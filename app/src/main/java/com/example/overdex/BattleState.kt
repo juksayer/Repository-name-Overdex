@@ -1,3 +1,5 @@
+package com.example.overdex
+
 data class BattleState(
     val enemyPokemon: String?,
     val enemyFastMove: String?,
