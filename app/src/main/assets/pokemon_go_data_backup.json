@@ -1,0 +1,19 @@
+{
+  "pokemon": [
+    {
+      "id": 1,
+      "name": "Bulbasaur",
+
+      "typesJson": "[\"GRASS\",\"POISON\"]",
+      "region": "Kanto",
+
+      "fastMovesJson": "[]",
+      "chargedMovesJson": "[]",
+
+      "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
+      "cryUrl": "https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/1.ogg",
+
+      "description": "Seed Pokemon"
+    }
+  ]
+}
