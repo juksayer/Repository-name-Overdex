@@ -1,5 +1,6 @@
 package com.example.overdex
 
+import com.example.overdex.ui.screens.CalibrationScreen
 import android.util.Log
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -79,9 +80,12 @@ fun PokedexApp(mediaManager: MediaManager, modifier: Modifier = Modifier) {
 
     NavHost(
         navController = navController,
-        startDestination = "list",
+        startDestination = "calibration",
         modifier = modifier,
     ) {
+        composable("calibration") {
+            CalibrationScreen()
+        }
         composable("list") {
             PokedexListScreen(
                 viewModel = viewModel,
