@@ -167,7 +167,11 @@ fun EffectivenessRow(multipliers: Map<com.example.overdex.model.PokemonType, Dou
         multipliers.forEach { (type, mult) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TypeBadge(type)
-                Text(text = "${mult}x", fontSize = 10.sp, color = TerminalDimGreen)
+                Text(
+                    text = "%.2fx".format(mult),
+                    fontSize = 16.sp,
+                    color = TerminalGreen
+                )
             }
         }
     }

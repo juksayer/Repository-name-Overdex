@@ -95,8 +95,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         ?: gameMasterPokemon?.speciesName
                         ?: "Pokemon #$id"
                 val rawTypes = importedPokemon?.type ?: listOf("Normal")
-                val spriteUrl = importedPokemon?.img ?: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
+                val spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
 
+                if (id <= 3) {
+                    Log.d("SPRITE_TEST", "ID=$id importedImg=${importedPokemon?.img}")
+                    Log.d("SPRITE_TEST", "ID=$id spriteUrl=$spriteUrl")
+                }
                 val mappedTypes = rawTypes.mapNotNull { typeName ->
                     try {
                         PokemonType.valueOf(typeName.uppercase())

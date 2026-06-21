@@ -35,6 +35,13 @@ class MainActivity : ComponentActivity() {
         calibrationManager = CalibrationManager(this)
 
         val calibration = calibrationManager.load()
+        if (!calibration.isCalibrated()) {
+            calibrationMode = CalibrationMode.ENEMY_NAME
+        }
+        Log.d(
+            "OVERMON_CALIBRATION",
+            "Mode = $calibrationMode"
+        )
     //    Log.d("OPENAI_TEST", BuildConfig.OPENAI_API_KEY)
         mediaManager = MediaManager(this)
         enableEdgeToEdge()
@@ -61,7 +68,7 @@ fun PokedexApp(mediaManager: MediaManager, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
-
+    val calibrationMode = CalibrationMode.ENEMY_NAME
     val onCycleFilter = {
         filterSettings = when {
             !filterSettings.isEnabled -> FilterSettings(isEnabled = true, scanlineIntensity = 0.1f)
