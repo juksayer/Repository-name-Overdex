@@ -9,17 +9,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.overdex.AnchorRegion
 import com.example.overdex.BattleCalibration
+import com.example.overdex.CalibrationManager
 import com.example.overdex.CalibrationMode
 
 @Composable
-fun CalibrationScreen() {
+fun CalibrationScreen(
+    calibrationManager: CalibrationManager
+) {
 
     var calibrationMode by remember {
         mutableStateOf(CalibrationMode.NONE)
     }
 
     var calibration by remember {
-        mutableStateOf(BattleCalibration())
+        mutableStateOf(calibrationManager.load())
     }
 
     val activeRegion = when (calibrationMode) {
@@ -129,6 +132,24 @@ fun CalibrationScreen() {
             }
         ) {
             Text("TEST REGION")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                calibrationManager.save(calibration)
+            }
+        ) {
+            Text("SAVE")
+        }
+
+        Button(
+            onClick = {
+                calibration = calibrationManager.load()
+            }
+        ) {
+            Text("LOAD")
         }
     }
 }

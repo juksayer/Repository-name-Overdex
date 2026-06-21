@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     PokedexApp(
                         mediaManager = mediaManager,
+                        calibrationManager = calibrationManager,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -65,7 +66,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PokedexApp(mediaManager: MediaManager, modifier: Modifier = Modifier) {
+fun PokedexApp(
+    mediaManager: MediaManager,
+    calibrationManager: CalibrationManager,
+    modifier: Modifier = Modifier
+){
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
@@ -84,7 +89,9 @@ fun PokedexApp(mediaManager: MediaManager, modifier: Modifier = Modifier) {
         modifier = modifier,
     ) {
         composable("calibration") {
-            CalibrationScreen()
+            CalibrationScreen(
+                calibrationManager = calibrationManager
+            )
         }
         composable("list") {
             PokedexListScreen(
