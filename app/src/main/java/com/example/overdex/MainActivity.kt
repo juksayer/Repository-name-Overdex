@@ -1,5 +1,6 @@
 package com.example.overdex
 
+import android.util.Log
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,9 +27,14 @@ import com.example.overdex.ui.theme.OverdexTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
+    private lateinit var calibrationManager: CalibrationManager
+    private var calibrationMode = CalibrationMode.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        calibrationManager = CalibrationManager(this)
+
+        val calibration = calibrationManager.load()
     //    Log.d("OPENAI_TEST", BuildConfig.OPENAI_API_KEY)
         mediaManager = MediaManager(this)
         enableEdgeToEdge()
