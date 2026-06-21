@@ -9,6 +9,16 @@ object BattleMemoryUpdater {
 
         state.enemyPokemon?.let { pokemon ->
 
+            if (!memory.enemyTeam.containsKey(pokemon)) {
+                memory.enemyTeam[pokemon] =
+                    EnemyPokemonMemory(species = pokemon)
+            }
+            memory.enemyTeam[pokemon]?.timesSeen++
+            android.util.Log.d(
+                "OVERMON_MEMORY",
+                "Enemy team: ${memory.enemyTeam.keys}"
+            )
+
             memory.seenPokemon.add(pokemon)
 
             if (!memory.observedEnemyPokemon.contains(pokemon)) {

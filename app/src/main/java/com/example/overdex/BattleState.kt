@@ -6,4 +6,4 @@ data class BattleState(
     val enemyChargedMoves: List<String>,
     val enemyEnergy: Int,
     val enemyRemainingPokemon: Int
-)val observedEnemyPokemon: MutableList<String> = mutableListOf()
+)
