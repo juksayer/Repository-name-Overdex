@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +26,8 @@ import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.screens.PokedexListScreen
 import com.example.overdex.ui.screens.PokemonDetailScreen
 import com.example.overdex.ui.theme.OverdexTheme
+
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
@@ -85,7 +88,7 @@ fun PokedexApp(
 
     NavHost(
         navController = navController,
-        startDestination = "calibration",
+        startDestination = "list",
         modifier = modifier,
     ) {
         composable("calibration") {

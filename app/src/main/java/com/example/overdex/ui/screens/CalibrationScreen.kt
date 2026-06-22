@@ -24,6 +24,9 @@ fun CalibrationScreen(
     var calibration by remember {
         mutableStateOf(calibrationManager.load())
     }
+    var statusMessage by remember {
+        mutableStateOf("Ready")
+    }
 
     val activeRegion = when (calibrationMode) {
         CalibrationMode.ENEMY_NAME -> calibration.enemyNameRegion
@@ -45,6 +48,7 @@ fun CalibrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Current Mode: $calibrationMode")
+        Text("Status: $statusMessage")
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -139,17 +143,20 @@ fun CalibrationScreen(
         Button(
             onClick = {
                 calibrationManager.save(calibration)
+                statusMessage = "Saved"
             }
-        ) {
+        ){
             Text("SAVE")
         }
 
         Button(
             onClick = {
                 calibration = calibrationManager.load()
+                statusMessage = "Loaded"
             }
         ) {
             Text("LOAD")
         }
+
     }
 }
