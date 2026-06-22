@@ -17,7 +17,7 @@ fun CalibrationScreen(
 ) {
 
     var calibrationMode by remember {
-        mutableStateOf(CalibrationMode.NONE)
+        mutableStateOf(CalibrationMode.ENEMY_NAME)
     }
 
     var calibration by remember {
@@ -85,6 +85,7 @@ fun CalibrationScreen(
         ) {
             Text("Height +")
         }
+
         Button(
             onClick = {
                 if (calibrationMode == CalibrationMode.ENEMY_NAME) {
@@ -100,12 +101,23 @@ fun CalibrationScreen(
         }
         Button(
             onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            y = activeRegion.y + 10f
+                when (calibrationMode) {
+
+                    CalibrationMode.ENEMY_NAME ->
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                y = activeRegion.y + 10f
+                            )
                         )
-                    )
+
+                    CalibrationMode.HP_BAR ->
+                        calibration = calibration.copy(
+                            hpBarRegion = activeRegion.copy(
+                                y = activeRegion.y + 10f
+                            )
+                        )
+
+                    else -> {}
                 }
             }
         ) {
@@ -117,12 +129,23 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                x = activeRegion.x - 10f
+                    when (calibrationMode) {
+
+                        CalibrationMode.ENEMY_NAME ->
+                            calibration = calibration.copy(
+                                enemyNameRegion = activeRegion.copy(
+                                    x = activeRegion.x - 10f
+                                )
                             )
-                        )
+
+                        CalibrationMode.HP_BAR ->
+                            calibration = calibration.copy(
+                                hpBarRegion = activeRegion.copy(
+                                    x = activeRegion.x - 10f
+                                )
+                            )
+
+                        else -> {}
                     }
                 }
             ) {
@@ -133,12 +156,23 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                x = activeRegion.x + 10f
+                    when (calibrationMode) {
+
+                        CalibrationMode.ENEMY_NAME ->
+                            calibration = calibration.copy(
+                                enemyNameRegion = activeRegion.copy(
+                                    x = activeRegion.x + 10f
+                                )
                             )
-                        )
+
+                        CalibrationMode.HP_BAR ->
+                            calibration = calibration.copy(
+                                hpBarRegion = activeRegion.copy(
+                                    x = activeRegion.x + 10f
+                                )
+                            )
+
+                        else -> {}
                     }
                 }
             ) {
@@ -148,12 +182,23 @@ fun CalibrationScreen(
 
         Button(
             onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            y = activeRegion.y - 10f
+                when (calibrationMode) {
+
+                    CalibrationMode.ENEMY_NAME ->
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                y = activeRegion.y - 10f
+                            )
                         )
-                    )
+
+                    CalibrationMode.HP_BAR ->
+                        calibration = calibration.copy(
+                            hpBarRegion = activeRegion.copy(
+                                y = activeRegion.y - 10f
+                            )
+                        )
+
+                    else -> {}
                 }
             }
         ) {
