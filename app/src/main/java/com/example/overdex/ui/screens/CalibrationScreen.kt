@@ -103,27 +103,47 @@ fun CalibrationScreen(
                 if (calibrationMode == CalibrationMode.ENEMY_NAME) {
                     calibration = calibration.copy(
                         enemyNameRegion = activeRegion.copy(
-                            x = activeRegion.x - 10f
+                            y = activeRegion.y + 10f
                         )
                     )
                 }
             }
         ) {
-            Text("X -")
+            Text("↑")
         }
 
-        Button(
-            onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            x = activeRegion.x + 10f
+        Row {
+
+
+            Button(
+                onClick = {
+                    if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                x = activeRegion.x - 10f
+                            )
                         )
-                    )
+                    }
                 }
+            ) {
+                Text("←")
             }
-        ) {
-            Text("X +")
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = {
+                    if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                x = activeRegion.x + 10f
+                            )
+                        )
+                    }
+                }
+            ) {
+                Text("→")
+            }
         }
 
         Button(
@@ -137,22 +157,9 @@ fun CalibrationScreen(
                 }
             }
         ) {
-            Text("Y -")
+            Text("↓")
         }
 
-        Button(
-            onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            y = activeRegion.y + 10f
-                        )
-                    )
-                }
-            }
-        ) {
-            Text("Y +")
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
