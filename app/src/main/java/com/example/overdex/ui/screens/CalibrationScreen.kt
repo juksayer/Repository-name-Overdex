@@ -61,43 +61,107 @@ fun CalibrationScreen(
 
         Button(
             onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            width = activeRegion.width + 10f
+                when (calibrationMode) {
+
+                    CalibrationMode.ENEMY_NAME ->
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                height = activeRegion.height + 10f
+                            )
                         )
-                    )
-                }
-            }
-        ) {
-            Text("Width +")
-        }
-        Button(
-            onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            height = activeRegion.height + 10f
+
+                    CalibrationMode.HP_BAR ->
+                        calibration = calibration.copy(
+                            hpBarRegion = activeRegion.copy(
+                                height = activeRegion.height + 10f
+                            )
                         )
-                    )
+
+                    else -> {}
                 }
             }
         ) {
             Text("Height +")
         }
 
+        Row {
+
+            Button(
+                onClick = {
+                    when (calibrationMode) {
+
+                        CalibrationMode.ENEMY_NAME ->
+                            calibration = calibration.copy(
+                                enemyNameRegion = activeRegion.copy(
+                                    width = activeRegion.width - 10f
+                                )
+                            )
+
+                        CalibrationMode.HP_BAR ->
+                            calibration = calibration.copy(
+                                hpBarRegion = activeRegion.copy(
+                                    width = activeRegion.width - 10f
+                                )
+                            )
+
+                        else -> {}
+                    }
+                }
+            ) {
+                Text("Width -")
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = {
+                    when (calibrationMode) {
+
+                        CalibrationMode.ENEMY_NAME ->
+                            calibration = calibration.copy(
+                                enemyNameRegion = activeRegion.copy(
+                                    width = activeRegion.width + 10f
+                                )
+                            )
+
+                        CalibrationMode.HP_BAR ->
+                            calibration = calibration.copy(
+                                hpBarRegion = activeRegion.copy(
+                                    width = activeRegion.width + 10f
+                                )
+                            )
+
+                        else -> {}
+                    }
+                }
+            ) {
+                Text("Width +")
+            }
+        }
+
         Button(
             onClick = {
-                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
-                    calibration = calibration.copy(
-                        enemyNameRegion = activeRegion.copy(
-                            width = activeRegion.width - 10f
+                when (calibrationMode) {
+
+                    CalibrationMode.ENEMY_NAME ->
+                        calibration = calibration.copy(
+                            enemyNameRegion = activeRegion.copy(
+                                height = activeRegion.height - 10f
+                            )
                         )
-                    )
+
+                    CalibrationMode.HP_BAR ->
+                        calibration = calibration.copy(
+                            hpBarRegion = activeRegion.copy(
+                                height = activeRegion.height - 10f
+                            )
+                        )
+
+                    else -> {}
                 }
             }
         ) {
-            Text("Width -")
+            Text("Height -")
         }
         Button(
             onClick = {
