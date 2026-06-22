@@ -8,7 +8,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.overdex.AnchorRegion
-import com.example.overdex.BattleCalibration
 import com.example.overdex.CalibrationManager
 import com.example.overdex.CalibrationMode
 
@@ -24,6 +23,7 @@ fun CalibrationScreen(
     var calibration by remember {
         mutableStateOf(calibrationManager.load())
     }
+
     var statusMessage by remember {
         mutableStateOf("Ready")
     }
@@ -56,6 +56,103 @@ fun CalibrationScreen(
         Text("Y: ${activeRegion.y}")
         Text("Width: ${activeRegion.width}")
         Text("Height: ${activeRegion.height}")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            width = activeRegion.width + 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("Width +")
+        }
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            height = activeRegion.height + 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("Height +")
+        }
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            width = activeRegion.width - 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("Width -")
+        }
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            x = activeRegion.x - 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("X -")
+        }
+
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            x = activeRegion.x + 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("X +")
+        }
+
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            y = activeRegion.y - 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("Y -")
+        }
+
+        Button(
+            onClick = {
+                if (calibrationMode == CalibrationMode.ENEMY_NAME) {
+                    calibration = calibration.copy(
+                        enemyNameRegion = activeRegion.copy(
+                            y = activeRegion.y + 10f
+                        )
+                    )
+                }
+            }
+        ) {
+            Text("Y +")
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -145,7 +242,7 @@ fun CalibrationScreen(
                 calibrationManager.save(calibration)
                 statusMessage = "Saved"
             }
-        ){
+        ) {
             Text("SAVE")
         }
 
@@ -157,6 +254,5 @@ fun CalibrationScreen(
         ) {
             Text("LOAD")
         }
-
     }
 }

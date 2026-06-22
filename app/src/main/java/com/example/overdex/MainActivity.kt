@@ -79,12 +79,9 @@ fun PokedexApp(
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
     val calibrationMode = CalibrationMode.ENEMY_NAME
     val onCycleFilter = {
-        filterSettings = when {
-            !filterSettings.isEnabled -> FilterSettings(isEnabled = true, scanlineIntensity = 0.1f)
-            filterSettings.scanlineIntensity < 0.3f -> filterSettings.copy(scanlineIntensity = 0.4f)
-            else -> filterSettings.copy(isEnabled = false)
-        }
+        navController.navigate("calibration")
     }
+
 
     NavHost(
         navController = navController,
