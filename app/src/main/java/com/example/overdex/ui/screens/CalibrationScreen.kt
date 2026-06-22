@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.example.overdex.AnchorRegion
 import com.example.overdex.CalibrationManager
 import com.example.overdex.CalibrationMode
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun CalibrationScreen(
@@ -39,6 +41,7 @@ fun CalibrationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
