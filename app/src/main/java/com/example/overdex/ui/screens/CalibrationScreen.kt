@@ -184,6 +184,13 @@ fun CalibrationScreen(
                             )
                         )
 
+                    CalibrationMode.TEAM_ICONS ->
+                        calibration = calibration.copy(
+                            teamIconsRegion = activeRegion.copy(
+                                y = activeRegion.y + 10f
+                            )
+                        )
+
                     else -> {}
                 }
             }
@@ -208,6 +215,13 @@ fun CalibrationScreen(
                         CalibrationMode.HP_BAR ->
                             calibration = calibration.copy(
                                 hpBarRegion = activeRegion.copy(
+                                    x = activeRegion.x - 10f
+                                )
+                            )
+
+                        CalibrationMode.TEAM_ICONS ->
+                            calibration = calibration.copy(
+                                teamIconsRegion = activeRegion.copy(
                                     x = activeRegion.x - 10f
                                 )
                             )
@@ -239,6 +253,13 @@ fun CalibrationScreen(
                                 )
                             )
 
+                        CalibrationMode.TEAM_ICONS ->
+                            calibration = calibration.copy(
+                                teamIconsRegion = activeRegion.copy(
+                                    x = activeRegion.x + 10f
+                                )
+                            )
+
                         else -> {}
                     }
                 }
@@ -261,6 +282,13 @@ fun CalibrationScreen(
                     CalibrationMode.HP_BAR ->
                         calibration = calibration.copy(
                             hpBarRegion = activeRegion.copy(
+                                y = activeRegion.y - 10f
+                            )
+                        )
+
+                    CalibrationMode.TEAM_ICONS ->
+                        calibration = calibration.copy(
+                            teamIconsRegion = activeRegion.copy(
                                 y = activeRegion.y - 10f
                             )
                         )

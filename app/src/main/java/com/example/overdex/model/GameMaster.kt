@@ -9,12 +9,20 @@ data class GameMaster(
 )
 
 @Serializable
+data class BaseStats(
+    val atk: Int,
+    val def: Int,
+    val hp: Int
+)
+
+@Serializable
 data class GameMasterPokemon(
     val dex: Int,
     val speciesId: String,
     val speciesName: String,
     val fastMoves: List<String> = emptyList(),
-    val chargedMoves: List<String> = emptyList()
+    val chargedMoves: List<String> = emptyList(),
+    val baseStats: BaseStats? = null
 )
 
 @Serializable

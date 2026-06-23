@@ -125,8 +125,12 @@ fun PokemonDetailScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Effectiveness
+
+
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+// Effectiveness
             SectionTitle("Weaknesses")
             EffectivenessRow(pokemon.getWeaknesses().filter { it.value > 1.0 })
             
