@@ -9,6 +9,10 @@ data class PokemonEntity(
     val name: String,
     val typesJson: String, // Serialized List<PokemonType>
     val region: String,
+
+    val height: String = "",
+    val weight: String = "",
+
     val fastMovesJson: String, // Serialized List<Move>
     val chargedMovesJson: String, // Serialized List<Move>
     val spriteUrl: String,

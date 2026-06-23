@@ -142,7 +142,12 @@ fun PokemonDetailScreen(
                     )
                 }
             }
-
+            Text(
+                text = "HT ${pokemon.height}  WT ${pokemon.weight}",
+                color = TerminalDimGreen,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
 // Effectiveness

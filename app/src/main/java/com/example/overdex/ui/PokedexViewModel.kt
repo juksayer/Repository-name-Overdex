@@ -180,6 +180,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         name = name,
                         typesJson = Json.encodeToString(mappedTypes),
                         region = region,
+                        height = importedPokemon?.height ?: "",
+                        weight = importedPokemon?.weight ?: "",
                         baseAttack = gameMasterPokemon?.baseStats?.atk ?: 0,
                         baseDefense = gameMasterPokemon?.baseStats?.def ?: 0,
                         baseStamina = gameMasterPokemon?.baseStats?.hp ?: 0,
@@ -235,9 +237,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = name,
             types = types,
             region = region,
+
+            height = height,
+            weight = weight,
+
             baseAttack = baseAttack,
             baseDefense = baseDefense,
             baseStamina = baseStamina,
+            
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
             spriteUrl = spriteUrl,

@@ -10,5 +10,5 @@ data class PokemonImport(
     val img: String,
     val type: List<String>,
     val height: String? = null,
-    val weight: String? = null
+    val weight: String? = null,
 )

@@ -5,6 +5,10 @@ data class Pokemon(
     val name: String,
     val types: List<PokemonType>,
     val region: String,
+
+    val height: String = "",
+    val weight: String = "",
+
     val fastMoves: List<Move>,
     val chargedMoves: List<Move>,
     val spriteUrl: String = "",
