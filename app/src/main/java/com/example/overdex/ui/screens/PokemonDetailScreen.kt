@@ -126,7 +126,11 @@ fun PokemonDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            SectionTitle("Base Stats")
 
+            Text("ATK: ${pokemon.baseAttack}")
+            Text("DEF: ${pokemon.baseDefense}")
+            Text("STA: ${pokemon.baseStamina}")
 
             Spacer(modifier = Modifier.height(16.dp))
 
