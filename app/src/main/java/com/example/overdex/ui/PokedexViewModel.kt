@@ -169,7 +169,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             )
                         }
                     }
-                    ?.take(3)
+                    //?.take(3)
                     ?.ifEmpty { null }
                     ?: commonChargedMoves.filter { it.type in mappedTypes }
                         .ifEmpty { listOf(commonChargedMoves.random()) }

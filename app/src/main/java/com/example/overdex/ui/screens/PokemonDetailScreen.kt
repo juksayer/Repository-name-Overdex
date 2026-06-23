@@ -126,11 +126,22 @@ fun PokemonDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SectionTitle("Base Stats")
-
-            Text("ATK: ${pokemon.baseAttack}")
-            Text("DEF: ${pokemon.baseDefense}")
-            Text("STA: ${pokemon.baseStamina}")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "ATK ${pokemon.baseAttack}  DEF ${pokemon.baseDefense}  STA ${pokemon.baseStamina}",
+                        color = TerminalGreen,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
