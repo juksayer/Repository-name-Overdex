@@ -10,6 +10,9 @@ data class Pokemon(
     val spriteUrl: String = "",
     val cryUrl: String = "",
     val description: String = "",
+    val baseAttack: Int = 0,
+    val baseDefense: Int = 0,
+    val baseStamina: Int = 0,
 ) {
     val formattedId: String get() = "#${id.toString().padStart(3, '0')}"
 

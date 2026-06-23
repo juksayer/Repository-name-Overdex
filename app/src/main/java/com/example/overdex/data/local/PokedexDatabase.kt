@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [PokemonEntity::class], version = 1, exportSchema = false)
+@Database(entities = [PokemonEntity::class], version = 2, exportSchema = false)
 abstract class PokedexDatabase : RoomDatabase() {
     abstract fun pokemonDao(): PokemonDao
 
@@ -20,9 +20,8 @@ abstract class PokedexDatabase : RoomDatabase() {
                     PokedexDatabase::class.java,
                     "pokedex_database",
                 )
-                // In a real app with 1000+ pokemon, we'd use .createFromAsset("pokedex.db")
-                // For this demo, we'll populate it if empty.
-                .build()
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
