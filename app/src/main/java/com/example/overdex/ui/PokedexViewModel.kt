@@ -257,6 +257,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = name,
             types = types,
             region = region,
+            genus = genus,
 
             height = height,
             weight = weight,

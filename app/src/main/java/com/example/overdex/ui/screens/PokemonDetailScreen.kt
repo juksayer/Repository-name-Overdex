@@ -113,10 +113,22 @@ fun PokemonDetailScreen(
                     pokemon.types.forEach { TypeBadge(it) }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            // Description
+
+            if (pokemon.genus.isNotBlank()) {
+                Text(
+                    text = pokemon.genus,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TerminalDimGreen,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+// Description
             Text(
                 text = pokemon.description,
                 fontSize = 14.sp,
