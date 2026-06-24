@@ -204,6 +204,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         height = importedPokemon?.height ?: "",
                         weight = importedPokemon?.weight ?: "",
 
+                        prevEvolutionsJson = Json.encodeToString(
+                            importedPokemon?.prev_evolution ?: emptyList()
+                        ),
+                        nextEvolutionsJson = Json.encodeToString(
+                            importedPokemon?.next_evolution ?: emptyList()
+                        ),
+
                         baseAttack = gameMasterPokemon?.baseStats?.atk ?: 0,
                         baseDefense = gameMasterPokemon?.baseStats?.def ?: 0,
                         baseStamina = gameMasterPokemon?.baseStats?.hp ?: 0,
@@ -259,12 +266,27 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val types = try { Json.decodeFromString<List<PokemonType>>(typesJson) } catch (e: Exception) { emptyList() }
         val fastMoves = try { Json.decodeFromString<List<Move>>(fastMovesJson) } catch (e: Exception) { emptyList() }
         val chargedMoves = try { Json.decodeFromString<List<Move>>(chargedMovesJson) } catch (e: Exception) { emptyList() }
+        val prevEvolutions = try {
+            Json.decodeFromString<List<EvolutionImport>>(prevEvolutionsJson)
+                .map { Evolution(it.num, it.name) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val nextEvolutions = try {
+            Json.decodeFromString<List<EvolutionImport>>(nextEvolutionsJson)
+                .map { Evolution(it.num, it.name) }
+        } catch (e: Exception) {
+            emptyList()
+        }
         return Pokemon(
             id = id,
             name = name,
             types = types,
             region = region,
             genus = genus,
+            prevEvolutions = prevEvolutions,
+            nextEvolutions = nextEvolutions,
 
             height = height,
             weight = weight,

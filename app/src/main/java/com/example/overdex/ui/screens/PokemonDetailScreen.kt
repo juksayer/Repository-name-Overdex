@@ -160,6 +160,49 @@ fun PokemonDetailScreen(
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 4.dp)
             )
+            if (pokemon.prevEvolutions.isNotEmpty() || pokemon.nextEvolutions.isNotEmpty()) {
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SectionTitle("EVO")
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    pokemon.prevEvolutions.forEach { evo ->
+                        Text(
+                            text = evo.name,
+                            color = TerminalGreen
+                        )
+
+                        Text(
+                            text = "↓",
+                            color = TerminalDimGreen
+                        )
+                    }
+
+                    Text(
+                        text = pokemon.name,
+                        color = TerminalGreen,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+
+                    pokemon.nextEvolutions.forEach { evo ->
+                        Text(
+                            text = "↓",
+                            color = TerminalDimGreen
+                        )
+
+                        Text(
+                            text = evo.name,
+                            color = TerminalGreen
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
 // Effectiveness

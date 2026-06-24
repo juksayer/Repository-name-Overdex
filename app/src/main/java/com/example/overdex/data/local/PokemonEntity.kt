@@ -15,6 +15,9 @@ data class PokemonEntity(
     val height: String = "",
     val weight: String = "",
 
+    val prevEvolutionsJson: String = "[]",
+    val nextEvolutionsJson: String = "[]",
+
     val fastMovesJson: String, // Serialized List<Move>
     val chargedMovesJson: String, // Serialized List<Move>
     val spriteUrl: String,

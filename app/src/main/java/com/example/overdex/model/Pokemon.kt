@@ -10,6 +10,9 @@ data class Pokemon(
     val height: String = "",
     val weight: String = "",
 
+    val prevEvolutions: List<Evolution> = emptyList(),
+    val nextEvolutions: List<Evolution> = emptyList(),
+
     val fastMoves: List<Move>,
     val chargedMoves: List<Move>,
     val spriteUrl: String = "",
