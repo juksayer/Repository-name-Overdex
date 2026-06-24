@@ -11,4 +11,11 @@ data class PokemonImport(
     val type: List<String>,
     val height: String? = null,
     val weight: String? = null,
+    val prev_evolution: List<EvolutionImport>? = null,
+    val next_evolution: List<EvolutionImport>? = null,
+)
+@Serializable
+data class EvolutionImport(
+    val num: String,
+    val name: String
 )

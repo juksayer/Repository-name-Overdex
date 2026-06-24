@@ -96,6 +96,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             for (id in 1..1025) {
                 val importedPokemon = importedMap[id]
 
+                if (id == 5) {
+                    Log.d(
+                        "EVO_TEST",
+                        "name=${importedPokemon?.name} prev=${importedPokemon?.prev_evolution} next=${importedPokemon?.next_evolution}"
+                    )
+                }
+
                 val speciesInfo = speciesMap[id]
 
                 val gameMasterPokemon =
