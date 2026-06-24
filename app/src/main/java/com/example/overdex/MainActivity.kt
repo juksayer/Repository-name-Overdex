@@ -127,9 +127,14 @@ fun PokedexApp(
                     onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
                     onSelect = onCycleFilter,
                     onBackClick = { navController.popBackStack() },
-                ) { url ->
-                    mediaManager.playSound(url)
-                }
+                    onPlayCry = { url ->
+                        mediaManager.playSound(url)
+                    },
+                    onMoveClick = { moveName ->
+                        viewModel.updateSearchQuery(moveName)
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

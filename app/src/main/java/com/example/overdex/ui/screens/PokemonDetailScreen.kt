@@ -27,6 +27,7 @@ import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.compose.foundation.clickable
 
 @Composable
 fun PokemonDetailScreen(
@@ -36,10 +37,10 @@ fun PokemonDetailScreen(
     onSelect: () -> Unit,
     onBackClick: () -> Unit,
     onPlayCry: (String) -> Unit,
+    onMoveClick: (String) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
-
     PokedexFrame(
         onUp = {
             scope.launch {
@@ -216,12 +217,26 @@ fun PokemonDetailScreen(
             
             // Moves
             SectionTitle("Fast Moves")
-            pokemon.fastMoves.forEach { MoveRow(it) }
+            pokemon.fastMoves.forEach { move ->
+                MoveRow(
+                    move = move,
+                    onClick = {
+                        onMoveClick(move.name)
+                    }
+                )
+            }
             
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             SectionTitle("Charged Moves")
-            pokemon.chargedMoves.forEach { MoveRow(it) }
+            pokemon.chargedMoves.forEach { move ->
+                MoveRow(
+                    move = move,
+                    onClick = {
+                        onMoveClick(move.name)
+                    }
+                )
+            }
         }
     }
 }
@@ -272,12 +287,18 @@ fun FlowRow(
 }
 
 @Composable
-fun MoveRow(move: Move) {
+fun MoveRow(
+    move: Move,
+    onClick: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .border(1.dp, TerminalDimGreen, CardDefaults.shape),
+            .border(1.dp, TerminalDimGreen, CardDefaults.shape)
+            .clickable(enabled = onClick != null) {
+                onClick?.invoke()
+            },
         colors = CardDefaults.cardColors(
             containerColor = TerminalBlack,
             contentColor = TerminalGreen

@@ -8,18 +8,29 @@ import androidx.room.Query
 
 @Dao
 interface PokemonDao {
+
+    @Query("""
+        SELECT * FROM pokemon
+        WHERE
+            name LIKE :query
+            OR id LIKE :query
+            OR region LIKE :query
+            OR typesJson LIKE :query
+            OR fastMovesJson LIKE :query
+            OR chargedMovesJson LIKE :query
+        ORDER BY id ASC
+    """)
+    fun searchPokemon(query: String): PagingSource<Int, PokemonEntity>
+
     @Query("SELECT * FROM pokemon ORDER BY id ASC")
     fun getAllPokemon(): PagingSource<Int, PokemonEntity>
 
-    @Query("SELECT * FROM pokemon WHERE name LIKE :query OR id LIKE :query OR region LIKE :query OR typesJson LIKE :query ORDER BY id ASC")
-    fun searchPokemon(query: String): PagingSource<Int, PokemonEntity>
-
-    @Query("SELECT * FROM pokemon WHERE id = :id")
+    @Query("SELECT * FROM pokemon WHERE id = :id LIMIT 1")
     suspend fun getPokemonById(id: Int): PokemonEntity?
-
-    @Query("DELETE FROM pokemon")
-    suspend fun clearAll()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(pokemon: List<PokemonEntity>)
+
+    @Query("DELETE FROM pokemon")
+    suspend fun clearAll()
 }
