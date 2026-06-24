@@ -10,6 +10,8 @@ data class PokemonEntity(
     val typesJson: String, // Serialized List<PokemonType>
     val region: String,
 
+    val genus: String = "",
+
     val height: String = "",
     val weight: String = "",
 

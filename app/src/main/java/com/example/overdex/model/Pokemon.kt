@@ -5,6 +5,7 @@ data class Pokemon(
     val name: String,
     val types: List<PokemonType>,
     val region: String,
+    val genus: String = "",
 
     val height: String = "",
     val weight: String = "",

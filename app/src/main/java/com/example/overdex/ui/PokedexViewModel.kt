@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.example.overdex.data.SpeciesJsonLoader
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -62,7 +63,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonDao.clearAll()
             val imported = pokemonLoader.loadPokemon()
             val importedMap = imported.pokemon.associateBy { it.id }
-            
+            val speciesLoader = SpeciesJsonLoader(getApplication())
+
+            val speciesMap =
+                speciesLoader.loadSpecies()
+                    .associateBy { it.id }
+
+            Log.d("SPECIES_TEST", "Species count = ${speciesMap.size}")
+            Log.d("SPECIES_TEST", "Charizard = ${speciesMap[6]}")
+
             val commonFastMoves = listOf(
                 Move("Counter", PokemonType.FIGHTING, 8, 7, isFast = true, 2),
                 Move("Dragon Breath", PokemonType.DRAGON, 4, 3, isFast = true, 1),
@@ -86,6 +95,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             // Populate up to 1025 pokemon
             for (id in 1..1025) {
                 val importedPokemon = importedMap[id]
+
+                val speciesInfo = speciesMap[id]
 
                 val gameMasterPokemon =
                     gameMasterLoader.getPokemonByDex(id)
@@ -180,16 +191,25 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         name = name,
                         typesJson = Json.encodeToString(mappedTypes),
                         region = region,
+
+                        genus = speciesInfo?.genus ?: "",
+
                         height = importedPokemon?.height ?: "",
                         weight = importedPokemon?.weight ?: "",
+
                         baseAttack = gameMasterPokemon?.baseStats?.atk ?: 0,
                         baseDefense = gameMasterPokemon?.baseStats?.def ?: 0,
                         baseStamina = gameMasterPokemon?.baseStats?.hp ?: 0,
+
                         fastMovesJson = Json.encodeToString(fastMoves),
                         chargedMovesJson = Json.encodeToString(chargedMoves),
+
                         spriteUrl = spriteUrl,
                         cryUrl = "https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/$id.ogg",
-                        description = "A ${mappedTypes.joinToString("/") { it.name.lowercase() }} type Pokémon from the $region region."
+
+                        description =
+                            speciesInfo?.flavor_text
+                                ?: "A ${mappedTypes.joinToString("/") { it.name.lowercase() }} type Pokémon from the $region region."
                     )
                 )
                 
@@ -244,7 +264,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             baseAttack = baseAttack,
             baseDefense = baseDefense,
             baseStamina = baseStamina,
-            
+
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
             spriteUrl = spriteUrl,
