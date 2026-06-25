@@ -38,6 +38,7 @@ fun PokemonDetailScreen(
     onBackClick: () -> Unit,
     onPlayCry: (String) -> Unit,
     onMoveClick: (String) -> Unit,
+    onTypeClick: (String) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -111,7 +112,12 @@ fun PokemonDetailScreen(
                     )
                 }
                 Row {
-                    pokemon.types.forEach { TypeBadge(it) }
+                    pokemon.types.forEach { type ->
+                        TypeBadge(
+                            type = type,
+                            onClick = { onTypeClick(type.name) }
+                        )
+                    }
                 }
             }
 

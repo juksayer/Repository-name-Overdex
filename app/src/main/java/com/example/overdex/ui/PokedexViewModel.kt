@@ -23,6 +23,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val gameMasterLoader = GameMasterLoader(application)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
+    private val _searchRequest = MutableStateFlow(SearchRequest())
+
+    val searchRequest = _searchRequest.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedPokemon: Flow<PagingData<Pokemon>> = _searchQuery
@@ -251,11 +254,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         id <= 721 -> "Kalos"
         id <= 809 -> "Alola"
         id <= 898 -> "Galar"
-        else -> "Paldea"
+        id <= 1025 -> "Paldea"
+        else -> "Unknown"
     }
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+        _searchRequest.value =
+            _searchRequest.value.copy(
+                text = query
+            )
     }
 
     suspend fun getPokemonById(id: Int): Pokemon? {

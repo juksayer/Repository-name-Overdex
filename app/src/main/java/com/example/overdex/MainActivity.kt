@@ -133,6 +133,10 @@ fun PokedexApp(
                     onMoveClick = { moveName ->
                         viewModel.updateSearchQuery(moveName)
                         navController.popBackStack()
+                    },
+                    onTypeClick = { type ->
+                        viewModel.updateSearchQuery(type)
+                        navController.popBackStack()
                     }
                 )
             }
