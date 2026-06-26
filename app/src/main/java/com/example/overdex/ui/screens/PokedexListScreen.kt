@@ -40,6 +40,7 @@ fun PokedexListScreen(
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchRequest by viewModel.searchRequest.collectAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -62,8 +63,20 @@ fun PokedexListScreen(
             SearchBar(query = searchQuery) {
                 viewModel.updateSearchQuery(it)
             }
-            
+            searchRequest.activeFilters.forEach { filter ->
+                AssistChip(
+                    onClick = {
+                        viewModel.removeFilter(filter)
+                    },
+
+                    label = {
+                        Text(filter.label)
+                    }
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             
             LazyColumn(
                 state = listState,

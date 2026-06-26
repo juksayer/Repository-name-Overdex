@@ -22,6 +22,13 @@ interface PokemonDao {
     """)
     fun searchPokemon(query: String): PagingSource<Int, PokemonEntity>
 
+    @Query("""
+    SELECT * FROM pokemon
+    WHERE typesJson LIKE :type
+    ORDER BY id ASC
+""")
+    fun getPokemonByType(type: String): PagingSource<Int, PokemonEntity>
+
     @Query("SELECT * FROM pokemon ORDER BY id ASC")
     fun getAllPokemon(): PagingSource<Int, PokemonEntity>
 

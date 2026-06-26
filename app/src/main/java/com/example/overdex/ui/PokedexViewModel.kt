@@ -15,10 +15,13 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.example.overdex.data.SpeciesJsonLoader
+import com.example.overdex.data.PokemonSearchRepository
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
+
+    private val searchRepository = PokemonSearchRepository(pokemonDao)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
     private val _searchQuery = MutableStateFlow("")
@@ -33,8 +36,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             Pager(
                 config = PagingConfig(pageSize = 50, enablePlaceholders = false),
             ) {
-                if (query.isBlank()) pokemonDao.getAllPokemon()
-                else pokemonDao.searchPokemon("%$query%")
+                searchRepository.search(
+                    query = query,
+                    type = _searchRequest.value.type
+                )
             }.flow
         }
         .map { pagingData ->
@@ -115,9 +120,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     importedPokemon?.name
                         ?: gameMasterPokemon?.speciesName
                         ?: "Pokemon #$id"
-                val rawTypes = importedPokemon?.type ?: listOf("Normal")
+                val rawTypes =
+                    importedPokemon?.type
+                        ?: gameMasterPokemon?.types
+                            ?.filter { it != "none" }
+                            ?.map { it.replaceFirstChar(Char::uppercase) }
+                        ?: listOf("Normal")
                 val spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
 
+                if (id == 152 || id == 249 || id == 445 || id == 1000) {
+                    Log.d(
+                        "TYPE_DEBUG",
+                        "#$id importedPokemon=${importedPokemon != null} rawTypes=$rawTypes"
+                    )
+                }
                 if (id <= 3) {
                     Log.d("SPRITE_TEST", "ID=$id importedImg=${importedPokemon?.img}")
                     Log.d("SPRITE_TEST", "ID=$id spriteUrl=$spriteUrl")
@@ -171,8 +187,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                     ?.ifEmpty { null }
-                    ?: commonFastMoves.filter { it.type in mappedTypes }
-                        .ifEmpty { listOf(commonFastMoves.random()) }
+                    ?: run {
+                        Log.d("MOVE_FALLBACK", "FAST fallback for #$id $name")
+                        commonFastMoves.filter { it.type in mappedTypes }
+                            .ifEmpty { listOf(commonFastMoves.random()) }
+                    }
 
                 val chargedMoves = gameMasterPokemon?.chargedMoves
                     ?.mapNotNull { moveId ->
@@ -262,10 +281,30 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _searchQuery.value = query
         _searchRequest.value =
             _searchRequest.value.copy(
-                text = query
+                text = query,
+                type = if (query.isBlank()) null else _searchRequest.value.type
             )
     }
 
+    fun removeFilter(filter: SearchRequest.ActiveFilter) {
+        when (filter.label) {
+            _searchRequest.value.type?.name -> {
+                _searchQuery.value = ""
+
+                _searchRequest.value =
+                    _searchRequest.value.copy(
+                        text = "",
+                        type = null
+                    )
+            }
+        }
+    }
+    fun updateTypeFilter(type: PokemonType?) {
+        _searchRequest.value =
+            _searchRequest.value.copy(
+                type = type
+            )
+    }
     suspend fun getPokemonById(id: Int): Pokemon? {
         return pokemonDao.getPokemonById(id)?.toDomain()
     }

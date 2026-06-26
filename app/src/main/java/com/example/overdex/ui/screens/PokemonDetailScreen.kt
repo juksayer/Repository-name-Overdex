@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
+import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.components.TypeBadge
@@ -38,7 +39,7 @@ fun PokemonDetailScreen(
     onBackClick: () -> Unit,
     onPlayCry: (String) -> Unit,
     onMoveClick: (String) -> Unit,
-    onTypeClick: (String) -> Unit,
+    onTypeClick: (PokemonType) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -115,7 +116,7 @@ fun PokemonDetailScreen(
                     pokemon.types.forEach { type ->
                         TypeBadge(
                             type = type,
-                            onClick = { onTypeClick(type.name) }
+                            onClick = { onTypeClick(type) }
                         )
                     }
                 }

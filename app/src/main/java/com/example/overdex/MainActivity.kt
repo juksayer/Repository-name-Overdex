@@ -135,7 +135,8 @@ fun PokedexApp(
                         navController.popBackStack()
                     },
                     onTypeClick = { type ->
-                        viewModel.updateSearchQuery(type)
+                        viewModel.updateTypeFilter(type)
+                        viewModel.updateSearchQuery(type.name)
                         navController.popBackStack()
                     }
                 )

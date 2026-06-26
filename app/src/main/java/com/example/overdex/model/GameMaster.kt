@@ -20,6 +20,7 @@ data class GameMasterPokemon(
     val dex: Int,
     val speciesId: String,
     val speciesName: String,
+    val types: List<String> = emptyList(),
     val fastMoves: List<String> = emptyList(),
     val chargedMoves: List<String> = emptyList(),
     val baseStats: BaseStats? = null
