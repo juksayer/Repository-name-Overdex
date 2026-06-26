@@ -1,0 +1,286 @@
+[
+  {
+    "id": 1,
+    "name": "Bulbasaur",
+    "genus": "Seed Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Biological Overview",
+        "content": [
+          "Bulbasaur is a symbiotic species featuring a nutrient-rich bulb on its back. This bulb is planted at birth and grows in tandem with the Pokémon.",
+          "It can survive for days without food, relying solely on solar energy stored within its bulb through photosynthesis."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Design Origins",
+        "content": [
+          "Inspired by the Dicynodont, an extinct synapsid, combined with characteristics of common frogs.",
+          "Its name is a portmanteau of the English words 'Bulb' and the Greek 'Saurus' (Lizard)."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical History",
+        "content": [
+          "A dominant contender in the Little Cup format.",
+          "The combination of Vine Whip's high energy generation and the legacy move Frenzy Plant makes it one of the most efficient Grass-type attackers in the meta."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Terminal Data: Anomalies",
+        "content": [
+          "Bulbasaur is the only dual-type starter in the Kanto region.",
+          "It holds the first index entry (#001) in the National Pokédex."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Ivysaur",
+    "genus": "Seed Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Maturation Profile",
+        "content": [
+          "As the bulb on its back matures into a bud, Ivysaur's weight increases, forcing it to develop stronger leg muscles.",
+          "When the bud is close to blooming, it emits a distinctively sweet aroma and the Pokémon begins spending significantly more time basking in direct sunlight."
+        ]
+      },
+      {
+        "type": "ANIME",
+        "title": "Historical Media Logs",
+        "content": [
+          "Famously documented in the 'Bulbasaur's Mysterious Garden' logs, which show groups of the species gathering to evolve synchronously under moonlight."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Venusaur",
+    "genus": "Seed Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Apex Flora",
+        "content": [
+          "The bulb has fully flowered into a massive bloom capable of absorbing large amounts of solar energy to power devastating beam attacks.",
+          "The scent from its flower is known to calm human emotions and can attract other Pokémon from miles away."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A premiere choice for the Ultra League. Its Shadow variant is particularly feared for its ability to overwhelm Water-types with raw Frenzy Plant pressure."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Charmander",
+    "genus": "Lizard Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Thermal Core",
+        "content": [
+          "Charmander's health is tied directly to the flame on its tail. If the flame flickers weakly, its health is declining; if it goes out, the Pokémon's life ends.",
+          "Steam is known to rise from the tip of its tail if it is caught in the rain."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Mythological Baseline",
+        "content": [
+          "Derived from the 'Fire Salamander' of European myth, which was believed to be capable of surviving inside active furnaces."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Charmeleon",
+    "genus": "Flame Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aggression Surge",
+        "content": [
+          "Evolution triggers a surge in adrenaline and aggression. Charmeleon is highly territorial and will seek out opponents far larger than itself.",
+          "In battle, it exhales bluish-white flames, raising local temperatures to hazardous levels."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Charizard",
+    "genus": "Flame Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "System Designation: FLAME POKEMON",
+        "content": [
+          "Charizard represents the final biological maturation of the Kanto Fire-type lineage. It is characterized by its powerful wings and a thermal core that powers a perpetual flame at the tip of its tail.",
+          "Despite its destructive potential, Charizard adheres to a primitive code of honor: it will never direct its full heat toward an opponent it perceives as significantly weaker than itself."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Morphological Inspiration",
+        "content": [
+          "While its English designation suggests a 'Charred Lizard,' its physiology is more closely aligned with the European 'Western Dragon'—a winged, fire-breathing reptilian apex predator.",
+          "Its Japanese name, 'Lizardon,' highlights its lizard-like ancestry over its draconic appearance."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "In the Go Battle League (GBL), Charizard has evolved from a niche pick to a premier meta threat. Its utility shifted dramatically following the 'Wing Attack' energy-generation buff and the introduction of the legacy move 'Blast Burn'."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Terminal Data: Anomalies",
+        "content": [
+          "STAT CLONE: Charizard shares the exact base stat distribution with the Johto starter, Typhlosion.",
+          "DUAL EVOLUTION: It is one of only two known species capable of two distinct Mega Evolutions (X and Y)."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Squirtle",
+    "genus": "Tiny Turtle Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydraulic Defense",
+        "content": [
+          "Squirtle's shell is not just for protection; its rounded shape and surface grooves help minimize resistance in water, enabling the Pokémon to swim at high speeds.",
+          "When threatened, it withdraws into its shell and sprays water from its mouth with high pressure."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Wartortle",
+    "genus": "Turtle Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Maturation and Longevity",
+        "content": [
+          "The long, furry tail is a symbol of longevity. As it ages, scratches may appear on its shell as evidence of its toughness as a battler.",
+          "It is popular as a pet because its tail is considered to bring good luck."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Blastoise",
+    "genus": "Shellfish Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydraulic Artillery",
+        "content": [
+          "Blastoise features pressurized water cannons inside its shell. These cannons can punch through thick steel and are accurate enough to hit small targets from over 160 feet away.",
+          "It deliberately makes itself heavy to withstand the recoil of the water jets it fires."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Functions as a bulky Water-type closer in the Great League. Hydro Cannon is its primary win condition."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Caterpie",
+    "genus": "Worm Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Defense Mechanisms",
+        "content": [
+          "Caterpie releases a powerful, stench-filled odor from its bright red antenna when it feels threatened. This serves to repel bird Pokémon predators.",
+          "Its feet are tipped with suction pads that allow it to scale vertical surfaces like trees."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "Pikachu",
+    "genus": "Mouse Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Electrical Capacitance",
+        "content": [
+          "Pikachu stores electricity in the red pouches on its cheeks. When it releases this energy, it can cause small lightning bolts to strike.",
+          "It raises its tail to check its surroundings; it is occasionally struck by lightning in this position."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Global Iconography",
+        "content": [
+          "Pikachu was not originally intended to be the series mascot; the role was initially planned for Clefairy."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "name": "Ninetales",
+    "genus": "Fox Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Mystical Longevity",
+        "content": [
+          "Ninetales is said to live for a thousand years. Each of its nine tails is imbued with a different supernatural power.",
+          "It is highly intelligent and understands human speech. It is also notoriously vengeful; grabbing one of its tails could result in a 1,000-year curse."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Mythological Baseline",
+        "content": [
+          "Based on the Kitsune of Japanese folklore—many-tailed foxes with shapeshifting and fire-breathing abilities."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "name": "Diglett",
+    "genus": "Mole Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Subterranean Life",
+        "content": [
+          "Diglett lives about one yard underground, where it feeds on plant roots. It only comes to the surface when it is not sunny.",
+          "Farmers often keep Diglett because it tills the earth while burrowing, leaving the soil perfectly conditioned for planting crops."
+        ]
+      }
+    ]
+  }
+]

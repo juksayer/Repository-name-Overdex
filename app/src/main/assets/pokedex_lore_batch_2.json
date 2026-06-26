@@ -1,0 +1,114 @@
+[
+  {
+    "id": 51,
+    "name": "Dugtrio",
+    "genus": "Mole Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Coordinated Subterranean Assault",
+        "content": [
+          "Dugtrio consists of three heads that move in perfect synchronization. They can burrow through even the hardest soil to depths of 60 miles.",
+          "By burrowing together, they create massive seismic disturbances that can be detected from several miles away."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "name": "Meowth",
+    "genus": "Scratch Cat Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Nocturnal Obsessions",
+        "content": [
+          "Meowth is fascinated by round, shiny objects. It spends its nights wandering city streets looking for dropped loose change.",
+          "The gold coin on its forehead can glow, and the Pokémon is often used as a symbol of prosperity and good fortune."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "name": "Psyduck",
+    "genus": "Duck Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Psychic Threshold",
+        "content": [
+          "Psyduck is constantly plagued by a severe headache. When the pain reaches a critical peak, it unknowingly releases powerful psychic energy.",
+          "Because these powers are only activated in a state of extreme stress, Psyduck usually has no memory of using them."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "name": "Abra",
+    "genus": "Psi Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Preemptive Teleportation",
+        "content": [
+          "Abra sleeps for 18 hours a day. Even while asleep, it can sense incoming threats and will reflexively teleport to safety.",
+          "If it doesn't get enough sleep, it loses its ability to utilize its psychic powers."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "name": "Machop",
+    "genus": "Superpower Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Physical Discipline",
+        "content": [
+          "Machop trains by lifting boulders and practicing various forms of martial arts. Its muscles never get sore, no matter how much it exercises.",
+          "A single Machop is strong enough to hurl 100 adult humans simultaneously."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "name": "Gastly",
+    "genus": "Gas Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Gaseous Composition",
+        "content": [
+          "Gastly's body is 95% gas. It can slip through any crack or crevice to reach its prey.",
+          "The gas is highly toxic; if it envelops a human, they will lose consciousness instantly."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "name": "Gengar",
+    "genus": "Shadow Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Shadow Mimicry",
+        "content": [
+          "Gengar hides in the shadows of people or objects at night and absorbs the heat from their bodies, causing a sudden, chilling drop in temperature.",
+          "It is said that if you feel a sudden cold shiver, a Gengar is hiding right behind you."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A classic 'Glass Cannon' in the Ultra League. Shadow Claw and Shadow Ball combined with its high attack stat make it a lethal closer if shields are down."
+        ]
+      }
+    ]
+  }
+]

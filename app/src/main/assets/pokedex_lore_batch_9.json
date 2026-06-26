@@ -1,0 +1,253 @@
+[
+  {
+    "id": 722,
+    "name": "Rowlet",
+    "genus": "Grass Quill Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Nocturnal Sharpshooter",
+        "content": [
+          "Rowlet is nocturnal and can see as clearly in the dark as in the day. It flies silently, using its feathers like sharp daggers.",
+          "It uses photosynthesis to store energy during the day while it sleeps. Its head can rotate nearly 180 degrees to keep watch."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 724,
+    "name": "Decidueye",
+    "genus": "Arrow Quill Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Spectral Marksmanship",
+        "content": [
+          "Decidueye can fire an arrow-shaped quill in a tenth of a second with pinpoint accuracy. It is so stealthy that its presence is felt only after it has struck.",
+          "It hides its presence by nocking its quills into its wing strings and letting them loose from the shadows."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A versatile Grass/Ghost type. Its access to Spirit Shackle allows it to trap opponents, while Frenzy Plant provides reliable high-damage output in the Great League."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 727,
+    "name": "Incineroar",
+    "genus": "Heel Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Pyro-Mechanical Combat",
+        "content": [
+          "Incineroar's fighting spirit increases when the crowd gets excited. It can launch fireballs from its belt-like pouch.",
+          "It is a master of rough-and-tumble combat, often disregarding its own safety to land a powerful blow on its opponent."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "The Heel Wrestler",
+        "content": [
+          "Based on the 'Heel' (antagonist) in professional wrestling. Its design combines the features of a tiger with the persona of a flamboyant brawler."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 730,
+    "name": "Primarina",
+    "genus": "Soloist Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydro-Sonic Aria",
+        "content": [
+          "Primarina uses songs to control balloons made of water. It manipulates these balloons with the sound waves from its voice.",
+          "Its singing is so beautiful that it is often used in theatrical performances. In battle, it uses its voice to unleash powerful elemental attacks."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A top-tier threat in the Master League. Charming down Dragons and Dark-types while reaching high-damage Hydro Cannons makes it a core meta pick."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 745,
+    "name": "Lycanroc",
+    "genus": "Wolf Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Lunar Temperament",
+        "content": [
+          "Lycanroc has three distinct forms depending on the time of day it evolved. Midnight Forme is highly aggressive and enjoys taunting its foes.",
+          "It is extremely loyal to its Trainer, but its behavioral shift during the full moon can make it difficult to control."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 778,
+    "name": "Mimikyu",
+    "genus": "Disguise Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Spectral Loneliness",
+        "content": [
+          "Mimikyu wears a rag that looks like Pikachu so that it can get closer to people and other Pokémon. It believes that its true form is too terrifying to be seen.",
+          "If its rag is damaged, it will spend all night tirelessly repairing it. Looking under its rag is said to cause a mysterious illness."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 785,
+    "name": "Tapu Koko",
+    "genus": "Land Spirit Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Electric Guardian",
+        "content": [
+          "Tapu Koko is the guardian deity of Melemele Island. It is known for its fickle nature and its tendency to suddenly attack those who trespass on its domain.",
+          "It can store electricity in its shells and unleash it in massive bolts to strike down its enemies."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 788,
+    "name": "Tapu Fini",
+    "genus": "Land Spirit Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Purification & Mists",
+        "content": [
+          "Tapu Fini is the guardian deity of Poni Island. It has the power to create a thick mist that confuses and traps its enemies.",
+          "It is said to be able to purify water and heal those who are worthy of its favor."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The 'Queen of the Ultra League.' Its Water/Fairy typing and high bulk allow it to wall many of the league's most common threats, while Surf provides consistent damage."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 791,
+    "name": "Solgaleo",
+    "genus": "Sunne Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Beast that Devours the Sun",
+        "content": [
+          "Solgaleo is an emissary of the sun. It is said to live in another world and returns to ours by opening Ultra Wormholes.",
+          "Its body is filled with massive amounts of energy, and it shines brightly even in the middle of the night."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A massive tank in the Master League. Its Steel/Psychic typing provides numerous resistances, making it an excellent anchor for teams with high-damage glass cannons."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 792,
+    "name": "Lunala",
+    "genus": "Moone Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Beast that Calls the Moon",
+        "content": [
+          "Lunala is an emissary of the moon. It is said to live in another world and returns to ours by opening Ultra Wormholes.",
+          "It absorbs light and converts it into energy. When it spreads its wings to absorb light and glitters, it resembles a beautiful night sky."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 794,
+    "name": "Buzzwole",
+    "genus": "Swollen Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Extra-Dimensional Musculature",
+        "content": [
+          "Buzzwole is an Ultra Beast that emerged from an Ultra Wormhole. It is known for its extreme physical strength and its tendency to constantly show off its muscles.",
+          "It possesses a specialized organ that allows it to absorb the energy of its enemies to further enhance its own power."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A premier Fighter in the Great and Ultra Leagues. Counter combined with Lunge and Power-Up Punch allows it to debuff enemies while simultaneously boosting its own damage."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 800,
+    "name": "Necrozma",
+    "genus": "Prism Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Light-Starved Remnant",
+        "content": [
+          "Necrozma is a mysterious life-form that is said to have come from another world. It is constantly seeking light and will violently attack anything that possesses it.",
+          "It can fuse with Solgaleo or Lunala to take on even more powerful forms, allowing it to regain some of its lost power."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Dusk Mane and Dawn Wings forms have redefined the Master League. Sunsteel Strike and Moongeist Beam are among the most efficient moves in the game, forcing a shift in the entire meta."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 809,
+    "name": "Melmetal",
+    "genus": "Hex Nut Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Liquid Metal Prowess",
+        "content": [
+          "Melmetal was once worshipped as a deity that could create metal. Its body is composed of liquid metal that can harden into a material stronger than steel.",
+          "It uses its heavy hex-nut arms to deliver devastating punches that can crush boulders into dust."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A classic Master League veteran. Its high bulk and access to the extremely fast Double Iron Bash make it one of the best shield-burners and safe-swaps in the format."
+        ]
+      }
+    ]
+  }
+]

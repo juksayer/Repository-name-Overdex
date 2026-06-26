@@ -1,0 +1,231 @@
+[
+  {
+    "id": 901,
+    "name": "Ursaluna",
+    "genus": "Peat Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Mire-Dwelling Colossus",
+        "content": [
+          "Ursaluna is a massive Pokémon that evolved through the influence of the swampy terrain of the Hisui region. It has the power to manipulate peat and soil.",
+          "It is a highly skilled tracker, using its powerful sense of smell to find objects buried deep underground. Its physical strength is unmatched among most forest-dwellers."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Ursaluna serves as a high-bulk Ground/Normal type. While its standard form is a Master League niche, its Bloodmoon variant is feared for its overwhelming special attack pressure."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 906,
+    "name": "Sprigatito",
+    "genus": "Grass Cat Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aromatic Grooming",
+        "content": [
+          "Sprigatito frequently grooms its fur to keep it clean and to enhance the sweet scent it emits. This scent has a calming effect on those around it.",
+          "It can perform photosynthesis by absorbing sunlight through its fur. It is known to be quite temperamental and easily gets lonely."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 909,
+    "name": "Meowscarada",
+    "genus": "Magician Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Floral Misdirection",
+        "content": [
+          "Meowscarada uses its flower as a tool for misdirection. It can create illusions and perform incredible feats of magic to confuse its enemies.",
+          "It is a master of stealth, moving through the shadows with silent grace. Its signature move, Flower Trick, never misses its mark."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 911,
+    "name": "Skeledirge",
+    "genus": "Singer Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Fiery Serenade",
+        "content": [
+          "Skeledirge has a small, bird-like spirit made of fire that sits on its snout. The bird spirit changes shape when Skeledirge sings its powerful songs.",
+          "Its singing is said to be so soul-stirring that it can soothe even the most savage of beasts. In battle, its voice unleashes waves of intense heat."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A foundational pillar of the Great and Ultra League meta. Incinerate paired with Disarming Voice and Shadow Ball makes it a versatile and extremely tanky threat."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 912,
+    "name": "Quaxly",
+    "genus": "Duckling Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Gelatinous Grooming",
+        "content": [
+          "Quaxly is very particular about its appearance. Its feathers secrete a specialized gel that repels water and dirt, keeping it looking pristine.",
+          "It has incredibly strong legs and is a skilled swimmer. It is naturally tidy and becomes stressed if its environment is messy."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 914,
+    "name": "Quaquaval",
+    "genus": "Dancer Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Rhythmic Combat",
+        "content": [
+          "Quaquaval uses its rhythmic dancing to confuse and overwhelm its enemies. Each of its movements is calculated to deliver a powerful strike.",
+          "Its feathers are as sharp as blades, and it can use them to slice through water and solid objects with ease."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 979,
+    "name": "Annihilape",
+    "genus": "Rage Monkey Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Transcendental Fury",
+        "content": [
+          "Annihilape was born when Primeape's rage reached a point beyond the physical limit. Its physical body could no longer contain its anger, allowing it to transcend into a spectral form.",
+          "It is perpetually enraged, and its spectral power increases with every blow it receives. It is feared for its relentless and savage fighting style."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The definitive 'Fighter' of the modern Great and Ultra League eras. Counter paired with Night Slash and Shadow Ball provides near-perfect coverage against almost every meta threat."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 999,
+    "name": "Gimmighoul",
+    "genus": "Coin Chest Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hoarding Instincts",
+        "content": [
+          "Gimmighoul lives inside a chest filled with old coins. It uses its spectral power to manipulate those who approach, forcing them to collect more coins for its hoard.",
+          "In its Roaming Form, it is much more elusive and is often seen carrying a single gold coin across the Paldea region."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1000,
+    "name": "Gholdengo",
+    "genus": "Coin Entity Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Solid Gold Physiology",
+        "content": [
+          "Gholdengo's body is composed entirely of 1,000 gold coins. It is said to be exceptionally friendly and enjoys the company of others.",
+          "Its solid gold body provides it with incredible durability and resistance to many different types of elemental attacks."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A premiere Steel/Ghost type in the Master League. Its Good as Gold ability in the main series translates to a high resistance profile in GO, making it an excellent counter to Fairy and Psychic types."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1007,
+    "name": "Koraidon",
+    "genus": "Paradox Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Primeval Winged King",
+        "content": [
+          "Koraidon is a mysterious Pokémon that is said to have come from the ancient past. It possesses overwhelming physical power and is capable of running at incredible speeds.",
+          "It can change its form to better suit its environment, allowing it to swim, climb, and fly with ease."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A devastating force in the Master League. Breaking Swipe's guaranteed Attack debuff and its high-damage Fighting/Dragon STAB moves make it a terrifying opponent for any team."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1008,
+    "name": "Miraidon",
+    "genus": "Paradox Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Iron Serpent of the Future",
+        "content": [
+          "Miraidon is a mysterious Pokémon that is said to have come from the distant future. Its body is composed of advanced mechanical parts that are powered by electricity.",
+          "It is capable of performing incredible feats of speed and agility, and its electrical attacks are powerful enough to overload standard power grids."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A high-speed Electric/Dragon pick in the Master League. Its ability to outpace opponents and deliver massive neutral damage makes it a premiere choice for fast-paced aggressive teams."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1025,
+    "name": "Pecharunt",
+    "genus": "Subjugation Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Toxic Subjugation",
+        "content": [
+          "Pecharunt uses its toxic chains to subjugate others, forcing them to do its bidding. It is a highly intelligent and manipulative Pokémon.",
+          "It is said to have been responsible for many of the legends and conflicts that have occurred throughout the history of the Paldea region."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Mythological Baseline",
+        "content": [
+          "Inspired by Momotarō of Japanese folklore, specifically the 'Peach Boy' who led a group of animal companions to fight off an ogre."
+        ]
+      }
+    ]
+  }
+]

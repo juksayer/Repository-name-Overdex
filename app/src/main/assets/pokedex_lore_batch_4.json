@@ -1,0 +1,224 @@
+[
+  {
+    "id": 152,
+    "name": "Chikorita",
+    "genus": "Leaf Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aromatic Regulation",
+        "content": [
+          "Chikorita uses the leaf on its head to determine the temperature and humidity of its surroundings. It loves to sunbathe.",
+          "It emits a sweet, refreshing aroma from its leaf that has the power to calm down battling Pokémon and create a friendly atmosphere."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Botanical Design",
+        "content": [
+          "Influenced by the long-necked Sauropod dinosaurs (specifically the Brachiosaurus), blended with a pear and an unfurling leaf."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 155,
+    "name": "Cyndaquil",
+    "genus": "Fire Mouse Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Combustion Vents",
+        "content": [
+          "Cyndaquil is usually timid and curls into a ball when startled. It has several fire-emitting vents on its back.",
+          "If it is angry or surprised, it shoots flames out of its back. The intensity of these flames indicates its level of exhaustion."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 158,
+    "name": "Totodile",
+    "genus": "Big Jaw Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Mastication Reflex",
+        "content": [
+          "Totodile has a playful but dangerous habit of biting anything it sees moving. Its jaws are powerful enough to crush heavy objects.",
+          "Even if its trainer is just trying to show affection, Totodile may accidentally cause injury with its powerful snap."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 181,
+    "name": "Ampharos",
+    "genus": "Light Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Luminescent Guidance",
+        "content": [
+          "The tip of Ampharos's tail glows so brightly that it can be seen from space. In ancient times, people used its light as a beacon for ships.",
+          "It was once heavily utilized in lighthouses along the Johto coast before the advent of industrial lighting."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A versatile Electric-type in the Ultra League. Its access to the fast-charging Volt Switch and the coverage move Brutal Swing or Focus Blast makes it a dangerous 'safe swap'."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 196,
+    "name": "Espeon",
+    "genus": "Sun Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Psychic Sensitivity",
+        "content": [
+          "Espeon is extremely loyal to any trainer it considers worthy. It is said to have developed its precognitive powers to protect its trainer from harm.",
+          "The fine fur covering its body is so sensitive that it can sense minute shifts in the air, allowing it to predict its opponent's next move and even the weather."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Mythological Baseline",
+        "content": [
+          "Inspired by the Bakeneko (monster cat) of Japanese folklore, specifically the Nekomata, which is often depicted with a forked tail."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 197,
+    "name": "Umbreon",
+    "genus": "Moonlight Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Nocturnal Synchronization",
+        "content": [
+          "Umbreon evolved as a result of exposure to the moon's waves. It hides silently in darkness and waits for its foes to make a move.",
+          "The yellow rings on its body glow when it is excited or when it is exposed to moonlight, striking fear into the hearts of anyone nearby."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The definitive 'Tank' of the Great League. With astronomical defense and HP stats, Umbreon can outlast almost any opponent. Snarl provides elite energy generation for the community-day move Psychic or the heavy-hitting Foul Play."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 212,
+    "name": "Scizor",
+    "genus": "Pincer Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Metallic Exoskeleton",
+        "content": [
+          "Scizor has a body with the hardness of steel. It is not easily fazed by ordinary attacks. It flaps its wings to regulate its body temperature.",
+          "Its pincers contain steel and can smash any hard object into bits. It raises its pincers and waves them around to scare off predators."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 214,
+    "name": "Heracross",
+    "genus": "Single Horn Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Sap Obsession",
+        "content": [
+          "Heracross is usually docile, but if it is disturbed while sipping honey or sap, it will use its powerful horn to hurl the intruder away.",
+          "It is capable of lifting objects more than 100 times its own weight with its impressive horn strength."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 243,
+    "name": "Raikou",
+    "genus": "Thunder Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Electromagnetic Velocity",
+        "content": [
+          "Raikou embodies the speed of lightning. The roars it emits send shock waves shuddering through the air and shake the ground as if lightning bolts had struck.",
+          "It is said to have descended with lightning. It can fire electrical blasts from the rain clouds on its back."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 248,
+    "name": "Tyranitar",
+    "genus": "Armor Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Insurmountable Durability",
+        "content": [
+          "Tyranitar is so overwhelmingly powerful, it can bring down a whole mountain to make its nest. It wanders about in mountains seeking new opponents to fight.",
+          "Its body is practically indestructible, so it is extremely difficult to inflict any significant damage upon it."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A niche but terrifying pick in the Master League. Its 'Smack Down' fast move can melt Flying-types (like Ho-Oh or Lugia) in seconds, though its many weaknesses require careful team composition."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 249,
+    "name": "Lugia",
+    "genus": "Diving Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Guardian of the Seas",
+        "content": [
+          "Lugia's wings pack devastating power—a light fluttering of them can blow apart regular houses. As a result, it chooses to live out of sight deep under the sea.",
+          "It is said to be the guardian of the seas and is capable of calming the most violent storms."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 250,
+    "name": "Ho-Oh",
+    "genus": "Rainbow Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Celestial Resurrection",
+        "content": [
+          "Ho-Oh's feathers glow in seven colors depending on the angle at which they are struck by light. These feathers are said to bring happiness to the bearers.",
+          "Legend says this Pokémon flew over the burned tower in Ecruteak City and resurrected three deceased Pokémon as the Legendary Beasts."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A top-tier Master League titan. Incinerate and Brave Bird allow it to output massive damage, while Sacred Fire (a signature move) provides a high chance to debuff the opponent's attack."
+        ]
+      }
+    ]
+  }
+]

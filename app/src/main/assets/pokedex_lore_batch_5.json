@@ -1,0 +1,268 @@
+[
+  {
+    "id": 252,
+    "name": "Treecko",
+    "genus": "Wood Gecko Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Arboreal Adaptation",
+        "content": [
+          "Treecko has small hooks on the bottom of its feet that enable it to scale vertical walls. It is known for its cool and collected personality.",
+          "It makes its home in large trees and will fiercely defend its territory from anyone who approaches."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 254,
+    "name": "Sceptile",
+    "genus": "Forest Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Jungle Predator",
+        "content": [
+          "Sceptile's agility is unmatched in the forest. The seeds on its back are filled with nutrients that can revitalize trees.",
+          "The leaves growing on its arms are as sharp as swords, allowing it to slice through thick branches and foes alike."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A high-pressure 'Glass Cannon' in the Great and Ultra Leagues. With Bullet Seed and Leaf Blade, it has one of the fastest charged move activation rates in the game."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 257,
+    "name": "Blaziken",
+    "genus": "Blaze Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Pyro-Kinetic Martial Arts",
+        "content": [
+          "Blaziken has incredibly strong legs; it can easily clear a 30-story building in a single leap. Its punches can leave opponents scorched.",
+          "In battle, it blows out intense flames from its wrists, which intensify as it faces tougher opponents."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Design Origins",
+        "content": [
+          "Inspired by the Shamo breed of Japanese chicken, which was bred specifically for its fighting spirit and upright posture."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 260,
+    "name": "Swampert",
+    "genus": "Mud Fish Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydro-Mechanical Prowess",
+        "content": [
+          "Swampert is very strong and can easily drag a large boulder weighing more than a ton. It has powerful vision that enables it to see even in turbid water.",
+          "Its fins can sense subtle changes in the movement of air and water, allowing it to predict storms and incoming waves."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Widely considered the most dominant 'Mud Shot' user in GBL history. Its access to Hydro Cannon and Earthquake gives it near-perfect coverage across all leagues."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 282,
+    "name": "Gardevoir",
+    "genus": "Embrace Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Psychic Devotion",
+        "content": [
+          "Gardevoir has the ability to read the future. It is famously protective and will expend all its psychic power to create a small black hole to protect its trainer.",
+          "It does not feel the pull of gravity because it supports its body with psychic energy."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 289,
+    "name": "Slaking",
+    "genus": "Lazy Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Economic Energy Management",
+        "content": [
+          "Slaking spends its entire day lounging and eating grass. It only moves when it has absolutely no other choice.",
+          "Despite its lazy appearance, it can exert horrifying power by releasing all its pent-up energy at once."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Stat Anomaly",
+        "content": [
+          "Slaking has a base stat total higher than many Legendary Pokémon, which is balanced by its 'Truant' ability that forces it to skip every other turn."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 302,
+    "name": "Sableye",
+    "genus": "Darkness Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Subterranean Scavenger",
+        "content": [
+          "Sableye lives in caves where it leads a quiet life. It feeds on gemstones it finds in the earth, which has caused its eyes to transform into gems.",
+          "It is feared by many who believe it can steal the spirits of those it gazes upon in the dark."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The 'King of the Safe Swap' in the Great League. Its 'Return' (purified) coverage and Ghost/Dark typing make it extremely difficult to counter without a dedicated Fairy-type."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 334,
+    "name": "Altaria",
+    "genus": "Humming Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aerial Soprano",
+        "content": [
+          "Altaria dances and wheels through the sky among billowy, cotton-like clouds. It sings in a beautiful soprano voice that puts listeners into a dreamy state.",
+          "It is very affectionate; if it bonds with a person, it will envelop them with its soft, fluffy wings and hum."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A foundational pillar of the Great League meta. Its extreme bulk and Dragon Breath pressure allow it to win most neutral matchups comfortably."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 350,
+    "name": "Milotic",
+    "genus": "Tender Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aesthetic Pacifism",
+        "content": [
+          "Milotic is said to be the most beautiful of all Pokémon. It has the power to becalm such emotions as anger and hostility to end arguments.",
+          "It lives at the bottom of large lakes. When its body glows a vivid pink, it releases a wave of energy that is soothing to the soul."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 376,
+    "name": "Metagross",
+    "genus": "Iron Claw Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Organic Supercomputer",
+        "content": [
+          "Metagross has four brains that are joined by a complex neural network. As a result, it can perform difficult intellectual calculations faster than a supercomputer.",
+          "When it hunts, it pins its prey to the ground under its massive body. It then eats the victim with the mouth on its stomach."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The undisputed master of the Master League Premiere format. Its combination of Meteor Mash and high-defense Steel typing makes it a mandatory inclusion for many teams."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 379,
+    "name": "Registeel",
+    "genus": "Iron Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Extraterrestrial Metallurgy",
+        "content": [
+          "Registeel's body is made of a strange material that is harder than any metal on Earth. It is hollow inside, and no one knows what it eats.",
+          "The metal that composes its body is tempered by pressure deep underground over tens of thousands of years."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Often cited as the most 'un-fun' Pokémon to face in GBL. Its astronomical bulk and high-damage Lock-On energy generation allow it to spam powerful moves like Zap Cannon and Focus Blast."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 382,
+    "name": "Kyogre",
+    "genus": "Sea Basin Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Abyssal Sovereign",
+        "content": [
+          "Kyogre has the power to control water and create massive rain clouds. It has been referred to as a savior by people who have suffered from droughts.",
+          "It is said to have expanded the seas by covering the earth with torrential rains and towering tidal waves."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 383,
+    "name": "Groudon",
+    "genus": "Continent Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Tectonic Titan",
+        "content": [
+          "Groudon is said to be the personification of the land itself. It has the power to scatter rain clouds and make water evaporate with light and heat.",
+          "It has been locked in a traditional clash with Kyogre since ancient times as each sought to expand their respective domain."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 384,
+    "name": "Rayquaza",
+    "genus": "Sky High Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Ozone Arbiter",
+        "content": [
+          "Rayquaza lived in the ozone layer for hundreds of millions of years without ever descending to the ground. It feeds on water and particles in the atmosphere.",
+          "It acts as a mediator in the conflict between Kyogre and Groudon, descending to Earth to quell their destructive battles."
+        ]
+      }
+    ]
+  }
+]

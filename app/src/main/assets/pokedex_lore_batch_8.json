@@ -1,0 +1,208 @@
+[
+  {
+    "id": 650,
+    "name": "Chespin",
+    "genus": "Spiny Nut Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Armored Canopy",
+        "content": [
+          "Chespin has a tough shell covering its head and back. Even if a truck crashed into it, Chespin would likely be unscathed.",
+          "It is naturally curious and often gets into trouble, but it can use its head spikes to protect itself from predators."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 655,
+    "name": "Delphox",
+    "genus": "Fox Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Pyromancy & Precognition",
+        "content": [
+          "Delphox focuses its mind on the flame at the tip of its branch to see into the future. It uses psychic power to generate 5,400-degree-Fahrenheit fire.",
+          "By swirling its branch, it can create a massive vortex of fire that incinerates its foes instantly."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A niche Fire/Psychic pick. The addition of Blast Burn and Mystical Fire has given it significant utility, allowing it to debuff opponents while dealing high STAB damage."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 658,
+    "name": "Greninja",
+    "genus": "Ninja Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydro-Ninja Mastery",
+        "content": [
+          "Greninja creates throwing stars out of compressed water. When it spins them and throws them at high speed, these stars can slice through metal.",
+          "It uses its long tongue like a scarf to mask its presence and keep its throat moist during rapid movement."
+        ]
+      },
+      {
+        "type": "ANIME",
+        "title": "Battle Bond Phenomenon",
+        "content": [
+          "Famously associated with the Kalos region hero Ash Ketchum. Their unique 'Battle Bond' allowed Greninja to take on a special form that rivaled Mega Evolutions in raw power."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The definitive 'spam' king of the Ultra League. Water Shuriken's elite energy generation allows it to reach Hydro Cannon and Night Slash faster than almost any other Pokémon can react."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 663,
+    "name": "Talonflame",
+    "genus": "Scorching Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "High-Speed Incineration",
+        "content": [
+          "Talonflame dives at its prey at speeds of over 310 mph. It finishes them off with a powerful kick and showers of embers from its wings.",
+          "When it gets excited, it vents embers from the gaps between its feathers. It is extremely popular among aerial racers."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A top-tier threat in the Great and Ultra Leagues. Incinerate provides massive damage, while the Fly/Brave Bird/Flame Charge combination creates a high-stakes psychological game for the opponent."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 681,
+    "name": "Aegislash",
+    "genus": "Royal Sword Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Spectral Monarchy",
+        "content": [
+          "Aegislash has the power to detect the innate qualities of a leader. Legend says that whoever Aegislash chooses will soon become a king.",
+          "It can manipulate people and Pokémon with its spectral power, using them to do its bidding."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Stance Change Mechanics",
+        "content": [
+          "In the main series games, its 'Stance Change' ability allows it to flip its Attack and Defense stats depending on the move used, a mechanic that translates into high-difficulty gameplay."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 700,
+    "name": "Sylveon",
+    "genus": "Intertwining Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Ribbon-Like Feelers",
+        "content": [
+          "Sylveon sends a soothing aura from its ribbon-like feelers to calm fights. It will wrap these feelers around its Trainer's arm as it walks.",
+          "Despite its gentle appearance, it is a ferocious fighter and can use its ribbons to distract and bind its prey."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The 'Charmer' of choice for the Ultra and Master Leagues. Its high bulk and the high-damage Charm fast move allow it to shred Fighting, Dragon, and Dark types with ease."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 716,
+    "name": "Xerneas",
+    "genus": "Life Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Eternal Vitality",
+        "content": [
+          "Xerneas is said to share eternal life. It took the form of a tree and slept for a thousand years when its life energy was depleted.",
+          "When the horns on its head shine in seven colors, it is said to be sharing its life force with all living things in the vicinity."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A Master League titan. Geomancy's elite energy generation allowed it to finally utilize its powerful charged moves, making it the premier Fairy-type pick in the highest tiers of GBL."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 717,
+    "name": "Yveltal",
+    "genus": "Destruction Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Cocoon of Oblivion",
+        "content": [
+          "Yveltal has the power to absorb the life energy of all living things. When its life comes to an end, it absorbs the life force of everything around it before turning into a cocoon.",
+          "Its wings and tail feathers spread wide as it absorbs life energy, glowing a dark, ominous red."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 718,
+    "name": "Zygarde",
+    "genus": "Order Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Ecosystem Guardian",
+        "content": [
+          "Zygarde monitors the ecosystem from its deep cave. It is said that when the ecosystem falls into disarray, Zygarde appears and reveals its true power.",
+          "In its Complete Forme, it possesses power that exceeds that of Xerneas and Yveltal combined."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The undisputed 'Final Boss' of the Master League. Its Complete Forme has the highest stat product in GBL history, making it almost impossible to knock out without a dedicated counter."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 719,
+    "name": "Diancie",
+    "genus": "Jewel Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Crystalline Mutation",
+        "content": [
+          "Diancie is a sudden mutation of Carbink. Its pink, glittering body is said to be the loveliest sight in the whole world.",
+          "It can instantly create diamonds by compressing the carbon in the air between its hands."
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,187 @@
+[
+  {
+    "id": 810,
+    "name": "Grookey",
+    "genus": "Chimp Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Percussive Vitality",
+        "content": [
+          "Grookey can drum with its stick to revitalize plants and flowers. The stick it uses was originally a branch from the forest where its troop lived.",
+          "As it beats its stick, it releases energy that can heal withered grass and cause buds to bloom."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 812,
+    "name": "Rillaboom",
+    "genus": "Drummer Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Forest Rhythm",
+        "content": [
+          "Rillaboom carries a stump drum that it can use to control the roots of trees. It is a calm leader that values the harmony of its group.",
+          "In battle, it uses its powerful drumming to unleash seismic waves that can knock opponents off balance."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A heavy-hitting Grass type in the Great and Ultra Leagues. Its access to Frenzy Plant and High Horsepower gives it excellent coverage against common Steel and Poison-type counters."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 815,
+    "name": "Cinderace",
+    "genus": "Striker Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Pyrotechnic Footwork",
+        "content": [
+          "Cinderace can juggle a pebble with its feet to transform it into a burning soccer ball. It has incredible leg strength and can outrun most opponents.",
+          "It uses its dazzling footwork to confuse foes, and its fireballs are so hot they can leave third-degree burns on contact."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 818,
+    "name": "Inteleon",
+    "genus": "Secret Agent Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Hydro-Sniper Precision",
+        "content": [
+          "Inteleon has various secret capabilities, such as a sharp knife hidden in its tail and the ability to shoot water from its fingertips at Mach 3.",
+          "It is highly intelligent and can calculate the trajectory of its shots with surgical precision, rarely missing a target."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 832,
+    "name": "Dubwool",
+    "genus": "Sheep Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Springy Resilience",
+        "content": [
+          "Dubwool has a coat of wool that is so springy it can bounce off the ground like a rubber ball. Its horns are mainly for attracting mates.",
+          "Despite its soft appearance, it is very sturdy and can withstand powerful physical attacks by simply bouncing away from the impact."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The 'Spam King' of the Great League. Double Kick energy generation paired with Body Slam and Wild Charge makes it one of the most versatile and annoying safe-swaps in the meta."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 862,
+    "name": "Obstagoon",
+    "genus": "Blocking Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Defensive Taunting",
+        "content": [
+          "Obstagoon has an incredibly loud voice that it uses to taunt opponents into attacking first. It then uses its thick fur to block and counter those attacks.",
+          "It rarely initiates an attack, preferring to wait for the opponent to lose their cool and leave an opening."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A premiere choice in the Great and Ultra Leagues. Counter and Night Slash allow it to boost its own attack while dealing high neutral damage, and Obstruct provides a unique tactical debuff."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 888,
+    "name": "Zacian",
+    "genus": "Warrior Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Fairy King's Sword",
+        "content": [
+          "Zacian is known as the hero that saved the Galar region. It can cut through anything with its sword, which is said to be able to slice the very fabric of space.",
+          "In its Hero of Many Battles form, it is a pure Fairy type, but it gains the Steel type when it holds its rusted sword."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The undisputed 'Goddess' of the Master League. Its pure Fairy typing (Hero form) and incredible movepool including Quick Attack, Close Combat, and Wild Charge make it the most versatile threat in the format."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 889,
+    "name": "Zamazenta",
+    "genus": "Warrior Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Shield that Guards the Realm",
+        "content": [
+          "Zamazenta is the partner hero to Zacian. It uses its shield-like mane to deflect even the most powerful attacks without taking a scratch.",
+          "It is so heavy and sturdy that it can bring down a mountain by simply charging into it."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A massive force in the Master League. Its access to Snarl and Close Combat allows it to exert huge shield pressure, while its high defense makes it a difficult target to take down."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 890,
+    "name": "Eternatus",
+    "genus": "Gigantic Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Source of Dynamax",
+        "content": [
+          "Eternatus came to Earth inside a meteor 20,000 years ago. It absorbs energy from the land to stay active, which is the origin of the Dynamax phenomenon.",
+          "When it releases its full power, it takes on the terrifying Eternamax form, which is too large to even be measured by standard devices."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 898,
+    "name": "Calyrex",
+    "genus": "King Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The King of Bountiful Harvests",
+        "content": [
+          "Calyrex was once a merciful king that ruled over the Galar region. It has the power to see all past, present, and future events.",
+          "By mounting its loyal steed (Glastrier or Spectrier), it can regain its true power and bring about a bountiful harvest across the land."
+        ]
+      }
+    ]
+  }
+]

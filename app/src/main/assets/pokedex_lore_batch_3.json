@@ -1,0 +1,106 @@
+[
+  {
+    "id": 131,
+    "name": "Lapras",
+    "genus": "Transport Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Nautical Intelligence",
+        "content": [
+          "Lapras is highly intelligent and capable of understanding human speech. It is exceptionally gentle and enjoys ferrying people across the ocean on its back.",
+          "Due to its peaceful nature, it has been overhunted by humans, bringing it to the brink of extinction."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 133,
+    "name": "Eevee",
+    "genus": "Evolution Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Genetic Mutability",
+        "content": [
+          "Eevee possesses an unstable genetic code that allows it to evolve into various forms depending on its environment.",
+          "Its radiation-sensitive DNA can mutate rapidly when exposed to certain evolutionary stones."
+        ]
+      },
+      {
+        "type": "TRIVIA",
+        "title": "Terminal Data: Anomalies",
+        "content": [
+          "Eevee holds the record for the most possible branched evolutions of any species in the National Pokédex."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 143,
+    "name": "Snorlax",
+    "genus": "Sleeping Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Metabolic Extremes",
+        "content": [
+          "Snorlax spends its entire day sleeping and eating. It needs to consume 900 pounds of food daily to feel satisfied.",
+          "Its stomach is strong enough to digest even moldy or rotten food without any ill effects."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 149,
+    "name": "Dragonite",
+    "genus": "Dragon Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Oceanic Guardian",
+        "content": [
+          "Despite its bulky appearance, Dragonite can fly faster than the speed of sound. It is a kind-hearted Pokémon that leads lost ships in storms back to safety.",
+          "In battle, it is nearly unstoppable, capable of unleashing massive elemental attacks."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A powerhouse in the Master League. Dragon Breath and Dragon Claw provide relentless pressure, while Superpower or Hurricane offers vital coverage."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 150,
+    "name": "Mewtwo",
+    "genus": "Genetic Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Artificially Engineered Psionics",
+        "content": [
+          "Mewtwo was created by scientists through years of horrific gene-splicing experiments based on the DNA of Mew.",
+          "It lacks a sympathetic heart and is said to possess the most savage temperament among all Pokémon."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 151,
+    "name": "Mew",
+    "genus": "New Species Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "The Genetic Origin",
+        "content": [
+          "Mew is said to possess the genetic composition of all Pokémon. Because it can make itself invisible at will, it is rarely seen by humans.",
+          "Scientists believe Mew is the ancestor of all Pokémon species."
+        ]
+      }
+    ]
+  }
+]

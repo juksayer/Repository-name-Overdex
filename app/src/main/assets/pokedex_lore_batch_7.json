@@ -1,0 +1,231 @@
+[
+  {
+    "id": 494,
+    "name": "Victini",
+    "genus": "Victory Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Infinite Energy Source",
+        "content": [
+          "Victini creates an unlimited supply of energy within its body and shares it with those who touch it. When it shares this energy, the recipient's body overflows with power.",
+          "It is said that a Trainer with a Victini will always win, regardless of the type of encounter."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 495,
+    "name": "Snivy",
+    "genus": "Grass Snake Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Photosynthetic Elegance",
+        "content": [
+          "Snivy is very intelligent and calm. It exposes its tail to sunlight to perform photosynthesis, which makes its movements much swifter.",
+          "If it is not feeling well, its tail will droop. It is known to be quite snobbish toward Trainers it deems unworthy."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 497,
+    "name": "Serperior",
+    "genus": "Regal Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Intimidating Gaze",
+        "content": [
+          "Serperior only gives its all against opponents that are not fazed by its noble, intimidating glare. It raises its head to look down on its foes.",
+          "It can amplify solar energy within its body to unleash powerful Grass-type attacks."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A bulky Grass-type specialist in the Great League. Its access to Frenzy Plant and Aerial Ace allows it to counter Fighters and other Grass-types effectively."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 503,
+    "name": "Samurott",
+    "genus": "Formidable Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Seamitar Mastery",
+        "content": [
+          "Samurott can silence its enemies with a simple glare. It carries armor made of shells on its forelegs, which it can unsheathe and use like swords.",
+          "One swing of its seamitar can fell an opponent in the blink of an eye. It is a master of martial arts."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The addition of Hydro Cannon via Community Day made Samurott a legitimate threat. Megahorn provides unique coverage that surprises Grass and Psychic-type switch-ins."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 560,
+    "name": "Scrafty",
+    "genus": "Hoodlum Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Dermal Defense",
+        "content": [
+          "Scrafty uses its loose skin like a shield to reduce the damage it takes. It kicks with enough force to smash through large boulders.",
+          "It is very protective of its family and territory. The bigger its crest, the more respect it commands within its group."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A Great League staple. Counter and Power-Up Punch allow it to snowball quickly, while Foul Play provides high-damage STAB coverage."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 596,
+    "name": "Galvantula",
+    "genus": "EleSpider Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Electro-Static Webbing",
+        "content": [
+          "Galvantula creates webs made of electrically charged silk. When prey touches the web, they are paralyzed by a massive surge of electricity.",
+          "It can fire its electrified fur like needles to defend itself from attackers."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The definitive 'anti-Flyer' in the Great League. Volt Switch combined with Discharge and Lunge creates immense pressure, while Lunge's guaranteed Attack debuff increases its effective bulk."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 612,
+    "name": "Haxorus",
+    "genus": "Axe Jaw Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Unbreakable Tusks",
+        "content": [
+          "Haxorus has tusks that are so sharp and strong they can cut through steel beams. It is generally kind but becomes terrifying if its territory is invaded.",
+          "Its body is covered in hard armor, and it uses its axe-like jaws to deliver finishing blows."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 635,
+    "name": "Hydreigon",
+    "genus": "Brutal Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Tri-Headed Hostility",
+        "content": [
+          "Hydreigon is extremely aggressive and will attack anything that moves. The heads on its arms do not have brains, but they are capable of eating.",
+          "It flies through the sky on its six wings, destroying everything in its path with its three mouths."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A high-damage Dragon in the Master League. Dragon Breath and Brutal Swing allow it to tear through neutral matchups, though its double weakness to Fairy remains a major liability."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 638,
+    "name": "Cobalion",
+    "genus": "Iron Will Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Guardian of Justice",
+        "content": [
+          "Cobalion has a body and heart of steel. It once protected Pokémon from humans by leading them to safety during a war.",
+          "Its glare is enough to make even the most unruly Pokémon obey it. It is the leader of the Swords of Justice."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The king of the Ultra League. Double Kick energy generation and Sacred Sword's efficiency make it a top-tier threat that almost every team must prepare for."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 643,
+    "name": "Reshiram",
+    "genus": "Vast White Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Incinerating Truth",
+        "content": [
+          "Reshiram can scorch the entire world with fire. It helps those who want to build a world of truth.",
+          "When its tail flares up, the heat energy changes the atmosphere and causes weather changes across the globe."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 644,
+    "name": "Zekrom",
+    "genus": "Deep Black Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aerodynamic Lightning",
+        "content": [
+          "Zekrom can scorch the world with lightning. It assists those who want to build an ideal world.",
+          "Its tail contains a massive electricity generator that can produce enough power to darken the sky with thunderclouds."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 645,
+    "name": "Landorus",
+    "genus": "Abundance Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Agricultural Fertility",
+        "content": [
+          "Landorus is known as the 'Guardian of the Fields.' The energy that pours from its tail provides nutrition to the soil, ensuring a bountiful harvest.",
+          "In its Therian Forme, it becomes much more aggressive and possesses overwhelming physical strength."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Therian Forme is a premiere threat in the Master League. The buff to Sandsear Storm has made it one of the most oppressive Ground-types in the format due to its guaranteed Attack debuff."
+        ]
+      }
+    ]
+  }
+]

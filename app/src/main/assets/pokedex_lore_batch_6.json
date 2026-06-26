@@ -1,0 +1,254 @@
+[
+  {
+    "id": 387,
+    "name": "Turtwig",
+    "genus": "Tiny Leaf Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Photosynthetic Shell",
+        "content": [
+          "Turtwig's shell is made of soil and hardens when it drinks water. It lives along lakeshores.",
+          "The leaf on its head will wilt if the Pokémon becomes thirsty. It carries out photosynthesis with its entire body."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 389,
+    "name": "Torterra",
+    "genus": "Continent Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Migratory Ecosystem",
+        "content": [
+          "Torterra are so large and stationary that small Pokémon occasionally build nests on their backs.",
+          "Some people once believed that a giant Torterra lived under the earth and supported the continents on its back."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 390,
+    "name": "Chimchar",
+    "genus": "Chimp Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Gas-Powered Tail",
+        "content": [
+          "Chimchar's tail is fueled by gas produced in its stomach. Even rain can't put out the fire.",
+          "When it sleeps, the flame on its tail goes out to prevent forest fires."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 392,
+    "name": "Infernape",
+    "genus": "Flame Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Pyro-Kinetic Martial Arts",
+        "content": [
+          "Infernape uses a unique type of martial arts involving all of its limbs. Its crown of fire is indicative of its fiery nature.",
+          "It is incredibly agile, using its speed to confuse enemies while delivering powerful punches and kicks."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 393,
+    "name": "Piplup",
+    "genus": "Penguin Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Proud Navigator",
+        "content": [
+          "Piplup is very proud and dislikes accepting food from people. It is a skilled swimmer and can dive for over 10 minutes.",
+          "Its thick down protects it from the freezing cold of the northern seas where it makes its home."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 395,
+    "name": "Empoleon",
+    "genus": "Emperor Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Ice-Slicing Wings",
+        "content": [
+          "The three horns on its beak are a symbol of its strength. The leader of a colony has the largest horns.",
+          "Its wings are sharp enough to slice through thick ice floes. It swims as fast as a jet boat."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A versatile Water/Steel type. Steel Wing's energy generation allows it to reach Hydro Cannon and Drill Peck quickly, making it a threat in both Great and Ultra Leagues."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 442,
+    "name": "Spiritomb",
+    "genus": "Forbidden Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Spectral Bindings",
+        "content": [
+          "Spiritomb was formed by 108 spirits that were bound to an Odd Keystone 500 years ago as punishment for misdeeds.",
+          "It projects its gaseous form from the stone to attack, but it can never stray far from its anchor."
+        ]
+      },
+      {
+        "type": "ORIGINS",
+        "title": "Numerical Significance",
+        "content": [
+          "Heavily influenced by the Buddhist tradition of 108 temptations. Its weight and Pokedex number also reflect this number in various game datasets."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 445,
+    "name": "Garchomp",
+    "genus": "Mach Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Supersonic Predator",
+        "content": [
+          "Garchomp can fly at speeds rivaling a jet plane. It never lets its prey escape. The scales on its body reduce air resistance.",
+          "It lives in volcanic caves and is known to be extremely territorial and aggressive when hunting."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "A Master League titan. Mud Shot allows it to spam Sand Tomb for debuffs or Earth Power for massive damage. Its high attack stat makes it a premiere Ground-type attacker."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 448,
+    "name": "Lucario",
+    "genus": "Aura Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Aura Perception",
+        "content": [
+          "Lucario can sense the auras of all things. It can read the thoughts and movements of its enemies by sensing their aura fluctuations.",
+          "It is said that a well-trained Lucario can identify the emotions of creatures over half a mile away."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 483,
+    "name": "Dialga",
+    "genus": "Temporal Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Chronological Sovereign",
+        "content": [
+          "Dialga has the power to control time. It is said that time began moving when Dialga was born.",
+          "It is a legendary Pokémon of Sinnoh that is spoken of in ancient myths as a deity."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "The definitive 'King of the Master League.' Its Steel/Dragon typing and the high-damage Dragon Breath fast move make it the central pillar around which the entire league meta revolves."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 484,
+    "name": "Palkia",
+    "genus": "Spatial Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Dimensional Sovereign",
+        "content": [
+          "Palkia has the ability to distort space. It is said to live in a gap in the spatial dimension parallel to ours.",
+          "It is described in Sinnoh myths as a deity that maintains the stability of the physical world."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 487,
+    "name": "Giratina",
+    "genus": "Renegade Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Distortion Dweller",
+        "content": [
+          "Giratina was banished to the Distortion World for its violent behavior. It silently gazes at the old world from its home.",
+          "In its Origin Forme, it can travel between dimensions at will. It possesses terrifying spectral power."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "Altered Forme is a premiere tank in the Ultra League, while Origin Forme dominates the Master League. Its Ghost/Dragon typing is both a blessing and a curse in high-level play."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 488,
+    "name": "Cresselia",
+    "genus": "Lunar Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Nocturnal Serenity",
+        "content": [
+          "Cresselia represents the crescent moon. Its feathers are used as charms to dispel nightmares and bring pleasant dreams.",
+          "It emits particles of light from its veil-like wings that create a soothing, aurora-like glow in the night sky."
+        ]
+      },
+      {
+        "type": "POKEMON_GO",
+        "title": "GBL Tactical Analysis",
+        "content": [
+          "One of the bulkiest Pokémon in the Great and Ultra Leagues. Its ability to absorb massive amounts of neutral damage and retaliate with Grass Knot or Moonblast makes it a frustrating opponent to knock out."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 493,
+    "name": "Arceus",
+    "genus": "Alpha Pokémon",
+    "sections": [
+      {
+        "type": "BIOLOGY",
+        "title": "Primeval Architect",
+        "content": [
+          "According to the legends of Sinnoh, Arceus emerged from an egg in a place where there was nothing and then shaped the entire world.",
+          "It possesses 1,000 arms with which it is said to have constructed the universe. It can change its type by holding different elemental plates."
+        ]
+      }
+    ]
+  }
+]
