@@ -115,7 +115,7 @@ fun PokedexApp(
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: 0
             var pokemon by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
-            
+
             LaunchedEffect(id) {
                 pokemon = viewModel.getPokemonById(id)
             }
@@ -124,9 +124,13 @@ fun PokedexApp(
                 PokemonDetailScreen(
                     pokemon = pokemon!!,
                     filterSettings = filterSettings,
-                    onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
+                    onFilterSettingsChange = { newSettings ->
+                        filterSettings = newSettings
+                    },
                     onSelect = onCycleFilter,
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
                     onPlayCry = { url ->
                         mediaManager.playSound(url)
                     },
@@ -138,9 +142,11 @@ fun PokedexApp(
                         viewModel.updateTypeFilter(type)
                         viewModel.updateSearchQuery(type.name)
                         navController.popBackStack()
+                    },
+                    onEvolutionClick = { evolutionId ->
+                        navController.navigate("detail/$evolutionId")
                     }
                 )
-            }
-        }
+            }        }
     }
 }

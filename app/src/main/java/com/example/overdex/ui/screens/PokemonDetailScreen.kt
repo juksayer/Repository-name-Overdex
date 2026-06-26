@@ -40,6 +40,7 @@ fun PokemonDetailScreen(
     onPlayCry: (String) -> Unit,
     onMoveClick: (String) -> Unit,
     onTypeClick: (PokemonType) -> Unit,
+    onEvolutionClick: (Int) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -182,7 +183,10 @@ fun PokemonDetailScreen(
                     pokemon.prevEvolutions.forEach { evo ->
                         Text(
                             text = evo.name,
-                            color = TerminalGreen
+                            color = TerminalGreen,
+                            modifier = Modifier.clickable {
+                                onEvolutionClick(evo.num.toInt())
+                            }
                         )
 
                         Text(
@@ -206,7 +210,10 @@ fun PokemonDetailScreen(
 
                         Text(
                             text = evo.name,
-                            color = TerminalGreen
+                            color = TerminalGreen,
+                            modifier = Modifier.clickable {
+                                onEvolutionClick(evo.num.toInt())
+                            }
                         )
                     }
                 }

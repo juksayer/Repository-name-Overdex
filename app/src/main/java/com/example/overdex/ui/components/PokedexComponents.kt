@@ -1,5 +1,6 @@
 package com.example.overdex.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,6 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
+import com.example.overdex.ResearcherManager
+import com.example.overdex.ui.screens.ResearcherModeOverlay
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.sin
 
@@ -53,6 +58,39 @@ fun PokedexFrame(
     content: @Composable () -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    var showResearcherSettings by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val researcherManager = remember { ResearcherManager(context) }
+    var isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
+    
+    // Konami Code Detection
+    val konamiCode = remember { listOf("UP", "UP", "DOWN", "DOWN", "LEFT", "RIGHT", "LEFT", "RIGHT", "B", "A") }
+    var currentSequence by remember { mutableStateOf(emptyList<String>()) }
+    var unlockMessage by remember { mutableStateOf<String?>(null) }
+
+    val handleInput = { input: String ->
+        val nextSequence = currentSequence + input
+        if (konamiCode.take(nextSequence.size) == nextSequence) {
+            currentSequence = nextSequence
+            if (currentSequence.size == konamiCode.size) {
+                researcherManager.setUnlocked(true)
+                isResearcherUnlocked = true
+                unlockMessage = "ACCESS LEVEL UPDATED\nRESEARCHER MODE ENABLED"
+                currentSequence = emptyList()
+            }
+        } else {
+            // Reset if sequence broken, but allow starting new sequence with 'UP'
+            currentSequence = if (input == "UP") listOf("UP") else emptyList()
+        }
+    }
+
+    LaunchedEffect(unlockMessage) {
+        if (unlockMessage != null) {
+            delay(3000)
+            unlockMessage = null
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -103,8 +141,40 @@ fun PokedexFrame(
                     FilterSettingsOverlay(
                         settings = filterSettings,
                         onSettingsChange = onFilterSettingsChange,
+                        isResearcherUnlocked = isResearcherUnlocked,
+                        onOpenResearcher = { 
+                            showSettings = false
+                            showResearcherSettings = true 
+                        },
                         onClose = { showSettings = false }
                     )
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = showResearcherSettings,
+                    enter = fadeIn() + expandIn(),
+                    exit = fadeOut() + shrinkOut()
+                ) {
+                    ResearcherModeOverlay(onClose = { showResearcherSettings = false })
+                }
+
+                // Unlock Message Overlay
+                if (unlockMessage != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.8f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = unlockMessage!!,
+                            color = TerminalGreen,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }
@@ -118,14 +188,19 @@ fun PokedexFrame(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // D-Pad
-            DPad(onUp, onDown, onLeft, onRight)
+            DPad(
+                onUp = { handleInput("UP"); onUp() },
+                onDown = { handleInput("DOWN"); onDown() },
+                onLeft = { handleInput("LEFT"); onLeft() },
+                onRight = { handleInput("RIGHT"); onRight() }
+            )
 
             // Buttons Area
             Column(horizontalAlignment = Alignment.End) {
                 Row {
-                    ActionButton("B", Color.Black, onB)
+                    ActionButton("B", Color.Black, onClick = { handleInput("B"); onB() })
                     Spacer(modifier = Modifier.width(16.dp))
-                    ActionButton("A", Color.Black, onA)
+                    ActionButton("A", Color.Black, onClick = { handleInput("A"); onA() })
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -220,6 +295,8 @@ fun AndroidPokeballLogo(modifier: Modifier = Modifier) {
 fun FilterSettingsOverlay(
     settings: FilterSettings,
     onSettingsChange: (FilterSettings) -> Unit,
+    isResearcherUnlocked: Boolean = false,
+    onOpenResearcher: () -> Unit = {},
     onClose: () -> Unit
 ) {
     Surface(
@@ -251,6 +328,25 @@ fun FilterSettingsOverlay(
                 SettingSlider("Scanlines", settings.scanlineIntensity, 0f, 1f) { onSettingsChange(settings.copy(scanlineIntensity = it)) }
                 SettingSlider("Curvature", settings.crtCurvature, 0f, 0.5f) { onSettingsChange(settings.copy(crtCurvature = it)) }
                 SettingSlider("Noise", settings.noiseIntensity, 0f, 0.5f) { onSettingsChange(settings.copy(noiseIntensity = it)) }
+            }
+
+            if (isResearcherUnlocked) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(color = TerminalPurple.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onOpenResearcher,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TerminalPurple.copy(alpha = 0.2f),
+                        contentColor = TerminalPurple
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, TerminalPurple)
+                ) {
+                    Text("OPEN RESEARCHER MODE", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -436,7 +532,7 @@ fun SearchBar(
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(24.dp)),
-        placeholder = { Text("Search Pokedex...", color = TerminalDimGreen) },
+        placeholder = { Text("Search OverDex...", color = TerminalDimGreen) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TerminalGreen) },
         colors = TextFieldDefaults.colors(
             unfocusedContainerColor = TerminalBlack,
