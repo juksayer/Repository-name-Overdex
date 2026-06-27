@@ -309,6 +309,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         return pokemonDao.getPokemonById(id)?.toDomain()
     }
 
+    suspend fun getPokemonByName(name: String): Pokemon? {
+        return pokemonDao.getPokemonByName(name)?.toDomain()
+    }
+
     private fun PokemonEntity.toDomain(): Pokemon {
         val types = try { Json.decodeFromString<List<PokemonType>>(typesJson) } catch (e: Exception) { emptyList() }
         val fastMoves = try { Json.decodeFromString<List<Move>>(fastMovesJson) } catch (e: Exception) { emptyList() }

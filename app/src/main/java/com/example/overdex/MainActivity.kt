@@ -145,7 +145,8 @@ fun PokedexApp(
                     },
                     onEvolutionClick = { evolutionId ->
                         navController.navigate("detail/$evolutionId")
-                    }
+                    },
+                    viewModel = viewModel
                 )
             }        }
     }

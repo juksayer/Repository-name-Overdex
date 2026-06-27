@@ -58,6 +58,7 @@ fun PokedexListScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
+        viewModel = viewModel
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SearchBar(query = searchQuery) {

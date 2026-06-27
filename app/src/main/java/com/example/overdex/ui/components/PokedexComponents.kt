@@ -55,6 +55,7 @@ fun PokedexFrame(
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
+    viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     content: @Composable () -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
@@ -142,7 +143,15 @@ fun PokedexFrame(
                 content()
 
                 // Enemy Team Overlay - Driven by BattleMemory
-                EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
+                Column {
+                    EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
+                    
+                    // Live Move Panel - Displays moves for the active enemy
+                    LiveMovePanel(
+                        activePokemon = battleMemory.enemyTeam.find { it.isActive },
+                        viewModel = viewModel
+                    )
+                }
 
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showSettings,

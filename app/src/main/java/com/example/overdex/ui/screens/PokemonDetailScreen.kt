@@ -22,6 +22,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
+import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.components.TypeBadge
@@ -41,6 +42,7 @@ fun PokemonDetailScreen(
     onMoveClick: (String) -> Unit,
     onTypeClick: (PokemonType) -> Unit,
     onEvolutionClick: (Int) -> Unit,
+    viewModel: PokedexViewModel? = null,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -61,6 +63,7 @@ fun PokemonDetailScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
+        viewModel = viewModel
     ) {
         Column(
             modifier = Modifier
