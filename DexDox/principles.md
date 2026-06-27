@@ -91,7 +91,15 @@ The overlay should never compete with the game.
 It should quietly complement it.
 
 ---
+# Recognition Over Reading
 
+Recognition is faster than reading.
+
+Prefer icons, color, position, and shape over text whenever practical.
+
+Text is a last resort.
+
+The player should understand the overlay with a glance, not a sentence.
 # Minimalist. Game Boy. Winning.
 
 Avoid decoration.
@@ -127,6 +135,15 @@ Overdex should reduce cognitive load, not increase it.
 The best interaction is often the one the player never notices.
 
 ---
+# Motion Must Earn Attention
+
+Motion is the strongest visual signal available.
+
+Use it sparingly.
+
+If an element moves, the player should immediately understand why.
+
+Calm interfaces build trust.
 
 # Design for Learning
 
@@ -174,3 +191,7 @@ Red is debt.
 Green is proof.
 
 Zero red before starting the next feature.
+
+Every commit should leave the project in a state you'd be happy to hand to another developer.
+
+Promote data from transient to permanent only once

@@ -80,6 +80,7 @@ fun PokedexFrame(
 
     // BattleMemory Single Source of Truth
     val battleMemory = remember { com.example.overdex.BattleMemory() }
+    var currentDecision by remember { mutableStateOf<com.example.overdex.model.DecisionAnalysis?>(null) }
 
     val handleInput = { input: String ->
         val nextSequence = currentSequence + input
@@ -107,6 +108,33 @@ fun PokedexFrame(
     // Start Battle Simulation Prototype
     LaunchedEffect(Unit) {
         battleMemory.runPrototypeSimulation()
+    }
+
+    // Matchup Intelligence Foundation Verification
+    LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
+        val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
+        if (viewModel != null && activeEnemy != null) {
+            val enemyData = viewModel.getPokemonByName(activeEnemy.species)
+            val playerData = viewModel.getPokemonByName(battleMemory.playerActivePokemon ?: "Charizard")
+            
+            if (enemyData != null && playerData != null) {
+                val matchupAnalysis = com.example.overdex.data.matchup.MatchupEngine.analyze(
+                    player = playerData,
+                    enemy = enemyData,
+                    enemyMemory = activeEnemy
+                )
+                
+                val decision = com.example.overdex.data.matchup.DecisionEngine.analyze(matchupAnalysis)
+                currentDecision = decision
+                
+                android.util.Log.d("MATCHUP_ENGINE", "Analysis: ${matchupAnalysis.playerSpecies} vs ${matchupAnalysis.enemySpecies}")
+                android.util.Log.d("MATCHUP_ENGINE", "Advantage: ${matchupAnalysis.playerAdvantage} | Threat: ${matchupAnalysis.enemyThreatLevel}")
+                
+                android.util.Log.d("DECISION_ENGINE", "Recommendation: ${decision.recommendedAction} (Priority: ${decision.actionPriority})")
+                android.util.Log.d("DECISION_ENGINE", "Reasoning: ${decision.reasoning}")
+                android.util.Log.d("DECISION_ENGINE", "Shield Recommended: ${decision.shieldRecommended}")
+            }
+        }
     }
 
     Column(
@@ -167,7 +195,10 @@ fun PokedexFrame(
                 // Enemy Team Overlay - Driven by BattleMemory
                 if (overlayState == OverlayState.EXPANDED) {
                     Column {
-                        EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
+                        EnemyTeamMemoryOverlay(
+                            enemyTeam = battleMemory.enemyTeam,
+                            decision = currentDecision
+                        )
                         
                         // Live Move Panel - Displays moves for the active enemy
                         LiveMovePanel(

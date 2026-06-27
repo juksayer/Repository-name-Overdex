@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,13 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.EnemyPokemonMemory
+import com.example.overdex.model.DecisionAnalysis
+import com.example.overdex.model.RecommendedAction
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
 @Composable
-fun EnemyTeamMemoryOverlay(enemyTeam: List<EnemyPokemonMemory>) {
+fun EnemyTeamMemoryOverlay(
+    enemyTeam: List<EnemyPokemonMemory>,
+    decision: DecisionAnalysis? = null
+) {
     Column(
         modifier = Modifier
             .padding(8.dp)
@@ -35,13 +43,35 @@ fun EnemyTeamMemoryOverlay(enemyTeam: List<EnemyPokemonMemory>) {
             .padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = "ENEMY TEAM",
-            color = TerminalPurple,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 2.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "ENEMY TEAM",
+                color = TerminalPurple,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (decision != null) {
+                val icon = when (decision.recommendedAction) {
+                    RecommendedAction.SWITCH_NOW -> Icons.Default.Sync
+                    RecommendedAction.FARM_ENERGY -> Icons.Default.Bolt
+                    RecommendedAction.SHIELD_LIKELY_REQUIRED -> Icons.Default.Shield
+                    RecommendedAction.STAY_AND_FIGHT -> Icons.Default.Check
+                    else -> Icons.Default.Info
+                }
+                
+                Icon(
+                    imageVector = icon,
+                    contentDescription = decision.recommendedAction.name,
+                    tint = if (decision.isEnemyThreatening) Color.Red else TerminalGreen,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
         
         enemyTeam.forEach { pokemon ->
             EnemyPokemonRow(pokemon)

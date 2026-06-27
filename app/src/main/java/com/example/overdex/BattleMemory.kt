@@ -2,11 +2,9 @@ package com.example.overdex
 
 import androidx.compose.runtime.mutableStateListOf
 import com.example.overdex.data.observation.BattleObservationPipeline
-import com.example.overdex.model.BattleEvent
-import com.example.overdex.model.BattleEventType
-import com.example.overdex.model.Confidence
-import com.example.overdex.model.ConfidenceLevel
+import com.example.overdex.model.*
 import com.example.overdex.model.observation.ObservationSource
+import com.example.overdex.model.observation.FastMoveObservation
 import com.example.overdex.model.observation.PokemonNameObservation
 import kotlinx.coroutines.delay
 
@@ -17,7 +15,9 @@ data class BattleMemory(
     val observedEnemyPokemon: MutableList<String> = mutableListOf(),
     val enemyTeam: MutableList<EnemyPokemonMemory> = mutableStateListOf<EnemyPokemonMemory>(),
     var enemyRemainingPokemon: Int? = null,
-    val battleHistory: MutableList<BattleEvent> = mutableStateListOf<BattleEvent>()
+    var playerActivePokemon: String? = "Charizard", // Prototype default
+    val battleHistory: MutableList<BattleEvent> = mutableStateListOf<BattleEvent>(),
+    var startTime: Long = System.currentTimeMillis()
 ) {
     private val observationPipeline = BattleObservationPipeline(this)
 
@@ -63,6 +63,7 @@ data class BattleMemory(
      * PROTOTYPE ONLY: Simulates a battle sequence to prove BattleMemory drives the UI.
      */
     suspend fun runPrototypeSimulation() {
+        startTime = System.currentTimeMillis()
         recordEvent(BattleEventType.BATTLE_STARTED)
         populatePrototypeEnemyTeam()
         recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
@@ -70,13 +71,18 @@ data class BattleMemory(
         while (true) {
             // State 1: Swampert gaining energy
             delay(2000)
-            updateSpecies("Swampert") { it.estimatedEnergy = 45 }
-            recordEvent(
-                type = BattleEventType.ENERGY_UPDATED, 
-                species = "Swampert", 
-                value = 45,
-                confidence = Confidence(ConfidenceLevel.INFERRED)
+            updateSpecies("Swampert") { 
+                it.estimatedEnergy = 45 
+            }
+            observationPipeline.onObservationReceived(
+                FastMoveObservation(
+                    species = "Swampert",
+                    moveName = "Mud Shot",
+                    source = ObservationSource.PROTOTYPE,
+                    confidence = Confidence(ConfidenceLevel.OBSERVED)
+                )
             )
+            recordEvent(BattleEventType.ENERGY_UPDATED, "Swampert", 45)
             
             // State 2: Switch to Talonflame
             delay(2000)
@@ -127,10 +133,15 @@ data class BattleMemory(
             // End Battle Sequence
             delay(2000)
             recordEvent(BattleEventType.BATTLE_ENDED)
+            
+            // Generate BattleLog
+            val battleLog = toBattleLog()
+            android.util.Log.d("BATTLE_LOG", "BattleLog Generated: ID=${battleLog.id} | Duration=${battleLog.durationMs}ms | Result=${battleLog.result}")
 
             // Reset for loop
             delay(4000)
             battleHistory.clear()
+            startTime = System.currentTimeMillis()
             recordEvent(BattleEventType.BATTLE_STARTED)
             populatePrototypeEnemyTeam()
             recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
@@ -144,5 +155,32 @@ data class BattleMemory(
             block(updated)
             enemyTeam[index] = updated
         }
+    }
+
+    /**
+     * Converts current battle memory into a finalized BattleLog snapshot.
+     */
+    fun toBattleLog(): BattleLog {
+        val endTime = System.currentTimeMillis()
+        val duration = endTime - startTime
+        
+        // Collect all sources used from history
+        val sources = battleHistory.map { it.confidence.level }.toSet() // Simple mock logic for sources
+        // Real logic would be:
+        // val sources = battleHistory.mapNotNull { it.source }.toSet()
+        // But source isn't in BattleEvent yet, it's in Observations.
+        
+        return BattleLog(
+            startTime = startTime,
+            endTime = endTime,
+            durationMs = duration,
+            enemyTeam = enemyTeam.toList(),
+            timeline = battleHistory.toList(),
+            result = if (enemyTeam.all { !it.alive }) BattleResult.WIN else BattleResult.UNKNOWN,
+            overallConfidence = 0.9f, // Placeholder logic
+            sourcesUsed = setOf(ObservationSource.PROTOTYPE),
+            seenFastMoves = seenFastMoves.toMap(),
+            seenChargedMoves = seenChargedMoves.toMap()
+        )
     }
 }

@@ -18,6 +18,16 @@ The Overlay provides guidance.
 
 Together they become something greater than the sum of their parts.
 
+One observation should create value many times.
+
+Information observed during battle should become reusable knowledge for Battle Logs, Statistics, Team Builder, Pivot Analysis, Researcher Mode, and future features.
+
+Observe once.
+
+Remember once.
+
+Reuse forever.
+
 ## Design Philosophy
 
 Minimalist.

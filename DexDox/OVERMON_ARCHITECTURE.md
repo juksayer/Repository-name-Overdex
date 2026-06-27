@@ -1,24 +1,20 @@
-# Overmon Architecture
-
-Goal:
-Remember battle information that Pokemon GO reveals briefly.
-
-Pipeline:
-
 Screen Capture
-↓
-OCR
-↓
-Battle Memory
-↓
-Overlay UI
+│
+▼
+Observation Pipeline
+│
+▼
+BattleMemory
+│
+▼
+BattleLog
+│
+├── Overlay
+├── Statistics
+├── Team Builder
+├── Pivot
+├── Researcher Mode
+└── Battle History
 
-Known signals:
-- Pokemon names
-- Types
-- HP
-- Faint status
-- Fast moves
-- Charged moves
-- Energy tracking
-- Team tracking
+
+The BattleEngine may know everything. The overlay should say almost nothing.

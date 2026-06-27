@@ -101,7 +101,28 @@ Important information should become brighter.
 Inactive information should become quieter.
 
 ---
+# Decision Support
 
+The overlay exists to improve decisions, not to display data.
+
+Do not display information simply because it is known.
+
+Display information only when it changes the player's current decision.
+
+The overlay should describe the relationship between the player's active Pokémon and the enemy's active Pokémon.
+
+It should not describe either Pokémon independently.
+
+Whenever possible, answer questions such as:
+
+• Can this Pokémon threaten me?
+• Can I threaten this Pokémon?
+• Should I shield?
+• Should I switch?
+• Should I farm?
+• Should I throw?
+
+If the information does not help answer one of these questions, it probably does not belong on the overlay.
 # Information Priority
 
 Highest
@@ -189,6 +210,33 @@ Examples:
 The player should never confuse inference with observation.
 
 ---
+# Attention
+
+The player's attention belongs to Pokémon GO.
+
+Overdex borrows attention only when necessary.
+
+Motion is expensive.
+
+Animation should communicate state changes—not attract attention.
+
+Acceptable animation:
+
+• Droidball launch
+• Droidball collapse
+• Overlay appearing
+• Overlay disappearing
+• Gentle fades
+• Slow energy fills
+
+Avoid:
+
+• Flashing
+• Blinking
+• Continuous pulsing
+• Decorative movement
+
+When nothing important is happening, the overlay should feel almost invisible.
 
 # Performance
 
