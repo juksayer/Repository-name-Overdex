@@ -32,9 +32,16 @@ import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.sin
+
+enum class OverlayState {
+    COLLAPSED,
+    EXPANDED
+}
 
 data class FilterSettings(
     val scanlineIntensity: Float = 0.2f,
@@ -60,6 +67,7 @@ fun PokedexFrame(
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
+    var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
     
     val context = LocalContext.current
     val researcherManager = remember { ResearcherManager(context) }
@@ -114,7 +122,21 @@ fun PokedexFrame(
                 .padding(bottom = 16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            AndroidPokeballLogo(modifier = Modifier.size(60.dp))
+            AndroidPokeballLogo(
+                modifier = Modifier
+                    .size(60.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                overlayState = if (overlayState == OverlayState.EXPANDED) {
+                                    OverlayState.COLLAPSED
+                                } else {
+                                    OverlayState.EXPANDED
+                                }
+                            }
+                        )
+                    }
+            )
             
             Spacer(modifier = Modifier.width(16.dp))
             
@@ -143,14 +165,16 @@ fun PokedexFrame(
                 content()
 
                 // Enemy Team Overlay - Driven by BattleMemory
-                Column {
-                    EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
-                    
-                    // Live Move Panel - Displays moves for the active enemy
-                    LiveMovePanel(
-                        activePokemon = battleMemory.enemyTeam.find { it.isActive },
-                        viewModel = viewModel
-                    )
+                if (overlayState == OverlayState.EXPANDED) {
+                    Column {
+                        EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
+                        
+                        // Live Move Panel - Displays moves for the active enemy
+                        LiveMovePanel(
+                            activePokemon = battleMemory.enemyTeam.find { it.isActive },
+                            viewModel = viewModel
+                        )
+                    }
                 }
 
                 androidx.compose.animation.AnimatedVisibility(

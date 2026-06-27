@@ -39,3 +39,5 @@ Speak only when it has something worth saying.
 The best compliment Overdex can receive is:
 
 > "Oh... that's helpful."
+
+Every observation should have multiple consumers
