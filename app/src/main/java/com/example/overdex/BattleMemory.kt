@@ -1,10 +1,13 @@
 package com.example.overdex
 
 import androidx.compose.runtime.mutableStateListOf
+import com.example.overdex.data.observation.BattleObservationPipeline
 import com.example.overdex.model.BattleEvent
 import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
+import com.example.overdex.model.observation.ObservationSource
+import com.example.overdex.model.observation.PokemonNameObservation
 import kotlinx.coroutines.delay
 
 data class BattleMemory(
@@ -16,12 +19,23 @@ data class BattleMemory(
     var enemyRemainingPokemon: Int? = null,
     val battleHistory: MutableList<BattleEvent> = mutableStateListOf<BattleEvent>()
 ) {
+    private val observationPipeline = BattleObservationPipeline(this)
+
     fun populatePrototypeEnemyTeam() {
         enemyTeam.clear()
-        enemyTeam.add(EnemyPokemonMemory(species = "Swampert", estimatedEnergy = 0, alive = true, isActive = true))
-        enemyTeam.add(EnemyPokemonMemory(species = "Talonflame", estimatedEnergy = 0, alive = true, isActive = false))
-        enemyTeam.add(EnemyPokemonMemory(species = "Azumarill", estimatedEnergy = 0, alive = true, isActive = false))
+        // Injecting via pipeline instead of direct add
+        observationPipeline.onObservationReceived(
+            PokemonNameObservation(species = "Swampert", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+        )
+        observationPipeline.onObservationReceived(
+            PokemonNameObservation(species = "Talonflame", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+        )
+        observationPipeline.onObservationReceived(
+            PokemonNameObservation(species = "Azumarill", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+        )
         
+        updateSpecies("Swampert") { it.isActive = true }
+
         recordEvent(BattleEventType.POKEMON_OBSERVED, "Swampert")
         recordEvent(BattleEventType.POKEMON_OBSERVED, "Talonflame")
         recordEvent(BattleEventType.POKEMON_OBSERVED, "Azumarill")
