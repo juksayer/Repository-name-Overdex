@@ -8,8 +8,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,8 +59,8 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
         else -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png"
     }
 
-    val isActive = pokemon.isActive
     val isFainted = !pokemon.alive
+    val isActive = pokemon.isActive && !isFainted
 
     Row(
         modifier = Modifier
@@ -67,7 +70,7 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
             .background(
                 when {
                     isActive -> TerminalGreen.copy(alpha = 0.15f)
-                    isFainted -> Color.DarkGray.copy(alpha = 0.3f)
+                    isFainted -> Color.DarkGray.copy(alpha = 0.2f)
                     else -> Color.Transparent
                 }
             )
@@ -78,11 +81,21 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Desaturate and reduce opacity if fainted
+        val colorFilter = if (isFainted) {
+            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+        } else {
+            null
+        }
+
         AsyncImage(
             model = spriteUrl,
             contentDescription = pokemon.species,
-            modifier = Modifier.size(32.dp),
-            contentScale = ContentScale.Fit
+            modifier = Modifier
+                .size(32.dp)
+                .alpha(if (isFainted) 0.5f else 1.0f),
+            contentScale = ContentScale.Fit,
+            colorFilter = colorFilter
         )
         
         Spacer(modifier = Modifier.width(4.dp))
@@ -92,7 +105,7 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
                 text = pokemon.species.uppercase(),
                 color = when {
                     isActive -> Color.White
-                    isFainted -> Color.Gray
+                    isFainted -> TerminalDimGreen.copy(alpha = 0.6f)
                     else -> TerminalGreen
                 },
                 fontSize = 9.sp,
@@ -100,21 +113,26 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
                 maxLines = 1
             )
             
-            // Energy Bar Placeholder
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(TerminalBlack)
-                    .border(0.5.dp, if (isActive) TerminalGreen else TerminalDimGreen, RoundedCornerShape(1.dp))
-            ) {
+            // Energy Bar - Hidden if fainted
+            if (!isFainted) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
-                        .fillMaxHeight()
-                        .background(if (isActive) TerminalGreen else TerminalDimGreen)
-                )
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(TerminalBlack)
+                        .border(0.5.dp, if (isActive) TerminalGreen else TerminalDimGreen, RoundedCornerShape(1.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
+                            .fillMaxHeight()
+                            .background(if (isActive) TerminalGreen else TerminalDimGreen)
+                    )
+                }
+            } else {
+                // Empty space to maintain vertical height consistency
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }

@@ -1,5 +1,8 @@
 package com.example.overdex
 
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
+
 object BattleMemoryUpdater {
 
     fun update(
@@ -9,14 +12,26 @@ object BattleMemoryUpdater {
 
         state.enemyPokemon?.let { pokemon ->
 
-            if (!memory.enemyTeam.containsKey(pokemon)) {
-                memory.enemyTeam[pokemon] =
-                    EnemyPokemonMemory(species = pokemon)
+            val existingIndex = memory.enemyTeam.indexOfFirst { it.species == pokemon }
+            if (existingIndex == -1) {
+                memory.enemyTeam.add(
+                    EnemyPokemonMemory(
+                        species = pokemon,
+                        speciesConfidence = Confidence(ConfidenceLevel.OBSERVED)
+                    )
+                )
             }
-            memory.enemyTeam[pokemon]?.timesSeen++
+            
+            val indexToUpdate = memory.enemyTeam.indexOfFirst { it.species == pokemon }
+            if (indexToUpdate != -1) {
+                val updated = memory.enemyTeam[indexToUpdate].copy()
+                updated.timesSeen++
+                memory.enemyTeam[indexToUpdate] = updated
+            }
+
             android.util.Log.d(
                 "OVERMON_MEMORY",
-                "Enemy team: ${memory.enemyTeam.keys}"
+                "Enemy team: ${memory.enemyTeam.map { it.species }}"
             )
 
             memory.seenPokemon.add(pokemon)

@@ -69,6 +69,9 @@ fun PokedexFrame(
     var currentSequence by remember { mutableStateOf(emptyList<String>()) }
     var unlockMessage by remember { mutableStateOf<String?>(null) }
 
+    // BattleMemory Single Source of Truth
+    val battleMemory = remember { com.example.overdex.BattleMemory() }
+
     val handleInput = { input: String ->
         val nextSequence = currentSequence + input
         if (konamiCode.take(nextSequence.size) == nextSequence) {
@@ -90,6 +93,11 @@ fun PokedexFrame(
             delay(3000)
             unlockMessage = null
         }
+    }
+
+    // Start Battle Simulation Prototype
+    LaunchedEffect(Unit) {
+        battleMemory.runPrototypeSimulation()
     }
 
     Column(
@@ -133,14 +141,8 @@ fun PokedexFrame(
             ) {
                 content()
 
-                // Enemy Team Overlay Prototype
-                EnemyTeamMemoryOverlay(
-                    enemyTeam = listOf(
-                        com.example.overdex.EnemyPokemonMemory(species = "Swampert", estimatedEnergy = 45, isActive = false),
-                        com.example.overdex.EnemyPokemonMemory(species = "Talonflame", estimatedEnergy = 20, isActive = true),
-                        com.example.overdex.EnemyPokemonMemory(species = "Azumarill", estimatedEnergy = 80, isActive = false)
-                    )
-                )
+                // Enemy Team Overlay - Driven by BattleMemory
+                EnemyTeamMemoryOverlay(enemyTeam = battleMemory.enemyTeam)
 
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showSettings,

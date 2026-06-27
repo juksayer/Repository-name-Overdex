@@ -169,3 +169,8 @@ The goal is to make the next version better than the last.
 Make the player's experience feel effortless.
 
 If a feature makes the player think about Overdex instead of Pokémon, redesign the feature.
+Red is debt.
+
+Green is proof.
+
+Zero red before starting the next feature.
