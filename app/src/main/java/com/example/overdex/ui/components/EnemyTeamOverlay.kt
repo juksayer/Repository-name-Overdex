@@ -15,38 +15,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.overdex.EnemyPokemonMemory
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
-data class EnemyPokemonMemoryPrototype(
-    val name: String,
-    val spriteUrl: String,
-    val energy: Int,
-    val isFainted: Boolean = false
-)
-
 @Composable
-fun EnemyTeamMemoryOverlay() {
-    val testTeam = listOf(
-        EnemyPokemonMemoryPrototype(
-            name = "Swampert",
-            spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png",
-            energy = 45
-        ),
-        EnemyPokemonMemoryPrototype(
-            name = "Talonflame",
-            spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/663.png",
-            energy = 20
-        ),
-        EnemyPokemonMemoryPrototype(
-            name = "Azumarill",
-            spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/184.png",
-            energy = 80
-        )
-    )
-
+fun EnemyTeamMemoryOverlay(enemyTeam: List<EnemyPokemonMemory>) {
     Column(
         modifier = Modifier
             .padding(8.dp)
@@ -64,25 +40,47 @@ fun EnemyTeamMemoryOverlay() {
             modifier = Modifier.padding(bottom = 2.dp)
         )
         
-        testTeam.forEach { pokemon ->
+        enemyTeam.forEach { pokemon ->
             EnemyPokemonRow(pokemon)
         }
     }
 }
 
 @Composable
-fun EnemyPokemonRow(pokemon: EnemyPokemonMemoryPrototype) {
+fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
+    // Hardcoded sprite mapping for the prototype
+    val spriteUrl = when (pokemon.species.lowercase()) {
+        "swampert" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png"
+        "talonflame" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/663.png"
+        "azumarill" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/184.png"
+        else -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png"
+    }
+
+    val isActive = pokemon.isActive
+    val isFainted = !pokemon.alive
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
             .clip(RoundedCornerShape(2.dp))
-            .background(if (pokemon.isFainted) Color.DarkGray else Color.Transparent),
+            .background(
+                when {
+                    isActive -> TerminalGreen.copy(alpha = 0.15f)
+                    isFainted -> Color.DarkGray.copy(alpha = 0.3f)
+                    else -> Color.Transparent
+                }
+            )
+            .border(
+                width = if (isActive) 1.5.dp else 0.dp,
+                color = if (isActive) TerminalGreen else Color.Transparent,
+                shape = RoundedCornerShape(2.dp)
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = pokemon.spriteUrl,
-            contentDescription = pokemon.name,
+            model = spriteUrl,
+            contentDescription = pokemon.species,
             modifier = Modifier.size(32.dp),
             contentScale = ContentScale.Fit
         )
@@ -91,8 +89,12 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemoryPrototype) {
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = pokemon.name.uppercase(),
-                color = if (pokemon.isFainted) Color.Gray else TerminalGreen,
+                text = pokemon.species.uppercase(),
+                color = when {
+                    isActive -> Color.White
+                    isFainted -> Color.Gray
+                    else -> TerminalGreen
+                },
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
@@ -105,13 +107,13 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemoryPrototype) {
                     .height(4.dp)
                     .clip(RoundedCornerShape(1.dp))
                     .background(TerminalBlack)
-                    .border(0.5.dp, TerminalDimGreen, RoundedCornerShape(1.dp))
+                    .border(0.5.dp, if (isActive) TerminalGreen else TerminalDimGreen, RoundedCornerShape(1.dp))
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(pokemon.energy / 100f)
+                        .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
                         .fillMaxHeight()
-                        .background(TerminalGreen)
+                        .background(if (isActive) TerminalGreen else TerminalDimGreen)
                 )
             }
         }

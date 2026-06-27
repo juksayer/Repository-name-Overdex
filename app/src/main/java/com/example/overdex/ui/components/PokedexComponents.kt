@@ -133,6 +133,15 @@ fun PokedexFrame(
             ) {
                 content()
 
+                // Enemy Team Overlay Prototype
+                EnemyTeamMemoryOverlay(
+                    enemyTeam = listOf(
+                        com.example.overdex.EnemyPokemonMemory(species = "Swampert", estimatedEnergy = 45, isActive = false),
+                        com.example.overdex.EnemyPokemonMemory(species = "Talonflame", estimatedEnergy = 20, isActive = true),
+                        com.example.overdex.EnemyPokemonMemory(species = "Azumarill", estimatedEnergy = 80, isActive = false)
+                    )
+                )
+
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showSettings,
                     enter = fadeIn() + expandIn(),

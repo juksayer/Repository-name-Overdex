@@ -6,5 +6,6 @@ data class EnemyPokemonMemory(
     var estimatedEnergy: Int = 0,
     var timesSeen: Int = 0,
     val fastMoves: MutableSet<String> = mutableSetOf(),
-    val chargedMoves: MutableSet<String> = mutableSetOf()
+    val chargedMoves: MutableSet<String> = mutableSetOf(),
+    var isActive: Boolean = false
 )
