@@ -27,8 +27,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
     private val _searchRequest = MutableStateFlow(SearchRequest())
-
     val searchRequest = _searchRequest.asStateFlow()
+
+    private val _isServiceRunning = MutableStateFlow(false)
+    val isServiceRunning = _isServiceRunning.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedPokemon: Flow<PagingData<Pokemon>> = _searchQuery
@@ -305,6 +307,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 type = type
             )
     }
+
+    fun startDroidBallService() {
+        _isServiceRunning.value = true
+    }
+
+    fun stopDroidBallService() {
+        _isServiceRunning.value = false
+    }
+
     suspend fun getPokemonById(id: Int): Pokemon? {
         return pokemonDao.getPokemonById(id)?.toDomain()
     }

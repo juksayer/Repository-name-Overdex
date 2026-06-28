@@ -37,6 +37,7 @@ fun PokedexListScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onSelect: () -> Unit,
     onPokemonClick: (Int) -> Unit,
+    isServiceRunning: Boolean = false,
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -58,7 +59,8 @@ fun PokedexListScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
-        viewModel = viewModel
+        viewModel = viewModel,
+        isServiceRunning = isServiceRunning
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SearchBar(query = searchQuery) {

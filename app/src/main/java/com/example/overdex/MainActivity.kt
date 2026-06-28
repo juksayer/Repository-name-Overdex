@@ -23,10 +23,10 @@ import com.example.overdex.media.MediaManager
 import kotlinx.coroutines.launch
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.screens.PokedexListScreen
-import com.example.overdex.ui.screens.PokemonDetailScreen
+import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.theme.OverdexTheme
-
+import kotlin.system.exitProcess
 
 
 class MainActivity : ComponentActivity() {
@@ -76,8 +76,8 @@ fun PokedexApp(
 ){
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
+    val isServiceRunning by viewModel.isServiceRunning.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
-    val calibrationMode = CalibrationMode.ENEMY_NAME
     val onCycleFilter = {
         navController.navigate("calibration")
     }
@@ -85,9 +85,69 @@ fun PokedexApp(
 
     NavHost(
         navController = navController,
-        startDestination = "list",
+        startDestination = "main_menu",
         modifier = modifier,
     ) {
+        composable("main_menu") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter
+            ) {
+                MainMenuScreen(
+                    isServiceRunning = isServiceRunning,
+                    onModuleSelect = { module ->
+                        when (module) {
+                            "overdex" -> navController.navigate("list")
+                            "start.service" -> viewModel.startDroidBallService()
+                            "stop.service" -> viewModel.stopDroidBallService()
+                            "review.kit" -> navController.navigate("module/review.kit/OFFLINE/this component is under active development.")
+                            "battle.log" -> navController.navigate("module/battle.log/UNAVAILABLE/this module has not yet been installed into this build of overdex.")
+                            "settings" -> navController.navigate("settings_module")
+                            else -> navController.navigate("module/$module/UNAVAILABLE/check future releases.")
+                        }
+                    },
+                    onShutdown = {
+                        exitProcess(0)
+                    }
+                )
+            }
+        }
+        composable("module/{title}/{status}/{description}") { backStackEntry ->
+            val title = backStackEntry.arguments?.getString("title") ?: "module"
+            val statusStr = backStackEntry.arguments?.getString("status") ?: "UNAVAILABLE"
+            val description = backStackEntry.arguments?.getString("description") ?: ""
+            
+            val status = try { ModuleStatus.valueOf(statusStr) } catch(e: Exception) { ModuleStatus.UNAVAILABLE }
+            
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter
+            ) {
+                ModuleScreen(
+                    title = title,
+                    status = status,
+                    description = description,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("settings_module") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter
+            ) {
+                SettingsScreen(onBack = { navController.popBackStack() })
+            }
+        }
         composable("calibration") {
             CalibrationScreen(
                 calibrationManager = calibrationManager
@@ -106,7 +166,8 @@ fun PokedexApp(
                         }
                     }
                     navController.navigate("detail/$id")
-                }
+                },
+                isServiceRunning = isServiceRunning
             )
         }
         composable(
@@ -146,7 +207,8 @@ fun PokedexApp(
                     onEvolutionClick = { evolutionId ->
                         navController.navigate("detail/$evolutionId")
                     },
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    isServiceRunning = isServiceRunning
                 )
             }        }
     }

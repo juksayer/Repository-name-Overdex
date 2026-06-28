@@ -171,3 +171,131 @@ It is:
 And eventually:
 
 > "I forgot Overdex was even there."
+
+## Terminal Identity
+
+Overdex is not intended to feel like another Android application.
+
+It should feel like a dedicated piece of field equipment built specifically for Pokémon Trainers.
+
+Every interaction should reinforce the illusion that the user is operating a purpose-built battle computer rather than navigating a mobile app.
+
+The Pokédex body, LCD display, terminal interface, physical controls, boot sequence, and DroidBall all contribute to this identity.
+
+Android should fade into the background.
+
+Overdex should become the device.
+
+## Boot Sequence
+
+The boot sequence establishes the fiction that Overdex is inheriting the Pokémon world's existing information network before connecting to the user's hardware.
+
+On startup, Overdex briefly initializes through the familiar legacy system:
+
+
+Oak's PC System
+
+
+Only for a brief moment.
+
+The system then transfers control to the local device:
+
+
+OVERDEX TERMINAL
+
+Host: Pixel 8
+
+
+or
+
+
+OVERDEX TERMINAL
+
+Host: SCH-1535
+
+
+using the device's friendly name whenever possible.
+
+The intent is not to imitate the Game Boy games, but to acknowledge the world's established information network before introducing Overdex as the player's personal battle terminal.
+
+Oak's PC hands off the connection.
+
+Overdex becomes the user's device.
+
+## Device Philosophy
+
+Overdex should behave like dedicated hardware.
+
+The interface should favor physical-device interactions over conventional Android patterns whenever practical.
+
+Examples include:
+
+- A always activates the highlighted action.
+- B always returns to the previous screen.
+- The D-Pad behaves according to the active module.
+- Start launches the DroidBall.
+- Select performs the module's contextual action.
+
+The objective is consistency through interaction, not through identical controls.
+
+Each module should use the D-Pad in the most natural way for its task while preserving universal behavior for the primary buttons.
+
+## The LCD
+
+The LCD display is a defining part of Overdex's visual identity.
+
+The shader is not simply a retro effect.
+
+It represents the physical display inside the Pokédex itself.
+
+Every application running inside the Pokédex should be rendered through this display layer.
+
+The live battle overlay intentionally does not use the LCD effect.
+
+During battle, clarity always takes priority over nostalgia.
+
+## The DroidBall
+
+The DroidBall is not merely an icon.
+
+It is the user's deployed battle companion.
+
+Launching the DroidBall prepares Overdex for battle.
+
+The DroidBall represents the overlay throughout its lifecycle:
+
+OFF
+
+↓
+
+Launching
+
+↓
+
+Closed
+
+↓
+
+Open
+
+↓
+
+Closed
+
+↓
+
+Shutdown
+
+Its animations should communicate state rather than provide decoration.
+
+Every movement should have purpose.
+
+## Design Principle
+
+Whenever a design decision is unclear, ask one question:
+
+> "Would this exist on a dedicated Overdex handheld?"
+
+If the answer is yes, it belongs.
+
+If the answer is simply "because Android apps usually work this way," reconsider the design.

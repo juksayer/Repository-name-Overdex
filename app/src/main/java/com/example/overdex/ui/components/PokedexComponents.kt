@@ -34,6 +34,7 @@ import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.sin
@@ -63,6 +64,8 @@ fun PokedexFrame(
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
+    showBattleOverlay: Boolean = true,
+    isServiceRunning: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
@@ -156,21 +159,8 @@ fun PokedexFrame(
                 .padding(bottom = 16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            AndroidPokeballLogo(
-                modifier = Modifier
-                    .size(60.dp)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
-                                overlayState = if (overlayState == OverlayState.EXPANDED) {
-                                    OverlayState.COLLAPSED
-                                } else {
-                                    OverlayState.EXPANDED
-                                }
-                            }
-                        )
-                    }
-            )
+            // Device Emblem (Permanent branding)
+            AndroidPokeballLogo(modifier = Modifier.size(60.dp))
             
             Spacer(modifier = Modifier.width(16.dp))
             
@@ -193,25 +183,50 @@ fun PokedexFrame(
                     .clip(RoundedCornerShape(4.dp))
                     .background(PokedexScreen)
                     .border(8.dp, PokedexScreenBorder, RoundedCornerShape(4.dp))
-                    .then(if (filterSettings.isEnabled) Modifier.advancedCrtFilter(filterSettings) else Modifier)
                     .padding(8.dp)
             ) {
-                content()
+                // Application Layer (Shader applied here)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
+                ) {
+                    content()
+                }
 
-                // Enemy Team Overlay - Driven by BattleMemory
-                if (overlayState == OverlayState.EXPANDED) {
+                // HUD Overlay Layer (Kept clean and sharp)
+                if (showBattleOverlay && isServiceRunning) {
                     Column {
-                        EnemyTeamMemoryOverlay(
-                            enemyTeam = battleMemory.enemyTeam,
-                            decision = currentDecision
+                        // DroidBall (Service indicator and control)
+                        AndroidPokeballLogo(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onDoubleTap = {
+                                            overlayState = if (overlayState == OverlayState.EXPANDED) {
+                                                OverlayState.COLLAPSED
+                                            } else {
+                                                OverlayState.EXPANDED
+                                            }
+                                        }
+                                    )
+                                }
                         )
-                        
-                        // Live Move Panel - Displays moves for the active enemy
-                        LiveMovePanel(
-                            activePokemon = battleMemory.enemyTeam.find { it.isActive },
-                            viewModel = viewModel,
-                            matchup = currentMatchup
-                        )
+
+                        if (overlayState == OverlayState.EXPANDED) {
+                            EnemyTeamMemoryOverlay(
+                                enemyTeam = battleMemory.enemyTeam,
+                                decision = currentDecision
+                            )
+                            
+                            // Live Move Panel - Displays moves for the active enemy
+                            LiveMovePanel(
+                                activePokemon = battleMemory.enemyTeam.find { it.isActive },
+                                viewModel = viewModel,
+                                matchup = currentMatchup
+                            )
+                        }
                     }
                 }
 
@@ -550,55 +565,6 @@ fun LightDot(color: Color) {
             .clip(CircleShape)
             .background(color)
             .border(1.dp, Color.Black, CircleShape)
-    )
-}
-
-fun Modifier.advancedCrtFilter(settings: FilterSettings) = this.drawWithContent {
-    drawContent()
-    
-    val time = System.currentTimeMillis() / 1000f
-    
-    // Scanlines with slight movement
-    val lineCount = 180
-    val lineHeight = size.height / lineCount
-    for (i in 0 until lineCount) {
-        val alpha = settings.scanlineIntensity * (0.8f + 0.2f * sin(i.toFloat() * 0.1f + time * 2f))
-        if (i % 2 == 0) {
-            drawRect(
-                color = Color.Black.copy(alpha = alpha),
-                topLeft = Offset(0f, i * lineHeight),
-                size = size.copy(height = lineHeight)
-            )
-        }
-    }
-    
-    // Grain / Noise
-    for (idx in 0 until 1000) {
-        val x = (0..size.width.toInt()).random().toFloat()
-        val y = (0..size.height.toInt()).random().toFloat()
-        drawCircle(
-            color = Color.White.copy(alpha = settings.noiseIntensity * (0..10).random() / 10f),
-            radius = 1f,
-            center = Offset(x, y)
-        )
-    }
-
-    // Vignette
-    drawRect(
-        brush = Brush.radialGradient(
-            0.0f to Color.Transparent,
-            0.7f to Color.Transparent,
-            1.2f to Color.Black.copy(alpha = 0.8f),
-            center = center,
-            radius = size.minDimension * 1.2f
-        ),
-        blendMode = BlendMode.Multiply
-    )
-    
-    // Phosphor glow
-    drawRect(
-        color = TerminalGreen.copy(alpha = 0.05f),
-        blendMode = BlendMode.Screen
     )
 }
 
