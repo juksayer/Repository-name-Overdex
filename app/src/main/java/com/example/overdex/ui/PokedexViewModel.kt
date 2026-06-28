@@ -53,6 +53,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             Log.d("STARTUP", "1: ViewModel init")
 
+            // Battle Timeline Milestone Proof
+            val proofTimeline = com.example.overdex.model.BattleTimeline()
+            proofTimeline.record(com.example.overdex.model.BattleEvent(type = com.example.overdex.model.BattleEventType.BATTLE_STARTED))
+            proofTimeline.record(
+                com.example.overdex.model.BattleEvent(
+                    type = com.example.overdex.model.BattleEventType.POKEMON_IDENTIFIED,
+                    actor = com.example.overdex.model.BattleActor.ENEMY,
+                    pokemonId = 6
+                )
+            )
+            proofTimeline.record(com.example.overdex.model.BattleEvent(type = com.example.overdex.model.BattleEventType.BATTLE_ENDED))
+
             val gameMasterText = gameMasterLoader.loadRawJson()
             println("GameMaster length = ${gameMasterText.length}")
 

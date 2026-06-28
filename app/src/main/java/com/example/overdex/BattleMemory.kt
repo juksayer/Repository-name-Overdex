@@ -21,7 +21,8 @@ data class BattleMemory(
     var playerLead: String? = null,
     var enemyLead: String? = null,
     var playerShieldsUsed: Int = 0,
-    var enemyShieldsUsed: Int = 0
+    var enemyShieldsUsed: Int = 0,
+    val timeline: BattleTimeline = BattleTimeline()
 ) {
     private val observationPipeline = BattleObservationPipeline(this)
 
@@ -40,15 +41,16 @@ data class BattleMemory(
         
         updateSpecies("Swampert") { it.isActive = true }
 
-        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Swampert", actor = BattleActor.ENEMY)
-        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Talonflame", actor = BattleActor.ENEMY)
-        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Azumarill", actor = BattleActor.ENEMY)
+        // Factual ID-based records
+        timeline.record(BattleEvent(type = BattleEventType.POKEMON_IDENTIFIED, actor = BattleActor.ENEMY, pokemonId = 260))
+        timeline.record(BattleEvent(type = BattleEventType.POKEMON_IDENTIFIED, actor = BattleActor.ENEMY, pokemonId = 663))
+        timeline.record(BattleEvent(type = BattleEventType.POKEMON_IDENTIFIED, actor = BattleActor.ENEMY, pokemonId = 184))
     }
 
     private fun recordEvent(
         type: BattleEventType,
-        species: String? = null,
         actor: BattleActor = BattleActor.SYSTEM,
+        pokemonId: Int? = null,
         value: Int? = null,
         message: String? = null,
         confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED)
@@ -56,16 +58,13 @@ data class BattleMemory(
         val event = BattleEvent(
             type = type,
             actor = actor,
-            species = species, 
+            pokemonId = pokemonId,
             value = value, 
             message = message,
             confidence = confidence
         )
-        battleHistory.add(event)
-        android.util.Log.d(
-            "BATTLE_TIMELINE",
-            "Actor: ${event.actor} | Event: ${event.type} | Species: ${event.species} | Value: ${event.value} | Confidence: ${event.confidence.level}"
-        )
+        timeline.record(event)
+        battleHistory.add(event) // Keeping for BattleLog until it's refactored
     }
 
     /**
@@ -73,12 +72,13 @@ data class BattleMemory(
      */
     suspend fun runPrototypeSimulation() {
         startTime = System.currentTimeMillis()
+        timeline.clear()
         recordEvent(type = BattleEventType.BATTLE_STARTED, actor = BattleActor.SYSTEM)
         populatePrototypeEnemyTeam()
         
         playerLead = "Charizard"
         enemyLead = "Swampert"
-        recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
+        recordEvent(type = BattleEventType.POKEMON_SWITCHED, pokemonId = 260, actor = BattleActor.ENEMY)
         
         while (true) {
             // State 1: Swampert gaining energy
@@ -86,7 +86,7 @@ data class BattleMemory(
             updateSpecies("Swampert") { it.estimatedEnergy = 45 }
             recordEvent(
                 type = BattleEventType.ENERGY_UPDATED, 
-                species = "Swampert", 
+                pokemonId = 260, 
                 actor = BattleActor.ENEMY,
                 value = 45,
                 confidence = Confidence(ConfidenceLevel.INFERRED)
@@ -98,18 +98,17 @@ data class BattleMemory(
             updateSpecies("Talonflame") { it.isActive = true }
             recordEvent(
                 type = BattleEventType.POKEMON_SWITCHED, 
-                species = "Talonflame", 
+                pokemonId = 663, 
                 actor = BattleActor.ENEMY,
                 message = "Swampert switched out"
             )
-            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Talonflame", actor = BattleActor.ENEMY)
             
             // State 3: Talonflame gaining energy and throwing a move
             delay(2000)
             updateSpecies("Talonflame") { it.estimatedEnergy = 60 }
             recordEvent(
                 type = BattleEventType.CHARGED_MOVE_THROWN, 
-                species = "Talonflame", 
+                pokemonId = 663, 
                 actor = BattleActor.ENEMY,
                 message = "Brave Bird"
             )
@@ -118,7 +117,7 @@ data class BattleMemory(
             playerShieldsUsed++
             recordEvent(
                 type = BattleEventType.SHIELD_USED,
-                species = playerActivePokemon,
+                pokemonId = 6, // Charizard
                 actor = BattleActor.PLAYER,
                 message = "Player used shield"
             )
@@ -130,8 +129,7 @@ data class BattleMemory(
                 it.isActive = true 
                 it.estimatedEnergy = 80
             }
-            recordEvent(type = BattleEventType.POKEMON_SWITCHED, species = "Azumarill", actor = BattleActor.ENEMY)
-            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Azumarill", actor = BattleActor.ENEMY)
+            recordEvent(type = BattleEventType.POKEMON_SWITCHED, pokemonId = 184, actor = BattleActor.ENEMY)
 
             delay(2000)
             updateSpecies("Azumarill") { 
@@ -139,12 +137,12 @@ data class BattleMemory(
                 it.isActive = false
                 it.estimatedEnergy = 0
             }
-            recordEvent(type = BattleEventType.POKEMON_FAINTED, species = "Azumarill", actor = BattleActor.ENEMY)
+            recordEvent(type = BattleEventType.POKEMON_FAINTED, pokemonId = 184, actor = BattleActor.ENEMY)
             
             // State 5: Swampert returns
             delay(2000)
             updateSpecies("Swampert") { it.isActive = true }
-            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
+            recordEvent(type = BattleEventType.POKEMON_SWITCHED, pokemonId = 260, actor = BattleActor.ENEMY)
             
             // End Battle Sequence
             delay(2000)
@@ -152,17 +150,18 @@ data class BattleMemory(
             
             // Generate BattleLog
             val battleLog = toBattleLog()
-            android.util.Log.d("BATTLE_LOG", "BattleLog Generated: ID=${battleLog.id} | Duration=${battleLog.durationMs}ms | Result=${battleLog.result} | Shields(P/E)=${battleLog.playerShieldsUsed}/${battleLog.enemyShieldsUsed}")
+            android.util.Log.d("BATTLE_LOG", "BattleLog Generated: ID=${battleLog.id} | Events=${battleLog.timeline.size} | Result=${battleLog.result}")
 
             // Reset for loop
             delay(4000)
             battleHistory.clear()
+            timeline.clear()
             playerShieldsUsed = 0
             enemyShieldsUsed = 0
             startTime = System.currentTimeMillis()
             recordEvent(type = BattleEventType.BATTLE_STARTED, actor = BattleActor.SYSTEM)
             populatePrototypeEnemyTeam()
-            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
+            recordEvent(type = BattleEventType.POKEMON_SWITCHED, pokemonId = 260, actor = BattleActor.ENEMY)
         }
     }
 
@@ -188,7 +187,7 @@ data class BattleMemory(
             durationMs = duration,
             playerTeam = playerTeam.toList(),
             enemyTeam = enemyTeam.toList(),
-            timeline = battleHistory.toList(),
+            timeline = timeline.events.toList(), // Now using the new timeline
             playerLead = playerLead,
             enemyLead = enemyLead,
             playerShieldsUsed = playerShieldsUsed,
