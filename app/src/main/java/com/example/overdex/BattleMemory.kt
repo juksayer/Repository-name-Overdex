@@ -40,27 +40,32 @@ data class BattleMemory(
         
         updateSpecies("Swampert") { it.isActive = true }
 
-        recordEvent(BattleEventType.POKEMON_OBSERVED, "Swampert")
-        recordEvent(BattleEventType.POKEMON_OBSERVED, "Talonflame")
-        recordEvent(BattleEventType.POKEMON_OBSERVED, "Azumarill")
+        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Swampert", actor = BattleActor.ENEMY)
+        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Talonflame", actor = BattleActor.ENEMY)
+        recordEvent(type = BattleEventType.POKEMON_OBSERVED, species = "Azumarill", actor = BattleActor.ENEMY)
     }
 
     private fun recordEvent(
-        type: BattleEventType, 
-        species: String? = null, 
-        value: Int? = null, 
+        type: BattleEventType,
+        species: String? = null,
+        actor: BattleActor = BattleActor.SYSTEM,
+        value: Int? = null,
         message: String? = null,
         confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED)
     ) {
         val event = BattleEvent(
-            type = type, 
+            type = type,
+            actor = actor,
             species = species, 
             value = value, 
             message = message,
             confidence = confidence
         )
         battleHistory.add(event)
-        android.util.Log.d("BATTLE_TIMELINE", "Event: ${event.type} | Species: ${event.species} | Value: ${event.value} | Confidence: ${event.confidence.level}")
+        android.util.Log.d(
+            "BATTLE_TIMELINE",
+            "Actor: ${event.actor} | Event: ${event.type} | Species: ${event.species} | Value: ${event.value} | Confidence: ${event.confidence.level}"
+        )
     }
 
     /**
@@ -68,12 +73,12 @@ data class BattleMemory(
      */
     suspend fun runPrototypeSimulation() {
         startTime = System.currentTimeMillis()
-        recordEvent(BattleEventType.BATTLE_STARTED)
+        recordEvent(type = BattleEventType.BATTLE_STARTED, actor = BattleActor.SYSTEM)
         populatePrototypeEnemyTeam()
         
         playerLead = "Charizard"
         enemyLead = "Swampert"
-        recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
+        recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
         
         while (true) {
             // State 1: Swampert gaining energy
@@ -82,6 +87,7 @@ data class BattleMemory(
             recordEvent(
                 type = BattleEventType.ENERGY_UPDATED, 
                 species = "Swampert", 
+                actor = BattleActor.ENEMY,
                 value = 45,
                 confidence = Confidence(ConfidenceLevel.INFERRED)
             )
@@ -90,17 +96,32 @@ data class BattleMemory(
             delay(2000)
             updateSpecies("Swampert") { it.isActive = false }
             updateSpecies("Talonflame") { it.isActive = true }
-            recordEvent(BattleEventType.POKEMON_SWITCHED, "Talonflame", message = "Swampert switched out")
-            recordEvent(BattleEventType.POKEMON_ACTIVE, "Talonflame")
+            recordEvent(
+                type = BattleEventType.POKEMON_SWITCHED, 
+                species = "Talonflame", 
+                actor = BattleActor.ENEMY,
+                message = "Swampert switched out"
+            )
+            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Talonflame", actor = BattleActor.ENEMY)
             
             // State 3: Talonflame gaining energy and throwing a move
             delay(2000)
             updateSpecies("Talonflame") { it.estimatedEnergy = 60 }
-            recordEvent(BattleEventType.CHARGED_MOVE_THROWN, "Talonflame", message = "Brave Bird")
+            recordEvent(
+                type = BattleEventType.CHARGED_MOVE_THROWN, 
+                species = "Talonflame", 
+                actor = BattleActor.ENEMY,
+                message = "Brave Bird"
+            )
             
             delay(1000)
             playerShieldsUsed++
-            recordEvent(BattleEventType.SHIELD_USED, playerActivePokemon, message = "Player used shield")
+            recordEvent(
+                type = BattleEventType.SHIELD_USED,
+                species = playerActivePokemon,
+                actor = BattleActor.PLAYER,
+                message = "Player used shield"
+            )
 
             // State 4: Azumarill enters and faints
             delay(2000)
@@ -109,8 +130,8 @@ data class BattleMemory(
                 it.isActive = true 
                 it.estimatedEnergy = 80
             }
-            recordEvent(BattleEventType.POKEMON_SWITCHED, "Azumarill")
-            recordEvent(BattleEventType.POKEMON_ACTIVE, "Azumarill")
+            recordEvent(type = BattleEventType.POKEMON_SWITCHED, species = "Azumarill", actor = BattleActor.ENEMY)
+            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Azumarill", actor = BattleActor.ENEMY)
 
             delay(2000)
             updateSpecies("Azumarill") { 
@@ -118,16 +139,16 @@ data class BattleMemory(
                 it.isActive = false
                 it.estimatedEnergy = 0
             }
-            recordEvent(BattleEventType.POKEMON_FAINTED, "Azumarill")
+            recordEvent(type = BattleEventType.POKEMON_FAINTED, species = "Azumarill", actor = BattleActor.ENEMY)
             
             // State 5: Swampert returns
             delay(2000)
             updateSpecies("Swampert") { it.isActive = true }
-            recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
+            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
             
             // End Battle Sequence
             delay(2000)
-            recordEvent(BattleEventType.BATTLE_ENDED)
+            recordEvent(type = BattleEventType.BATTLE_ENDED, actor = BattleActor.SYSTEM)
             
             // Generate BattleLog
             val battleLog = toBattleLog()
@@ -139,9 +160,9 @@ data class BattleMemory(
             playerShieldsUsed = 0
             enemyShieldsUsed = 0
             startTime = System.currentTimeMillis()
-            recordEvent(BattleEventType.BATTLE_STARTED)
+            recordEvent(type = BattleEventType.BATTLE_STARTED, actor = BattleActor.SYSTEM)
             populatePrototypeEnemyTeam()
-            recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
+            recordEvent(type = BattleEventType.POKEMON_ACTIVE, species = "Swampert", actor = BattleActor.ENEMY)
         }
     }
 

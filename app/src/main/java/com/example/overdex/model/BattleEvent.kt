@@ -13,11 +13,16 @@ enum class BattleEventType {
     SHIELD_USED,
     BATTLE_ENDED
 }
-
+enum class BattleActor {
+    PLAYER,
+    ENEMY,
+    SYSTEM
+}
 data class BattleEvent(
     val id: String = UUID.randomUUID().toString(),
     val timestamp: Long = System.currentTimeMillis(),
     val type: BattleEventType,
+    val actor: BattleActor = BattleActor.SYSTEM,
     val species: String? = null,
     val value: Int? = null,
     val message: String? = null,

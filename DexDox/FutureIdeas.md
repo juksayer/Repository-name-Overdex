@@ -1,0 +1,1 @@
+Consider replacing generic value with event-specific payloads once BattleEvent stabilizes
