@@ -66,7 +66,7 @@ fun PokedexFrame(
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     isServiceRunning: Boolean = false,
-    content: @Composable () -> Unit,
+    content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
@@ -81,7 +81,7 @@ fun PokedexFrame(
     var currentSequence by remember { mutableStateOf(emptyList<String>()) }
     var unlockMessage by remember { mutableStateOf<String?>(null) }
 
-    // BattleMemory Single Source of Truth
+    // BattleMemory - Restore local lifecycle
     val battleMemory = remember { com.example.overdex.BattleMemory() }
     var currentDecision by remember { mutableStateOf<com.example.overdex.model.DecisionAnalysis?>(null) }
 
@@ -108,9 +108,11 @@ fun PokedexFrame(
         }
     }
 
-    // Start Battle Simulation Prototype
-    LaunchedEffect(Unit) {
-        battleMemory.runPrototypeSimulation()
+    // Simulation is now managed by the ViewModel/Service lifecycle
+    LaunchedEffect(isServiceRunning) {
+        if (isServiceRunning) {
+            battleMemory.runPrototypeSimulation()
+        }
     }
 
     // Matchup Intelligence Foundation Verification
@@ -191,7 +193,7 @@ fun PokedexFrame(
                         .fillMaxSize()
                         .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
                 ) {
-                    content()
+                    content(battleMemory)
                 }
 
                 // HUD Overlay Layer (Kept clean and sharp)

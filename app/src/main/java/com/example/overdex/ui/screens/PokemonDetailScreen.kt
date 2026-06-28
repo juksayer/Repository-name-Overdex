@@ -66,7 +66,7 @@ fun PokemonDetailScreen(
         onSelect = onSelect,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning
-    ) {
+    ) { _ ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

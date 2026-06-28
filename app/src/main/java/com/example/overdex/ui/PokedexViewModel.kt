@@ -328,6 +328,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _isServiceRunning.value = false
     }
 
+    private val pokemonNameCache = mutableMapOf<Int, String>()
+
+    suspend fun getPokemonName(id: Int): String {
+        return pokemonNameCache[id] ?: run {
+            val name = getPokemonById(id)?.name ?: "Unknown"
+            pokemonNameCache[id] = name
+            name
+        }
+    }
+
     suspend fun getPokemonById(id: Int): Pokemon? {
         return pokemonDao.getPokemonById(id)?.toDomain()
     }

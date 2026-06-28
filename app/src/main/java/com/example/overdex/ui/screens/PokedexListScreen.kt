@@ -61,7 +61,7 @@ fun PokedexListScreen(
         onSelect = onSelect,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning
-    ) {
+    ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
             SearchBar(query = searchQuery) {
                 viewModel.updateSearchQuery(it)

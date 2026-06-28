@@ -95,7 +95,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter
-            ) {
+            ) { _ ->
                 MainMenuScreen(
                     isServiceRunning = isServiceRunning,
                     onModuleSelect = { module ->
@@ -104,7 +104,7 @@ fun PokedexApp(
                             "start.service" -> viewModel.startDroidBallService()
                             "stop.service" -> viewModel.stopDroidBallService()
                             "review.kit" -> navController.navigate("module/review.kit/OFFLINE/this component is under active development.")
-                            "battle.log" -> navController.navigate("module/battle.log/UNAVAILABLE/this module has not yet been installed into this build of overdex.")
+                            "battle.log" -> navController.navigate("battle_log")
                             "settings" -> navController.navigate("settings_module")
                             else -> navController.navigate("module/$module/UNAVAILABLE/check future releases.")
                         }
@@ -112,6 +112,22 @@ fun PokedexApp(
                     onShutdown = {
                         exitProcess(0)
                     }
+                )
+            }
+        }
+        composable("battle_log") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter,
+                viewModel = viewModel
+            ) { battleMemory ->
+                BattleTimelineScreen(
+                    battleMemory = battleMemory,
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
                 )
             }
         }
@@ -128,7 +144,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter
-            ) {
+            ) { _ ->
                 ModuleScreen(
                     title = title,
                     status = status,
@@ -144,7 +160,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter
-            ) {
+            ) { _ ->
                 SettingsScreen(onBack = { navController.popBackStack() })
             }
         }
