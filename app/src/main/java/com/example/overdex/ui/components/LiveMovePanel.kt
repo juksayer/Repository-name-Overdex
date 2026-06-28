@@ -13,17 +13,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.EnemyPokemonMemory
+import com.example.overdex.model.Effectiveness
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
+import com.example.overdex.model.MatchupAnalysis
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
+/**
+ * A highly compressed move display focusing on type relationship and threat level.
+ */
 @Composable
 fun LiveMovePanel(
     activePokemon: EnemyPokemonMemory?,
-    viewModel: PokedexViewModel?
+    viewModel: PokedexViewModel?,
+    matchup: MatchupAnalysis? = null
 ) {
     var pokemonData by remember { mutableStateOf<Pokemon?>(null) }
 
@@ -35,89 +41,63 @@ fun LiveMovePanel(
         }
     }
 
-    Column(
+    if (activePokemon == null || pokemonData == null) return
+
+    Row(
         modifier = Modifier
-            .padding(top = 4.dp)
-            .width(120.dp)
-            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-            .border(1.dp, TerminalDimGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(horizontal = 8.dp)
+            .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (activePokemon == null) {
-            Text(
-                text = "NO ACTIVE",
-                color = TerminalDimGreen,
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold
-            )
-        } else {
-            Text(
-                text = activePokemon.species.uppercase(),
-                color = TerminalPurple,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold
-            )
+        // Fast Move
+        pokemonData!!.fastMoves.firstOrNull()?.let { move ->
+            val effectiveness = matchup?.enemyFastMoveMatchup?.effectiveness ?: Effectiveness.NEUTRAL
+            CompactMoveIcon(move, effectiveness)
+        }
+        
+        // Vertical Divider
+        Box(modifier = Modifier.width(0.5.dp).height(12.dp).background(TerminalDimGreen.copy(alpha = 0.3f)))
 
-            if (pokemonData == null) {
-                Text(
-                    text = "NO DATA",
-                    color = TerminalDimGreen,
-                    fontSize = 7.sp
-                )
-            } else {
-                MoveSection("FAST", pokemonData!!.fastMoves)
-                MoveSection("CHARGED", pokemonData!!.chargedMoves)
+        // Charged Moves
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            pokemonData!!.chargedMoves.take(2).forEach { move ->
+                val effectiveness = matchup?.enemyChargedMoveMatchups?.find { it.moveName == move.name }?.effectiveness 
+                    ?: Effectiveness.NEUTRAL
+                CompactMoveIcon(move, effectiveness)
             }
         }
     }
 }
 
 @Composable
-fun MoveSection(title: String, moves: List<Move>) {
-    Column {
-        Text(
-            text = title,
-            color = TerminalDimGreen,
-            fontSize = 7.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-        )
-        moves.forEach { move ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 1.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = move.name.uppercase(),
-                    color = TerminalGreen,
-                    fontSize = 7.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f)
-                )
-                TypeBadgeTiny(move.type)
-            }
-        }
-    }
-}
-
-@Composable
-fun TypeBadgeTiny(type: com.example.overdex.model.PokemonType) {
+fun CompactMoveIcon(move: Move, effectiveness: Effectiveness) {
     Box(
         modifier = Modifier
-            .background(type.color.copy(alpha = 0.2f), RoundedCornerShape(1.dp))
-            .border(0.5.dp, type.color.copy(alpha = 0.5f), RoundedCornerShape(1.dp))
-            .padding(horizontal = 2.dp, vertical = 0.5.dp)
+            .background(
+                color = move.type.color.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(2.dp)
+            )
+            .border(
+                width = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) 1.dp else 0.5.dp,
+                color = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) Color.Red else move.type.color.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(2.dp)
+            )
+            .padding(horizontal = 4.dp, vertical = 1.dp)
     ) {
-        Text(
-            text = type.name.take(1),
-            color = type.color,
-            fontSize = 6.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = move.name.take(4).uppercase(),
+                color = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) Color.White else TerminalGreen,
+                fontSize = 7.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (effectiveness == Effectiveness.SUPER_EFFECTIVE) {
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(modifier = Modifier.size(2.dp).background(Color.Red, RoundedCornerShape(1.dp)))
+            }
+        }
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.runtime.mutableStateListOf
 import com.example.overdex.data.observation.BattleObservationPipeline
 import com.example.overdex.model.*
 import com.example.overdex.model.observation.ObservationSource
-import com.example.overdex.model.observation.FastMoveObservation
 import com.example.overdex.model.observation.PokemonNameObservation
 import kotlinx.coroutines.delay
 
@@ -16,8 +15,13 @@ data class BattleMemory(
     val enemyTeam: MutableList<EnemyPokemonMemory> = mutableStateListOf<EnemyPokemonMemory>(),
     var enemyRemainingPokemon: Int? = null,
     var playerActivePokemon: String? = "Charizard", // Prototype default
+    val playerTeam: MutableList<String> = mutableStateListOf("Charizard", "Venusaur", "Blastoise"),
     val battleHistory: MutableList<BattleEvent> = mutableStateListOf<BattleEvent>(),
-    var startTime: Long = System.currentTimeMillis()
+    var startTime: Long = System.currentTimeMillis(),
+    var playerLead: String? = null,
+    var enemyLead: String? = null,
+    var playerShieldsUsed: Int = 0,
+    var enemyShieldsUsed: Int = 0
 ) {
     private val observationPipeline = BattleObservationPipeline(this)
 
@@ -66,23 +70,21 @@ data class BattleMemory(
         startTime = System.currentTimeMillis()
         recordEvent(BattleEventType.BATTLE_STARTED)
         populatePrototypeEnemyTeam()
+        
+        playerLead = "Charizard"
+        enemyLead = "Swampert"
         recordEvent(BattleEventType.POKEMON_ACTIVE, "Swampert")
         
         while (true) {
             // State 1: Swampert gaining energy
             delay(2000)
-            updateSpecies("Swampert") { 
-                it.estimatedEnergy = 45 
-            }
-            observationPipeline.onObservationReceived(
-                FastMoveObservation(
-                    species = "Swampert",
-                    moveName = "Mud Shot",
-                    source = ObservationSource.PROTOTYPE,
-                    confidence = Confidence(ConfidenceLevel.OBSERVED)
-                )
+            updateSpecies("Swampert") { it.estimatedEnergy = 45 }
+            recordEvent(
+                type = BattleEventType.ENERGY_UPDATED, 
+                species = "Swampert", 
+                value = 45,
+                confidence = Confidence(ConfidenceLevel.INFERRED)
             )
-            recordEvent(BattleEventType.ENERGY_UPDATED, "Swampert", 45)
             
             // State 2: Switch to Talonflame
             delay(2000)
@@ -91,16 +93,15 @@ data class BattleMemory(
             recordEvent(BattleEventType.POKEMON_SWITCHED, "Talonflame", message = "Swampert switched out")
             recordEvent(BattleEventType.POKEMON_ACTIVE, "Talonflame")
             
-            // State 3: Talonflame gaining energy
+            // State 3: Talonflame gaining energy and throwing a move
             delay(2000)
             updateSpecies("Talonflame") { it.estimatedEnergy = 60 }
-            recordEvent(
-                type = BattleEventType.ENERGY_UPDATED, 
-                species = "Talonflame", 
-                value = 60,
-                confidence = Confidence(ConfidenceLevel.INFERRED)
-            )
+            recordEvent(BattleEventType.CHARGED_MOVE_THROWN, "Talonflame", message = "Brave Bird")
             
+            delay(1000)
+            playerShieldsUsed++
+            recordEvent(BattleEventType.SHIELD_USED, playerActivePokemon, message = "Player used shield")
+
             // State 4: Azumarill enters and faints
             delay(2000)
             updateSpecies("Talonflame") { it.isActive = false }
@@ -110,12 +111,6 @@ data class BattleMemory(
             }
             recordEvent(BattleEventType.POKEMON_SWITCHED, "Azumarill")
             recordEvent(BattleEventType.POKEMON_ACTIVE, "Azumarill")
-            recordEvent(
-                type = BattleEventType.ENERGY_UPDATED, 
-                species = "Azumarill", 
-                value = 80,
-                confidence = Confidence(ConfidenceLevel.INFERRED)
-            )
 
             delay(2000)
             updateSpecies("Azumarill") { 
@@ -136,11 +131,13 @@ data class BattleMemory(
             
             // Generate BattleLog
             val battleLog = toBattleLog()
-            android.util.Log.d("BATTLE_LOG", "BattleLog Generated: ID=${battleLog.id} | Duration=${battleLog.durationMs}ms | Result=${battleLog.result}")
+            android.util.Log.d("BATTLE_LOG", "BattleLog Generated: ID=${battleLog.id} | Duration=${battleLog.durationMs}ms | Result=${battleLog.result} | Shields(P/E)=${battleLog.playerShieldsUsed}/${battleLog.enemyShieldsUsed}")
 
             // Reset for loop
             delay(4000)
             battleHistory.clear()
+            playerShieldsUsed = 0
+            enemyShieldsUsed = 0
             startTime = System.currentTimeMillis()
             recordEvent(BattleEventType.BATTLE_STARTED)
             populatePrototypeEnemyTeam()
@@ -164,20 +161,19 @@ data class BattleMemory(
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
-        // Collect all sources used from history
-        val sources = battleHistory.map { it.confidence.level }.toSet() // Simple mock logic for sources
-        // Real logic would be:
-        // val sources = battleHistory.mapNotNull { it.source }.toSet()
-        // But source isn't in BattleEvent yet, it's in Observations.
-        
         return BattleLog(
             startTime = startTime,
             endTime = endTime,
             durationMs = duration,
+            playerTeam = playerTeam.toList(),
             enemyTeam = enemyTeam.toList(),
             timeline = battleHistory.toList(),
+            playerLead = playerLead,
+            enemyLead = enemyLead,
+            playerShieldsUsed = playerShieldsUsed,
+            enemyShieldsUsed = enemyShieldsUsed,
             result = if (enemyTeam.all { !it.alive }) BattleResult.WIN else BattleResult.UNKNOWN,
-            overallConfidence = 0.9f, // Placeholder logic
+            overallConfidence = 0.9f,
             sourcesUsed = setOf(ObservationSource.PROTOTYPE),
             seenFastMoves = seenFastMoves.toMap(),
             seenChargedMoves = seenChargedMoves.toMap()

@@ -29,58 +29,55 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
+/**
+ * A horizontal row of enemy Pokémon sprites, serving as a persistent memory of the opponent's team.
+ */
 @Composable
 fun EnemyTeamMemoryOverlay(
     enemyTeam: List<EnemyPokemonMemory>,
     decision: DecisionAnalysis? = null
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .padding(8.dp)
-            .width(120.dp)
             .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-            .border(1.dp, TerminalDimGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+            .border(0.5.dp, TerminalDimGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
             .padding(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "ENEMY TEAM",
-                color = TerminalPurple,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-            
-            if (decision != null) {
-                val icon = when (decision.recommendedAction) {
-                    RecommendedAction.SWITCH_NOW -> Icons.Default.Sync
-                    RecommendedAction.FARM_ENERGY -> Icons.Default.Bolt
-                    RecommendedAction.SHIELD_LIKELY_REQUIRED -> Icons.Default.Shield
-                    RecommendedAction.STAY_AND_FIGHT -> Icons.Default.Check
-                    else -> Icons.Default.Info
-                }
-                
-                Icon(
-                    imageVector = icon,
-                    contentDescription = decision.recommendedAction.name,
-                    tint = if (decision.isEnemyThreatening) Color.Red else TerminalGreen,
-                    modifier = Modifier.size(12.dp)
-                )
-            }
+        // Strategic Indicator at the start
+        if (decision != null) {
+            DecisionIcon(decision)
         }
         
+        // Enemy Pokémon Blocks
         enemyTeam.forEach { pokemon ->
-            EnemyPokemonRow(pokemon)
+            EnemyPokemonBlock(pokemon)
         }
     }
 }
 
 @Composable
-fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
+fun DecisionIcon(decision: DecisionAnalysis) {
+    val icon = when (decision.recommendedAction) {
+        RecommendedAction.SWITCH_NOW -> Icons.Default.Sync
+        RecommendedAction.FARM_ENERGY -> Icons.Default.Bolt
+        RecommendedAction.SHIELD_LIKELY_REQUIRED -> Icons.Default.Shield
+        RecommendedAction.STAY_AND_FIGHT -> Icons.Default.Check
+        else -> Icons.Default.Info
+    }
+    
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = if (decision.isEnemyThreatening) Color.Red else TerminalGreen,
+        modifier = Modifier.size(16.dp)
+    )
+}
+
+@Composable
+fun EnemyPokemonBlock(pokemon: EnemyPokemonMemory) {
     // Hardcoded sprite mapping for the prototype
     val spriteUrl = when (pokemon.species.lowercase()) {
         "swampert" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png"
@@ -92,26 +89,24 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
     val isFainted = !pokemon.alive
     val isActive = pokemon.isActive && !isFainted
 
-    Row(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .clip(RoundedCornerShape(2.dp))
+            .size(36.dp)
+            .clip(RoundedCornerShape(4.dp))
             .background(
                 when {
                     isActive -> TerminalGreen.copy(alpha = 0.15f)
-                    isFainted -> Color.DarkGray.copy(alpha = 0.2f)
+                    isFainted -> Color.DarkGray.copy(alpha = 0.3f)
                     else -> Color.Transparent
                 }
             )
             .border(
-                width = if (isActive) 1.5.dp else 0.dp,
-                color = if (isActive) TerminalGreen else Color.Transparent,
-                shape = RoundedCornerShape(2.dp)
+                width = if (isActive) 1.5.dp else 0.5.dp,
+                color = if (isActive) TerminalGreen else TerminalDimGreen.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(4.dp)
             ),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        // Desaturate and reduce opacity if fainted
         val colorFilter = if (isFainted) {
             ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
         } else {
@@ -120,49 +115,30 @@ fun EnemyPokemonRow(pokemon: EnemyPokemonMemory) {
 
         AsyncImage(
             model = spriteUrl,
-            contentDescription = pokemon.species,
+            contentDescription = null,
             modifier = Modifier
-                .size(32.dp)
-                .alpha(if (isFainted) 0.5f else 1.0f),
+                .size(28.dp)
+                .alpha(if (isFainted) 0.3f else 1.0f),
             contentScale = ContentScale.Fit,
             colorFilter = colorFilter
         )
         
-        Spacer(modifier = Modifier.width(4.dp))
-        
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = pokemon.species.uppercase(),
-                color = when {
-                    isActive -> Color.White
-                    isFainted -> TerminalDimGreen.copy(alpha = 0.6f)
-                    else -> TerminalGreen
-                },
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-            
-            // Energy Bar - Hidden if fainted
-            if (!isFainted) {
+        // Quiet Energy Bar at bottom
+        if (!isFainted) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 1.dp)
+                    .width(28.dp)
+                    .height(2.dp)
+                    .background(Color.Black.copy(alpha = 0.5f))
+            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(TerminalBlack)
-                        .border(0.5.dp, if (isActive) TerminalGreen else TerminalDimGreen, RoundedCornerShape(1.dp))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
-                            .fillMaxHeight()
-                            .background(if (isActive) TerminalGreen else TerminalDimGreen)
-                    )
-                }
-            } else {
-                // Empty space to maintain vertical height consistency
-                Spacer(modifier = Modifier.height(4.dp))
+                        .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
+                        .fillMaxHeight()
+                        .background(if (isActive) Color.White else TerminalGreen)
+                )
             }
         }
     }

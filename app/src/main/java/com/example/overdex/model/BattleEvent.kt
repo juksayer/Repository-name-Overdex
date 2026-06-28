@@ -9,6 +9,8 @@ enum class BattleEventType {
     ENERGY_UPDATED,
     POKEMON_SWITCHED,
     POKEMON_FAINTED,
+    CHARGED_MOVE_THROWN,
+    SHIELD_USED,
     BATTLE_ENDED
 }
 

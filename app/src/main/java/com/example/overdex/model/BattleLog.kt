@@ -22,9 +22,18 @@ data class BattleLog(
     val durationMs: Long,
     
     // Core data reuse from existing models
+    val playerTeam: List<String>,
     val enemyTeam: List<EnemyPokemonMemory>,
     val timeline: List<BattleEvent>,
     
+    // Lead info
+    val playerLead: String?,
+    val enemyLead: String?,
+
+    // Resources
+    val playerShieldsUsed: Int,
+    val enemyShieldsUsed: Int,
+
     // Metadata for analysis
     val result: BattleResult = BattleResult.UNKNOWN,
     val overallConfidence: Float,

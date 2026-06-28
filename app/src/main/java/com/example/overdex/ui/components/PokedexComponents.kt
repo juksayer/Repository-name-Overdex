@@ -111,6 +111,8 @@ fun PokedexFrame(
     }
 
     // Matchup Intelligence Foundation Verification
+    var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
+    
     LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
         if (viewModel != null && activeEnemy != null) {
@@ -123,6 +125,7 @@ fun PokedexFrame(
                     enemy = enemyData,
                     enemyMemory = activeEnemy
                 )
+                currentMatchup = matchupAnalysis
                 
                 val decision = com.example.overdex.data.matchup.DecisionEngine.analyze(matchupAnalysis)
                 currentDecision = decision
@@ -134,6 +137,9 @@ fun PokedexFrame(
                 android.util.Log.d("DECISION_ENGINE", "Reasoning: ${decision.reasoning}")
                 android.util.Log.d("DECISION_ENGINE", "Shield Recommended: ${decision.shieldRecommended}")
             }
+        } else {
+            currentMatchup = null
+            currentDecision = null
         }
     }
 
@@ -203,7 +209,8 @@ fun PokedexFrame(
                         // Live Move Panel - Displays moves for the active enemy
                         LiveMovePanel(
                             activePokemon = battleMemory.enemyTeam.find { it.isActive },
-                            viewModel = viewModel
+                            viewModel = viewModel,
+                            matchup = currentMatchup
                         )
                     }
                 }

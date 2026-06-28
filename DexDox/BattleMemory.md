@@ -196,3 +196,5 @@ Visible updates.
 No impossible states.
 
 No duplicated ownership.
+
+If we are unsure whether to store a value directly, prefer recording the event that produced it. Events can always generate state. State cannot always reconstruct events
