@@ -110,7 +110,7 @@ fun PokemonDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(text = pokemon.formattedId, fontSize = 16.sp, color = TerminalDimGreen)
                     Text(
                         text = pokemon.name,
@@ -119,22 +119,22 @@ fun PokemonDetailScreen(
                         color = TerminalGreen
                     )
                     
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // Region Badge
                     Surface(
-                        color = TerminalBlack,
+                        color = TerminalGreen.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
-                            .border(1.dp, TerminalDimGreen, RoundedCornerShape(4.dp))
+                            .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
                             .clickable { onRegionClick(pokemon.region) }
                     ) {
                         Text(
                             text = pokemon.region.uppercase(),
-                            color = TerminalDimGreen,
-                            fontSize = 10.sp,
+                            color = TerminalGreen,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
                 }

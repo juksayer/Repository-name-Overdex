@@ -43,8 +43,8 @@ class MainActivity : ComponentActivity() {
             calibrationMode = CalibrationMode.ENEMY_NAME
         }
         Log.d(
-            "OVERMON_CALIBRATION",
-            "Mode = $calibrationMode"
+            "OVERDEX_CALIBRATION",
+            "Mode = $calibrationMode",
         )
     //    Log.d("OPENAI_TEST", BuildConfig.OPENAI_API_KEY)
         mediaManager = MediaManager(this)
@@ -111,7 +111,7 @@ fun PokedexApp(
                     },
                     onShutdown = {
                         exitProcess(0)
-                    }
+                    },
                 )
             }
         }
@@ -154,7 +154,7 @@ fun PokedexApp(
             val statusStr = backStackEntry.arguments?.getString("status") ?: "UNAVAILABLE"
             val description = backStackEntry.arguments?.getString("description") ?: ""
             
-            val status = try { ModuleStatus.valueOf(statusStr) } catch(e: Exception) { ModuleStatus.UNAVAILABLE }
+            val status = try { ModuleStatus.valueOf(statusStr) } catch(_: Exception) { ModuleStatus.UNAVAILABLE }
             
             PokedexFrame(
                 showBattleOverlay = false,

@@ -12,7 +12,6 @@ import com.example.overdex.model.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.PokemonSearchRepository
@@ -60,7 +59,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 com.example.overdex.model.BattleEvent(
                     type = com.example.overdex.model.BattleEventType.POKEMON_IDENTIFIED,
                     actor = com.example.overdex.model.BattleActor.ENEMY,
-                    pokemonId = 6
+                    pokemonId = 6,
                 )
             )
             proofTimeline.record(com.example.overdex.model.BattleEvent(type = com.example.overdex.model.BattleEventType.BATTLE_ENDED))
@@ -137,8 +136,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 val rawTypes =
                     importedPokemon?.type
                         ?: gameMasterPokemon?.types
+                            ?.asSequence()
                             ?.filter { it != "none" }
                             ?.map { it.replaceFirstChar(Char::uppercase) }
+                            ?.toList()
                         ?: listOf("Normal")
                 val spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
 
