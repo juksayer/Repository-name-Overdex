@@ -260,3 +260,21 @@ It quietly remembers.
 It quietly coordinates.
 
 Everything else simply reacts.
+
+
+Update the pipeline.
+
+I think it's now something like:
+
+Observation Pipeline
+│
+▼
+BattleMemory
+│
+▼
+BattleTimeline
+│
+├── Timeline UI
+├── Battle Summary
+├── Decision Engine
+└── Overlay

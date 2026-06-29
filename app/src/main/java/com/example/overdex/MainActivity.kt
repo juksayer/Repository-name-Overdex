@@ -104,7 +104,7 @@ fun PokedexApp(
                             "start.service" -> viewModel.startDroidBallService()
                             "stop.service" -> viewModel.stopDroidBallService()
                             "review.kit" -> navController.navigate("module/review.kit/OFFLINE/this component is under active development.")
-                            "battle.log" -> navController.navigate("battle_log")
+                            "battle.log" -> navController.navigate("battle_history")
                             "settings" -> navController.navigate("settings_module")
                             else -> navController.navigate("module/$module/UNAVAILABLE/check future releases.")
                         }
@@ -112,6 +112,24 @@ fun PokedexApp(
                     onShutdown = {
                         exitProcess(0)
                     }
+                )
+            }
+        }
+        composable("battle_history") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter,
+                viewModel = viewModel
+            ) { _ ->
+                BattleHistoryScreen(
+                    viewModel = viewModel,
+                    onBattleClick = { id -> 
+                        navController.navigate("module/battle.summary/OFFLINE/View details for battle $id.")
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

@@ -198,3 +198,24 @@ No impossible states.
 No duplicated ownership.
 
 If we are unsure whether to store a value directly, prefer recording the event that produced it. Events can always generate state. State cannot always reconstruct events
+
+
+It should now explain the relationship between:
+
+Observation
+│
+▼
+BattleMemory
+│
+▼
+BattleEvent
+│
+▼
+BattleTimeline
+
+And it should explicitly define responsibilities:
+
+BattleMemory = current battle state.
+BattleTimeline = chronological journal.
+BattleEvent = immutable fact.
+Timeline UI = read-only presentation.

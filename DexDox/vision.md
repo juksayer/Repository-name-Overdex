@@ -299,3 +299,13 @@ Whenever a design decision is unclear, ask one question:
 If the answer is yes, it belongs.
 
 If the answer is simply "because Android apps usually work this way," reconsider the design.
+
+Overdex is no longer simply a Pokédex or an overlay. It is a Pokémon GO knowledge and battle intelligence platform.
+
+Add the recent accomplishments:
+
+Battle Timeline
+Move cross-referencing
+Evolution chains
+Species descriptions
+Battle Log module
