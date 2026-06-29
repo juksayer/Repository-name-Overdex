@@ -1,221 +1,52 @@
 # BattleMemory
 
-BattleMemory is the central source of truth for every battle.
+`BattleMemory` is the central source of truth for every live battle. Its primary responsibility is to remember what is currently happening accurately.
 
-It stores only information that has been observed or confidently inferred during a battle.
+## Role in the Pipeline
 
-BattleMemory does not perform OCR, audio recognition, recommendations, or UI rendering.
+```
+Observation Pipeline
+        │
+        ▼
+BattleMemory (Live State)
+        │
+        ▼
+BattleTimeline
+```
 
-BattleMemory is not trying to predict the battle. It is trying to remember it accurately.
-
-Its purpose is to remember.
+- **Input**: Receives standardized data from the **Observation Pipeline**.
+- **State Management**: Updates the current health, energy, and status of both teams.
+- **Output**: Generates immutable `BattleEvent` objects to be stored in the **BattleTimeline**.
 
 ---
 
 ## Philosophy
 
-Every battle component should ask BattleMemory for information.
-
-BattleMemory should never ask the overlay what happened.
-
-Information flows one direction.
-
-Battle Systems
-↓
-BattleMemory
-↓
-Overlay
+- **Accurate Recall**: BattleMemory does not guess. It distinguishes strictly between **Observed Facts** (e.g., Pokémon confirmed) and **Inferred Data** (e.g., estimated energy).
+- **Single Source of Truth**: Every UI component (like the Battle Overlay) and Decision Engine asks BattleMemory for information.
+- **One-Way Flow**: Information flows from sensor to memory to display. The UI never tells BattleMemory what happened.
 
 ---
+
+## Principles
+
+1. **Facts first**: Prefer recording the event that produced a value over the value itself.
+2. **No Impossible States**: Logic prevents invalid transitions (e.g., a fainted Pokémon returning to active status).
+3. **Passive Presentation**: The overlay is a read-only mirror of the state stored in BattleMemory.
+
 
 ## Responsibilities
 
-BattleMemory owns:
+BattleMemory stores observations.
 
-- Enemy team
-- Friendly team
-- Active enemy Pokémon
-- Active friendly Pokémon
-- Remaining Pokémon
-- Shield counts
-- Estimated energy
-- Observed fast moves
-- Observed charged moves
-- Battle timeline
-- Switch history
-- Battle start/end state
+BattleMemory does not determine battle outcomes.
 
-BattleMemory does NOT own:
+BattleMemory does not archive completed battles.
 
-- OCR
-- MediaProjection
-- Audio recognition
-- Overlay drawing
-- Recommendations
-- Type effectiveness
-- Move timing algorithms
+BattleMemory exists only while a battle is active.
 
----
+Battle outcome determination belongs to BattleLifecycleAnalyzer.
 
-## Information Hierarchy
+Permanent storage belongs to ArchivedBattle.
 
-Overdex distinguishes between facts and conclusions.
-
-Observed
-
-Examples:
-
-- Enemy Pokémon appeared.
-- Fast move animation occurred.
-- Charged move banner appeared.
-- HP decreased.
-- Pokémon fainted.
-- Shield used.
-
-These should always be preferred.
-
----
-
-Inferred
-
-Examples:
-
-- Estimated energy.
-- Possible charged moves.
-- Predicted backline.
-- Recommended swap.
-
-Inference should never overwrite observations.
-
----
-
-## Enemy Pokémon Lifecycle
-
-Unknown
-
-↓
-
-Observed
-
-↓
-
-Active
-
-↓
-
-Inactive
-
-↓
-
-Active again
-
-↓
-
-Fainted
-
-↓
-
-Battle End
-
-Each state transition should occur only once.
-
-Impossible state transitions should never occur.
-
-Examples:
-
-Fainted → Active ❌
-
-Unknown → Fainted ❌
-
----
-
-## EnemyPokemonMemory
-
-Each enemy Pokémon remembers:
-
-Species
-
-Alive
-
-Estimated Energy
-
-Observed Fast Moves
-
-Observed Charged Moves
-
-Times Seen
-
-Active Status
-
-Additional fields should only be added if they represent battle memory, not UI state.
-
----
-
-## Overlay Rules
-
-The overlay never owns data.
-
-The overlay receives BattleMemory and renders it.
-
-The overlay must never calculate battle information.
-
----
-
-## Update Sources
-
-BattleMemory may receive updates from:
-
-OCR
-
-Audio Recognition
-
-Manual User Input
-
-BattleMemoryUpdater
-
-Future parsers
-
-Every update should modify BattleMemory instead of directly modifying UI.
-
----
-
-## Design Principles
-
-One source of truth.
-
-Observation before inference.
-
-UI reflects state.
-
-State never reflects UI.
-
-Small updates.
-
-Visible updates.
-
-No impossible states.
-
-No duplicated ownership.
-
-If we are unsure whether to store a value directly, prefer recording the event that produced it. Events can always generate state. State cannot always reconstruct events
-
-
-It should now explain the relationship between:
-
-Observation
-│
-▼
-BattleMemory
-│
-▼
-BattleEvent
-│
-▼
-BattleTimeline
-
-And it should explicitly define responsibilities:
-
-BattleMemory = current battle state.
-BattleTimeline = chronological journal.
-BattleEvent = immutable fact.
-Timeline UI = read-only presentation.
+Distribution belongs to EventBusRoute.

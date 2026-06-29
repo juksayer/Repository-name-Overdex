@@ -309,3 +309,104 @@ Move cross-referencing
 Evolution chains
 Species descriptions
 Battle Log module
+
+## Design Philosophy
+
+Overdex complements Pokémon GO rather than replacing it.
+
+Pokémon GO owns:
+
+* Friends
+* Battles
+* Networking
+* Match execution
+
+Overdex owns:
+
+* Knowledge
+* Analysis
+* Organization
+* Statistics
+* Battle History
+* Tournament Tools
+
+Whenever Pokémon GO already provides a feature well, Overdex should integrate with that workflow instead of duplicating it.
+
+The long-term vision is to organize competitive play, not replace the game itself.
+
+
+# Competitive Platform Vision
+
+Overdex is not intended to replace Pokémon GO.
+
+Instead, Overdex complements Pokémon GO by providing knowledge, organization, and historical analysis around competitive play.
+
+## Responsibility
+
+Pokémon GO owns:
+
+* Friends
+* Battles
+* Match execution
+* Networking
+* Core gameplay
+
+Overdex owns:
+
+* Knowledge
+* Battle Analysis
+* Battle History
+* Statistics
+* Review Kit
+* My Collection
+* Tournament Organization
+* Player Profiles
+
+Whenever Pokémon GO already provides a feature well, Overdex should integrate with that workflow instead of duplicating it.
+
+---
+
+## Design Principles
+
+Observe once.
+
+Record facts.
+
+Analyze separately.
+
+Archive once.
+
+Distribute knowledge.
+
+Every module should consume the same source of truth.
+
+---
+
+## DroidBall
+
+The DroidBall is the persistent interface of Overdex.
+
+Navigation, status indicators, and system health should feel like a dedicated handheld device rather than a traditional Android application.
+
+Calibration teaches.
+
+Battle reminds.
+
+System status should be communicated primarily through persistent icons instead of interruptive dialogs.
+
+---
+
+## Long-Term Vision
+
+The long-term goal of Overdex is to become a competitive companion platform.
+
+Players should be able to:
+
+* Learn
+* Practice
+* Analyze
+* Organize tournaments
+* Preserve achievements
+* Build a competitive identity
+
+Tournament play should be organized through Overdex while battles themselves continue to take place inside Pokémon GO.
