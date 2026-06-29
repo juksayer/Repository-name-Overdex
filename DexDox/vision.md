@@ -410,3 +410,6 @@ Players should be able to:
 * Build a competitive identity
 
 Tournament play should be organized through Overdex while battles themselves continue to take place inside Pokémon GO.
+
+
+Every page should have at least three meaningful paths to another page

@@ -238,6 +238,10 @@ fun PokedexApp(
                         viewModel.updateSearchQuery(type.name)
                         navController.popBackStack()
                     },
+                    onRegionClick = { region ->
+                        viewModel.updateSearchQuery(region)
+                        navController.popBackStack()
+                    },
                     onEvolutionClick = { evolutionId ->
                         navController.navigate("detail/$evolutionId")
                     },

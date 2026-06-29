@@ -41,6 +41,7 @@ fun PokemonDetailScreen(
     onPlayCry: (String) -> Unit,
     onMoveClick: (String) -> Unit,
     onTypeClick: (PokemonType) -> Unit,
+    onRegionClick: (String) -> Unit,
     onEvolutionClick: (Int) -> Unit,
     viewModel: PokedexViewModel? = null,
     isServiceRunning: Boolean = false,
@@ -117,6 +118,25 @@ fun PokemonDetailScreen(
                         fontWeight = FontWeight.Bold,
                         color = TerminalGreen
                     )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Region Badge
+                    Surface(
+                        color = TerminalBlack,
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier
+                            .border(1.dp, TerminalDimGreen, RoundedCornerShape(4.dp))
+                            .clickable { onRegionClick(pokemon.region) }
+                    ) {
+                        Text(
+                            text = pokemon.region.uppercase(),
+                            color = TerminalDimGreen,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
                 Row {
                     pokemon.types.forEach { type ->
@@ -227,10 +247,16 @@ fun PokemonDetailScreen(
 
 // Effectiveness
             SectionTitle("Weaknesses")
-            EffectivenessRow(pokemon.getWeaknesses().filter { it.value > 1.0 })
+            EffectivenessRow(
+                multipliers = pokemon.getWeaknesses().filter { it.value > 1.0 },
+                onTypeClick = onTypeClick
+            )
             
             SectionTitle("Resistances")
-            EffectivenessRow(pokemon.getWeaknesses().filter { it.value < 1.0 })
+            EffectivenessRow(
+                multipliers = pokemon.getWeaknesses().filter { it.value < 1.0 },
+                onTypeClick = onTypeClick
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -239,9 +265,10 @@ fun PokemonDetailScreen(
             pokemon.fastMoves.forEach { move ->
                 MoveRow(
                     move = move,
-                    onClick = {
+                    onMoveClick = {
                         onMoveClick(move.name)
-                    }
+                    },
+                    onTypeClick = onTypeClick
                 )
             }
             
@@ -251,9 +278,10 @@ fun PokemonDetailScreen(
             pokemon.chargedMoves.forEach { move ->
                 MoveRow(
                     move = move,
-                    onClick = {
+                    onMoveClick = {
                         onMoveClick(move.name)
-                    }
+                    },
+                    onTypeClick = onTypeClick
                 )
             }
         }
@@ -272,14 +300,20 @@ fun SectionTitle(title: String) {
 }
 
 @Composable
-fun EffectivenessRow(multipliers: Map<com.example.overdex.model.PokemonType, Double>) {
+fun EffectivenessRow(
+    multipliers: Map<PokemonType, Double>,
+    onTypeClick: (PokemonType) -> Unit
+) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         multipliers.forEach { (type, mult) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                TypeBadge(type)
+                TypeBadge(
+                    type = type,
+                    onClick = { onTypeClick(type) }
+                )
                 Text(
                     text = "%.2fx".format(mult),
                     fontSize = 16.sp,
@@ -308,15 +342,16 @@ fun FlowRow(
 @Composable
 fun MoveRow(
     move: Move,
-    onClick: (() -> Unit)? = null
+    onMoveClick: (() -> Unit)? = null,
+    onTypeClick: (PokemonType) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .border(1.dp, TerminalDimGreen, CardDefaults.shape)
-            .clickable(enabled = onClick != null) {
-                onClick?.invoke()
+            .clickable(enabled = onMoveClick != null) {
+                onMoveClick?.invoke()
             },
         colors = CardDefaults.cardColors(
             containerColor = TerminalBlack,
@@ -331,7 +366,10 @@ fun MoveRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TypeBadge(move.type)
+                    TypeBadge(
+                        type = move.type,
+                        onClick = { onTypeClick(move.type) }
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = move.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
@@ -352,10 +390,10 @@ fun MoveRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatItem("Damage", "${move.damage}")
+                StatItem("Damage", move.damage.toString())
                 if (move.isFast) {
                     StatItem("Energy Gain", "+${move.energy}")
-                    StatItem("Turns", "${move.turns ?: 0}")
+                    StatItem("Turns", (move.turns ?: 0).toString())
                 } else {
                     StatItem("Energy Cost", "-${move.energy}")
                     StatItem("DPE", String.format(Locale.ROOT, "%.2f", move.dpe ?: 0.0))
