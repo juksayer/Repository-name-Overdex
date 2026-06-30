@@ -50,3 +50,19 @@ Battle outcome determination belongs to BattleLifecycleAnalyzer.
 Permanent storage belongs to ArchivedBattle.
 
 Distribution belongs to EventBusRoute.
+
+This changed substantially.
+
+BattleMemory isn't just collecting events.
+
+It's collecting evidence.
+
+Example:
+
+BattleMemory records observations.
+
+It does not determine truth.
+
+Truth is inferred from accumulated evidence.
+
+Huge distinction.

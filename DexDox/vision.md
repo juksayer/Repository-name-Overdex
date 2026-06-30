@@ -413,3 +413,19 @@ Tournament play should be organized through Overdex while battles themselves con
 
 
 Every page should have at least three meaningful paths to another page
+
+This is where the project's mission has evolved.
+
+Originally:
+
+Battle assistant.
+
+Now:
+
+Build the most trustworthy Pokémon GO companion possible.
+
+I'd literally include:
+
+Trust the Data.
+
+It's become your north star.

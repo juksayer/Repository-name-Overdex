@@ -98,3 +98,6 @@ Future users will forgive missing features.
 
 They will not forgive incorrect battle data.
 
+Overdex is built around confidence rather than certainty.
+
+Recommendations are derived from multiple observations and become stronger as evidence accumulates.

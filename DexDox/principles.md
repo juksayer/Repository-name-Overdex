@@ -195,3 +195,29 @@ Zero red before starting the next feature.
 Every commit should leave the project in a state you'd be happy to hand to another developer.
 
 Promote data from transient to permanent only once
+
+## Trust the Data
+
+Overdex never presents certainty where only confidence exists.
+
+Every observation contributes evidence.
+
+Every recommendation reflects confidence.
+
+Multiple independent observations are preferred over a single source.
+
+## Show, Don't Assume
+
+A feature is not complete because it compiles.
+
+Features are complete when they have been:
+
+Built
+
+Run
+
+Verified
+
+Observed
+
+0RBSLOP
