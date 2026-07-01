@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -143,7 +144,9 @@ fun PokemonListItem(pokemon: Pokemon, onClick: () -> Unit) {
                     text = pokemon.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TerminalGreen
+                    color = TerminalGreen,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = pokemon.region,
