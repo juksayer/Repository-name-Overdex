@@ -123,7 +123,7 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter,
                 viewModel = viewModel
-            ) { _ ->
+            ) { battleMemory ->
                 BattleHistoryScreen(
                     viewModel = viewModel,
                     onBattleClick = { id -> 

@@ -75,20 +75,13 @@ fun PokemonDetailScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBackClick) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = TerminalGreen
-                    )
-                }
-                IconButton(onClick = { onPlayCry(pokemon.cryUrl) }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Play Cry",
                         tint = TerminalGreen
                     )
                 }
@@ -99,10 +92,13 @@ fun PokemonDetailScreen(
                 AsyncImage(
                     model = pokemon.spriteUrl,
                     contentDescription = pokemon.name,
-                    modifier = Modifier.size(180.dp),
+                    modifier = Modifier
+                        .size(180.dp)
+                        .clickable { onPlayCry(pokemon.cryUrl) },
                     contentScale = ContentScale.Fit,
                 )
             }
+            // TODO: Implement long-press behavior for artwork (e.g., download or share)
 
             // Header
             Row(
