@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.overdex.AnchorRegion
 import com.example.overdex.CalibrationManager
-import com.example.overdex.CalibrationMode
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.overdex.CalibrationRegion
 
 @Composable
 fun CalibrationScreen(
@@ -19,7 +19,7 @@ fun CalibrationScreen(
 ) {
 
     var calibrationMode by remember {
-        mutableStateOf(CalibrationMode.ENEMY_NAME)
+        mutableStateOf(CalibrationRegion.ENEMY_NAME)
     }
 
     var calibration by remember {
@@ -31,11 +31,11 @@ fun CalibrationScreen(
     }
 
     val activeRegion = when (calibrationMode) {
-        CalibrationMode.ENEMY_NAME -> calibration.enemyNameRegion
-        CalibrationMode.HP_BAR -> calibration.hpBarRegion
-        CalibrationMode.TEAM_ICONS -> calibration.teamIconsRegion
-        CalibrationMode.MOVE_BANNER -> calibration.moveBannerRegion
-        CalibrationMode.NONE -> calibration.enemyNameRegion
+        CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
+        CalibrationRegion.HP_BAR -> calibration.hpBarRegion
+        CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
+        CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
+        CalibrationRegion.NONE -> calibration.enemyNameRegion
     }
 
     Column(
@@ -66,14 +66,14 @@ fun CalibrationScreen(
             onClick = {
                 when (calibrationMode) {
 
-                    CalibrationMode.ENEMY_NAME ->
+                    CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
                             enemyNameRegion = activeRegion.copy(
                                 height = activeRegion.height + 10f
                             )
                         )
 
-                    CalibrationMode.HP_BAR ->
+                    CalibrationRegion.HP_BAR ->
                         calibration = calibration.copy(
                             hpBarRegion = activeRegion.copy(
                                 height = activeRegion.height + 10f
@@ -93,14 +93,14 @@ fun CalibrationScreen(
                 onClick = {
                     when (calibrationMode) {
 
-                        CalibrationMode.ENEMY_NAME ->
+                        CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
                                 enemyNameRegion = activeRegion.copy(
                                     width = activeRegion.width - 10f
                                 )
                             )
 
-                        CalibrationMode.HP_BAR ->
+                        CalibrationRegion.HP_BAR ->
                             calibration = calibration.copy(
                                 hpBarRegion = activeRegion.copy(
                                     width = activeRegion.width - 10f
@@ -120,14 +120,14 @@ fun CalibrationScreen(
                 onClick = {
                     when (calibrationMode) {
 
-                        CalibrationMode.ENEMY_NAME ->
+                        CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
                                 enemyNameRegion = activeRegion.copy(
                                     width = activeRegion.width + 10f
                                 )
                             )
 
-                        CalibrationMode.HP_BAR ->
+                        CalibrationRegion.HP_BAR ->
                             calibration = calibration.copy(
                                 hpBarRegion = activeRegion.copy(
                                     width = activeRegion.width + 10f
@@ -146,14 +146,14 @@ fun CalibrationScreen(
             onClick = {
                 when (calibrationMode) {
 
-                    CalibrationMode.ENEMY_NAME ->
+                    CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
                             enemyNameRegion = activeRegion.copy(
                                 height = activeRegion.height - 10f
                             )
                         )
 
-                    CalibrationMode.HP_BAR ->
+                    CalibrationRegion.HP_BAR ->
                         calibration = calibration.copy(
                             hpBarRegion = activeRegion.copy(
                                 height = activeRegion.height - 10f
@@ -170,21 +170,21 @@ fun CalibrationScreen(
             onClick = {
                 when (calibrationMode) {
 
-                    CalibrationMode.ENEMY_NAME ->
+                    CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
                             enemyNameRegion = activeRegion.copy(
                                 y = activeRegion.y + 10f
                             )
                         )
 
-                    CalibrationMode.HP_BAR ->
+                    CalibrationRegion.HP_BAR ->
                         calibration = calibration.copy(
                             hpBarRegion = activeRegion.copy(
                                 y = activeRegion.y + 10f
                             )
                         )
 
-                    CalibrationMode.TEAM_ICONS ->
+                    CalibrationRegion.TEAM_ICONS ->
                         calibration = calibration.copy(
                             teamIconsRegion = activeRegion.copy(
                                 y = activeRegion.y + 10f
@@ -205,21 +205,21 @@ fun CalibrationScreen(
                 onClick = {
                     when (calibrationMode) {
 
-                        CalibrationMode.ENEMY_NAME ->
+                        CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
                                 enemyNameRegion = activeRegion.copy(
                                     x = activeRegion.x - 10f
                                 )
                             )
 
-                        CalibrationMode.HP_BAR ->
+                        CalibrationRegion.HP_BAR ->
                             calibration = calibration.copy(
                                 hpBarRegion = activeRegion.copy(
                                     x = activeRegion.x - 10f
                                 )
                             )
 
-                        CalibrationMode.TEAM_ICONS ->
+                        CalibrationRegion.TEAM_ICONS ->
                             calibration = calibration.copy(
                                 teamIconsRegion = activeRegion.copy(
                                     x = activeRegion.x - 10f
@@ -239,21 +239,21 @@ fun CalibrationScreen(
                 onClick = {
                     when (calibrationMode) {
 
-                        CalibrationMode.ENEMY_NAME ->
+                        CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
                                 enemyNameRegion = activeRegion.copy(
                                     x = activeRegion.x + 10f
                                 )
                             )
 
-                        CalibrationMode.HP_BAR ->
+                        CalibrationRegion.HP_BAR ->
                             calibration = calibration.copy(
                                 hpBarRegion = activeRegion.copy(
                                     x = activeRegion.x + 10f
                                 )
                             )
 
-                        CalibrationMode.TEAM_ICONS ->
+                        CalibrationRegion.TEAM_ICONS ->
                             calibration = calibration.copy(
                                 teamIconsRegion = activeRegion.copy(
                                     x = activeRegion.x + 10f
@@ -272,21 +272,21 @@ fun CalibrationScreen(
             onClick = {
                 when (calibrationMode) {
 
-                    CalibrationMode.ENEMY_NAME ->
+                    CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
                             enemyNameRegion = activeRegion.copy(
                                 y = activeRegion.y - 10f
                             )
                         )
 
-                    CalibrationMode.HP_BAR ->
+                    CalibrationRegion.HP_BAR ->
                         calibration = calibration.copy(
                             hpBarRegion = activeRegion.copy(
                                 y = activeRegion.y - 10f
                             )
                         )
 
-                    CalibrationMode.TEAM_ICONS ->
+                    CalibrationRegion.TEAM_ICONS ->
                         calibration = calibration.copy(
                             teamIconsRegion = activeRegion.copy(
                                 y = activeRegion.y - 10f
@@ -304,25 +304,25 @@ fun CalibrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { calibrationMode = CalibrationMode.ENEMY_NAME }
+            onClick = { calibrationMode = CalibrationRegion.ENEMY_NAME }
         ) {
             Text("Enemy Name")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationMode.HP_BAR }
+            onClick = { calibrationMode = CalibrationRegion.HP_BAR }
         ) {
             Text("HP Bar")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationMode.TEAM_ICONS }
+            onClick = { calibrationMode = CalibrationRegion.TEAM_ICONS }
         ) {
             Text("Team Icons")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationMode.MOVE_BANNER }
+            onClick = { calibrationMode = CalibrationRegion.MOVE_BANNER }
         ) {
             Text("Move Banner")
         }
@@ -334,7 +334,7 @@ fun CalibrationScreen(
 
                 calibration = when (calibrationMode) {
 
-                    CalibrationMode.ENEMY_NAME ->
+                    CalibrationRegion.ENEMY_NAME ->
                         calibration.copy(
                             enemyNameRegion = AnchorRegion(
                                 x = 100f,
@@ -344,7 +344,7 @@ fun CalibrationScreen(
                             )
                         )
 
-                    CalibrationMode.HP_BAR ->
+                    CalibrationRegion.HP_BAR ->
                         calibration.copy(
                             hpBarRegion = AnchorRegion(
                                 x = 400f,
@@ -354,7 +354,7 @@ fun CalibrationScreen(
                             )
                         )
 
-                    CalibrationMode.TEAM_ICONS ->
+                    CalibrationRegion.TEAM_ICONS ->
                         calibration.copy(
                             teamIconsRegion = AnchorRegion(
                                 x = 50f,
@@ -364,7 +364,7 @@ fun CalibrationScreen(
                             )
                         )
 
-                    CalibrationMode.MOVE_BANNER ->
+                    CalibrationRegion.MOVE_BANNER ->
                         calibration.copy(
                             moveBannerRegion = AnchorRegion(
                                 x = 999f,
@@ -374,7 +374,7 @@ fun CalibrationScreen(
                             )
                         )
 
-                    CalibrationMode.NONE ->
+                    CalibrationRegion.NONE ->
                         calibration
                 }
             }

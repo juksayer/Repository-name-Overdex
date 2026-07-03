@@ -62,6 +62,7 @@ fun ColumnScope.TerminalSection(
 fun TerminalMenuOption(
     label: String,
     status: String? = null,
+    selected: Boolean = false,
     onClick: () -> Unit
 ) {
     Row(
@@ -74,17 +75,19 @@ fun TerminalMenuOption(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = ">",
+                text = if (selected) ">>" else ">",
                 color = TerminalDimGreen,
                 fontSize = 16.sp,
                 modifier = Modifier.padding(end = 8.dp)
             )
+
             Text(
-                text = label,
+                text = if (selected) ">> $label <<" else label,
                 color = TerminalGreen,
                 fontSize = 16.sp
             )
         }
+
         if (status != null) {
             Text(
                 text = "[ $status ]",

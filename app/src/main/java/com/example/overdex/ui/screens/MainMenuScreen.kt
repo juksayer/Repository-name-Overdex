@@ -21,6 +21,10 @@ fun MainMenuScreen(
     onShutdown: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    var selectedIndex by remember {
+        mutableIntStateOf(0)
+    }
     
     // Local state for the sequential lines
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 11 else 0) }
@@ -109,7 +113,12 @@ fun MainMenuScreen(
                 ) {
 
                     TerminalSection(title = "modules") {
-                        TerminalMenuOption(label = "overdex") { onModuleSelect("overdex") }
+                        TerminalMenuOption(
+                            label = "overdex",
+                            selected = true
+                        ) {
+                            onModuleSelect("overdex")
+                        }
 
                         if (!isServiceRunning) {
                             TerminalMenuOption(label = "start.service") { onModuleSelect("start.service") }

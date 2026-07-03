@@ -32,7 +32,7 @@ import kotlin.system.exitProcess
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
     private lateinit var calibrationManager: CalibrationManager
-    private var calibrationMode = CalibrationMode.NONE
+    private var calibrationMode = CalibrationRegion.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
         val calibration = calibrationManager.load()
         if (!calibration.isCalibrated()) {
-            calibrationMode = CalibrationMode.ENEMY_NAME
+
         }
         Log.d(
             "OVERDEX_CALIBRATION",

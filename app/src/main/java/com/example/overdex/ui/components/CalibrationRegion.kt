@@ -1,6 +1,6 @@
 package com.example.overdex
 
-enum class CalibrationMode {
+enum class CalibrationRegion {
     NONE,
     ENEMY_NAME,
     HP_BAR,
