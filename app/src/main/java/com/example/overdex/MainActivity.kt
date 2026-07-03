@@ -77,6 +77,7 @@ fun PokedexApp(
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
     val isServiceRunning by viewModel.isServiceRunning.collectAsState()
+    val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
     val onCycleFilter = {
         navController.navigate("calibration")
@@ -98,6 +99,8 @@ fun PokedexApp(
             ) { _ ->
                 MainMenuScreen(
                     isServiceRunning = isServiceRunning,
+                    hasBootedInSession = hasBootedInSession,
+                    onBootComplete = { viewModel.markBooted() },
                     onModuleSelect = { module ->
                         when (module) {
                             "overdex" -> navController.navigate("list")

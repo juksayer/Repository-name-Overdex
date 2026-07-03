@@ -31,6 +31,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _isServiceRunning = MutableStateFlow(false)
     val isServiceRunning = _isServiceRunning.asStateFlow()
 
+    // App-session state for the boot sequence
+    private val _hasBootedInSession = MutableStateFlow(false)
+    val hasBootedInSession = _hasBootedInSession.asStateFlow()
+
+    fun markBooted() {
+        _hasBootedInSession.value = true
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val pagedPokemon: Flow<PagingData<Pokemon>> = _searchQuery
         .flatMapLatest { query ->

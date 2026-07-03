@@ -5,28 +5,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
 
 @Composable
 fun MainMenuScreen(
     isServiceRunning: Boolean,
+    hasBootedInSession: Boolean,
+    onBootComplete: () -> Unit,
     onModuleSelect: (String) -> Unit,
     onShutdown: () -> Unit
 ) {
-    var hasBooted by rememberSaveable { mutableStateOf(false) }
-    var bootStep by remember { mutableIntStateOf(if (hasBooted) 11 else 0) }
-    var screenHeightPx by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
+    val scrollState = rememberScrollState()
+    
+    // Local state for the sequential lines
+    var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 11 else 0) }
 
     val bootLines = listOf(
         "overdex boot sequence...",
@@ -42,39 +39,52 @@ fun MainMenuScreen(
         "confidence level..................... [high]"
     )
 
-    val transitionProgress = remember { Animatable(if (hasBooted) 1f else 0f) }
-
-    LaunchedEffect(Unit) {
-        if (!hasBooted) {
-            bootLines.indices.forEach { index ->
-                bootStep = index + 1
-                val baseDelay = if (index < 2) 400L else 150L
+    LaunchedEffect(hasBootedInSession) {
+        if (!hasBootedInSession) {
+            // 1. Sequential Reveal
+            for (i in 1..bootLines.size) {
+                bootStep = i
+                val baseDelay = if (i < 3) 400L else 100L
                 delay(baseDelay)
             }
-            delay(800)
-            transitionProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing)
+            
+            // 2. Pause to show full report
+            delay(1000)
+
+            // 3. Animate scroll to bring menu into view
+
+            scrollState.animateScrollTo(
+                value = scrollState.maxValue,
+                animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing)
             )
-            hasBooted = true
+            
+            // 4. Mark boot as complete
+            onBootComplete()
+        } else {
+            // If already booted, ensure menu is visible instantly
+            bootStep = 11
+            // Wait for layout to settle so maxValue is calculated
+            delay(100)
+
+            scrollState.scrollTo(scrollState.maxValue)
         }
     }
 
-    val bootOffsetY = -screenHeightPx * transitionProgress.value
-    val menuOffsetY = screenHeightPx * (1f - transitionProgress.value)
-
     TerminalScreen {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .onGloballyPositioned { screenHeightPx = it.size.height.toFloat() }
-        ) {
-            // BootLayer
-            if (transitionProgress.value < 1f) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val viewportHeight = maxHeight
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
+                // SECTION 1: BOOT REPORT (Fills exactly one screen height)
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .offset { IntOffset(0, bootOffsetY.roundToInt()) }
+                        .fillMaxWidth()
+                        .height(viewportHeight)
+                        .padding(bottom = 32.dp)
                 ) {
                     bootLines.take(bootStep).forEach { line ->
                         TerminalText(
@@ -92,26 +102,11 @@ fun MainMenuScreen(
                         TerminalText(text = "> pogo_data_status                [ ok ]", fontSize = 14.sp)
                     }
                 }
-            }
 
-            // InteractiveMenuLayer
-            if (transitionProgress.value > 0f || hasBooted) {
+                // SECTION 2: INTERACTIVE MENU (Starts below the fold)
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .offset { IntOffset(0, menuOffsetY.roundToInt()) }
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    TerminalText(
-                        text = "overdex terminal",
-                        color = TerminalDimGreen,
-                        fontSize = 12.sp
-                    )
-                    TerminalText(
-                        text = "status: active",
-                        color = TerminalDimGreen,
-                        fontSize = 12.sp
-                    )
 
                     TerminalSection(title = "modules") {
                         TerminalMenuOption(label = "overdex") { onModuleSelect("overdex") }
@@ -122,10 +117,7 @@ fun MainMenuScreen(
                             TerminalMenuOption(label = "stop.service") { onModuleSelect("stop.service") }
                         }
 
-                        TerminalMenuOption(label = "review.kit") { onModuleSelect("review.kit") }
-                        TerminalMenuOption(label = "battle.log") { onModuleSelect("battle.log") }
-                        TerminalMenuOption(label = "more.info") { onModuleSelect("more.info") }
-                        TerminalMenuOption(label = "readme.txt") { onModuleSelect("readme.txt") }
+
                         TerminalMenuOption(label = "settings") { onModuleSelect("settings") }
                     }
 
@@ -133,19 +125,10 @@ fun MainMenuScreen(
                         TerminalMenuOption(label = "shutdown.droidball") { onShutdown() }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    TerminalText(
-                        text = "built for SMNAPvP",
-                        color = TerminalDimGreen,
-                        fontSize = 12.sp
-                    )
-                    TerminalText(
-                        text = "(c) 2026 som_labs",
-                        color = TerminalDimGreen,
-                        fontSize = 12.sp
-                    )
+                    
+
                 }
             }
         }
