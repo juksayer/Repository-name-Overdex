@@ -1,100 +1,251 @@
-
 # Overdex
 
-An offline-first Pokémon GO companion inspired by the feel of a real Game Boy Pokédex.
+> **An offline-first Pokémon GO companion built for players who want better information before, during, and after every battle.**
 
-The long-term goal is to provide fast Pokémon reference data, battle information, team analysis tools, and eventually screen-assisted battle analysis through a calibration and scanning system.
+Overdex combines a complete Pokémon GO Pokédex, battle knowledge, team analysis, tournament management, and future screen-assisted battle recognition into a single Android application.
 
-## Current Features
+Inspired by the simplicity of the original Game Boy Pokédex, Overdex is designed to answer questions quickly, work completely offline, and grow into a comprehensive companion for competitive Pokémon GO.
 
-### Pokédex
+---
 
-* Browse National Pokédex (#001–#1025)
-* Search Pokémon
-* View detailed Pokémon information
-* Base Attack / Defense / Stamina stats
-* Height and Weight data
-* Fast move listings
-* Charged move listings
-* Type effectiveness analysis
-* Pokémon cry playback
+# Core Philosophy
 
-### Battle Information
+The project is guided by one simple idea:
 
-* Fast move data
-* Charged move data
-* Energy generation values
-* Energy requirements
-* Type effectiveness
-* Weaknesses and resistances
-* PvP-relevant battle statistics
+> **Learn everything before the battle. Observe only what changes during the battle. Infer everything else. Remember everything.**
 
-### Calibration System
+Instead of overwhelming players with raw data, Overdex is designed to reduce cognitive load by organizing, remembering, and presenting information when it matters.
 
-* Select calibration targets
+---
 
-  * Enemy Name
-  * HP Bar
-  * Team Icons
-  * Move Banner
+# Project Pillars
 
-* Edit calibration regions
+## Pokédex
 
-* Save calibration settings
+The Pokédex is the heart of Overdex.
 
-* Load calibration settings
+Current features include:
 
-* Calibration persists across app restarts
+- Complete Pokémon GO Pokédex (#001–#1025)
+- Instant search
+- Base Attack, Defense, and Stamina
+- Height and Weight
+- Pokémon typing
+- Type effectiveness
+- Weaknesses and resistances
+- Fast Moves
+- Charged Moves
+- Flavor text
+- Cross-referenced searches
+- Evolution navigation
+- Pokémon cry playback
 
-### Navigation
+Future improvements:
 
-* Pokédex is the primary application screen
-* Calibration tools are accessible from the Select button
+- Advanced filters
+- Personal collection tracking
+  
+---
 
-## Data Sources
+## Battle Database
 
-* Pokémon GO Game Master data
-* Pokémon GO Pokédex dataset
-* PokéAPI species data
-* Local Room database for offline access
+Every Pokémon, move, and battle mechanic is stored locally for instant access.
 
-## Project Status
+Current features:
 
-### Completed
+- Fast Move statistics
+- Charged Move statistics
+- Energy generation
+- Energy costs
+- STAB calculations
+- Type effectiveness
+- PvP battle information
 
-* National Pokédex database
-* Offline Pokémon storage
-* Move database
-* Type effectiveness engine
-* Base stat support
-* Height and weight support
-* Cry playback
-* Calibration system
-* Calibration persistence
+The Battle Database forms the foundation for every future battle-related feature in Overdex.
 
-### In Progress
+---
 
-* Real Pokédex flavor text entries
-* Overlay battle recognition
-* Battle assistant improvements
+## Team Analysis
 
-## Design Goals
+Overdex is being designed to help players build stronger teams—not simply list Pokémon.
 
-* Fast access to Pokémon information
-* Offline-first operation
-* Game Boy-inspired presentation
-* Accurate Pokémon GO battle data
-* Simple, testable feature development
+Planned features include:
 
-## Development Philosophy
+- Build Around
+- Team Builder
+- Team Review
+- Coverage Analysis
+- Weakness Analysis
+- Replacement Suggestions
+- Battle History
+- Performance Tracking
 
-* Build first.
-* Test what already exists.
-* Show that it happened.
-* Small commits.
-* One feature at a time.
+Future recommendations will consider the Pokémon a player actually owns, rather than assuming every Pokémon is available.
 
-Future users will forgive missing features.
+---
 
-They will not forgive incorrect battle data.
+## Battle Assistant
 
+The Battle Assistant is designed to provide useful information during battle without replacing player decision-making.
+
+Current foundation:
+
+- Calibration system
+- Persistent calibration profiles
+- Overlay infrastructure
+
+Future capabilities:
+
+- Enemy recognition
+- Fast Move identification
+- Energy tracking
+- Charge Move prediction
+- Farm-down recommendations
+- Stay / Swap suggestions
+- Battle Memory
+
+The goal is to reduce cognitive load—not automate gameplay.
+
+---
+
+## Tournament System
+
+Overdex is also being built as a complete tournament companion.
+
+Tournament organizers will be able to:
+
+- Create custom tournaments
+- Define league restrictions
+- Configure custom rules
+- Generate a unique five-digit tournament code
+
+Players simply enter the tournament code to automatically receive:
+
+- League settings
+- Cup restrictions
+- Pokémon eligibility rules
+- Tournament configuration
+
+Future tournament tools include:
+
+- Swiss tournaments
+- Round Robin
+- Single Elimination
+- Double Elimination
+- Custom Cups
+- Match history
+- Bracket management
+- Tournament statistics
+
+Long-term, Overdex's event detection system will assist as a digital referee by helping verify battles, enforce tournament rules, and automatically record match results.
+
+---
+
+## Calibration & Vision System
+
+The calibration system is the foundation for future battle recognition.
+
+Current calibration regions include:
+
+- Enemy Name
+- HP Bar
+- Team Icons
+- Move Banner
+
+Current features:
+
+- Move regions
+- Resize regions
+- Save calibration
+- Load calibration
+- Persistent settings across app restarts
+
+Future versions will use these calibration regions to support screen-assisted battle recognition.
+
+---
+
+# Offline First
+
+Overdex is designed to function without an internet connection.
+
+Current data sources include:
+
+- Pokémon GO Game Master
+- PokéAPI species information
+- Local Room database
+
+Normal gameplay should never require a network connection.
+
+---
+
+# Architecture
+
+Overdex is organized into independent systems.
+
+Current systems:
+
+- Pokédex
+- Battle Database
+- Calibration System
+- Cry Playback
+
+Systems under active development:
+
+- Battle Assistant
+- Team Analysis
+- Tournament Tools
+- Battle Memory
+- Screen Recognition
+
+Keeping systems modular makes development easier to test, maintain, and expand.
+
+---
+
+# Development Philosophy
+
+Every improvement follows the same process:
+
+1. Build first.
+2. Test what already exists.
+3. Show that it happened.
+4. One feature.
+5. One commit.
+6. One test.
+
+Small, verified improvements are preferred over large rewrites.
+
+---
+
+# Long-Term Vision
+
+Overdex is not simply a Pokédex.
+
+It is becoming a complete Pokémon GO companion.
+
+Before battle:
+
+- Learn
+- Research
+- Build your team
+
+During battle:
+
+- Observe
+- Assist
+- Remember
+
+After battle:
+
+- Review
+- Improve
+- Prepare for the next one
+
+Whether you're checking move counts, preparing for a tournament, analyzing a team, or researching a Pokémon, Overdex is designed to provide the right information at the right time.
+
+---
+
+# Guiding Principle
+
+> **Future users will forgive missing features.**
+>
+> **They will not forgive incorrect battle data.**
