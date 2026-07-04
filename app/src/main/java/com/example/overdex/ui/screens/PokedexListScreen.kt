@@ -37,6 +37,7 @@ fun PokedexListScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onSelect: () -> Unit,
+    onBack: () -> Unit,
     onPokemonClick: (Int) -> Unit,
     isServiceRunning: Boolean = false,
 ) {
@@ -57,6 +58,7 @@ fun PokedexListScreen(
                 listState.animateScrollBy(500f)
             }
         },
+        onB = onBack,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,

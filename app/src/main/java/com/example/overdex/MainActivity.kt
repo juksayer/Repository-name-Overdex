@@ -95,7 +95,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter
+                onSelect = onCycleFilter,
+                onB = { navController.popBackStack() }
             ) { _ ->
                 MainMenuScreen(
                     isServiceRunning = isServiceRunning,
@@ -125,6 +126,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter,
+                onB = { navController.popBackStack() },
                 viewModel = viewModel
             ) { battleMemory ->
                 BattleHistoryScreen(
@@ -143,6 +145,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter,
+                onB = { navController.popBackStack() },
                 viewModel = viewModel
             ) { battleMemory ->
                 BattleTimelineScreen(
@@ -164,7 +167,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter
+                onSelect = onCycleFilter,
+                onB = { navController.popBackStack() }
             ) { _ ->
                 ModuleScreen(
                     title = title,
@@ -180,15 +184,25 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter
+                onSelect = onCycleFilter,
+                onB = { navController.popBackStack() }
             ) { _ ->
                 SettingsScreen(onBack = { navController.popBackStack() })
             }
         }
         composable("calibration") {
-            CalibrationScreen(
-                calibrationManager = calibrationManager
-            )
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSelect = onCycleFilter,
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                CalibrationScreen(
+                    calibrationManager = calibrationManager
+                )
+            }
         }
         composable("list") {
             PokedexListScreen(
@@ -196,6 +210,7 @@ fun PokedexApp(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
                 onSelect = onCycleFilter,
+                onBack = { navController.popBackStack() },
                 onPokemonClick = { id ->
                     viewModel.viewModelScope.launch {
                         viewModel.getPokemonById(id)?.let {
