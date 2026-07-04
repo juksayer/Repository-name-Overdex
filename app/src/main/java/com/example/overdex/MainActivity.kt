@@ -90,32 +90,45 @@ fun PokedexApp(
         modifier = modifier,
     ) {
         composable("main_menu") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+
+            val options = remember(isServiceRunning) {
+                listOf(
+                    MenuOption("overdex", { navController.navigate("list") }),
+                    MenuOption(
+                        if (isServiceRunning) "stop.service" else "start.service",
+                        {
+                            if (isServiceRunning) viewModel.stopDroidBallService()
+                            else viewModel.startDroidBallService()
+                        }
+                    ),
+                    MenuOption("settings", { navController.navigate("settings_module") }),
+                    MenuOption("shutdown.droidball", { exitProcess(0) })
+                )
+            }
+
             PokedexFrame(
                 showBattleOverlay = false,
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
+                onUp = {
+                    if (selectedIndex > 0) selectedIndex--
+                },
+                onDown = {
+                    if (selectedIndex < options.size - 1) selectedIndex++
+                },
+                onA = {
+                    options[selectedIndex].onActivate()
+                },
                 onSelect = onCycleFilter,
-                onB = { navController.popBackStack() }
+                onB = { /* No action on root screen */ }
             ) { _ ->
                 MainMenuScreen(
-                    isServiceRunning = isServiceRunning,
                     hasBootedInSession = hasBootedInSession,
                     onBootComplete = { viewModel.markBooted() },
-                    onModuleSelect = { module ->
-                        when (module) {
-                            "overdex" -> navController.navigate("list")
-                            "start.service" -> viewModel.startDroidBallService()
-                            "stop.service" -> viewModel.stopDroidBallService()
-                            "review.kit" -> navController.navigate("module/review.kit/OFFLINE/this component is under active development.")
-                            "battle.log" -> navController.navigate("battle_history")
-                            "settings" -> navController.navigate("settings_module")
-                            else -> navController.navigate("module/$module/UNAVAILABLE/check future releases.")
-                        }
-                    },
-                    onShutdown = {
-                        exitProcess(0)
-                    },
+                    selectedIndex = selectedIndex,
+                    options = options
                 )
             }
         }

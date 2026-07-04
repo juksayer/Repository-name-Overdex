@@ -12,20 +12,21 @@ import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.delay
 
+data class MenuOption(
+    val label: String,
+    val onActivate: () -> Unit,
+    val isEnabled: Boolean = true
+)
+
 @Composable
 fun MainMenuScreen(
-    isServiceRunning: Boolean,
     hasBootedInSession: Boolean,
     onBootComplete: () -> Unit,
-    onModuleSelect: (String) -> Unit,
-    onShutdown: () -> Unit
+    selectedIndex: Int = 0,
+    options: List<MenuOption> = emptyList()
 ) {
     val scrollState = rememberScrollState()
 
-    var selectedIndex by remember {
-        mutableIntStateOf(0)
-    }
-    
     // Local state for the sequential lines
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 11 else 0) }
 
@@ -111,33 +112,33 @@ fun MainMenuScreen(
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    val modulesOptions = options.take(3)
+                    val sessionOptions = options.drop(3)
 
                     TerminalSection(title = "modules") {
-                        TerminalMenuOption(
-                            label = "overdex",
-                            selected = true
-                        ) {
-                            onModuleSelect("overdex")
+                        modulesOptions.forEachIndexed { index, option ->
+                            TerminalMenuOption(
+                                label = option.label,
+                                selected = selectedIndex == index
+                            ) {
+                                option.onActivate()
+                            }
                         }
-
-                        if (!isServiceRunning) {
-                            TerminalMenuOption(label = "start.service") { onModuleSelect("start.service") }
-                        } else {
-                            TerminalMenuOption(label = "stop.service") { onModuleSelect("stop.service") }
-                        }
-
-
-                        TerminalMenuOption(label = "settings") { onModuleSelect("settings") }
                     }
 
                     TerminalSection(title = "session") {
-                        TerminalMenuOption(label = "shutdown.droidball") { onShutdown() }
+                        sessionOptions.forEachIndexed { index, option ->
+                            val globalIndex = index + 3
+                            TerminalMenuOption(
+                                label = option.label,
+                                selected = selectedIndex == globalIndex
+                            ) {
+                                option.onActivate()
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
-
-                    
-
                 }
             }
         }
