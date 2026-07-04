@@ -90,26 +90,6 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { increaseHeight() }) {
-            Text("Height +")
-        }
-
-        Row {
-
-            Button(onClick = { decreaseWidth() }) {
-                Text("Width -")
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(onClick = { increaseWidth() }) {
-                Text("Width +")
-            }
-        }
-
-        Button(onClick = { decreaseHeight() }) {
-            Text("Height -")
-        }
 
         DPad(
             onUp = {
