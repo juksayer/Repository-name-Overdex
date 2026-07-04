@@ -221,3 +221,42 @@ Verified
 Observed
 
 0RBSLOP
+
+The player should learn Overdex's controls once.
+
+Every screen should reuse the same interaction model whenever practical.
+
+Consistency builds speed.
+
+Familiarity builds confidence.
+
+The D-pad owns focus.
+
+Meaning:
+
+In lists, it moves the current selection.
+In editors, it manipulates the current selection.
+In menus, it changes the highlighted option.
+In brackets, it moves through matches.
+In settings, it changes the active setting.
+
+The D-pad always answers the same question:
+
+"Where is my attention?"
+
+What changes is what "moving" means in that context.
+
+## Respect Existing Architecture
+
+Assume the existing architecture is intentional.
+
+Do not improve it unless the task explicitly asks you to.
+
+Working code is not a problem to solve.
+
+Prefer extending existing behavior over replacing it.
+
+The smallest successful change is usually the correct change.
+
+Refactors are features.
+Treat them with the same planning, testing, and review as any other feature.
