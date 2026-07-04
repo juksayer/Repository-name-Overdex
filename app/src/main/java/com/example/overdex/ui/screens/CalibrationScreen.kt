@@ -7,11 +7,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.overdex.AnchorRegion
 import com.example.overdex.CalibrationManager
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.overdex.CalibrationRegion
+import com.example.overdex.ui.components.CalibrationMode
+import com.example.overdex.ui.components.DPad
 
 @Composable
 fun CalibrationScreen(
@@ -20,6 +23,10 @@ fun CalibrationScreen(
 
     var selectedRegion by remember {
         mutableStateOf(CalibrationRegion.ENEMY_NAME)
+    }
+
+    var selectedMode by remember {
+        mutableStateOf(CalibrationMode.POSITION)
     }
 
     var calibration by remember {
@@ -70,7 +77,8 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Current Mode: $selectedRegion")
+        Text("Target: $selectedRegion")
+        Text("Mode: ${if (selectedMode == CalibrationMode.POSITION) "Position" else "Size"}", fontSize = 14.sp)
         Text("Status: $statusMessage")
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -103,25 +111,31 @@ fun CalibrationScreen(
             Text("Height -")
         }
 
-        Button(onClick = { moveUp() }) {
-            Text("↑")
-        }
-
-        Row {
-
-            Button(onClick = { moveLeft() }) {
-                Text("←")
+        DPad(
+            onUp = {
+                if (selectedMode == CalibrationMode.POSITION) moveUp() else increaseHeight()
+            },
+            onDown = {
+                if (selectedMode == CalibrationMode.POSITION) moveDown() else decreaseHeight()
+            },
+            onLeft = {
+                if (selectedMode == CalibrationMode.POSITION) moveLeft() else decreaseWidth()
+            },
+            onRight = {
+                if (selectedMode == CalibrationMode.POSITION) moveRight() else increaseWidth()
             }
+        )
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(onClick = { moveRight() }) {
-                Text("→")
+        Button(
+            onClick = {
+                selectedMode = if (selectedMode == CalibrationMode.POSITION) {
+                    CalibrationMode.SIZE
+                } else {
+                    CalibrationMode.POSITION
+                }
             }
-        }
-
-        Button(onClick = { moveDown() }) {
-            Text("↓")
+        ) {
+            Text("SELECT")
         }
 
 
