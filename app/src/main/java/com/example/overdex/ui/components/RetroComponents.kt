@@ -74,12 +74,6 @@ fun TerminalMenuOption(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = if (selected) ">>" else ">",
-                color = TerminalDimGreen,
-                fontSize = 16.sp,
-                modifier = Modifier.padding(end = 8.dp)
-            )
 
             Text(
                 text = if (selected) ">> $label <<" else label,
