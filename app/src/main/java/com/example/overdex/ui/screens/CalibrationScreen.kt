@@ -38,6 +38,26 @@ fun CalibrationScreen(
         CalibrationRegion.NONE -> calibration.enemyNameRegion
     }
 
+    fun updateActiveRegion(transform: (AnchorRegion) -> AnchorRegion) {
+        val updated = transform(activeRegion)
+        calibration = when (selectedRegion) {
+            CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = updated)
+            CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
+            CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
+            CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
+            else -> calibration.copy(enemyNameRegion = updated)
+        }
+    }
+
+    fun moveUp() = updateActiveRegion { it.copy(y = it.y + 10f) }
+    fun moveDown() = updateActiveRegion { it.copy(y = it.y - 10f) }
+    fun moveLeft() = updateActiveRegion { it.copy(x = it.x - 10f) }
+    fun moveRight() = updateActiveRegion { it.copy(x = it.x + 10f) }
+    fun increaseWidth() = updateActiveRegion { it.copy(width = it.width + 10f) }
+    fun decreaseWidth() = updateActiveRegion { it.copy(width = it.width - 10f) }
+    fun increaseHeight() = updateActiveRegion { it.copy(height = it.height + 10f) }
+    fun decreaseHeight() = updateActiveRegion { it.copy(height = it.height - 10f) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,241 +82,45 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                when (selectedRegion) {
-
-                    CalibrationRegion.ENEMY_NAME ->
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                height = activeRegion.height + 10f
-                            )
-                        )
-
-                    CalibrationRegion.HP_BAR ->
-                        calibration = calibration.copy(
-                            hpBarRegion = activeRegion.copy(
-                                height = activeRegion.height + 10f
-                            )
-                        )
-
-                    else -> {}
-                }
-            }
-        ) {
+        Button(onClick = { increaseHeight() }) {
             Text("Height +")
         }
 
         Row {
 
-            Button(
-                onClick = {
-                    when (selectedRegion) {
-
-                        CalibrationRegion.ENEMY_NAME ->
-                            calibration = calibration.copy(
-                                enemyNameRegion = activeRegion.copy(
-                                    width = activeRegion.width - 10f
-                                )
-                            )
-
-                        CalibrationRegion.HP_BAR ->
-                            calibration = calibration.copy(
-                                hpBarRegion = activeRegion.copy(
-                                    width = activeRegion.width - 10f
-                                )
-                            )
-
-                        else -> {}
-                    }
-                }
-            ) {
+            Button(onClick = { decreaseWidth() }) {
                 Text("Width -")
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Button(
-                onClick = {
-                    when (selectedRegion) {
-
-                        CalibrationRegion.ENEMY_NAME ->
-                            calibration = calibration.copy(
-                                enemyNameRegion = activeRegion.copy(
-                                    width = activeRegion.width + 10f
-                                )
-                            )
-
-                        CalibrationRegion.HP_BAR ->
-                            calibration = calibration.copy(
-                                hpBarRegion = activeRegion.copy(
-                                    width = activeRegion.width + 10f
-                                )
-                            )
-
-                        else -> {}
-                    }
-                }
-            ) {
+            Button(onClick = { increaseWidth() }) {
                 Text("Width +")
             }
         }
 
-        Button(
-            onClick = {
-                when (selectedRegion) {
-
-                    CalibrationRegion.ENEMY_NAME ->
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                height = activeRegion.height - 10f
-                            )
-                        )
-
-                    CalibrationRegion.HP_BAR ->
-                        calibration = calibration.copy(
-                            hpBarRegion = activeRegion.copy(
-                                height = activeRegion.height - 10f
-                            )
-                        )
-
-                    else -> {}
-                }
-            }
-        ) {
+        Button(onClick = { decreaseHeight() }) {
             Text("Height -")
         }
-        Button(
-            onClick = {
-                when (selectedRegion) {
 
-                    CalibrationRegion.ENEMY_NAME ->
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                y = activeRegion.y + 10f
-                            )
-                        )
-
-                    CalibrationRegion.HP_BAR ->
-                        calibration = calibration.copy(
-                            hpBarRegion = activeRegion.copy(
-                                y = activeRegion.y + 10f
-                            )
-                        )
-
-                    CalibrationRegion.TEAM_ICONS ->
-                        calibration = calibration.copy(
-                            teamIconsRegion = activeRegion.copy(
-                                y = activeRegion.y + 10f
-                            )
-                        )
-
-                    else -> {}
-                }
-            }
-        ) {
+        Button(onClick = { moveUp() }) {
             Text("↑")
         }
 
         Row {
 
-
-            Button(
-                onClick = {
-                    when (selectedRegion) {
-
-                        CalibrationRegion.ENEMY_NAME ->
-                            calibration = calibration.copy(
-                                enemyNameRegion = activeRegion.copy(
-                                    x = activeRegion.x - 10f
-                                )
-                            )
-
-                        CalibrationRegion.HP_BAR ->
-                            calibration = calibration.copy(
-                                hpBarRegion = activeRegion.copy(
-                                    x = activeRegion.x - 10f
-                                )
-                            )
-
-                        CalibrationRegion.TEAM_ICONS ->
-                            calibration = calibration.copy(
-                                teamIconsRegion = activeRegion.copy(
-                                    x = activeRegion.x - 10f
-                                )
-                            )
-
-                        else -> {}
-                    }
-                }
-            ) {
+            Button(onClick = { moveLeft() }) {
                 Text("←")
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Button(
-                onClick = {
-                    when (selectedRegion) {
-
-                        CalibrationRegion.ENEMY_NAME ->
-                            calibration = calibration.copy(
-                                enemyNameRegion = activeRegion.copy(
-                                    x = activeRegion.x + 10f
-                                )
-                            )
-
-                        CalibrationRegion.HP_BAR ->
-                            calibration = calibration.copy(
-                                hpBarRegion = activeRegion.copy(
-                                    x = activeRegion.x + 10f
-                                )
-                            )
-
-                        CalibrationRegion.TEAM_ICONS ->
-                            calibration = calibration.copy(
-                                teamIconsRegion = activeRegion.copy(
-                                    x = activeRegion.x + 10f
-                                )
-                            )
-
-                        else -> {}
-                    }
-                }
-            ) {
+            Button(onClick = { moveRight() }) {
                 Text("→")
             }
         }
 
-        Button(
-            onClick = {
-                when (selectedRegion) {
-
-                    CalibrationRegion.ENEMY_NAME ->
-                        calibration = calibration.copy(
-                            enemyNameRegion = activeRegion.copy(
-                                y = activeRegion.y - 10f
-                            )
-                        )
-
-                    CalibrationRegion.HP_BAR ->
-                        calibration = calibration.copy(
-                            hpBarRegion = activeRegion.copy(
-                                y = activeRegion.y - 10f
-                            )
-                        )
-
-                    CalibrationRegion.TEAM_ICONS ->
-                        calibration = calibration.copy(
-                            teamIconsRegion = activeRegion.copy(
-                                y = activeRegion.y - 10f
-                            )
-                        )
-
-                    else -> {}
-                }
-            }
-        ) {
+        Button(onClick = { moveDown() }) {
             Text("↓")
         }
 
