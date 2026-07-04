@@ -18,7 +18,7 @@ fun CalibrationScreen(
     calibrationManager: CalibrationManager
 ) {
 
-    var calibrationMode by remember {
+    var selectedRegion by remember {
         mutableStateOf(CalibrationRegion.ENEMY_NAME)
     }
 
@@ -30,7 +30,7 @@ fun CalibrationScreen(
         mutableStateOf("Ready")
     }
 
-    val activeRegion = when (calibrationMode) {
+    val activeRegion = when (selectedRegion) {
         CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
         CalibrationRegion.HP_BAR -> calibration.hpBarRegion
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
@@ -50,7 +50,7 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Current Mode: $calibrationMode")
+        Text("Current Mode: $selectedRegion")
         Text("Status: $statusMessage")
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -64,7 +64,7 @@ fun CalibrationScreen(
 
         Button(
             onClick = {
-                when (calibrationMode) {
+                when (selectedRegion) {
 
                     CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
@@ -91,7 +91,7 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    when (calibrationMode) {
+                    when (selectedRegion) {
 
                         CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
@@ -118,7 +118,7 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    when (calibrationMode) {
+                    when (selectedRegion) {
 
                         CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
@@ -144,7 +144,7 @@ fun CalibrationScreen(
 
         Button(
             onClick = {
-                when (calibrationMode) {
+                when (selectedRegion) {
 
                     CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
@@ -168,7 +168,7 @@ fun CalibrationScreen(
         }
         Button(
             onClick = {
-                when (calibrationMode) {
+                when (selectedRegion) {
 
                     CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
@@ -203,7 +203,7 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    when (calibrationMode) {
+                    when (selectedRegion) {
 
                         CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
@@ -237,7 +237,7 @@ fun CalibrationScreen(
 
             Button(
                 onClick = {
-                    when (calibrationMode) {
+                    when (selectedRegion) {
 
                         CalibrationRegion.ENEMY_NAME ->
                             calibration = calibration.copy(
@@ -270,7 +270,7 @@ fun CalibrationScreen(
 
         Button(
             onClick = {
-                when (calibrationMode) {
+                when (selectedRegion) {
 
                     CalibrationRegion.ENEMY_NAME ->
                         calibration = calibration.copy(
@@ -304,25 +304,25 @@ fun CalibrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { calibrationMode = CalibrationRegion.ENEMY_NAME }
+            onClick = { selectedRegion = CalibrationRegion.ENEMY_NAME }
         ) {
             Text("Enemy Name")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationRegion.HP_BAR }
+            onClick = { selectedRegion = CalibrationRegion.HP_BAR }
         ) {
             Text("HP Bar")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationRegion.TEAM_ICONS }
+            onClick = { selectedRegion = CalibrationRegion.TEAM_ICONS }
         ) {
             Text("Team Icons")
         }
 
         Button(
-            onClick = { calibrationMode = CalibrationRegion.MOVE_BANNER }
+            onClick = { selectedRegion = CalibrationRegion.MOVE_BANNER }
         ) {
             Text("Move Banner")
         }
@@ -332,7 +332,7 @@ fun CalibrationScreen(
         Button(
             onClick = {
 
-                calibration = when (calibrationMode) {
+                calibration = when (selectedRegion) {
 
                     CalibrationRegion.ENEMY_NAME ->
                         calibration.copy(

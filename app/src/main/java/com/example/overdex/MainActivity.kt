@@ -32,7 +32,7 @@ import kotlin.system.exitProcess
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
     private lateinit var calibrationManager: CalibrationManager
-    private var calibrationMode = CalibrationRegion.NONE
+    private var selectedRegion = CalibrationRegion.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         }
         Log.d(
             "OVERDEX_CALIBRATION",
-            "Mode = $calibrationMode",
+            "Mode = $selectedRegion",
         )
     //    Log.d("OPENAI_TEST", BuildConfig.OPENAI_API_KEY)
         mediaManager = MediaManager(this)
