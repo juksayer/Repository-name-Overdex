@@ -46,7 +46,25 @@ fun PokedexListScreen(
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(selectedIndex) {
-        listState.animateScrollToItem(selectedIndex)
+        val layoutInfo = listState.layoutInfo
+        val visibleItems = layoutInfo.visibleItemsInfo
+        val totalCount = pokemonItems.itemCount
+
+        if (visibleItems.isEmpty() || totalCount == 0) return@LaunchedEffect
+
+        val firstVisible = visibleItems.first().index
+        val lastVisible = visibleItems.last().index
+
+        if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
+            // Out of view jump (e.g. search reset or initial load)
+            listState.animateScrollToItem(selectedIndex)
+        } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
+            // Top margin: scroll up to keep selection from hitting the absolute top
+            listState.animateScrollToItem(selectedIndex - 1)
+        } else if (selectedIndex >= lastVisible && selectedIndex < totalCount - 1) {
+            // Bottom margin: scroll down to keep selection from hitting the absolute bottom
+            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+        }
     }
 
     LaunchedEffect(searchQuery, searchRequest) {

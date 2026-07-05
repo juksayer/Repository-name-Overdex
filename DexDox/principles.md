@@ -260,3 +260,23 @@ The smallest successful change is usually the correct change.
 
 Refactors are features.
 Treat them with the same planning, testing, and review as any other feature.
+
+## Confidence Over Certainty
+
+Overdex never presents uncertain information as fact.
+
+When confidence is high, Overdex speaks clearly.
+
+When confidence is reduced, Overdex communicates why.
+
+Users should always understand not only what Overdex believes, but how strongly it believes it.
+
+## Trust Is Earned
+
+Every interaction should increase or preserve user trust.
+
+Overdex would rather admit uncertainty than provide false confidence.
+
+A feature that is 90% correct should communicate that it is 90% correct.
+
+Overdex is a Pokémon companion that earns trust by making its confidence visible.
