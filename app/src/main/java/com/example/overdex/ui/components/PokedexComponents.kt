@@ -2,6 +2,7 @@ package com.example.overdex.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.sin
 
@@ -67,6 +69,7 @@ fun PokedexFrame(
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     isServiceRunning: Boolean = false,
+    isLogoInteractive: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
@@ -164,7 +167,10 @@ fun PokedexFrame(
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
-            AndroidPokeballLogo(modifier = Modifier.size(60.dp))
+            AndroidPokeballLogo(
+                modifier = Modifier.size(60.dp),
+                isInteractive = isLogoInteractive
+            )
             
             Spacer(modifier = Modifier.width(16.dp))
             
@@ -318,8 +324,53 @@ fun PokedexFrame(
 }
 
 @Composable
-fun AndroidPokeballLogo(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
+fun AndroidPokeballLogo(
+    modifier: Modifier = Modifier,
+    isInteractive: Boolean = false
+) {
+    var trigger by remember { mutableIntStateOf(0) }
+    val rotation = remember { Animatable(0f) }
+    val wakeIntensity = remember { Animatable(0f) }
+    val eyesAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(trigger) {
+        if (trigger > 0) {
+            // Phase 1: Wake (Brighten and thicken)
+            launch {
+                wakeIntensity.animateTo(1f, tween(400))
+            }
+            
+            // Phase 2: Acknowledge (Inertial rotation ~15 degrees)
+            rotation.animateTo(
+                targetValue = 15f,
+                animationSpec = spring(
+                    dampingRatio = 0.6f, // Subtle overshoot
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+            
+            // Phase 3: Blink (Mechanical acknowledgements)
+            delay(100)
+            eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f); delay(100)
+            eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f)
+            
+            delay(500)
+            
+            // Phase 4: Rest
+            launch {
+                wakeIntensity.animateTo(0f, tween(600))
+            }
+            rotation.animateTo(0f, tween(600))
+        }
+    }
+
+    Canvas(
+        modifier = modifier
+            .then(if (isInteractive) Modifier.pointerInput(Unit) {
+                detectTapGestures(onTap = { trigger++ })
+            } else Modifier)
+            .graphicsLayer { rotationZ = rotation.value }
+    ) {
         val w = size.width
         val h = size.height
         
@@ -332,11 +383,13 @@ fun AndroidPokeballLogo(modifier: Modifier = Modifier) {
             )
         }
         
+        val animatedRed = androidx.compose.ui.graphics.lerp(Color.Red, Color(0xFFFF4444), wakeIntensity.value)
+        
         drawContext.canvas.save()
         drawPath(path, color = Color.White)
         
         // Top half Red (clip to head shape)
-        drawPath(path, color = Color.Red)
+        drawPath(path, color = animatedRed)
         
         // Middle black line
         drawRect(
@@ -359,12 +412,12 @@ fun AndroidPokeballLogo(modifier: Modifier = Modifier) {
         
         // Eyes
         drawCircle(
-            color = Color.White,
+            color = Color.White.copy(alpha = eyesAlpha.value),
             radius = 4.dp.toPx(),
             center = Offset(w * 0.3f, h * 0.3f)
         )
         drawCircle(
-            color = Color.White,
+            color = Color.White.copy(alpha = eyesAlpha.value),
             radius = 4.dp.toPx(),
             center = Offset(w * 0.7f, h * 0.3f)
         )
@@ -372,18 +425,19 @@ fun AndroidPokeballLogo(modifier: Modifier = Modifier) {
         drawContext.canvas.restore()
         
         // Border
-        drawPath(path, color = Color.Black, style = Stroke(width = 2.dp.toPx()))
+        val strokeWidth = androidx.compose.ui.unit.lerp(2.dp, 3.dp, wakeIntensity.value).toPx()
+        drawPath(path, color = Color.Black, style = Stroke(width = strokeWidth))
         
         // Antennas
         drawLine(
-            color = Color.Red,
+            color = animatedRed,
             start = Offset(w * 0.3f, h * 0.1f),
             end = Offset(w * 0.2f, -h * 0.1f),
             strokeWidth = 4.dp.toPx(),
             cap = StrokeCap.Round
         )
         drawLine(
-            color = Color.Red,
+            color = animatedRed,
             start = Offset(w * 0.7f, h * 0.1f),
             end = Offset(w * 0.8f, -h * 0.1f),
             strokeWidth = 4.dp.toPx(),

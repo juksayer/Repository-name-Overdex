@@ -115,7 +115,8 @@ fun
                     options[selectedIndex].onActivate()
                 },
                 onSelect = { /* Reserved */ },
-                onB = { /* No action on root screen */ }
+                onB = { /* No action on root screen */ },
+                isLogoInteractive = true
             ) { _ ->
                 MainMenuScreen(
                     hasBootedInSession = hasBootedInSession,
