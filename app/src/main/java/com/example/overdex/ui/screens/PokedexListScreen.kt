@@ -2,15 +2,12 @@ package com.example.overdex.ui.screens
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -29,7 +26,6 @@ import com.example.overdex.ui.components.SearchBar
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.theme.*
-import kotlinx.coroutines.launch
 
 @Composable
 fun PokedexListScreen(
@@ -45,17 +41,31 @@ fun PokedexListScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchRequest by viewModel.searchRequest.collectAsState()
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
+
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(selectedIndex) {
+        listState.animateScrollToItem(selectedIndex)
+    }
+
+    LaunchedEffect(searchQuery, searchRequest) {
+        selectedIndex = 0
+    }
 
     PokedexFrame(
         onUp = {
-            scope.launch {
-                listState.animateScrollBy(-500f)
+            if (selectedIndex > 0) {
+                selectedIndex--
             }
         },
         onDown = {
-            scope.launch {
-                listState.animateScrollBy(500f)
+            if (selectedIndex < pokemonItems.itemCount - 1) {
+                selectedIndex++
+            }
+        },
+        onA = {
+            if (selectedIndex in 0 until pokemonItems.itemCount) {
+                pokemonItems[selectedIndex]?.let { onPokemonClick(it.id) }
             }
         },
         onB = onBack,
@@ -95,7 +105,13 @@ fun PokedexListScreen(
                     contentType = pokemonItems.itemContentType { "pokemon" }
                 ) { index ->
                     pokemonItems[index]?.let { pokemon ->
-                        PokemonListItem(pokemon = pokemon) { onPokemonClick(pokemon.id) }
+                        PokemonListItem(
+                            pokemon = pokemon,
+                            selected = selectedIndex == index
+                        ) {
+                            selectedIndex = index
+                            onPokemonClick(pokemon.id)
+                        }
                     }
                 }
             }
@@ -104,11 +120,15 @@ fun PokedexListScreen(
 }
 
 @Composable
-fun PokemonListItem(pokemon: Pokemon, onClick: () -> Unit) {
+fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, TerminalDimGreen, CardDefaults.shape)
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) TerminalGreen else TerminalDimGreen,
+                shape = CardDefaults.shape
+            )
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = TerminalBlack,
@@ -122,6 +142,13 @@ fun PokemonListItem(pokemon: Pokemon, onClick: () -> Unit) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Text(
+                text = if (selected) ">>" else ">",
+                color = if (selected) TerminalGreen else TerminalDimGreen,
+                fontSize = 14.sp,
+                modifier = Modifier.width(20.dp)
+            )
+
             // Sprite
             AsyncImage(
                 model = pokemon.spriteUrl,
@@ -143,7 +170,7 @@ fun PokemonListItem(pokemon: Pokemon, onClick: () -> Unit) {
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = pokemon.name,
+                    text = if (selected) ">> ${pokemon.name} <<" else pokemon.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TerminalGreen,
