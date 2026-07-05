@@ -102,7 +102,7 @@ fun PokedexApp(
                             else viewModel.startDroidBallService()
                         }
                     ),
-                    MenuOption("settings", { navController.navigate("settings_module") }),
+                    MenuOption("readme", { navController.navigate("readme") }),
                     MenuOption("shutdown.droidball", { exitProcess(0) })
                 )
             }
@@ -191,17 +191,15 @@ fun PokedexApp(
                 )
             }
         }
-        composable("settings_module") {
-            PokedexFrame(
-                showBattleOverlay = false,
-                isServiceRunning = isServiceRunning,
+        composable("readme") {
+            ReadmeScreen(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onSelect = onCycleFilter,
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                SettingsScreen(onBack = { navController.popBackStack() })
-            }
+                onBack = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning,
+                viewModel = viewModel
+            )
         }
         composable("calibration") {
             PokedexFrame(

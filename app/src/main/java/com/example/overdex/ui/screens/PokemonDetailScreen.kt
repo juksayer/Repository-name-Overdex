@@ -60,7 +60,6 @@ fun PokemonDetailScreen(
             }
         },
         onB = onBackClick,
-        onLeft = onBackClick,
         onA = { onPlayCry(pokemon.cryUrl) },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
