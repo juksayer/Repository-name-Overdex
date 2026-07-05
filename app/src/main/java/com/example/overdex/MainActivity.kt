@@ -68,7 +68,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PokedexApp(
+fun
+        PokedexApp(
     mediaManager: MediaManager,
     calibrationManager: CalibrationManager,
     modifier: Modifier = Modifier
@@ -78,9 +79,6 @@ fun PokedexApp(
     val isServiceRunning by viewModel.isServiceRunning.collectAsState()
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
-    val onCycleFilter = {
-        navController.navigate("calibration")
-    }
 
 
     NavHost(
@@ -113,7 +111,10 @@ fun PokedexApp(
                 onA = {
                     options[selectedIndex].onActivate()
                 },
-                onSelect = onCycleFilter,
+                onStart = {
+                    options[selectedIndex].onActivate()
+                },
+                onSelect = { /* Reserved */ },
                 onB = { /* No action on root screen */ }
             ) { _ ->
                 MainMenuScreen(
@@ -130,7 +131,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter,
+                onStart = { /* Reserved */ },
+                onSelect = { /* Reserved */ },
                 onB = { navController.popBackStack() },
                 viewModel = viewModel
             ) { battleMemory ->
@@ -149,7 +151,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter,
+                onStart = { /* Reserved */ },
+                onSelect = { /* Reserved */ },
                 onB = { navController.popBackStack() },
                 viewModel = viewModel
             ) { battleMemory ->
@@ -172,7 +175,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter,
+                onStart = { /* Reserved */ },
+                onSelect = { /* Reserved */ },
                 onB = { navController.popBackStack() }
             ) { _ ->
                 ModuleScreen(
@@ -187,7 +191,8 @@ fun PokedexApp(
             ReadmeScreen(
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter,
+                onStart = {}, // Already on Readme
+                onSelect = { /* Reserved */ },
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 viewModel = viewModel
@@ -199,7 +204,8 @@ fun PokedexApp(
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onSelect = onCycleFilter,
+                onStart = { /* Reserved */ },
+                onSelect = { /* Reserved */ },
                 onB = { navController.popBackStack() }
             ) { _ ->
                 CalibrationScreen(
@@ -212,7 +218,8 @@ fun PokedexApp(
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
-                onSelect = onCycleFilter,
+                onStart = { /* Reserved */ },
+                onSelect = { /* Reserved */ },
                 onBack = { navController.popBackStack() },
                 onPokemonClick = { id ->
                     viewModel.viewModelScope.launch {
@@ -243,7 +250,8 @@ fun PokedexApp(
                     onFilterSettingsChange = { newSettings ->
                         filterSettings = newSettings
                     },
-                    onSelect = onCycleFilter,
+                    onStart = { /* Reserved */ },
+                    onSelect = { /* Reserved */ },
                     onBackClick = {
                         navController.popBackStack()
                     },

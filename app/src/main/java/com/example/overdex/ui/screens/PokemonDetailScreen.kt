@@ -37,6 +37,7 @@ fun PokemonDetailScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onSelect: () -> Unit,
+    onStart: () -> Unit,
     onBackClick: () -> Unit,
     onPlayCry: (String) -> Unit,
     onMoveClick: (String) -> Unit,
@@ -64,6 +65,7 @@ fun PokemonDetailScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
+        onStart = onStart,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning
     ) { _ ->

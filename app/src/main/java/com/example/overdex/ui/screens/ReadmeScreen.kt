@@ -19,6 +19,7 @@ fun ReadmeScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onSelect: () -> Unit,
+    onStart: () -> Unit,
     onBack: () -> Unit,
     viewModel: PokedexViewModel? = null,
     isServiceRunning: Boolean = false
@@ -36,6 +37,7 @@ fun ReadmeScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
+        onStart = onStart,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning,
         showBattleOverlay = false

@@ -33,6 +33,7 @@ fun PokedexListScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onSelect: () -> Unit,
+    onStart: () -> Unit,
     onBack: () -> Unit,
     onPokemonClick: (Int) -> Unit,
     isServiceRunning: Boolean = false,
@@ -72,6 +73,7 @@ fun PokedexListScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
+        onStart = onStart,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning
     ) { _ ->

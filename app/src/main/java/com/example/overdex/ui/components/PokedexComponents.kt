@@ -63,6 +63,7 @@ fun PokedexFrame(
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
+    onStart: () -> Unit = {},
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     isServiceRunning: Boolean = false,
@@ -92,6 +93,7 @@ fun PokedexFrame(
             if (currentSequence.size == konamiCode.size) {
                 researcherManager.setUnlocked(true)
                 isResearcherUnlocked = true
+                showSettings = true
                 unlockMessage = "ACCESS LEVEL UPDATED\nRESEARCHER MODE ENABLED"
                 currentSequence = emptyList()
             }
@@ -306,9 +308,9 @@ fun PokedexFrame(
                 
                 // Select/Start
                 Row {
-                    PillButton("SELECT", onClick = onSelect)
+                    PillButton("SELECT", onClick = { handleInput("SELECT"); onSelect() })
                     Spacer(modifier = Modifier.width(8.dp))
-                    PillButton("START", onClick = { showSettings = !showSettings })
+                    PillButton("START", onClick = { handleInput("START"); onStart() })
                 }
             }
         }
