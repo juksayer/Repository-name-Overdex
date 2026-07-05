@@ -46,7 +46,6 @@ class MainActivity : ComponentActivity() {
             "OVERDEX_CALIBRATION",
             "Mode = $selectedRegion",
         )
-    //    Log.d("OPENAI_TEST", BuildConfig.OPENAI_API_KEY)
         mediaManager = MediaManager(this)
         enableEdgeToEdge()
         setContent {
@@ -92,16 +91,9 @@ fun PokedexApp(
         composable("main_menu") {
             var selectedIndex by remember { mutableIntStateOf(0) }
 
-            val options = remember(isServiceRunning) {
+            val options = remember {
                 listOf(
                     MenuOption("overdex", { navController.navigate("list") }),
-                    MenuOption(
-                        if (isServiceRunning) "stop.service" else "start.service",
-                        {
-                            if (isServiceRunning) viewModel.stopDroidBallService()
-                            else viewModel.startDroidBallService()
-                        }
-                    ),
                     MenuOption("readme", { navController.navigate("readme") }),
                     MenuOption("shutdown.droidball", { exitProcess(0) })
                 )
