@@ -280,3 +280,11 @@ Overdex would rather admit uncertainty than provide false confidence.
 A feature that is 90% correct should communicate that it is 90% correct.
 
 Overdex is a Pokémon companion that earns trust by making its confidence visible.
+
+Navigation Principle
+
+Gestures are not used for navigation within the Overdex device.
+
+The sole exception is the native Android system gesture used to leave the application entirely.
+
+This gesture represents returning from the Overdex handheld to the user's phone, not navigating within the handheld itself.

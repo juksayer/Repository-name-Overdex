@@ -92,8 +92,7 @@ fun
             val options = remember {
                 listOf(
                     MenuOption("overdex", { navController.navigate("list") }),
-                    MenuOption("readme", { navController.navigate("readme") }),
-                    MenuOption("shutdown.droidball", { exitProcess(0) })
+                    MenuOption("readme", { navController.navigate("readme") })
                 )
             }
 

@@ -112,26 +112,11 @@ fun MainMenuScreen(
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val modulesOptions = options.take(3)
-                    val sessionOptions = options.drop(3)
-
                     TerminalSection(title = "modules") {
-                        modulesOptions.forEachIndexed { index, option ->
+                        options.forEachIndexed { index, option ->
                             TerminalMenuOption(
                                 label = option.label,
                                 selected = selectedIndex == index
-                            ) {
-                                option.onActivate()
-                            }
-                        }
-                    }
-
-                    TerminalSection(title = "session") {
-                        sessionOptions.forEachIndexed { index, option ->
-                            val globalIndex = index + 3
-                            TerminalMenuOption(
-                                label = option.label,
-                                selected = selectedIndex == globalIndex
                             ) {
                                 option.onActivate()
                             }
