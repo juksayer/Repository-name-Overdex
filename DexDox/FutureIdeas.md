@@ -1,86 +1,119 @@
-Consider replacing generic value with event-specific payloads once BattleEvent stabilizes
+# Future Ideas
+
+This document is intentionally unfinished.
+
+It exists to preserve ideas before they are forgotten.
+
+Nothing in this document should be considered planned, scheduled, or guaranteed.
+
+These are possibilities.
+
+---
+
+# Architecture
+
+## Event Payloads
+
+Consider replacing generic values with event-specific payloads once `BattleEvent` stabilizes.
+
+---
+
+# Handheld Experience
 
 ## Handheld vs Android Interaction
 
-The search keyboard currently transitions the user from the Overdex handheld experience into a standard Android interaction.
+The search keyboard currently transitions the player from the Overdex handheld experience into a standard Android interaction.
 
-This is not inherently a problem, but it creates two different interaction models:
+This creates two interaction models:
 
 - Overdex handheld
 - Android touch input
 
-The more of Overdex that can be navigated with the D-pad and physical controls, the longer the player remains inside the handheld metaphor.
+The long-term goal is to remain inside the handheld metaphor whenever practical.
 
-This should be treated as a long-term design direction rather than an immediate implementation task.
+Possible future exploration:
 
-Future exploration:
 - Search without immediately invoking the Android keyboard.
 - D-pad-first browsing.
-- Device-native text entry concepts.
-- Quick filters or shortcuts that reduce the need for typing.
+- Device-native text entry.
+- Quick filters.
+- Search shortcuts.
 
-/*
-──────────────────────────────────────────────────────────────────────────────
-Divination Engine Philosophy
-──────────────────────────────────────────────────────────────────────────────
+---
 
-Overdex should distinguish between information that is OBSERVED and
-information that is DIVINED.
+# Divination Engine
 
-Observed:
-Directly verified from the game state.
+## Philosophy
+
+Overdex should distinguish between information that is:
+
+- **Observed**
+- **Divined**
+- **Reconciled**
+
+Observed information is directly confirmed.
+
+Divined information represents the engine's best current explanation based upon known mechanics and accumulated evidence.
+
+Reconciled information represents previously divined values that have returned to agreement with new observations.
+
+Possible state flow:
+
+```
+OBSERVED
+    ↓
+DIVINED
+    ↓
+RECONCILED
+    ↓
+OBSERVED
+```
+
+Future ideas:
+
+- Integrity Indicator
+- Observation confidence
+- Divination confidence
+- Reconciliation visualization
+- Alternative presentation methods
+
+The purpose is not to pretend certainty.
+
+The purpose is to remain useful during uncertainty.
+
+---
+
+# Research
+
+Ideas that require experimentation before becoming architecture belong here.
+
+Successful experiments may eventually migrate into Architecture, Philosophy, or the Constitution.
+
+---
+
+# User Experience
+
+Future interaction concepts belong here before implementation.
+
 Examples:
-- OCR identifies the opponent.
-- HP bar is visible.
-- A charge move animation is seen.
 
-Divined:
-Estimated from game mechanics and prior observations.
-Examples:
-- Estimated opponent energy after OCR interruption.
-- Predicted fast move count.
-- Expected HP after simulated turns.
+- Hardware interaction
+- Navigation experiments
+- Accessibility ideas
+- Visual language exploration
 
-The goal is not to pretend certainty.
+---
 
-The goal is to maintain the best current explanation of the battle while
-clearly communicating how that explanation was obtained.
+# Artificial Intelligence
 
-Future UI ideas:
-• Integrity Indicator (Observed / Divined / Reconciled)
-• Color-coded certainty
-• DroidBall may describe values as "Divined" rather than "Observed"
+Ideas involving AI-assisted reasoning, explanation, or recommendation belong here until they mature into concrete designs.
 
-Possible State Flow:
+---
 
-    OBSERVED
-        ↓
-    DIVINED
-        ↓
-    RECONCILED
-        ↓
-    OBSERVED
+# Someday / Maybe
 
-Where:
+Interesting ideas that are worth remembering but have no immediate implementation path.
 
-Observed
-The value is currently visible or directly confirmed.
+No idea is too strange to record.
 
-Divined
-The value is inferred using battle simulation, timing,
-and known Pokémon GO mechanics.
-
-Reconciled
-New observations corrected a previously divined value,
-bringing the internal model back into agreement with reality.
-
-Design Principle:
-
-    Overdex does not remember every piece of evidence.
-
-    Overdex remembers the single best current explanation
-    of the battle.
-
-The battle engine should be honest about uncertainty without interrupting
-the player. The user decides how much to trust divined information.
-*/
+Some of Overdex's defining features began here.

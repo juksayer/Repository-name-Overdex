@@ -1,10 +1,24 @@
+# Constitution of Overdex
+
+## Foundations
+
 The Pokédex is the foundation.
 
 Facts before conclusions.
 
+Wait before you do.
+
 Observe once.
 
-Trust the data.
+Trust observed data.
+
+Respect existing architecture.
+
+The smallest successful change is the correct change.
+
+---
+
+## Development
 
 One feature.
 
@@ -12,9 +26,9 @@ One commit.
 
 One test.
 
-Respect existing architecture.
+---
 
-The smallest successful change is the correct change.
+## Interface
 
 Every pixel earns its place.
 
@@ -24,8 +38,12 @@ A confirms.
 
 B returns.
 
-Select performs contextual actions.
+SELECT performs contextual actions.
 
-Start launches DroidBall.
+START launches DroidBall.
+
+---
+
+## Litmus Test
 
 Would this exist on a dedicated Overdex handheld?

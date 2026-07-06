@@ -1,13 +1,18 @@
-
 # Overdex
 
 An offline-first Pokémon GO companion inspired by the feel of a real Game Boy Pokédex.
 
-The long-term goal is to provide fast Pokémon reference data, battle information, team analysis tools, and eventually screen-assisted battle analysis through a calibration and scanning system.
+Overdex is designed around a simple idea:
 
-## Current Features
+> Learn everything possible before the battle. Observe only what changes during the battle. Infer everything else.
 
-### Pokédex
+Rather than overwhelming the player with information, Overdex aims to reduce cognitive load by presenting only the information that matters, when it matters.
+
+---
+
+# Current Features
+
+## Pokédex
 
 * Browse National Pokédex (#001–#1025)
 * Search Pokémon
@@ -19,7 +24,7 @@ The long-term goal is to provide fast Pokémon reference data, battle informatio
 * Type effectiveness analysis
 * Pokémon cry playback
 
-### Battle Information
+## Battle Information
 
 * Fast move data
 * Charged move data
@@ -29,7 +34,7 @@ The long-term goal is to provide fast Pokémon reference data, battle informatio
 * Weaknesses and resistances
 * PvP-relevant battle statistics
 
-### Calibration System
+## Calibration System
 
 * Select calibration targets
 
@@ -37,30 +42,30 @@ The long-term goal is to provide fast Pokémon reference data, battle informatio
   * HP Bar
   * Team Icons
   * Move Banner
-
 * Edit calibration regions
-
 * Save calibration settings
-
 * Load calibration settings
-
 * Calibration persists across app restarts
 
-### Navigation
+## Navigation
 
 * Pokédex is the primary application screen
 * Calibration tools are accessible from the Select button
 
-## Data Sources
+---
+
+# Data Sources
 
 * Pokémon GO Game Master data
 * Pokémon GO Pokédex dataset
 * PokéAPI species data
 * Local Room database for offline access
 
-## Project Status
+---
 
-### Completed
+# Project Status
+
+## Completed
 
 * National Pokédex database
 * Offline Pokémon storage
@@ -72,27 +77,35 @@ The long-term goal is to provide fast Pokémon reference data, battle informatio
 * Calibration system
 * Calibration persistence
 
-### In Progress
+## In Progress
 
-* Real Pokédex flavor text entries
+* Pokédex flavor text
 * Overlay battle recognition
-* Battle assistant improvements
+* Battle assistant
+* Team analysis tools
+* Battle memory
 
-## Design Goals
+---
 
-* Fast access to Pokémon information
+# Design Goals
+
 * Offline-first operation
-* Game Boy-inspired presentation
+* Fast access to Pokémon information
 * Accurate Pokémon GO battle data
-* Simple, testable feature development
+* Game Boy-inspired presentation
+* Small, testable feature development
+* Interfaces that teach rather than distract
 
-## Development Philosophy
+---
+
+# Development Philosophy
 
 * Build first.
 * Test what already exists.
 * Show that it happened.
-* Small commits.
-* One feature at a time.
+* One feature.
+* One commit.
+* One test.
 
 Future users will forgive missing features.
 
@@ -101,3 +114,19 @@ They will not forgive incorrect battle data.
 Overdex is built around confidence rather than certainty.
 
 Recommendations are derived from multiple observations and become stronger as evidence accumulates.
+
+---
+
+# Long-Term Vision
+
+Overdex is evolving into a complete Pokémon GO companion.
+
+Before battle, it helps players learn, prepare, and build teams.
+
+During battle, it observes, remembers, and assists.
+
+After battle, it will help players review, understand, and improve.
+
+The goal is not to replace player skill.
+
+The goal is to help players make better decisions with less effort.

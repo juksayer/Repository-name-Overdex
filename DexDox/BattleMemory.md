@@ -1,68 +1,200 @@
-# BattleMemory
+# DroidBall
 
-`BattleMemory` is the central source of truth for every live battle. Its primary responsibility is to remember what is currently happening accurately.
+The DroidBall is the physical identity of Overdex.
 
-## Role in the Pipeline
+It is not merely a button.
 
-```
-Observation Pipeline
-        │
-        ▼
-BattleMemory (Live State)
-        │
-        ▼
-BattleTimeline
-```
+It is the mechanical representation of the Battle Engine itself.
 
-- **Input**: Receives standardized data from the **Observation Pipeline**.
-- **State Management**: Updates the current health, energy, and status of both teams.
-- **Output**: Generates immutable `BattleEvent` objects to be stored in the **BattleTimeline**.
+Its purpose is to communicate the engine's readiness through simple, tactile interaction.
 
 ---
 
-## Philosophy
+# Philosophy
 
-- **Accurate Recall**: BattleMemory does not guess. It distinguishes strictly between **Observed Facts** (e.g., Pokémon confirmed) and **Inferred Data** (e.g., estimated energy).
-- **Single Source of Truth**: Every UI component (like the Battle Overlay) and Decision Engine asks BattleMemory for information.
-- **One-Way Flow**: Information flows from sensor to memory to display. The UI never tells BattleMemory what happened.
+The DroidBall should feel like a physical mechanism rather than a software widget.
+
+Every interaction should suggest mass, momentum, and intention.
+
+The DroidBall is not animated for entertainment.
+
+It is animated to communicate state.
 
 ---
 
-## Principles
+# Design Principles
 
-1. **Facts first**: Prefer recording the event that produced a value over the value itself.
-2. **No Impossible States**: Logic prevents invalid transitions (e.g., a fainted Pokémon returning to active status).
-3. **Passive Presentation**: The overlay is a read-only mirror of the state stored in BattleMemory.
+## Mechanical Before Digital
 
+The DroidBall should behave like a physical object.
 
-## Responsibilities
+Motion should imply weight.
 
-BattleMemory stores observations.
+Acceleration and deceleration should feel intentional.
 
-BattleMemory does not determine battle outcomes.
+Every movement should appear mechanically possible.
 
-BattleMemory does not archive completed battles.
+---
 
-BattleMemory exists only while a battle is active.
+## Quiet Confidence
 
-Battle outcome determination belongs to BattleLifecycleAnalyzer.
+The DroidBall never demands attention.
 
-Permanent storage belongs to ArchivedBattle.
+It acknowledges interaction.
 
-Distribution belongs to EventBusRoute.
+It quietly communicates the state of the Battle Engine without interrupting the player.
 
-This changed substantially.
+---
 
-BattleMemory isn't just collecting events.
+## Communication Without Words
 
-It's collecting evidence.
+The DroidBall never speaks.
 
-Example:
+It communicates through:
 
-BattleMemory records observations.
+* Motion
+* Light
+* Timing
+* Mechanical behavior
 
-It does not determine truth.
+The player should understand its state without reading text.
 
-Truth is inferred from accumulated evidence.
+---
 
-Huge distinction.
+## Respect the Player
+
+Repeated interaction should never become annoying.
+
+The DroidBall may acknowledge repeated presses.
+
+Each acknowledgement should become progressively smaller until no response is given.
+
+The DroidBall supports the player.
+
+It never competes for attention.
+
+---
+
+# States
+
+## OFF
+
+The engine is inactive.
+
+No battle systems are running.
+
+The DroidBall appears dormant.
+
+---
+
+## DEPLOYING
+
+The Battle Engine is starting.
+
+Services initialize.
+
+Observation systems prepare.
+
+The DroidBall unfolds with deliberate mechanical motion.
+
+---
+
+## CLOSED
+
+The engine is active.
+
+The overlay is hidden.
+
+Battle systems continue operating.
+
+The DroidBall remains available.
+
+---
+
+## OPEN
+
+The overlay is visible.
+
+Battle information is being presented.
+
+The DroidBall indicates an active tactical state.
+
+---
+
+## COLLAPSING
+
+The overlay is retracting.
+
+Battle systems remain active.
+
+Only presentation is changing.
+
+---
+
+## SHUTTING DOWN
+
+Observation systems terminate.
+
+Resources are released.
+
+The DroidBall returns to its resting state.
+
+---
+
+# Responsibilities
+
+The DroidBall:
+
+* Starts the Battle Engine.
+* Stops the Battle Engine.
+* Opens the overlay.
+* Closes the overlay.
+* Communicates engine state.
+
+The DroidBall does not:
+
+* Display battle information.
+* Perform calculations.
+* Interpret observations.
+* Make recommendations.
+
+---
+
+# Relationship to the Battle Engine
+
+The DroidBall is the player's mechanical interface to the Battle Engine.
+
+It controls engine state.
+
+It does not control battle logic.
+
+The Battle Engine may continue observing while the DroidBall is closed.
+
+Presentation and operation are intentionally independent.
+
+---
+
+# Animation Principles
+
+Animations should:
+
+* Feel mechanical.
+* Be brief.
+* Reinforce state.
+* Never loop continuously.
+* Never flash.
+* Never become decorative.
+
+Motion exists only to communicate change.
+
+When nothing changes, nothing moves.
+
+---
+
+# Design Goal
+
+The DroidBall should become familiar enough that players instinctively understand its state.
+
+The best DroidBall animation is the one the player notices only once.
+
+After that, it should simply feel like part of the hardware.
