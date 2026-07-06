@@ -705,12 +705,14 @@ fun SearchBar(
 @Composable
 fun TypeBadge(
     type: PokemonType,
+    modifier: Modifier = Modifier,
+    style: TypeIconStyle = TypeIconStyle.GBA,
     onClick: (() -> Unit)? = null,
 ) {
     Surface(
         color = TerminalBlack,
         shape = RoundedCornerShape(4.dp),
-        modifier = Modifier
+        modifier = modifier
             .padding(2.dp)
             .border(1.dp, type.color, RoundedCornerShape(4.dp))
             .then(
@@ -721,11 +723,9 @@ fun TypeBadge(
                 }
             )
     ) {
-        Text(
-            text = type.name,
-            color = type.color,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
+        PokemonTypeIcon(
+            type = type,
+            style = style,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }

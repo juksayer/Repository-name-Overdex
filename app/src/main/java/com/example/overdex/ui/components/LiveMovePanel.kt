@@ -84,14 +84,13 @@ fun CompactMoveIcon(move: Move, effectiveness: Effectiveness) {
                 color = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) Color.Red else move.type.color.copy(alpha = 0.4f),
                 shape = RoundedCornerShape(2.dp)
             )
-            .padding(horizontal = 4.dp, vertical = 1.dp)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = move.name.take(4).uppercase(),
-                color = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) Color.White else TerminalGreen,
-                fontSize = 7.sp,
-                fontWeight = FontWeight.Bold
+            PokemonTypeIcon(
+                type = move.type,
+                style = TypeIconStyle.OVERDEX,
+                modifier = Modifier.size(10.dp)
             )
             
             if (effectiveness == Effectiveness.SUPER_EFFECTIVE) {

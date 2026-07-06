@@ -25,6 +25,7 @@ import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.components.SearchBar
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.FilterSettings
+import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.theme.*
 
 @Composable
@@ -206,7 +207,7 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
             
             Row {
                 pokemon.types.forEach { type ->
-                    TypeBadge(type = type)
+                    TypeBadge(type = type, style = TypeIconStyle.OVERDEX)
                 }
             }
         }

@@ -12,57 +12,54 @@
             android:translateX="-12"
             android:translateY="-12">
 
-            <!-- Antennae -->
+            <!-- Monochrome Antennae -->
             <path
-                android:strokeColor="#111111"
+                android:strokeColor="#FF000000"
                 android:strokeWidth="1"
                 android:strokeLineCap="round"
                 android:pathData="M7.5,6 L6.5,3.5" />
             <path
-                android:fillColor="#111111"
+                android:fillColor="#FF000000"
                 android:pathData="M6.5,3.5 m-0.5,0 a0.5,0.5 0,1 1,1 0 a0.5,0.5 0,1 1,-1 0" />
 
             <path
-                android:strokeColor="#111111"
+                android:strokeColor="#FF000000"
                 android:strokeWidth="1"
                 android:strokeLineCap="round"
                 android:pathData="M16.5,6 L17.5,3.5" />
             <path
-                android:fillColor="#111111"
+                android:fillColor="#FF000000"
                 android:pathData="M17.5,3.5 m-0.5,0 a0.5,0.5 0,1 1,1 0 a0.5,0.5 0,1 1,-1 0" />
 
-            <!-- Head Shell -->
+            <!-- Monochrome Head Shell -->
             <path
-                android:fillColor="#D8D8D8"
-                android:strokeColor="#111111"
+                android:strokeColor="#FF000000"
                 android:strokeWidth="1.5"
                 android:pathData="M12,5 A7,7 0,1 0,12,19 A7,7 0,1 0,12,5 Z" />
 
-            <!-- Equator Band -->
+            <!-- Monochrome Equator Band -->
             <path
-                android:fillColor="#111111"
+                android:fillColor="#FF000000"
                 android:pathData="M5,10.5 H19 V13.5 H5 Z" />
 
-            <!-- Center Button -->
-            <!-- Outer Dark Gray Ring -->
+            <!-- Monochrome Center Button (Outlines only for contrast) -->
             <path
-                android:fillColor="#5A5A5A"
+                android:strokeColor="#FF000000"
+                android:strokeWidth="0.5"
                 android:pathData="M12,12 m-3,0 a3,3 0,1 0,6 0 a3,3 0,1 0,-6 0" />
-            <!-- Light Gray Middle -->
             <path
-                android:fillColor="#D8D8D8"
-                android:pathData="M12,12 m-2,0 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0" />
-            <!-- Dark Gray Center -->
-            <path
-                android:fillColor="#5A5A5A"
+                android:strokeColor="#FF000000"
+                android:strokeWidth="0.5"
                 android:pathData="M12,12 m-1,0 a1,1 0,1 0,2 0 a1,1 0,1 0,-2 0" />
 
-            <!-- Eyes -->
+            <!-- Monochrome Eyes (Cutouts) -->
             <path
-                android:fillColor="#FFFFFF"
+                android:strokeColor="#FF000000"
+                android:strokeWidth="0.5"
                 android:pathData="M8.5,8.5 m-1,0 a1,1.5 0,1 0,2 0 a1,1.5 0,1 0,-2 0" />
             <path
-                android:fillColor="#FFFFFF"
+                android:strokeColor="#FF000000"
+                android:strokeWidth="0.5"
                 android:pathData="M15.5,8.5 m-1,0 a1,1.5 0,1 0,2 0 a1,1.5 0,1 0,-2 0" />
         </group>
     </group>

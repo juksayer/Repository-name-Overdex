@@ -26,6 +26,7 @@ import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.components.TypeBadge
+import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -309,6 +310,7 @@ fun EffectivenessRow(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TypeBadge(
                     type = type,
+                    style = TypeIconStyle.OVERDEX,
                     onClick = { onTypeClick(type) }
                 )
                 Text(
