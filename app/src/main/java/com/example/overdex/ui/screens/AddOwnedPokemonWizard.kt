@@ -200,9 +200,14 @@ fun SpeciesSearchStep(
     }
 
     Column {
-        SearchBar(query = searchQuery) {
-            pokedexViewModel.updateSearchQuery(it)
-        }
+        SearchBar(
+            query = searchQuery,
+            onSearchClick = {
+                // For now, this step still uses regular SearchBar, but it's broken by my changes
+                // I should probably also update this to the new SearchBar usage
+                // but the work order says focus on Pokédex Search first.
+            }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 

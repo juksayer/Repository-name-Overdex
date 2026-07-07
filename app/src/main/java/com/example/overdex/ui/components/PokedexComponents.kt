@@ -678,28 +678,33 @@ fun LightDot(color: Color) {
 @Composable
 fun SearchBar(
     query: String,
-    onQueryChange: (String) -> Unit,
+    onSearchClick: () -> Unit = {},
+    selected: Boolean = false
 ) {
-    TextField(
-        value = query,
-        onValueChange = onQueryChange,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(24.dp)),
-        placeholder = { Text("Search OverDex...", color = TerminalDimGreen) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TerminalGreen) },
-        colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = TerminalBlack,
-            focusedContainerColor = TerminalBlack,
-            unfocusedIndicatorColor = TerminalGreen,
-            focusedIndicatorColor = TerminalGreen,
-            focusedTextColor = TerminalGreen,
-            unfocusedTextColor = TerminalDimGreen,
-            cursorColor = TerminalGreen
-        ),
-        singleLine = true
-    )
+            .clip(RoundedCornerShape(24.dp))
+            .background(if (selected) TerminalGreen else TerminalBlack)
+            .border(1.dp, TerminalGreen, RoundedCornerShape(24.dp))
+            .clickable { onSearchClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Search, 
+                contentDescription = null, 
+                tint = if (selected) TerminalBlack else TerminalGreen
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = query.ifEmpty { "Search OverDex..." },
+                color = if (selected) TerminalBlack else if (query.isEmpty()) TerminalDimGreen else TerminalGreen,
+                fontSize = 16.sp
+            )
+        }
+    }
 }
 
 @Composable

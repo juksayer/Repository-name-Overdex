@@ -40,3 +40,8 @@ fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
     createdAt = createdAt,
     updatedAt = updatedAt
 )
+
+data class OwnedPokemonWithSpecies(
+    @androidx.room.Embedded val owned: OwnedPokemonEntity,
+    val speciesName: String?
+)

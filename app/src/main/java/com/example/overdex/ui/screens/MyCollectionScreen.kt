@@ -35,86 +35,141 @@ fun MyCollectionScreen(
     isServiceRunning: Boolean = false,
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
+    val searchQuery by collectionViewModel.searchQuery.collectAsState()
     val selectedIndex by collectionViewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
+    val keyboardController = rememberTerminalKeyboardController()
 
-    // +1 for the [REGISTER SPECIMEN] entry at the top
-    val totalItems = ownedPokemon.size + 1
+    // Index 0: SearchBar
+    // Index 1: [REGISTER SPECIMEN]
+    // Index 2+: Specimen list
+    val totalItems = ownedPokemon.size + 2
 
     LaunchedEffect(selectedIndex) {
-        val layoutInfo = listState.layoutInfo
-        val visibleItems = layoutInfo.visibleItemsInfo
-        if (visibleItems.isEmpty() || totalItems == 0) return@LaunchedEffect
+        if (!keyboardController.isVisible) {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            if (visibleItems.isEmpty() || totalItems == 0) return@LaunchedEffect
 
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
+            val firstVisible = visibleItems.first().index
+            val lastVisible = visibleItems.last().index
 
-        if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
-            // Out of view jump
-            listState.animateScrollToItem(selectedIndex)
-        } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
-            // Top margin: scroll up to keep selection from hitting the absolute top
-            listState.animateScrollToItem(selectedIndex - 1)
-        } else if (selectedIndex >= lastVisible && selectedIndex < totalItems - 1) {
-            // Bottom margin: scroll down to keep selection from hitting the absolute bottom
-            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
+                // Out of view jump
+                listState.animateScrollToItem(selectedIndex)
+            } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
+                // Top margin
+                listState.animateScrollToItem(selectedIndex - 1)
+            } else if (selectedIndex >= lastVisible && selectedIndex < totalItems - 1) {
+                // Bottom margin
+                listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            }
         }
     }
 
     PokedexFrame(
-        onUp = { if (selectedIndex > 0) collectionViewModel.updateSelectedIndex(selectedIndex - 1) },
-        onDown = { if (selectedIndex < totalItems - 1) collectionViewModel.updateSelectedIndex(selectedIndex + 1) },
+        onUp = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleUp()
+            } else if (selectedIndex > 0) {
+                collectionViewModel.updateSelectedIndex(selectedIndex - 1)
+            }
+        },
+        onDown = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleDown()
+            } else if (selectedIndex < totalItems - 1) {
+                collectionViewModel.updateSelectedIndex(selectedIndex + 1)
+            }
+        },
+        onLeft = {
+            if (keyboardController.isVisible) keyboardController.handleLeft()
+        },
+        onRight = {
+            if (keyboardController.isVisible) keyboardController.handleRight()
+        },
         onA = {
-            if (selectedIndex == 0) {
-                onAddClick()
+            if (keyboardController.isVisible) {
+                keyboardController.handleA(searchQuery) { collectionViewModel.updateSearchQuery(it) }
             } else {
-                val actualIndex = selectedIndex - 1
-                if (actualIndex in ownedPokemon.indices) {
-                    onItemClick(ownedPokemon[actualIndex].id)
+                when (selectedIndex) {
+                    0 -> keyboardController.open()
+                    1 -> onAddClick()
+                    else -> {
+                        val actualIndex = selectedIndex - 2
+                        if (actualIndex in ownedPokemon.indices) {
+                            onItemClick(ownedPokemon[actualIndex].id)
+                        }
+                    }
                 }
             }
         },
-        onB = onBack,
+        onB = {
+            if (!keyboardController.handleB()) onBack()
+        },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         isServiceRunning = isServiceRunning,
         viewModel = pokedexViewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
-            TerminalHeader(text = "my collection")
-            
-            Text(
-                text = "${ownedPokemon.size} SPECIMENS",
-                color = TerminalDimGreen,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-            )
+            if (keyboardController.isVisible) {
+                TerminalHeader(text = "input module: search")
+                SearchBar(query = searchQuery, selected = false)
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TerminalKeyboard(
+                    layout = keyboardController.layout,
+                    currentRow = keyboardController.currentRow,
+                    currentColumn = keyboardController.currentCol,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                TerminalHeader(text = "my collection")
 
-            Spacer(modifier = Modifier.height(8.dp))
+                SearchBar(
+                    query = searchQuery,
+                    selected = selectedIndex == 0,
+                    onSearchClick = {
+                        keyboardController.open()
+                        collectionViewModel.updateSelectedIndex(0)
+                    }
+                )
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Persistent Registration Entry
-                item {
-                    RegisterSpecimenItem(selected = selectedIndex == 0)
-                }
+                Text(
+                    text = "${ownedPokemon.size} SPECIMENS",
+                    color = TerminalDimGreen,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
 
-                // Specimen List
-                itemsIndexed(ownedPokemon) { index, owned ->
-                    var species by remember(owned.speciesId) { mutableStateOf<Pokemon?>(null) }
-                    LaunchedEffect(owned.speciesId) {
-                        species = pokedexViewModel.getPokemonById(owned.speciesId)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Persistent Registration Entry
+                    item {
+                        RegisterSpecimenItem(selected = selectedIndex == 1)
                     }
 
-                    OwnedPokemonListItem(
-                        owned = owned,
-                        species = species,
-                        selected = selectedIndex == index + 1
-                    )
+                    // Specimen List
+                    itemsIndexed(ownedPokemon) { index, owned ->
+                        var species by remember(owned.speciesId) { mutableStateOf<Pokemon?>(null) }
+                        LaunchedEffect(owned.speciesId) {
+                            species = pokedexViewModel.getPokemonById(owned.speciesId)
+                        }
+
+                        OwnedPokemonListItem(
+                            owned = owned,
+                            species = species,
+                            selected = selectedIndex == index + 2
+                        )
+                    }
                 }
             }
         }

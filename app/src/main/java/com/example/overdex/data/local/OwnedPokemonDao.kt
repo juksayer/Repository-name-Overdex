@@ -5,8 +5,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface OwnedPokemonDao {
-    @Query("SELECT * FROM owned_pokemon ORDER BY createdAt DESC")
-    fun getAllOwnedPokemon(): Flow<List<OwnedPokemonEntity>>
+    @Query("""
+        SELECT owned.*, pokemon.name as speciesName 
+        FROM owned_pokemon as owned
+        LEFT JOIN pokemon ON owned.speciesId = pokemon.id
+        ORDER BY owned.createdAt DESC
+    """)
+    fun getAllOwnedPokemonWithSpecies(): Flow<List<OwnedPokemonWithSpecies>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addOwnedPokemon(owned: OwnedPokemonEntity)

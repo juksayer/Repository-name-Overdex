@@ -26,6 +26,7 @@ import com.example.overdex.ui.components.SearchBar
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.TypeIconStyle
+import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 
 @Composable
@@ -45,26 +46,29 @@ fun PokedexListScreen(
     val listState = rememberLazyListState()
 
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+    val keyboardController = rememberTerminalKeyboardController()
 
     LaunchedEffect(selectedIndex) {
-        val layoutInfo = listState.layoutInfo
-        val visibleItems = layoutInfo.visibleItemsInfo
-        val totalCount = pokemonItems.itemCount
+        if (!keyboardController.isVisible) {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            val totalCount = pokemonItems.itemCount
 
-        if (visibleItems.isEmpty() || totalCount == 0) return@LaunchedEffect
+            if (visibleItems.isEmpty() || totalCount == 0) return@LaunchedEffect
 
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
+            val firstVisible = visibleItems.first().index
+            val lastVisible = visibleItems.last().index
 
-        if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
-            // Out of view jump (e.g. search reset or initial load)
-            listState.animateScrollToItem(selectedIndex)
-        } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
-            // Top margin: scroll up to keep selection from hitting the absolute top
-            listState.animateScrollToItem(selectedIndex - 1)
-        } else if (selectedIndex >= lastVisible && selectedIndex < totalCount - 1) {
-            // Bottom margin: scroll down to keep selection from hitting the absolute bottom
-            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
+                // Out of view jump (e.g. search reset or initial load)
+                listState.animateScrollToItem(selectedIndex)
+            } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
+                // Top margin: scroll up to keep selection from hitting the absolute top
+                listState.animateScrollToItem(selectedIndex - 1)
+            } else if (selectedIndex >= lastVisible && selectedIndex < totalCount - 1) {
+                // Bottom margin: scroll down to keep selection from hitting the absolute bottom
+                listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            }
         }
     }
 
@@ -74,21 +78,39 @@ fun PokedexListScreen(
 
     PokedexFrame(
         onUp = {
-            if (selectedIndex > 0) {
-                selectedIndex--
+            if (keyboardController.isVisible) {
+                keyboardController.handleUp()
+            } else {
+                if (selectedIndex > 0) selectedIndex--
             }
         },
         onDown = {
-            if (selectedIndex < pokemonItems.itemCount - 1) {
-                selectedIndex++
+            if (keyboardController.isVisible) {
+                keyboardController.handleDown()
+            } else {
+                if (selectedIndex < pokemonItems.itemCount) selectedIndex++
             }
+        },
+        onLeft = {
+            if (keyboardController.isVisible) keyboardController.handleLeft()
+        },
+        onRight = {
+            if (keyboardController.isVisible) keyboardController.handleRight()
         },
         onA = {
-            if (selectedIndex in 0 until pokemonItems.itemCount) {
-                pokemonItems[selectedIndex]?.let { onPokemonClick(it.id) }
+            if (keyboardController.isVisible) {
+                keyboardController.handleA(searchQuery) { viewModel.updateSearchQuery(it) }
+            } else {
+                if (selectedIndex == 0) {
+                    keyboardController.open()
+                } else if (selectedIndex > 0 && selectedIndex <= pokemonItems.itemCount) {
+                    pokemonItems[selectedIndex - 1]?.let { onPokemonClick(it.id) }
+                }
             }
         },
-        onB = onBack,
+        onB = {
+            if (!keyboardController.handleB()) onBack()
+        },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
@@ -97,41 +119,61 @@ fun PokedexListScreen(
         isServiceRunning = isServiceRunning
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
-            SearchBar(query = searchQuery) {
-                viewModel.updateSearchQuery(it)
-            }
-            searchRequest.activeFilters.forEach { filter ->
-                AssistChip(
-                    onClick = {
-                        viewModel.removeFilter(filter)
-                    },
-
-                    label = {
-                        Text(filter.label)
+            if (keyboardController.isVisible) {
+                TerminalHeader("input module: search")
+                SearchBar(query = searchQuery, selected = false)
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TerminalKeyboard(
+                    layout = keyboardController.layout,
+                    currentRow = keyboardController.currentRow,
+                    currentColumn = keyboardController.currentCol,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                SearchBar(
+                    query = searchQuery, 
+                    selected = selectedIndex == 0,
+                    onSearchClick = { 
+                        keyboardController.open()
+                        selectedIndex = 0
                     }
                 )
-            }
+                
+                searchRequest.activeFilters.forEach { filter ->
+                    AssistChip(
+                        onClick = {
+                            viewModel.removeFilter(filter)
+                        },
+                        label = {
+                            Text(filter.label)
+                        }
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    count = pokemonItems.itemCount,
-                    key = pokemonItems.itemKey { it.id },
-                    contentType = pokemonItems.itemContentType { "pokemon" }
-                ) { index ->
-                    pokemonItems[index]?.let { pokemon ->
-                        PokemonListItem(
-                            pokemon = pokemon,
-                            selected = selectedIndex == index
-                        ) {
-                            selectedIndex = index
-                            onPokemonClick(pokemon.id)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(
+                        count = pokemonItems.itemCount,
+                        key = pokemonItems.itemKey { it.id },
+                        contentType = pokemonItems.itemContentType { "pokemon" }
+                    ) { index ->
+                        // Offset by 1 for the SearchBar
+                        val pokemonIndex = index
+                        pokemonItems[pokemonIndex]?.let { pokemon ->
+                            PokemonListItem(
+                                pokemon = pokemon,
+                                selected = selectedIndex == (index + 1)
+                            ) {
+                                selectedIndex = index + 1
+                                onPokemonClick(pokemon.id)
+                            }
                         }
                     }
                 }

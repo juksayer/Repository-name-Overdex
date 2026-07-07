@@ -17,17 +17,36 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
     private val _selectedIndex = MutableStateFlow(0)
     val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     fun updateSelectedIndex(index: Int) {
         _selectedIndex.value = index
     }
 
-    val ownedPokemon: StateFlow<List<OwnedPokemon>> = ownedPokemonDao.getAllOwnedPokemon()
-        .map { entities -> entities.map { it.toDomain() } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        _selectedIndex.value = 0 // Reset selection on search
+    }
+
+    val ownedPokemon: StateFlow<List<OwnedPokemon>> = combine(
+        ownedPokemonDao.getAllOwnedPokemonWithSpecies(),
+        _searchQuery
+    ) { entities, query ->
+        val list = entities.map { it.owned.toDomain() }
+        if (query.isBlank()) {
+            list
+        } else {
+            entities.filter { 
+                it.owned.displayName?.contains(query, ignoreCase = true) == true ||
+                it.speciesName?.contains(query, ignoreCase = true) == true
+            }.map { it.owned.toDomain() }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     fun getOwnedPokemon(id: String): Flow<OwnedPokemon?> = ownedPokemonDao.getOwnedPokemonById(id)
         .map { it?.toDomain() }
