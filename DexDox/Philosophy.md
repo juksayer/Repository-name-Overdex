@@ -121,3 +121,7 @@ Frameworks change.
 Good ideas endure.
 
 Overdex should be built in a way that future versions can improve without abandoning the principles that created them.
+
+Mirror Pokémon GO's current gameplay, but leave room for future mechanics.
+
+Do not over-engineer for hypothetical features, but reserve enough flexibility that a new gameplay distinction can be added without redesigning the ownership model.

@@ -117,3 +117,22 @@ Interesting ideas that are worth remembering but have no immediate implementatio
 No idea is too strange to record.
 
 Some of Overdex's defining features began here.
+
+I would make one small change.
+
+Don't rename My Collection yet.
+
+Ship it.
+
+Let it stabilize.
+
+Then, when binders become a real feature, you can do something like:
+
+My Collection
+└── Binders
+
+or even rename the module once binders actually exist.
+
+Right now, "My Collection" is a good description of what you've built. "My Binders" implies organization, pages, custom layouts, and curation—which I think is where you're headed, but not where the code is today.
+
+The exciting part is this: you didn't just think of a UI. You may have discovered the organizing metaphor for the entire ownership side of Overdex. And good metaphors tend to make lots of later decisions easier.

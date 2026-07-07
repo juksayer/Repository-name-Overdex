@@ -1,10 +1,10 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -145,27 +145,23 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                width = if (selected) 2.dp else 1.dp,
-                color = if (selected) TerminalGreen else TerminalDimGreen,
-                shape = CardDefaults.shape
-            )
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = TerminalBlack,
-            contentColor = TerminalGreen
+            containerColor = if (selected) TerminalGreen else TerminalBlack,
+            contentColor = if (selected) TerminalBlack else TerminalGreen
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(0.dp) // Sharp corners for hardware feel
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (selected) ">>" else ">",
-                color = if (selected) TerminalGreen else TerminalDimGreen,
+                text = if (selected) "▶" else " ",
+                color = if (selected) TerminalBlack else TerminalGreen,
                 fontSize = 14.sp,
                 modifier = Modifier.width(20.dp)
             )
@@ -174,7 +170,7 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
             AsyncImage(
                 model = pokemon.spriteUrl,
                 contentDescription = pokemon.name,
-                modifier = Modifier.size(60.dp),
+                modifier = Modifier.size(50.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -183,7 +179,7 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
             Text(
                 text = pokemon.formattedId,
                 fontSize = 12.sp,
-                color = TerminalDimGreen,
+                color = if (selected) TerminalBlack else TerminalDimGreen,
                 modifier = Modifier.width(40.dp)
             )
             
@@ -191,23 +187,27 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (selected) ">> ${pokemon.name} <<" else pokemon.name,
+                    text = pokemon.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TerminalGreen,
+                    color = if (selected) TerminalBlack else TerminalGreen,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = pokemon.region,
                     fontSize = 11.sp,
-                    color = TerminalDimGreen
+                    color = if (selected) TerminalBlack else TerminalDimGreen
                 )
             }
             
             Row {
                 pokemon.types.forEach { type ->
-                    TypeBadge(type = type, style = TypeIconStyle.OVERDEX)
+                    TypeBadge(
+                        type = type, 
+                        style = TypeIconStyle.OVERDEX,
+                        modifier = Modifier.padding(2.dp)
+                    )
                 }
             }
         }

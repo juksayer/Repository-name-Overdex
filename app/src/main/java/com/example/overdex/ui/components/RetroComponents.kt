@@ -68,24 +68,25 @@ fun TerminalMenuOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(if (selected) TerminalGreen else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-
             Text(
-                text = if (selected) ">> $label <<" else label,
-                color = TerminalGreen,
-                fontSize = 16.sp
+                text = if (selected) "▶ $label" else "  $label",
+                color = if (selected) TerminalBlack else TerminalGreen,
+                fontSize = 16.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
             )
         }
 
         if (status != null) {
             Text(
                 text = "[ $status ]",
-                color = TerminalGreen,
+                color = if (selected) TerminalBlack else TerminalGreen,
                 fontSize = 14.sp
             )
         }

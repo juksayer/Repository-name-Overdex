@@ -22,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.overdex.media.MediaManager
 import kotlinx.coroutines.launch
 import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.screens.*
@@ -92,6 +93,7 @@ fun
             val options = remember {
                 listOf(
                     MenuOption("overdex", { navController.navigate("list") }),
+                    MenuOption("my collection", { navController.navigate("collection") }),
                     MenuOption("readme", { navController.navigate("readme") })
                 )
             }
@@ -277,6 +279,61 @@ fun
                     viewModel = viewModel,
                     isServiceRunning = isServiceRunning
                 )
-            }        }
+            }
+        }
+        composable("collection") {
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            MyCollectionScreen(
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onItemClick = { id -> navController.navigate("owned_detail/$id") },
+                onAddClick = { navController.navigate("add_pokemon_wizard") },
+                onBack = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
+            )
+        }
+        composable("owned_detail/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            OwnedPokemonDetailScreen(
+                ownedId = id,
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onEditClick = { navController.navigate("owned_edit/$id") },
+                onDeleteSuccess = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
+            )
+        }
+        composable("owned_edit/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            OwnedPokemonEditScreen(
+                ownedId = id,
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onSaveSuccess = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
+            )
+        }
+        composable("add_pokemon_wizard") {
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            AddOwnedPokemonWizard(
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onFinish = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
+            )
+        }
     }
 }
