@@ -288,3 +288,7 @@ Gestures are not used for navigation within the Overdex device.
 The sole exception is the native Android system gesture used to leave the application entirely.
 
 This gesture represents returning from the Overdex handheld to the user's phone, not navigating within the handheld itself.
+
+Type glyphs are part of Overdex's visual language.
+
+They represent the underlying concepts of the Pokémon types rather than reproducing official Pokémon iconography. New UI should use these glyphs consistently instead of introducing alternate symbols.

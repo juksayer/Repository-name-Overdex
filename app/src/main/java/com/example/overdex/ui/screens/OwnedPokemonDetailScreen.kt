@@ -1,20 +1,18 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.PokedexViewModel
@@ -29,17 +27,13 @@ fun OwnedPokemonDetailScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onEditClick: () -> Unit,
-    onDeleteSuccess: () -> Unit,
+    onDeleteSuccess: () -> Unit, // Reserved for future use
     onBack: () -> Unit,
     isServiceRunning: Boolean = false,
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
     var species by remember { mutableStateOf<Pokemon?>(null) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    var actionIndex by remember { mutableIntStateOf(0) }
     
-    val actions = listOf("EDIT", "DELETE", "BACK")
-
     LaunchedEffect(ownedPokemon?.speciesId) {
         ownedPokemon?.speciesId?.let { id ->
             species = pokedexViewModel.getPokemonById(id)
@@ -47,117 +41,141 @@ fun OwnedPokemonDetailScreen(
     }
 
     PokedexFrame(
-        onUp = { if (actionIndex > 0) actionIndex-- },
-        onDown = { if (actionIndex < actions.size - 1) actionIndex++ },
-        onA = {
-            if (showDeleteConfirm) {
-                collectionViewModel.removeOwnedPokemon(ownedId)
-                onDeleteSuccess()
-            } else {
-                when (actions[actionIndex]) {
-                    "EDIT" -> onEditClick()
-                    "DELETE" -> showDeleteConfirm = true
-                    "BACK" -> onBack()
-                }
-            }
-        },
-        onB = {
-            if (showDeleteConfirm) {
-                showDeleteConfirm = false
-            } else {
-                onBack()
-            }
-        },
+        onA = onEditClick,
+        onB = onBack,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         isServiceRunning = isServiceRunning,
-        viewModel = pokedexViewModel
+        viewModel = pokedexViewModel,
     ) { _ ->
-        if (ownedPokemon == null) {
+        val owned = ownedPokemon
+        if (owned == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 TerminalText(text = "RECORD NOT FOUND")
             }
             return@PokedexFrame
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                val identity = ownedPokemon!!.displayName?.ifBlank { species?.name } ?: species?.name ?: "UNKNOWN"
-                TerminalHeader(text = identity)
-                
-                Spacer(modifier = Modifier.height(16.dp))
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(16.dp)
+        ) {
+            // Identity Header
+            val hasNickname = !owned.displayName.isNullOrBlank()
+            val speciesName = species?.name ?: "UNKNOWN"
+            val identity = if (hasNickname) {
+                owned.displayName
+            } else {
+                val prefix = if (owned.isShadow) "SHADOW " else if (owned.isPurified) "PURIFIED " else ""
+                "$prefix$speciesName"
+            }
 
-                DetailField(label = "Species", value = species?.name ?: "Loading...")
-                DetailField(label = "Nickname", value = ownedPokemon!!.displayName ?: "[NONE]")
-                DetailField(label = "Owned ID", value = "#${ownedPokemon!!.id.takeLast(6).uppercase()}")
-                
-                Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = identity.uppercase(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = if (owned.isShiny) TerminalPurple else TerminalGreen,
+                lineHeight = 32.sp
+            )
+            
+            if (hasNickname) {
+                Text(
+                    text = "($speciesName)",
+                    fontSize = 18.sp,
+                    color = TerminalDimGreen,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
 
-                DetailField(label = "CP", value = ownedPokemon!!.cp?.toString() ?: "[NONE]")
-                DetailField(label = "Shadow", value = if (ownedPokemon!!.isShadow) "[YES]" else "[NO]")
-                DetailField(label = "Purified", value = if (ownedPokemon!!.isPurified) "[YES]" else "[NO]")
-                DetailField(label = "Shiny", value = if (ownedPokemon!!.isShiny) "[YES]" else "[NO]")
+            Text(
+                text = "OWNED ID: #${ownedId.takeLast(8).uppercase()}",
+                fontSize = 12.sp,
+                color = TerminalDimGreen,
+                modifier = Modifier.padding(top = 4.dp)
+            )
 
-                Spacer(modifier = Modifier.weight(1f))
-                
-                HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.3f), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                actions.forEachIndexed { index, label ->
-                    TerminalMenuOption(
-                        label = label,
-                        selected = actionIndex == index && !showDeleteConfirm,
-                        onClick = {
-                            if (!showDeleteConfirm) {
-                                actionIndex = index
-                                when (label) {
-                                    "EDIT" -> onEditClick()
-                                    "DELETE" -> showDeleteConfirm = true
-                                    "BACK" -> onBack()
-                                }
-                            }
-                        }
+            // Type Icons (Scaled for emphasis)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                species?.types?.forEach { type ->
+                    TypeBadge(
+                        type = type,
+                        style = TypeIconStyle.OVERDEX,
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .scale(1.1f)
                     )
                 }
             }
 
-            if (showDeleteConfirm) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(TerminalBlack.copy(alpha = 0.8f))
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .border(1.dp, TerminalPurple, RoundedCornerShape(4.dp))
-                            .background(TerminalBlack)
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "DELETE THIS POKEMON?",
-                            color = TerminalPurple,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                            Text(text = "A YES", color = Color.Red, fontWeight = FontWeight.Bold)
-                            Text(text = "B NO", color = TerminalGreen, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Attributes
+            OwnedAttribute(label = "COMBAT POWER", value = owned.cp?.toString() ?: "???")
+            
+            if (owned.isShadow) {
+                OwnedAttribute(label = "CONDITION", value = "SHADOW", color = Color(0xFFBC13FE))
+            } else if (owned.isPurified) {
+                OwnedAttribute(label = "CONDITION", value = "PURIFIED", color = Color(0xFF00E5FF))
             }
+
+            if (owned.isShiny) {
+                OwnedAttribute(label = "VARIANT", value = "SHINY ✨", color = TerminalPurple)
+            }
+
+            // Fill space to ensure scrollability is felt and for future metadata
+            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Firmware Footer
+            HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "A EDIT", 
+                    color = TerminalGreen, 
+                    fontSize = 14.sp, 
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "B BACK", 
+                    color = TerminalDimGreen, 
+                    fontSize = 14.sp, 
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-fun DetailField(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(text = label, color = TerminalDimGreen, fontSize = 12.sp)
-        Text(text = value, color = TerminalGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+fun OwnedAttribute(label: String, value: String, color: Color = TerminalGreen) {
+    Column(modifier = Modifier.padding(vertical = 12.dp)) {
+        Text(
+            text = label, 
+            color = TerminalDimGreen, 
+            fontSize = 10.sp, 
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Text(
+            text = value.uppercase(), 
+            color = color, 
+            fontSize = 24.sp, 
+            fontWeight = FontWeight.Black
+        )
     }
 }

@@ -14,6 +14,13 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
     private val db = PokedexDatabase.getDatabase(application)
     private val ownedPokemonDao = db.ownedPokemonDao()
 
+    private val _selectedIndex = MutableStateFlow(0)
+    val selectedIndex: StateFlow<Int> = _selectedIndex.asStateFlow()
+
+    fun updateSelectedIndex(index: Int) {
+        _selectedIndex.value = index
+    }
+
     val ownedPokemon: StateFlow<List<OwnedPokemon>> = ownedPokemonDao.getAllOwnedPokemon()
         .map { entities -> entities.map { it.toDomain() } }
         .stateIn(

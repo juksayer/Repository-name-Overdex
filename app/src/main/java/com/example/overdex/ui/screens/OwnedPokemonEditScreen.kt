@@ -116,15 +116,15 @@ fun OwnedPokemonEditScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Toggles
-            AttributeToggle("Shadow", isShadow) { 
-                isShadow = it
-                if (it) isPurified = false 
-            }
-            AttributeToggle("Purified", isPurified) { 
-                isPurified = it
-                if (it) isShadow = false 
-            }
-            AttributeToggle("Shiny", isShiny) { isShiny = it }
+            AttributeToggle("Shadow", isShadow, onClick = { 
+                isShadow = !isShadow
+                if (isShadow) isPurified = false 
+            })
+            AttributeToggle("Purified", isPurified, onClick = { 
+                isPurified = !isPurified
+                if (isPurified) isShadow = false 
+            })
+            AttributeToggle("Shiny", isShiny, onClick = { isShiny = !isShiny })
 
             Spacer(modifier = Modifier.weight(1f))
             

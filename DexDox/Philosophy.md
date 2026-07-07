@@ -125,3 +125,5 @@ Overdex should be built in a way that future versions can improve without abando
 Mirror Pokémon GO's current gameplay, but leave room for future mechanics.
 
 Do not over-engineer for hypothetical features, but reserve enough flexibility that a new gameplay distinction can be added without redesigning the ownership model.
+
+The Pokédex documents Pokémon. My Binders document your relationship with Pokémon.

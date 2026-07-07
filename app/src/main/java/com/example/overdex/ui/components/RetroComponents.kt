@@ -1,6 +1,7 @@
 package com.example.overdex.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -112,19 +113,101 @@ fun TerminalText(
 fun TerminalButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selected: Boolean = false
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(TerminalGreen.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+            .background(
+                color = if (selected) TerminalGreen else TerminalGreen.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp)
+            )
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 12.dp)
     ) {
         Text(
-            text = "> $text",
-            color = TerminalGreen,
-            fontSize = 16.sp
+            text = if (selected) "▶ $text" else "> $text",
+            color = if (selected) TerminalBlack else TerminalGreen,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun HardwareNumericEntry(
+    value: String,
+    onValueChange: (String) -> Unit,
+    maxDigits: Int = 4,
+    isFocused: Boolean = true,
+    focusedDigitIndex: Int = 0,
+    onDigitFocusChange: (Int) -> Unit = {}
+) {
+    val paddedValue = value.padStart(maxDigits, '0')
+    
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in 0 until maxDigits) {
+            val digitSelected = isFocused && focusedDigitIndex == i
+            
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(40.dp)
+                    .background(
+                        color = if (digitSelected) TerminalGreen else TerminalBlack,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (digitSelected) TerminalBlack else TerminalDimGreen,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(vertical = 8.dp)
+                    .clickable { onDigitFocusChange(i) }
+            ) {
+                Text(
+                    text = paddedValue[i].toString(),
+                    color = if (digitSelected) TerminalBlack else TerminalGreen,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AttributeToggle(
+    label: String,
+    value: Boolean,
+    onClick: () -> Unit = {},
+    selected: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (selected) TerminalGreen else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (value) "[ X ]" else "[   ]",
+            color = if (selected) TerminalBlack else TerminalGreen,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = label.uppercase(),
+            color = if (selected) TerminalBlack else TerminalGreen,
+            fontSize = 16.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }

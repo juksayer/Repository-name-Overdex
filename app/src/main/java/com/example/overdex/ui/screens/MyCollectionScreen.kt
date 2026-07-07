@@ -1,6 +1,5 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -36,17 +35,43 @@ fun MyCollectionScreen(
     isServiceRunning: Boolean = false,
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
+    val selectedIndex by collectionViewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
-    var selectedIndex by remember { mutableIntStateOf(0) }
+
+    // +1 for the [REGISTER SPECIMEN] entry at the top
+    val totalItems = ownedPokemon.size + 1
+
+    LaunchedEffect(selectedIndex) {
+        val layoutInfo = listState.layoutInfo
+        val visibleItems = layoutInfo.visibleItemsInfo
+        if (visibleItems.isEmpty() || totalItems == 0) return@LaunchedEffect
+
+        val firstVisible = visibleItems.first().index
+        val lastVisible = visibleItems.last().index
+
+        if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
+            // Out of view jump
+            listState.animateScrollToItem(selectedIndex)
+        } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
+            // Top margin: scroll up to keep selection from hitting the absolute top
+            listState.animateScrollToItem(selectedIndex - 1)
+        } else if (selectedIndex >= lastVisible && selectedIndex < totalItems - 1) {
+            // Bottom margin: scroll down to keep selection from hitting the absolute bottom
+            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+        }
+    }
 
     PokedexFrame(
-        onUp = { if (selectedIndex > 0) selectedIndex-- },
-        onDown = { if (selectedIndex < ownedPokemon.size - 1) selectedIndex++ },
+        onUp = { if (selectedIndex > 0) collectionViewModel.updateSelectedIndex(selectedIndex - 1) },
+        onDown = { if (selectedIndex < totalItems - 1) collectionViewModel.updateSelectedIndex(selectedIndex + 1) },
         onA = {
-            if (ownedPokemon.isNotEmpty()) {
-                onItemClick(ownedPokemon[selectedIndex].id)
-            } else {
+            if (selectedIndex == 0) {
                 onAddClick()
+            } else {
+                val actualIndex = selectedIndex - 1
+                if (actualIndex in ownedPokemon.indices) {
+                    onItemClick(ownedPokemon[actualIndex].id)
+                }
             }
         },
         onB = onBack,
@@ -57,35 +82,72 @@ fun MyCollectionScreen(
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
             TerminalHeader(text = "my collection")
+            
+            Text(
+                text = "${ownedPokemon.size} SPECIMENS",
+                color = TerminalDimGreen,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
 
-            if (ownedPokemon.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No Pokémon yet.", color = TerminalDimGreen)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("A Add Pokémon", color = TerminalGreen, fontWeight = FontWeight.Bold)
-                    }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Persistent Registration Entry
+                item {
+                    RegisterSpecimenItem(selected = selectedIndex == 0)
                 }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    itemsIndexed(ownedPokemon) { index, owned ->
-                        var species by remember { mutableStateOf<Pokemon?>(null) }
-                        LaunchedEffect(owned.speciesId) {
-                            species = pokedexViewModel.getPokemonById(owned.speciesId)
-                        }
 
-                        OwnedPokemonListItem(
-                            owned = owned,
-                            species = species,
-                            selected = selectedIndex == index
-                        )
+                // Specimen List
+                itemsIndexed(ownedPokemon) { index, owned ->
+                    var species by remember(owned.speciesId) { mutableStateOf<Pokemon?>(null) }
+                    LaunchedEffect(owned.speciesId) {
+                        species = pokedexViewModel.getPokemonById(owned.speciesId)
                     }
+
+                    OwnedPokemonListItem(
+                        owned = owned,
+                        species = species,
+                        selected = selectedIndex == index + 1
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun RegisterSpecimenItem(selected: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) TerminalGreen else TerminalBlack,
+            contentColor = if (selected) TerminalBlack else TerminalGreen
+        ),
+        shape = RoundedCornerShape(0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (selected) "▶" else " ",
+                color = if (selected) TerminalBlack else TerminalGreen,
+                fontSize = 14.sp,
+                modifier = Modifier.width(20.dp)
+            )
+            
+            Text(
+                text = "[+] REGISTER SPECIMEN",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
+            )
         }
     }
 }
