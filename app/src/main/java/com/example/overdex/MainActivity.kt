@@ -94,6 +94,7 @@ fun
                 listOf(
                     MenuOption("overdex", { navController.navigate("list") }),
                     MenuOption("my collection", { navController.navigate("collection") }),
+                    MenuOption("capture test", { navController.navigate("capture_verification") }),
                     MenuOption("readme", { navController.navigate("readme") })
                 )
             }
@@ -214,6 +215,9 @@ fun
                     calibrationManager = calibrationManager
                 )
             }
+        }
+        composable("capture_verification") {
+            CaptureVerificationScreen(onBack = { navController.popBackStack() })
         }
         composable("list") {
             PokedexListScreen(
