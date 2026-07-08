@@ -2,6 +2,7 @@ package com.example.overdex.data
 
 import android.graphics.Bitmap
 import com.example.overdex.model.CaptureTemplate
+import com.example.overdex.model.observation.CaptureObservation
 
 /**
  * Extracts individual bitmaps for each region defined in a CaptureTemplate.
@@ -10,10 +11,10 @@ object ObservationCropExtractor {
     
     /**
      * Extracts crops from a source bitmap based on the provided template.
-     * @return A map of region IDs to their corresponding cropped Bitmaps.
+     * @return A list of CaptureObservation objects containing the region ID and cropped Bitmap.
      */
-    fun extract(source: Bitmap, template: CaptureTemplate): Map<String, Bitmap> {
-        val crops = mutableMapOf<String, Bitmap>()
+    fun extract(source: Bitmap, template: CaptureTemplate): List<CaptureObservation> {
+        val observations = mutableListOf<CaptureObservation>()
         val width = source.width
         val height = source.height
 
@@ -27,12 +28,12 @@ object ObservationCropExtractor {
             if (cropWidth > 0 && cropHeight > 0) {
                 try {
                     val cropped = Bitmap.createBitmap(source, left, top, cropWidth, cropHeight)
-                    crops[region.id] = cropped
+                    observations.add(CaptureObservation(region.id, cropped))
                 } catch (e: Exception) {
                     android.util.Log.e("CROP_EXTRACTOR", "Failed to crop ${region.id}", e)
                 }
             }
         }
-        return crops
+        return observations
     }
 }

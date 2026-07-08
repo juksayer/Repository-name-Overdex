@@ -27,6 +27,7 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.ObservationCropExtractor
+import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
@@ -47,7 +48,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     var imageSize by remember { mutableStateOf<Size?>(null) }
     
     // Extraction state
-    var extractedCrops by remember { mutableStateOf<Map<String, Bitmap>?>(null) }
+    var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
     var isInspectionMode by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -57,14 +58,14 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
             captureLibrary = uris
             currentIndex = 0
             imageSize = null // Reset size for new batch
-            extractedCrops = null
+            observations = null
             isInspectionMode = false
         }
     }
 
     LaunchedEffect(currentIndex) {
         imageSize = null
-        extractedCrops = null
+        observations = null
         isInspectionMode = false
     }
 
@@ -86,14 +87,26 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                     manager.getSummaryTemplate()
                 }
                 selectedRegionId = null // Clear selection on template switch
-                extractedCrops = null
+                observations = null
             }
         },
         onA = {
-            if (isInspectionMode) {
-                // Future: Action in inspection mode?
-            } else {
+            if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } else if (!isInspectionMode) {
+                // Perform extraction
+                scope.launch {
+                    val request = ImageRequest.Builder(context)
+                        .data(captureLibrary[currentIndex])
+                        .allowHardware(false) // Required for Bitmap.createBitmap from Canvas/Software
+                        .build()
+                    val result = context.imageLoader.execute(request)
+                    if (result is SuccessResult) {
+                        val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
+                        observations = ObservationCropExtractor.extract(bitmap, currentTemplate)
+                        isInspectionMode = true
+                    }
+                }
             }
         },
         onB = {
@@ -138,19 +151,19 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                     .background(TerminalBlack),
                 contentAlignment = Alignment.Center
             ) {
-                if (isInspectionMode && extractedCrops != null) {
-                    // Inspection View: Show list of crops
+                if (isInspectionMode && observations != null) {
+                    // Inspection View: Show list of observations
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(extractedCrops!!.toList()) { (id, bitmap) ->
+                        items(observations!!) { observation ->
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                TerminalText(text = "REGION: $id", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
+                                TerminalText(text = "REGION: ${observation.regionId}", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
                                 Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = id,
+                                    bitmap = observation.crop.asImageBitmap(),
+                                    contentDescription = observation.regionId,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .wrapContentHeight(),
