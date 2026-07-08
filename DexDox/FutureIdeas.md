@@ -136,3 +136,5 @@ or even rename the module once binders actually exist.
 Right now, "My Collection" is a good description of what you've built. "My Binders" implies organization, pages, custom layouts, and curation—which I think is where you're headed, but not where the code is today.
 
 The exciting part is this: you didn't just think of a UI. You may have discovered the organizing metaphor for the entire ownership side of Overdex. And good metaphors tend to make lots of later decisions easier.
+
+The instrument may bend reality to improve understanding, but it should never break its own identity.

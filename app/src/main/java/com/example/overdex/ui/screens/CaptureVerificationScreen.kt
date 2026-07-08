@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
@@ -26,9 +29,11 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     
     var currentTemplate by remember { mutableStateOf(manager.getSummaryTemplate()) }
     var isOverlayVisible by remember { mutableStateOf(true) }
+    var selectedRegionId by remember { mutableStateOf<String?>(null) }
     
     var captureLibrary by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var currentIndex by remember { mutableIntStateOf(0) }
+    var imageSize by remember { mutableStateOf<Size?>(null) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
@@ -36,7 +41,12 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
         if (uris.isNotEmpty()) {
             captureLibrary = uris
             currentIndex = 0
+            imageSize = null // Reset size for new batch
         }
+    }
+
+    LaunchedEffect(currentIndex) {
+        imageSize = null
     }
 
     PokedexFrame(
@@ -55,25 +65,40 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
             } else {
                 manager.getSummaryTemplate()
             }
+            selectedRegionId = null // Clear selection on template switch
         },
         onA = {
-            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            if (captureLibrary.isEmpty()) {
+                launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
         },
         onB = onBack
     ) {
         TerminalScreen {
-            TerminalHeader(text = "capture verification")
-            
-            TerminalText(text = "template : ${currentTemplate.name.removePrefix("PokemonGo").replace("Template", "").uppercase()}")
-            
-            val imageCounter = if (captureLibrary.isEmpty()) "EMPTY" else "${(currentIndex + 1).toString().padStart(3, '0')} / ${captureLibrary.size.toString().padStart(3, '0')}"
-            TerminalText(text = "image    : $imageCounter")
-            
-            TerminalText(text = "overlay  : ${if (isOverlayVisible) "ON" else "OFF"}")
+            // COMPACT HEADER: One line status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TerminalText(
+                    text = "[ CAPTURE VERIFICATION ]",
+                    color = com.example.overdex.ui.theme.TerminalPurple,
+                    fontSize = 12.sp
+                )
+                
+                val templateName = currentTemplate.name.removePrefix("PokemonGo").replace("Template", "").uppercase()
+                val imageCounter = if (captureLibrary.isEmpty()) "EMPTY" else "${(currentIndex + 1)} / ${captureLibrary.size}"
+                TerminalText(
+                    text = "$templateName | $imageCounter | ${selectedRegionId ?: "NONE"}",
+                    fontSize = 10.sp,
+                    color = TerminalDimGreen
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Main Viewport for Screenshot + Overlay
+            // MAXIMIZED VIEWPORT: Reduced padding and weight-based expansion
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,12 +112,29 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                             model = captureLibrary[currentIndex],
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
+                            onState = { state ->
+                                if (state is AsyncImagePainter.State.Success) {
+                                    imageSize = state.painter.intrinsicSize
+                                }
+                            }
                         )
                         
                         CaptureTemplateOverlay(
                             template = currentTemplate,
-                            isVisible = isOverlayVisible
+                            isVisible = isOverlayVisible,
+                            imageSize = imageSize,
+                            selectedRegionId = selectedRegionId,
+                            onRegionSelect = { selectedRegionId = it },
+                            onRegionUpdate = { updatedRegion ->
+                                manager.saveAdjustment(currentTemplate.name, updatedRegion)
+                                // Update local state immediately
+                                currentTemplate = currentTemplate.copy(
+                                    regions = currentTemplate.regions.map { 
+                                        if (it.id == updatedRegion.id) updatedRegion else it 
+                                    }
+                                )
+                            }
                         )
                     }
                 } else {
@@ -100,20 +142,30 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                         modifier = Modifier.fillMaxSize().background(Color.DarkGray.copy(alpha = 0.5f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        TerminalText(text = "NO MEDIA LOADED", color = TerminalDimGreen)
+                        TerminalButton(
+                            text = "load capture library",
+                            modifier = Modifier.padding(32.dp),
+                            onClick = {
+                                launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }
+                        )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            TerminalButton(text = "load capture", onClick = {
-                launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            })
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            TerminalButton(text = "back", onClick = onBack)
+            // COMPACT FOOTER: Minimal button footprint
+            if (captureLibrary.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TerminalText(text = "TAP: SELECT | DRAG: MOVE/RESIZE", fontSize = 9.sp, color = TerminalDimGreen)
+                    TerminalText(text = "L/R: BROWSE | B: EXIT", fontSize = 9.sp, color = TerminalDimGreen)
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                TerminalButton(text = "back", onClick = onBack)
+            }
         }
     }
 }
