@@ -27,7 +27,9 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.ObservationCropExtractor
+import com.example.overdex.data.observation.ObservationRecognizer
 import com.example.overdex.model.observation.CaptureObservation
+import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
@@ -49,6 +51,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     
     // Extraction state
     var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
+    var recognitionResults by remember { mutableStateOf<Map<String, RecognitionResult<*>>>(emptyMap()) }
     var isInspectionMode by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -59,6 +62,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
             currentIndex = 0
             imageSize = null // Reset size for new batch
             observations = null
+            recognitionResults = emptyMap()
             isInspectionMode = false
         }
     }
@@ -66,6 +70,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     LaunchedEffect(currentIndex) {
         imageSize = null
         observations = null
+        recognitionResults = emptyMap()
         isInspectionMode = false
     }
 
@@ -88,13 +93,14 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                 }
                 selectedRegionId = null // Clear selection on template switch
                 observations = null
+                recognitionResults = emptyMap()
             }
         },
         onA = {
             if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             } else if (!isInspectionMode) {
-                // Perform extraction
+                // Perform extraction and recognition
                 scope.launch {
                     val request = ImageRequest.Builder(context)
                         .data(captureLibrary[currentIndex])
@@ -103,7 +109,17 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                     val result = context.imageLoader.execute(request)
                     if (result is SuccessResult) {
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
-                        observations = ObservationCropExtractor.extract(bitmap, currentTemplate)
+                        val extracted = ObservationCropExtractor.extract(bitmap, currentTemplate)
+                        observations = extracted
+                        
+                        // Run recognizers
+                        val results = mutableMapOf<String, RecognitionResult<*>>()
+                        extracted.forEach { obs ->
+                            ObservationRecognizer.recognize(obs)?.let { res ->
+                                results[obs.regionId] = res
+                            }
+                        }
+                        recognitionResults = results
                         isInspectionMode = true
                     }
                 }
@@ -169,6 +185,15 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                                         .wrapContentHeight(),
                                     contentScale = ContentScale.Inside
                                 )
+                                
+                                // Display Recognition Result
+                                val result = recognitionResults[observation.regionId]
+                                if (result != null) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    TerminalText(text = "RECOGNIZED", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
+                                    TerminalText(text = result.value?.toString() ?: "—", fontSize = 16.sp)
+                                }
+
                                 Spacer(modifier = Modifier.height(4.dp))
                                 androidx.compose.material3.HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f))
                             }

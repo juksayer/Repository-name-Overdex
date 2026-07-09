@@ -81,6 +81,10 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     
+    // ML Kit
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    
     // Serialization
     implementation(libs.kotlinx.serialization.json)
     implementation("io.ktor:ktor-client-core:2.3.12")

@@ -54,6 +54,10 @@ The Pokédex came before the overlay because knowledge comes before advice.
 
 ---
 
+Confidence is the currency we use to buy the user's trust.
+
+Every observation contributes evidence, not certainty. Overdex earns confidence by accumulating independent observations that agree with one another. The system should never present more certainty than the evidence supports. When confidence is low, Overdex should say so. When confidence is high, the user should be able to understand why.
+
 # Observe Before Inferring
 
 The battle engine should distinguish between what it knows and what it believes.

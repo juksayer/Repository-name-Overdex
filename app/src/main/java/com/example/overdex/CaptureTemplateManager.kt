@@ -15,8 +15,7 @@ class CaptureTemplateManager(private val context: Context) {
                 CaptureRegion("SpeciesName", 0.1f, 0.43f, 0.8f, 0.05f, ObservationType.OCR_TEXT),
                 CaptureRegion("CombatPower", 0.35f, 0.06f, 0.3f, 0.06f, ObservationType.OCR_TEXT),
                 CaptureRegion("TypeIcons", 0.35f, 0.62f, 0.3f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("ShadowIndicator", 0.35f, 0.2f, 0.3f, 0.1f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("PurifiedIndicator", 0.35f, 0.2f, 0.3f, 0.1f, ObservationType.IMAGE_MATCH),
+                CaptureRegion("CandyPanel", 0.05f, 0.68f, 0.9f, 0.12f, ObservationType.TEMPLATE_MATCH),
                 CaptureRegion("ShinyIndicator", 0.8f, 0.1f, 0.1f, 0.05f, ObservationType.IMAGE_MATCH),
                 CaptureRegion("Gender", 0.85f, 0.43f, 0.05f, 0.05f, ObservationType.IMAGE_MATCH),
                 CaptureRegion("FavoriteStar", 0.88f, 0.06f, 0.08f, 0.06f, ObservationType.IMAGE_MATCH)
@@ -29,9 +28,9 @@ class CaptureTemplateManager(private val context: Context) {
         val base = CaptureTemplate(
             name = "PokemonGoMovesTemplate",
             regions = listOf(
-                CaptureRegion("FastMove", 0.05f, 0.73f, 0.9f, 0.04f, ObservationType.OCR_TEXT),
-                CaptureRegion("ChargedMoveA", 0.05f, 0.79f, 0.9f, 0.04f, ObservationType.OCR_TEXT),
-                CaptureRegion("ChargedMoveB", 0.05f, 0.85f, 0.9f, 0.04f, ObservationType.OCR_TEXT)
+                CaptureRegion("FastMoveRow", 0.05f, 0.73f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
+                CaptureRegion("ChargedMoveRowA", 0.05f, 0.79f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
+                CaptureRegion("ChargedMoveRowB", 0.05f, 0.85f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH)
             )
         )
         return loadAdjustedTemplate(base)
