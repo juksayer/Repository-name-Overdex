@@ -11,13 +11,24 @@ object ObservationRecognizer {
     
     /**
      * Recognizes structured data from a capture observation.
-     * @return A RecognitionResult containing the extracted value and confidence, or null if no recognizer exists.
+     * @return A list of RecognitionResults containing the extracted values.
      */
-    suspend fun recognize(observation: CaptureObservation): RecognitionResult<*>? {
-        return when (observation.regionId) {
-            "CombatPower" -> CombatPowerRecognizer.recognize(observation.crop)
-            "CandyPanel" -> CandyPanelSpeciesRecognizer.recognize(observation.crop)
-            else -> null
+    suspend fun recognize(observation: CaptureObservation): List<RecognitionResult<*>> {
+        val results = mutableListOf<RecognitionResult<*>>()
+        
+        when (observation.regionId) {
+            "CombatPower" -> {
+                results.add(CombatPowerRecognizer.recognize(observation.crop))
+            }
+            "CandyPanel" -> {
+                results.add(CandyPanelSpeciesRecognizer.recognize(observation.crop))
+            }
+            "FastMoveRow", "ChargedMoveRowA", "ChargedMoveRowB" -> {
+                results.add(MoveNameRecognizer.recognize(observation.crop))
+                ShadowBonusRecognizer.recognize(observation.crop)?.let { results.add(it) }
+            }
         }
+        
+        return results
     }
 }

@@ -51,7 +51,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     
     // Extraction state
     var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
-    var recognitionResults by remember { mutableStateOf<Map<String, RecognitionResult<*>>>(emptyMap()) }
+    var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
     var isInspectionMode by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -113,10 +113,11 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                         observations = extracted
                         
                         // Run recognizers
-                        val results = mutableMapOf<String, RecognitionResult<*>>()
+                        val results = mutableMapOf<String, List<RecognitionResult<*>>>()
                         extracted.forEach { obs ->
-                            ObservationRecognizer.recognize(obs)?.let { res ->
-                                results[obs.regionId] = res
+                            val regionResults = ObservationRecognizer.recognize(obs)
+                            if (regionResults.isNotEmpty()) {
+                                results[obs.regionId] = regionResults
                             }
                         }
                         recognitionResults = results
@@ -186,12 +187,16 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                                     contentScale = ContentScale.Inside
                                 )
                                 
-                                // Display Recognition Result
-                                val result = recognitionResults[observation.regionId]
-                                if (result != null) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    TerminalText(text = "RECOGNIZED", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
-                                    TerminalText(text = result.value?.toString() ?: "—", fontSize = 16.sp)
+                                // Display Recognition Results
+                                val results = recognitionResults[observation.regionId]
+                                if (results != null) {
+                                    results.forEach { res ->
+                                        if (res.value != null) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            TerminalText(text = "RECOGNIZED", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
+                                            TerminalText(text = res.value.toString(), fontSize = 16.sp)
+                                        }
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.height(4.dp))
