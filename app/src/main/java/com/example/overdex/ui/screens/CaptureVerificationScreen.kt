@@ -203,6 +203,60 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                                 androidx.compose.material3.HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f))
                             }
                         }
+
+                        // RECOGNITION SUMMARY
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TerminalHeader(text = "recognition summary")
+
+                            val summaryMap = mutableMapOf<String, String>()
+
+                            recognitionResults.forEach { (regionId, results) ->
+                                results.forEach { res ->
+                                    if (res.value != null) {
+                                        when (res.recognizer) {
+                                            "CandyPanelSpeciesRecognizer" -> summaryMap["Species"] = res.value.toString()
+                                            "CombatPowerRecognizer" -> summaryMap["Combat Power"] = res.value.toString()
+                                            "MoveNameRecognizer" -> {
+                                                when (regionId) {
+                                                    "FastMoveRow" -> summaryMap["Fast Move"] = res.value.toString()
+                                                    "ChargedMoveRowA" -> summaryMap["Charged Move A"] = res.value.toString()
+                                                    "ChargedMoveRowB" -> summaryMap["Charged Move B"] = res.value.toString()
+                                                }
+                                            }
+                                            "ShadowBonusRecognizer" -> summaryMap["Shadow Bonus"] = "+${res.value}"
+                                        }
+                                    }
+                                }
+                            }
+
+                            // TODO: Replace with RecognizedPokemon model
+                            val displayOrder = listOf(
+                                "Species",
+                                "Combat Power",
+                                "Fast Move",
+                                "Charged Move A",
+                                "Charged Move B",
+                                "Shadow Bonus"
+                            )
+
+                            displayOrder.forEach { label ->
+                                summaryMap[label]?.let { value ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        TerminalText(
+                                            text = "$label:",
+                                            color = TerminalDimGreen,
+                                            modifier = Modifier.width(140.dp)
+                                        )
+                                        TerminalText(text = value)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
                     }
                 } else if (captureLibrary.isNotEmpty()) {
                     // Standard Verification View

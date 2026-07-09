@@ -18,53 +18,59 @@ object ShadowBonusRecognizer {
     private val recognizer =
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-    suspend fun recognize(bitmap: Bitmap): RecognitionResult<Int>? {
+    /**
+     * Recognizes the shadow bonus.
+     * Returns a list containing the raw OCR output and the parsed bonus (if found).
+     */
+    suspend fun recognize(bitmap: Bitmap): List<RecognitionResult<*>> {
         val image = InputImage.fromBitmap(bitmap, 0)
+        val results = mutableListOf<RecognitionResult<*>>()
 
         return try {
             val result = recognizer.process(image).await()
 
-            // ----------------------------------------------------------------
-            // DEBUG: Dump exactly what ML Kit recognized.
-            // ----------------------------------------------------------------
-            Log.d(TAG, "========== RAW OCR ==========")
-            Log.d(TAG, result.text)
+            // 1. Expose Raw OCR Output
+            results.add(
+                RecognitionResult(
+                    value = result.text.ifEmpty { "[EMPTY]" },
+                    confidence = 1.0f,
+                    recognizer = "ShadowRawOCR"
+                )
+            )
 
-            result.textBlocks.forEachIndexed { blockIndex, block ->
-                Log.d(TAG, "Block $blockIndex:")
-                block.lines.forEachIndexed { lineIndex, line ->
-                    Log.d(TAG, "  Line $lineIndex: '${line.text}'")
+            // 2. Parse Embedded Shadow Bonus
+            // Refined heuristic: Search for '+' followed by digits anywhere in each line
+            val bonusRegex = Regex("""\+(\d+)""")
+            var shadowBonus: Int? = null
+
+            for (block in result.textBlocks) {
+                for (line in block.lines) {
+                    val match = bonusRegex.find(line.text)
+                    if (match != null) {
+                        shadowBonus = match.groupValues[1].toIntOrNull()
+                        if (shadowBonus != null) {
+                            Log.d(TAG, "Matched embedded value: $shadowBonus from '${line.text}'")
+                            break
+                        }
+                    }
                 }
+                if (shadowBonus != null) break
             }
-            Log.d(TAG, "=============================")
-
-            // Existing heuristic (unchanged)
-            val plusNumber = result.textBlocks
-                .flatMap { it.lines }
-                .map { it.text.trim() }
-                .firstOrNull {
-                    it.startsWith("+") &&
-                            it.drop(1).all { c -> c.isDigit() }
-                }
-
-            Log.d(TAG, "Matched value: $plusNumber")
-
-            val shadowBonus = plusNumber?.drop(1)?.toIntOrNull()
 
             if (shadowBonus != null) {
-                RecognitionResult(
-                    value = shadowBonus,
-                    confidence = 1.0f,
-                    recognizer = "ShadowBonusRecognizer"
+                results.add(
+                    RecognitionResult(
+                        value = shadowBonus,
+                        confidence = 1.0f,
+                        recognizer = "ShadowBonusRecognizer"
+                    )
                 )
-            } else {
-                Log.d(TAG, "No Shadow Bonus recognized.")
-                null
             }
 
+            results
         } catch (e: Exception) {
             Log.e(TAG, "Recognition failed", e)
-            null
+            results
         }
     }
 }

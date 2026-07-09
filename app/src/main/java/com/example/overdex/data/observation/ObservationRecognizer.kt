@@ -25,7 +25,7 @@ object ObservationRecognizer {
             }
             "FastMoveRow", "ChargedMoveRowA", "ChargedMoveRowB" -> {
                 results.add(MoveNameRecognizer.recognize(observation.crop))
-                ShadowBonusRecognizer.recognize(observation.crop)?.let { results.add(it) }
+                results.addAll(ShadowBonusRecognizer.recognize(observation.crop))
             }
         }
         
