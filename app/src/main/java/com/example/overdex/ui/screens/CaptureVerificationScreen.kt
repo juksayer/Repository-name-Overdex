@@ -262,7 +262,16 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                             )
 
                             displayOrder.forEach { label ->
-                                summaryMap[label]?.let { value ->
+                                val value = when (label) {
+                                    "Species" -> recognizedPokemon.species
+                                    "Combat Power" -> recognizedPokemon.cp?.toString()
+                                    "Fast Move" -> recognizedPokemon.fastMove
+                                    "Charged Move A" -> recognizedPokemon.chargedMoveA
+                                    "Charged Move B" -> recognizedPokemon.chargedMoveB
+                                    else -> summaryMap[label]
+                                }
+
+                                value?.let { summaryValue ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically
@@ -272,7 +281,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                                             color = TerminalDimGreen,
                                             modifier = Modifier.width(140.dp)
                                         )
-                                        TerminalText(text = value)
+                                        TerminalText(text = summaryValue)
                                     }
                                 }
                             }
