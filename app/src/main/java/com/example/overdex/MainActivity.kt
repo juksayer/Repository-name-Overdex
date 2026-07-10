@@ -217,8 +217,10 @@ fun
             }
         }
         composable("capture_verification") {
+            val collectionViewModel: MyCollectionViewModel = viewModel()
             CaptureVerificationScreen(
                 viewModel = viewModel,
+                collectionViewModel = collectionViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

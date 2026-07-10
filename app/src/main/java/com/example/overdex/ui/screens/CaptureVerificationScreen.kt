@@ -34,6 +34,7 @@ import com.example.overdex.model.toOwnedPokemon
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
@@ -47,6 +48,7 @@ enum class CalibrationMode {
 @Composable
 fun CaptureVerificationScreen(
     viewModel: PokedexViewModel,
+    collectionViewModel: MyCollectionViewModel,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -73,15 +75,20 @@ fun CaptureVerificationScreen(
 
     // Unified "best understanding" model
     val recognizedPokemon = remember(recognitionResults) {
-        val speciesResult = recognitionResults["CandyPanel"]?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
+        val speciesResult = recognitionResults["SpeciesName"]?.find { it.recognizer == "SpeciesNameRecognizer" }
+        val candyResult = recognitionResults["CandyPanel"]?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
+        
         val cpResult = recognitionResults["CombatPower"]?.find { it.recognizer == "CombatPowerRecognizer" }
         val fastMoveResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "MoveNameRecognizer" }
         val chargedMoveAResult = recognitionResults["ChargedMoveRowA"]?.find { it.recognizer == "MoveNameRecognizer" }
         val chargedMoveBResult = recognitionResults["ChargedMoveRowB"]?.find { it.recognizer == "MoveNameRecognizer" }
         val shadowBonusResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "ShadowBonusRecognizer" }
         
+        // Priority logic: Species Name > Candy Name (Family Evidence)
+        val finalSpecies = (speciesResult?.value as? String) ?: (candyResult?.value as? String)
+        
         RecognizedPokemon(
-            species = speciesResult?.value as? String,
+            species = finalSpecies,
             cp = cpResult?.value as? Int,
             fastMove = fastMoveResult?.value as? String,
             chargedMoveA = chargedMoveAResult?.value as? String,
@@ -223,14 +230,23 @@ fun CaptureVerificationScreen(
                 scope.launch {
                     val speciesName = recognizedPokemon.species
                     if (speciesName != null) {
-                        val speciesData = viewModel.getPokemonByName(speciesName)
+                        Log.d("CAPTURE_DIAGNOSTICS", "Recognized Species: \"$speciesName\"")
+                        
+                        val lookupKey = speciesName.trim()
+                        Log.d("CAPTURE_DIAGNOSTICS", "Lookup Key: \"$lookupKey\"")
+                        
+                        val speciesData = viewModel.getPokemonByName(lookupKey)
                         if (speciesData != null) {
+                            Log.d("CAPTURE_DIAGNOSTICS", "Match: Yes (#${speciesData.id})")
+                            
                             val owned = recognizedPokemon.toOwnedPokemon(speciesData.id)
                             lastMappedPokemon = owned
-                            Log.d("CAPTURE_IMPORT", "Created OwnedPokemon instance: $owned")
-                            saveConfirmation = "Import Accepted (Local Instance)"
+                            collectionViewModel.addOwnedPokemon(owned)
+                            Log.d("CAPTURE_IMPORT", "Saved OwnedPokemon to database: $owned")
+                            saveConfirmation = "Import Accepted (Saved to Database)"
                         } else {
-                            saveConfirmation = "Error: Species Not Found"
+                            Log.d("CAPTURE_DIAGNOSTICS", "Match: No")
+                            saveConfirmation = "Error: Species Not Found ($speciesName)"
                         }
                     } else {
                         saveConfirmation = "Error: No Species Recognized"

@@ -40,7 +40,7 @@ object CandyPanelSpeciesRecognizer {
 
             RecognitionResult(
                 value = detectedSpecies,
-                confidence = if (detectedSpecies != null) 1.0f else 0.0f,
+                confidence = if (detectedSpecies != null) 0.8f else 0.0f, // Evolution-family evidence weighting
                 recognizer = "CandyPanelSpeciesRecognizer"
             )
         } catch (e: Exception) {

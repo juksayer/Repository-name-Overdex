@@ -17,6 +17,9 @@ object ObservationRecognizer {
         val results = mutableListOf<RecognitionResult<*>>()
         
         when (observation.regionId) {
+            "SpeciesName" -> {
+                results.add(SpeciesNameRecognizer.recognize(observation.crop))
+            }
             "CombatPower" -> {
                 results.add(CombatPowerRecognizer.recognize(observation.crop))
             }
