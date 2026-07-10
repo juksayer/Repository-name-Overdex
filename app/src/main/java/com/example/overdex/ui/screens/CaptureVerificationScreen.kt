@@ -54,6 +54,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
     var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
     var isInspectionMode by remember { mutableStateOf(false) }
+    var saveConfirmation by remember { mutableStateOf<String?>(null) }
 
     // Unified "best understanding" model
     val recognizedPokemon = remember(recognitionResults) {
@@ -94,6 +95,13 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
         isInspectionMode = false
     }
 
+    LaunchedEffect(saveConfirmation) {
+        if (saveConfirmation != null) {
+            kotlinx.coroutines.delay(1000)
+            saveConfirmation = null
+        }
+    }
+
     PokedexFrame(
         onUp = {
             if (!isInspectionMode && selectedRegionId != null) {
@@ -101,6 +109,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                 if (region != null) {
                     val updated = region.copy(y = (region.y - 0.005f).coerceAtLeast(0f))
                     manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
                     currentTemplate = currentTemplate.copy(
                         regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
                     )
@@ -113,6 +122,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                 if (region != null) {
                     val updated = region.copy(y = (region.y + 0.005f).coerceAtMost(1f - region.height))
                     manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
                     currentTemplate = currentTemplate.copy(
                         regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
                     )
@@ -225,6 +235,14 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                         color = TerminalDimGreen
                     )
                 }
+            }
+
+            if (saveConfirmation != null) {
+                TerminalText(
+                    text = saveConfirmation!!,
+                    color = com.example.overdex.ui.theme.TerminalGreen,
+                    fontSize = 10.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(4.dp))
