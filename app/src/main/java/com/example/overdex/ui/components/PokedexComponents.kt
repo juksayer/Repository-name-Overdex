@@ -228,7 +228,8 @@ fun PokedexFrame(
                         if (overlayState == OverlayState.EXPANDED) {
                             EnemyTeamMemoryOverlay(
                                 enemyTeam = battleMemory.enemyTeam,
-                                decision = currentDecision
+                                decision = currentDecision,
+                                spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
                             )
                             
                             // Live Move Panel - Displays moves for the active enemy

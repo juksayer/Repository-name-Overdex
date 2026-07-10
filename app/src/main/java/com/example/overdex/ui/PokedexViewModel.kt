@@ -17,7 +17,8 @@ import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.PokemonSearchRepository
 import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.GithubSpriteProvider
-import com.example.overdex.data.CompositeSpriteProvider
+import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.data.FallbackSpriteProvider
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -34,7 +35,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _isServiceRunning = MutableStateFlow(false)
     val isServiceRunning = _isServiceRunning.asStateFlow()
 
-    private val spriteProvider: SpriteProvider = CompositeSpriteProvider(localIds = setOf(1))
+    val spriteProvider: SpriteProvider = FallbackSpriteProvider(
+        primary = LocalSpriteProvider(application.assets),
+        secondary = GithubSpriteProvider()
+    )
 
     // App-session state for the boot sequence
     private val _hasBootedInSession = MutableStateFlow(false)
@@ -395,7 +399,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
-            spriteUrl = spriteUrl,
+            spriteUrl = spriteProvider.getSpriteUrl(id),
             cryUrl = cryUrl,
             description = description
         )

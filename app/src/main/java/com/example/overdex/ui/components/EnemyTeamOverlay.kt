@@ -37,7 +37,8 @@ import com.example.overdex.data.SpriteProvider
 @Composable
 fun EnemyTeamMemoryOverlay(
     enemyTeam: List<EnemyPokemonMemory>,
-    decision: DecisionAnalysis? = null
+    decision: DecisionAnalysis? = null,
+    spriteProvider: SpriteProvider = GithubSpriteProvider()
 ) {
     Row(
         modifier = Modifier
@@ -55,7 +56,7 @@ fun EnemyTeamMemoryOverlay(
         
         // Enemy Pokémon Blocks
         enemyTeam.forEach { pokemon ->
-            EnemyPokemonBlock(pokemon)
+            EnemyPokemonBlock(pokemon, spriteProvider)
         }
     }
 }
