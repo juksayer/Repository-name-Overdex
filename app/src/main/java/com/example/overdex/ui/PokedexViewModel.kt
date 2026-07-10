@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.PokemonSearchRepository
+import com.example.overdex.data.SpriteProvider
+import com.example.overdex.data.GithubSpriteProvider
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -30,6 +32,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _isServiceRunning = MutableStateFlow(false)
     val isServiceRunning = _isServiceRunning.asStateFlow()
+
+    private val spriteProvider: SpriteProvider = GithubSpriteProvider()
 
     // App-session state for the boot sequence
     private val _hasBootedInSession = MutableStateFlow(false)
@@ -149,7 +153,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             ?.map { it.replaceFirstChar(Char::uppercase) }
                             ?.toList()
                         ?: listOf("Normal")
-                val spriteUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
+                val spriteUrl = spriteProvider.getSpriteUrl(id)
 
                 if (id == 152 || id == 249 || id == 445 || id == 1000) {
                     Log.d(

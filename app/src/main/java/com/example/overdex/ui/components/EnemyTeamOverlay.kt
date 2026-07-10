@@ -28,6 +28,8 @@ import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
+import com.example.overdex.data.GithubSpriteProvider
+import com.example.overdex.data.SpriteProvider
 
 /**
  * A horizontal row of enemy Pokémon sprites, serving as a persistent memory of the opponent's team.
@@ -77,13 +79,16 @@ fun DecisionIcon(decision: DecisionAnalysis) {
 }
 
 @Composable
-fun EnemyPokemonBlock(pokemon: EnemyPokemonMemory) {
+fun EnemyPokemonBlock(
+    pokemon: EnemyPokemonMemory,
+    spriteProvider: SpriteProvider = GithubSpriteProvider()
+) {
     // Hardcoded sprite mapping for the prototype
     val spriteUrl = when (pokemon.species.lowercase()) {
-        "swampert" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png"
-        "talonflame" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/663.png"
-        "azumarill" -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/184.png"
-        else -> "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png"
+        "swampert" -> spriteProvider.getSpriteUrl(260)
+        "talonflame" -> spriteProvider.getSpriteUrl(663)
+        "azumarill" -> spriteProvider.getSpriteUrl(184)
+        else -> spriteProvider.getSpriteUrl(0)
     }
 
     val isFainted = !pokemon.alive

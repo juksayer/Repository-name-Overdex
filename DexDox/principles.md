@@ -296,3 +296,27 @@ This gesture represents returning from the Overdex handheld to the user's phone,
 Type glyphs are part of Overdex's visual language.
 
 They represent the underlying concepts of the Pokémon types rather than reproducing official Pokémon iconography. New UI should use these glyphs consistently instead of introducing alternate symbols.
+
+## Transparency Builds Trust
+
+Whenever a user could reasonably ask:
+
+- What happened?
+- Why?
+- What happens next?
+
+Overdex should answer before they have to ask.
+
+Never fail silently.
+Never save silently.
+Never guess silently.
+
+Confidence, uncertainty, and system state are part of the user interface.
+
+Local First
+
+Core gameplay assets and knowledge should be available without an internet connection whenever practical.
+
+Network access should improve Overdex, not enable it.
+
+Users should be able to browse, learn, review, and battle whether they're at home, in a tournament venue, or riding through a tunnel.

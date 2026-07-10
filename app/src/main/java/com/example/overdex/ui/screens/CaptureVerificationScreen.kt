@@ -36,6 +36,10 @@ import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
 
+enum class CalibrationMode {
+    MOVE, WIDTH, HEIGHT
+}
+
 @Composable
 fun CaptureVerificationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -45,6 +49,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     var currentTemplate by remember { mutableStateOf(manager.getSummaryTemplate()) }
     var isOverlayVisible by remember { mutableStateOf(true) }
     var selectedRegionId by remember { mutableStateOf<String?>(null) }
+    var calibrationMode by remember { mutableStateOf(CalibrationMode.MOVE) }
     
     var captureLibrary by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var currentIndex by remember { mutableIntStateOf(0) }
