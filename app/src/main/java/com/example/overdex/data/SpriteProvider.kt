@@ -25,3 +25,21 @@ class LocalSpriteProvider : SpriteProvider {
         return "file:///android_asset/sprites/pokemon/$id.png"
     }
 }
+
+/**
+ * Uses LocalSpriteProvider for specific IDs (e.g. Bulbasaur #1)
+ * and falls back to GithubSpriteProvider for everything else.
+ */
+class CompositeSpriteProvider(
+    private val localIds: Set<Int>,
+    private val localProvider: LocalSpriteProvider = LocalSpriteProvider(),
+    private val githubProvider: GithubSpriteProvider = GithubSpriteProvider()
+) : SpriteProvider {
+    override fun getSpriteUrl(id: Int): String {
+        return if (id in localIds) {
+            localProvider.getSpriteUrl(id)
+        } else {
+            githubProvider.getSpriteUrl(id)
+        }
+    }
+}
