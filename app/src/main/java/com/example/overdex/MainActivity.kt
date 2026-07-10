@@ -217,7 +217,10 @@ fun
             }
         }
         composable("capture_verification") {
-            CaptureVerificationScreen(onBack = { navController.popBackStack() })
+            CaptureVerificationScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable("list") {
             PokedexListScreen(

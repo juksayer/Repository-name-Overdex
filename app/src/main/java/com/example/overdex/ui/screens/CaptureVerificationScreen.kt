@@ -28,20 +28,27 @@ import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.ObservationCropExtractor
 import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.RecognizedPokemon
+import com.example.overdex.model.toOwnedPokemon
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
+import android.util.Log
 
 enum class CalibrationMode {
     MOVE, WIDTH, HEIGHT
 }
 
 @Composable
-fun CaptureVerificationScreen(onBack: () -> Unit) {
+fun CaptureVerificationScreen(
+    viewModel: PokedexViewModel,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val manager = remember { CaptureTemplateManager(context) }
@@ -60,6 +67,9 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
     var isInspectionMode by remember { mutableStateOf(false) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
+
+    // Result of mapping (local only for now)
+    var lastMappedPokemon by remember { mutableStateOf<OwnedPokemon?>(null) }
 
     // Unified "best understanding" model
     val recognizedPokemon = remember(recognitionResults) {
@@ -206,6 +216,24 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                         recognitionResults = results
 
                         isInspectionMode = true
+                    }
+                }
+            } else {
+                // INSPECTION MODE: Accept Import
+                scope.launch {
+                    val speciesName = recognizedPokemon.species
+                    if (speciesName != null) {
+                        val speciesData = viewModel.getPokemonByName(speciesName)
+                        if (speciesData != null) {
+                            val owned = recognizedPokemon.toOwnedPokemon(speciesData.id)
+                            lastMappedPokemon = owned
+                            Log.d("CAPTURE_IMPORT", "Created OwnedPokemon instance: $owned")
+                            saveConfirmation = "Import Accepted (Local Instance)"
+                        } else {
+                            saveConfirmation = "Error: Species Not Found"
+                        }
+                    } else {
+                        saveConfirmation = "Error: No Species Recognized"
                     }
                 }
             }
