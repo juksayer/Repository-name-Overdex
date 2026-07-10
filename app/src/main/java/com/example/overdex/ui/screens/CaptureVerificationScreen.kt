@@ -95,13 +95,61 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     }
 
     PokedexFrame(
-        onUp = { /* Reserved */ },
-        onDown = { /* Reserved */ },
+        onUp = {
+            if (!isInspectionMode && selectedRegionId != null) {
+                val region = currentTemplate.regions.find { it.id == selectedRegionId }
+                if (region != null) {
+                    val updated = region.copy(y = (region.y - 0.005f).coerceAtLeast(0f))
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
+                }
+            }
+        },
+        onDown = {
+            if (!isInspectionMode && selectedRegionId != null) {
+                val region = currentTemplate.regions.find { it.id == selectedRegionId }
+                if (region != null) {
+                    val updated = region.copy(y = (region.y + 0.005f).coerceAtMost(1f - region.height))
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
+                }
+            }
+        },
         onLeft = {
-            if (!isInspectionMode && currentIndex > 0) currentIndex--
+            if (!isInspectionMode) {
+                if (selectedRegionId != null) {
+                    val region = currentTemplate.regions.find { it.id == selectedRegionId }
+                    if (region != null) {
+                        val updated = region.copy(x = (region.x - 0.005f).coerceAtLeast(0f))
+                        manager.saveAdjustment(currentTemplate.name, updated)
+                        currentTemplate = currentTemplate.copy(
+                            regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                        )
+                    }
+                } else if (currentIndex > 0) {
+                    currentIndex--
+                }
+            }
         },
         onRight = {
-            if (!isInspectionMode && currentIndex < captureLibrary.size - 1) currentIndex++
+            if (!isInspectionMode) {
+                if (selectedRegionId != null) {
+                    val region = currentTemplate.regions.find { it.id == selectedRegionId }
+                    if (region != null) {
+                        val updated = region.copy(x = (region.x + 0.005f).coerceAtMost(1f - region.width))
+                        manager.saveAdjustment(currentTemplate.name, updated)
+                        currentTemplate = currentTemplate.copy(
+                            regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                        )
+                    }
+                } else if (currentIndex < captureLibrary.size - 1) {
+                    currentIndex++
+                }
+            }
         },
         onSelect = { if (!isInspectionMode) isOverlayVisible = !isOverlayVisible },
         onStart = {
@@ -268,6 +316,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                                     "Fast Move" -> recognizedPokemon.fastMove
                                     "Charged Move A" -> recognizedPokemon.chargedMoveA
                                     "Charged Move B" -> recognizedPokemon.chargedMoveB
+                                    "Shadow Bonus" -> recognizedPokemon.shadowBonus?.let { "+$it" }
                                     else -> summaryMap[label]
                                 }
 
