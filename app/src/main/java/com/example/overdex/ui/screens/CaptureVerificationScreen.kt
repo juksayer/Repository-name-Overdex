@@ -28,6 +28,7 @@ import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.ObservationCropExtractor
 import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.model.RecognizedPokemon
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.ui.components.*
@@ -53,6 +54,25 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
     var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
     var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
     var isInspectionMode by remember { mutableStateOf(false) }
+
+    // Unified "best understanding" model
+    val recognizedPokemon = remember(recognitionResults) {
+        val speciesResult = recognitionResults["CandyPanel"]?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
+        val cpResult = recognitionResults["CombatPower"]?.find { it.recognizer == "CombatPowerRecognizer" }
+        val fastMoveResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "MoveNameRecognizer" }
+        val chargedMoveAResult = recognitionResults["ChargedMoveRowA"]?.find { it.recognizer == "MoveNameRecognizer" }
+        val chargedMoveBResult = recognitionResults["ChargedMoveRowB"]?.find { it.recognizer == "MoveNameRecognizer" }
+        val shadowBonusResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "ShadowBonusRecognizer" }
+        
+        RecognizedPokemon(
+            species = speciesResult?.value as? String,
+            cp = cpResult?.value as? Int,
+            fastMove = fastMoveResult?.value as? String,
+            chargedMoveA = chargedMoveAResult?.value as? String,
+            chargedMoveB = chargedMoveBResult?.value as? String,
+            shadowBonus = shadowBonusResult?.value as? Int
+        )
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
@@ -121,6 +141,7 @@ fun CaptureVerificationScreen(onBack: () -> Unit) {
                             }
                         }
                         recognitionResults = results
+
                         isInspectionMode = true
                     }
                 }
