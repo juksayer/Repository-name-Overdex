@@ -444,7 +444,7 @@ fun CaptureVerificationScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(observations!!) { observation ->
+                        items(observations!!) { observation: CaptureObservation ->
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 TerminalText(text = "REGION: ${observation.regionId}", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
                                 Image(
@@ -622,7 +622,12 @@ fun CaptureVerificationScreen(
                         )
 
                         if (!isInspectionMode) {
-                            Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.TopEnd
+                            ) {
                                 CalibrationStatusPanel(
                                     mode = calibrationMode,
                                     regionId = selectedRegionId,

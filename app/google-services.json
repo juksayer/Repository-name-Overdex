@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "135254686377",
+    "project_id": "com-example-startovermon-6b6ff",
+    "storage_bucket": "com-example-startovermon-6b6ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135254686377:android:d73cfd7a9790c17e7147b8",
+        "android_client_info": {
+          "package_name": "com.example.overdex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8MclZZNDq4kWQEjXJ6kHVeIs7pbDN8pA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:135254686377:android:c14f5d1962613a597147b8",
+        "android_client_info": {
+          "package_name": "com.example.startovermon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8MclZZNDq4kWQEjXJ6kHVeIs7pbDN8pA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

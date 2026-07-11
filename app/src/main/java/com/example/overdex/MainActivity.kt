@@ -8,11 +8,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,13 +21,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewModelScope
 import com.example.overdex.media.MediaManager
-import com.example.overdex.data.TrainerRepository
-import com.example.overdex.data.PartnerRepository
-import com.example.overdex.data.SharedPreferencesPartnerRepository
-import com.example.overdex.data.SharedTimelineRepository
-import com.example.overdex.data.SharedPreferencesTimelineRepository
-import com.example.overdex.data.ChatRepository
-import com.example.overdex.data.SharedPreferencesChatRepository
+import androidx.lifecycle.lifecycleScope
+import com.example.overdex.data.*
 import com.example.overdex.model.*
 import kotlinx.coroutines.launch
 import com.example.overdex.ui.PokedexViewModel
@@ -55,6 +51,17 @@ class MainActivity : ComponentActivity() {
         partnerRepository = SharedPreferencesPartnerRepository(this)
         chatRepository = SharedPreferencesChatRepository(this)
 
+        lifecycleScope.launch {
+            partnerRepository.partner.collect { partner ->
+                if (partner != null) {
+                    val myId = trainerRepository.getIdentity().trainerId.toString()
+                    val transport = ChatTransportFactory.create(this@MainActivity, myId, partner.trainerId)
+                    chatRepository.setTransport(transport)
+                    Log.i("CHAT_TRANSPORT", "Repository transport updated: ${transport::class.java.simpleName}")
+                }
+            }
+        }
+
         val identity = trainerRepository.getIdentity()
         Log.d("TRAINER_IDENTITY", "Loaded Identity: ${identity.displayName} (${identity.trainerId})")
         Log.d("TRAINER_IDENTITY", "Seed: ${identity.avatarSeed} | Version: ${identity.appVersionWhenCreated}")
@@ -76,7 +83,7 @@ class MainActivity : ComponentActivity() {
             val chatMessages by chatRepository.messages.collectAsState()
 
             OverdexTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding: PaddingValues ->
                     PokedexApp(
                         mediaManager = mediaManager,
                         calibrationManager = calibrationManager,
@@ -208,7 +215,7 @@ fun
                 )
             }
         }
-        composable("module/{title}/{status}/{description}") { backStackEntry ->
+        composable("module/{title}/{status}/{description}") { backStackEntry: NavBackStackEntry ->
             val title = backStackEntry.arguments?.getString("title") ?: "module"
             val statusStr = backStackEntry.arguments?.getString("status") ?: "UNAVAILABLE"
             val description = backStackEntry.arguments?.getString("description") ?: ""

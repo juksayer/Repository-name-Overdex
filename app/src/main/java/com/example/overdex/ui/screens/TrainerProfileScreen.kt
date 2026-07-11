@@ -199,6 +199,20 @@ fun TrainerProfileScreen(
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
+                // Debug / System Status Section
+                TerminalSection(title = "system status") {
+                    val transportStatus = remember(trainerIdentity, partnerIdentity) {
+                        if (partnerIdentity == null) "IDLE (No Partner)"
+                        else {
+                            "FIREBASE ACTIVE"
+                        }
+                    }
+                    TerminalText(text = "TRANSPORT:", color = TerminalDimGreen, fontSize = 10.sp)
+                    TerminalText(text = transportStatus, fontSize = 12.sp, color = TerminalGreen)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 TerminalButton(text = "back", onClick = onBack)
             }
         }
