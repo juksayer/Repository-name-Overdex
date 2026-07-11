@@ -44,6 +44,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.ui.text.font.FontWeight
 import com.example.overdex.ui.theme.TerminalGreen
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+
+import com.example.overdex.ui.components.PokemonTypeIcon
 import android.util.Log
 
 enum class CalibrationMode {
@@ -203,7 +207,7 @@ fun CaptureVerificationScreen(
         
         val shadowBonusResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "ShadowBonusRecognizer" }
             ?: recognitionResults["SummaryFastMove"]?.find { it.recognizer == "ShadowBonusRecognizer" }
-        
+
         RecognizedPokemon(
             species = resolvedSpecies,
             family = recognizedFamily,
@@ -520,11 +524,27 @@ fun CaptureVerificationScreen(
                                 value = if (recognizedPokemon.family.isNotEmpty()) "${recognizedPokemon.family.first()} Family" else null,
                                 status = if (recognizedPokemon.family.isNotEmpty()) EvidenceStatus.VALID else EvidenceStatus.MISSING
                             )
-                            EvidenceRow(
-                                label = "Type Icons",
-                                value = null, // Not yet implemented
-                                status = EvidenceStatus.MISSING
-                            )
+                            if (resolvedSpeciesData != null) {
+                                EvidenceRow(
+                                    label = "Type Icons",
+                                    value = "",
+                                    status = EvidenceStatus.VALID
+                                )
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    resolvedSpeciesData!!.types.forEach { type ->
+                                        PokemonTypeIcon(type)
+                                    }
+                                }
+                            } else {
+                                EvidenceRow(
+                                    label = "Type Icons",
+                                    value = null,
+                                    status = EvidenceStatus.MISSING
+                                )
+                            }
                             EvidenceRow(
                                 label = "Combat Power",
                                 value = recognizedPokemon.cp?.toString(),

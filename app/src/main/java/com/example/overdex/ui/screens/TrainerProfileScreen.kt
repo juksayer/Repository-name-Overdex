@@ -128,13 +128,24 @@ fun TrainerProfileScreen(
                         text = "scan trainer qr",
                         onClick = onScanQr
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TerminalButton(
+                        text = "link debug partner",
+                        onClick = {
+                            scope.launch {
+                                partnerRepository.linkDebugPartner()
+                            }
+                        }
+                    )
                 }
 
                 // Partner Section
                 TerminalSection(title = "partner") {
                     if (partnerIdentity != null) {
                         TerminalText(
-                            text = "❤️ ${partnerIdentity.displayName?.uppercase() ?: "UNNAMED"}",
+                            text = " ${partnerIdentity.displayName?.uppercase() ?: "UNNAMED"}",
                             fontSize = 18.sp,
                             color = TerminalPurple
                         )

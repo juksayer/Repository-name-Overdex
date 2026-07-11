@@ -58,7 +58,7 @@ fun ChatScreen(
     ) { _ ->
         TerminalScreen {
             Column(modifier = Modifier.fillMaxSize()) {
-                TerminalHeader(text = partnerIdentity?.displayName?.let { "❤️ $it" } ?: "private chat")
+                TerminalHeader(text = partnerIdentity?.displayName?.let { " $it" } ?: "private chat")
                 
                 Spacer(modifier = Modifier.height(8.dp))
 

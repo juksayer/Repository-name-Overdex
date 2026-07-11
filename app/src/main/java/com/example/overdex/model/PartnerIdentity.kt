@@ -13,5 +13,8 @@ data class PartnerIdentity(
     val avatarSeed: Long,
     @Serializable(with = InstantSerializer::class)
     val linkedAt: Instant,
-    val protocolVersion: Int
+    val protocolVersion: Int,
+
+    // Temporary until trainers can choose their companion.
+    val companionSpecies: String = "Shadow Gardevoir"
 )

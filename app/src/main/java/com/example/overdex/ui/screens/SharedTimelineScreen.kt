@@ -42,7 +42,9 @@ fun SharedTimelineScreen(
     ) { _ ->
         TerminalScreen {
             Column(modifier = Modifier.fillMaxSize()) {
-                TerminalHeader(text = partnerIdentity?.displayName?.let { "❤️ $it" } ?: "shared timeline")
+                TerminalHeader(
+                    text = partnerIdentity?.displayName ?: "shared timeline"
+                )
                 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -145,7 +147,7 @@ fun MilestoneEventRow(event: SharedEvent) {
             modifier = Modifier.clickable { /* Future: Congratulate */ },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TerminalText(text = "❤️ CONGRATULATE", color = TerminalPurple, fontSize = 12.sp)
+            TerminalText(text = " CONGRATULATE", color = TerminalPurple, fontSize = 12.sp)
         }
     }
 }

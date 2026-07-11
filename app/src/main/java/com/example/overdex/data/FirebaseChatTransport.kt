@@ -78,7 +78,12 @@ class FirebaseChatTransport(
 
             Log.i(
                 "CHAT_TRANSPORT",
-                "CHAT SEND: $conversationId | ${message.senderTrainerId} | ${message.text}"
+                """
+                CHAT SEND
+                Conversation: $conversationId
+                Sender: ${message.senderTrainerId}
+                Message: "${message.text}"
+                """.trimIndent()
             )
 
         } catch (e: Exception) {
@@ -160,7 +165,12 @@ class FirebaseChatTransport(
 
                         Log.i(
                             "CHAT_TRANSPORT",
-                            "CHAT RECEIVE: $conversationId | ${message.senderTrainerId} | ${message.text}"
+                            """
+                            CHAT RECEIVE
+                            Conversation: $conversationId
+                            Sender: ${message.senderTrainerId}
+                            Message: "${message.text}"
+                            """.trimIndent()
                         )
 
                         trySend(message)

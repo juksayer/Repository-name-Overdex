@@ -19,8 +19,16 @@ import java.time.Instant
  */
 interface PartnerRepository {
     val partner: StateFlow<PartnerIdentity?>
-    suspend fun link(identity: PublicTrainerIdentity, myIdentity: TrainerIdentity, recordLinkEvent: (SharedEvent) -> Unit)
+
+    suspend fun link(
+        identity: PublicTrainerIdentity,
+        myIdentity: TrainerIdentity,
+        recordLinkEvent: (SharedEvent) -> Unit
+    )
+
     suspend fun unlink()
+
+    suspend fun linkDebugPartner()
 }
 
 class SharedPreferencesPartnerRepository(private val context: Context) : PartnerRepository {
@@ -77,5 +85,17 @@ class SharedPreferencesPartnerRepository(private val context: Context) : Partner
         prefs.edit().remove("partner_identity").apply()
         _partner.value = null
         // Note: Timeline is preserved for historical record
+    }override suspend fun linkDebugPartner() {
+        val partnerIdentity = PartnerIdentity(
+            trainerId = "debug-partner",
+            displayName = "Atlas Test",
+            avatarSeed = 12345L,
+            linkedAt = Instant.now(),
+            protocolVersion = 1
+        )
+
+        val partnerJson = json.encodeToString(PartnerIdentity.serializer(), partnerIdentity)
+        prefs.edit().putString("partner_identity", partnerJson).apply()
+        _partner.value = partnerIdentity
     }
 }
