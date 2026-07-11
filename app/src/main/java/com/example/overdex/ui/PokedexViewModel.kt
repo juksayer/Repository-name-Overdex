@@ -364,6 +364,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         return pokemonDao.getPokemonByName(name)?.toDomain()
     }
 
+    /**
+     * Resolves the entire evolution family (names) that a given species belongs to.
+     */
+    suspend fun getEvolutionFamily(name: String): List<String> {
+        val base = getPokemonByName(name) ?: return emptyList()
+        val family = mutableSetOf<String>()
+        family.add(base.name)
+        base.prevEvolutions.forEach { family.add(it.name) }
+        base.nextEvolutions.forEach { family.add(it.name) }
+        return family.toList()
+    }
+
     private fun PokemonEntity.toDomain(): Pokemon {
         val types = try { Json.decodeFromString<List<PokemonType>>(typesJson) } catch (e: Exception) { emptyList() }
         val fastMoves = try { Json.decodeFromString<List<Move>>(fastMovesJson) } catch (e: Exception) { emptyList() }

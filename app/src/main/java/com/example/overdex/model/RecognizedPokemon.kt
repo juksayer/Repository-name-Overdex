@@ -6,6 +6,7 @@ package com.example.overdex.model
  */
 data class RecognizedPokemon(
     val species: String? = null,
+    val family: List<String> = emptyList(),
     val cp: Int? = null,
     val fastMove: String? = null,
     val chargedMoveA: String? = null,

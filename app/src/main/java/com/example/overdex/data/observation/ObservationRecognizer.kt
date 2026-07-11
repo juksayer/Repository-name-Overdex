@@ -26,12 +26,12 @@ object ObservationRecognizer {
             "CandyPanel" -> {
                 results.add(CandyPanelSpeciesRecognizer.recognize(observation.crop))
             }
-            "FastMoveRow", "ChargedMoveRowA", "ChargedMoveRowB" -> {
+            "FastMoveRow", "ChargedMoveRowA", "ChargedMoveRowB", "SummaryFastMove" -> {
                 results.add(MoveNameRecognizer.recognize(observation.crop))
                 results.addAll(ShadowBonusRecognizer.recognize(observation.crop))
             }
         }
         
-        return results
+        return results.filter { it.confidence > 0 }
     }
 }

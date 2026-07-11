@@ -39,10 +39,54 @@ import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.font.FontWeight
+import com.example.overdex.ui.theme.TerminalGreen
 import android.util.Log
 
 enum class CalibrationMode {
     MOVE, WIDTH, HEIGHT
+}
+
+enum class EvidenceStatus {
+    VALID, MISSING, CONFLICTING, NOT_OBSERVED
+}
+
+@Composable
+fun EvidenceRow(
+    label: String,
+    value: String?,
+    status: EvidenceStatus
+) {
+    if (status == EvidenceStatus.NOT_OBSERVED) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TerminalText(
+            text = when (status) {
+                EvidenceStatus.VALID -> "✓"
+                EvidenceStatus.CONFLICTING -> "?"
+                EvidenceStatus.MISSING -> "⚠"
+                else -> ""
+            },
+            color = when (status) {
+                EvidenceStatus.VALID -> TerminalGreen
+                EvidenceStatus.CONFLICTING -> Color.Yellow
+                EvidenceStatus.MISSING -> Color.Red
+                else -> Color.Gray
+            },
+            modifier = Modifier.width(20.dp)
+        )
+        Column {
+            TerminalText(text = label, color = TerminalDimGreen, fontSize = 10.sp)
+            TerminalText(
+                text = value ?: "Not Recognized",
+                color = if (status != EvidenceStatus.MISSING) Color.White else Color.Gray,
+                fontSize = 14.sp
+            )
+        }
+    }
 }
 
 @Composable
@@ -72,29 +116,50 @@ fun CaptureVerificationScreen(
 
     // Result of mapping (local only for now)
     var lastMappedPokemon by remember { mutableStateOf<OwnedPokemon?>(null) }
+    var recognizedFamily by remember { mutableStateOf<List<String>>(emptyList()) }
+    var resolvedSpeciesData by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
 
     // Unified "best understanding" model
-    val recognizedPokemon = remember(recognitionResults) {
+    val recognizedPokemon = remember(recognitionResults, recognizedFamily) {
         val speciesResult = recognitionResults["SpeciesName"]?.find { it.recognizer == "SpeciesNameRecognizer" }
-        val candyResult = recognitionResults["CandyPanel"]?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
         
         val cpResult = recognitionResults["CombatPower"]?.find { it.recognizer == "CombatPowerRecognizer" }
         val fastMoveResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "MoveNameRecognizer" }
+            ?: recognitionResults["SummaryFastMove"]?.find { it.recognizer == "MoveNameRecognizer" }
+            
         val chargedMoveAResult = recognitionResults["ChargedMoveRowA"]?.find { it.recognizer == "MoveNameRecognizer" }
         val chargedMoveBResult = recognitionResults["ChargedMoveRowB"]?.find { it.recognizer == "MoveNameRecognizer" }
-        val shadowBonusResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "ShadowBonusRecognizer" }
         
-        // Priority logic: Species Name > Candy Name (Family Evidence)
-        val finalSpecies = (speciesResult?.value as? String) ?: (candyResult?.value as? String)
+        val shadowBonusResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "ShadowBonusRecognizer" }
+            ?: recognitionResults["SummaryFastMove"]?.find { it.recognizer == "ShadowBonusRecognizer" }
         
         RecognizedPokemon(
-            species = finalSpecies,
+            species = speciesResult?.value as? String,
+            family = recognizedFamily,
             cp = cpResult?.value as? Int,
             fastMove = fastMoveResult?.value as? String,
             chargedMoveA = chargedMoveAResult?.value as? String,
             chargedMoveB = chargedMoveBResult?.value as? String,
             shadowBonus = shadowBonusResult?.value as? Int
         )
+    }
+
+    // Resolve Family evidence and full species data
+    LaunchedEffect(recognitionResults) {
+        val speciesName = recognizedPokemon.species
+        if (speciesName != null) {
+            resolvedSpeciesData = viewModel.getPokemonByName(speciesName.trim())
+        } else {
+            resolvedSpeciesData = null
+        }
+
+        val candyResult = recognitionResults["CandyPanel"]?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
+        val candyName = candyResult?.value as? String
+        if (candyName != null) {
+            recognizedFamily = viewModel.getEvolutionFamily(candyName)
+        } else {
+            recognizedFamily = emptyList()
+        }
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -249,7 +314,10 @@ fun CaptureVerificationScreen(
                             saveConfirmation = "Error: Species Not Found ($speciesName)"
                         }
                     } else {
-                        saveConfirmation = "Error: No Species Recognized"
+                        val errorSuffix = if (recognizedPokemon.family.isNotEmpty()) {
+                            " (Family: ${recognizedPokemon.family.joinToString("/")})"
+                        } else ""
+                        saveConfirmation = "Error: No Species Recognized$errorSuffix"
                     }
                 }
             }
@@ -345,62 +413,114 @@ fun CaptureVerificationScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             TerminalHeader(text = "recognition summary")
 
-                            val summaryMap = mutableMapOf<String, String>()
-
-                            recognitionResults.forEach { (regionId, results) ->
-                                results.forEach { res ->
-                                    if (res.value != null) {
-                                        when (res.recognizer) {
-                                            "CandyPanelSpeciesRecognizer" -> summaryMap["Species"] = res.value.toString()
-                                            "CombatPowerRecognizer" -> summaryMap["Combat Power"] = res.value.toString()
-                                            "MoveNameRecognizer" -> {
-                                                when (regionId) {
-                                                    "FastMoveRow" -> summaryMap["Fast Move"] = res.value.toString()
-                                                    "ChargedMoveRowA" -> summaryMap["Charged Move A"] = res.value.toString()
-                                                    "ChargedMoveRowB" -> summaryMap["Charged Move B"] = res.value.toString()
-                                                }
-                                            }
-                                            "ShadowBonusRecognizer" -> summaryMap["Shadow Bonus"] = "+${res.value}"
-                                        }
-                                    }
+                            if (recognizedPokemon.species != null) {
+                                TerminalText(
+                                    text = recognizedPokemon.species.uppercase(),
+                                    fontSize = 24.sp,
+                                    color = com.example.overdex.ui.theme.TerminalPurple
+                                )
+                            } else if (recognizedPokemon.family.isNotEmpty()) {
+                                TerminalText(text = "POSSIBLE FAMILY", color = TerminalDimGreen, fontSize = 12.sp)
+                                recognizedPokemon.family.forEach { member ->
+                                    TerminalText(text = " • $member", fontSize = 16.sp)
                                 }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TerminalText(
+                                    text = "Waiting for additional evidence...",
+                                    color = Color.Yellow,
+                                    fontSize = 11.sp
+                                )
+                            } else {
+                                TerminalText(text = "UNKNOWN", color = TerminalDimGreen, fontSize = 20.sp)
                             }
 
-                            // TODO: Replace with RecognizedPokemon model
-                            val displayOrder = listOf(
-                                "Species",
-                                "Combat Power",
-                                "Fast Move",
-                                "Charged Move A",
-                                "Charged Move B",
-                                "Shadow Bonus"
+                            Spacer(modifier = Modifier.height(16.dp))
+                            TerminalText(text = "EVIDENCE", fontSize = 12.sp, color = TerminalDimGreen)
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Evidence Rows
+                            EvidenceRow(
+                                label = "Species Name",
+                                value = recognizedPokemon.species,
+                                status = if (recognizedPokemon.species != null) EvidenceStatus.VALID else EvidenceStatus.MISSING
+                            )
+                            EvidenceRow(
+                                label = "Candy Family",
+                                value = if (recognizedPokemon.family.isNotEmpty()) "${recognizedPokemon.family.first()} Family" else null,
+                                status = if (recognizedPokemon.family.isNotEmpty()) EvidenceStatus.VALID else EvidenceStatus.MISSING
+                            )
+                            EvidenceRow(
+                                label = "Type Icons",
+                                value = null, // Not yet implemented
+                                status = EvidenceStatus.MISSING
+                            )
+                            EvidenceRow(
+                                label = "Combat Power",
+                                value = recognizedPokemon.cp?.toString(),
+                                status = if (recognizedPokemon.cp != null) EvidenceStatus.VALID else EvidenceStatus.MISSING
                             )
 
-                            displayOrder.forEach { label ->
-                                val value = when (label) {
-                                    "Species" -> recognizedPokemon.species
-                                    "Combat Power" -> recognizedPokemon.cp?.toString()
-                                    "Fast Move" -> recognizedPokemon.fastMove
-                                    "Charged Move A" -> recognizedPokemon.chargedMoveA
-                                    "Charged Move B" -> recognizedPokemon.chargedMoveB
-                                    "Shadow Bonus" -> recognizedPokemon.shadowBonus?.let { "+$it" }
-                                    else -> summaryMap[label]
+                            // Move Validation
+                            val fastMoveStatus = when {
+                                recognizedPokemon.fastMove != null -> {
+                                    if (resolvedSpeciesData == null) EvidenceStatus.VALID
+                                    else if (resolvedSpeciesData!!.fastMoves.any { it.name.equals(recognizedPokemon.fastMove, ignoreCase = true) }) EvidenceStatus.VALID
+                                    else EvidenceStatus.CONFLICTING
                                 }
-
-                                value?.let { summaryValue ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        TerminalText(
-                                            text = "$label:",
-                                            color = TerminalDimGreen,
-                                            modifier = Modifier.width(140.dp)
-                                        )
-                                        TerminalText(text = summaryValue)
-                                    }
-                                }
+                                currentTemplate.name == "PokemonGoSummaryTemplate" -> EvidenceStatus.NOT_OBSERVED
+                                else -> EvidenceStatus.MISSING
                             }
+                            
+                            val chargedMoveAStatus = when {
+                                recognizedPokemon.chargedMoveA != null -> {
+                                    if (resolvedSpeciesData == null) EvidenceStatus.VALID
+                                    else if (resolvedSpeciesData!!.chargedMoves.any { it.name.equals(recognizedPokemon.chargedMoveA, ignoreCase = true) }) EvidenceStatus.VALID
+                                    else EvidenceStatus.CONFLICTING
+                                }
+                                currentTemplate.name == "PokemonGoSummaryTemplate" -> EvidenceStatus.NOT_OBSERVED
+                                else -> EvidenceStatus.MISSING
+                            }
+
+                            val chargedMoveBStatus = when {
+                                recognizedPokemon.chargedMoveB != null -> {
+                                    if (resolvedSpeciesData == null) EvidenceStatus.VALID
+                                    else if (resolvedSpeciesData!!.chargedMoves.any { it.name.equals(recognizedPokemon.chargedMoveB, ignoreCase = true) }) EvidenceStatus.VALID
+                                    else EvidenceStatus.CONFLICTING
+                                }
+                                currentTemplate.name == "PokemonGoSummaryTemplate" -> EvidenceStatus.NOT_OBSERVED
+                                else -> EvidenceStatus.MISSING
+                            }
+
+                            EvidenceRow(
+                                label = "Fast Move",
+                                value = recognizedPokemon.fastMove,
+                                status = fastMoveStatus
+                            )
+                            
+                            if (recognizedPokemon.chargedMoveA != null || chargedMoveAStatus == EvidenceStatus.CONFLICTING) {
+                                EvidenceRow(
+                                    label = "Charged Move A",
+                                    value = recognizedPokemon.chargedMoveA,
+                                    status = chargedMoveAStatus
+                                )
+                            }
+
+                            if (recognizedPokemon.chargedMoveB != null || chargedMoveBStatus == EvidenceStatus.CONFLICTING) {
+                                EvidenceRow(
+                                    label = "Charged Move B",
+                                    value = recognizedPokemon.chargedMoveB,
+                                    status = chargedMoveBStatus
+                                )
+                            }
+
+                            if (recognizedPokemon.shadowBonus != null) {
+                                EvidenceRow(
+                                    label = "Shadow Bonus",
+                                    value = "+${recognizedPokemon.shadowBonus}%",
+                                    status = EvidenceStatus.VALID
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(32.dp))
                         }
                     }
