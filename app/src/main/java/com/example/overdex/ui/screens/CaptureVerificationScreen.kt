@@ -187,6 +187,12 @@ fun CaptureVerificationScreen(
     // Unified "best understanding" model
     val recognizedPokemon = remember(recognitionResults, recognizedFamily) {
         val speciesResult = recognitionResults["SpeciesName"]?.find { it.recognizer == "SpeciesNameRecognizer" }
+        val candyResult =
+            recognitionResults["CandyPanel"]
+                ?.find { it.recognizer == "CandyPanelSpeciesRecognizer" }
+        val resolvedSpecies =
+            (speciesResult?.value as? String)
+                ?: (candyResult?.value as? String)
         
         val cpResult = recognitionResults["CombatPower"]?.find { it.recognizer == "CombatPowerRecognizer" }
         val fastMoveResult = recognitionResults["FastMoveRow"]?.find { it.recognizer == "MoveNameRecognizer" }
@@ -199,7 +205,7 @@ fun CaptureVerificationScreen(
             ?: recognitionResults["SummaryFastMove"]?.find { it.recognizer == "ShadowBonusRecognizer" }
         
         RecognizedPokemon(
-            species = speciesResult?.value as? String,
+            species = resolvedSpecies,
             family = recognizedFamily,
             cp = cpResult?.value as? Int,
             fastMove = fastMoveResult?.value as? String,
