@@ -15,9 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.data.TrainerRepository
+import com.example.overdex.data.PartnerRepository
 import com.example.overdex.model.TrainerIdentity
+import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
+import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -25,11 +28,16 @@ import java.util.Locale
 @Composable
 fun TrainerProfileScreen(
     trainerIdentity: TrainerIdentity?,
+    partnerIdentity: PartnerIdentity?,
     trainerRepository: TrainerRepository,
+    partnerRepository: PartnerRepository,
     onShowQr: () -> Unit,
     onScanQr: () -> Unit,
+    onViewTimeline: () -> Unit,
+    onChat: () -> Unit,
     onBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var showEditDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
     
@@ -115,15 +123,54 @@ fun TrainerProfileScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                TerminalButton(
-                    text = "scan trainer qr",
-                    onClick = onScanQr
-                )
+                if (partnerIdentity == null) {
+                    TerminalButton(
+                        text = "scan trainer qr",
+                        onClick = onScanQr
+                    )
+                }
 
-                // Partner Section (Placeholder)
+                // Partner Section
                 TerminalSection(title = "partner") {
-                    TerminalText(text = "STATUS:", color = TerminalDimGreen, fontSize = 10.sp)
-                    TerminalText(text = "NOT LINKED", fontSize = 14.sp)
+                    if (partnerIdentity != null) {
+                        TerminalText(
+                            text = "❤️ ${partnerIdentity.displayName?.uppercase() ?: "UNNAMED"}",
+                            fontSize = 18.sp,
+                            color = TerminalPurple
+                        )
+                        
+                        val dateStr = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ROOT)
+                            .withZone(ZoneId.systemDefault())
+                            .format(partnerIdentity.linkedAt)
+                        
+                        TerminalText(text = "LINKED", color = TerminalDimGreen, fontSize = 10.sp)
+                        TerminalText(text = dateStr, fontSize = 12.sp)
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TerminalButton(
+                                text = "view",
+                                onClick = onViewTimeline,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TerminalButton(
+                                text = "chat",
+                                onClick = onChat,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TerminalButton(
+                                text = "unlink",
+                                onClick = { 
+                                    scope.launch { partnerRepository.unlink() }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    } else {
+                        TerminalText(text = "STATUS:", color = TerminalDimGreen, fontSize = 10.sp)
+                        TerminalText(text = "NOT LINKED", fontSize = 14.sp)
+                    }
                 }
 
                 // Avatar Section (Placeholder)

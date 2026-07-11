@@ -24,16 +24,22 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.overdex.data.PublicIdentitySerializer
 import com.example.overdex.data.QrCodeAnalyzer
+import com.example.overdex.data.PartnerRepository
 import com.example.overdex.model.PublicTrainerIdentity
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 @Composable
 fun QrScannerScreen(
+    trainerIdentity: com.example.overdex.model.TrainerIdentity?,
+    partnerRepository: PartnerRepository,
+    timelineRepository: com.example.overdex.data.SharedTimelineRepository,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     
     var hasCameraPermission by remember {
@@ -64,6 +70,17 @@ fun QrScannerScreen(
     if (scannedIdentity != null) {
         TrainerFoundPreview(
             identity = scannedIdentity!!,
+            onLink = {
+                scope.launch {
+                    trainerIdentity?.let { myId ->
+                        partnerRepository.link(it, myId) { event ->
+                            scope.launch { timelineRepository.recordEvent(event) }
+                        }
+                    }
+                    scannedIdentity = null
+                    onBack()
+                }
+            },
             onDone = { scannedIdentity = null },
             onBack = onBack
         )
@@ -175,12 +192,13 @@ fun CameraPreview(
 @Composable
 fun TrainerFoundPreview(
     identity: PublicTrainerIdentity,
+    onLink: (PublicTrainerIdentity) -> Unit,
     onDone: () -> Unit,
     onBack: () -> Unit
 ) {
     PokedexFrame(
         onB = onBack,
-        onA = onDone
+        onA = { onLink(identity) }
     ) { _ ->
         TerminalScreen {
             Column(
@@ -222,21 +240,20 @@ fun TrainerFoundPreview(
                     color = Color.White
                 )
                 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(32.dp))
                 
-                TerminalText(
-                    text = "Pairing is not yet implemented.",
-                    color = Color.Gray,
-                    fontSize = 12.sp
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                TerminalButton(
-                    text = "done",
-                    onClick = onDone,
-                    modifier = Modifier.width(120.dp)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TerminalButton(
+                        text = "link trainer",
+                        onClick = { onLink(identity) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TerminalButton(
+                        text = "cancel",
+                        onClick = onDone,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }

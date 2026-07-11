@@ -1,0 +1,181 @@
+package com.example.overdex.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.overdex.data.ChatRepository
+import com.example.overdex.model.ChatMessage
+import com.example.overdex.model.ChatMessageType
+import com.example.overdex.model.PartnerIdentity
+import com.example.overdex.model.TrainerIdentity
+import com.example.overdex.ui.components.*
+import com.example.overdex.ui.theme.*
+import kotlinx.coroutines.launch
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+@Composable
+fun ChatScreen(
+    trainerIdentity: TrainerIdentity?,
+    partnerIdentity: PartnerIdentity?,
+    messages: List<ChatMessage>,
+    chatRepository: ChatRepository,
+    onBack: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var inputText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+
+    // Auto-scroll to bottom when new messages arrive
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    PokedexFrame(
+        onB = onBack,
+        onA = {
+            if (inputText.isNotBlank() && trainerIdentity != null) {
+                scope.launch {
+                    chatRepository.send(inputText, trainerIdentity)
+                    inputText = ""
+                }
+            }
+        }
+    ) { _ ->
+        TerminalScreen {
+            Column(modifier = Modifier.fillMaxSize()) {
+                TerminalHeader(text = partnerIdentity?.displayName?.let { "❤️ $it" } ?: "private chat")
+                
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Messages List
+                Box(modifier = Modifier.weight(1f)) {
+                    if (messages.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            TerminalText(text = "NO MESSAGES YET", color = Color.Gray)
+                        }
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(messages) { message ->
+                                val isMe = message.senderTrainerId == trainerIdentity?.trainerId?.toString()
+                                ChatMessageRow(
+                                    message = message,
+                                    isMe = isMe,
+                                    senderName = if (isMe) "YOU" else partnerIdentity?.displayName ?: "PARTNER"
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Input Area
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("TYPE MESSAGE...", color = TerminalDimGreen, fontSize = 12.sp) },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = TerminalBlack,
+                            unfocusedContainerColor = TerminalBlack,
+                            focusedTextColor = TerminalGreen,
+                            unfocusedTextColor = TerminalGreen,
+                            focusedIndicatorColor = TerminalGreen,
+                            unfocusedIndicatorColor = TerminalDimGreen
+                        ),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    TerminalButton(
+                        text = "SEND",
+                        onClick = {
+                            if (inputText.isNotBlank() && trainerIdentity != null) {
+                                scope.launch {
+                                    chatRepository.send(inputText, trainerIdentity)
+                                    inputText = ""
+                                }
+                            }
+                        },
+                        modifier = Modifier.width(80.dp)
+                    )
+                }
+
+                TerminalButton(text = "back", onClick = onBack)
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatMessageRow(
+    message: ChatMessage,
+    isMe: Boolean,
+    senderName: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TerminalText(
+                text = senderName,
+                color = if (isMe) TerminalPurple else TerminalGreen,
+                fontSize = 10.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            val timeStr = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
+                .withZone(ZoneId.systemDefault())
+                .format(message.sentAt)
+            TerminalText(text = timeStr, color = Color.Gray, fontSize = 9.sp)
+        }
+        
+        Box(
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .background(
+                    color = if (isMe) TerminalPurple.copy(alpha = 0.1f) else TerminalGreen.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(if (isMe) 8.dp else 4.dp)
+                )
+                .border(
+                    width = 0.5.dp,
+                    color = if (isMe) TerminalPurple.copy(alpha = 0.3f) else TerminalGreen.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(if (isMe) 8.dp else 4.dp)
+                )
+                .padding(8.dp)
+        ) {
+            TerminalText(
+                text = message.text ?: "",
+                color = Color.White,
+                fontSize = 14.sp
+            )
+        }
+    }
+}

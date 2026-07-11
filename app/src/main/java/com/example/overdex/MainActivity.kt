@@ -21,7 +21,13 @@ import androidx.navigation.navArgument
 import androidx.lifecycle.viewModelScope
 import com.example.overdex.media.MediaManager
 import com.example.overdex.data.TrainerRepository
-import com.example.overdex.model.TrainerIdentity
+import com.example.overdex.data.PartnerRepository
+import com.example.overdex.data.SharedPreferencesPartnerRepository
+import com.example.overdex.data.SharedTimelineRepository
+import com.example.overdex.data.SharedPreferencesTimelineRepository
+import com.example.overdex.data.ChatRepository
+import com.example.overdex.data.SharedPreferencesChatRepository
+import com.example.overdex.model.*
 import kotlinx.coroutines.launch
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
@@ -36,12 +42,18 @@ class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
     private lateinit var calibrationManager: CalibrationManager
     private lateinit var trainerRepository: TrainerRepository
+    private lateinit var partnerRepository: PartnerRepository
+    private lateinit var timelineRepository: SharedTimelineRepository
+    private lateinit var chatRepository: ChatRepository
     private var selectedRegion = CalibrationRegion.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         calibrationManager = CalibrationManager(this)
         trainerRepository = TrainerRepository(this)
+        timelineRepository = SharedPreferencesTimelineRepository(this)
+        partnerRepository = SharedPreferencesPartnerRepository(this)
+        chatRepository = SharedPreferencesChatRepository(this)
 
         val identity = trainerRepository.getIdentity()
         Log.d("TRAINER_IDENTITY", "Loaded Identity: ${identity.displayName} (${identity.trainerId})")
@@ -59,6 +71,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val trainerIdentity by trainerRepository.identity.collectAsState()
+            val partnerIdentity by partnerRepository.partner.collectAsState()
+            val timelineEvents by timelineRepository.events.collectAsState()
+            val chatMessages by chatRepository.messages.collectAsState()
 
             OverdexTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -66,7 +81,13 @@ class MainActivity : ComponentActivity() {
                         mediaManager = mediaManager,
                         calibrationManager = calibrationManager,
                         trainerRepository = trainerRepository,
+                        partnerRepository = partnerRepository,
+                        timelineRepository = timelineRepository,
+                        chatRepository = chatRepository,
                         trainerIdentity = trainerIdentity,
+                        partnerIdentity = partnerIdentity,
+                        timelineEvents = timelineEvents,
+                        chatMessages = chatMessages,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -86,7 +107,13 @@ fun
     mediaManager: MediaManager,
     calibrationManager: CalibrationManager,
     trainerRepository: TrainerRepository,
+    partnerRepository: PartnerRepository,
+    timelineRepository: SharedTimelineRepository,
+    chatRepository: ChatRepository,
     trainerIdentity: TrainerIdentity?,
+    partnerIdentity: PartnerIdentity?,
+    timelineEvents: List<SharedEvent>,
+    chatMessages: List<ChatMessage>,
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
@@ -242,9 +269,29 @@ fun
         composable("trainer_profile") {
             TrainerProfileScreen(
                 trainerIdentity = trainerIdentity,
+                partnerIdentity = partnerIdentity,
                 trainerRepository = trainerRepository,
+                partnerRepository = partnerRepository,
                 onShowQr = { navController.navigate("qr_identity") },
                 onScanQr = { navController.navigate("qr_scanner") },
+                onViewTimeline = { navController.navigate("shared_timeline") },
+                onChat = { navController.navigate("private_chat") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("private_chat") {
+            ChatScreen(
+                trainerIdentity = trainerIdentity,
+                partnerIdentity = partnerIdentity,
+                messages = chatMessages,
+                chatRepository = chatRepository,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("shared_timeline") {
+            SharedTimelineScreen(
+                partnerIdentity = partnerIdentity,
+                events = timelineEvents,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -257,6 +304,9 @@ fun
         }
         composable("qr_scanner") {
             QrScannerScreen(
+                trainerIdentity = trainerIdentity,
+                partnerRepository = partnerRepository,
+                timelineRepository = timelineRepository,
                 onBack = { navController.popBackStack() }
             )
         }
