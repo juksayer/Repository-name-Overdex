@@ -27,6 +27,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val searchRepository = PokemonSearchRepository(pokemonDao)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
+    
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
     private val _searchRequest = MutableStateFlow(SearchRequest())

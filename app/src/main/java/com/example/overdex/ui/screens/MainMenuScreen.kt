@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalDimGreen
+import com.example.overdex.model.TrainerIdentity
 import kotlinx.coroutines.delay
 
 data class MenuOption(
@@ -23,26 +24,33 @@ fun MainMenuScreen(
     hasBootedInSession: Boolean,
     onBootComplete: () -> Unit,
     selectedIndex: Int = 0,
-    options: List<MenuOption> = emptyList()
+    options: List<MenuOption> = emptyList(),
+    trainerIdentity: TrainerIdentity? = null
 ) {
     val scrollState = rememberScrollState()
 
     // Local state for the sequential lines
-    var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 11 else 0) }
+    var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
 
-    val bootLines = listOf(
-        "overdex boot sequence...",
-        "version 1.0.8",
-        "",
-        "initializing confidence engine...",
-        "checking local database.............. [ok]",
-        "loading pokemon...................... [1025]",
-        "loading move database................ [894]",
-        "loading type effectiveness........... [ok]",
-        "loading user profile................. [ok]",
-        "confidence engine.................... [ready]",
-        "confidence level..................... [high]"
-    )
+    val bootLines = remember(trainerIdentity) {
+        listOf(
+            "overdex boot sequence...",
+            "version 1.0.8",
+            "",
+            "initializing confidence engine...",
+            "checking local database.............. [ok]",
+            "loading pokemon...................... [1025]",
+            "loading move database................ [894]",
+            "loading type effectiveness........... [ok]",
+            "loading user profile................. [ok]",
+            "",
+            "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "UNNAMED TRAINER"}",
+            "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "UNKNOWN"}",
+            "",
+            "confidence engine.................... [ready]",
+            "confidence level..................... [high]"
+        )
+    }
 
     LaunchedEffect(hasBootedInSession) {
         if (!hasBootedInSession) {
@@ -67,7 +75,7 @@ fun MainMenuScreen(
             onBootComplete()
         } else {
             // If already booted, ensure menu is visible instantly
-            bootStep = 11
+            bootStep = bootLines.size
             // Wait for layout to settle so maxValue is calculated
             delay(100)
 

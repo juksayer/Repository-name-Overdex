@@ -39,12 +39,77 @@ import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.ui.text.font.FontWeight
 import com.example.overdex.ui.theme.TerminalGreen
 import android.util.Log
 
 enum class CalibrationMode {
     MOVE, WIDTH, HEIGHT
+}
+
+@Composable
+fun CalibrationStatusPanel(
+    mode: CalibrationMode,
+    regionId: String?,
+    saveConfirmation: String?
+) {
+    Column(
+        modifier = Modifier
+            .padding(8.dp)
+            .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(4.dp))
+            .border(0.5.dp, TerminalDimGreen.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+            .padding(8.dp)
+            .width(180.dp)
+    ) {
+        TerminalText(text = "MODE", color = TerminalDimGreen, fontSize = 9.sp)
+        TerminalText(
+            text = when (mode) {
+                CalibrationMode.MOVE -> "Move Box"
+                CalibrationMode.WIDTH -> "Resize Width"
+                CalibrationMode.HEIGHT -> "Resize Height"
+            },
+            color = Color.White,
+            fontSize = 12.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TerminalText(text = "REGION", color = TerminalDimGreen, fontSize = 9.sp)
+        TerminalText(
+            text = regionId?.replace(Regex("([A-Z])"), " $1")?.trim()?.uppercase() ?: "NONE SELECTED",
+            color = if (regionId != null) TerminalPurple else Color.Gray,
+            fontSize = 12.sp
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TerminalText(text = "CONTROLS", color = TerminalDimGreen, fontSize = 9.sp)
+        ControlRow("↑↓←→", when (mode) {
+            CalibrationMode.MOVE -> "Move Box"
+            CalibrationMode.WIDTH -> "Resize Width"
+            CalibrationMode.HEIGHT -> "Resize Height"
+        })
+        ControlRow("A", "Recognize")
+        ControlRow("B", "Exit")
+        ControlRow("START", "Switch Template")
+        ControlRow("SELECT", "Toggle UI")
+
+        if (saveConfirmation != null && saveConfirmation.contains("Saved")) {
+            Spacer(modifier = Modifier.height(8.dp))
+            TerminalText(text = saveConfirmation.uppercase(), color = TerminalGreen, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun ControlRow(key: String, action: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        TerminalText(text = key.padEnd(8), color = TerminalGreen, fontSize = 9.sp, modifier = Modifier.width(60.dp))
+        TerminalText(text = action, color = Color.White, fontSize = 9.sp)
+    }
 }
 
 enum class EvidenceStatus {
@@ -555,6 +620,16 @@ fun CaptureVerificationScreen(
                                 )
                             }
                         )
+
+                        if (!isInspectionMode) {
+                            Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                                CalibrationStatusPanel(
+                                    mode = calibrationMode,
+                                    regionId = selectedRegionId,
+                                    saveConfirmation = saveConfirmation
+                                )
+                            }
+                        }
                     }
                 } else {
                     // Empty State

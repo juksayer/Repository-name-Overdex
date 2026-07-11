@@ -89,6 +89,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation("io.ktor:ktor-client-core:2.3.12")
     implementation("io.ktor:ktor-client-cio:2.3.12")
+    
+    // QR Code
+    implementation("com.google.zxing:core:3.5.4")
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

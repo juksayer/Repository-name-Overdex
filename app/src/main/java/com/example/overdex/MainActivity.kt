@@ -8,10 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,6 +20,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewModelScope
 import com.example.overdex.media.MediaManager
+import com.example.overdex.data.TrainerRepository
+import com.example.overdex.model.TrainerIdentity
 import kotlinx.coroutines.launch
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
@@ -33,11 +35,17 @@ import kotlin.system.exitProcess
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
     private lateinit var calibrationManager: CalibrationManager
+    private lateinit var trainerRepository: TrainerRepository
     private var selectedRegion = CalibrationRegion.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         calibrationManager = CalibrationManager(this)
+        trainerRepository = TrainerRepository(this)
+
+        val identity = trainerRepository.getIdentity()
+        Log.d("TRAINER_IDENTITY", "Loaded Identity: ${identity.displayName} (${identity.trainerId})")
+        Log.d("TRAINER_IDENTITY", "Seed: ${identity.avatarSeed} | Version: ${identity.appVersionWhenCreated}")
 
         val calibration = calibrationManager.load()
         if (!calibration.isCalibrated()) {
@@ -50,11 +58,15 @@ class MainActivity : ComponentActivity() {
         mediaManager = MediaManager(this)
         enableEdgeToEdge()
         setContent {
+            val trainerIdentity by trainerRepository.identity.collectAsState()
+
             OverdexTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     PokedexApp(
                         mediaManager = mediaManager,
                         calibrationManager = calibrationManager,
+                        trainerRepository = trainerRepository,
+                        trainerIdentity = trainerIdentity,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -73,6 +85,8 @@ fun
         PokedexApp(
     mediaManager: MediaManager,
     calibrationManager: CalibrationManager,
+    trainerRepository: TrainerRepository,
+    trainerIdentity: TrainerIdentity?,
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
@@ -80,7 +94,6 @@ fun
     val isServiceRunning by viewModel.isServiceRunning.collectAsState()
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
-
 
     NavHost(
         navController = navController,
@@ -95,6 +108,7 @@ fun
                     MenuOption("overdex", { navController.navigate("list") }),
                     MenuOption("my collection", { navController.navigate("collection") }),
                     MenuOption("capture test", { navController.navigate("capture_verification") }),
+                    MenuOption("trainer profile", { navController.navigate("trainer_profile") }),
                     MenuOption("readme", { navController.navigate("readme") })
                 )
             }
@@ -124,7 +138,8 @@ fun
                     hasBootedInSession = hasBootedInSession,
                     onBootComplete = { viewModel.markBooted() },
                     selectedIndex = selectedIndex,
-                    options = options
+                    options = options,
+                    trainerIdentity = trainerIdentity
                 )
             }
         }
@@ -221,6 +236,21 @@ fun
             CaptureVerificationScreen(
                 viewModel = viewModel,
                 collectionViewModel = collectionViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("trainer_profile") {
+            TrainerProfileScreen(
+                trainerIdentity = trainerIdentity,
+                trainerRepository = trainerRepository,
+                onShowQr = { navController.navigate("qr_identity") },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("qr_identity") {
+            QrIdentityScreen(
+                trainerIdentity = trainerIdentity,
+                trainerRepository = trainerRepository,
                 onBack = { navController.popBackStack() }
             )
         }
