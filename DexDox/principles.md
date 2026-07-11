@@ -320,3 +320,9 @@ Core gameplay assets and knowledge should be available without an internet conne
 Network access should improve Overdex, not enable it.
 
 Users should be able to browse, learn, review, and battle whether they're at home, in a tournament venue, or riding through a tunnel.
+
+A recognizer never invents domain objects.
+
+It produces observations.
+
+The Game Master validates those observations.

@@ -13,6 +13,12 @@ import kotlinx.coroutines.tasks.await
 object SpeciesNameRecognizer {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
+    private fun normalizeSpeciesCandidate(text: String): String {
+        return text
+            .replace(Regex("^#\\d+"), "")   // Remove "#15"
+            .replace(Regex("^\\d+"), "")    // Remove "15"
+            .trim()
+    }
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)
         return try {
@@ -21,7 +27,7 @@ object SpeciesNameRecognizer {
             // The species name is usually the primary text in this region.
             val speciesName = result.textBlocks
                 .flatMap { it.lines }
-                .map { it.text.trim() }
+                .map { normalizeSpeciesCandidate(it.text) }
                 .firstOrNull { it.isNotEmpty() }
 
             RecognitionResult(
