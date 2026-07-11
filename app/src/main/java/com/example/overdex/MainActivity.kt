@@ -244,6 +244,7 @@ fun
                 trainerIdentity = trainerIdentity,
                 trainerRepository = trainerRepository,
                 onShowQr = { navController.navigate("qr_identity") },
+                onScanQr = { navController.navigate("qr_scanner") },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -251,6 +252,11 @@ fun
             QrIdentityScreen(
                 trainerIdentity = trainerIdentity,
                 trainerRepository = trainerRepository,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable("qr_scanner") {
+            QrScannerScreen(
                 onBack = { navController.popBackStack() }
             )
         }

@@ -27,6 +27,7 @@ fun TrainerProfileScreen(
     trainerIdentity: TrainerIdentity?,
     trainerRepository: TrainerRepository,
     onShowQr: () -> Unit,
+    onScanQr: () -> Unit,
     onBack: () -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
@@ -110,6 +111,13 @@ fun TrainerProfileScreen(
                 TerminalButton(
                     text = "show my qr",
                     onClick = onShowQr
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TerminalButton(
+                    text = "scan trainer qr",
+                    onClick = onScanQr
                 )
 
                 // Partner Section (Placeholder)
