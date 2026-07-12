@@ -33,15 +33,17 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
         ownedPokemonDao.getAllOwnedPokemonWithSpecies(),
         _searchQuery
     ) { entities, query ->
-        val list = entities.map { it.owned.toDomain() }
-        if (query.isBlank()) {
-            list
+        val filtered = if (query.isBlank()) {
+            entities
         } else {
             entities.filter { 
                 it.owned.displayName?.contains(query, ignoreCase = true) == true ||
                 it.speciesName?.contains(query, ignoreCase = true) == true
-            }.map { it.owned.toDomain() }
+            }
         }
+        
+        filtered.map { it.owned.toDomain() }
+            .sortedWith(compareByDescending<OwnedPokemon> { it.isFavorite }.thenByDescending { it.createdAt })
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

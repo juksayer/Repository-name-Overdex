@@ -13,6 +13,7 @@ data class OwnedPokemonEntity(
     val isShadow: Boolean,
     val isPurified: Boolean,
     val isShiny: Boolean,
+    val isFavorite: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -25,6 +26,7 @@ fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
     isShadow = isShadow,
     isPurified = isPurified,
     isShiny = isShiny,
+    isFavorite = isFavorite,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -37,6 +39,7 @@ fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
     isShadow = isShadow,
     isPurified = isPurified,
     isShiny = isShiny,
+    isFavorite = isFavorite,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

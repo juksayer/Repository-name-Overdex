@@ -279,6 +279,8 @@ fun
                 partnerIdentity = partnerIdentity,
                 trainerRepository = trainerRepository,
                 partnerRepository = partnerRepository,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
                 onShowQr = { navController.navigate("qr_identity") },
                 onScanQr = { navController.navigate("qr_scanner") },
                 onViewTimeline = { navController.navigate("shared_timeline") },
@@ -287,11 +289,22 @@ fun
             )
         }
         composable("private_chat") {
+            val collectionViewModel: MyCollectionViewModel = viewModel()
             ChatScreen(
                 trainerIdentity = trainerIdentity,
                 partnerIdentity = partnerIdentity,
                 messages = chatMessages,
                 chatRepository = chatRepository,
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                onPokemonClick = { id -> 
+                    viewModel.viewModelScope.launch {
+                        viewModel.getPokemonById(id)?.let {
+                            mediaManager.playSound(it.cryUrl)
+                        }
+                    }
+                    navController.navigate("detail/$id") 
+                },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -403,25 +416,12 @@ fun
                 ownedId = id,
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
+                chatRepository = chatRepository,
+                trainerIdentity = trainerIdentity,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onEditClick = { navController.navigate("owned_edit/$id") },
                 onDeleteSuccess = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
-            )
-        }
-        composable("owned_edit/{id}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            OwnedPokemonEditScreen(
-                ownedId = id,
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onSaveSuccess = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning
             )
         }

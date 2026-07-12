@@ -123,8 +123,9 @@ enum class EvidenceStatus {
 @Composable
 fun EvidenceRow(
     label: String,
-    value: String?,
-    status: EvidenceStatus
+    value: String? = null,
+    status: EvidenceStatus,
+    content: (@Composable () -> Unit)? = null
 ) {
     if (status == EvidenceStatus.NOT_OBSERVED) return
 
@@ -149,11 +150,15 @@ fun EvidenceRow(
         )
         Column {
             TerminalText(text = label, color = TerminalDimGreen, fontSize = 10.sp)
-            TerminalText(
-                text = value ?: "Not Recognized",
-                color = if (status != EvidenceStatus.MISSING) Color.White else Color.Gray,
-                fontSize = 14.sp
-            )
+            if (content != null) {
+                content()
+            } else {
+                TerminalText(
+                    text = value ?: "Not Recognized",
+                    color = if (status != EvidenceStatus.MISSING) Color.White else Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 }
@@ -526,21 +531,21 @@ fun CaptureVerificationScreen(
                             )
                             if (resolvedSpeciesData != null) {
                                 EvidenceRow(
-                                    label = "Type Icons",
-                                    value = "",
+                                    label = "Types",
                                     status = EvidenceStatus.VALID
-                                )
-
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    resolvedSpeciesData!!.types.forEach { type ->
-                                        PokemonTypeIcon(type)
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    ) {
+                                        resolvedSpeciesData!!.types.forEach { type ->
+                                            PokemonTypeIcon(type)
+                                        }
                                     }
                                 }
                             } else {
                                 EvidenceRow(
-                                    label = "Type Icons",
+                                    label = "Types",
                                     value = null,
                                     status = EvidenceStatus.MISSING
                                 )

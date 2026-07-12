@@ -52,13 +52,26 @@ class FirebaseChatTransport(
             "SEND START"
         )
 
-        val data = mapOf(
+        val data = mutableMapOf<String, Any?>(
             "id" to message.id.toString(),
             "senderTrainerId" to message.senderTrainerId,
             "sentAt" to message.sentAt.toEpochMilli(),
             "type" to message.type.name,
             "text" to message.text
         )
+
+        message.sharedPokemon?.let { sp ->
+            data["sharedPokemon"] = mapOf(
+                "speciesId" to sp.speciesId,
+                "speciesName" to sp.speciesName,
+                "cp" to sp.cp,
+                "isShadow" to sp.isShadow,
+                "isPurified" to sp.isPurified,
+                "isShiny" to sp.isShiny,
+                "primaryType" to sp.primaryType,
+                "secondaryType" to sp.secondaryType
+            )
+        }
 
         Log.i(
             "CHAT_TRANSPORT",
@@ -151,6 +164,20 @@ class FirebaseChatTransport(
 
                         val doc = change.document
 
+                        val spMap = doc.get("sharedPokemon") as? Map<String, Any?>
+                        val sharedPokemon = spMap?.let {
+                            com.example.overdex.model.SharedPokemon(
+                                speciesId = (it["speciesId"] as? Long)?.toInt() ?: 0,
+                                speciesName = it["speciesName"] as? String ?: "",
+                                cp = (it["cp"] as? Long)?.toInt(),
+                                isShadow = it["isShadow"] as? Boolean ?: false,
+                                isPurified = it["isPurified"] as? Boolean ?: false,
+                                isShiny = it["isShiny"] as? Boolean ?: false,
+                                primaryType = it["primaryType"] as? String ?: "NORMAL",
+                                secondaryType = it["secondaryType"] as? String
+                            )
+                        }
+
                         val message = ChatMessage(
                             id = UUID.fromString(doc.getString("id")),
                             senderTrainerId = doc.getString("senderTrainerId") ?: "",
@@ -160,7 +187,8 @@ class FirebaseChatTransport(
                             type = ChatMessageType.valueOf(
                                 doc.getString("type") ?: "TEXT"
                             ),
-                            text = doc.getString("text")
+                            text = doc.getString("text"),
+                            sharedPokemon = sharedPokemon
                         )
 
                         Log.i(

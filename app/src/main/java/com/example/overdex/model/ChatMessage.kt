@@ -7,7 +7,8 @@ import java.util.UUID
 @Serializable
 enum class ChatMessageType {
     TEXT,
-    SYSTEM
+    SYSTEM,
+    POKEMON
 }
 
 @Serializable
@@ -18,5 +19,6 @@ data class ChatMessage(
     @Serializable(with = InstantSerializer::class)
     val sentAt: Instant = Instant.now(),
     val type: ChatMessageType,
-    val text: String? = null
+    val text: String? = null,
+    val sharedPokemon: SharedPokemon? = null
 )

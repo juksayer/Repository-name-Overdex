@@ -167,7 +167,8 @@ fun MyCollectionScreen(
                         OwnedPokemonListItem(
                             owned = owned,
                             species = species,
-                            selected = selectedIndex == index + 2
+                            selected = selectedIndex == index + 2,
+                            pokedexViewModel = pokedexViewModel
                         )
                     }
                 }
@@ -211,7 +212,8 @@ fun RegisterSpecimenItem(selected: Boolean) {
 fun OwnedPokemonListItem(
     owned: OwnedPokemon,
     species: Pokemon?,
-    selected: Boolean
+    selected: Boolean,
+    pokedexViewModel: PokedexViewModel
 ) {
     Card(
         modifier = Modifier
@@ -235,16 +237,13 @@ fun OwnedPokemonListItem(
             )
 
             // Sprite
-            if (species != null) {
-                AsyncImage(
-                    model = species.spriteUrl,
-                    contentDescription = species.name,
-                    modifier = Modifier.size(50.dp),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                Box(modifier = Modifier.size(50.dp))
-            }
+            val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(owned.speciesId)
+            AsyncImage(
+                model = spriteUrl,
+                contentDescription = species?.name,
+                modifier = Modifier.size(50.dp),
+                contentScale = ContentScale.Fit
+            )
 
             Spacer(modifier = Modifier.width(8.dp))
 
@@ -268,6 +267,11 @@ fun OwnedPokemonListItem(
                         Text("CP ${owned.cp}", fontSize = 12.sp, color = if (selected) TerminalBlack else TerminalDimGreen)
                     }
                 }
+            }
+
+            if (owned.isFavorite) {
+                Text("★", color = if (selected) TerminalBlack else Color.Yellow, fontSize = 16.sp)
+                Spacer(modifier = Modifier.width(4.dp))
             }
 
             if (owned.isShiny) {

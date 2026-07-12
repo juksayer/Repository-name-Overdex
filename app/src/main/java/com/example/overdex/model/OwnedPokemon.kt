@@ -10,6 +10,7 @@ data class OwnedPokemon(
     val isShadow: Boolean = false,
     val isPurified: Boolean = false,
     val isShiny: Boolean = false,
+    val isFavorite: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
