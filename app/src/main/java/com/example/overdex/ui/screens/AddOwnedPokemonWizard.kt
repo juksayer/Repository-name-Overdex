@@ -146,7 +146,12 @@ fun AddOwnedPokemonWizard(
                 WizardStep.SPECIES_SEARCH -> {
                     SpeciesSearchStep(
                         pokedexViewModel = pokedexViewModel,
-                        selectedIndex = focusIndex
+                        selectedIndex = focusIndex,
+                        onSelectedIndexChange = { focusIndex = it },
+                        onSpeciesSelected = { 
+                            selectedSpecies = it
+                            currentStep = WizardStep.CP_INPUT
+                        }
                     )
                 }
                 WizardStep.CP_INPUT -> {
@@ -172,7 +177,9 @@ fun AddOwnedPokemonWizard(
 @Composable
 fun SpeciesSearchStep(
     pokedexViewModel: PokedexViewModel,
-    selectedIndex: Int
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    onSpeciesSelected: (Pokemon) -> Unit
 ) {
     val searchQuery by pokedexViewModel.searchQuery.collectAsState()
     val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
@@ -225,7 +232,11 @@ fun SpeciesSearchStep(
                         label = pokemon.name,
                         selected = selectedIndex == index
                     ) {
-                        // Click handled by PokedexFrame onA
+                        if (selectedIndex == index) {
+                            onSpeciesSelected(pokemon)
+                        } else {
+                            onSelectedIndexChange(index)
+                        }
                     }
                 }
             }

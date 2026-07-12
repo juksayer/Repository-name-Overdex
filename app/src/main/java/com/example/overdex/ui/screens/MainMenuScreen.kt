@@ -42,13 +42,10 @@ fun MainMenuScreen(
             "loading pokemon...................... [1025]",
             "loading move database................ [894]",
             "loading type effectiveness........... [ok]",
-            "loading user profile................. [ok]",
             "",
             "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "UNNAMED TRAINER"}",
             "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "UNKNOWN"}",
             "",
-            "confidence engine.................... [ready]",
-            "confidence level..................... [high]"
         )
     }
 
@@ -110,8 +107,6 @@ fun MainMenuScreen(
                     if (bootStep >= bootLines.size) {
                         Spacer(modifier = Modifier.height(24.dp))
                         TerminalHeader(text = "system check")
-                        TerminalText(text = "> overlay_permission              [ ok ]", fontSize = 14.sp)
-                        TerminalText(text = "> battery_optimization            [ ok ]", fontSize = 14.sp)
                         TerminalText(text = "> pogo_data_status                [ ok ]", fontSize = 14.sp)
                     }
                 }
