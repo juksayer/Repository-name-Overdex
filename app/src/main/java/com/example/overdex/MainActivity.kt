@@ -279,6 +279,8 @@ fun
                 partnerIdentity = partnerIdentity,
                 trainerRepository = trainerRepository,
                 partnerRepository = partnerRepository,
+                spriteProvider = viewModel.spriteProvider,
+                avatarSpeciesId = 1,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onShowQr = { navController.navigate("qr_identity") },

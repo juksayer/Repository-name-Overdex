@@ -1,6 +1,5 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -15,8 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.overdex.data.TrainerRepository
 import com.example.overdex.data.PartnerRepository
+import com.example.overdex.data.SpriteProvider
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.ui.components.*
@@ -43,6 +44,8 @@ fun TrainerProfileScreen(
     partnerIdentity: PartnerIdentity?,
     trainerRepository: TrainerRepository,
     partnerRepository: PartnerRepository,
+    spriteProvider: SpriteProvider,
+    avatarSpeciesId: Int,
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onShowQr: () -> Unit,
@@ -271,9 +274,18 @@ fun TrainerProfileScreen(
                     }
                 }
 
-                // Avatar Section (Placeholder)
+                // Avatar Section
                 TerminalSection(title = "avatar") {
-                    TerminalText(text = "COMING SOON", color = Color.Gray, fontSize = 12.sp)
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = spriteProvider.getSpriteUrl(avatarSpeciesId),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.size(96.dp)
+                        )
+                    }
                 }
 
                 // Public Identity Preview Section
