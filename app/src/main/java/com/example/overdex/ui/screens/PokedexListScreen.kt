@@ -56,18 +56,23 @@ fun PokedexListScreen(
 
             if (visibleItems.isEmpty() || totalCount == 0) return@LaunchedEffect
 
-            val firstVisible = visibleItems.first().index
-            val lastVisible = visibleItems.last().index
+            // Normalize coordinate system: listIndex is the item's index inside the LazyColumn
+            val listIndex = if (selectedIndex == 0) null else selectedIndex - 1
 
-            if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
-                // Out of view jump (e.g. search reset or initial load)
-                listState.animateScrollToItem(selectedIndex)
-            } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
-                // Top margin: scroll up to keep selection from hitting the absolute top
-                listState.animateScrollToItem(selectedIndex - 1)
-            } else if (selectedIndex >= lastVisible && selectedIndex < totalCount - 1) {
-                // Bottom margin: scroll down to keep selection from hitting the absolute bottom
-                listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            if (listIndex != null) {
+                val firstVisible = visibleItems.first().index
+                val lastVisible = visibleItems.last().index
+
+                if (listIndex < firstVisible || listIndex > lastVisible) {
+                    // Out of view jump (e.g. search reset or initial load)
+                    listState.animateScrollToItem(listIndex)
+                } else if (listIndex <= firstVisible && listIndex > 0) {
+                    // Top margin: scroll up to keep selection from hitting the absolute top
+                    listState.animateScrollToItem(listIndex - 1)
+                } else if (listIndex >= lastVisible && listIndex < totalCount - 1) {
+                    // Bottom margin: scroll down to keep selection from hitting the absolute bottom
+                    listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+                }
             }
         }
     }

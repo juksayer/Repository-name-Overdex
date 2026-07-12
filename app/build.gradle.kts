@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.overdex"
-        minSdk = 32
+        minSdk = 30
         targetSdk = 36
 
         buildConfigField(
