@@ -570,17 +570,55 @@ fun DPad(onUp: () -> Unit, onDown: () -> Unit, onLeft: () -> Unit, onRight: () -
                 .background(Color.Black, RoundedCornerShape(4.dp))
         )
         
-        // Buttons
+        // Buttons with Press-and-Hold Repetition
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f).clickable { onUp() }) {}
+            RepeatableDPadButton(Modifier.fillMaxWidth().weight(1f), onUp)
             Row(Modifier.fillMaxWidth().weight(1f)) {
-                Box(Modifier.fillMaxHeight().weight(1f).clickable { onLeft() }) {}
+                RepeatableDPadButton(Modifier.fillMaxHeight().weight(1f), onLeft)
                 Spacer(Modifier.width(36.dp))
-                Box(Modifier.fillMaxHeight().weight(1f).clickable { onRight() }) {}
+                RepeatableDPadButton(Modifier.fillMaxHeight().weight(1f), onRight)
             }
-            Box(Modifier.fillMaxWidth().weight(1f).clickable { onDown() }) {}
+            RepeatableDPadButton(Modifier.fillMaxWidth().weight(1f), onDown)
         }
     }
+}
+
+@Composable
+private fun RepeatableDPadButton(
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    
+    Box(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        var currentDelay = 400L
+                        val minDelay = 60L
+                        val acceleration = 0.8f
+                        
+                        onClick() // Immediate first trigger
+                        
+                        val job = scope.launch {
+                            delay(currentDelay)
+                            while (true) {
+                                onClick()
+                                delay(currentDelay)
+                                currentDelay = (currentDelay * acceleration).toLong().coerceAtLeast(minDelay)
+                            }
+                        }
+                        
+                        try {
+                            awaitRelease()
+                        } finally {
+                            job.cancel()
+                        }
+                    }
+                )
+            }
+    )
 }
 
 @Composable
