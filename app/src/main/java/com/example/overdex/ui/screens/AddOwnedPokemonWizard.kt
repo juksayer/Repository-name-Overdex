@@ -146,8 +146,8 @@ fun AddOwnedPokemonWizard(
                 WizardStep.SPECIES_SEARCH -> {
                     SpeciesSearchStep(
                         pokedexViewModel = pokedexViewModel,
-                        selectedIndex = focusIndex,
-                        onSelectedIndexChange = { focusIndex = it },
+                        initialIndex = focusIndex,
+                        onIndexChange = { focusIndex = it },
                         onSpeciesSelected = { 
                             selectedSpecies = it
                             currentStep = WizardStep.CP_INPUT
@@ -177,42 +177,44 @@ fun AddOwnedPokemonWizard(
 @Composable
 fun SpeciesSearchStep(
     pokedexViewModel: PokedexViewModel,
-    selectedIndex: Int,
-    onSelectedIndexChange: (Int) -> Unit,
+    initialIndex: Int,
+    onIndexChange: (Int) -> Unit,
     onSpeciesSelected: (Pokemon) -> Unit
 ) {
     val searchQuery by pokedexViewModel.searchQuery.collectAsState()
     val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
 
-    LaunchedEffect(selectedIndex) {
-        val layoutInfo = listState.layoutInfo
-        val visibleItems = layoutInfo.visibleItemsInfo
-        val totalCount = pokemonItems.itemCount
-        if (visibleItems.isEmpty() || totalCount == 0) return@LaunchedEffect
-
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
-
-        if (selectedIndex < firstVisible || selectedIndex > lastVisible) {
-            // Out of view jump
-            listState.animateScrollToItem(selectedIndex)
-        } else if (selectedIndex <= firstVisible && selectedIndex > 0) {
-            // Top margin
-            listState.animateScrollToItem(selectedIndex - 1)
-        } else if (selectedIndex >= lastVisible && selectedIndex < totalCount - 1) {
-            // Bottom margin
-            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+    val nav = rememberHandheldNavigationController(
+        initialIndex = initialIndex,
+        itemCount = { pokemonItems.itemCount + 1 }, // SearchBar + List
+        onActivate = { index ->
+            if (index == 0) {
+                // Future: Focus search bar
+            } else {
+                pokemonItems[index - 1]?.let { onSpeciesSelected(it) }
+            }
         }
+    )
+
+    // Sync back to parent
+    LaunchedEffect(nav.selectedIndex) {
+        onIndexChange(nav.selectedIndex)
     }
+
+    HandheldListSync(
+        listState = listState,
+        selectedIndex = nav.selectedIndex,
+        listIndexMapping = { if (it == 0) null else it - 1 },
+        totalItems = pokemonItems.itemCount
+    )
 
     Column {
         SearchBar(
             query = searchQuery,
+            selected = nav.selectedIndex == 0,
             onSearchClick = {
-                // For now, this step still uses regular SearchBar, but it's broken by my changes
-                // I should probably also update this to the new SearchBar usage
-                // but the work order says focus on Pokédex Search first.
+                nav.handleTouch(0)
             }
         )
 
@@ -230,13 +232,9 @@ fun SpeciesSearchStep(
                 pokemonItems[index]?.let { pokemon ->
                     TerminalMenuOption(
                         label = pokemon.name,
-                        selected = selectedIndex == index
+                        selected = nav.selectedIndex == index + 1
                     ) {
-                        if (selectedIndex == index) {
-                            onSpeciesSelected(pokemon)
-                        } else {
-                            onSelectedIndexChange(index)
-                        }
+                        nav.handleTouch(index + 1)
                     }
                 }
             }

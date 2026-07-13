@@ -41,51 +41,48 @@ fun MyCollectionScreen(
     val listState = rememberLazyListState()
     val keyboardController = rememberTerminalKeyboardController()
 
-    // Index 0: SearchBar
-    // Index 1: [REGISTER SPECIMEN]
-    // Index 2+: Specimen list
-    val totalItems = ownedPokemon.size + 2
-
-    LaunchedEffect(selectedIndex) {
-        if (!keyboardController.isVisible) {
-            val layoutInfo = listState.layoutInfo
-            val visibleItems = layoutInfo.visibleItemsInfo
-            if (visibleItems.isEmpty() || totalItems == 0) return@LaunchedEffect
-
-            // Normalize coordinate system: listIndex is the item's index inside the LazyColumn
-            val listIndex = if (selectedIndex == 0) null else selectedIndex - 1
-
-            if (listIndex != null) {
-                val firstVisible = visibleItems.first().index
-                val lastVisible = visibleItems.last().index
-
-                if (listIndex < firstVisible || listIndex > lastVisible) {
-                    // Out of view jump
-                    listState.animateScrollToItem(listIndex)
-                } else if (listIndex <= firstVisible && listIndex > 0) {
-                    // Top margin
-                    listState.animateScrollToItem(listIndex - 1)
-                } else if (listIndex >= lastVisible && selectedIndex < totalItems - 1) {
-                    // Bottom margin
-                    listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+    val nav = rememberHandheldNavigationController(
+        initialIndex = selectedIndex,
+        itemCount = { ownedPokemon.size + 2 }, // SearchBar + Register + List
+        onActivate = { index ->
+            when (index) {
+                0 -> keyboardController.open()
+                1 -> onAddClick()
+                else -> {
+                    val actualIndex = index - 2
+                    if (actualIndex in ownedPokemon.indices) {
+                        onItemClick(ownedPokemon[actualIndex].id)
+                    }
                 }
             }
         }
+    )
+    
+    // Sync UI selection state back to ViewModel if needed for state restoration
+    LaunchedEffect(nav.selectedIndex) {
+        collectionViewModel.updateSelectedIndex(nav.selectedIndex)
     }
+
+    HandheldListSync(
+        listState = listState,
+        selectedIndex = nav.selectedIndex,
+        listIndexMapping = { if (it == 0) null else it - 1 },
+        totalItems = ownedPokemon.size + 1
+    )
 
     PokedexFrame(
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
-            } else if (selectedIndex > 0) {
-                collectionViewModel.updateSelectedIndex(selectedIndex - 1)
+            } else {
+                nav.moveUp()
             }
         },
         onDown = {
             if (keyboardController.isVisible) {
                 keyboardController.handleDown()
-            } else if (selectedIndex < totalItems - 1) {
-                collectionViewModel.updateSelectedIndex(selectedIndex + 1)
+            } else {
+                nav.moveDown()
             }
         },
         onLeft = {
@@ -98,16 +95,7 @@ fun MyCollectionScreen(
             if (keyboardController.isVisible) {
                 keyboardController.handleA(searchQuery) { collectionViewModel.updateSearchQuery(it) }
             } else {
-                when (selectedIndex) {
-                    0 -> keyboardController.open()
-                    1 -> onAddClick()
-                    else -> {
-                        val actualIndex = selectedIndex - 2
-                        if (actualIndex in ownedPokemon.indices) {
-                            onItemClick(ownedPokemon[actualIndex].id)
-                        }
-                    }
-                }
+                nav.activate()
             }
         },
         onB = {
@@ -136,10 +124,9 @@ fun MyCollectionScreen(
 
                 SearchBar(
                     query = searchQuery,
-                    selected = selectedIndex == 0,
+                    selected = nav.selectedIndex == 0,
                     onSearchClick = {
-                        keyboardController.open()
-                        collectionViewModel.updateSelectedIndex(0)
+                        nav.handleTouch(0)
                     }
                 )
 
@@ -161,10 +148,9 @@ fun MyCollectionScreen(
                     // Persistent Registration Entry
                     item {
                         RegisterSpecimenItem(
-                            selected = selectedIndex == 1,
+                            selected = nav.selectedIndex == 1,
                             onClick = {
-                                if (selectedIndex == 1) onAddClick()
-                                else collectionViewModel.updateSelectedIndex(1)
+                                nav.handleTouch(1)
                             }
                         )
                     }
@@ -179,15 +165,10 @@ fun MyCollectionScreen(
                         OwnedPokemonListItem(
                             owned = owned,
                             species = species,
-                            selected = selectedIndex == index + 2,
+                            selected = nav.selectedIndex == index + 2,
                             pokedexViewModel = pokedexViewModel,
                             onClick = {
-                                val targetIndex = index + 2
-                                if (selectedIndex == targetIndex) {
-                                    onItemClick(owned.id)
-                                } else {
-                                    collectionViewModel.updateSelectedIndex(targetIndex)
-                                }
+                                nav.handleTouch(index + 2)
                             }
                         )
                     }

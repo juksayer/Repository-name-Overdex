@@ -572,53 +572,15 @@ fun DPad(onUp: () -> Unit, onDown: () -> Unit, onLeft: () -> Unit, onRight: () -
         
         // Buttons with Press-and-Hold Repetition
         Column(modifier = Modifier.fillMaxSize()) {
-            RepeatableDPadButton(Modifier.fillMaxWidth().weight(1f), onUp)
+            Box(Modifier.fillMaxWidth().weight(1f).repeatableAction(onUp))
             Row(Modifier.fillMaxWidth().weight(1f)) {
-                RepeatableDPadButton(Modifier.fillMaxHeight().weight(1f), onLeft)
+                Box(Modifier.fillMaxHeight().weight(1f).repeatableAction(onLeft))
                 Spacer(Modifier.width(36.dp))
-                RepeatableDPadButton(Modifier.fillMaxHeight().weight(1f), onRight)
+                Box(Modifier.fillMaxHeight().weight(1f).repeatableAction(onRight))
             }
-            RepeatableDPadButton(Modifier.fillMaxWidth().weight(1f), onDown)
+            Box(Modifier.fillMaxWidth().weight(1f).repeatableAction(onDown))
         }
     }
-}
-
-@Composable
-private fun RepeatableDPadButton(
-    modifier: Modifier,
-    onClick: () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    
-    Box(
-        modifier = modifier
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        var currentDelay = 400L
-                        val minDelay = 60L
-                        val acceleration = 0.8f
-                        
-                        onClick() // Immediate first trigger
-                        
-                        val job = scope.launch {
-                            delay(currentDelay)
-                            while (true) {
-                                onClick()
-                                delay(currentDelay)
-                                currentDelay = (currentDelay * acceleration).toLong().coerceAtLeast(minDelay)
-                            }
-                        }
-                        
-                        try {
-                            awaitRelease()
-                        } finally {
-                            job.cancel()
-                        }
-                    }
-                )
-            }
-    )
 }
 
 @Composable

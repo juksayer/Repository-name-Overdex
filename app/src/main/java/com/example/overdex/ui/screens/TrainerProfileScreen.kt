@@ -72,8 +72,35 @@ fun TrainerProfileScreen(
             add(ProfileFocus.BACK)
         }
     }
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val currentFocus = focusableItems.getOrElse(selectedIndex) { ProfileFocus.BACK }
+    
+    val nav = rememberHandheldNavigationController(
+        itemCount = { focusableItems.size },
+        onActivate = { index ->
+            when (focusableItems[index]) {
+                ProfileFocus.EDIT_NAME -> {
+                    tempName = trainerIdentity?.displayName ?: ""
+                    showEditDialog = true
+                }
+                ProfileFocus.SHOW_QR -> onShowQr()
+                ProfileFocus.SCAN_QR -> onScanQr()
+                ProfileFocus.LINK_DEBUG -> {
+                    scope.launch {
+                        partnerRepository.linkDebugPartner()
+                    }
+                }
+                ProfileFocus.VIEW_TIMELINE -> onViewTimeline()
+                ProfileFocus.CHAT -> onChat()
+                ProfileFocus.UNLINK -> {
+                    scope.launch {
+                        partnerRepository.unlink()
+                    }
+                }
+                ProfileFocus.BACK -> onBack()
+            }
+        }
+    )
+
+    val currentFocus = focusableItems.getOrElse(nav.selectedIndex) { ProfileFocus.BACK }
 
     val bringIntoViewRequesters = remember {
         ProfileFocus.entries.associateWith { BringIntoViewRequester() }
@@ -82,7 +109,7 @@ fun TrainerProfileScreen(
     val scrollState = rememberScrollState()
 
     // Auto-scroll when focus changes
-    LaunchedEffect(selectedIndex) {
+    LaunchedEffect(nav.selectedIndex) {
         bringIntoViewRequesters[currentFocus]?.bringIntoView()
     }
 
@@ -119,41 +146,13 @@ fun TrainerProfileScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onUp = {
-            if (selectedIndex > 0) {
-                selectedIndex--
-            } else {
-                selectedIndex = focusableItems.size - 1
-            }
+            nav.moveUp()
         },
         onDown = {
-            if (selectedIndex < focusableItems.size - 1) {
-                selectedIndex++
-            } else {
-                selectedIndex = 0
-            }
+            nav.moveDown()
         },
         onA = {
-            when (currentFocus) {
-                ProfileFocus.EDIT_NAME -> {
-                    tempName = trainerIdentity?.displayName ?: ""
-                    showEditDialog = true
-                }
-                ProfileFocus.SHOW_QR -> onShowQr()
-                ProfileFocus.SCAN_QR -> onScanQr()
-                ProfileFocus.LINK_DEBUG -> {
-                    scope.launch {
-                        partnerRepository.linkDebugPartner()
-                    }
-                }
-                ProfileFocus.VIEW_TIMELINE -> onViewTimeline()
-                ProfileFocus.CHAT -> onChat()
-                ProfileFocus.UNLINK -> {
-                    scope.launch {
-                        partnerRepository.unlink()
-                    }
-                }
-                ProfileFocus.BACK -> onBack()
-            }
+            nav.activate()
         }
     ) { _ ->
         TerminalScreen {
@@ -187,9 +186,7 @@ fun TrainerProfileScreen(
                 TerminalButton(
                     text = "edit display name",
                     onClick = {
-                        selectedIndex = focusableItems.indexOf(ProfileFocus.EDIT_NAME)
-                        tempName = trainerIdentity?.displayName ?: ""
-                        showEditDialog = true
+                        nav.handleTouch(focusableItems.indexOf(ProfileFocus.EDIT_NAME))
                     },
                     selected = currentFocus == ProfileFocus.EDIT_NAME,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.EDIT_NAME]!!)
@@ -199,7 +196,7 @@ fun TrainerProfileScreen(
 
                 TerminalButton(
                     text = "show my qr",
-                    onClick = onShowQr,
+                    onClick = { onShowQr() },
                     selected = currentFocus == ProfileFocus.SHOW_QR,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.SHOW_QR]!!)
                 )
@@ -209,7 +206,7 @@ fun TrainerProfileScreen(
                 if (partnerIdentity == null) {
                     TerminalButton(
                         text = "scan trainer qr",
-                        onClick = onScanQr,
+                        onClick = { onScanQr() },
                         selected = currentFocus == ProfileFocus.SCAN_QR,
                         modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.SCAN_QR]!!)
                     )
@@ -219,9 +216,7 @@ fun TrainerProfileScreen(
                     TerminalButton(
                         text = "link debug partner",
                         onClick = {
-                            scope.launch {
-                                partnerRepository.linkDebugPartner()
-                            }
+                            nav.handleTouch(focusableItems.indexOf(ProfileFocus.LINK_DEBUG))
                         },
                         selected = currentFocus == ProfileFocus.LINK_DEBUG,
                         modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.LINK_DEBUG]!!)
@@ -249,20 +244,20 @@ fun TrainerProfileScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TerminalButton(
                                 text = "view",
-                                onClick = onViewTimeline,
+                                onClick = { nav.handleTouch(focusableItems.indexOf(ProfileFocus.VIEW_TIMELINE)) },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.VIEW_TIMELINE]!!),
                                 selected = currentFocus == ProfileFocus.VIEW_TIMELINE
                             )
                             TerminalButton(
                                 text = "chat",
-                                onClick = onChat,
+                                onClick = { nav.handleTouch(focusableItems.indexOf(ProfileFocus.CHAT)) },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.CHAT]!!),
                                 selected = currentFocus == ProfileFocus.CHAT
                             )
                             TerminalButton(
                                 text = "unlink",
                                 onClick = { 
-                                    scope.launch { partnerRepository.unlink() }
+                                    nav.handleTouch(focusableItems.indexOf(ProfileFocus.UNLINK))
                                 },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.UNLINK]!!),
                                 selected = currentFocus == ProfileFocus.UNLINK
@@ -274,19 +269,7 @@ fun TrainerProfileScreen(
                     }
                 }
 
-                // Avatar Section
-                TerminalSection(title = "avatar") {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = spriteProvider.getSpriteUrl(avatarSpeciesId),
-                            contentDescription = "Avatar",
-                            modifier = Modifier.size(96.dp)
-                        )
-                    }
-                }
+
 
                 // Public Identity Preview Section
                 TerminalSection(title = "public identity preview") {
