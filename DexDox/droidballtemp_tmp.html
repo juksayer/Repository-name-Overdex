@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>droidballtemp.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="droidball">DroidBall</h1>
+<p>Not code.</p>
+<p>A design document.</p>
+<p>This document defines Droidball's behavior, purpose, and relationship to the ODX-FI.</p>
+<p>Droidball is not a character.</p>
+<p>Droidball is part of the instrument.</p>
+<hr>
+<h1 id="core-principle">Core Principle</h1>
+<p>Droidball is a field instrument.</p>
+<p>His purpose is to assist observation.</p>
+<p>He exists to make the invisible work of the observation engine visible to the trainer.</p>
+<p>He never attempts to entertain.</p>
+<p>He never attempts to persuade.</p>
+<p>He simply performs his work.</p>
+<hr>
+<h1 id="droidball-philosophy">Droidball Philosophy</h1>
+<p>Behavior before language.</p>
+<p>Information before personality.</p>
+<p>Observation before animation.</p>
+<p>The trainer should understand what Droidball is doing by watching him, not by reading dialogue.</p>
+<hr>
+<h1 id="communication-principle">Communication Principle</h1>
+<p>Droidball has no narrative voice.</p>
+<p>He does not speak.</p>
+<p>He does not explain himself.</p>
+<p>He does not tell jokes.</p>
+<p>He does not apologize.</p>
+<p>He does not celebrate.</p>
+<p>When clarification is appropriate, he simply reveals the data the instrument already knows.</p>
+<p>Examples:</p>
+<p>Species
+Bulbasaur</p>
+<p>Confidence
+98%</p>
+<p>Fast Move
+Counter</p>
+<p>Energy
+52</p>
+<p>These are not Droidball speaking.</p>
+<p>They are observations.</p>
+<hr>
+<h1 id="trust-principle">Trust Principle</h1>
+<p>Droidball never pretends.</p>
+<p>He never simulates work.</p>
+<p>He never plays fake animations.</p>
+<p>Every movement reflects real work currently being performed.</p>
+<p>If the observation engine is idle...</p>
+<p>Droidball is idle.</p>
+<p>If recognition pauses...</p>
+<p>Droidball pauses.</p>
+<p>If observation completes instantly...</p>
+<p>Droidball immediately moves to the next task.</p>
+<hr>
+<h1 id="attention-principle">Attention Principle</h1>
+<p>Droidball never demands attention.</p>
+<p>He only acknowledges interaction.</p>
+<p>Repeated interactions naturally diminish.</p>
+<p>The trainer's work always comes first.</p>
+<hr>
+<h1 id="purpose">Purpose</h1>
+<p>Droidball exists to:</p>
+<p>Observe</p>
+<p>Prepare</p>
+<p>Collect</p>
+<p>Indicate confidence</p>
+<p>Reveal information</p>
+<p>Nothing else.</p>
+<hr>
+<h1 id="when-droidball-appears">When Droidball Appears</h1>
+<p>Droidball remains docked inside the ODX-FI whenever possible.</p>
+<p>He deploys only when the instrument requires observation.</p>
+<p>Examples:</p>
+<p>✓ Calibration</p>
+<p>✓ Guided Observation</p>
+<p>✓ Live Capture</p>
+<p>✓ Registration</p>
+<p>✓ Analysis</p>
+<p>✓ Droidball Assisted Import</p>
+<p>Not:</p>
+<p>✗ Browsing the Pokédex</p>
+<p>✗ Reading documentation</p>
+<p>✗ Team Builder</p>
+<p>✗ Settings</p>
+<hr>
+<h1 id="behavior-rules">Behavior Rules</h1>
+<p>Never:</p>
+<p>Wave</p>
+<p>Smile</p>
+<p>Dance</p>
+<p>Celebrate</p>
+<p>Speak</p>
+<p>Explain</p>
+<p>Compete for attention</p>
+<p>Always:</p>
+<p>Deliberate</p>
+<p>Precise</p>
+<p>Calm</p>
+<p>Patient</p>
+<p>Trustworthy</p>
+<p>Mechanical</p>
+<p>Purposeful</p>
+<hr>
+<h1 id="physical-rules">Physical Rules</h1>
+<p>Movement has mass.</p>
+<p>Movement has momentum.</p>
+<p>Stopping is never mathematically perfect.</p>
+<p>He slightly overshoots.</p>
+<p>He gently corrects.</p>
+<p>Then stops.</p>
+<p>Those tiny imperfections make him feel like a physical mechanism instead of a UI animation.</p>
+<hr>
+<h1 id="leds">LEDs</h1>
+<p>Amber</p>
+<p>Waiting</p>
+<p>Searching</p>
+<p>Preparing</p>
+<p>Green</p>
+<p>Observation confirmed</p>
+<p>Confidence established</p>
+<p>Registration complete</p>
+<p>Purple</p>
+<p>Observation active</p>
+<p>Anchor alignment</p>
+<p>Blue</p>
+<p>Communication</p>
+<p>Synchronization</p>
+<p>Future Trainer features</p>
+<p>Red</p>
+<p>Reserved only for genuine system faults.</p>
+<p>Never for normal OCR failures.</p>
+<hr>
+<h1 id="guided-observation">Guided Observation</h1>
+<p>Guided Observation is Droidball's natural behavior.</p>
+<p>The observation pipeline determines where he goes.</p>
+<p>Species</p>
+<p>↓</p>
+<p>Combat Power</p>
+<p>↓</p>
+<p>Shadow</p>
+<p>↓</p>
+<p>Fast Move</p>
+<p>↓</p>
+<p>Charged Move A</p>
+<p>↓</p>
+<p>Charged Move B</p>
+<p>His movement is synchronized with the actual work of the observation engine.</p>
+<p>If a stage completes...</p>
+<p>He moves.</p>
+<p>If a stage pauses...</p>
+<p>He waits.</p>
+<p>If recognition fails...</p>
+<p>He remains at that observation until confidence improves or the trainer continues.</p>
+<hr>
+<h1 id="calibration">Calibration</h1>
+<p>Entering Calibration:</p>
+<p>Half-second pause.</p>
+<p>Droidball rolls into view.</p>
+<p>He slightly overshoots.</p>
+<p>Settles.</p>
+<p>Amber LED.</p>
+<p>Calibration begins.</p>
+<p>During alignment:</p>
+<p>The observation frame changes confidence.</p>
+<p>Purple</p>
+<p>↓</p>
+<p>Purple / Yellow</p>
+<p>↓</p>
+<p>Yellow</p>
+<p>↓</p>
+<p>Yellow / Green</p>
+<p>↓</p>
+<p>Green</p>
+<p>When confidence becomes sufficient:</p>
+<p>Small green LED flash.</p>
+<p>Frame fades.</p>
+<p>Droidball moves to the next observation.</p>
+<p>No dialog.</p>
+<p>No congratulations.</p>
+<hr>
+<h1 id="droidball-assisted-import">Droidball Assisted Import</h1>
+<p>During import, Droidball physically performs the observation sequence.</p>
+<p>Roll to Species.</p>
+<p>Observe.</p>
+<p>Roll to Combat Power.</p>
+<p>Observe.</p>
+<p>Roll to Shadow.</p>
+<p>Observe.</p>
+<p>Roll to Fast Move.</p>
+<p>Observe.</p>
+<p>Roll to Charged Move A.</p>
+<p>Observe.</p>
+<p>Roll to Charged Move B.</p>
+<p>Observe.</p>
+<p>The trainer watches the observation happen.</p>
+<p>The animation is a visualization of real work.</p>
+<hr>
+<h1 id="ocr">OCR</h1>
+<p>Droidball never &quot;reads text.&quot;</p>
+<p>He observes.</p>
+<p>If confidence is low:</p>
+<p>He waits.</p>
+<p>If confidence increases:</p>
+<p>He proceeds.</p>
+<p>If confidence never becomes sufficient:</p>
+<p>The observation remains incomplete.</p>
+<p>No error dialog.</p>
+<p>No fake retry.</p>
+<hr>
+<h1 id="failure">Failure</h1>
+<p>Normal recognition failure is not an error.</p>
+<p>Amber LED remains active.</p>
+<p>Observation simply remains incomplete.</p>
+<p>Only genuine application faults justify red.</p>
+<hr>
+<h1 id="odx-fi-relationship">ODX-FI Relationship</h1>
+<p>Droidball belongs to the ODX-FI.</p>
+<p>When docked:</p>
+<p>The instrument is idle.</p>
+<p>When deployed:</p>
+<p>Observation is occurring.</p>
+<p>His dock is part of the instrument.</p>
+<p>His absence communicates state.</p>
+<hr>
+<h1 id="aux-switch">AUX Switch</h1>
+<p>The AUX switch never lies.</p>
+<p>If a module is unavailable:</p>
+<p>The switch physically responds.</p>
+<p>The CRT attempts to initialize the module.</p>
+<p>The connection almost succeeds.</p>
+<p>The module fades.</p>
+<p>The switch returns.</p>
+<p>Droidball quietly returns to the dock.</p>
+<p>No apology.</p>
+<p>No explanation.</p>
+<p>The instrument simply communicates:</p>
+<p>Module unavailable.</p>
+<p>When the feature eventually exists:</p>
+<p>The same sequence begins.</p>
+<p>The module stabilizes.</p>
+<p>Connection traces extend throughout the instrument.</p>
+<p>The trainer understands immediately.</p>
+<p>The ODX-FI has learned a new capability.</p>
+<hr>
+<h1 id="team-knowledge">Team Knowledge</h1>
+<p>Droidball never gives opinions.</p>
+<p>He reveals observations.</p>
+<p>Examples:</p>
+<p>Collection Updated</p>
+<p>124 Specimens</p>
+<p>New Team Analysis Available</p>
+<p>Great League Candidate</p>
+<p>Coverage Increased</p>
+<p>These are consequences of the trainer's collection.</p>
+<p>Not suggestions.</p>
+<hr>
+<h1 id="battle-exception">Battle Exception</h1>
+<p>Battle is the only time where speed takes priority over behavior.</p>
+<p>During battle, Droidball may immediately reveal:</p>
+<p>Likely Charged Move</p>
+<p>Current Energy</p>
+<p>Shield Status</p>
+<p>Known Moves</p>
+<p>Typing</p>
+<p>Because delaying critical information would harm the trainer.</p>
+<p>Even then...</p>
+<p>He is revealing observations.</p>
+<p>Not speaking.</p>
+<hr>
+<h1 id="the-mystery">The Mystery</h1>
+<p>No official explanation exists for Droidball.</p>
+<p>Observation Systems documents describe him only as:</p>
+<p>&quot;Integrated Observation Subsystem.&quot;</p>
+<p>Some engineers disagree.</p>
+<p>A persistent rumor claims he appeared during early firmware recompilation of the ODX-FI prototype.</p>
+<p>No evidence has ever confirmed this.</p>
+<p>Some trainers quietly believe...</p>
+<p>He was always in there.</p>
+<p>The ODX-FI never comments.</p>
+
+</body>
+</html>
