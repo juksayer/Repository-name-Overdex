@@ -216,8 +216,15 @@ fun ChatMessageRow(
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Sprite resolution
-                        val spriteUrl = resolvedPokemon?.let { pokedexViewModel.spriteProvider.getSpriteUrl(it.id) }
+                        // Sprite resolution through unified pipeline
+                        val spriteUrl = resolvedPokemon?.let { 
+                            pokedexViewModel.spriteProvider.getSpriteUrl(
+                                id = it.id,
+                                isShiny = sp.isShiny,
+                                isShadow = sp.isShadow,
+                                isPurified = sp.isPurified
+                            )
+                        }
                         var spriteLoaded by remember { mutableStateOf(false) }
 
                         if (spriteUrl != null) {

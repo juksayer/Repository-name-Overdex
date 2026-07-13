@@ -84,13 +84,16 @@ fun EnemyPokemonBlock(
     pokemon: EnemyPokemonMemory,
     spriteProvider: SpriteProvider = GithubSpriteProvider()
 ) {
-    // Hardcoded sprite mapping for the prototype
-    val spriteUrl = when (pokemon.species.lowercase()) {
-        "swampert" -> spriteProvider.getSpriteUrl(260)
-        "talonflame" -> spriteProvider.getSpriteUrl(663)
-        "azumarill" -> spriteProvider.getSpriteUrl(184)
-        else -> spriteProvider.getSpriteUrl(0)
+    // Strategic Resolution: Resolve ID from species name if possible
+    // Note: In a future brick, EnemyPokemonMemory should store speciesId directly.
+    val speciesId = when (pokemon.species.lowercase()) {
+        "swampert" -> 260
+        "talonflame" -> 663
+        "azumarill" -> 184
+        else -> 0
     }
+
+    val spriteUrl = spriteProvider.getSpriteUrl(id = speciesId)
 
     val isFainted = !pokemon.alive
     val isActive = pokemon.isActive && !isFainted

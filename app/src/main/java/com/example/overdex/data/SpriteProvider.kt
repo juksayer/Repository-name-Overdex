@@ -1,24 +1,40 @@
 package com.example.overdex.data
 
 import android.content.res.AssetManager
+import android.util.Log
 
 /**
  * Abstraction for resolving Pokémon sprite locations.
  */
 interface SpriteProvider {
-    fun getSpriteUrl(id: Int): String
-    fun exists(id: Int): Boolean
+    fun getSpriteUrl(
+        id: Int,
+        isShiny: Boolean = false,
+        isShadow: Boolean = false,
+        isPurified: Boolean = false
+    ): String
+
+    fun exists(id: Int, isShiny: Boolean = false): Boolean
 }
 
 /**
  * Resolves sprites from the official PokeAPI GitHub repository.
  */
 class GithubSpriteProvider : SpriteProvider {
-    override fun getSpriteUrl(id: Int): String {
-        return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
+    override fun getSpriteUrl(
+        id: Int,
+        isShiny: Boolean,
+        isShadow: Boolean,
+        isPurified: Boolean
+    ): String {
+        if (id <= 0) return getPlaceholderUrl()
+        val path = if (isShiny) "shiny/" else ""
+        return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$path$id.png"
     }
 
-    override fun exists(id: Int): Boolean = true // Assume remote sprites always exist
+    override fun exists(id: Int, isShiny: Boolean): Boolean = id > 0
+
+    private fun getPlaceholderUrl(): String = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
 }
 
 /**
@@ -26,11 +42,22 @@ class GithubSpriteProvider : SpriteProvider {
  * Convention: assets/sprites/pokemon/{id}.png
  */
 class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvider {
-    override fun getSpriteUrl(id: Int): String {
+    override fun getSpriteUrl(
+        id: Int,
+        isShiny: Boolean,
+        isShadow: Boolean,
+        isPurified: Boolean
+    ): String {
+        if (id <= 0 || !exists(id, isShiny)) {
+            if (id > 0) Log.w("SpriteProvider", "Missing local sprite for ID: $id (shiny=$isShiny)")
+            return getPlaceholderUrl()
+        }
+        val path = if (isShiny) "shiny/" else "" // Future: support local shiny folder
         return "file:///android_asset/sprites/pokemon/$id.png"
     }
 
-    override fun exists(id: Int): Boolean {
+    override fun exists(id: Int, isShiny: Boolean): Boolean {
+        if (id <= 0) return false
         return try {
             assetManager.open("sprites/pokemon/$id.png").use { }
             true
@@ -38,6 +65,8 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
             false
         }
     }
+
+    private fun getPlaceholderUrl(): String = "file:///android_asset/sprites/items/poke-ball.png"
 }
 
 /**
@@ -48,15 +77,20 @@ class FallbackSpriteProvider(
     private val primary: SpriteProvider,
     private val secondary: SpriteProvider
 ) : SpriteProvider {
-    override fun getSpriteUrl(id: Int): String {
-        return if (primary.exists(id)) {
-            primary.getSpriteUrl(id)
+    override fun getSpriteUrl(
+        id: Int,
+        isShiny: Boolean,
+        isShadow: Boolean,
+        isPurified: Boolean
+    ): String {
+        return if (primary.exists(id, isShiny)) {
+            primary.getSpriteUrl(id, isShiny, isShadow, isPurified)
         } else {
-            secondary.getSpriteUrl(id)
+            secondary.getSpriteUrl(id, isShiny, isShadow, isPurified)
         }
     }
 
-    override fun exists(id: Int): Boolean {
-        return primary.exists(id) || secondary.exists(id)
+    override fun exists(id: Int, isShiny: Boolean): Boolean {
+        return primary.exists(id, isShiny) || secondary.exists(id, isShiny)
     }
 }

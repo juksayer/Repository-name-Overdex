@@ -193,7 +193,7 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
                 modifier = Modifier.width(20.dp)
             )
 
-            // Sprite
+            // Sprite resolution through unified pipeline
             AsyncImage(
                 model = pokemon.spriteUrl,
                 contentDescription = pokemon.name,

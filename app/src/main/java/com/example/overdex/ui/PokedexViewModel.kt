@@ -159,7 +159,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             ?.map { it.replaceFirstChar(Char::uppercase) }
                             ?.toList()
                         ?: listOf("Normal")
-                val spriteUrl = spriteProvider.getSpriteUrl(id)
+                val spriteUrl = spriteProvider.getSpriteUrl(id = id)
 
                 if (id == 152 || id == 249 || id == 445 || id == 1000) {
                     Log.d(
@@ -412,7 +412,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
-            spriteUrl = spriteProvider.getSpriteUrl(id),
+            spriteUrl = spriteProvider.getSpriteUrl(id = id),
             cryUrl = cryUrl,
             description = description
         )

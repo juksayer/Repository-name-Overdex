@@ -89,7 +89,7 @@ fun PokemonDetailScreen(
                 }
             }
             
-            // Sprite
+            // Sprite resolution through unified pipeline
             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                 AsyncImage(
                     model = pokemon.spriteUrl,

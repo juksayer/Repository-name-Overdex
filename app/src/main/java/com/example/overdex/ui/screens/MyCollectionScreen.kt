@@ -241,8 +241,13 @@ fun OwnedPokemonListItem(
                 modifier = Modifier.width(20.dp)
             )
 
-            // Sprite
-            val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(owned.speciesId)
+            // Sprite resolution through unified pipeline
+            val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
+                id = owned.speciesId,
+                isShiny = owned.isShiny,
+                isShadow = owned.isShadow,
+                isPurified = owned.isPurified
+            )
             AsyncImage(
                 model = spriteUrl,
                 contentDescription = species?.name,
