@@ -62,12 +62,13 @@ fun ColumnScope.TerminalSection(
 @Composable
 fun TerminalMenuOption(
     label: String,
+    modifier: Modifier = Modifier,
     status: String? = null,
     selected: Boolean = false,
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(if (selected) TerminalGreen else Color.Transparent)
             .clickable(onClick = onClick)
@@ -185,11 +186,12 @@ fun HardwareNumericEntry(
 fun AttributeToggle(
     label: String,
     value: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     selected: Boolean = false
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(if (selected) TerminalGreen else Color.Transparent)
             .clickable(onClick = onClick)

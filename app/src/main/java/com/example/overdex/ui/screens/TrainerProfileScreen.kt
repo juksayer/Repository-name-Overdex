@@ -103,15 +103,16 @@ fun TrainerProfileScreen(
     val currentFocus = focusableItems.getOrElse(nav.selectedIndex) { ProfileFocus.BACK }
 
     val bringIntoViewRequesters = remember {
-        ProfileFocus.entries.associateWith { BringIntoViewRequester() }
+        focusableItems.associateWith { BringIntoViewRequester() }
     }
 
     val scrollState = rememberScrollState()
 
-    // Auto-scroll when focus changes
-    LaunchedEffect(nav.selectedIndex) {
-        bringIntoViewRequesters[currentFocus]?.bringIntoView()
-    }
+    HandheldFocusSync(
+        selectedIndex = nav.selectedIndex,
+        items = focusableItems,
+        requesters = bringIntoViewRequesters
+    )
 
     if (showEditDialog) {
         AlertDialog(

@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -52,9 +54,6 @@ fun OwnedPokemonDetailScreen(
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
     var species by remember { mutableStateOf<Pokemon?>(null) }
     
-    // Focused field state
-    var focusedField by remember { mutableStateOf(DetailField.NICKNAME) }
-    
     // Mutable editing state
     var editingNickname by remember { mutableStateOf("") }
     var editingCP by remember { mutableStateOf("") }
@@ -65,63 +64,12 @@ fun OwnedPokemonDetailScreen(
     
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Initialize editing state when data loads
-    LaunchedEffect(ownedPokemon) {
-        ownedPokemon?.let { owned ->
-            editingNickname = owned.displayName ?: ""
-            editingCP = owned.cp?.toString() ?: ""
-            isShadow = owned.isShadow
-            isPurified = owned.isPurified
-            isShiny = owned.isShiny
-            isFavorite = owned.isFavorite
-            
-            if (species == null) {
-                species = pokedexViewModel.getPokemonById(owned.speciesId)
-            }
-        }
-    }
-
-    if (showDeleteConfirm) {
-        TerminalDialog(
-            title = "DELETE RECORD?",
-            onConfirm = {
-                collectionViewModel.removeOwnedPokemon(ownedId)
-                onDeleteSuccess()
-            },
-            onDismiss = { showDeleteConfirm = false }
-        )
-        return
-    }
-
-    PokedexFrame(
-        onUp = {
-            focusedField = when (focusedField) {
-                DetailField.NICKNAME -> DetailField.DELETE
-                DetailField.CP -> DetailField.NICKNAME
-                DetailField.SHADOW -> DetailField.CP
-                DetailField.PURIFIED -> DetailField.SHADOW
-                DetailField.SHINY -> DetailField.PURIFIED
-                DetailField.FAVORITE -> DetailField.SHINY
-                DetailField.SHARE -> DetailField.FAVORITE
-                DetailField.SAVE -> DetailField.SHARE
-                DetailField.DELETE -> DetailField.SAVE
-            }
-        },
-        onDown = {
-            focusedField = when (focusedField) {
-                DetailField.NICKNAME -> DetailField.CP
-                DetailField.CP -> DetailField.SHADOW
-                DetailField.SHADOW -> DetailField.PURIFIED
-                DetailField.PURIFIED -> DetailField.SHINY
-                DetailField.SHINY -> DetailField.FAVORITE
-                DetailField.FAVORITE -> DetailField.SHARE
-                DetailField.SHARE -> DetailField.SAVE
-                DetailField.SAVE -> DetailField.DELETE
-                DetailField.DELETE -> DetailField.NICKNAME
-            }
-        },
-        onA = {
-            when (focusedField) {
+    // Framework-driven Navigation
+    val fields = DetailField.entries
+    val nav = rememberHandheldNavigationController(
+        itemCount = { fields.size },
+        onActivate = { index ->
+            when (fields[index]) {
                 DetailField.SHADOW -> {
                     isShadow = !isShadow
                     if (isShadow) isPurified = false
@@ -155,8 +103,60 @@ fun OwnedPokemonDetailScreen(
                     }
                 }
                 DetailField.DELETE -> showDeleteConfirm = true
-                else -> {} // NICKNAME and CP handled by system keyboard focus
+                else -> {} // NICKNAME and CP handled by keyboard
             }
+        }
+    )
+
+    val focusedField = fields[nav.selectedIndex]
+    
+    val requesters = remember {
+        fields.associateWith { BringIntoViewRequester() }
+    }
+
+    HandheldFocusSync(
+        selectedIndex = nav.selectedIndex,
+        items = fields,
+        requesters = requesters
+    )
+
+    // Initialize editing state when data loads
+    LaunchedEffect(ownedPokemon) {
+        ownedPokemon?.let { owned ->
+            editingNickname = owned.displayName ?: ""
+            editingCP = owned.cp?.toString() ?: ""
+            isShadow = owned.isShadow
+            isPurified = owned.isPurified
+            isShiny = owned.isShiny
+            isFavorite = owned.isFavorite
+            
+            if (species == null) {
+                species = pokedexViewModel.getPokemonById(owned.speciesId)
+            }
+        }
+    }
+
+    if (showDeleteConfirm) {
+        TerminalDialog(
+            title = "DELETE RECORD?",
+            onConfirm = {
+                collectionViewModel.removeOwnedPokemon(ownedId)
+                onDeleteSuccess()
+            },
+            onDismiss = { showDeleteConfirm = false }
+        )
+        return
+    }
+
+    PokedexFrame(
+        onUp = {
+            nav.moveUp()
+        },
+        onDown = {
+            nav.moveDown()
+        },
+        onA = {
+            nav.activate()
         },
         onB = onBack,
         filterSettings = filterSettings,
@@ -240,7 +240,8 @@ fun OwnedPokemonDetailScreen(
                 label = "NICKNAME",
                 value = editingNickname,
                 onValueChange = { editingNickname = it },
-                selected = focusedField == DetailField.NICKNAME
+                selected = focusedField == DetailField.NICKNAME,
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.NICKNAME]!!)
             )
 
             TerminalEditField(
@@ -248,6 +249,7 @@ fun OwnedPokemonDetailScreen(
                 value = editingCP,
                 onValueChange = { if (it.length <= 4) editingCP = it.filter { c -> c.isDigit() } },
                 selected = focusedField == DetailField.CP,
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.CP]!!),
                 keyboardType = KeyboardType.Number
             )
 
@@ -261,10 +263,9 @@ fun OwnedPokemonDetailScreen(
                 value = isShadow,
                 selected = focusedField == DetailField.SHADOW,
                 onClick = { 
-                    isShadow = !isShadow
-                    if (isShadow) isPurified = false
-                    focusedField = DetailField.SHADOW
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.SHADOW))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHADOW]!!)
             )
 
             AttributeToggle(
@@ -272,10 +273,9 @@ fun OwnedPokemonDetailScreen(
                 value = isPurified,
                 selected = focusedField == DetailField.PURIFIED,
                 onClick = { 
-                    isPurified = !isPurified
-                    if (isPurified) isShadow = false
-                    focusedField = DetailField.PURIFIED
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.PURIFIED))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.PURIFIED]!!)
             )
 
             AttributeToggle(
@@ -283,9 +283,9 @@ fun OwnedPokemonDetailScreen(
                 value = isShiny,
                 selected = focusedField == DetailField.SHINY,
                 onClick = { 
-                    isShiny = !isShiny
-                    focusedField = DetailField.SHINY
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.SHINY))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHINY]!!)
             )
 
             AttributeToggle(
@@ -293,17 +293,18 @@ fun OwnedPokemonDetailScreen(
                 value = isFavorite,
                 selected = focusedField == DetailField.FAVORITE,
                 onClick = { 
-                    isFavorite = !isFavorite
-                    focusedField = DetailField.FAVORITE
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.FAVORITE))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.FAVORITE]!!)
             )
 
             TerminalMenuOption(
                 label = "SHARE WITH PARTNER",
                 selected = focusedField == DetailField.SHARE,
                 onClick = {
-                    focusedField = DetailField.SHARE
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.SHARE))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHARE]!!)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -313,18 +314,18 @@ fun OwnedPokemonDetailScreen(
                 label = "SAVE RECORD",
                 selected = focusedField == DetailField.SAVE,
                 onClick = {
-                    focusedField = DetailField.SAVE
-                    // Trigger Save (onA handles this if triggered by Dpad)
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.SAVE))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SAVE]!!)
             )
 
             TerminalMenuOption(
                 label = "DELETE RECORD",
                 selected = focusedField == DetailField.DELETE,
                 onClick = {
-                    focusedField = DetailField.DELETE
-                    showDeleteConfirm = true
-                }
+                    nav.handleTouch(fields.indexOf(DetailField.DELETE))
+                },
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.DELETE]!!)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -361,10 +362,11 @@ fun TerminalEditField(
     value: String,
     onValueChange: (String) -> Unit,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(if (selected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
             .padding(vertical = 8.dp, horizontal = 8.dp)

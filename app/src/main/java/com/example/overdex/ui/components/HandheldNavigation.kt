@@ -2,6 +2,7 @@ package com.example.overdex.ui.components
 
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -120,6 +121,24 @@ fun HandheldListSync(
             listState.animateScrollToItem(listIndex - 1)
         } else if (listIndex >= lastVisible && listIndex < totalItems - 1) {
             listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+        }
+    }
+}
+
+/**
+ * Synchronizes a selected index with BringIntoViewRequesters.
+ * Useful for non-Lazy lists (standard scrollable columns).
+ */
+@Composable
+fun <T> HandheldFocusSync(
+    selectedIndex: Int,
+    items: List<T>,
+    requesters: Map<T, BringIntoViewRequester>
+) {
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in items.indices) {
+            val key = items[selectedIndex]
+            requesters[key]?.bringIntoView()
         }
     }
 }
