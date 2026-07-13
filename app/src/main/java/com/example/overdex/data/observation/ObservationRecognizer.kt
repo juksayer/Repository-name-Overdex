@@ -2,6 +2,7 @@ package com.example.overdex.data.observation
 
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.model.observation.AnchorObservation
 
 /**
  * Entry point for the recognition pipeline.
@@ -15,6 +16,19 @@ object ObservationRecognizer {
      */
     suspend fun recognize(observation: CaptureObservation): List<RecognitionResult<*>> {
         val results = mutableListOf<RecognitionResult<*>>()
+        
+        // Brick #121: Anchor Detection
+        // Detect anchors within the current crop and expose them to the pipeline.
+        val anchors = SimpleAnchorDetector.detectAnchors(observation.crop)
+        anchors.forEach { anchor ->
+            results.add(
+                RecognitionResult(
+                    value = anchor,
+                    confidence = anchor.confidence,
+                    recognizer = "SimpleAnchorDetector"
+                )
+            )
+        }
         
         when (observation.regionId) {
             "SpeciesName" -> {

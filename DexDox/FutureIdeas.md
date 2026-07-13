@@ -145,3 +145,10 @@ Dual-resolution Droidball
 Expanding maintenance controls
 Observation wizard
 Image-under-box editing
+
+replay engines,
+observation logs,
+digital coaching,
+Trainer DNA,
+handheld industrial design,
+Paper Mario-style battle visualization

@@ -11,7 +11,7 @@ OFF state
 DEPLOYING
 CLOSED
 OPEN
-COLLAPSSED
+COLLAPSED
 SHUTTING DOWN
 Gestures
 Animations
@@ -89,7 +89,7 @@ Droidball communicates entirely through behavior.
 
 He never displays dialog.
 
-Instead he communicates through:
+Instead, he communicates through:
 
 movement
 timing

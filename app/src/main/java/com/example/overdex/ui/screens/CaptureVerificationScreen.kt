@@ -28,6 +28,9 @@ import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.ObservationCropExtractor
 import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.data.observation.GuidedObservationPipeline
+import com.example.overdex.data.observation.ObservationStage
+import com.example.overdex.data.observation.PipelineStatus
 import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.RecognizedPokemon
 import com.example.overdex.model.toOwnedPokemon
@@ -185,6 +188,7 @@ fun CaptureVerificationScreen(
     // Extraction state
     var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
     var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
+    var pipelineStatus by remember { mutableStateOf<PipelineStatus?>(null) }
     var isInspectionMode by remember { mutableStateOf(false) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
 
@@ -259,6 +263,7 @@ fun CaptureVerificationScreen(
         imageSize = null
         observations = null
         recognitionResults = emptyMap()
+        pipelineStatus = null
         isInspectionMode = false
     }
 
@@ -339,13 +344,14 @@ fun CaptureVerificationScreen(
                 selectedRegionId = null // Clear selection on template switch
                 observations = null
                 recognitionResults = emptyMap()
+                pipelineStatus = null
             }
         },
         onA = {
             if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             } else if (!isInspectionMode) {
-                // Perform extraction and recognition
+                // Perform extraction and recognition via Guided Pipeline
                 scope.launch {
                     val request = ImageRequest.Builder(context)
                         .data(captureLibrary[currentIndex])
@@ -354,20 +360,14 @@ fun CaptureVerificationScreen(
                     val result = context.imageLoader.execute(request)
                     if (result is SuccessResult) {
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
-                        val extracted = ObservationCropExtractor.extract(bitmap, currentTemplate)
-                        observations = extracted
                         
-                        // Run recognizers
-                        val results = mutableMapOf<String, List<RecognitionResult<*>>>()
-                        extracted.forEach { obs ->
-                            val regionResults = ObservationRecognizer.recognize(obs)
-                            if (regionResults.isNotEmpty()) {
-                                results[obs.regionId] = regionResults
-                            }
-                        }
-                        recognitionResults = results
-
                         isInspectionMode = true
+                        
+                        GuidedObservationPipeline.run(bitmap, currentTemplate) { status ->
+                            pipelineStatus = status
+                            observations = status.observations
+                            recognitionResults = status.results
+                        }
                     }
                 }
             } else {
@@ -452,39 +452,83 @@ fun CaptureVerificationScreen(
                     .background(TerminalBlack),
                 contentAlignment = Alignment.Center
             ) {
-                if (isInspectionMode && observations != null) {
-                    // Inspection View: Show list of observations
+                if (isInspectionMode) {
+                    // Inspection View: Show pipeline status and observations
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(8.dp)
                     ) {
-                        items(observations!!) { observation: CaptureObservation ->
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                TerminalText(text = "REGION: ${observation.regionId}", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
-                                Image(
-                                    bitmap = observation.crop.asImageBitmap(),
-                                    contentDescription = observation.regionId,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight(),
-                                    contentScale = ContentScale.Inside
+                        // PIPELINE PROGRESS
+                        item {
+                            TerminalHeader(text = "observation pipeline")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            val status = pipelineStatus
+                            if (status == null) {
+                                TerminalText(
+                                    text = "INITIALIZING...",
+                                    color = Color.Gray,
+                                    fontSize = 10.sp
                                 )
-                                
-                                // Display Recognition Results
-                                val results = recognitionResults[observation.regionId]
-                                if (results != null) {
-                                    results.forEach { res ->
-                                        if (res.value != null) {
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            TerminalText(text = "RECOGNIZED", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
-                                            TerminalText(text = res.value.toString(), fontSize = 16.sp)
-                                        }
+                            } else {
+                                ObservationStage.ALL.forEach { stage ->
+                                    if (stage == null) return@forEach
+                                    
+                                    val isCompleted = status.completedStages.contains(stage)
+                                    val isCurrent = status.currentStage == stage
+                                    
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        TerminalText(
+                                            text = when {
+                                                isCompleted -> "✓"
+                                                isCurrent -> "»"
+                                                else -> " "
+                                            },
+                                            color = if (isCompleted) TerminalGreen else TerminalPurple,
+                                            modifier = Modifier.width(20.dp)
+                                        )
+                                        TerminalText(
+                                            text = stage.label.uppercase(),
+                                            color = if (isCompleted) Color.White else if (isCurrent) TerminalPurple else Color.Gray,
+                                            fontSize = 10.sp
+                                        )
                                     }
                                 }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            androidx.compose.material3.HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
 
-                                Spacer(modifier = Modifier.height(4.dp))
-                                androidx.compose.material3.HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f))
+                        if (observations != null) {
+                            items(observations!!) { observation: CaptureObservation ->
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    TerminalText(text = "REGION: ${observation.regionId}", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
+                                    Image(
+                                        bitmap = observation.crop.asImageBitmap(),
+                                        contentDescription = observation.regionId,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight(),
+                                        contentScale = ContentScale.Inside
+                                    )
+                                    
+                                    // Display Recognition Results
+                                    val results = recognitionResults[observation.regionId]
+                                    if (results != null) {
+                                        results.forEach { res ->
+                                            if (res.value != null) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                TerminalText(text = "RECOGNIZED", color = com.example.overdex.ui.theme.TerminalPurple, fontSize = 10.sp)
+                                                TerminalText(text = res.value.toString(), fontSize = 16.sp)
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    androidx.compose.material3.HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f))
+                                }
                             }
                         }
 

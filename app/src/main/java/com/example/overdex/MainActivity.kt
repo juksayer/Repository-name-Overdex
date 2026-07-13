@@ -258,6 +258,7 @@ fun
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
+                onA = { /* Reserved */ },
                 onB = { navController.popBackStack() }
             ) { _ ->
                 CalibrationScreen(

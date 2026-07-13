@@ -231,6 +231,7 @@
       <w>Drifblim</w>
       <w>Drifloon</w>
       <w>Drilbur</w>
+      <w>Droidball</w>
       <w>Drowzee</w>
       <w>Druddigon</w>
       <w>Dubwool</w>
@@ -602,6 +603,7 @@
       <w>Orthworm</w>
       <w>Oshawott</w>
       <w>Overdex</w>
+      <w>Overmon</w>
       <w>Overqwil</w>
       <w>Pachirisu</w>
       <w>Palafin</w>
@@ -949,6 +951,7 @@
       <w>Whismur</w>
       <w>Wigglytuff</w>
       <w>Wiglett</w>
+      <w>Wimber</w>
       <w>Wimpod</w>
       <w>Wingull</w>
       <w>Wishiwashi</w>
@@ -990,6 +993,7 @@
       <w>charizard</w>
       <w>empoleon</w>
       <w>garchomp</w>
+      <w>overdex</w>
       <w>pokemon</w>
     </words>
   </dictionary>
