@@ -77,11 +77,23 @@ fun PokedexFrame(
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
-    var serviceMode by remember { mutableStateOf(false) }
+    var serviceMode by remember { mutableStateOf(true) }
+
     val crtOffset by animateDpAsState(
-        targetValue = if (serviceMode) (-16).dp else 0.dp,
+        targetValue = if (serviceMode) (-32).dp else 0.dp,
         label = "crtOffset"
     )
+
+    val dpadOffset by animateDpAsState(
+        targetValue = if (serviceMode) (-24).dp else 0.dp,
+        label = "dpadOffset"
+    )
+
+    val buttonsOffset by animateDpAsState(
+        targetValue = if (serviceMode) (8).dp else 0.dp,
+        label = "buttonsOffset"
+    )
+
 
     val context = LocalContext.current
     val researcherManager = remember { ResearcherManager(context) }
@@ -318,22 +330,26 @@ fun PokedexFrame(
         ) {
             // D-Pad
             DPad(
+                modifier = Modifier.offset(x = dpadOffset),
                 onUp = { handleInput("UP"); onUp() },
                 onDown = { handleInput("DOWN"); onDown() },
                 onLeft = { handleInput("LEFT"); onLeft() },
                 onRight = { handleInput("RIGHT"); onRight() }
             )
 
-            // Buttons Area
-            Column(horizontalAlignment = Alignment.End) {
+// Buttons Area
+            Column(
+                modifier = Modifier.offset(x = buttonsOffset),
+                horizontalAlignment = Alignment.End
+            ) {
                 Row {
                     ActionButton("B", Color.Black, onClick = { handleInput("B"); onB() })
                     Spacer(modifier = Modifier.width(16.dp))
                     ActionButton("A", Color.Black, onClick = { handleInput("A"); onA() })
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Select/Start
                 Row {
                     PillButton("SELECT", onClick = { handleInput("SELECT"); onSelect() })
@@ -361,7 +377,7 @@ fun AndroidPokeballLogo(
             launch {
                 wakeIntensity.animateTo(1f, tween(400))
             }
-            
+
             // Phase 2: Acknowledge (Inertial rotation ~15 degrees)
             rotation.animateTo(
                 targetValue = 15f,
@@ -370,14 +386,14 @@ fun AndroidPokeballLogo(
                     stiffness = Spring.StiffnessLow
                 )
             )
-            
+
             // Phase 3: Blink (Mechanical acknowledgements)
             delay(100)
             eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f); delay(100)
             eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f)
-            
+
             delay(500)
-            
+
             // Phase 4: Rest
             launch {
                 wakeIntensity.animateTo(0f, tween(600))
@@ -395,7 +411,7 @@ fun AndroidPokeballLogo(
     ) {
         val w = size.width
         val h = size.height
-        
+
         // Android Head Shape
         val path = Path().apply {
             addArc(
@@ -404,22 +420,22 @@ fun AndroidPokeballLogo(
                 sweepAngleDegrees = 180f
             )
         }
-        
+
         val animatedRed = androidx.compose.ui.graphics.lerp(Color.Red, Color(0xFFFF4444), wakeIntensity.value)
-        
+
         drawContext.canvas.save()
         drawPath(path, color = Color.White)
-        
+
         // Top half Red (clip to head shape)
         drawPath(path, color = animatedRed)
-        
+
         // Middle black line
         drawRect(
             color = Color.Black,
             topLeft = Offset(0f, h / 2 - 2.dp.toPx()),
             size = size.copy(height = 4.dp.toPx())
         )
-        
+
         // Center circle
         drawCircle(
             color = Color.Black,
@@ -431,7 +447,7 @@ fun AndroidPokeballLogo(
             radius = 6.dp.toPx(),
             center = center
         )
-        
+
         // Eyes
         drawCircle(
             color = Color.White.copy(alpha = eyesAlpha.value),
@@ -443,13 +459,13 @@ fun AndroidPokeballLogo(
             radius = 4.dp.toPx(),
             center = Offset(w * 0.7f, h * 0.3f)
         )
-        
+
         drawContext.canvas.restore()
-        
+
         // Border
         val strokeWidth = androidx.compose.ui.unit.lerp(2.dp, 3.dp, wakeIntensity.value).toPx()
         drawPath(path, color = Color.Black, style = Stroke(width = strokeWidth))
-        
+
         // Antennas
         drawLine(
             color = animatedRed,
@@ -500,7 +516,7 @@ fun FilterSettingsOverlay(
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingToggle("Enabled", settings.isEnabled) { onSettingsChange(settings.copy(isEnabled = it)) }
-            
+
             if (settings.isEnabled) {
                 SettingSlider("Scanlines", settings.scanlineIntensity, 0f, 1f) { onSettingsChange(settings.copy(scanlineIntensity = it)) }
                 SettingSlider("Curvature", settings.crtCurvature, 0f, 0.5f) { onSettingsChange(settings.copy(crtCurvature = it)) }
@@ -511,7 +527,7 @@ fun FilterSettingsOverlay(
                 Spacer(modifier = Modifier.height(24.dp))
                 Divider(color = TerminalPurple.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(
                     onClick = onOpenResearcher,
                     modifier = Modifier.fillMaxWidth(),
@@ -589,7 +605,7 @@ fun DPad(onUp: () -> Unit, onDown: () -> Unit, onLeft: () -> Unit, onRight: () -
                 .height(112.dp)
                 .background(Color.Black, RoundedCornerShape(4.dp))
         )
-        
+
         // Buttons with Press-and-Hold Repetition
         Column(modifier = Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f).repeatableAction(onUp))
@@ -714,8 +730,8 @@ fun SearchBar(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Default.Search, 
-                contentDescription = null, 
+                Icons.Default.Search,
+                contentDescription = null,
                 tint = if (selected) TerminalBlack else TerminalGreen
             )
             Spacer(modifier = Modifier.width(8.dp))
