@@ -32,6 +32,7 @@ import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.ui.screens.ResearcherModeOverlay
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -77,11 +78,11 @@ fun PokedexFrame(
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
-    var serviceMode by remember { mutableStateOf(true) }
+    val serviceMode = isServiceRunning
 
-    val crtOffset by animateDpAsState(
-        targetValue = if (serviceMode) (-32).dp else 0.dp,
-        label = "crtOffset"
+    val crtPadding by animateDpAsState(
+        targetValue = if (serviceMode) 0.dp else 32.dp,
+        label = "crtPadding"
     )
 
     val dpadOffset by animateDpAsState(
@@ -204,11 +205,11 @@ fun PokedexFrame(
                 .weight(1f)
                 .background(Color.DarkGray, RoundedCornerShape(8.dp))
                 .padding(bottom = 24.dp, start = 12.dp, end = 12.dp)
+                .padding(top = crtPadding)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .offset(y = crtOffset)
                     .clip(RoundedCornerShape(4.dp))
                     .background(PokedexScreen)
                     .border(8.dp, PokedexScreenBorder, RoundedCornerShape(4.dp))
@@ -321,14 +322,7 @@ fun PokedexFrame(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = 72.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color.Black)
-        )
+        ServiceDrawerFace()
 
 // Control Panel
         if (serviceMode) {
@@ -679,6 +673,35 @@ fun PillButton(label: String, onClick: () -> Unit = {}) {
                 .clickable { onClick() }
         )
         Text(text = label, color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun ServiceDrawerFace(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .padding(horizontal = 72.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(PokedexGreen)
+            .border(
+                BorderStroke(
+                    1.dp,
+                    Color.Black.copy(alpha = 0.2f)
+                ),
+                RoundedCornerShape(6.dp)
+            )
+    ) {
+        // Emergency eject pinhole
+        Box(
+            modifier = Modifier
+                .padding(end = 16.dp, top = 24.dp)
+                .size(2.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.5f))
+                .align(Alignment.TopEnd)
+        )
     }
 }
 
