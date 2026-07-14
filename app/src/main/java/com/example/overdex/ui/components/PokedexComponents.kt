@@ -331,40 +331,54 @@ fun PokedexFrame(
         )
 
 // Control Panel
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // D-Pad
-            DPad(
-                modifier = Modifier.offset(x = dpadOffset),
+        if (serviceMode) {
+            ServiceControls(
                 onUp = { handleInput("UP"); onUp() },
                 onDown = { handleInput("DOWN"); onDown() },
                 onLeft = { handleInput("LEFT"); onLeft() },
-                onRight = { handleInput("RIGHT"); onRight() }
+                onRight = { handleInput("RIGHT"); onRight() },
+                onA = { handleInput("A"); onA() },
+                onB = { handleInput("B"); onB() },
+                onSelect = { handleInput("SELECT"); onSelect() },
+                onStart = { handleInput("START"); onStart() },
+                modifier = Modifier.padding(top = 16.dp)
             )
-
-// Buttons Area
-            Column(
-                modifier = Modifier.offset(x = buttonsOffset),
-                horizontalAlignment = Alignment.End
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row {
-                    ActionButton("B", Color.Black, onClick = { handleInput("B"); onB() })
-                    Spacer(modifier = Modifier.width(16.dp))
-                    ActionButton("A", Color.Black, onClick = { handleInput("A"); onA() })
-                }
+                // D-Pad
+                DPad(
+                    modifier = Modifier.offset(x = dpadOffset),
+                    onUp = { handleInput("UP"); onUp() },
+                    onDown = { handleInput("DOWN"); onDown() },
+                    onLeft = { handleInput("LEFT"); onLeft() },
+                    onRight = { handleInput("RIGHT"); onRight() }
+                )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                // Buttons Area
+                Column(
+                    modifier = Modifier.offset(x = buttonsOffset),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Row {
+                        ActionButton("B", Color.Black, onClick = { handleInput("B"); onB() })
+                        Spacer(modifier = Modifier.width(16.dp))
+                        ActionButton("A", Color.Black, onClick = { handleInput("A"); onA() })
+                    }
 
-                // Select/Start
-                Row {
-                    PillButton("SELECT", onClick = { handleInput("SELECT"); onSelect() })
-                    Spacer(modifier = Modifier.width(8.dp))
-                    PillButton("START", onClick = { handleInput("START"); onStart() })
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Select/Start
+                    Row {
+                        PillButton("SELECT", onClick = { handleInput("SELECT"); onSelect() })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        PillButton("START", onClick = { handleInput("START"); onStart() })
+                    }
                 }
             }
         }
@@ -594,9 +608,15 @@ fun SettingSlider(label: String, value: Float, min: Float, max: Float, onValueCh
 }
 
 @Composable
-fun DPad(onUp: () -> Unit, onDown: () -> Unit, onLeft: () -> Unit, onRight: () -> Unit) {
+fun DPad(
+    onUp: () -> Unit,
+    onDown: () -> Unit,
+    onLeft: () -> Unit,
+    onRight: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(120.dp)
             .padding(4.dp),
         contentAlignment = Alignment.Center
@@ -659,6 +679,52 @@ fun PillButton(label: String, onClick: () -> Unit = {}) {
                 .clickable { onClick() }
         )
         Text(text = label, color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun ServiceControls(
+    onUp: () -> Unit,
+    onDown: () -> Unit,
+    onLeft: () -> Unit,
+    onRight: () -> Unit,
+    onA: () -> Unit,
+    onB: () -> Unit,
+    onSelect: () -> Unit,
+    onStart: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left Column: Vertical Navigation Column
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PillButton("UP", onUp)
+            PillButton("DOWN", onDown)
+            PillButton("LEFT", onLeft)
+            PillButton("RIGHT", onRight)
+        }
+
+        // Center Area: Unobstructed
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Right Column: Service Buttons
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PillButton("A", onA)
+            PillButton("B", onB)
+            PillButton("SELECT", onSelect)
+            PillButton("START", onStart)
+        }
     }
 }
 
