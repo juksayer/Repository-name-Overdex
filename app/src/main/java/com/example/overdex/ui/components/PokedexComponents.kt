@@ -320,7 +320,17 @@ fun PokedexFrame(
         )
 
         Spacer(modifier = Modifier.height(6.dp))
-        // Control Panel
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .padding(horizontal = 72.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color.Black)
+        )
+
+// Control Panel
         Row(
             modifier = Modifier
                 .fillMaxWidth()
