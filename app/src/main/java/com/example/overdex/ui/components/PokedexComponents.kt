@@ -322,7 +322,11 @@ fun PokedexFrame(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        ServiceDrawerFace()
+        if (serviceMode) {
+            ServiceDrawerFace()
+        } else {
+            ServiceAccessSeam()
+        }
 
 // Control Panel
         if (serviceMode) {
@@ -701,6 +705,31 @@ fun ServiceDrawerFace(modifier: Modifier = Modifier) {
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.5f))
                 .align(Alignment.TopEnd)
+        )
+    }
+}
+
+@Composable
+fun ServiceAccessSeam(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .padding(horizontal = 72.dp)
+            .background(Color.Black.copy(alpha = 0.15f))
+            .border(
+                width = 0.5.dp,
+                color = Color.Black.copy(alpha = 0.3f)
+            )
+    ) {
+        // Emergency eject pinhole
+        Box(
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(2.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.4f))
+                .align(Alignment.CenterEnd)
         )
     }
 }
