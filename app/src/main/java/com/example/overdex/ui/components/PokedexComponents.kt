@@ -77,11 +77,16 @@ fun PokedexFrame(
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
-    
+    var serviceMode by remember { mutableStateOf(false) }
+    val crtOffset by animateDpAsState(
+        targetValue = if (serviceMode) (-16).dp else 0.dp,
+        label = "crtOffset"
+    )
+
     val context = LocalContext.current
     val researcherManager = remember { ResearcherManager(context) }
     var isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
-    
+
     // Konami Code Detection
     val konamiCode = remember { listOf("UP", "UP", "DOWN", "DOWN", "LEFT", "RIGHT", "LEFT", "RIGHT", "B", "A") }
     var currentSequence by remember { mutableStateOf(emptyList<String>()) }
@@ -124,13 +129,13 @@ fun PokedexFrame(
 
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
-    
+
     LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
         if (viewModel != null && activeEnemy != null) {
             val enemyData = viewModel.getPokemonByName(activeEnemy.species)
             val playerData = viewModel.getPokemonByName(battleMemory.playerActivePokemon ?: "Charizard")
-            
+
             if (enemyData != null && playerData != null) {
                 val matchupAnalysis = com.example.overdex.data.matchup.MatchupEngine.analyze(
                     player = playerData,
@@ -138,13 +143,13 @@ fun PokedexFrame(
                     enemyMemory = activeEnemy
                 )
                 currentMatchup = matchupAnalysis
-                
+
                 val decision = com.example.overdex.data.matchup.DecisionEngine.analyze(matchupAnalysis)
                 currentDecision = decision
-                
+
                 android.util.Log.d("MATCHUP_ENGINE", "Analysis: ${matchupAnalysis.playerSpecies} vs ${matchupAnalysis.enemySpecies}")
                 android.util.Log.d("MATCHUP_ENGINE", "Advantage: ${matchupAnalysis.playerAdvantage} | Threat: ${matchupAnalysis.enemyThreatLevel}")
-                
+
                 android.util.Log.d("DECISION_ENGINE", "Recommendation: ${decision.recommendedAction} (Priority: ${decision.actionPriority})")
                 android.util.Log.d("DECISION_ENGINE", "Reasoning: ${decision.reasoning}")
                 android.util.Log.d("DECISION_ENGINE", "Shield Recommended: ${decision.shieldRecommended}")
@@ -173,9 +178,9 @@ fun PokedexFrame(
                 modifier = Modifier.size(60.dp),
                 isInteractive = isLogoInteractive
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Refined hardware instrumentation prototype: 5s breathing cycle
             BreathingLED(Color.Red, 5000)
         }
@@ -191,6 +196,7 @@ fun PokedexFrame(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .offset(y = crtOffset)
                     .clip(RoundedCornerShape(4.dp))
                     .background(PokedexScreen)
                     .border(8.dp, PokedexScreenBorder, RoundedCornerShape(4.dp))
@@ -287,7 +293,21 @@ fun PokedexFrame(
                 }
             }
         }
+// ----- Future Service Module Seam -----
 
+        Spacer(modifier = Modifier.height(2.dp))
+
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Color.Black.copy(alpha = 0.35f)
+        )
+
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Color.White.copy(alpha = 0.08f)
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
         // Control Panel
         Row(
             modifier = Modifier

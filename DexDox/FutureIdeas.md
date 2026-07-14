@@ -152,3 +152,8 @@ digital coaching,
 Trainer DNA,
 handheld industrial design,
 Paper Mario-style battle visualization
+
+// TODO (Architecture):
+// PokedexFrame currently owns BattleMemory and Matchup analysis.
+// Long-term this should be provided by a ViewModel or controller.
+// Keep shell responsible only for rendering and hardware behavior.

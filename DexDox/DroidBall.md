@@ -529,7 +529,47 @@ He is revealing observations.
 Not speaking.
 
 ---
+---
 
+# Motion Philosophy
+
+The ODX-FI distinguishes between information and hardware.
+
+Information is weightless.
+
+Hardware has mass.
+
+Information appears immediately.
+
+Hardware obeys physics.
+
+Motion communicates material.
+
+The trainer should understand what something is made of simply by watching it move.
+
+The CRT is heavy.
+
+The Service Module is spring-loaded.
+
+Droidball rolls.
+
+Buttons compress.
+
+Switches snap.
+
+LEDs bloom.
+
+These are not decorative animations.
+
+They are properties of the instrument.
+
+Software interfaces remain immediate.
+
+Only physical components possess inertia, friction, momentum, and settling.
+
+This distinction preserves trust.
+
+The trainer never mistakes information for hardware, or hardware for software.
 # The Mystery
 
 No official explanation exists for Droidball.
@@ -549,3 +589,5 @@ Some trainers quietly believe...
 He was always in there.
 
 The ODX-FI never comments.
+
+Droidball is not confined to the ODX-FI. He is the mobile embodiment of the Observation Engine. Wherever observation is occurring, Droidball is present.

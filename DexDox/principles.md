@@ -440,4 +440,10 @@ object GuidedObservationPipeline {
         val h = (region.height * bitmap.height).toInt().coerceAtMost(bitmap.height - top)
         return CaptureObservation(region.id, Bitmap.createBitmap(bitmap, left, top, w, h))
     }
-}
+}ODX-FI Motion Principle
+
+Only physical objects possess inertia.
+
+Information is instantaneous.
+
+Hardware has mass.
