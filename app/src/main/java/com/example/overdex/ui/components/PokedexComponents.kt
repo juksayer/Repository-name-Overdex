@@ -129,7 +129,7 @@ fun PokedexFrame(
 
     LaunchedEffect(unlockMessage) {
         if (unlockMessage != null) {
-            delay(3000)
+            delay(30)
             unlockMessage = null
         }
     }

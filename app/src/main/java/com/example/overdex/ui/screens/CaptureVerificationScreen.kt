@@ -39,6 +39,7 @@ import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*
+import com.example.overdex.ui.components.ObservationRegionOverlay
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
@@ -695,6 +696,8 @@ fun CaptureVerificationScreen(
                                 )
                             }
                         )
+
+                        ObservationRegionOverlay(imageSize = imageSize)
 
                         if (!isInspectionMode) {
                             Box(
