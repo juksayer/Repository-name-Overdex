@@ -44,17 +44,31 @@ fun AddOwnedPokemonWizard(
     var isPurified by remember { mutableStateOf(false) }
     var isShiny by remember { mutableStateOf(false) }
 
-    // Focus state for D-pad navigation
-    var focusIndex by remember(currentStep) { mutableIntStateOf(0) }
-    
     // For Species Search list navigation
     val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
 
-    fun handleAction(index: Int) {
+    val nav = rememberHandheldNavigationController(
+        itemCount = {
+            when (currentStep) {
+                WizardStep.SPECIES_SEARCH -> pokemonItems.itemCount + 1 // SearchBar + List
+                WizardStep.CP_INPUT -> 5 // 4 digits + NEXT
+                WizardStep.ATTRIBUTES -> 4 // 3 toggles + SAVE
+            }
+        }
+    )
+
+    // Separate activation logic to avoid circular reference during initialization
+    LaunchedEffect(nav.selectedIndex, currentStep) {
+        // This is a bit tricky since we want to handle activation on 'A' press,
+        // but rememberHandheldNavigationController's onActivate is called on handleTouch too.
+        // Actually, let's just define handleActivate here.
+    }
+
+    fun handleActivate(index: Int) {
         when (currentStep) {
             WizardStep.SPECIES_SEARCH -> {
-                if (index in 0 until pokemonItems.itemCount) {
-                    pokemonItems[index]?.let {
+                if (index > 0 && index <= pokemonItems.itemCount) {
+                    pokemonItems[index - 1]?.let {
                         selectedSpecies = it
                         currentStep = WizardStep.CP_INPUT
                     }
@@ -64,7 +78,7 @@ fun AddOwnedPokemonWizard(
                 if (index == 4) {
                     currentStep = WizardStep.ATTRIBUTES
                 } else {
-                    if (index < 4) focusIndex++
+                    nav.moveDown() // Move to next digit
                 }
             }
             WizardStep.ATTRIBUTES -> {
@@ -93,41 +107,33 @@ fun AddOwnedPokemonWizard(
 
     PokedexFrame(
         onUp = {
-            when (currentStep) {
-                WizardStep.SPECIES_SEARCH -> if (focusIndex > 0) focusIndex--
-                WizardStep.CP_INPUT -> {
-                    if (focusIndex < 4) { // Digits
-                        val charArray = cpValue.toCharArray()
-                        val currentDigit = charArray[focusIndex].digitToInt()
-                        charArray[focusIndex] = ((currentDigit + 1) % 10).digitToChar()
-                        cpValue = String(charArray)
-                    }
-                }
-                WizardStep.ATTRIBUTES -> if (focusIndex > 0) focusIndex--
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+                val charArray = cpValue.toCharArray()
+                val currentDigit = charArray[nav.selectedIndex].digitToInt()
+                charArray[nav.selectedIndex] = ((currentDigit + 1) % 10).digitToChar()
+                cpValue = String(charArray)
+            } else {
+                nav.moveUp()
             }
         },
         onDown = {
-            when (currentStep) {
-                WizardStep.SPECIES_SEARCH -> if (focusIndex < (pokemonItems.itemCount - 1)) focusIndex++
-                WizardStep.CP_INPUT -> {
-                    if (focusIndex < 4) { // Digits
-                        val charArray = cpValue.toCharArray()
-                        val currentDigit = charArray[focusIndex].digitToInt()
-                        charArray[focusIndex] = ((currentDigit + 9) % 10).digitToChar()
-                        cpValue = String(charArray)
-                    }
-                }
-                WizardStep.ATTRIBUTES -> if (focusIndex < 3) focusIndex++ // 0-2: toggles, 3: save
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+                val charArray = cpValue.toCharArray()
+                val currentDigit = charArray[nav.selectedIndex].digitToInt()
+                charArray[nav.selectedIndex] = ((currentDigit + 9) % 10).digitToChar()
+                cpValue = String(charArray)
+            } else {
+                nav.moveDown()
             }
         },
         onLeft = {
-            if (currentStep == WizardStep.CP_INPUT && focusIndex > 0) focusIndex--
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex > 0) nav.moveUp()
         },
         onRight = {
-            if (currentStep == WizardStep.CP_INPUT && focusIndex < 4) focusIndex++ // 4 is NEXT button
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) nav.moveDown()
         },
         onA = {
-            handleAction(focusIndex)
+            handleActivate(nav.selectedIndex)
         },
         onB = {
             when (currentStep) {
@@ -148,11 +154,12 @@ fun AddOwnedPokemonWizard(
                 WizardStep.SPECIES_SEARCH -> {
                     SpeciesSearchStep(
                         pokedexViewModel = pokedexViewModel,
-                        initialIndex = focusIndex,
-                        onIndexChange = { focusIndex = it },
-                        onSpeciesSelected = { 
-                            selectedSpecies = it
-                            currentStep = WizardStep.CP_INPUT
+                        selectedIndex = nav.selectedIndex,
+                        onSelectedIndexChange = { 
+                            nav.handleTouch(it)
+                            if (it > 0 && it <= pokemonItems.itemCount) {
+                                handleActivate(it)
+                            }
                         }
                     )
                 }
@@ -160,9 +167,9 @@ fun AddOwnedPokemonWizard(
                     CPInputStep(
                         speciesName = selectedSpecies?.name ?: "UNKNOWN",
                         cpValue = cpValue,
-                        focusIndex = focusIndex,
-                        onFocusChange = { focusIndex = it },
-                        onNext = { handleAction(4) }
+                        focusIndex = nav.selectedIndex,
+                        onFocusChange = { nav.handleTouch(it) },
+                        onNext = { handleActivate(4) }
                     )
                 }
                 WizardStep.ATTRIBUTES -> {
@@ -170,9 +177,9 @@ fun AddOwnedPokemonWizard(
                         isShadow = isShadow,
                         isPurified = isPurified,
                         isShiny = isShiny,
-                        focusIndex = focusIndex,
-                        onFocusChange = { focusIndex = it },
-                        onAction = { handleAction(it) }
+                        focusIndex = nav.selectedIndex,
+                        onFocusChange = { nav.handleTouch(it) },
+                        onAction = { handleActivate(it) }
                     )
                 }
             }
@@ -183,34 +190,17 @@ fun AddOwnedPokemonWizard(
 @Composable
 fun SpeciesSearchStep(
     pokedexViewModel: PokedexViewModel,
-    initialIndex: Int,
-    onIndexChange: (Int) -> Unit,
-    onSpeciesSelected: (Pokemon) -> Unit
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit
 ) {
+
     val searchQuery by pokedexViewModel.searchQuery.collectAsState()
     val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
 
-    val nav = rememberHandheldNavigationController(
-        initialIndex = initialIndex,
-        itemCount = { pokemonItems.itemCount + 1 }, // SearchBar + List
-        onActivate = { index ->
-            if (index == 0) {
-                // Future: Focus search bar
-            } else {
-                pokemonItems[index - 1]?.let { onSpeciesSelected(it) }
-            }
-        }
-    )
-
-    // Sync back to parent
-    LaunchedEffect(nav.selectedIndex) {
-        onIndexChange(nav.selectedIndex)
-    }
-
     HandheldListSync(
         listState = listState,
-        selectedIndex = nav.selectedIndex,
+        selectedIndex = selectedIndex,
         listIndexMapping = { if (it == 0) null else it - 1 },
         totalItems = pokemonItems.itemCount
     )
@@ -218,9 +208,9 @@ fun SpeciesSearchStep(
     Column {
         SearchBar(
             query = searchQuery,
-            selected = nav.selectedIndex == 0,
+            selected = selectedIndex == 0,
             onSearchClick = {
-                nav.handleTouch(0)
+                onSelectedIndexChange(0)
             }
         )
 
@@ -238,15 +228,16 @@ fun SpeciesSearchStep(
                 pokemonItems[index]?.let { pokemon ->
                     TerminalMenuOption(
                         label = pokemon.name,
-                        selected = nav.selectedIndex == index + 1
+                        selected = selectedIndex == index + 1
                     ) {
-                        nav.handleTouch(index + 1)
+                        onSelectedIndexChange(index + 1)
                     }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun CPInputStep(

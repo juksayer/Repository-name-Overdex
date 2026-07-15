@@ -563,7 +563,7 @@ fun
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id") ?: ""
             val collectionViewModel: MyCollectionViewModel = viewModel()
-            EditOwnedPokemonWizard(
+            EditSpecimenScreen(
                 ownedId = id,
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
