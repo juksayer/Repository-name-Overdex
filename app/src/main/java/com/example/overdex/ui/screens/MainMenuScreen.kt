@@ -42,9 +42,9 @@ fun MainMenuScreen(
             "loading pokemon...................... [1025]",
             "loading move database................ [894]",
             "loading type effectiveness........... [ok]",
-            "",
-            "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "UNNAMED TRAINER"}",
-            "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "UNKNOWN"}",
+            "overdex ready",
+            "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "TheRealestSquid"}",
+            "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "737032186666"}",
             "",
         )
     }
@@ -65,7 +65,7 @@ fun MainMenuScreen(
 
             scrollState.animateScrollTo(
                 value = scrollState.maxValue,
-                animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 2200, easing = FastOutSlowInEasing)
             )
             
             // 4. Mark boot as complete
@@ -107,7 +107,6 @@ fun MainMenuScreen(
                     if (bootStep >= bootLines.size) {
                         Spacer(modifier = Modifier.height(24.dp))
                         TerminalHeader(text = "system check")
-                        TerminalText(text = "> pogo_data_status                [ ok ]", fontSize = 14.sp)
                     }
                 }
 

@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -322,11 +323,7 @@ fun PokedexFrame(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        if (serviceMode) {
-            ServiceDrawerFace()
-        } else {
-            ServiceAccessSeam()
-        }
+        ServiceDrawer(serviceMode)
 
 // Control Panel
         if (serviceMode) {
@@ -681,56 +678,75 @@ fun PillButton(label: String, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun ServiceDrawerFace(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .padding(horizontal = 72.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(PokedexGreen)
-            .border(
-                BorderStroke(
-                    1.dp,
-                    Color.Black.copy(alpha = 0.2f)
-                ),
-                RoundedCornerShape(6.dp)
-            )
-    ) {
-        // Emergency eject pinhole
-        Box(
-            modifier = Modifier
-                .padding(end = 16.dp, top = 24.dp)
-                .size(2.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .align(Alignment.TopEnd)
-        )
-    }
-}
+fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
+    val drawerHeight by animateDpAsState(
+        targetValue = if (isDeployed) 72.dp else 6.dp, // 6dp height for the closed "face"
+        label = "drawerHeight"
+    )
 
-@Composable
-fun ServiceAccessSeam(modifier: Modifier = Modifier) {
+    // Outer Seam (Recess in the device shell)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(4.dp)
-            .padding(horizontal = 72.dp)
-            .background(Color.Black.copy(alpha = 0.15f))
-            .border(
-                width = 0.5.dp,
-                color = Color.Black.copy(alpha = 0.3f)
-            )
+            .height(drawerHeight)
+            .padding(horizontal = 70.dp) // Narrower seam as requested
+            .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(2.dp))
+            .padding(0.5.dp) // The physical gap (seam)
     ) {
-        // Emergency eject pinhole
+        // Drawer Panel Face
         Box(
             modifier = Modifier
-                .padding(end = 8.dp)
-                .size(2.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.4f))
-                .align(Alignment.CenterEnd)
-        )
+                .fillMaxSize()
+                .clip(RoundedCornerShape(1.dp))
+                .background(if (isDeployed) PokedexGreen else Color.Black.copy(alpha = 0.12f))
+                .drawBehind {
+                    if (!isDeployed) {
+                        // Top highlight (Light hitting the top chamfer/edge)
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.08f),
+                            start = Offset(0f, 0.5.dp.toPx()),
+                            end = Offset(this.size.width, 0.5.dp.toPx()),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                        // Bottom subtle shadow (Ambient occlusion in the recess)
+                        drawLine(
+                            color = Color.Black.copy(alpha = 0.05f),
+                            start = Offset(0f, this.size.height - 0.5.dp.toPx()),
+                            end = Offset(this.size.width, this.size.height - 0.5.dp.toPx()),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
+                }
+                .border(
+                    BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.15f)),
+                    RoundedCornerShape(1.dp)
+                )
+        ) {
+            if (!isDeployed) {
+                // "PUSH" Embossed Marking
+                Text(
+                    "PUSH",
+                    fontSize = 4.sp,
+                    color = Color.Black.copy(alpha = 0.35f),
+                    fontWeight = FontWeight.Black, // Bold/Heavy for embossed feel
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 0.5.dp)
+                )
+
+                // Emergency release pinhole
+                Box(
+                    modifier = Modifier
+                        .padding(top = 1.dp, end = 2.dp)
+                        .size(1.2.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        // Subtle highlight around the pinhole edge
+                        .border(0.2.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                        .align(Alignment.TopEnd)
+                )
+            }
+        }
     }
 }
 

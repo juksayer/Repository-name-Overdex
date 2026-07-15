@@ -156,3 +156,11 @@ Never continue implementation work in completed threads.
 The objective is to prevent stale context, unrelated architectural changes, and accumulated assumptions from influencing future work.
 
 Every conversation should begin with a clean understanding of exactly one task.
+
+I also think we should adopt a permanent rule for Jim prompts going forward:
+
+DO NOT TOUCH (largest section)
+ONLY CHANGE (small section)
+OBJECTIVE (one sentence)
+
+That ordering matches the way you've been developing Overdex: preserve what's already working, make one deliberate change, then stop. It's a good fit for your "one feature, one commit" philosophy.
