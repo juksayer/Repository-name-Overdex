@@ -21,18 +21,34 @@ fun ModuleScreen(
     title: String,
     status: ModuleStatus,
     description: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isServiceRunning: Boolean = false,
+    filterSettings: FilterSettings = FilterSettings(),
+    onFilterSettingsChange: (FilterSettings) -> Unit = {},
+    onStart: () -> Unit = {},
+    onSelect: () -> Unit = {}
 ) {
-    TerminalScreen {
-        TerminalHeader(title)
-        TerminalText(text = "module_status: ${status.label}", color = TerminalDimGreen)
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        TerminalText(text = description)
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        TerminalButton(text = "back", onClick = onBack)
+    PokedexFrame(
+        onA = onBack,
+        onB = onBack,
+        onStart = onStart,
+        onSelect = onSelect,
+        isServiceRunning = isServiceRunning,
+        filterSettings = filterSettings,
+        onFilterSettingsChange = onFilterSettingsChange,
+        showBattleOverlay = false
+    ) {
+        TerminalScreen {
+            TerminalHeader(title)
+            TerminalText(text = "module_status: ${status.label}", color = TerminalDimGreen)
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            TerminalText(text = description)
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            TerminalButton(text = "back", onClick = onBack, selected = true)
+        }
     }
 }

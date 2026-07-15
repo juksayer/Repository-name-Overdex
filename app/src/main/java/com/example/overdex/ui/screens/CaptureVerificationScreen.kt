@@ -454,15 +454,11 @@ fun CaptureVerificationScreen(
                                 )
                             }
 
-                            // 3. For Phase 1, we still finish immediately but via the session
-                            val session = collectionViewModel.activeSession.value
-                            if (session != null) {
-                                val owned = session.buildSpecimen(speciesData.id)
+                            // 3. Complete the session via Manager
+                            val owned = collectionViewModel.completeRegistrationSession(speciesData.id)
+                            if (owned != null) {
                                 lastMappedPokemon = owned
-                                collectionViewModel.addOwnedPokemon(owned)
-                                collectionViewModel.clearActiveSession()
-                                
-                                saveConfirmation = "Import Accepted (via Session)"
+                                saveConfirmation = "Import Accepted (via Session Manager)"
                                 onSaveSuccess(owned.id)
                             }
                         } else {

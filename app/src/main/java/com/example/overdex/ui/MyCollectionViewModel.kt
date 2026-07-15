@@ -8,6 +8,7 @@ import com.example.overdex.data.local.toDomain
 import com.example.overdex.data.local.toEntity
 import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.RegistrationSession
+import com.example.overdex.model.RegistrationSessionManager
 import com.example.overdex.model.observation.Observation
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -22,19 +23,31 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _activeSession = MutableStateFlow<RegistrationSession?>(null)
-    val activeSession: StateFlow<RegistrationSession?> = _activeSession.asStateFlow()
+    val activeSession: StateFlow<RegistrationSession?> = RegistrationSessionManager.activeSession
 
     fun startRegistrationSession() {
-        _activeSession.value = RegistrationSession()
+        RegistrationSessionManager.startSession()
     }
 
     fun addObservation(observation: Observation) {
-        _activeSession.value = _activeSession.value?.addObservation(observation)
+        RegistrationSessionManager.addObservation(observation)
+    }
+
+    fun completeRegistrationSession(speciesId: Int): OwnedPokemon? {
+        val session = RegistrationSessionManager.completeSession()
+        val specimen = session?.buildSpecimen(speciesId)
+        if (specimen != null) {
+            addOwnedPokemon(specimen)
+        }
+        return specimen
+    }
+
+    fun cancelRegistrationSession() {
+        RegistrationSessionManager.cancelSession()
     }
 
     fun clearActiveSession() {
-        _activeSession.value = null
+        RegistrationSessionManager.cancelSession()
     }
 
     fun updateSelectedIndex(index: Int) {

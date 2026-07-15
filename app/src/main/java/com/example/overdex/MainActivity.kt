@@ -222,22 +222,15 @@ fun
             
             val status = try { ModuleStatus.valueOf(statusStr) } catch(_: Exception) { ModuleStatus.UNAVAILABLE }
             
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = title,
+                status = status,
+                description = description,
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onStart = { /* Reserved */ },
-                onSelect = { /* Reserved */ },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = title,
-                    status = status,
-                    description = description,
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("readme") {
             ReadmeScreen(
@@ -486,84 +479,59 @@ fun
             }
         }
         composable("roster/register_specimen") {
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = "Register Specimen",
+                status = ModuleStatus.EXPERIMENTAL,
+                description = "Manual registration interface placeholder.",
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = "Register Specimen",
-                    status = ModuleStatus.EXPERIMENTAL,
-                    description = "Manual registration interface placeholder.",
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("roster/teams") {
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = "Teams",
+                status = ModuleStatus.OFFLINE,
+                description = "Team management and organization placeholder.",
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = "Teams",
-                    status = ModuleStatus.OFFLINE,
-                    description = "Team management and organization placeholder.",
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("roster/leagues") {
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = "Leagues",
+                status = ModuleStatus.OFFLINE,
+                description = "League participation and tracking placeholder.",
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = "Leagues",
-                    status = ModuleStatus.OFFLINE,
-                    description = "League participation and tracking placeholder.",
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("roster/trained_teammates") {
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = "Trained Teammates",
+                status = ModuleStatus.EXPERIMENTAL,
+                description = "Filtered view for battle-ready specimens.",
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = "Trained Teammates",
-                    status = ModuleStatus.EXPERIMENTAL,
-                    description = "Filtered view for battle-ready specimens.",
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("roster/untrained_teammates") {
-            PokedexFrame(
-                showBattleOverlay = false,
+            ModuleScreen(
+                title = "Untrained Teammates",
+                status = ModuleStatus.EXPERIMENTAL,
+                description = "Filtered view for specimens requiring training.",
+                onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onB = { navController.popBackStack() }
-            ) { _ ->
-                ModuleScreen(
-                    title = "Untrained Teammates",
-                    status = ModuleStatus.EXPERIMENTAL,
-                    description = "Filtered view for specimens requiring training.",
-                    onBack = { navController.popBackStack() }
-                )
-            }
+                onFilterSettingsChange = { filterSettings = it }
+            )
         }
         composable("roster/specimens") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
@@ -585,7 +553,23 @@ fun
                 ownedId = id,
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
+                onEdit = { ownedId -> navController.navigate("roster/edit_specimen/$ownedId") },
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "roster/edit_specimen/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            EditOwnedPokemonWizard(
+                ownedId = id,
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                onFinish = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
             )
         }
     }

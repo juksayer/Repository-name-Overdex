@@ -30,6 +30,7 @@ fun SpecimenDetailScreen(
     ownedId: String,
     pokedexViewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
+    onEdit: (String) -> Unit,
     onBack: () -> Unit
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
@@ -57,6 +58,7 @@ fun SpecimenDetailScreen(
                 scrollState.animateScrollBy(500f)
             }
         },
+        onStart = { onEdit(ownedId) },
         onB = onBack,
         viewModel = pokedexViewModel,
         showBattleOverlay = false
@@ -76,19 +78,29 @@ fun SpecimenDetailScreen(
                 .padding(16.dp)
         ) {
             // Header: Species Name
-            Text(
-                text = (species?.name ?: "UNKNOWN").uppercase(),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                color = if (owned.isShiny) TerminalPurple else TerminalGreen,
-            )
-            
-            // Reduced prominence Specimen ID
-            Text(
-                text = "ID: ${owned.id.takeLast(8).uppercase()}",
-                fontSize = 9.sp,
-                color = TerminalDimGreen.copy(alpha = 0.5f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = (species?.name ?: "UNKNOWN").uppercase(),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (owned.isShiny) TerminalPurple else TerminalGreen,
+                    )
+                    
+                    // Reduced prominence Specimen ID
+                    Text(
+                        text = "ID: ${owned.id.takeLast(8).uppercase()}",
+                        fontSize = 9.sp,
+                        color = TerminalDimGreen.copy(alpha = 0.5f)
+                    )
+                }
+
+                TerminalText(text = "START: EDIT", color = TerminalDimGreen, fontSize = 9.sp)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
