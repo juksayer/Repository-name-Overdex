@@ -5,6 +5,7 @@ import com.example.overdex.model.observation.CombatPowerObservation
 import com.example.overdex.model.observation.ShadowStatusObservation
 import com.example.overdex.model.observation.FastMoveObservation
 import com.example.overdex.model.observation.ChargedMoveObservation
+import com.example.overdex.model.observation.EvolutionFamilyObservation
 import java.util.UUID
 
 /**
@@ -42,6 +43,7 @@ data class RegistrationSession(
         var fastMove: String? = null
         var chargedMove1: String? = null
         var chargedMove2: String? = null
+        var evolutionFamily: String? = null
 
         // Group by type and pick highest confidence for each attribute
         observations.forEach { obs ->
@@ -63,6 +65,9 @@ data class RegistrationSession(
                     } else if (chargedMove1 != obs.moveName) {
                         chargedMove2 = obs.moveName
                     }
+                }
+                is EvolutionFamilyObservation -> {
+                    evolutionFamily = obs.familySpecies
                 }
                 else -> {}
             }

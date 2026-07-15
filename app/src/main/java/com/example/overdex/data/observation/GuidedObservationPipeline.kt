@@ -54,6 +54,8 @@ object GuidedObservationPipeline {
         val allObservations = mutableListOf<CaptureObservation>()
 
         fun update(stage: ObservationStage) {
+            val resultsCount = allResults.values.sumOf { it.size }
+            android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size}")
             onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList()))
         }
 
@@ -64,11 +66,10 @@ object GuidedObservationPipeline {
 
         val regions = template.regions.associateBy { it.id }
 
-        // 2. Species
+        // 2. Species & Family
         update(ObservationStage.Species)
-        (regions["SpeciesName"] ?: regions["CandyPanel"])?.let { region ->
-            processRegion(bitmap, region, allObservations, allResults, detectedAnchors)
-        }
+        regions["SpeciesName"]?.let { processRegion(bitmap, it, allObservations, allResults, detectedAnchors) }
+        regions["CandyPanel"]?.let { processRegion(bitmap, it, allObservations, allResults, detectedAnchors) }
         completed.add(ObservationStage.Species)
 
         // 3. Combat Power

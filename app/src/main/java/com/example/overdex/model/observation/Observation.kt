@@ -44,3 +44,10 @@ data class ShadowStatusObservation(
     override val source: ObservationSource,
     override val confidence: Confidence
 ) : Observation()
+
+data class EvolutionFamilyObservation(
+    val familySpecies: String,
+    override val timestamp: Long = System.currentTimeMillis(),
+    override val source: ObservationSource,
+    override val confidence: Confidence
+) : Observation()

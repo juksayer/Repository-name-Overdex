@@ -38,7 +38,7 @@ object ObservationRecognizer {
                 results.add(CombatPowerRecognizer.recognize(observation.crop))
             }
             "CandyPanel" -> {
-                results.add(CandyPanelSpeciesRecognizer.recognize(observation.crop))
+                results.add(CandyPanelFamilyRecognizer.recognize(observation.crop))
             }
             "FastMoveRow", "ChargedMoveRowA", "ChargedMoveRowB", "SummaryFastMove" -> {
                 results.add(MoveNameRecognizer.recognize(observation.crop))

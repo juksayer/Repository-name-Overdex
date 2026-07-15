@@ -28,8 +28,14 @@ object MoveNameRecognizer {
                 .flatMap { it.lines }
                 .map { it.text.trim() }
                 .firstOrNull { text -> 
-                    // Basic heuristic: ignore damage numbers and known suffixes
-                    text.isNotEmpty() && !text.all { it.isDigit() } && !text.lowercase().contains("bonus")
+                    val lower = text.lowercase()
+                    // Basic heuristic: ignore damage numbers, known suffixes, and Power Up button noise
+                    text.isNotEmpty() && 
+                    !text.all { it.isDigit() } && 
+                    !lower.contains("bonus") &&
+                    !lower.contains("power up") &&
+                    !lower.contains("stardust") &&
+                    !lower.contains("candy")
                 }
 
             RecognitionResult(

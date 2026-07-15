@@ -11,7 +11,7 @@ import kotlinx.coroutines.tasks.await
  * Specialized recognizer for determining species name from the Candy Panel.
  * Extracts text like "Mewtwo Candy" or "Charizard Mega Energy" and isolates the species.
  */
-object CandyPanelSpeciesRecognizer {
+object CandyPanelFamilyRecognizer {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
@@ -20,32 +20,32 @@ object CandyPanelSpeciesRecognizer {
             val result = recognizer.process(image).await()
             
             // Look for lines containing "Candy" or "Mega Energy"
-            var detectedSpecies: String? = null
+            var detectedFamily: String? = null
             
             for (block in result.textBlocks) {
                 for (line in block.lines) {
                     val text = line.text.lowercase()
                     when {
                         text.contains(" candy") -> {
-                            detectedSpecies = line.text.substring(0, text.indexOf(" candy")).trim()
+                            detectedFamily = line.text.substring(0, text.indexOf(" candy")).trim()
                         }
                         text.contains(" mega energy") -> {
-                            detectedSpecies = line.text.substring(0, text.indexOf(" mega energy")).trim()
+                            detectedFamily = line.text.substring(0, text.indexOf(" mega energy")).trim()
                         }
                     }
-                    if (detectedSpecies != null) break
+                    if (detectedFamily != null) break
                 }
-                if (detectedSpecies != null) break
+                if (detectedFamily != null) break
             }
 
             RecognitionResult(
-                value = detectedSpecies,
-                confidence = if (detectedSpecies != null) 0.8f else 0.0f, // Evolution-family evidence weighting
-                recognizer = "CandyPanelSpeciesRecognizer"
+                value = detectedFamily,
+                confidence = if (detectedFamily != null) 0.8f else 0.0f,
+                recognizer = "CandyPanelFamilyRecognizer"
             )
         } catch (e: Exception) {
-            android.util.Log.e("CANDY_SPECIES_REC", "Recognition failed", e)
-            RecognitionResult(null, 0.0f, "CandyPanelSpeciesRecognizer")
+            android.util.Log.e("CANDY_FAMILY_REC", "Recognition failed", e)
+            RecognitionResult(null, 0.0f, "CandyPanelFamilyRecognizer")
         }
     }
 }
