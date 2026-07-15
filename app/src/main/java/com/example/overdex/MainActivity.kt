@@ -140,7 +140,7 @@ fun
             val options = remember {
                 listOf(
                     MenuOption("overdex", { navController.navigate("list") }),
-                    MenuOption("my collection", { navController.navigate("collection") }),
+                    MenuOption("roster", { navController.navigate("roster_menu") }),
                     MenuOption("capture test", { navController.navigate("capture_verification") }),
                     MenuOption("trainer profile", { navController.navigate("trainer_profile") }),
                     MenuOption("readme", { navController.navigate("readme") })
@@ -439,6 +439,128 @@ fun
                 onCancel = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning
             )
+        }
+        composable("roster_menu") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val options = listOf(
+                "specimens",
+                "registration assistance",
+                "register specimen",
+                "teams",
+                "leagues",
+                "trained teammates",
+                "untrained teammates"
+            )
+
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < options.size - 1) selectedIndex++ },
+                onA = {
+                    val route = when (selectedIndex) {
+                        0 -> "collection"
+                        1 -> "add_pokemon_wizard"
+                        2 -> "roster/register_specimen"
+                        3 -> "roster/teams"
+                        4 -> "roster/leagues"
+                        5 -> "roster/trained_teammates"
+                        6 -> "roster/untrained_teammates"
+                        else -> "roster_menu"
+                    }
+                    navController.navigate(route)
+                },
+                onB = { navController.popBackStack() },
+                onStart = { /* Same as A */ },
+            ) { _ ->
+                RosterMenuScreen(
+                    selectedIndex = selectedIndex,
+                    onNavigate = { route -> navController.navigate(route) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("roster/register_specimen") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                ModuleScreen(
+                    title = "Register Specimen",
+                    status = ModuleStatus.EXPERIMENTAL,
+                    description = "Manual registration interface placeholder.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("roster/teams") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                ModuleScreen(
+                    title = "Teams",
+                    status = ModuleStatus.OFFLINE,
+                    description = "Team management and organization placeholder.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("roster/leagues") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                ModuleScreen(
+                    title = "Leagues",
+                    status = ModuleStatus.OFFLINE,
+                    description = "League participation and tracking placeholder.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("roster/trained_teammates") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                ModuleScreen(
+                    title = "Trained Teammates",
+                    status = ModuleStatus.EXPERIMENTAL,
+                    description = "Filtered view for battle-ready specimens.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("roster/untrained_teammates") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                isServiceRunning = isServiceRunning,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onB = { navController.popBackStack() }
+            ) { _ ->
+                ModuleScreen(
+                    title = "Untrained Teammates",
+                    status = ModuleStatus.EXPERIMENTAL,
+                    description = "Filtered view for specimens requiring training.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
