@@ -83,10 +83,11 @@ fun SpecimenDetailScreen(
                 color = if (owned.isShiny) TerminalPurple else TerminalGreen,
             )
             
+            // Reduced prominence Specimen ID
             Text(
-                text = "SPECIMEN ID: #${owned.id.takeLast(8).uppercase()}",
-                fontSize = 10.sp,
-                color = TerminalDimGreen
+                text = "ID: ${owned.id.takeLast(8).uppercase()}",
+                fontSize = 9.sp,
+                color = TerminalDimGreen.copy(alpha = 0.5f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -106,7 +107,7 @@ fun SpecimenDetailScreen(
                     model = spriteUrl,
                     contentDescription = species?.name,
                     modifier = Modifier
-                        .size(120.dp)
+                        .size(160.dp) // Increased size
                         .background(TerminalGreen.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
                         .border(1.dp, TerminalDimGreen.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                 )
@@ -114,14 +115,13 @@ fun SpecimenDetailScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
-                    if (owned.cp != null) {
-                        Text(
-                            text = "CP ${owned.cp}",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black,
-                            color = TerminalGreen
-                        )
-                    }
+                    val cpText = if (owned.cp != null && owned.cp != 0) "CP ${owned.cp}" else "CP ---"
+                    Text(
+                        text = cpText,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = TerminalGreen
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
