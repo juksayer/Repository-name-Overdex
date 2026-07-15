@@ -14,6 +14,9 @@ data class OwnedPokemonEntity(
     val isPurified: Boolean,
     val isShiny: Boolean,
     val isFavorite: Boolean = false,
+    val fastMove: String?,
+    val chargedMove1: String?,
+    val chargedMove2: String?,
     val createdAt: Long,
     val updatedAt: Long
 )
@@ -27,6 +30,9 @@ fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
     isPurified = isPurified,
     isShiny = isShiny,
     isFavorite = isFavorite,
+    fastMove = fastMove,
+    chargedMove1 = chargedMove1,
+    chargedMove2 = chargedMove2,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -40,6 +46,9 @@ fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
     isPurified = isPurified,
     isShiny = isShiny,
     isFavorite = isFavorite,
+    fastMove = fastMove,
+    chargedMove1 = chargedMove1,
+    chargedMove2 = chargedMove2,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

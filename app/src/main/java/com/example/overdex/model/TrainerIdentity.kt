@@ -18,7 +18,8 @@ data class TrainerIdentity(
     @Serializable(with = InstantSerializer::class)
     val createdAt: Instant,
     val avatarSeed: Long = 0L,
-    val appVersionWhenCreated: String = "1.0"
+    val appVersionWhenCreated: String = "1.0",
+    val pokemonGoTrainerCode: String? = null
 )
 
 object UUIDSerializer : KSerializer<UUID> {

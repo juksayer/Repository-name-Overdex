@@ -65,6 +65,12 @@ class TrainerRepository(private val context: Context) {
         saveIdentity(updated)
     }
 
+    fun updatePokemonGoTrainerCode(code: String) {
+        val current = getIdentity()
+        val updated = current.copy(pokemonGoTrainerCode = code)
+        saveIdentity(updated)
+    }
+
     fun saveIdentity(identity: TrainerIdentity) {
         val identityJson = json.encodeToString(TrainerIdentity.serializer(), identity)
         prefs.edit().putString("trainer_identity", identityJson).apply()

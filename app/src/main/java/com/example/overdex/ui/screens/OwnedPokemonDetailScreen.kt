@@ -34,7 +34,7 @@ import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 
 enum class DetailField {
-    NICKNAME, CP, SHADOW, PURIFIED, SHINY, FAVORITE, SHARE, SAVE, DELETE
+    NICKNAME, CP, FAST_MOVE, CHARGED_MOVE_1, CHARGED_MOVE_2, SHADOW, PURIFIED, SHINY, FAVORITE, SHARE, SAVE, DELETE
 }
 
 @Composable
@@ -61,6 +61,9 @@ fun OwnedPokemonDetailScreen(
     var isPurified by remember { mutableStateOf(false) }
     var isShiny by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
+    var fastMove by remember { mutableStateOf("") }
+    var chargedMove1 by remember { mutableStateOf("") }
+    var chargedMove2 by remember { mutableStateOf("") }
     
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
@@ -96,6 +99,9 @@ fun OwnedPokemonDetailScreen(
                             isPurified = isPurified,
                             isShiny = isShiny,
                             isFavorite = isFavorite,
+                            fastMove = fastMove.ifBlank { null },
+                            chargedMove1 = chargedMove1.ifBlank { null },
+                            chargedMove2 = chargedMove2.ifBlank { null },
                             updatedAt = System.currentTimeMillis()
                         )
                         collectionViewModel.updateOwnedPokemon(updated)
@@ -129,6 +135,9 @@ fun OwnedPokemonDetailScreen(
             isPurified = owned.isPurified
             isShiny = owned.isShiny
             isFavorite = owned.isFavorite
+            fastMove = owned.fastMove ?: ""
+            chargedMove1 = owned.chargedMove1 ?: ""
+            chargedMove2 = owned.chargedMove2 ?: ""
             
             if (species == null) {
                 species = pokedexViewModel.getPokemonById(owned.speciesId)
@@ -251,6 +260,34 @@ fun OwnedPokemonDetailScreen(
                 selected = focusedField == DetailField.CP,
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.CP]!!),
                 keyboardType = KeyboardType.Number
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = TerminalDimGreen.copy(alpha = 0.2f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TerminalEditField(
+                label = "FAST MOVE",
+                value = fastMove,
+                onValueChange = { fastMove = it.uppercase() },
+                selected = focusedField == DetailField.FAST_MOVE,
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.FAST_MOVE]!!)
+            )
+
+            TerminalEditField(
+                label = "CHARGED MOVE 1",
+                value = chargedMove1,
+                onValueChange = { chargedMove1 = it.uppercase() },
+                selected = focusedField == DetailField.CHARGED_MOVE_1,
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.CHARGED_MOVE_1]!!)
+            )
+
+            TerminalEditField(
+                label = "CHARGED MOVE 2",
+                value = chargedMove2,
+                onValueChange = { chargedMove2 = it.uppercase() },
+                selected = focusedField == DetailField.CHARGED_MOVE_2,
+                modifier = Modifier.bringIntoViewRequester(requesters[DetailField.CHARGED_MOVE_2]!!)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

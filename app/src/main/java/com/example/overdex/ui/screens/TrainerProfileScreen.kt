@@ -29,6 +29,7 @@ import java.util.Locale
 
 enum class ProfileFocus {
     EDIT_NAME,
+    EDIT_TRAINER_CODE,
     SHOW_QR,
     SCAN_QR,
     LINK_DEBUG,
@@ -57,10 +58,12 @@ fun TrainerProfileScreen(
     val scope = rememberCoroutineScope()
     var showEditDialog by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf("") }
+    var showEditTrainerCodeDialog by remember { mutableStateOf(false) }
+    var tempTrainerCode by remember { mutableStateOf("") }
     
     // D-pad Navigation State
     val focusableItems = remember(partnerIdentity) {
-        mutableListOf(ProfileFocus.EDIT_NAME, ProfileFocus.SHOW_QR).apply {
+        mutableListOf(ProfileFocus.EDIT_NAME, ProfileFocus.EDIT_TRAINER_CODE, ProfileFocus.SHOW_QR).apply {
             if (partnerIdentity == null) {
                 add(ProfileFocus.SCAN_QR)
                 add(ProfileFocus.LINK_DEBUG)
@@ -80,6 +83,10 @@ fun TrainerProfileScreen(
                 ProfileFocus.EDIT_NAME -> {
                     tempName = trainerIdentity?.displayName ?: ""
                     showEditDialog = true
+                }
+                ProfileFocus.EDIT_TRAINER_CODE -> {
+                    tempTrainerCode = trainerIdentity?.pokemonGoTrainerCode ?: ""
+                    showEditTrainerCodeDialog = true
                 }
                 ProfileFocus.SHOW_QR -> onShowQr()
                 ProfileFocus.SCAN_QR -> onScanQr()
@@ -142,6 +149,34 @@ fun TrainerProfileScreen(
         )
     }
 
+    if (showEditTrainerCodeDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditTrainerCodeDialog = false },
+            title = { Text("EDIT POKEMON GO CODE", color = TerminalGreen) },
+            text = {
+                TextField(
+                    value = tempTrainerCode,
+                    onValueChange = { tempTrainerCode = it },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = TerminalBlack,
+                        unfocusedContainerColor = TerminalBlack,
+                        focusedTextColor = TerminalGreen,
+                        unfocusedTextColor = TerminalGreen
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    trainerRepository.updatePokemonGoTrainerCode(tempTrainerCode)
+                    showEditTrainerCodeDialog = false
+                }) {
+                    Text("SAVE", color = TerminalGreen)
+                }
+            },
+            containerColor = TerminalBlack
+        )
+    }
+
     PokedexFrame(
         onB = onBack,
         filterSettings = filterSettings,
@@ -170,6 +205,7 @@ fun TrainerProfileScreen(
                 TerminalSection(title = "identity") {
                     ProfileRow(label = "DISPLAY NAME", value = trainerIdentity?.displayName ?: "UNNAMED TRAINER")
                     ProfileRow(label = "TRAINER ID", value = trainerIdentity?.trainerId?.toString() ?: "UNKNOWN")
+                    ProfileRow(label = "POKEMON GO CODE", value = trainerIdentity?.pokemonGoTrainerCode ?: "UNKNOWN")
                     
                     val dateStr = trainerIdentity?.createdAt?.let {
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT)
@@ -191,6 +227,17 @@ fun TrainerProfileScreen(
                     },
                     selected = currentFocus == ProfileFocus.EDIT_NAME,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.EDIT_NAME]!!)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TerminalButton(
+                    text = "edit trainer code",
+                    onClick = {
+                        nav.handleTouch(focusableItems.indexOf(ProfileFocus.EDIT_TRAINER_CODE))
+                    },
+                    selected = currentFocus == ProfileFocus.EDIT_TRAINER_CODE,
+                    modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.EDIT_TRAINER_CODE]!!)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
