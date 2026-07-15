@@ -129,3 +129,5 @@ Do not over-engineer for hypothetical features, but reserve enough flexibility t
 The Pokédex documents Pokémon. My Binders document your relationship with Pokémon.
 
 Recognizers should recover evidence, not reject imperfect evidence
+
+Learn before the battle. Observe during the battle. Remember after the battle. Improve before the next one.

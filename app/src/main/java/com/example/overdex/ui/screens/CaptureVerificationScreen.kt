@@ -36,6 +36,14 @@ import com.example.overdex.model.RecognizedPokemon
 import com.example.overdex.model.toOwnedPokemon
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.model.observation.PokemonNameObservation
+import com.example.overdex.model.observation.CombatPowerObservation
+import com.example.overdex.model.observation.FastMoveObservation
+import com.example.overdex.model.observation.ChargedMoveObservation
+import com.example.overdex.model.observation.ShadowStatusObservation
+import com.example.overdex.model.observation.ObservationSource
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*
@@ -173,6 +181,7 @@ fun EvidenceRow(
 fun CaptureVerificationScreen(
     viewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
+    onSaveSuccess: (String) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -390,33 +399,77 @@ fun CaptureVerificationScreen(
                     }
                 }
             } else {
-                // INSPECTION MODE: Accept Import
+                // INSPECTION MODE: Accept Import (Phase 1: Session Integration)
                 scope.launch {
                     val speciesName = recognizedPokemon.species
                     if (speciesName != null) {
-                        Log.d("CAPTURE_DIAGNOSTICS", "Recognized Species: \"$speciesName\"")
-                        
                         val lookupKey = speciesName.trim()
-                        Log.d("CAPTURE_DIAGNOSTICS", "Lookup Key: \"$lookupKey\"")
-                        
                         val speciesData = viewModel.getPokemonByName(lookupKey)
+                        
                         if (speciesData != null) {
-                            Log.d("CAPTURE_DIAGNOSTICS", "Match: Yes (#${speciesData.id})")
+                            // 1. Ensure session exists
+                            if (collectionViewModel.activeSession.value == null) {
+                                collectionViewModel.startRegistrationSession()
+                            }
+
+                            // 2. Wrap current recognition into observations
+                            val source = ObservationSource.OCR
+                            val confidence = Confidence(ConfidenceLevel.OBSERVED, 1.0f)
                             
-                            val owned = recognizedPokemon.toOwnedPokemon(speciesData.id)
-                            lastMappedPokemon = owned
-                            collectionViewModel.addOwnedPokemon(owned)
-                            Log.d("CAPTURE_IMPORT", "Saved OwnedPokemon to database: $owned")
-                            saveConfirmation = "Import Accepted (Saved to Database)"
+                            // Species Name
+                            collectionViewModel.addObservation(
+                                PokemonNameObservation(speciesName, source = source, confidence = confidence)
+                            )
+                            
+                            // Combat Power
+                            recognizedPokemon.cp?.let {
+                                collectionViewModel.addObservation(
+                                    CombatPowerObservation(it, source = source, confidence = confidence)
+                                )
+                            }
+                            
+                            // Shadow Status
+                            collectionViewModel.addObservation(
+                                ShadowStatusObservation(
+                                    isShadow = recognizedPokemon.shadowBonus != null,
+                                    source = source,
+                                    confidence = confidence
+                                )
+                            )
+                            
+                            // Moves
+                            recognizedPokemon.fastMove?.let {
+                                collectionViewModel.addObservation(
+                                    FastMoveObservation(speciesName, it, source = source, confidence = confidence)
+                                )
+                            }
+                            recognizedPokemon.chargedMoveA?.let {
+                                collectionViewModel.addObservation(
+                                    ChargedMoveObservation(speciesName, it, source = source, confidence = confidence)
+                                )
+                            }
+                            recognizedPokemon.chargedMoveB?.let {
+                                collectionViewModel.addObservation(
+                                    ChargedMoveObservation(speciesName, it, source = source, confidence = confidence)
+                                )
+                            }
+
+                            // 3. For Phase 1, we still finish immediately but via the session
+                            val session = collectionViewModel.activeSession.value
+                            if (session != null) {
+                                val owned = session.buildSpecimen(speciesData.id)
+                                lastMappedPokemon = owned
+                                collectionViewModel.addOwnedPokemon(owned)
+                                collectionViewModel.clearActiveSession()
+                                
+                                saveConfirmation = "Import Accepted (via Session)"
+                                onSaveSuccess(owned.id)
+                            }
                         } else {
-                            Log.d("CAPTURE_DIAGNOSTICS", "Match: No")
                             saveConfirmation = "Error: Species Not Found ($speciesName)"
                         }
                     } else {
-                        val errorSuffix = if (recognizedPokemon.family.isNotEmpty()) {
-                            " (Family: ${recognizedPokemon.family.joinToString("/")})"
-                        } else ""
-                        saveConfirmation = "Error: No Species Recognized$errorSuffix"
+                        saveConfirmation = "Error: No Species Recognized"
                     }
                 }
             }

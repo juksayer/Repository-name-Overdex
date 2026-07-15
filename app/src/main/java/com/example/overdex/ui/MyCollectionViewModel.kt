@@ -7,6 +7,8 @@ import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.toDomain
 import com.example.overdex.data.local.toEntity
 import com.example.overdex.model.OwnedPokemon
+import com.example.overdex.model.RegistrationSession
+import com.example.overdex.model.observation.Observation
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -19,6 +21,21 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _activeSession = MutableStateFlow<RegistrationSession?>(null)
+    val activeSession: StateFlow<RegistrationSession?> = _activeSession.asStateFlow()
+
+    fun startRegistrationSession() {
+        _activeSession.value = RegistrationSession()
+    }
+
+    fun addObservation(observation: Observation) {
+        _activeSession.value = _activeSession.value?.addObservation(observation)
+    }
+
+    fun clearActiveSession() {
+        _activeSession.value = null
+    }
 
     fun updateSelectedIndex(index: Int) {
         _selectedIndex.value = index

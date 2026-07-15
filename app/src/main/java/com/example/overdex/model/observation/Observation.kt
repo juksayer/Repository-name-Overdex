@@ -30,3 +30,17 @@ data class ChargedMoveObservation(
     override val source: ObservationSource,
     override val confidence: Confidence
 ) : Observation()
+
+data class CombatPowerObservation(
+    val cp: Int,
+    override val timestamp: Long = System.currentTimeMillis(),
+    override val source: ObservationSource,
+    override val confidence: Confidence
+) : Observation()
+
+data class ShadowStatusObservation(
+    val isShadow: Boolean,
+    override val timestamp: Long = System.currentTimeMillis(),
+    override val source: ObservationSource,
+    override val confidence: Confidence
+) : Observation()

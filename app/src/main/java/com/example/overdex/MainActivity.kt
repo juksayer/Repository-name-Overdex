@@ -271,6 +271,9 @@ fun
             CaptureVerificationScreen(
                 viewModel = viewModel,
                 collectionViewModel = collectionViewModel,
+                onSaveSuccess = { id ->
+                    navController.navigate("roster/specimen_detail/$id")
+                },
                 onBack = { navController.popBackStack() }
             )
         }

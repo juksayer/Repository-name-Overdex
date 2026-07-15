@@ -157,3 +157,5 @@ Paper Mario-style battle visualization
 // PokedexFrame currently owns BattleMemory and Matchup analysis.
 // Long-term this should be provided by a ViewModel or controller.
 // Keep shell responsible only for rendering and hardware behavior.
+
+"Rename OwnedPokemon → Specimen throughout the codebase."

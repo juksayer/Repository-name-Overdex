@@ -1,182 +1,164 @@
 # Overdex Roadmap
 
-The Overdex roadmap is organized by milestones rather than deadlines.
+> **Build first. Test what exists. Show that it happened. One feature.
+> One commit. One test.**
 
-Each milestone represents a meaningful increase in capability.
+The Overdex roadmap is organized around architectural milestones rather
+than dates. Each milestone leaves the project in a demonstrably better
+state before moving to the next.
 
-A milestone is complete only when it has been tested, verified, and documented.
-
----
+------------------------------------------------------------------------
 
 # Guiding Philosophy
 
-Build the foundation first.
+Overdex follows one progression:
 
-Every new capability should stand on the work that came before it.
+**Learn → Observe → Remember → Assist**
 
-Prefer small, complete milestones over large unfinished systems.
+Knowledge comes first. Observation comes second. Memory preserves what
+happened. Intelligence is built on trusted information---not guesses.
 
-One feature.
+Future users will forgive missing features.
 
-One commit.
+They will not forgive incorrect battle data.
 
-One test.
+------------------------------------------------------------------------
 
----
+# Milestone 1 --- Knowledge Foundation ✅
 
-# Milestone 1 — Pokédex Foundation ✅
+Completed
 
-Establish Overdex as a fast, reliable Pokédex.
+-   Complete Pokémon GO Pokédex
+-   Search
+-   Pokémon detail pages
+-   Base stats
+-   Typing
+-   Type effectiveness
+-   Evolution navigation
+-   Move database
+-   Cross-referenced searches
+-   CRT / ODX-FI presentation
+-   Cry playback
 
-Completed:
+Outcome
 
-* National Pokédex
-* Search
-* Detailed Pokémon pages
-* Type display
-* Base stats
-* Height and weight
-* Species data
-* Pokédex flavor text
-* Evolution chains
-* Move cross-referencing
-* Researcher Mode
-* Advanced search foundation
-* CRT display system
+A complete offline knowledge base that powers every future system.
 
-Outcome:
+------------------------------------------------------------------------
 
-A complete, searchable knowledge base that serves as the foundation for every future feature.
+# Milestone 2 --- Trainer Roster 🚧
 
----
+Current Focus
 
-# Milestone 2 — Battle Foundation 🚧
+Completed
 
-Teach Overdex to remember battles.
+-   Roster architecture
+-   Specimen Browser
+-   Binder Page
+-   Registration workflow
+-   Registration Assistance foundation
 
-Completed:
+Next
 
-* BattleMemory
-* EnemyPokemonMemory
-* Enemy Team Overlay
-* Active Pokémon highlighting
-* Fainted Pokémon state
-* Reactive Compose overlay
-* Prototype battle simulation
-* BattleMemory as the single source of truth
+-   Registration Assistance → Roster integration
+-   Observation-driven specimen creation
+-   Manual registration polish
+-   Team management
+-   League organization
 
-In Progress:
+Outcome
 
-* Battle timeline
-* BattleMemory refinement
-* Friendly team memory
+The trainer has a permanent record of every trained Pokémon.
 
-Outcome:
+------------------------------------------------------------------------
 
-A functioning battle engine capable of driving the overlay without OCR.
+# Milestone 3 --- Observation Engine 🚧
 
----
+Completed Foundation
 
-# Milestone 3 — Observation Engine
+-   ObservationRegion
+-   ObservationRegionState
+-   ObservationExtractor
+-   Guided Observation Pipeline
+-   Observation overlay
 
-Teach Overdex to observe live battles.
+Next
 
-Planned:
+-   Observation Session support
+-   Species recognition
+-   Move recognition
+-   Shadow recognition
+-   Confidence refinement
+-   Automatic calibration improvements
 
-* Overlay permissions
-* MediaProjection integration
-* OCR pipeline
-* Enemy Pokémon recognition
-* HP bar recognition
-* Move banner recognition
-* Switch detection
-* Team discovery
+Outcome
 
-Outcome:
+Overdex observes instead of asking the trainer to remember everything
+manually.
 
-Replace simulated battle events with live observations.
+------------------------------------------------------------------------
 
----
+# Milestone 4 --- Battle Memory
 
-# Milestone 4 — Battle Intelligence
+-   Battle timeline
+-   Per-specimen battle history
+-   Match reconstruction
+-   Opponent history
+-   Battle archive
 
-Teach Overdex to understand battles.
+Outcome
 
-Planned:
+Every battle becomes part of a permanent history instead of disappearing
+when the match ends.
 
-* Energy estimation
-* Move counting
-* Shield tracking
-* Type effectiveness
-* Matchup evaluation
-* Confidence system
-* Battle recommendations
+------------------------------------------------------------------------
 
-Outcome:
+# Milestone 5 --- Battle Intelligence
 
-Battle assistance based on observed information.
+-   Energy estimation
+-   Move counting
+-   Shield tracking
+-   Matchup evaluation
+-   Recommendations
+-   Confidence reporting
 
----
+Outcome
 
-# Milestone 5 — Player Tools
+Overdex assists decision-making using observed evidence.
 
-Expand beyond individual battles.
+------------------------------------------------------------------------
 
-Planned:
+# Milestone 6 --- Teams & Tournaments
 
-* Team Builder
-* Team analysis
-* Suggested replacements
-* Meta explorer
-* Move explorer
-* Collection management
-* Export and sharing tools
+-   Team Builder
+-   Team analysis
+-   League management
+-   Tournament support
+-   Match verification
+-   Replay support
+-   Statistics
 
-Outcome:
+Outcome
 
-A complete companion for preparing teams and understanding the metagame.
+Overdex becomes a complete competitive companion.
 
----
+------------------------------------------------------------------------
 
-# Milestone 6 — Tournament Support
+# Milestone 7 --- Polish & Release
 
-Support organized competitive play.
+-   Performance
+-   Battery optimization
+-   Accessibility
+-   Visual polish
+-   Documentation
+-   Device compatibility
+-   Google Play release
 
-Planned:
+Outcome
 
-* Tournament mode
-* Match history
-* Opponent tracking
-* Battle review
-* Replay support
-* Statistics
+A polished application suitable for everyday use.
 
-Outcome:
-
-Overdex becomes a companion throughout an entire tournament, not just a single match.
-
----
-
-# Milestone 7 — Refinement
-
-Improve speed, polish, and usability.
-
-Planned:
-
-* Performance optimization
-* Battery optimization
-* Accessibility improvements
-* Visual polish
-* Settings expansion
-* Device compatibility
-* Bug fixes
-* Documentation
-
-Outcome:
-
-A stable and enjoyable application suitable for everyday use.
-
----
+------------------------------------------------------------------------
 
 # Long-Term Vision
 
@@ -188,40 +170,31 @@ Display.
 
 Advise.
 
-Everything added to Overdex should support one or more of these four goals.
+Everything added to Overdex should strengthen one or more of these
+capabilities.
 
-If a proposed feature does not strengthen this progression, it should be reconsidered.
-
----
+------------------------------------------------------------------------
 
 # Development Principles
 
-Every milestone should leave the project in a better state than before.
+-   Architect first.
+-   Implement second.
+-   Verify always.
+-   Document continuously.
+-   Respect existing architecture.
+-   Definitions are immutable. State is mutable.
+-   Hardware is heavy. Software is light.
 
-Maintain a working build whenever possible.
-
-Avoid speculative refactoring.
-
-Architect first.
-
-Implement second.
-
-Verify always.
-
-Document continuously.
-
----
+------------------------------------------------------------------------
 
 # Success
 
-Success is not measured by the number of features.
-
 Success is measured by trust.
 
-When Overdex displays information, the player should know where it came from.
+Players should always know:
 
-When Overdex makes a recommendation, the player should understand why.
+-   where information came from,
+-   why a recommendation was made,
+-   and when Overdex does not know enough to make one.
 
-When Overdex is silent, it should be because it does not know—not because it guessed.
-
-Trust is the ultimate feature.
+Trust remains the ultimate feature.

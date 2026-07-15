@@ -24,6 +24,9 @@ object BattleMemoryUpdater {
                     .getOrPut(observation.species) { mutableSetOf() }
                     .add(observation.moveName)
             }
+            else -> {
+                // Ignore CP and Shadow observations for battle memory for now
+            }
         }
     }
 
