@@ -50,6 +50,47 @@ fun AddOwnedPokemonWizard(
     // For Species Search list navigation
     val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
 
+    fun handleAction(index: Int) {
+        when (currentStep) {
+            WizardStep.SPECIES_SEARCH -> {
+                if (index in 0 until pokemonItems.itemCount) {
+                    pokemonItems[index]?.let {
+                        selectedSpecies = it
+                        currentStep = WizardStep.CP_INPUT
+                    }
+                }
+            }
+            WizardStep.CP_INPUT -> {
+                if (index == 4) {
+                    currentStep = WizardStep.ATTRIBUTES
+                } else {
+                    if (index < 4) focusIndex++
+                }
+            }
+            WizardStep.ATTRIBUTES -> {
+                when (index) {
+                    0 -> { isShadow = !isShadow; if (isShadow) isPurified = false }
+                    1 -> { isPurified = !isPurified; if (isPurified) isShadow = false }
+                    2 -> { isShiny = !isShiny }
+                    3 -> {
+                        selectedSpecies?.let { species ->
+                            collectionViewModel.addOwnedPokemon(
+                                OwnedPokemon(
+                                    speciesId = species.id,
+                                    cp = cpValue.toIntOrNull(),
+                                    isShadow = isShadow,
+                                    isPurified = isPurified,
+                                    isShiny = isShiny
+                                )
+                            )
+                            onFinish()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     PokedexFrame(
         onUp = {
             when (currentStep) {
@@ -86,46 +127,7 @@ fun AddOwnedPokemonWizard(
             if (currentStep == WizardStep.CP_INPUT && focusIndex < 4) focusIndex++ // 4 is NEXT button
         },
         onA = {
-            when (currentStep) {
-                WizardStep.SPECIES_SEARCH -> {
-                    if (focusIndex in 0 until pokemonItems.itemCount) {
-                        pokemonItems[focusIndex]?.let { 
-                            selectedSpecies = it
-                            currentStep = WizardStep.CP_INPUT
-                        }
-                    }
-                }
-                WizardStep.CP_INPUT -> {
-                    if (focusIndex == 4) {
-                        currentStep = WizardStep.ATTRIBUTES
-                    } else {
-                        // Optional: move focus to next digit on A? 
-                        // For now, let's keep it simple: A on digits does nothing or moves focus.
-                        if (focusIndex < 4) focusIndex++
-                    }
-                }
-                WizardStep.ATTRIBUTES -> {
-                    when (focusIndex) {
-                        0 -> { isShadow = !isShadow; if (isShadow) isPurified = false }
-                        1 -> { isPurified = !isPurified; if (isPurified) isShadow = false }
-                        2 -> { isShiny = !isShiny }
-                        3 -> {
-                            selectedSpecies?.let { species ->
-                                collectionViewModel.addOwnedPokemon(
-                                    OwnedPokemon(
-                                        speciesId = species.id,
-                                        cp = cpValue.toIntOrNull(),
-                                        isShadow = isShadow,
-                                        isPurified = isPurified,
-                                        isShiny = isShiny
-                                    )
-                                )
-                                onFinish()
-                            }
-                        }
-                    }
-                }
-            }
+            handleAction(focusIndex)
         },
         onB = {
             when (currentStep) {
@@ -158,7 +160,9 @@ fun AddOwnedPokemonWizard(
                     CPInputStep(
                         speciesName = selectedSpecies?.name ?: "UNKNOWN",
                         cpValue = cpValue,
-                        focusIndex = focusIndex
+                        focusIndex = focusIndex,
+                        onFocusChange = { focusIndex = it },
+                        onNext = { handleAction(4) }
                     )
                 }
                 WizardStep.ATTRIBUTES -> {
@@ -166,7 +170,9 @@ fun AddOwnedPokemonWizard(
                         isShadow = isShadow,
                         isPurified = isPurified,
                         isShiny = isShiny,
-                        focusIndex = focusIndex
+                        focusIndex = focusIndex,
+                        onFocusChange = { focusIndex = it },
+                        onAction = { handleAction(it) }
                     )
                 }
             }
@@ -246,7 +252,9 @@ fun SpeciesSearchStep(
 fun CPInputStep(
     speciesName: String,
     cpValue: String,
-    focusIndex: Int
+    focusIndex: Int,
+    onFocusChange: (Int) -> Unit,
+    onNext: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -265,14 +273,18 @@ fun CPInputStep(
             value = cpValue,
             onValueChange = {}, // Handled by D-pad logic
             isFocused = focusIndex < 4,
-            focusedDigitIndex = focusIndex
+            focusedDigitIndex = focusIndex,
+            onDigitFocusChange = onFocusChange
         )
 
         Spacer(modifier = Modifier.height(48.dp))
         
         TerminalButton(
             text = "NEXT", 
-            onClick = { /* Handled by PokedexFrame onA */ },
+            onClick = { 
+                onFocusChange(4)
+                onNext()
+            },
             selected = focusIndex == 4
         )
     }
@@ -283,22 +295,51 @@ fun AttributesStep(
     isShadow: Boolean,
     isPurified: Boolean,
     isShiny: Boolean,
-    focusIndex: Int
+    focusIndex: Int,
+    onFocusChange: (Int) -> Unit,
+    onAction: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        AttributeToggle("SHADOW", isShadow, selected = focusIndex == 0)
-        AttributeToggle("PURIFIED", isPurified, selected = focusIndex == 1)
-        AttributeToggle("SHINY", isShiny, selected = focusIndex == 2)
+        AttributeToggle(
+            label = "SHADOW", 
+            value = isShadow, 
+            selected = focusIndex == 0,
+            onClick = {
+                onFocusChange(0)
+                onAction(0)
+            }
+        )
+        AttributeToggle(
+            label = "PURIFIED", 
+            value = isPurified, 
+            selected = focusIndex == 1,
+            onClick = {
+                onFocusChange(1)
+                onAction(1)
+            }
+        )
+        AttributeToggle(
+            label = "SHINY", 
+            value = isShiny, 
+            selected = focusIndex == 2,
+            onClick = {
+                onFocusChange(2)
+                onAction(2)
+            }
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
         TerminalButton(
             text = "SAVE SPECIMEN", 
-            onClick = { /* Handled by PokedexFrame onA */ },
+            onClick = { 
+                onFocusChange(3)
+                onAction(3)
+            },
             selected = focusIndex == 3
         )
     }
