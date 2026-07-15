@@ -461,7 +461,7 @@ fun
                 onDown = { if (selectedIndex < options.size - 1) selectedIndex++ },
                 onA = {
                     val route = when (selectedIndex) {
-                        0 -> "collection"
+                        0 -> "roster/specimens"
                         1 -> "add_pokemon_wizard"
                         2 -> "roster/register_specimen"
                         3 -> "roster/teams"
@@ -561,6 +561,29 @@ fun
                     onBack = { navController.popBackStack() }
                 )
             }
+        }
+        composable("roster/specimens") {
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            SpecimensScreen(
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                onItemClick = { id -> navController.navigate("roster/specimen_detail/$id") },
+                onBack = { navController.popBackStack() },
+                isServiceRunning = isServiceRunning
+            )
+        }
+        composable(
+            route = "roster/specimen_detail/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val collectionViewModel: MyCollectionViewModel = viewModel()
+            SpecimenDetailScreen(
+                ownedId = id,
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

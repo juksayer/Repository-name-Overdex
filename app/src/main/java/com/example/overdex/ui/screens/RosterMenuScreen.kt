@@ -47,7 +47,7 @@ fun RosterMenuScreen(
                     selected = selectedIndex == index,
                     onClick = { 
                         val route = when (index) {
-                            0 -> "collection"
+                            0 -> "roster/specimens"
                             1 -> "add_pokemon_wizard"
                             2 -> "roster/register_specimen"
                             3 -> "roster/teams"
