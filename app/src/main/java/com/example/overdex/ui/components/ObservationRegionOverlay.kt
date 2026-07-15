@@ -22,7 +22,7 @@ import com.example.overdex.ui.theme.TerminalPurple
 const val SHOW_OBSERVATION_REGIONS = false
 
 /**
- * A developer-only diagnostic overlay that visualizes every defined Observation Region.
+ * A developer-only diagnostic overlay that visualizes every Observation Region State.
  *
  * @param imageSize The intrinsic size of the source image being observed.
  */
@@ -43,11 +43,11 @@ fun ObservationRegionOverlay(
         val leftOffset = (containerSize.width - displayWidth) / 2
         val topOffset = (containerSize.height - displayHeight) / 2
 
-        ObservationRegions.all.forEach { region ->
-            val left = leftOffset + (region.x * displayWidth)
-            val top = topOffset + (region.y * displayHeight)
-            val rectWidth = region.width * displayWidth
-            val rectHeight = region.height * displayHeight
+        ObservationRegions.allStates.forEach { state ->
+            val left = leftOffset + (state.currentX * displayWidth)
+            val top = topOffset + (state.currentY * displayHeight)
+            val rectWidth = state.width * displayWidth
+            val rectHeight = state.height * displayHeight
 
             // Draw Region Rectangle
             drawRect(
@@ -59,7 +59,7 @@ fun ObservationRegionOverlay(
 
             // Draw Region Name
             val textLayoutResult = textMeasurer.measure(
-                text = region.name,
+                text = state.name,
                 style = TextStyle(
                     color = TerminalPurple,
                     fontSize = 8.sp,

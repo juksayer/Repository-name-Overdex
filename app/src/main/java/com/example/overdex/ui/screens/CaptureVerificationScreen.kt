@@ -40,6 +40,8 @@ import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.components.ObservationRegionOverlay
+import com.example.overdex.ui.components.SHOW_OBSERVATION_REGIONS
+import com.example.overdex.model.ObservationRegions
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import kotlinx.coroutines.launch
@@ -277,7 +279,11 @@ fun CaptureVerificationScreen(
 
     PokedexFrame(
         onUp = {
-            if (!isInspectionMode && selectedRegionId != null) {
+            if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
+                ObservationRegions.getState("Species")?.let { state ->
+                    state.offsetY = (state.offsetY - 0.01f).coerceAtLeast(-state.region.y)
+                }
+            } else if (!isInspectionMode && selectedRegionId != null) {
                 val region = currentTemplate.regions.find { it.id == selectedRegionId }
                 if (region != null) {
                     val updated = region.copy(y = (region.y - 0.005f).coerceAtLeast(0f))
@@ -290,7 +296,11 @@ fun CaptureVerificationScreen(
             }
         },
         onDown = {
-            if (!isInspectionMode && selectedRegionId != null) {
+            if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
+                ObservationRegions.getState("Species")?.let { state ->
+                    state.offsetY = (state.offsetY + 0.01f).coerceAtMost(1f - state.region.y - state.region.height)
+                }
+            } else if (!isInspectionMode && selectedRegionId != null) {
                 val region = currentTemplate.regions.find { it.id == selectedRegionId }
                 if (region != null) {
                     val updated = region.copy(y = (region.y + 0.005f).coerceAtMost(1f - region.height))
@@ -303,7 +313,11 @@ fun CaptureVerificationScreen(
             }
         },
         onLeft = {
-            if (!isInspectionMode) {
+            if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
+                ObservationRegions.getState("Species")?.let { state ->
+                    state.offsetX = (state.offsetX - 0.01f).coerceAtLeast(-state.region.x)
+                }
+            } else if (!isInspectionMode) {
                 if (selectedRegionId != null) {
                     val region = currentTemplate.regions.find { it.id == selectedRegionId }
                     if (region != null) {
@@ -319,7 +333,11 @@ fun CaptureVerificationScreen(
             }
         },
         onRight = {
-            if (!isInspectionMode) {
+            if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
+                ObservationRegions.getState("Species")?.let { state ->
+                    state.offsetX = (state.offsetX + 0.01f).coerceAtMost(1f - state.region.x - state.region.width)
+                }
+            } else if (!isInspectionMode) {
                 if (selectedRegionId != null) {
                     val region = currentTemplate.regions.find { it.id == selectedRegionId }
                     if (region != null) {

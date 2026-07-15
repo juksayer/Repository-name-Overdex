@@ -1,5 +1,9 @@
 package com.example.overdex.model
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 /**
  * Represents a named area of the Observation Display that represents a meaningful game element.
  *
@@ -8,6 +12,8 @@ package com.example.overdex.model
  *
  * Note: The fact that an Observation Region is currently rectangular is an implementation detail.
  * Coordinates are normalized (0.0 to 1.0) relative to the source display dimensions.
+ *
+ * ObservationRegion is an immutable definition.
  */
 data class ObservationRegion(
     val name: String,
@@ -18,10 +24,28 @@ data class ObservationRegion(
 )
 
 /**
- * Registry of standard Observation Regions used by the framework.
+ * Represents the current runtime state of an Observation Region.
  *
- * These regions establish a common coordinate system for future recognition.
- * Coordinates are initialized to zero and will be populated during calibration implementation.
+ * This holds mutable information like temporary adjustments or calibration offsets.
+ * It is decoupled from the permanent definition.
+ */
+class ObservationRegionState(
+    val region: ObservationRegion,
+    initialOffsetX: Float = 0f,
+    initialOffsetY: Float = 0f
+) {
+    var offsetX by mutableStateOf(initialOffsetX)
+    var offsetY by mutableStateOf(initialOffsetY)
+
+    val currentX get() = region.x + offsetX
+    val currentY get() = region.y + offsetY
+    val name get() = region.name
+    val width get() = region.width
+    val height get() = region.height
+}
+
+/**
+ * Registry of standard Observation Regions used by the framework.
  */
 object ObservationRegions {
     val Species = ObservationRegion("Species")
@@ -32,14 +56,25 @@ object ObservationRegions {
     val ShadowBonus = ObservationRegion("Shadow Bonus")
 
     /**
-     * Returns a list of all defined placeholder regions.
+     * Runtime state registry.
+     * Maps regions to their current mutable state.
      */
-    val all = listOf(
-        Species,
-        CombatPower,
-        FastMove,
-        ChargedMove1,
-        ChargedMove2,
-        ShadowBonus
+    val stateRegistry = mapOf(
+        Species.name to ObservationRegionState(Species),
+        CombatPower.name to ObservationRegionState(CombatPower),
+        FastMove.name to ObservationRegionState(FastMove),
+        ChargedMove1.name to ObservationRegionState(ChargedMove1),
+        ChargedMove2.name to ObservationRegionState(ChargedMove2),
+        ShadowBonus.name to ObservationRegionState(ShadowBonus)
     )
+
+    /**
+     * Returns the current state for a named region.
+     */
+    fun getState(name: String) = stateRegistry[name]
+
+    /**
+     * Returns all current Observation Region states.
+     */
+    val allStates get() = stateRegistry.values.toList()
 }
