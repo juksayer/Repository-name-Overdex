@@ -51,4 +51,34 @@ data class ObservationSession(
     val recognitionResults: Map<String, List<RecognitionResult<*>>> = emptyMap(),
     val assessment: RegistrationAssessment? = null,
     val state: ObservationSessionState = ObservationSessionState.CREATED
-)
+) {
+    /**
+     * Resolves the current best understanding of the specimen based on all accumulated evidence.
+     * Applies deterministic rules: Higher Confidence Wins, Missing Never Wins, and Equal Confidence
+     * preserves the existing observation.
+     */
+    fun resolveResults(): Map<String, List<RecognitionResult<*>>> {
+        return recognitionResults.mapValues { (_, results) ->
+            results.groupBy { it.recognizer }.mapNotNull { (_, recognizerResults) ->
+                var currentBest: RecognitionResult<*>? = null
+
+                for (result in recognizerResults) {
+                    // Rule: Missing Never Wins (A missing/null observation must never replace an existing value)
+                    if (result.value == null) continue
+
+                    if (currentBest == null) {
+                        // Rule: New Information Wins
+                        currentBest = result
+                    } else if (result.confidence > currentBest.confidence) {
+                        // Rule: Higher Confidence Wins
+                        currentBest = result
+                    }
+                    // Rule: Equal Confidence (If confidence is equal, preserve existing. Do not oscillate.)
+                    // This is handled by only updating if confidence is strictly greater.
+                }
+
+                currentBest
+            }
+        }
+    }
+}

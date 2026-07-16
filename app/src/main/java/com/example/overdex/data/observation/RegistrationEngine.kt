@@ -8,11 +8,13 @@ import kotlinx.coroutines.flow.first
 object RegistrationEngine {
 
     suspend fun assess(
-        captureId: String,
-        recognitionResults: Map<String, List<RecognitionResult<*>>>,
+        session: ObservationSession,
         manualSpecies: Pokemon?,
         viewModel: PokedexViewModel
     ): RegistrationAssessment {
+        val captureId = session.sessionId
+        val recognitionResults = session.resolveResults()
+        
         val missing = mutableListOf<String>()
         val conflicts = mutableListOf<String>()
         val candidates = mutableListOf<CandidateSpecies>()
