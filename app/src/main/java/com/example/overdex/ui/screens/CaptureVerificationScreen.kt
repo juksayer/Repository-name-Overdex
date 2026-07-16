@@ -126,7 +126,7 @@ fun CaptureVerificationScreen(
     val scope = rememberCoroutineScope()
     val manager = remember { CaptureTemplateManager(context) }
     
-    var currentTemplate by remember { mutableStateOf(manager.getSummaryTemplate()) }
+    var currentTemplate by remember { mutableStateOf(manager.getPokemonDetailTemplate()) }
     var isOverlayVisible by remember { mutableStateOf(true) }
     
     var captureLibrary by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -300,7 +300,7 @@ fun CaptureVerificationScreen(
         },
         onStart = {
             if (!isInspectionMode) {
-                currentTemplate = if (currentTemplate.name == "PokemonGoSummaryTemplate") manager.getMovesTemplate() else manager.getSummaryTemplate()
+                // START is now a no-op for template switching.
                 observations = null
                 recognitionResults = emptyMap()
                 pipelineStatus = null

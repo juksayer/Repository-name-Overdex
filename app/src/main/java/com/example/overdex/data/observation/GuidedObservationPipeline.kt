@@ -3,10 +3,7 @@ package com.example.overdex.data.observation
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.example.overdex.model.CaptureTemplate
-import com.example.overdex.model.observation.CaptureObservation
-import com.example.overdex.model.observation.RecognitionResult
-import com.example.overdex.model.observation.AnchorObservation
-import com.example.overdex.model.observation.AnchorType
+import com.example.overdex.model.observation.*
 
 /**
  * Represents the various stages of the guided observation sequence.
@@ -37,7 +34,8 @@ data class PipelineStatus(
     val completedStages: Set<ObservationStage> = emptySet(),
     val results: Map<String, List<RecognitionResult<*>>> = emptyMap(),
     val observations: List<CaptureObservation> = emptyList(),
-    val captureId: String = ""
+    val captureId: String = "",
+    val session: ObservationSession? = null
 )
 
 object GuidedObservationPipeline {
@@ -48,19 +46,32 @@ object GuidedObservationPipeline {
     suspend fun run(
         bitmap: Bitmap,
         template: CaptureTemplate,
+        existingSession: ObservationSession? = null,
         onUpdate: (PipelineStatus) -> Unit
     ) {
-        val captureId = System.currentTimeMillis().toString().takeLast(5)
+        // Architecture: Establish the ObservationSession foundation.
+        // If no session exists, start a new canonical session.
+        var session = existingSession ?: ObservationSession(source = SessionSource.SCREENSHOT)
+        val captureId = session.sessionId
+
         val completed = mutableSetOf<ObservationStage>()
         val allResults = mutableMapOf<String, List<RecognitionResult<*>>>()
         val allObservations = mutableListOf<CaptureObservation>()
 
         TraceLogger.logCaptureStart(captureId, template.regions.size)
+        android.util.Log.d("ODX_TRACE", "[$captureId][Session Info] Source: ${session.source}")
 
         fun update(stage: ObservationStage) {
             val resultsCount = allResults.values.sumOf { it.size }
+            
+            // Sync session state for future architectural growth
+            session = session.copy(
+                observations = allObservations.toList(),
+                recognitionResults = allResults.toMap()
+            )
+
             android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size}")
-            onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId))
+            onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId, session))
         }
 
         // 1. Locate Anchors
@@ -160,6 +171,12 @@ object GuidedObservationPipeline {
             fast = res_fm,
             chgA = res_cma,
             chgB = res_cmb
+        )
+
+        // Finalize session state
+        session = session.copy(
+            completedAt = System.currentTimeMillis(),
+            completionState = SessionCompletionState.COMPLETED
         )
 
         update(ObservationStage.Complete)
