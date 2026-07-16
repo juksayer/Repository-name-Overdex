@@ -208,17 +208,15 @@ object GuidedObservationPipeline {
         resultsMap: MutableMap<String, List<RecognitionResult<*>>>,
         anchors: List<AnchorObservation>
     ) {
-        if (resultsMap.containsKey(region.id)) {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ${region.id} | SKIPPED (Already processed)")
-            return
-        }
-        
         android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ${region.id} | Processing...")
         
         val obs = crop(bitmap, region, anchors)
         obsList.add(obs)
         val results = ObservationRecognizer.recognize(obs)
-        resultsMap[obs.regionId] = results
+        
+        // Cumulative Observation Memory: Append new results to the existing list for this region
+        val currentResults = resultsMap[region.id] ?: emptyList()
+        resultsMap[region.id] = currentResults + results
 
         val recognizers = when (region.id) {
             "SpeciesName" -> listOf("SpeciesNameRecognizer")
