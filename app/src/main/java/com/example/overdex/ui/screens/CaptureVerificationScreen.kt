@@ -192,11 +192,7 @@ fun CaptureVerificationScreen(
 
     LaunchedEffect(currentIndex) {
         imageSize = null
-        observations = null
-        recognitionResults = emptyMap()
-        pipelineStatus = null
         isInspectionMode = false
-        manualSpecies = null
     }
 
     PokedexFrame(
@@ -343,7 +339,11 @@ fun CaptureVerificationScreen(
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
                         isInspectionMode = true
                         val input = GalleryObservationInput(bitmap)
-                        GuidedObservationPipeline.run(input, currentTemplate) { status ->
+                        GuidedObservationPipeline.run(
+                            input = input,
+                            template = currentTemplate,
+                            existingSession = pipelineStatus?.session
+                        ) { status ->
                             pipelineStatus = status
                             observations = status.observations
                             recognitionResults = status.results
@@ -360,7 +360,15 @@ fun CaptureVerificationScreen(
                             if (speciesData != null) {
                                 if (collectionViewModel.activeSession.value == null) collectionViewModel.startRegistrationSession()
                                 val owned = collectionViewModel.completeRegistrationSession(speciesData.id)
-                                if (owned != null) onSaveSuccess(owned.id)
+                                if (owned != null) {
+                                    // Reset session state after successful registration
+                                    pipelineStatus = null
+                                    observations = null
+                                    recognitionResults = emptyMap()
+                                    manualSpecies = null
+                                    isInspectionMode = false
+                                    onSaveSuccess(owned.id)
+                                }
                             }
                         }
                     }

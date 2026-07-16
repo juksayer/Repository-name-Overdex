@@ -57,8 +57,8 @@ object GuidedObservationPipeline {
         val captureId = session.sessionId
 
         val completed = mutableSetOf<ObservationStage>()
-        val allResults = mutableMapOf<String, List<RecognitionResult<*>>>()
-        val allObservations = mutableListOf<CaptureObservation>()
+        val allResults = session.recognitionResults.toMutableMap()
+        val allObservations = session.observations.toMutableList()
 
         fun update(stage: ObservationStage) {
             val resultsCount = allResults.values.sumOf { it.size }
@@ -185,13 +185,19 @@ object GuidedObservationPipeline {
                 update(ObservationStage.Complete)
             }
 
-            // Finalize session state
-            session = session.copy(
-                completedAt = System.currentTimeMillis(),
-                state = ObservationSessionState.COMPLETED
-            )
-            android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: COMPLETED")
-            // One final update to broadcast the COMPLETED state
+            // Check if objective is complete before finalizing state
+            val progress = session.evaluateProgress()
+            if (progress.isComplete) {
+                session = session.copy(
+                    completedAt = System.currentTimeMillis(),
+                    state = ObservationSessionState.COMPLETED
+                )
+                android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: COMPLETED")
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: ACTIVE (Awaiting more evidence)")
+            }
+
+            // One final update to broadcast the current state
             onUpdate(PipelineStatus(ObservationStage.Complete, ObservationStage.ALL.toSet(), session.recognitionResults, session.observations, captureId, session))
 
         } catch (e: CancellationException) {
