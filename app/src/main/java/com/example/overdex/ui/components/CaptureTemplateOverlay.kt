@@ -54,20 +54,28 @@ fun CaptureTemplateOverlay(
     
     var dragMode by remember { mutableStateOf<DragMode>(DragMode.None) }
 
+    // Use rememberUpdatedState to prevent pointerInput restart while maintaining access to latest values
+    val currentTemplate by rememberUpdatedState(template)
+    val currentSelectedRegionId by rememberUpdatedState(selectedRegionId)
+    val currentOnRegionSelect by rememberUpdatedState(onRegionSelect)
+    val currentOnRegionUpdate by rememberUpdatedState(onRegionUpdate)
+    val currentImageSize by rememberUpdatedState(imageSize)
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(template, imageSize) {
+            .pointerInput(Unit) {
                 detectTapGestures { offset ->
+                    val imgSize = currentImageSize ?: return@detectTapGestures
                     val containerSize = size
-                    val scale = minOf(containerSize.width / imageSize.width, containerSize.height / imageSize.height)
-                    val displayWidth = imageSize.width * scale
-                    val displayHeight = imageSize.height * scale
+                    val scale = minOf(containerSize.width / imgSize.width, containerSize.height / imgSize.height)
+                    val displayWidth = imgSize.width * scale
+                    val displayHeight = imgSize.height * scale
                     val leftOffset = (containerSize.width - displayWidth) / 2
                     val topOffset = (containerSize.height - displayHeight) / 2
 
                     var found: String? = null
-                    template.regions.forEach { region ->
+                    currentTemplate.regions.forEach { region ->
                         val left = leftOffset + (region.x * displayWidth)
                         val top = topOffset + (region.y * displayHeight)
                         val right = left + (region.width * displayWidth)
@@ -77,20 +85,21 @@ fun CaptureTemplateOverlay(
                             found = region.id
                         }
                     }
-                    onRegionSelect(found)
+                    currentOnRegionSelect(found)
                 }
             }
-            .pointerInput(template, imageSize, selectedRegionId) {
+            .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
+                        val imgSize = currentImageSize ?: return@detectDragGestures
                         val containerSize = size
-                        val scale = minOf(containerSize.width / imageSize.width, containerSize.height / imageSize.height)
-                        val displayWidth = imageSize.width * scale
-                        val displayHeight = imageSize.height * scale
+                        val scale = minOf(containerSize.width / imgSize.width, containerSize.height / imgSize.height)
+                        val displayWidth = imgSize.width * scale
+                        val displayHeight = imgSize.height * scale
                         val leftOffset = (containerSize.width - displayWidth) / 2
                         val topOffset = (containerSize.height - displayHeight) / 2
 
-                        val selectedRegion = template.regions.find { it.id == selectedRegionId }
+                        val selectedRegion = currentTemplate.regions.find { it.id == currentSelectedRegionId }
                         if (selectedRegion != null) {
                             val left = leftOffset + (selectedRegion.x * displayWidth)
                             val top = topOffset + (selectedRegion.y * displayHeight)
@@ -110,11 +119,12 @@ fun CaptureTemplateOverlay(
                         }
                     },
                     onDrag = { _, dragAmount ->
-                        val selectedRegion = template.regions.find { it.id == selectedRegionId } ?: return@detectDragGestures
+                        val imgSize = currentImageSize ?: return@detectDragGestures
+                        val selectedRegion = currentTemplate.regions.find { it.id == currentSelectedRegionId } ?: return@detectDragGestures
                         val containerSize = size
-                        val scale = minOf(containerSize.width / imageSize.width, containerSize.height / imageSize.height)
-                        val displayWidth = imageSize.width * scale
-                        val displayHeight = imageSize.height * scale
+                        val scale = minOf(containerSize.width / imgSize.width, containerSize.height / imgSize.height)
+                        val displayWidth = imgSize.width * scale
+                        val displayHeight = imgSize.height * scale
                         
                         val dx = dragAmount.x / displayWidth
                         val dy = dragAmount.y / displayHeight
@@ -154,7 +164,7 @@ fun CaptureTemplateOverlay(
                         }
                         
                         if (updated != selectedRegion) {
-                            onRegionUpdate(updated)
+                            currentOnRegionUpdate(updated)
                         }
                     },
                     onDragEnd = { dragMode = DragMode.None }

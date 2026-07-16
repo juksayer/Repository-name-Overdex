@@ -15,12 +15,14 @@ data class ServiceObservation<T>(
 
 class ServicePanelState(
     val observations: List<ServiceObservation<*>>,
-    val assessment: RegistrationAssessment
+    val assessment: RegistrationAssessment,
+    val captureId: String = ""
 )
 
 object ServiceConsoleModel {
     
     fun createPanelState(
+        captureId: String,
         results: Map<String, List<RecognitionResult<*>>>,
         assessment: RegistrationAssessment
     ): ServicePanelState {
@@ -62,11 +64,29 @@ object ServiceConsoleModel {
             regionId = "CombatPower"
         ))
 
+        // LOG: ServicePanelState
+        val res_fm = (results["FastMoveRow"] ?: results["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val res_cma = results["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val res_cmb = results["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+
+        TraceLogger.logStage(
+            captureId = captureId,
+            stage = "ServicePanelState",
+            species = panelObs.find { it.label == "Species Name" }?.value?.toString() ?: "MISSING",
+            family = panelObs.find { it.label == "Evolution Family" }?.value?.toString() ?: "MISSING",
+            cp = panelObs.find { it.label == "Combat Power" }?.value?.toString() ?: "MISSING",
+            fast = res_fm,
+            chgA = res_cma,
+            chgB = res_cmb,
+            confidence = (assessment.confidence * 100).toInt().toString() + "%"
+        )
+
         android.util.Log.d("PIPELINE_INSTRUMENTATION", "ServicePanelState | Observations: ${panelObs.size}")
 
         return ServicePanelState(
             observations = panelObs,
-            assessment = assessment
+            assessment = assessment,
+            captureId = captureId
         )
     }
 }

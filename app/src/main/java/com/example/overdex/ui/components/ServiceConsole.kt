@@ -8,12 +8,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.data.observation.TraceLogger
 import com.example.overdex.model.observation.*
 import com.example.overdex.ui.screens.ServiceObservation
 import com.example.overdex.ui.screens.ServicePanelState
@@ -25,7 +27,23 @@ fun ServiceConsole(
     modifier: Modifier = Modifier,
     onManualSelect: () -> Unit = {}
 ) {
-    android.util.Log.d("PIPELINE_INSTRUMENTATION", "ServiceConsole Rendered | Observations: ${panelState.observations.size}")
+    LaunchedEffect(panelState.observations) {
+        val spec = panelState.observations.find { it.label == "Species Name" }?.value?.toString() ?: "MISSING"
+        val fam = panelState.observations.find { it.label == "Evolution Family" }?.value?.toString() ?: "MISSING"
+        val cp = panelState.observations.find { it.label == "Combat Power" }?.value?.toString() ?: "MISSING"
+        
+        TraceLogger.logStage(
+            captureId = panelState.captureId,
+            stage = "Compose Render",
+            species = spec,
+            family = fam,
+            cp = cp,
+            fast = "MISSING",
+            chgA = "MISSING",
+            chgB = "MISSING",
+            confidence = (panelState.assessment.confidence * 100).toInt().toString() + "%"
+        )
+    }
 
     Column(
         modifier = modifier

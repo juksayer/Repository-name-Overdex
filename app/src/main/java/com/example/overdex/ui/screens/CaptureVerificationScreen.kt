@@ -150,13 +150,13 @@ fun CaptureVerificationScreen(
     )
 
     // Requirement 2: Registration Assessment (Single Source of Truth)
-    val assessment by produceState(RegistrationAssessment(0f), recognitionResults, manualSpecies) {
-        value = RegistrationEngine.assess(recognitionResults, manualSpecies, viewModel)
+    val assessment by produceState(RegistrationAssessment(0f), recognitionResults, manualSpecies, pipelineStatus) {
+        value = RegistrationEngine.assess(pipelineStatus?.captureId ?: "00000", recognitionResults, manualSpecies, viewModel)
     }
 
     // Requirement 2: Service Console Model
-    val panelState = remember(recognitionResults, assessment) {
-        ServiceConsoleModel.createPanelState(recognitionResults, assessment)
+    val panelState = remember(recognitionResults, assessment, pipelineStatus) {
+        ServiceConsoleModel.createPanelState(pipelineStatus?.captureId ?: "00000", recognitionResults, assessment)
     }
 
     val launcher = rememberLauncherForActivityResult(

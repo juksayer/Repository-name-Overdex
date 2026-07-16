@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 object RegistrationEngine {
 
     suspend fun assess(
+        captureId: String,
         recognitionResults: Map<String, List<RecognitionResult<*>>>,
         manualSpecies: Pokemon?,
         viewModel: PokedexViewModel
@@ -69,6 +70,37 @@ object RegistrationEngine {
             candidates.isNotEmpty() -> RegistrationAction.SELECT_SPECIES
             else -> RegistrationAction.NONE
         }
+
+        // LOG: RegistrationAssessment
+        val fm = (recognitionResults["FastMoveRow"] ?: recognitionResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val cma = recognitionResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val cmb = recognitionResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+
+        TraceLogger.logStage(
+            captureId = captureId,
+            stage = "RegistrationAssessment",
+            species = solvedSpecies?.name ?: normalizedSpeciesName ?: "MISSING",
+            family = normalizedFamilyName ?: "MISSING",
+            cp = recognitionResults["CombatPower"]?.firstOrNull()?.value?.toString() ?: "MISSING",
+            fast = fm,
+            chgA = cma,
+            chgB = cmb,
+            confidence = (mainConfidence * 100).toInt().toString() + "%"
+        )
+
+        TraceLogger.logConfidenceTrace(
+            captureId = captureId,
+            source = "RegistrationEngine.candidates.maxOfOrNull { it.confidence }",
+            value = (mainConfidence * 100).toInt().toString() + "%",
+            details = candidates.map { "${it.name}: ${it.confidence} (${it.reasoning})" }
+        )
+
+        val verdicts = mutableMapOf<String, String>()
+        verdicts["OCR"] = if (recognitionResults.isNotEmpty()) "PASS" else "FAIL"
+        verdicts["Recognition"] = if (candidates.isNotEmpty()) "PASS" else "FAIL"
+        verdicts["Assessment"] = "PASS"
+        verdicts["Confidence"] = "NOT IMPLEMENTED (Heuristic Scoring)"
+        TraceLogger.logPipelineVerdict(captureId, verdicts)
 
         android.util.Log.d("PIPELINE_INSTRUMENTATION", "RegistrationAssessment | Confidence: $mainConfidence | Candidates: ${candidates.size} | Action: $action")
 
