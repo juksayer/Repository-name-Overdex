@@ -82,6 +82,40 @@ data class ObservationProgress(
 )
 
 /**
+ * Describes the current recommendation for the next observation.
+ */
+enum class GuidanceStatus {
+    /**
+     * Additional evidence is needed to fulfill the objective.
+     */
+    CONTINUE_OBSERVING,
+
+    /**
+     * All required fields are resolved and consistent.
+     */
+    OBJECTIVE_COMPLETE,
+
+    /**
+     * No evidence has been collected yet.
+     */
+    INSUFFICIENT_EVIDENCE,
+
+    /**
+     * Contradictory evidence requires manual or additional confirmation.
+     */
+    CONFLICT_REQUIRES_CONFIRMATION
+}
+
+/**
+ * A recommendation for the next step in an [ObservationSession].
+ */
+data class ObservationGuidance(
+    val status: GuidanceStatus,
+    val targetFields: Set<String> = emptySet(),
+    val reason: String? = null
+)
+
+/**
  * A passive data model representing everything Overdex has observed about a specimen 
  * during a single observation attempt.
  *
@@ -195,6 +229,42 @@ data class ObservationSession(
             percentComplete = percentComplete,
             missingFields = missingFields,
             isComplete = completedRequiredFields == totalRequiredFields
+        )
+    }
+
+    /**
+     * Recommends the next best observation to make progress toward the [objective].
+     */
+    fun nextObservation(): ObservationGuidance {
+        val integrity = evaluateIntegrity()
+        if (integrity.status == IntegrityStatus.CONFLICTING) {
+            val relevantConflicts = integrity.conflictingFields.intersect(objective.requiredFields)
+            if (relevantConflicts.isNotEmpty()) {
+                return ObservationGuidance(
+                    status = GuidanceStatus.CONFLICT_REQUIRES_CONFIRMATION,
+                    targetFields = relevantConflicts,
+                    reason = "Conflicting evidence in required fields"
+                )
+            }
+        }
+
+        val progress = evaluateProgress()
+        if (progress.isComplete) {
+            return ObservationGuidance(GuidanceStatus.OBJECTIVE_COMPLETE)
+        }
+
+        if (progress.completedRequiredFields == 0) {
+            return ObservationGuidance(
+                status = GuidanceStatus.INSUFFICIENT_EVIDENCE,
+                targetFields = objective.requiredFields,
+                reason = "No required fields resolved"
+            )
+        }
+
+        return ObservationGuidance(
+            status = GuidanceStatus.CONTINUE_OBSERVING,
+            targetFields = progress.missingFields,
+            reason = "Awaiting required fields"
         )
     }
 }
