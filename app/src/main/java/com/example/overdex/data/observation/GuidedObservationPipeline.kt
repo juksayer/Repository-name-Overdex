@@ -69,7 +69,8 @@ object GuidedObservationPipeline {
                 recognitionResults = allResults.toMap()
             )
 
-            android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size}")
+            val progress = session.evaluateProgress()
+            android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size} | Progress: ${(progress.percentComplete * 100).toInt()}%")
             onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId, session))
         }
 

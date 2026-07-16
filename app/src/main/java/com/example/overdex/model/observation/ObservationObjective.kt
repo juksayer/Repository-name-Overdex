@@ -5,6 +5,7 @@ package com.example.overdex.model.observation
  */
 sealed class ObservationObjective(val label: String) {
     abstract val requiredFields: Set<String>
+    abstract val optionalFields: Set<String>
 
     /**
      * Objective: Full data collection for registering a new specimen.
@@ -16,6 +17,10 @@ sealed class ObservationObjective(val label: String) {
             "FastMoveRow",
             "ChargedMoveRowA"
         )
+        override val optionalFields = setOf(
+            "CandyPanel",
+            "ChargedMoveRowB"
+        )
     }
 
     /**
@@ -25,6 +30,11 @@ sealed class ObservationObjective(val label: String) {
         override val requiredFields = setOf(
             "SpeciesName",
             "CombatPower"
+        )
+        override val optionalFields = setOf(
+            "CandyPanel",
+            "FastMoveRow",
+            "SummaryFastMove"
         )
     }
 }

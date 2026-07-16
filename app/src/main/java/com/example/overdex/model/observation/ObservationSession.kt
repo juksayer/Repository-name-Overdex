@@ -71,6 +71,17 @@ data class ObservationIntegrity(
 )
 
 /**
+ * Tracks the progress of an [ObservationSession] toward its [ObservationObjective].
+ */
+data class ObservationProgress(
+    val completedRequiredFields: Int,
+    val totalRequiredFields: Int,
+    val percentComplete: Float,
+    val missingFields: Set<String>,
+    val isComplete: Boolean
+)
+
+/**
  * A passive data model representing everything Overdex has observed about a specimen 
  * during a single observation attempt.
  *
@@ -151,6 +162,39 @@ data class ObservationSession(
             resolvedFields = resolvedFields,
             missingFields = missingFields,
             conflictingFields = conflictingFields
+        )
+    }
+
+    /**
+     * Evaluates the progress of the session relative to its [objective].
+     * Progress is calculated based only on [ObservationObjective.requiredFields].
+     */
+    fun evaluateProgress(): ObservationProgress {
+        val resolved = resolveResults()
+        val required = objective.requiredFields
+        
+        val completedRequiredFields = required.count { field ->
+            resolved[field]?.any { it.value != null } == true
+        }
+        
+        val totalRequiredFields = required.size
+        val percentComplete = if (totalRequiredFields > 0) {
+            completedRequiredFields.toFloat() / totalRequiredFields
+        } else {
+            1.0f
+        }
+        
+        val resolvedFields = resolved.keys.filter { field -> 
+            resolved[field]?.any { it.value != null } == true 
+        }.toSet()
+        val missingFields = required - resolvedFields
+
+        return ObservationProgress(
+            completedRequiredFields = completedRequiredFields,
+            totalRequiredFields = totalRequiredFields,
+            percentComplete = percentComplete,
+            missingFields = missingFields,
+            isComplete = completedRequiredFields == totalRequiredFields
         )
     }
 }

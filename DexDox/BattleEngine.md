@@ -44,3 +44,59 @@ The engine provides data to analytical layers that interpret the battle without 
 **Invisible decision support.**
 
 The engine quietly observes and remembers so the player can focus on gameplay. It surfaces only the information that reduces cognitive load, answering the core question: **"What decision does the player need to make right now?"**
+
+Press A
+
+↓
+
+Observation Session begins
+
+↓
+
+Locate next required cluster
+
+↓
+
+Observe
+
+↓
+
+Resolve
+
+↓
+
+Evaluate Integrity
+
+↓
+
+Cluster complete?
+
+        │
+No   │   Yes
+│
+▼
+
+Continue observing
+
+        │
+
+        ▼
+
+Advance to next cluster
+
+↓
+
+Objective complete?
+
+        │
+No   │   Yes
+│
+▼
+
+Locate next cluster
+
+        │
+
+        ▼
+
+Import Specimen
