@@ -13,10 +13,11 @@ data class ServiceObservation<T>(
     val regionId: String? = null
 )
 
-class ServicePanelState(
+data class ServicePanelState(
     val observations: List<ServiceObservation<*>>,
     val assessment: RegistrationAssessment,
-    val captureId: String = ""
+    val captureId: String = "",
+    val isProcessing: Boolean = false
 )
 
 object ServiceConsoleModel {

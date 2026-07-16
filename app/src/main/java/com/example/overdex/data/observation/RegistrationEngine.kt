@@ -106,12 +106,12 @@ object RegistrationEngine {
         )
 
         val confidenceDetails = mutableListOf<String>()
-        confidenceDetails.add("Species..............${(speciesPoints * 100).toInt()}")
-        confidenceDetails.add("Family...............${(familyPoints * 100).toInt()}")
-        confidenceDetails.add("CP...................${(cpPoints * 100).toInt()}")
-        confidenceDetails.add("Fast Move............${(fastPoints * 100).toInt()}")
-        confidenceDetails.add("Charged A............${chgAPoints * 100}")
-        confidenceDetails.add("Charged B............${chgBPoints * 100}")
+        confidenceDetails.add("Species..............${(speciesPoints * 100).toInt()}${if (speciesPoints > 0) " ✓" else " ✗"}")
+        confidenceDetails.add("Family...............${(familyPoints * 100).toInt()}${if (familyPoints > 0) " ✓" else " ✗"}")
+        confidenceDetails.add("CP...................${(cpPoints * 100).toInt()}${if (cpPoints > 0) " ✓" else " ✗"}")
+        confidenceDetails.add("Fast Move............${(fastPoints * 100).toInt()}${if (fastPoints > 0) " ✓" else " ✗"}")
+        confidenceDetails.add("Charged A............$chgAPoints${if (chgAPoints > 0) " ✓" else " ✗"}")
+        confidenceDetails.add("Charged B............$chgBPoints${if (chgBPoints > 0) " ✓" else " ✗"}")
 
         TraceLogger.logConfidenceTrace(
             captureId = captureId,

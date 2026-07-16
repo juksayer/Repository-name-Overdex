@@ -81,14 +81,13 @@ object TraceLogger {
         output.append("├── Source: $source\n")
         
         if (details.isNotEmpty()) {
-            details.dropLast(1).forEach { d ->
+            details.forEach { d ->
                 output.append("├── $d\n")
             }
-            output.append("└── ${details.last()}\n")
         } else {
-            output.append("└── NOT IMPLEMENTED (Using Default)\n")
+            output.append("├── [No Details]\n")
         }
-        output.append("Final Confidence: $value")
+        output.append("└── Final............$value")
         Log.d(TAG, output.toString())
     }
 

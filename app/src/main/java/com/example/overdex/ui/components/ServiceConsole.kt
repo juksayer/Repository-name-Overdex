@@ -60,8 +60,8 @@ fun ServiceConsole(
             
             val confidence = (panelState.assessment.confidence * 100).toInt()
             TerminalText(
-                text = "CONFIDENCE: $confidence%",
-                color = if (confidence > 75) TerminalGreen else if (confidence > 30) Color.Yellow else Color.Red,
+                text = if (panelState.isProcessing) "PROCESSING..." else "CONFIDENCE: $confidence%",
+                color = if (panelState.isProcessing) TerminalPurple else if (confidence > 75) TerminalGreen else if (confidence > 30) Color.Yellow else Color.Red,
                 fontSize = 12.sp
             )
         }

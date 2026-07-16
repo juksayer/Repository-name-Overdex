@@ -149,14 +149,27 @@ fun CaptureVerificationScreen(
         itemCount = { pokemonItems.itemCount + 1 }
     )
 
-    // Requirement 2: Registration Assessment (Single Source of Truth)
-    val assessment by produceState(RegistrationAssessment(0f), recognitionResults, manualSpecies, pipelineStatus) {
-        value = RegistrationEngine.assess(pipelineStatus?.captureId ?: "00000", recognitionResults, manualSpecies, viewModel)
-    }
+    // Consolidated Panel State (Single Synchronized Snapshot)
+    val panelState by produceState(
+        initialValue = ServiceConsoleModel.createPanelState(
+            pipelineStatus?.captureId ?: "00000",
+            recognitionResults,
+            RegistrationAssessment(0f)
+        ),
+        key1 = recognitionResults,
+        key2 = manualSpecies,
+        key3 = pipelineStatus
+    ) {
+        val capId = pipelineStatus?.captureId ?: "00000"
+        
+        // Transition immediately to processing to avoid Schrödinger's Catfidence
+        value = ServiceConsoleModel.createPanelState(capId, recognitionResults, RegistrationAssessment(0f))
+            .copy(isProcessing = true)
 
-    // Requirement 2: Service Console Model
-    val panelState = remember(recognitionResults, assessment, pipelineStatus) {
-        ServiceConsoleModel.createPanelState(pipelineStatus?.captureId ?: "00000", recognitionResults, assessment)
+        val newAssessment = RegistrationEngine.assess(capId, recognitionResults, manualSpecies, viewModel)
+        
+        // Synchronized Update: observations and assessment are now guaranteed to be from the same pass
+        value = ServiceConsoleModel.createPanelState(capId, recognitionResults, newAssessment)
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -333,6 +346,7 @@ fun CaptureVerificationScreen(
                     }
                 }
             } else {
+                val assessment = panelState.assessment
                 when (assessment.recommendedAction) {
                     RegistrationAction.REGISTER -> {
                         scope.launch {
