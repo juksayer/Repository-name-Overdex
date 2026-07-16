@@ -1,0 +1,11 @@
+{
+  "objective": "RegisterSpecimen",
+  "expectedResolvedFields": {
+    "SpeciesName": "Crabominable",
+    "CombatPower": 2800,
+    "FastMoveRow": "Bubble",
+    "ChargedMoveRowA": "Ice Hammer"
+  },
+  "expectedIntegrity": "COMPLETE",
+  "expectedProgress": 1.0
+}

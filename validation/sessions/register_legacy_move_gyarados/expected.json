@@ -1,0 +1,11 @@
+{
+  "objective": "RegisterSpecimen",
+  "expectedResolvedFields": {
+    "SpeciesName": "Gyarados",
+    "CombatPower": 3200,
+    "FastMoveRow": "Dragon Breath",
+    "ChargedMoveRowA": "Hydro Pump"
+  },
+  "expectedIntegrity": "COMPLETE",
+  "expectedProgress": 1.0
+}
