@@ -100,6 +100,40 @@ Examples:
 - Hardware interaction
 - Navigation experiments
 - Accessibility ideas
+- ## HUDphones
+
+HUDphones is an audio presentation layer for the Observation Engine.
+
+Rather than requiring the trainer to constantly observe the display, Overdex may communicate battle intelligence through concise spoken callouts delivered via Bluetooth earbuds, bone-conduction headphones, or other future audio devices.
+
+The Observation Engine remains the single source of truth.
+
+HUDphones is only another presentation layer.
+
+Possible callouts:
+
+- "Enemy identified."
+- "Fast move confirmed."
+- "Charged move ready."
+- "Shield recommended."
+- "Switch available."
+- "Super effective."
+
+Possible accessibility benefits:
+
+- Blind and low-vision battle assistance.
+- Reduced visual attention during PvP.
+- Hands-free battle awareness.
+
+Guiding principle:
+
+Observe.
+
+Understand.
+
+Communicate.
+
+HUDphones belongs entirely in the "communicate" layer.
 - Visual language exploration
 
 ---
@@ -159,3 +193,24 @@ Paper Mario-style battle visualization
 // Keep shell responsible only for rendering and hardware behavior.
 
 "Rename OwnedPokemon → Specimen throughout the codebase."
+
+
+## Columnar Anchor Clusters (CAC)
+
+A proposed spatial observation model for long-form or dynamic interfaces.
+
+Rather than treating each frame as an isolated bitmap, the Observation Engine establishes stable spatial anchor clusters that persist across multiple observations.
+
+Each cluster represents a logical region of information rather than a fixed pixel location.
+
+Possible applications:
+
+- Scrolling Pokémon detail pages
+- Live battle observation
+- Replay analysis
+- Droidball observation
+- Future observation sources
+
+The purpose of CAC is not image stitching.
+
+The purpose is to provide the Observation Engine with a stable spatial reference system that survives scrolling, animation, and changing viewports.
