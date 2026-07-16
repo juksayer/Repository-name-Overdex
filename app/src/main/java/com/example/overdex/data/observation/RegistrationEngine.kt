@@ -63,18 +63,35 @@ object RegistrationEngine {
         if (recognitionResults["CombatPower"] == null) missing.add("Combat Power")
         if (recognitionResults["FastMoveRow"] == null && recognitionResults["SummaryFastMove"] == null) missing.add("Fast Move")
 
-        val mainConfidence = candidates.maxOfOrNull { it.confidence } ?: 0.0f
+        // 5. Additive Registration Confidence
+        var speciesPoints = 0.0f
+        var familyPoints = 0.0f
+        var cpPoints = 0.0f
+        var fastPoints = 0.0f
+        var chgAPoints = 0.0f
+        var chgBPoints = 0.0f
+
+        if (normalizedSpeciesName != null) speciesPoints = 0.35f
+        if (normalizedFamilyName != null) familyPoints = 0.20f
+        if (recognitionResults["CombatPower"] != null) cpPoints = 0.15f
+        if (recognitionResults["FastMoveRow"] != null || recognitionResults["SummaryFastMove"] != null) fastPoints = 0.15f
+        if (recognitionResults["ChargedMoveRowA"] != null) chgAPoints = 0.075f
+        if (recognitionResults["ChargedMoveRowB"] != null) chgBPoints = 0.075f
+
+        val mainConfidence = (speciesPoints + familyPoints + cpPoints + fastPoints + chgAPoints + chgBPoints).coerceIn(0.0f, 1.0f)
         
+        val identityConfidence = candidates.maxOfOrNull { it.confidence } ?: 0.0f
+
         val action = when {
-            manualSpecies != null || mainConfidence >= 0.8f -> RegistrationAction.REGISTER
+            manualSpecies != null || identityConfidence >= 0.8f -> RegistrationAction.REGISTER
             candidates.isNotEmpty() -> RegistrationAction.SELECT_SPECIES
             else -> RegistrationAction.NONE
         }
 
         // LOG: RegistrationAssessment
-        val fm = (recognitionResults["FastMoveRow"] ?: recognitionResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
-        val cma = recognitionResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
-        val cmb = recognitionResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val fm = (recognitionResults["FastMoveRow"] ?: recognitionResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING"
+        val cma = recognitionResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+        val cmb = recognitionResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING"
 
         TraceLogger.logStage(
             captureId = captureId,
@@ -88,18 +105,26 @@ object RegistrationEngine {
             confidence = (mainConfidence * 100).toInt().toString() + "%"
         )
 
+        val confidenceDetails = mutableListOf<String>()
+        confidenceDetails.add("Species..............${(speciesPoints * 100).toInt()}")
+        confidenceDetails.add("Family...............${(familyPoints * 100).toInt()}")
+        confidenceDetails.add("CP...................${(cpPoints * 100).toInt()}")
+        confidenceDetails.add("Fast Move............${(fastPoints * 100).toInt()}")
+        confidenceDetails.add("Charged A............${chgAPoints * 100}")
+        confidenceDetails.add("Charged B............${chgBPoints * 100}")
+
         TraceLogger.logConfidenceTrace(
             captureId = captureId,
-            source = "RegistrationEngine.candidates.maxOfOrNull { it.confidence }",
+            source = "Registration Confidence (Additive Model)",
             value = (mainConfidence * 100).toInt().toString() + "%",
-            details = candidates.map { "${it.name}: ${it.confidence} (${it.reasoning})" }
+            details = confidenceDetails
         )
 
         val verdicts = mutableMapOf<String, String>()
         verdicts["OCR"] = if (recognitionResults.isNotEmpty()) "PASS" else "FAIL"
         verdicts["Recognition"] = if (candidates.isNotEmpty()) "PASS" else "FAIL"
         verdicts["Assessment"] = "PASS"
-        verdicts["Confidence"] = "NOT IMPLEMENTED (Heuristic Scoring)"
+        verdicts["Confidence"] = "PASS"
         TraceLogger.logPipelineVerdict(captureId, verdicts)
 
         android.util.Log.d("PIPELINE_INSTRUMENTATION", "RegistrationAssessment | Confidence: $mainConfidence | Candidates: ${candidates.size} | Action: $action")

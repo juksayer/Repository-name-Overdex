@@ -79,16 +79,16 @@ object TraceLogger {
         val output = StringBuilder()
         output.append("[$captureId][Confidence Trace][$elapsed]\n")
         output.append("├── Source: $source\n")
-        output.append("├── Value : $value\n")
-        output.append("└── Calculation Details:\n")
-        if (details.isEmpty()) {
-            output.append("    └── NOT IMPLEMENTED (Using Default)\n")
-        } else {
-            details.forEachIndexed { index, d ->
-                val prefix = if (index == details.lastIndex) "    └── " else "    ├── "
-                output.append("$prefix$d\n")
+        
+        if (details.isNotEmpty()) {
+            details.dropLast(1).forEach { d ->
+                output.append("├── $d\n")
             }
+            output.append("└── ${details.last()}\n")
+        } else {
+            output.append("└── NOT IMPLEMENTED (Using Default)\n")
         }
+        output.append("Final Confidence: $value")
         Log.d(TAG, output.toString())
     }
 
