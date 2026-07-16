@@ -36,6 +36,41 @@ enum class ObservationSessionState {
 }
 
 /**
+ * Describes the health and consistency of an [ObservationSession]'s current understanding.
+ */
+enum class IntegrityStatus {
+    /**
+     * All required fields for the objective are resolved and consistent.
+     */
+    COMPLETE,
+
+    /**
+     * Some required fields are missing.
+     */
+    PARTIAL,
+
+    /**
+     * Contradictory evidence exists within the session history.
+     */
+    CONFLICTING,
+
+    /**
+     * Sparse evidence that doesn't meet the minimum requirements for the objective.
+     */
+    INSUFFICIENT
+}
+
+/**
+ * A summary of the [ObservationSession]'s integrity.
+ */
+data class ObservationIntegrity(
+    val status: IntegrityStatus,
+    val resolvedFields: Set<String>,
+    val missingFields: Set<String>,
+    val conflictingFields: Set<String>
+)
+
+/**
  * A passive data model representing everything Overdex has observed about a specimen 
  * during a single observation attempt.
  *
@@ -50,7 +85,8 @@ data class ObservationSession(
     val observations: List<CaptureObservation> = emptyList(),
     val recognitionResults: Map<String, List<RecognitionResult<*>>> = emptyMap(),
     val assessment: RegistrationAssessment? = null,
-    val state: ObservationSessionState = ObservationSessionState.CREATED
+    val state: ObservationSessionState = ObservationSessionState.CREATED,
+    val objective: ObservationObjective = ObservationObjective.RegisterSpecimen
 ) {
     /**
      * Resolves the current best understanding of the specimen based on all accumulated evidence.
@@ -80,5 +116,41 @@ data class ObservationSession(
                 currentBest
             }
         }
+    }
+
+    /**
+     * Evaluates the integrity of the session's current understanding relative to its [objective].
+     */
+    fun evaluateIntegrity(): ObservationIntegrity {
+        val resolved = resolveResults()
+        val required = objective.requiredFields
+        
+        val resolvedFields = resolved.keys.filter { field -> 
+            resolved[field]?.any { it.value != null } == true 
+        }.toSet()
+        
+        val missingFields = required - resolvedFields
+        
+        // Detect conflicts: A single recognizer reporting different non-null values in history
+        val conflictingFields = recognitionResults.filter { (field, history) ->
+            history.groupBy { it.recognizer }.any { (_, recognizerHistory) ->
+                val uniqueValues = recognizerHistory.mapNotNull { it.value }.distinct()
+                uniqueValues.size > 1
+            }
+        }.keys.toSet()
+
+        val status = when {
+            conflictingFields.intersect(required).isNotEmpty() -> IntegrityStatus.CONFLICTING
+            missingFields.isEmpty() -> IntegrityStatus.COMPLETE
+            resolvedFields.isEmpty() -> IntegrityStatus.INSUFFICIENT
+            else -> IntegrityStatus.PARTIAL
+        }
+
+        return ObservationIntegrity(
+            status = status,
+            resolvedFields = resolvedFields,
+            missingFields = missingFields,
+            conflictingFields = conflictingFields
+        )
     }
 }

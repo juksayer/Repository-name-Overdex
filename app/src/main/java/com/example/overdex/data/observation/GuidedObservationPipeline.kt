@@ -48,11 +48,12 @@ object GuidedObservationPipeline {
         input: ObservationInput,
         template: CaptureTemplate,
         existingSession: ObservationSession? = null,
+        objective: ObservationObjective = ObservationObjective.RegisterSpecimen,
         onUpdate: (PipelineStatus) -> Unit
     ) {
         // Architecture: Establish the ObservationSession foundation.
         // If no session exists, start a new canonical session.
-        var session = existingSession ?: ObservationSession(source = input.source)
+        var session = existingSession ?: ObservationSession(source = input.source, objective = objective)
         val captureId = session.sessionId
 
         val completed = mutableSetOf<ObservationStage>()
