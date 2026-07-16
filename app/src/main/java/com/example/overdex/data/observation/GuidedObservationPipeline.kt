@@ -44,142 +44,144 @@ object GuidedObservationPipeline {
     private const val ANCHOR_PADDING_PX = 8
 
     suspend fun run(
-        bitmap: Bitmap,
+        input: ObservationInput,
         template: CaptureTemplate,
         existingSession: ObservationSession? = null,
         onUpdate: (PipelineStatus) -> Unit
     ) {
-        // Architecture: Establish the ObservationSession foundation.
-        // If no session exists, start a new canonical session.
-        var session = existingSession ?: ObservationSession(source = SessionSource.SCREENSHOT)
-        val captureId = session.sessionId
+        input.supply { bitmap ->
+            // Architecture: Establish the ObservationSession foundation.
+            // If no session exists, start a new canonical session.
+            var session = existingSession ?: ObservationSession(source = SessionSource.SCREENSHOT)
+            val captureId = session.sessionId
 
-        val completed = mutableSetOf<ObservationStage>()
-        val allResults = mutableMapOf<String, List<RecognitionResult<*>>>()
-        val allObservations = mutableListOf<CaptureObservation>()
+            val completed = mutableSetOf<ObservationStage>()
+            val allResults = mutableMapOf<String, List<RecognitionResult<*>>>()
+            val allObservations = mutableListOf<CaptureObservation>()
 
-        TraceLogger.logCaptureStart(captureId, template.regions.size)
-        android.util.Log.d("ODX_TRACE", "[$captureId][Session Info] Source: ${session.source}")
+            TraceLogger.logCaptureStart(captureId, template.regions.size)
+            android.util.Log.d("ODX_TRACE", "[$captureId][Session Info] Source: ${session.source}")
 
-        fun update(stage: ObservationStage) {
-            val resultsCount = allResults.values.sumOf { it.size }
+            fun update(stage: ObservationStage) {
+                val resultsCount = allResults.values.sumOf { it.size }
+                
+                // Sync session state for future architectural growth
+                session = session.copy(
+                    observations = allObservations.toList(),
+                    recognitionResults = allResults.toMap()
+                )
+
+                android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size}")
+                onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId, session))
+            }
+
+            // 1. Locate Anchors
+            update(ObservationStage.LocatingAnchors)
+            val detectedAnchors = SimpleAnchorDetector.detectAnchors(bitmap)
+            completed.add(ObservationStage.LocatingAnchors)
+
+            val regions = template.regions.associateBy { it.id }
+
+            // 2. Species & Family
+            update(ObservationStage.Species)
+            val speciesRegion = regions["SpeciesName"]
+            if (speciesRegion != null) {
+                processRegion(captureId, bitmap, speciesRegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: SpeciesName | MISSING (Not in template)")
+            }
             
-            // Sync session state for future architectural growth
-            session = session.copy(
-                observations = allObservations.toList(),
-                recognitionResults = allResults.toMap()
+            val candyRegion = regions["CandyPanel"]
+            if (candyRegion != null) {
+                processRegion(captureId, bitmap, candyRegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CandyPanel | MISSING (Not in template)")
+            }
+            completed.add(ObservationStage.Species)
+
+            // 3. Combat Power
+            update(ObservationStage.CombatPower)
+            val cpRegion = regions["CombatPower"]
+            if (cpRegion != null) {
+                processRegion(captureId, bitmap, cpRegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CombatPower | MISSING (Not in template)")
+            }
+            completed.add(ObservationStage.CombatPower)
+
+            // 4. Shadow Status
+            update(ObservationStage.ShadowStatus)
+            val fastMoveRegion = regions["FastMoveRow"] ?: regions["SummaryFastMove"]
+            if (fastMoveRegion != null) {
+                processRegion(captureId, bitmap, fastMoveRegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: FastMoveRow/SummaryFastMove | MISSING (Not in template)")
+            }
+            completed.add(ObservationStage.ShadowStatus)
+
+            // 5. Fast Move
+            update(ObservationStage.FastMove)
+            completed.add(ObservationStage.FastMove)
+
+            // 6. Charged Move A
+            update(ObservationStage.ChargedMoveA)
+            val chgARegion = regions["ChargedMoveRowA"]
+            if (chgARegion != null) {
+                processRegion(captureId, bitmap, chgARegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowA | MISSING (Not in template)")
+            }
+            completed.add(ObservationStage.ChargedMoveA)
+
+            // 7. Charged Move B
+            update(ObservationStage.ChargedMoveB)
+            val chgBRegion = regions["ChargedMoveRowB"]
+            if (chgBRegion != null) {
+                processRegion(captureId, bitmap, chgBRegion, allObservations, allResults, detectedAnchors)
+            } else {
+                android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowB | MISSING (Not in template)")
+            }
+            completed.add(ObservationStage.ChargedMoveB)
+
+            // LOG: RecognitionResults
+            val res_spec = allResults["SpeciesName"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+            val res_fam = allResults["CandyPanel"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+            val res_cp = allResults["CombatPower"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+            val res_fm = (allResults["FastMoveRow"] ?: allResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING"
+            val res_cma = allResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+            val res_cmb = allResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+            
+            TraceLogger.logStage(
+                captureId = captureId,
+                stage = "RecognitionResults",
+                species = res_spec,
+                family = res_fam,
+                cp = res_cp,
+                fast = res_fm,
+                chgA = res_cma,
+                chgB = res_cmb
             )
 
-            android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size}")
-            onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId, session))
+            // LOG: Observations
+            TraceLogger.logStage(
+                captureId = captureId,
+                stage = "Observations",
+                species = res_spec,
+                family = res_fam,
+                cp = res_cp,
+                fast = res_fm,
+                chgA = res_cma,
+                chgB = res_cmb
+            )
+
+            // Finalize session state
+            session = session.copy(
+                completedAt = System.currentTimeMillis(),
+                completionState = SessionCompletionState.COMPLETED
+            )
+
+            update(ObservationStage.Complete)
         }
-
-        // 1. Locate Anchors
-        update(ObservationStage.LocatingAnchors)
-        val detectedAnchors = SimpleAnchorDetector.detectAnchors(bitmap)
-        completed.add(ObservationStage.LocatingAnchors)
-
-        val regions = template.regions.associateBy { it.id }
-
-        // 2. Species & Family
-        update(ObservationStage.Species)
-        val speciesRegion = regions["SpeciesName"]
-        if (speciesRegion != null) {
-            processRegion(captureId, bitmap, speciesRegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: SpeciesName | MISSING (Not in template)")
-        }
-        
-        val candyRegion = regions["CandyPanel"]
-        if (candyRegion != null) {
-            processRegion(captureId, bitmap, candyRegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CandyPanel | MISSING (Not in template)")
-        }
-        completed.add(ObservationStage.Species)
-
-        // 3. Combat Power
-        update(ObservationStage.CombatPower)
-        val cpRegion = regions["CombatPower"]
-        if (cpRegion != null) {
-            processRegion(captureId, bitmap, cpRegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CombatPower | MISSING (Not in template)")
-        }
-        completed.add(ObservationStage.CombatPower)
-
-        // 4. Shadow Status
-        update(ObservationStage.ShadowStatus)
-        val fastMoveRegion = regions["FastMoveRow"] ?: regions["SummaryFastMove"]
-        if (fastMoveRegion != null) {
-            processRegion(captureId, bitmap, fastMoveRegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: FastMoveRow/SummaryFastMove | MISSING (Not in template)")
-        }
-        completed.add(ObservationStage.ShadowStatus)
-
-        // 5. Fast Move
-        update(ObservationStage.FastMove)
-        completed.add(ObservationStage.FastMove)
-
-        // 6. Charged Move A
-        update(ObservationStage.ChargedMoveA)
-        val chgARegion = regions["ChargedMoveRowA"]
-        if (chgARegion != null) {
-            processRegion(captureId, bitmap, chgARegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowA | MISSING (Not in template)")
-        }
-        completed.add(ObservationStage.ChargedMoveA)
-
-        // 7. Charged Move B
-        update(ObservationStage.ChargedMoveB)
-        val chgBRegion = regions["ChargedMoveRowB"]
-        if (chgBRegion != null) {
-            processRegion(captureId, bitmap, chgBRegion, allObservations, allResults, detectedAnchors)
-        } else {
-            android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowB | MISSING (Not in template)")
-        }
-        completed.add(ObservationStage.ChargedMoveB)
-
-        // LOG: RecognitionResults
-        val res_spec = allResults["SpeciesName"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val res_fam = allResults["CandyPanel"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val res_cp = allResults["CombatPower"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val res_fm = (allResults["FastMoveRow"] ?: allResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val res_cma = allResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val res_cmb = allResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        
-        TraceLogger.logStage(
-            captureId = captureId,
-            stage = "RecognitionResults",
-            species = res_spec,
-            family = res_fam,
-            cp = res_cp,
-            fast = res_fm,
-            chgA = res_cma,
-            chgB = res_cmb
-        )
-
-        // LOG: Observations
-        TraceLogger.logStage(
-            captureId = captureId,
-            stage = "Observations",
-            species = res_spec,
-            family = res_fam,
-            cp = res_cp,
-            fast = res_fm,
-            chgA = res_cma,
-            chgB = res_cmb
-        )
-
-        // Finalize session state
-        session = session.copy(
-            completedAt = System.currentTimeMillis(),
-            completionState = SessionCompletionState.COMPLETED
-        )
-
-        update(ObservationStage.Complete)
     }
 
     private suspend fun processRegion(

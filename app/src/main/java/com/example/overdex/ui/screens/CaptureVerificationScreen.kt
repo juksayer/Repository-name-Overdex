@@ -338,7 +338,8 @@ fun CaptureVerificationScreen(
                     if (result is SuccessResult) {
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
                         isInspectionMode = true
-                        GuidedObservationPipeline.run(bitmap, currentTemplate) { status ->
+                        val input = GalleryObservationInput(bitmap)
+                        GuidedObservationPipeline.run(input, currentTemplate) { status ->
                             pipelineStatus = status
                             observations = status.observations
                             recognitionResults = status.results
