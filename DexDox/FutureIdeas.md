@@ -137,7 +137,33 @@ HUDphones belongs entirely in the "communicate" layer.
 - Visual language exploration
 
 ---
+## Battle Haiku
 
+An optional second flavor text for each Pokémon.
+
+Unlike the official Pokédex entry, Battle Haiku describe the Pokémon's competitive identity rather than its biology or lore.
+
+The purpose is not instruction.
+
+The purpose is to capture the feeling of battling with that Pokémon.
+
+Examples of themes:
+
+- Patience
+- Momentum
+- Sacrifice
+- Endurance
+- Precision
+- Pressure
+- Adaptation
+
+Battle Haiku should remain concise, timeless, and open to interpretation.
+
+They should read like martial proverbs rather than strategy guides.
+
+The Pokédex explains what a Pokémon is.
+
+The Battle Haiku suggest what it becomes in battle.
 # Artificial Intelligence
 
 Ideas involving AI-assisted reasoning, explanation, or recommendation belong here until they mature into concrete designs.

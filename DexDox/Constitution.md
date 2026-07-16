@@ -1,24 +1,34 @@
 # Constitution of Overdex
 
+The Constitution defines the rules that should almost never change.
+
+If another document disagrees with this one, the Constitution wins.
+
+---
+
 ## Foundations
 
 The Pokédex is the foundation.
 
+Knowledge before observation.
+
 Facts before conclusions.
 
-Wait before you do.
-
-Observe once.
+Observe before inferring.
 
 Trust observed data.
 
 Respect existing architecture.
 
-The smallest successful change is the correct change.
+The smallest successful change is usually the correct change.
 
 ---
 
 ## Development
+
+Build first.
+
+Show that it happened.
 
 One feature.
 
@@ -26,11 +36,35 @@ One commit.
 
 One test.
 
+Working code is not a problem to solve.
+
+---
+
+## Architecture
+
+Each layer owns one responsibility.
+
+Knowledge knows.
+
+Observation observes.
+
+Memory remembers.
+
+History organizes.
+
+Archive preserves.
+
+Intelligence understands.
+
+Presentation communicates.
+
 ---
 
 ## Interface
 
 Every pixel earns its place.
+
+Recognition is faster than reading.
 
 The D-pad owns focus.
 
@@ -40,10 +74,32 @@ B returns.
 
 SELECT performs contextual actions.
 
-START launches DroidBall.
+START launches Droidball.
+
+---
+
+## Trust
+
+Never pretend certainty.
+
+Confidence is earned.
+
+Evidence beats assumptions.
+
+When uncertain, say so.
+
+Trust is the product.
 
 ---
 
 ## Litmus Test
 
-Would this exist on a dedicated Overdex handheld?
+Ask these questions before implementing a feature:
+
+- Would this exist on a dedicated Overdex handheld?
+- Does it reduce cognitive load?
+- Does it preserve player agency?
+- Does it strengthen the architecture?
+- Can it be explained by the layer that owns it?
+
+If the answer is "no," reconsider the design.

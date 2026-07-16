@@ -1,337 +1,299 @@
-# Principles
+# Future Ideas
 
-These principles exist to keep Overdex focused as the project grows.
+This document is intentionally unfinished.
 
-When two solutions are possible, the one that best follows these principles should be preferred.
+Nothing in this document is planned, scheduled, or guaranteed.
 
----
+Its purpose is simple:
 
-# Build First
+> Preserve ideas before they are forgotten.
 
-Ideas are valuable.
-
-Working software is more valuable.
-
-Prototype quickly, learn from the result, then improve it.
+Ideas graduate from this document into Architecture, Philosophy, Principles, or the Roadmap only after they survive experimentation.
 
 ---
 
-# Show That It Happened
+# Candidate Architecture
 
-Do not assume a feature works.
+Ideas that may eventually become permanent architecture.
 
-Demonstrate it.
+## Event Payloads
 
-A successful build, visible behavior, screenshot, log, or test is worth more than confidence.
-
-Evidence beats assumptions.
+Replace generic values with event-specific payloads once `BattleEvent` stabilizes.
 
 ---
 
-# One Feature. One Commit. One Test.
+## Columnar Anchor Clusters (CAC)
 
-Large changes hide bugs.
+A proposed spatial observation model for dynamic interfaces.
 
-Small changes reveal them.
+Rather than treating every frame as an isolated bitmap, the Observation Engine establishes persistent spatial anchor clusters.
 
-Complete one feature.
+Each cluster represents a logical region rather than fixed pixels.
 
-Verify it.
+Possible applications:
 
-Commit it.
+- Scrolling Pokédex pages
+- Battle observation
+- Replay analysis
+- Droidball observation
+- Future observation sources
 
-Move on.
+Purpose:
 
----
-
-# Build Foundations Before Features
-
-A stable foundation creates many future features.
-
-Do not rush visible functionality if the underlying architecture is not ready.
-
-The Pokédex came before the overlay because knowledge comes before advice.
+Provide a stable spatial reference system that survives scrolling, animation, and changing viewports.
 
 ---
 
-Confidence is the currency we use to buy the user's trust.
+## Divination Engine
 
-Every observation contributes evidence, not certainty. Overdex earns confidence by accumulating independent observations that agree with one another. The system should never present more certainty than the evidence supports. When confidence is low, Overdex should say so. When confidence is high, the user should be able to understand why.
+Possible future layer responsible for reasoning during incomplete observations.
 
-# Observe Before Inferring
+Information may exist in three states:
 
-The battle engine should distinguish between what it knows and what it believes.
+```
+OBSERVED
 
-Observed information is evidence.
+↓
 
-Inferred information is a conclusion built from evidence.
+DIVINED
 
-The two should never be confused.
+↓
 
----
+RECONCILED
 
-# The Overlay Speaks Last
+↓
 
-The overlay does not think.
-
-It does not guess.
-
-It presents conclusions reached by the systems beneath it.
-
-Its job is clarity, not computation.
-
----
-
-# Every Pixel Must Earn Its Place
-
-Screen space is limited.
-
-Attention is even more limited.
-
-If an element does not improve a decision, it should not exist.
-
-The overlay should never compete with the game.
-
-It should quietly complement it.
-
----
-# Recognition Over Reading
-
-Recognition is faster than reading.
-
-Prefer icons, color, position, and shape over text whenever practical.
-
-Text is a last resort.
-
-The player should understand the overlay with a glance, not a sentence.
-# Minimalist. Game Boy. Winning.
-
-Avoid decoration.
-
-Prefer purpose.
-
-Interfaces should feel deliberate rather than flashy.
-
-Simple interfaces often communicate more effectively than complex ones.
-
----
-
-# Trust Through Consistency
-
-Every icon should have one meaning.
-
-Every color should have one purpose.
-
-Every interaction should behave the same way every time.
-
-Consistency builds confidence.
-
----
-
-# Preserve the Player's Attention
-
-The player is here to battle.
-
-Not to operate another application.
-
-Overdex should reduce cognitive load, not increase it.
-
-The best interaction is often the one the player never notices.
-
----
-# Motion Must Earn Attention
-
-Motion is the strongest visual signal available.
-
-Use it sparingly.
-
-If an element moves, the player should immediately understand why.
-
-Calm interfaces build trust.
-
-# Design for Learning
-
-The best feature is not one that tells the player what to do.
-
-It is one that teaches them something they will remember.
-
-If Overdex helps a player make better decisions without Overdex tomorrow, it has succeeded.
-
----
-
-# Respect Uncertainty
-
-Not every conclusion deserves complete confidence.
-
-When the application is uncertain, it should communicate uncertainty honestly rather than pretending certainty.
-
-Trust is difficult to earn and easy to lose.
-
----
-
-# The Project Is Never Finished
-
-Overdex is expected to evolve.
-
-Architectures will improve.
-
-Interfaces will change.
-
-Ideas will mature.
-
-The goal is not perfection.
-
-The goal is to make the next version better than the last.
-
----
-
-# Above All
-
-Make the player's experience feel effortless.
-
-If a feature makes the player think about Overdex instead of Pokémon, redesign the feature.
-Red is debt.
-
-Green is proof.
-
-Zero red before starting the next feature.
-
-Every commit should leave the project in a state you'd be happy to hand to another developer.
-
-Promote data from transient to permanent only once
-
-## Trust the Data
-
-Overdex never presents certainty where only confidence exists.
-
-Every observation contributes evidence.
-
-Every recommendation reflects confidence.
-
-Multiple independent observations are preferred over a single source.
-
-## Show, Don't Assume
-
-A feature is not complete because it compiles.
-
-Features are complete when they have been:
-
-Built
-
-Run
-
-Verified
+OBSERVED
+```
 
 Observed
 
-0RBSLOP
+- Directly confirmed.
 
-The player should learn Overdex's controls once.
+Divined
 
-Every screen should reuse the same interaction model whenever practical.
+- Best explanation supported by current evidence.
 
-Consistency builds speed.
+Reconciled
 
-Familiarity builds confidence.
+- Previously inferred information that has become directly supported.
 
-The D-pad owns focus.
+Possible future concepts:
 
-Meaning:
+- Integrity indicator
+- Observation confidence
+- Divination confidence
+- Reconciliation visualization
 
-In lists, it moves the current selection.
-In editors, it manipulates the current selection.
-In menus, it changes the highlighted option.
-In brackets, it moves through matches.
-In settings, it changes the active setting.
+Goal:
 
-The D-pad always answers the same question:
+Remain useful during uncertainty without pretending certainty.
 
-"Where is my attention?"
+---
 
-What changes is what "moving" means in that context.
+# Handheld Experience
 
-## Respect Existing Architecture
+Ideas related to the dedicated handheld identity.
 
-Assume the existing architecture is intentional.
+## Handheld vs Android
 
-Do not improve it unless the task explicitly asks you to.
+Reduce transitions between:
 
-Working code is not a problem to solve.
+- Overdex handheld
+- Android operating system
 
-Prefer extending existing behavior over replacing it.
+Possible directions:
 
-The smallest successful change is usually the correct change.
+- Device-native search
+- D-pad-first navigation
+- Hardware text entry
+- Quick filters
+- Search shortcuts
 
-Refactors are features.
-Treat them with the same planning, testing, and review as any other feature.
+---
 
-## Confidence Over Certainty
+## Maintenance Drawer
 
-Overdex never presents uncertain information as fact.
+Future Service LCD drawer.
 
-When confidence is high, Overdex speaks clearly.
+Ideas include:
 
-When confidence is reduced, Overdex communicates why.
+- Guided calibration
+- Droidball confidence behavior
+- Dual-resolution Droidball
+- Maintenance controls
+- Observation wizard
+- Image-under-box editing
 
-Users should always understand not only what Overdex believes, but how strongly it believes it.
+---
 
-## Trust Is Earned
+## Hardware Identity
 
-Every interaction should increase or preserve user trust.
+> The instrument may bend reality to improve understanding.
 
-Overdex would rather admit uncertainty than provide false confidence.
+> It should never break its own identity.
 
-A feature that is 90% correct should communicate that it is 90% correct.
+---
 
-Overdex is a Pokémon companion that earns trust by making its confidence visible.
+# Presentation Experiments
 
-Navigation Principle
+Possible future interface concepts.
 
-Gestures are not used for navigation within the Overdex device.
+- Replay engine
+- Observation logs
+- Paper Mario-style battle visualization
+- Digital coaching
+- Trainer DNA visualization
+- Visual language experiments
 
-The sole exception is the native Android system gesture used to leave the application entirely.
+---
 
-This gesture represents returning from the Overdex handheld to the user's phone, not navigating within the handheld itself.
+## HUDphones
 
-Type glyphs are part of Overdex's visual language.
+Audio presentation layer for Overdex.
 
-They represent the underlying concepts of the Pokémon types rather than reproducing official Pokémon iconography. New UI should use these glyphs consistently instead of introducing alternate symbols.
+The Observation Layer remains the source of truth.
 
-## Transparency Builds Trust
+HUDphones becomes another presentation layer.
 
-Whenever a user could reasonably ask:
+Possible callouts:
 
-- What happened?
-- Why?
-- What happens next?
+- Enemy identified.
+- Fast move confirmed.
+- Charged move ready.
+- Shield recommended.
+- Switch available.
+- Super effective.
 
-Overdex should answer before they have to ask.
+Accessibility possibilities:
 
-Never fail silently.
-Never save silently.
-Never guess silently.
+- Blind and low-vision support
+- Reduced visual attention
+- Hands-free battle awareness
 
-Confidence, uncertainty, and system state are part of the user interface.
+Guiding principle:
 
-Local First
+Observe.
 
-Core gameplay assets and knowledge should be available without an internet connection whenever practical.
+Understand.
 
-Network access should improve Overdex, not enable it.
+Communicate.
 
-Users should be able to browse, learn, review, and battle whether they're at home, in a tournament venue, or riding through a tunnel.
+---
 
-A recognizer never invents domain objects.
+# Collection Ideas
 
-It produces observations.
+## My Collection → My Binders
 
-The Game Master validates those observations.
+Current recommendation:
 
+Do not rename My Collection immediately.
 
-}ODX-FI Motion Principle
+Ship it.
 
-Only physical objects possess inertia.
+Let it mature.
 
-Information is instantaneous.
+When binders become a complete organizational system:
 
-Hardware has mass.
+```
+My Collection
+└── Binders
+```
+
+The Pokédex documents Pokémon.
+
+My Binders document the trainer's relationship with Pokémon.
+
+---
+
+## Terminology
+
+Possible future rename:
+
+```
+OwnedPokemon
+
+↓
+
+Specimen
+```
+
+---
+
+# Artificial Intelligence
+
+Ideas involving AI reasoning remain experimental until supported by architecture.
+
+Potential directions:
+
+- Explanation engine
+- Coaching
+- Pattern discovery
+- Long-term training insights
+
+---
+
+# Technical Notes
+
+Ideas that should not be forgotten.
+
+```text
+TODO (Architecture)
+
+PokedexFrame currently owns BattleMemory and Matchup analysis.
+
+Long-term:
+Move ownership into a ViewModel or controller.
+
+PokedexFrame should remain responsible only for rendering and hardware behavior.
+```
+
+---
+
+# Someday / Maybe
+
+Ideas with no implementation plan.
+
+These exist because interesting ideas are easy to lose.
+
+Examples:
+
+- Trainer DNA
+- Droidball personality
+- Alternate industrial designs
+- Experimental interfaces
+- New observation techniques
+
+Some of Overdex's defining ideas began here.
+
+This document exists so future ideas have somewhere to begin.
+
+# Design Test
+
+When designing a new Droidball behavior, ask:
+
+Does this reveal observation?
+
+If no...
+
+Do not animate it.
+
+Does this communicate confidence?
+
+If no...
+
+Do not animate it.
+
+Does this teach the trainer something?
+
+If no...
+
+Do not animate it.
+
+If the animation exists only because it is entertaining...
+
+It does not belong.
+
+The Observation Layer is the performance.
+
+Droidball simply makes that performance visible.

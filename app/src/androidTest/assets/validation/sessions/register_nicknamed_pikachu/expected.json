@@ -1,0 +1,11 @@
+{
+  "objective": "RegisterSpecimen",
+  "expectedResolvedFields": {
+    "SpeciesName": "Pikachu",
+    "CombatPower": 500,
+    "FastMoveRow": "Thunder Shock",
+    "ChargedMoveRowA": "Discharge"
+  },
+  "expectedIntegrity": "COMPLETE",
+  "expectedProgress": 1.0
+}

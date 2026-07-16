@@ -39,7 +39,7 @@ class ObservationEngineValidator {
         
         for (sessionDirName in sessions) {
             val sessionPath = "$sessionsRoot/$sessionDirName"
-            val readmePath = "$sessionPath/README.md"
+            val readmePath = "$sessionPath/BrutalSwingOriginStory.md"
             val expectedPath = "$sessionPath/expected.json"
             
             // 1. Read Expected Data

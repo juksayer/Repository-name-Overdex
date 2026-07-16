@@ -165,13 +165,13 @@ fun CaptureVerificationScreen(
             recognitionResults = recognitionResults
         )
         val capId = currentSession.sessionId
-        
+
         // Transition immediately to processing to avoid Schrödinger's Catfidence
         value = ServiceConsoleModel.createPanelState(capId, recognitionResults, RegistrationAssessment(0f))
             .copy(isProcessing = true)
 
         val newAssessment = RegistrationEngine.assess(currentSession, manualSpecies, viewModel)
-        
+
         // Synchronized Update: observations and assessment are now guaranteed to be from the same pass
         value = ServiceConsoleModel.createPanelState(capId, recognitionResults, newAssessment)
     }

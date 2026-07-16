@@ -1,0 +1,9 @@
+{
+  "objective": "IdentifySpecimen",
+  "expectedResolvedFields": {
+    "SpeciesName": "Snorlax",
+    "CombatPower": 2500
+  },
+  "expectedIntegrity": "COMPLETE",
+  "expectedProgress": 1.0
+}

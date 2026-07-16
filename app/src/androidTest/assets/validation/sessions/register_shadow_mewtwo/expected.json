@@ -1,0 +1,11 @@
+{
+  "objective": "RegisterSpecimen",
+  "expectedResolvedFields": {
+    "SpeciesName": "Mewtwo",
+    "CombatPower": 3500,
+    "FastMoveRow": "Psycho Cut",
+    "ChargedMoveRowA": "Psystrike"
+  },
+  "expectedIntegrity": "COMPLETE",
+  "expectedProgress": 1.0
+}
