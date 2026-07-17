@@ -99,7 +99,7 @@ If observation completes instantly...
 Droidball immediately moves to the next task.
 
 ---
-
+Droidball never performs work that the Observation Workspace has not already requested.
 # Attention Principle
 
 Droidball never demands attention.
@@ -570,31 +570,6 @@ Only physical components possess inertia, friction, momentum, and settling.
 This distinction preserves trust.
 
 The trainer never mistakes information for hardware, or hardware for software.
-# The Mystery
-
-No official explanation exists for Droidball.
-
-Observation Systems documents describe him only as:
-
-"Integrated Observation Subsystem."
-
-Some engineers disagree.
-
-A persistent rumor claims he appeared during early firmware recompilation of the ODX-FI prototype.
-
-No evidence has ever confirmed this.
-
-Some trainers quietly believe...
-
-He was always in there.
-
-The ODX-FI never comments.
-
-Droidball is the mobile embodiment of the Observation Layer.
-
-The ODX-FI is simply his home.
-
-Wherever observation occurs, Droidball is present.
 
 # Observation Session
 
@@ -675,7 +650,47 @@ Confidence changes only through observation.
 Emotion is never used to communicate certainty.
 
 ---
+Do Not
 
+Do not animate for decoration.
+
+Do not invent activity to make the instrument appear busy.
+
+Do not delay information for dramatic effect.
+
+Do not celebrate routine operations.
+
+Do not apologize for incomplete observations.
+
+Do not speak on behalf of Droidball.
+
+Do not replace observations with opinions.
+
+Do not predict when certainty is unavailable.
+
+Do not interrupt the trainer to request unnecessary confirmation.
+
+Do not imply a capability the instrument does not possess.
+
+Do not initialize modules that do not exist.
+
+Do not simulate hardware behavior that is not occurring.
+
+Do not display placeholder systems during boot.
+
+Do not use red to indicate expected observation failure.
+
+Do not use animation to communicate software state when information is sufficient.
+
+Do not allow physical controls to misrepresent the current state of the instrument.
+
+Do not confuse hardware with software.
+
+Do not confuse observation with interpretation.
+
+Do not confuse confidence with certainty.
+
+Do not confuse personality with trust.
 # Presence
 
 The trainer should never wonder:
@@ -685,3 +700,28 @@ The trainer should never wonder:
 Only:
 
 "What is Droidball observing?"
+# The Mystery
+
+No official explanation exists for Droidball.
+
+Observation Systems documents describe him only as:
+
+"Integrated Observation Subsystem."
+
+Some engineers disagree.
+
+A persistent rumor claims he appeared during early firmware recompilation of the ODX-FI prototype.
+
+No evidence has ever confirmed this.
+
+Some trainers quietly believe...
+
+He was always in there.
+
+The ODX-FI never comments.
+
+Droidball is the mobile embodiment of the Observation Layer.
+
+The ODX-FI is simply his home.
+
+Wherever observation occurs, Droidball is present.

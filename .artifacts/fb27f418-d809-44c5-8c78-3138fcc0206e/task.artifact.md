@@ -1,3 +1,4 @@
-- [x] Implement `ObservationWorkspaceViewer` in `ObservationSessionWorkspace.kt`
-- [x] Integrate `ObservationWorkspaceViewer` into `CaptureVerificationScreen.kt`
-- [x] Verify live updates and data accuracy
+- [x] Refine boot entries in `MainMenuScreen.kt`
+- [x] Remove animated scroll and viewport constraints in `MainMenuScreen.kt`
+- [x] Update `onBootComplete` trigger logic
+- [x] Verify terminal transition behavior

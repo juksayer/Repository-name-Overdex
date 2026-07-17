@@ -1,6 +1,5 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -37,10 +36,9 @@ fun MainMenuScreen(
             "overdex boot sequence...",
             "version 1.0.8",
             "",
-            "initializing confidence engine...",
             "checking local database.............. [ok]",
             "loading pokemon...................... [1025]",
-            "loading move database................ [894]",
+            "loading move database................ [335]",
             "loading type effectiveness........... [ok]",
             "overdex ready",
             "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "TheRealestSquid"}",
@@ -54,67 +52,53 @@ fun MainMenuScreen(
             // 1. Sequential Reveal
             for (i in 1..bootLines.size) {
                 bootStep = i
+                
+                // Trigger onBootComplete immediately after the final line is appended
+                if (i == bootLines.size) {
+                    onBootComplete()
+                }
+
                 val baseDelay = if (i < 3) 400L else 100L
                 delay(baseDelay)
             }
-            
-            // 2. Pause to show full report
-            delay(1000)
-
-            // 3. Animate scroll to bring menu into view
-
-            scrollState.animateScrollTo(
-                value = scrollState.maxValue,
-                animationSpec = tween(durationMillis = 2200, easing = FastOutSlowInEasing)
-            )
-            
-            // 4. Mark boot as complete
-            onBootComplete()
         } else {
             // If already booted, ensure menu is visible instantly
             bootStep = bootLines.size
-            // Wait for layout to settle so maxValue is calculated
-            delay(100)
-
-            scrollState.scrollTo(scrollState.maxValue)
         }
     }
 
     TerminalScreen {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val viewportHeight = maxHeight
-            
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            // SECTION 1: BOOT REPORT
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
             ) {
-                // SECTION 1: BOOT REPORT (Fills exactly one screen height)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(viewportHeight)
-                        .padding(bottom = 32.dp)
-                ) {
-                    bootLines.take(bootStep).forEach { line ->
-                        TerminalText(
-                            text = line,
-                            color = TerminalDimGreen,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    if (bootStep >= bootLines.size) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        TerminalHeader(text = "system check")
-                    }
+                bootLines.take(bootStep).forEach { line ->
+                    TerminalText(
+                        text = line,
+                        color = TerminalDimGreen,
+                        fontSize = 12.sp
+                    )
                 }
 
-                // SECTION 2: INTERACTIVE MENU (Starts below the fold)
+                if (bootStep >= bootLines.size) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    TerminalHeader(text = "system check")
+                }
+            }
+
+            // SECTION 2: INTERACTIVE MENU (Appears as lines are appended)
+            if (bootStep >= bootLines.size) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TerminalSection(title = "modules") {
+                    TerminalSection(title = "modules", spacing = 0) {
                         options.forEachIndexed { index, option ->
                             TerminalMenuOption(
                                 label = option.label,

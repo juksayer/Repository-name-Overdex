@@ -1,25 +1,37 @@
-# Observation Session Workspace Viewer Implementation Plan
+# Terminal Boot Sequence Refinement Implementation Plan
 
-Objective: Implement a developer-facing visualization of the Observation Session Workspace for debugging purposes.
+Refine the application boot sequence to ensure architectural correctness, remove placeholders, and improve the terminal-like transition to the main menu.
 
 ## Proposed Changes
 
-### [Component Name] UI Components
+### [Component Name] UI Screens
 
-#### [MODIFY] [ObservationSessionWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/ObservationSessionWorkspace.kt)
-- Create `ObservationWorkspaceViewer` Composable.
-- Display a list of all observation regions currently in the session workspace.
-- For each region, display the raw recognition results (Recognizer, Value, Confidence).
-- Use a simple, terminal-style UI consistent with existing debug tools.
+#### [MODIFY] [MainMenuScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MainMenuScreen.kt)
+- **Update Boot Entries**:
+    - Remove placeholder "initializing confidence engine...".
+    - Update move database count to `335` (matching `gamemaster.json`).
+    - Standardize labels to resemble concise terminal status output.
+- **Refine Transition**:
+    - Remove `animateScrollTo` to eliminate "screen navigation" feel and dependency on Android's animation duration scale.
+    - Remove the `height(viewportHeight)` constraint on the boot report section so it doesn't push the menu "below the fold" artificially.
+    - Trigger `onBootComplete()` immediately after the final boot line has been appended to the terminal output, before any UI transition or scrolling logic.
+    - Ensure the terminal output timing remains consistent using `delay()` (which is independent of animation duration scale).
 
-#### [MODIFY] [CaptureVerificationScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/CaptureVerificationScreen.kt)
-- Add a mechanism to toggle the Workspace Viewer (e.g., a constant or a debug state).
-- Integrate `ObservationWorkspaceViewer` into the screen layout.
+## Implementation Notes
+> [!IMPORTANT]
+> Do not introduce fade, slide, or navigation animations as a replacement for the removed scroll animation. The menu should simply exist because the terminal has finished printing.
+
+## Out of Scope
+- Do not redesign the boot sequence.
+- Do not add or remove boot stages beyond the specified placeholder removal.
+- Do not modify boot timing except as required to remove the animated scroll.
+- Do not introduce new visual effects or animations.
 
 ## Verification Plan
 
 ### Manual Verification
-- Deploy the app and navigate to the Capture Verification screen.
-- Start an observation session.
-- Verify that the Workspace Viewer appears and updates live as recognizers process different regions.
-- Confirm that the values displayed match the raw `RecognitionResult` data without any normalization or inference.
+- Observe the boot sequence:
+    - Verify that "confidence engine" is removed.
+    - Verify move count is 335.
+    - Confirm the transition to the main menu happens without a 2.2-second animated scroll.
+    - Check that the menu items appear immediately after "overdex ready" (or the last boot line) in a way that feels like reaching a terminal prompt.
