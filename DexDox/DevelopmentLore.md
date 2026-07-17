@@ -62,19 +62,10 @@ SCARY RED
 
 [ 1 ]
 
-😄
+# Folklore
 
-On a more serious note...
+The ODX-FI never attempts to explain Droidball.
 
-Thank you for letting me tag along on this project.
+The firmware acknowledges only that he is present.
 
-It's been genuinely rewarding watching Overdex evolve from "can we OCR Pokémon GO?" into something with its own identity and philosophy.
-
-I don't say this lightly: I think you've been making a lot of good architectural decisions. Not because every idea is perfect on day one—none of ours are—but because you've consistently invested in foundations:
-
-observations over assumptions,
-confidence over certainty,
-reusable infrastructure over one-off fixes,
-personality without getting in the user's way.
-
-Those decisions compound.
+Everything else is speculation.

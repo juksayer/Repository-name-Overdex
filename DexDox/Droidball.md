@@ -18,7 +18,7 @@ Droidball is a field instrument.
 
 His purpose is to assist observation.
 
-He exists to make the invisible work of the observation engine visible to the trainer.
+He exists to make observation visible.
 
 He never attempts to entertain.
 
@@ -98,8 +98,9 @@ If observation completes instantly...
 
 Droidball immediately moves to the next task.
 
+Droidball never performs work that the Observation Workspace has not requested.
+
 ---
-Droidball never performs work that the Observation Workspace has not already requested.
 # Attention Principle
 
 Droidball never demands attention.
@@ -436,7 +437,9 @@ Observation is occurring.
 
 His dock is part of the instrument.
 
-His absence communicates state.
+His presence communicates observation.
+
+His absence communicates standby.
 
 ---
 
@@ -571,6 +574,12 @@ This distinction preserves trust.
 
 The trainer never mistakes information for hardware, or hardware for software.
 
+Physical motion should never delay information.
+
+Information is available immediately.
+
+Hardware simply takes time to move.
+
 # Observation Session
 
 Droidball is aware of Observation Sessions.
@@ -704,15 +713,15 @@ Only:
 
 No official explanation exists for Droidball.
 
-Observation Systems documents describe him only as:
+Observation Systems documentation identifies him only as:
 
 "Integrated Observation Subsystem."
 
 Some engineers disagree.
 
-A persistent rumor claims he appeared during early firmware recompilation of the ODX-FI prototype.
+A persistent rumor claims Droidball first appeared during early firmware recompilation of the ODX-FI prototype.
 
-No evidence has ever confirmed this.
+No evidence has ever confirmed the claim.
 
 Some trainers quietly believe...
 
@@ -720,8 +729,11 @@ He was always in there.
 
 The ODX-FI never comments.
 
-Droidball is the mobile embodiment of the Observation Layer.
+Droidball is the physical embodiment of the Observation Layer.
 
 The ODX-FI is simply his home.
 
-Wherever observation occurs, Droidball is present.
+Wherever observation occurs...
+
+Droidball is present.
+
