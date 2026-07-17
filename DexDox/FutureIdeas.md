@@ -240,3 +240,79 @@ Possible applications:
 The purpose of CAC is not image stitching.
 
 The purpose is to provide the Observation Engine with a stable spatial reference system that survives scrolling, animation, and changing viewports.
+
+Every observed battle should be replayable from recorded events alone
+
+## Battle Replay
+
+Replay archived battles using recorded battle events rather than video.
+
+The replay is not intended to recreate Pokémon GO.
+
+It recreates the sequence of observations and battle events that occurred during the match.
+
+Presentation should intentionally resemble a simple simulation or student-built debugging tool rather than a polished game.
+
+### Visual Style
+
+- Static Pokémon sprites with minimal movement.
+- Deliberately simple animation.
+- Type icons travel between Pokémon to represent Fast and Charged Moves.
+- HP bars, shields, and energy update only when events occur.
+- CRT display with scanlines and subtle phosphor persistence.
+- Replay presented through Droidball's Service Panel.
+
+### Controls
+
+Replay uses familiar transport controls inspired by VCRs.
+
+- ▶ Play / Pause
+- ◀◀ Previous Event
+- ▶▶ Next Event
+- ■ Stop
+- Playback speed (½×, 1×, 2×, 4×, 8×)
+
+Navigation advances between recorded battle events rather than video frames.
+
+### Audio
+
+No music.
+
+Replay audio consists entirely of mechanical and synthetic sounds.
+
+Examples:
+
+- Archive drive clicks
+- Tape transport sounds
+- CRT hum
+- Button clicks
+- Simple move effects (bloop, thunk, fffff, zzzt, etc.)
+
+Audio should reinforce the feeling that the trainer is reviewing an archived recording using a service instrument rather than watching a cinematic replay.
+
+### Battle Summary
+
+When playback ends, Droidball presents a concise archive summary.
+
+Examples:
+
+- Winner
+- Battle duration
+- Remaining Pokémon
+- Remaining shields
+- Banked energy
+- Final battle state
+- Observation completeness
+- Archive status
+
+### Purpose
+
+The replay system exists to teach, analyze, and preserve battles.
+
+It should answer:
+
+- What happened?
+- When did it happen?
+- Why did the battle engine resolve it that way?
+
+The replay should feel less like watching a recording and more like examining evidence.

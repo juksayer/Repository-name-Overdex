@@ -143,6 +143,7 @@ fun CaptureVerificationScreen(
     var selectedRegionId by remember { mutableStateOf<String?>(null) }
     var calibrationMode by remember { mutableStateOf(CalibrationMode.MOVE) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
+    var showWorkspaceViewer by remember { mutableStateOf(false) }
 
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val manualNav = rememberHandheldNavigationController(
@@ -312,7 +313,9 @@ fun CaptureVerificationScreen(
             }
         },
         onStart = {
-            if (!isInspectionMode) {
+            if (isInspectionMode) {
+                showWorkspaceViewer = !showWorkspaceViewer
+            } else {
                 // START is now a no-op for template switching.
                 observations = null
                 recognitionResults = emptyMap()
@@ -379,6 +382,7 @@ fun CaptureVerificationScreen(
         },
         onB = {
             if (isManualSpeciesSelection) isManualSpeciesSelection = false
+            else if (showWorkspaceViewer) showWorkspaceViewer = false
             else if (isInspectionMode) isInspectionMode = false
             else onBack()
         }
@@ -392,7 +396,7 @@ fun CaptureVerificationScreen(
                     contentScale = ContentScale.Fit,
                     onState = { if (it is AsyncImagePainter.State.Success) imageSize = it.painter.intrinsicSize }
                 )
-                
+
                 CaptureTemplateOverlay(
                     template = currentTemplate,
                     isVisible = isOverlayVisible,
@@ -452,6 +456,10 @@ fun CaptureVerificationScreen(
                         }
                     }
                 }
+            }
+
+            if (showWorkspaceViewer) {
+                ObservationWorkspaceViewer(recognitionResults = recognitionResults)
             }
         }
     }

@@ -1,0 +1,3 @@
+- [x] Implement `ObservationWorkspaceViewer` in `ObservationSessionWorkspace.kt`
+- [x] Integrate `ObservationWorkspaceViewer` into `CaptureVerificationScreen.kt`
+- [x] Verify live updates and data accuracy

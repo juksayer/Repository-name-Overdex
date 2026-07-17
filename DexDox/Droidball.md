@@ -590,4 +590,98 @@ He was always in there.
 
 The ODX-FI never comments.
 
-Droidball is not confined to the ODX-FI. He is the mobile embodiment of the Observation Engine. Wherever observation is occurring, Droidball is present.
+Droidball is the mobile embodiment of the Observation Layer.
+
+The ODX-FI is simply his home.
+
+Wherever observation occurs, Droidball is present.
+
+# Observation Session
+
+Droidball is aware of Observation Sessions.
+
+When a session begins:
+
+He deploys.
+
+When the session completes:
+
+He returns to the dock.
+
+When a session is abandoned:
+
+He quietly returns home.
+
+He does not distinguish between successful and unsuccessful observations.
+
+He distinguishes only between active and inactive observation.
+
+---
+
+# Workspace
+
+Droidball does not own observations.
+
+He contributes them.
+
+The Observation Session Workspace remains the single source of truth.
+
+Droidball simply visualizes the progress of observation.
+
+---
+
+# Concurrent Observation
+
+When multiple observations are active simultaneously:
+
+Droidball follows the observation currently requiring the trainer's attention.
+
+Background observations continue silently.
+
+The trainer's focus always determines Droidball's focus.
+
+---
+# Dock
+
+When observation is complete, Droidball returns to the Service Drawer.
+
+The drawer is his home.
+
+He is never dismissed.
+
+He is never hidden.
+
+He simply returns to standby until observation is needed again.
+
+The opening and closing of the drawer communicate the beginning and end of observation.
+# Idle
+
+Docked does not mean inactive.
+
+Droidball continuously maintains observation readiness.
+
+He simply does not demand attention until observation begins.
+
+---
+
+# Confidence
+
+Droidball never appears frustrated.
+
+He never appears excited.
+
+Confidence changes only through observation.
+
+Emotion is never used to communicate certainty.
+
+---
+
+# Presence
+
+The trainer should never wonder:
+
+"Where is Droidball?"
+
+Only:
+
+"What is Droidball observing?"
