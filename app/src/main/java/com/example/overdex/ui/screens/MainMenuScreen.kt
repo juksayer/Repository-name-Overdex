@@ -5,7 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalDimGreen
@@ -70,46 +69,29 @@ fun MainMenuScreen(
     TerminalScreen {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .verticalScroll(scrollState)
         ) {
-            // SECTION 1: BOOT REPORT
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp)
-            ) {
-                bootLines.take(bootStep).forEach { line ->
-                    TerminalText(
-                        text = line,
-                        color = TerminalDimGreen,
-                        fontSize = 12.sp
-                    )
-                }
-
-                if (bootStep >= bootLines.size) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    TerminalHeader(text = "system check")
-                }
+            bootLines.take(bootStep).forEach { line ->
+                TerminalText(
+                    text = line,
+                    color = TerminalDimGreen,
+                    fontSize = 12.sp
+                )
             }
 
-            // SECTION 2: INTERACTIVE MENU (Appears as lines are appended)
             if (bootStep >= bootLines.size) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TerminalSection(title = "modules", spacing = 0) {
-                        options.forEachIndexed { index, option ->
-                            TerminalMenuOption(
-                                label = option.label,
-                                selected = selectedIndex == index
-                            ) {
-                                option.onActivate()
-                            }
+                TerminalHeader(text = "system check")
+
+                TerminalSection(title = "modules", spacing = 0) {
+                    options.forEachIndexed { index, option ->
+                        TerminalMenuOption(
+                            label = option.label,
+                            selected = selectedIndex == index
+                        ) {
+                            option.onActivate()
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }

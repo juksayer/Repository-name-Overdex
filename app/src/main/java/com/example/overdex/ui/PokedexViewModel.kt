@@ -19,6 +19,7 @@ import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.FallbackSpriteProvider
+import com.example.overdex.model.observation.ObservationSessionState
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -33,8 +34,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _searchRequest = MutableStateFlow(SearchRequest())
     val searchRequest = _searchRequest.asStateFlow()
 
-    private val _isServiceRunning = MutableStateFlow(false)
-    val isServiceRunning = _isServiceRunning.asStateFlow()
+    private val _observationSessionState = MutableStateFlow(ObservationSessionState.IDLE)
+    val observationSessionState = _observationSessionState.asStateFlow()
 
     val spriteProvider: SpriteProvider = FallbackSpriteProvider(
         primary = LocalSpriteProvider(application.assets),
@@ -45,15 +46,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _hasBootedInSession = MutableStateFlow(false)
     val hasBootedInSession = _hasBootedInSession.asStateFlow()
 
-    private val _isObservationActive = MutableStateFlow(false)
-    val isObservationActive = _isObservationActive.asStateFlow()
-
     fun markBooted() {
         _hasBootedInSession.value = true
     }
 
-    fun setObservationActive(active: Boolean) {
-        _isObservationActive.value = active
+    fun setObservationSessionState(state: ObservationSessionState) {
+        _observationSessionState.value = state
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -347,11 +345,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun startDroidBallService() {
-        _isServiceRunning.value = true
+        _observationSessionState.value = ObservationSessionState.SERVICE_ACTIVE
     }
 
     fun stopDroidBallService() {
-        _isServiceRunning.value = false
+        if (_observationSessionState.value == ObservationSessionState.SERVICE_ACTIVE) {
+            _observationSessionState.value = ObservationSessionState.IDLE
+        }
     }
 
     private val pokemonNameCache = mutableMapOf<Int, String>()

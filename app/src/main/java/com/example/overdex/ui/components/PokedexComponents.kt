@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
+import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
@@ -72,18 +73,19 @@ fun PokedexFrame(
     onStart: () -> Unit = {},
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
-    isServiceRunning: Boolean = false,
-    isObservationActive: Boolean = false,
+    instrumentState: ObservationSessionState? = null,
     isLogoInteractive: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
-    val serviceMode = isServiceRunning
 
-    val vmObservationActive by viewModel?.isObservationActive?.collectAsState() ?: remember { mutableStateOf(false) }
-    val drawerOpen = isServiceRunning || isObservationActive || vmObservationActive
+    val vmState by viewModel?.observationSessionState?.collectAsState() ?: remember { mutableStateOf(ObservationSessionState.IDLE) }
+    val currentState = instrumentState ?: vmState
+
+    val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
+    val drawerOpen = currentState != ObservationSessionState.IDLE
 
     val crtPadding by animateDpAsState(
         targetValue = if (serviceMode) 0.dp else 32.dp,
@@ -139,8 +141,8 @@ fun PokedexFrame(
     }
 
     // Simulation is now managed by the ViewModel/Service lifecycle
-    LaunchedEffect(isServiceRunning) {
-        if (isServiceRunning) {
+    LaunchedEffect(serviceMode) {
+        if (serviceMode) {
             battleMemory.runPrototypeSimulation()
         }
     }
@@ -230,7 +232,7 @@ fun PokedexFrame(
                 }
 
                 // HUD Overlay Layer (Kept clean and sharp)
-                if (showBattleOverlay && isServiceRunning) {
+                if (showBattleOverlay && serviceMode) {
                     Column {
                         // DroidBall (Service indicator and control)
                         AndroidPokeballLogo(

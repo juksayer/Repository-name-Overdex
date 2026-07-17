@@ -47,9 +47,7 @@ fun OwnedPokemonDetailScreen(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onDeleteSuccess: () -> Unit,
-    onBack: () -> Unit,
-    isServiceRunning: Boolean = false,
-    isObservationActive: Boolean = false,
+    onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
@@ -171,8 +169,6 @@ fun OwnedPokemonDetailScreen(
         onB = onBack,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
-        isServiceRunning = isServiceRunning,
-        isObservationActive = isObservationActive,
         viewModel = pokedexViewModel,
     ) { _ ->
         val owned = ownedPokemon

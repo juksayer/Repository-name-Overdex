@@ -11,9 +11,9 @@ enum class SessionSource {
 }
 
 /**
- * Represents the various phases of an [ObservationSession].
+ * Represents the various phases of an [ObservationSession] lifecycle.
  */
-enum class ObservationSessionState {
+enum class SessionPhase {
     /**
      * The session has been initialized but observation hasn't started yet.
      */
@@ -130,7 +130,7 @@ data class ObservationSession(
     val observations: List<CaptureObservation> = emptyList(),
     val recognitionResults: Map<String, List<RecognitionResult<*>>> = emptyMap(),
     val assessment: RegistrationAssessment? = null,
-    val state: ObservationSessionState = ObservationSessionState.CREATED,
+    val state: SessionPhase = SessionPhase.CREATED,
     val objective: ObservationObjective = ObservationObjective.RegisterSpecimen
 ) {
     /**

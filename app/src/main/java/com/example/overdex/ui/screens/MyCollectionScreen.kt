@@ -32,9 +32,7 @@ fun MyCollectionScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onItemClick: (String) -> Unit,
     onAddClick: () -> Unit,
-    onBack: () -> Unit,
-    isServiceRunning: Boolean = false,
-    isObservationActive: Boolean = false,
+    onBack: () -> Unit
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val searchQuery by collectionViewModel.searchQuery.collectAsState()
@@ -104,8 +102,6 @@ fun MyCollectionScreen(
         },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
-        isServiceRunning = isServiceRunning,
-        isObservationActive = isObservationActive,
         viewModel = pokedexViewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {

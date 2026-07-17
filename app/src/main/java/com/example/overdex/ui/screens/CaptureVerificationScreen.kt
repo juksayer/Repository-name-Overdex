@@ -33,6 +33,7 @@ import com.example.overdex.model.toOwnedPokemon
 import com.example.overdex.model.observation.*
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
+import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*
@@ -341,7 +342,7 @@ fun CaptureVerificationScreen(
                     if (result is SuccessResult) {
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
                         isInspectionMode = true
-                        viewModel.setObservationActive(true)
+                        viewModel.setObservationSessionState(ObservationSessionState.OBSERVING)
                         val input = GalleryObservationInput(bitmap)
                         GuidedObservationPipeline.run(
                             input = input,
@@ -386,7 +387,7 @@ fun CaptureVerificationScreen(
             else if (showWorkspaceViewer) showWorkspaceViewer = false
             else if (isInspectionMode) {
                 isInspectionMode = false
-                viewModel.setObservationActive(false)
+                viewModel.setObservationSessionState(ObservationSessionState.IDLE)
             }
             else onBack()
         }

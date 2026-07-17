@@ -76,7 +76,7 @@ object GuidedObservationPipeline {
 
         try {
             // Transition to ACTIVE state
-            session = session.copy(state = ObservationSessionState.ACTIVE)
+            session = session.copy(state = SessionPhase.ACTIVE)
             android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: ACTIVE")
 
             input.supply { bitmap ->
@@ -190,7 +190,7 @@ object GuidedObservationPipeline {
             if (progress.isComplete) {
                 session = session.copy(
                     completedAt = System.currentTimeMillis(),
-                    state = ObservationSessionState.COMPLETED
+                    state = SessionPhase.COMPLETED
                 )
                 android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: COMPLETED")
             } else {
@@ -201,7 +201,7 @@ object GuidedObservationPipeline {
             onUpdate(PipelineStatus(ObservationStage.Complete, ObservationStage.ALL.toSet(), session.recognitionResults, session.observations, captureId, session))
 
         } catch (e: CancellationException) {
-            session = session.copy(state = ObservationSessionState.CANCELLED)
+            session = session.copy(state = SessionPhase.CANCELLED)
             android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: CANCELLED")
             onUpdate(PipelineStatus(ObservationStage.Complete, emptySet(), session.recognitionResults, session.observations, captureId, session))
             throw e

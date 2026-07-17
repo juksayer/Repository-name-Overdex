@@ -45,9 +45,7 @@ fun PokemonDetailScreen(
     onTypeClick: (PokemonType) -> Unit,
     onRegionClick: (String) -> Unit,
     onEvolutionClick: (Int) -> Unit,
-    viewModel: PokedexViewModel? = null,
-    isServiceRunning: Boolean = false,
-    isObservationActive: Boolean = false,
+    viewModel: PokedexViewModel? = null
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -68,9 +66,7 @@ fun PokemonDetailScreen(
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
         onStart = onStart,
-        viewModel = viewModel,
-        isServiceRunning = isServiceRunning,
-        isObservationActive = isObservationActive
+        viewModel = viewModel
     ) { _ ->
         Column(
             modifier = Modifier
