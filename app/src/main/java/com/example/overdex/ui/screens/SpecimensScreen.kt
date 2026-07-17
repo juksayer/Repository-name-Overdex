@@ -29,6 +29,7 @@ fun SpecimensScreen(
     onItemClick: (String) -> Unit,
     onBack: () -> Unit,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val listState = rememberLazyListState()
@@ -45,6 +46,7 @@ fun SpecimensScreen(
         },
         onB = { onBack() },
         isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive,
         viewModel = pokedexViewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {

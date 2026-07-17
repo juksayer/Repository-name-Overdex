@@ -126,6 +126,7 @@ fun
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
     val isServiceRunning by viewModel.isServiceRunning.collectAsState()
+    val isObservationActive by viewModel.isObservationActive.collectAsState()
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
 
@@ -150,6 +151,7 @@ fun
             PokedexFrame(
                 showBattleOverlay = false,
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onUp = {
@@ -181,6 +183,7 @@ fun
             PokedexFrame(
                 showBattleOverlay = false,
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
@@ -201,6 +204,7 @@ fun
             PokedexFrame(
                 showBattleOverlay = false,
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
@@ -228,6 +232,7 @@ fun
                 description = description,
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -240,6 +245,7 @@ fun
                 onSelect = { /* Reserved */ },
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 viewModel = viewModel
             )
         }
@@ -247,6 +253,7 @@ fun
             PokedexFrame(
                 showBattleOverlay = false,
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
@@ -345,7 +352,8 @@ fun
                     }
                     navController.navigate("detail/$id")
                 },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
         composable(
@@ -391,7 +399,8 @@ fun
                         navController.navigate("detail/$evolutionId")
                     },
                     viewModel = viewModel,
-                    isServiceRunning = isServiceRunning
+                    isServiceRunning = isServiceRunning,
+                    isObservationActive = isObservationActive
                 )
             }
         }
@@ -405,7 +414,8 @@ fun
                 onItemClick = { id -> navController.navigate("owned_detail/$id") },
                 onAddClick = { navController.navigate("add_pokemon_wizard") },
                 onBack = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
         composable("owned_detail/{id}") { backStackEntry ->
@@ -421,7 +431,8 @@ fun
                 onFilterSettingsChange = { filterSettings = it },
                 onDeleteSuccess = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
         composable("add_pokemon_wizard") {
@@ -433,7 +444,8 @@ fun
                 onFilterSettingsChange = { filterSettings = it },
                 onFinish = { navController.popBackStack() },
                 onCancel = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
         composable("roster_menu") {
@@ -485,6 +497,7 @@ fun
                 description = "Manual registration interface placeholder.",
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -496,6 +509,7 @@ fun
                 description = "Team management and organization placeholder.",
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -507,6 +521,7 @@ fun
                 description = "League participation and tracking placeholder.",
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -518,6 +533,7 @@ fun
                 description = "Filtered view for battle-ready specimens.",
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -529,6 +545,7 @@ fun
                 description = "Filtered view for specimens requiring training.",
                 onBack = { navController.popBackStack() },
                 isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
             )
@@ -540,7 +557,8 @@ fun
                 collectionViewModel = collectionViewModel,
                 onItemClick = { id -> navController.navigate("roster/specimen_detail/$id") },
                 onBack = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
         composable(
@@ -554,7 +572,8 @@ fun
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
                 onEdit = { ownedId -> navController.navigate("roster/edit_specimen/$ownedId") },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                isObservationActive = isObservationActive
             )
         }
         composable(
@@ -569,7 +588,8 @@ fun
                 collectionViewModel = collectionViewModel,
                 onFinish = { navController.popBackStack() },
                 onCancel = { navController.popBackStack() },
-                isServiceRunning = isServiceRunning
+                isServiceRunning = isServiceRunning,
+                isObservationActive = isObservationActive
             )
         }
     }

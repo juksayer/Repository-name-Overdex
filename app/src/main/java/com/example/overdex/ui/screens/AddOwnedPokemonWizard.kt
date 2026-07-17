@@ -36,6 +36,7 @@ fun AddOwnedPokemonWizard(
     onFinish: () -> Unit,
     onCancel: () -> Unit,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
 ) {
     var currentStep by remember { mutableStateOf(WizardStep.SPECIES_SEARCH) }
     var selectedSpecies by remember { mutableStateOf<Pokemon?>(null) }
@@ -145,6 +146,7 @@ fun AddOwnedPokemonWizard(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive,
         viewModel = pokedexViewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {

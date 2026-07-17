@@ -27,6 +27,7 @@ fun EditSpecimenScreen(
     onFinish: () -> Unit,
     onCancel: () -> Unit,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
     var editedState by remember { mutableStateOf<OwnedPokemon?>(null) }
@@ -109,6 +110,7 @@ fun EditSpecimenScreen(
             }
         },
         isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive,
         viewModel = pokedexViewModel
     ) {
         TerminalScreen {

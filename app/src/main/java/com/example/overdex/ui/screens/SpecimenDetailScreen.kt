@@ -31,7 +31,8 @@ fun SpecimenDetailScreen(
     pokedexViewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
     onEdit: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isObservationActive: Boolean = false
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
     var species by remember { mutableStateOf<Pokemon?>(null) }
@@ -61,6 +62,7 @@ fun SpecimenDetailScreen(
         onStart = { onEdit(ownedId) },
         onB = onBack,
         viewModel = pokedexViewModel,
+        isObservationActive = isObservationActive,
         showBattleOverlay = false
     ) { _ ->
         val owned = ownedPokemon

@@ -341,6 +341,7 @@ fun CaptureVerificationScreen(
                     if (result is SuccessResult) {
                         val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
                         isInspectionMode = true
+                        viewModel.setObservationActive(true)
                         val input = GalleryObservationInput(bitmap)
                         GuidedObservationPipeline.run(
                             input = input,
@@ -383,7 +384,10 @@ fun CaptureVerificationScreen(
         onB = {
             if (isManualSpeciesSelection) isManualSpeciesSelection = false
             else if (showWorkspaceViewer) showWorkspaceViewer = false
-            else if (isInspectionMode) isInspectionMode = false
+            else if (isInspectionMode) {
+                isInspectionMode = false
+                viewModel.setObservationActive(false)
+            }
             else onBack()
         }
     ) {

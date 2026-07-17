@@ -39,6 +39,7 @@ fun PokedexListScreen(
     onBack: () -> Unit,
     onPokemonClick: (Int) -> Unit,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -104,7 +105,8 @@ fun PokedexListScreen(
         onSelect = onSelect,
         onStart = onStart,
         viewModel = viewModel,
-        isServiceRunning = isServiceRunning
+        isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
             if (keyboardController.isVisible) {

@@ -47,6 +47,7 @@ fun PokemonDetailScreen(
     onEvolutionClick: (Int) -> Unit,
     viewModel: PokedexViewModel? = null,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -68,7 +69,8 @@ fun PokemonDetailScreen(
         onSelect = onSelect,
         onStart = onStart,
         viewModel = viewModel,
-        isServiceRunning = isServiceRunning
+        isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive
     ) { _ ->
         Column(
             modifier = Modifier

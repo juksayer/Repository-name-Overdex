@@ -45,8 +45,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _hasBootedInSession = MutableStateFlow(false)
     val hasBootedInSession = _hasBootedInSession.asStateFlow()
 
+    private val _isObservationActive = MutableStateFlow(false)
+    val isObservationActive = _isObservationActive.asStateFlow()
+
     fun markBooted() {
         _hasBootedInSession.value = true
+    }
+
+    fun setObservationActive(active: Boolean) {
+        _isObservationActive.value = active
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

@@ -1,4 +1,6 @@
-- [x] Refine boot entries in `MainMenuScreen.kt`
-- [x] Remove animated scroll and viewport constraints in `MainMenuScreen.kt`
-- [x] Update `onBootComplete` trigger logic
-- [x] Verify terminal transition behavior
+- [x] Add `isObservationActive` state to `PokedexViewModel`
+- [x] Refine `ServiceDrawer` component with spring-driven animation and physical details
+- [x] Update `PokedexFrame` to respond to `isObservationActive` for drawer state
+- [x] Trigger `isObservationActive` in `CaptureVerificationScreen`
+- [x] Pass `isObservationActive` through intermediate screen components
+- [x] Verify build and basic drawer state transitions

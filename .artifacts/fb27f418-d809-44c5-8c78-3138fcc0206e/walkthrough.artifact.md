@@ -1,29 +1,43 @@
-# Terminal Boot Sequence Refinement Walkthrough
+# Service Drawer Foundation Walkthrough
 
-I have refined the application boot sequence to align with the Droidball design philosophy, ensuring it reports only genuine system activity and behaves like a physical terminal reaching a prompt.
+I have implemented the physical Service Drawer component, which serves as the dock for DroidBall. This change establishes the hardware foundation for observation-driven physical responses in the ODX-FI shell.
 
 ## Changes Made
 
-### UI Screens
+### Hardware Components
 
-#### [MainMenuScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MainMenuScreen.kt)
-- **Architectural Correctness**:
-    - Removed the placeholder "initializing confidence engine" entry.
-    - Updated the move database count to **335**, matching the actual content of `gamemaster.json`.
-    - Standardized labels to resemble concise terminal status output.
-- **Terminal Behavior**:
-    - Removed the 2.2-second animated scroll that previously treated the menu as a separate screen.
-    - Removed the artificial viewport height constraint on the boot report. The menu now appears immediately following the final boot line, as if the terminal has reached its active prompt.
-    - **Triggering**: `onBootComplete()` now triggers immediately when the final boot line is appended to the terminal output.
-    - **Animation Guardrail**: No fade, slide, or other software-driven transitions were added; the menu simply becomes part of the terminal output once the boot process finishes.
+#### [MODIFY] [PokedexComponents.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/PokedexComponents.kt)
+- **Refined `ServiceDrawer`**:
+    - Updated the animation to use a `spring` spec for the opening state, creating a "mechanical" feel with slight overshoot and settling (`dampingRatio = 0.5f`).
+    - Added physical details: a recess (interior) that becomes visible when open, and maintained the "PUSH" embossed marking and emergency release pinhole when closed.
+    - Standardized the component to take an `isOpen` state.
+
+#### [MODIFY] [PokedexFrame](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/PokedexComponents.kt)
+- Added `isObservationActive` parameter to the frame.
+- The drawer now opens if `isServiceRunning` OR `isObservationActive` is true.
+- It also automatically collects `isObservationActive` from the `PokedexViewModel` if a view model is provided.
+
+### State Management
+
+#### [MODIFY] [PokedexViewModel.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt)
+- Introduced `isObservationActive` as a `StateFlow`.
+- Added `setObservationActive(Boolean)` to allow screens to communicate the beginning and end of an observation session.
+
+#### [MODIFY] [CaptureVerificationScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/CaptureVerificationScreen.kt)
+- Now triggers `setObservationActive(true)` when entering inspection mode (starting an observation).
+- Triggers `setObservationActive(false)` when exiting inspection mode or completing a registration.
+
+### Integration
+- Updated all major screen components ([ModuleScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/ModuleScreen.kt), [ReadmeScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/ReadmeScreen.kt), [PokedexListScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/PokedexListScreen.kt), [MyCollectionScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MyCollectionScreen.kt), [PokemonDetailScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/PokemonDetailScreen.kt), [OwnedPokemonDetailScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/OwnedPokemonDetailScreen.kt), [AddOwnedPokemonWizard](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/AddOwnedPokemonWizard.kt), [SpecimensScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/SpecimensScreen.kt), [SpecimenDetailScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/SpecimenDetailScreen.kt), [EditSpecimenScreen](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/EditSpecimenScreen.kt)) to support passing the `isObservationActive` state to the underlying `PokedexFrame`.
 
 ## Verification Results
 
-### Boot Report Logic
-- Checked `bootLines` to ensure placeholders are gone and move count is 335.
-- Verified `LaunchedEffect` loop timing and `onBootComplete()` trigger point.
+### Physical Response
+- Verified the `spring` animation parameters in `PokedexComponents.kt`. The `stiffness = Spring.StiffnessLow` provides a deliberate mechanical opening.
 
-### Transition Logic
-- Verified removal of `animateScrollTo`.
-- Verified removal of `BoxWithConstraints` and `viewportHeight` height constraint.
-- Confirmed the menu section is now conditionally rendered based on `bootStep`, ensuring it appears as the final step of the terminal "printing" process.
+### Session Sync
+- The drawer correctly opens when a capture verification is initiated and closes when the user backs out or saves the record, as verified by the state changes in `CaptureVerificationScreen`.
+
+### Architectural Integrity
+- DroidBall remains docked during these transitions as requested (no deployment animation added yet).
+- The "Service Mode" (DroidBall deployment) still independently controls the drawer and DroidBall appearance.

@@ -22,7 +22,8 @@ fun ReadmeScreen(
     onStart: () -> Unit,
     onBack: () -> Unit,
     viewModel: PokedexViewModel? = null,
-    isServiceRunning: Boolean = false
+    isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false
 ) {
     var currentPage by remember { mutableIntStateOf(0) }
     val pages = readmePages
@@ -40,6 +41,7 @@ fun ReadmeScreen(
         onStart = onStart,
         viewModel = viewModel,
         isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive,
         showBattleOverlay = false
     ) { _ ->
         Column(

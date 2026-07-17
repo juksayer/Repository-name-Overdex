@@ -23,6 +23,7 @@ fun ModuleScreen(
     description: String,
     onBack: () -> Unit,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onStart: () -> Unit = {},
@@ -34,6 +35,7 @@ fun ModuleScreen(
         onStart = onStart,
         onSelect = onSelect,
         isServiceRunning = isServiceRunning,
+        isObservationActive = isObservationActive,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         showBattleOverlay = false

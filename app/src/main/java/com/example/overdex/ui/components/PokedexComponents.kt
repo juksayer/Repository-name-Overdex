@@ -73,6 +73,7 @@ fun PokedexFrame(
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     isServiceRunning: Boolean = false,
+    isObservationActive: Boolean = false,
     isLogoInteractive: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
@@ -80,6 +81,9 @@ fun PokedexFrame(
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
     val serviceMode = isServiceRunning
+
+    val vmObservationActive by viewModel?.isObservationActive?.collectAsState() ?: remember { mutableStateOf(false) }
+    val drawerOpen = isServiceRunning || isObservationActive || vmObservationActive
 
     val crtPadding by animateDpAsState(
         targetValue = if (serviceMode) 0.dp else 32.dp,
@@ -323,7 +327,7 @@ fun PokedexFrame(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        ServiceDrawer(serviceMode)
+        ServiceDrawer(drawerOpen)
 
 // Control Panel
         if (serviceMode) {
@@ -678,9 +682,18 @@ fun PillButton(label: String, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
+fun ServiceDrawer(isOpen: Boolean, modifier: Modifier = Modifier) {
     val drawerHeight by animateDpAsState(
-        targetValue = if (isDeployed) 72.dp else 6.dp, // 6dp height for the closed "face"
+        targetValue = if (isOpen) 72.dp else 6.dp, // 6dp height for the closed "face"
+        animationSpec = if (isOpen) {
+            spring(
+                dampingRatio = 0.5f, // Physical settling/rebound
+                stiffness = Spring.StiffnessLow // Slower, mechanical feel
+            )
+        } else {
+            // Closing is typically more deliberate/mechanical
+            tween(durationMillis = 400, easing = FastOutSlowInEasing)
+        },
         label = "drawerHeight"
     )
 
@@ -689,7 +702,7 @@ fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .height(drawerHeight)
-            .padding(horizontal = 70.dp) // Narrower seam as requested
+            .padding(horizontal = 70.dp)
             .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(2.dp))
             .padding(0.5.dp) // The physical gap (seam)
     ) {
@@ -698,21 +711,14 @@ fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(1.dp))
-                .background(if (isDeployed) PokedexGreen else Color.Black.copy(alpha = 0.12f))
+                .background(if (isOpen) PokedexGreen else Color.Black.copy(alpha = 0.12f))
                 .drawBehind {
-                    if (!isDeployed) {
+                    if (!isOpen) {
                         // Top highlight (Light hitting the top chamfer/edge)
                         drawLine(
                             color = Color.White.copy(alpha = 0.08f),
                             start = Offset(0f, 0.5.dp.toPx()),
                             end = Offset(this.size.width, 0.5.dp.toPx()),
-                            strokeWidth = 1.dp.toPx()
-                        )
-                        // Bottom subtle shadow (Ambient occlusion in the recess)
-                        drawLine(
-                            color = Color.Black.copy(alpha = 0.05f),
-                            start = Offset(0f, this.size.height - 0.5.dp.toPx()),
-                            end = Offset(this.size.width, this.size.height - 0.5.dp.toPx()),
                             strokeWidth = 1.dp.toPx()
                         )
                     }
@@ -722,13 +728,13 @@ fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
                     RoundedCornerShape(1.dp)
                 )
         ) {
-            if (!isDeployed) {
+            if (!isOpen) {
                 // "PUSH" Embossed Marking
                 Text(
                     "PUSH",
                     fontSize = 4.sp,
                     color = Color.Black.copy(alpha = 0.35f),
-                    fontWeight = FontWeight.Black, // Bold/Heavy for embossed feel
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 0.5.dp)
@@ -741,9 +747,17 @@ fun ServiceDrawer(isDeployed: Boolean, modifier: Modifier = Modifier) {
                         .size(1.2.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.5f))
-                        // Subtle highlight around the pinhole edge
                         .border(0.2.dp, Color.White.copy(alpha = 0.1f), CircleShape)
                         .align(Alignment.TopEnd)
+                )
+            } else {
+                // Interior of the drawer (Empty for now)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                        .border(1.dp, Color.Black.copy(alpha = 0.1f), RoundedCornerShape(2.dp))
                 )
             }
         }
