@@ -1,61 +1,60 @@
-# Implementation Plan - Battle Timeline Architecture (Final Refinement)
+# Implementation Plan - Battle Timeline Expansion (Refined)
 
-This plan establishes the canonical domain architecture for the Battle Timeline. It is a first-class domain concept, independent of UI, observation, or tournaments.
-
-Favor mechanical believability over animation complexity. If implementation reveals a small improvement that better communicates the hardware without changing the design philosophy, use your engineering judgment.
+This plan expands the Battle Timeline architecture with concrete event types, evidence implementations, and a refined observer model. This establishes the domain vocabulary for Pokémon GO battles without introducing behavior, game mechanics, or UI.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Architecture Only**: This task is limited to establishing the package structure and key interface/class definitions. No business logic or UI behavior will be implemented.
+> **Observation-First Events**: All new event types are restricted to observable actions (e.g., `ShieldUsed`) rather than inferred state changes (e.g., `ShieldBroken` or `EnergyGenerated`).
 
 > [!NOTE]
-> **Immutability Pattern**: The architecture introduces `BattleTimelineBuilder` to reserve space for an immutable ledger pattern, separating the active observation session from the final battle record.
+> **Evidence Refinement**: `DerivedEvidence` has been removed as it represents reasoning rather than primary source evidence.
 
 ## Proposed Changes
 
-I will create a new top-level `battle` package structure. I will avoid creating placeholder subclasses and focus on core contracts.
+### Event Taxonomy
+I will create concrete implementations of `TimelineEvent` in the `com.example.overdex.battle.timeline.event` package.
 
-### `com.example.overdex.battle.timeline`
+#### [NEW] [BattleLifecycleEvents.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/BattleLifecycleEvents.kt)
+- `BattleStarted`: Marks the beginning of a battle session.
+- `BattleEnded`: Marks the conclusion of a battle session.
 
-#### [NEW] [BattleTimeline.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimeline.kt)
-The primary domain model and canonical ledger.
+#### [NEW] [CombatEvents.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt)
+- `FastMovePerformed`: Recorded when a fast move is identified.
+- `ChargedMoveStarted`: Recorded when the charged move sequence begins.
+- `ChargedMoveResolved`: Recorded when the charged move damage/effect is applied.
+- `ShieldUsed`: Recorded when a shield is deployed.
 
-#### [NEW] [BattleTimelineBuilder.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimelineBuilder.kt)
-Reserved for the mutation of timelines during an active session before finalizing as an immutable record.
+#### [NEW] [StatusEvents.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/StatusEvents.kt)
+- `PokemonSwitched`: Recorded when a trainer switches their active Pokémon.
+- `PokemonFainted`: Recorded when a Pokémon's HP reaches zero.
 
-### `com.example.overdex.battle.timeline.event`
+### Evidence Implementations
+I will create concrete implementations of the `Evidence` interface in the `com.example.overdex.battle.timeline.evidence` package.
 
-#### [NEW] [TimelineEvent.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/TimelineEvent.kt)
-#### [NEW] [ObservationEvent.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/ObservationEvent.kt)
+#### [NEW] [EvidenceTypes.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/evidence/EvidenceTypes.kt)
+- `VisualEvidence`: Supporting data from screen/video frames.
+- `AudioEvidence`: Supporting data from audio captures.
+- `StateEvidence`: Supporting data from internal application or system state.
 
-> [!CAUTION]
-> Do not create placeholder event subclasses "just to fill out the architecture." Only create the abstract `TimelineEvent` contract and a single `ObservationEvent` implementation.
+### Observer Model Expansion
+I will update the `ObservationSource` enum to reflect the specific inputs of the Overdex instrument.
 
-### `com.example.overdex.battle.timeline.confidence`
+#### [MODIFY] [ObservationSource.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObservationSource.kt)
+- Expand the enum to include: `SCREEN_CAPTURE`, `AUDIO_CAPTURE`, `DROIDBALL`, `REMOTE_PARTNER`, `SYSTEM_INFERENCE`.
 
-#### [NEW] [ConfidenceScore.kt](file:///home/sean/AndroidStudioProjects/Overdex/battle/timeline/confidence/ConfidenceScore.kt)
-#### [NEW] [ConfidenceLevel.kt](file:///home/sean/AndroidStudioProjects/Overdex/battle/timeline/confidence/ConfidenceLevel.kt)
-#### [NEW] [ConfidenceMath.kt](file:///home/sean/AndroidStudioProjects/Overdex/battle/timeline/confidence/ConfidenceMath.kt)
+### Serializer Definition
+The `BattleTimelineSerializer` interface remains a pure contract without backing implementation for any specific storage format.
 
-### `com.example.overdex.battle.timeline.evidence`
+## Guardrails
 
-#### [NEW] [Evidence.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/evidence/Evidence.kt)
-Renamed from `TimelineEvidence` for better internal naming within the `evidence` package.
-
-### `com.example.overdex.battle.timeline.observer`
-
-#### [NEW] [ObservationSource.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObservationSource.kt)
-#### [NEW] [ObserverId.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObserverId.kt)
-
-### `com.example.overdex.battle.timeline.serialization`
-
-#### [NEW] [BattleTimelineSerializer.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/serialization/BattleTimelineSerializer.kt)
-Interface definition only. No serialization format (JSON, etc.) will be baked into the domain at this stage.
+- **No Inferred Mechanics**: Do not include Pokémon GO-specific game mechanics beyond event names. Keep events as close to observations as possible (e.g., no `EnergyGenerated`).
+- **Builder Placeholder**: Do not add behavior to `BattleTimelineBuilder`. It remains a placeholder for future observation reconciliation.
+- **No Implementation**: Do not wire up the events or evidence yet. Establish the vocabulary only.
 
 ## Verification Plan
 
 ### Manual Verification
-- The user will perform the verification process personally.
-- I will verify the physical directory structure and package declarations match the refined hierarchy.
-- I will ensure no existing "battle log" or "history" implementations were extended or modified.
+- Verify that all new files are in the correct packages (`event`, `evidence`, `observer`).
+- Confirm that the `TimelineEvent` contract is correctly implemented by all new event types.
+- Ensure no behavior was added to `BattleTimelineBuilder`.

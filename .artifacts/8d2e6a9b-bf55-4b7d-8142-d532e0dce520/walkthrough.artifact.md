@@ -1,52 +1,28 @@
-# Walkthrough - Battle Timeline Architecture
+# Walkthrough - Battle Timeline Expansion
 
-I have established the canonical domain architecture for the Battle Timeline, creating a foundation that supports immutable ledgers, observation sources, and a core confidence framework.
+I have expanded the Battle Timeline architecture with concrete event types, evidence implementations, and a refined observer model. This establishes the domain vocabulary for Pokémon GO battles while strictly maintaining the "observation-first" architecture.
 
-## Architecture Highlights
+## Changes Made
 
-### Canonical Domain Model
-- **[BattleTimeline](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimeline.kt)**: The immutable entry point for battle history.
-- **[BattleTimelineBuilder](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimelineBuilder.kt)**: Explicitly reserved as a placeholder for managing mutable state during active observation sessions.
+### Battle Event Taxonomy
+Established the core observable events for a battle session in `com.example.overdex.battle.timeline.event`:
+- **Lifecycle**: [BattleStarted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/BattleLifecycleEvents.kt), [BattleEnded](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/BattleLifecycleEvents.kt)
+- **Combat**: [FastMovePerformed](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ChargedMoveStarted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ChargedMoveResolved](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ShieldUsed](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt)
+- **Status**: [PokemonSwitched](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/StatusEvents.kt), [PokemonFainted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/StatusEvents.kt)
 
-### Event & Observation Contracts
-- **[TimelineEvent](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/TimelineEvent.kt)**: The base contract for all temporal data.
-- **[ObservationEvent](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/ObservationEvent.kt)**: The first concrete implementation, linking evidence and confidence to a timestamped event.
+### Evidence Vocabulary
+Defined the primary source evidence types in `com.example.overdex.battle.timeline.evidence`:
+- **[EvidenceTypes.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/evidence/EvidenceTypes.kt)**: Introduced `VisualEvidence`, `AudioEvidence`, and `StateEvidence` to capture raw inputs from the device and application.
 
-### Core Frameworks
-- **Confidence**: Established a dedicated `confidence` package ([ConfidenceScore](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/confidence/ConfidenceScore.kt)) as the starting point for Overdex's cross-domain confidence system.
-- **Evidence**: Created a flexible [Evidence](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/evidence/Evidence.kt) interface, prepared for expansion into various media and recognition types.
-- **Observer Identity**: Introduced [ObservationSource](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObservationSource.kt) and [ObserverId](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObserverId.kt) to distinguish between local Droidball, remote sources, AI, and system-level events.
-
-## Package Structure
-
-The hierarchy is flattened for discoverability and cohesive growth:
-```
-battle/
-  timeline/
-    BattleTimeline.kt
-    BattleTimelineBuilder.kt
-    event/
-      TimelineEvent.kt
-      ObservationEvent.kt
-    confidence/
-      ConfidenceScore.kt
-      ConfidenceLevel.kt
-      ConfidenceMath.kt
-    evidence/
-      Evidence.kt
-    observer/
-      ObservationSource.kt
-      ObserverId.kt
-    serialization/
-      BattleTimelineSerializer.kt
-```
+### Observer Model Refinement
+- **[ObservationSource](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObservationSource.kt)**: Expanded to explicitly include `SCREEN_CAPTURE`, `AUDIO_CAPTURE`, `DROIDBALL`, `REMOTE_PARTNER`, and `SYSTEM_INFERENCE`.
 
 ## Verification Results
 
 ### Manual Verification
-- Verified that all package declarations align with the new hierarchy.
-- Confirmed that no behavior or UI logic was implemented, maintaining strict domain boundaries.
-- Ensure no existing legacy "battle logs" or "history" systems were modified.
+- Verified all file paths and package declarations.
+- Confirmed that event types are restricted to observable actions (e.g., `ShieldUsed`) rather than inferred mechanics.
+- Ensured `BattleTimelineBuilder` remains a pure placeholder to preserve the immutability design space.
 
 > [!TIP]
-> By separating the `BattleTimelineBuilder` from the immutable `BattleTimeline`, we've prepared the system for a reliable "ledger" pattern that distinguishes between the messy, real-time observation process and the final, reconciled record of truth.
+> By focusing on the "what was seen" (e.g., `FastMovePerformed`) rather than "what it means" (e.g., `EnergyGenerated`), the Battle Timeline serves as a reliable ledger that remains decoupled from the shifting game mechanics of Pokémon GO.

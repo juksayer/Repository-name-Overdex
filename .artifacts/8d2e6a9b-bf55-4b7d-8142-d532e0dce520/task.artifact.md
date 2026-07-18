@@ -1,11 +1,15 @@
-# Tasks - Battle Timeline Architecture
+# Tasks - Battle Timeline Expansion
 
-- [x] `[x]` Create package structure and base files in `com.example.overdex.battle.timeline`
-    - [x] Root: `BattleTimeline.kt`, `BattleTimelineBuilder.kt` (premature metadata classes removed)
-    - [x] `event/`: `TimelineEvent.kt`, `ObservationEvent.kt`
-    - [x] `confidence/`: `ConfidenceScore.kt`, `ConfidenceLevel.kt`, `ConfidenceMath.kt`
-    - [x] `evidence/`: `Evidence.kt`
-    - [x] `observer/`: `ObservationSource.kt`, `ObserverId.kt`
-    - [x] `serialization/`: `BattleTimelineSerializer.kt` (interface)
-- [x] `[x]` Verify package declarations and structure
+- [x] `[x]` Expand Battle Event Taxonomy in `com.example.overdex.battle.timeline.event`
+    - [x] `BattleLifecycleEvents.kt`: `BattleStarted`, `BattleEnded`
+    - [x] `CombatEvents.kt`: `FastMovePerformed`, `ChargedMoveStarted`, `ChargedMoveResolved`, `ShieldUsed`
+    - [x] `StatusEvents.kt`: `PokemonSwitched`, `PokemonFainted`
+- [x] `[x]` Create Evidence Implementations in `com.example.overdex.battle.timeline.evidence`
+    - [x] `EvidenceTypes.kt`: `VisualEvidence`, `AudioEvidence`, `StateEvidence`
+- [x] `[x]` Expand `ObservationSource` in `com.example.overdex.battle.timeline.observer`
+    - [x] Add `SCREEN_CAPTURE`, `AUDIO_CAPTURE`, `DROIDBALL`, `REMOTE_PARTNER`, `SYSTEM_INFERENCE`
+- [x] `[x]` Verify package structure and placeholder status of `BattleTimelineBuilder`
+- [x] `[x]` Build and Deploy
+    - [x] Run build: `./gradlew :app:assembleDebug` [SUCCESS]
+    - [x] Deploy to device [SUCCESS]
 - [x] `[x]` Update Walkthrough
