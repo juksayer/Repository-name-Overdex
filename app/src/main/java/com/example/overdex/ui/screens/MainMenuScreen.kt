@@ -23,10 +23,11 @@ enum class MainMenuPhase {
 fun MainMenuScreen(
     hasBootedInSession: Boolean,
     onBootComplete: () -> Unit,
-    selectedIndex: Int = 0,
-    nodes: List<DirectoryNode> = emptyList(),
+    visibleNodes: List<FlattenedNode> = emptyList(),
+    selectedPath: String = "",
     trainerIdentity: TrainerIdentity? = null,
-    onPhaseChange: (MainMenuPhase) -> Unit = {}
+    onPhaseChange: (MainMenuPhase) -> Unit = {},
+    onNodeSelected: (TreeNode) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -39,7 +40,7 @@ fun MainMenuScreen(
     SideEffect { onPhaseChange(phase) }
 
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
-    var menuRevealCount by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) nodes.size else 0) }
+    var menuRevealCount by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) visibleNodes.size else 0) }
 
     val bootLines = remember(trainerIdentity) {
         listOf(
@@ -73,7 +74,7 @@ fun MainMenuScreen(
             onPhaseChange(phase)
             
             // Sequential menu reveal
-            for (i in 1..nodes.size) {
+            for (i in 1..visibleNodes.size) {
                 menuRevealCount = i
                 val revealDelay = if (i == 1) 120L else 70L
                 delay(revealDelay)
@@ -87,7 +88,7 @@ fun MainMenuScreen(
         } else {
             // Already booted
             bootStep = bootLines.size
-            menuRevealCount = nodes.size
+            menuRevealCount = visibleNodes.size
             phase = MainMenuPhase.READY
             onPhaseChange(phase)
         }
@@ -125,13 +126,12 @@ fun MainMenuScreen(
             }
         } else {
             // OPERATIONAL Workspace (MENU_BUILD or READY)
-            DirectoryWorkspace(
-                path = "/",
-                nodes = nodes.take(menuRevealCount),
-                selectedIndex = if (phase == MainMenuPhase.READY) selectedIndex else -1,
+            DirectoryTree(
+                visibleNodes = visibleNodes.take(menuRevealCount),
+                selectedPath = if (phase == MainMenuPhase.READY) selectedPath else "",
                 onNodeSelected = { node ->
                     if (phase == MainMenuPhase.READY) {
-                        node.action?.invoke()
+                        onNodeSelected(node)
                     }
                 }
             )

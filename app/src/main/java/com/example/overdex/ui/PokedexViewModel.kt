@@ -20,6 +20,7 @@ import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.model.observation.ObservationSessionState
+import com.example.overdex.model.navigation.*
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -41,6 +42,64 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         primary = LocalSpriteProvider(application.assets),
         secondary = GithubSpriteProvider(),
     )
+
+    // Instrument Workspace
+    private val instrumentTree = InstrumentTree(
+        listOf(
+            DirectoryNode("specimens", listOf(
+                ActionNode("search", InstrumentCommand.OpenSearch),
+                DirectoryNode("collection", emptyList()), // Placeholder for now
+                ActionNode("register", InstrumentCommand.AddSpecimen)
+            )),
+            DirectoryNode("battle", listOf(
+                ActionNode("history", InstrumentCommand.OpenBattleHistory),
+                ActionNode("logs", InstrumentCommand.OpenBattleLogs)
+            )),
+            DirectoryNode("observation", listOf(
+                ActionNode("capture", InstrumentCommand.OpenCapture),
+                ActionNode("calibration", InstrumentCommand.OpenCalibration)
+            )),
+            DirectoryNode("trainer", listOf(
+                ActionNode("profile", InstrumentCommand.OpenProfile),
+                ActionNode("timeline", InstrumentCommand.OpenTimeline),
+                ActionNode("chat", InstrumentCommand.OpenChat)
+            )),
+            DirectoryNode("tools", listOf(
+                ActionNode("readme", InstrumentCommand.OpenReadme)
+            ))
+        )
+    )
+
+    private val _treeState = MutableStateFlow(instrumentTree.getState())
+    val treeState = _treeState.asStateFlow()
+
+    // Command handling
+    private val _pendingCommand = MutableSharedFlow<InstrumentCommand>(extraBufferCapacity = 1)
+    val pendingCommand = _pendingCommand.asSharedFlow()
+
+    fun handleUp() {
+        instrumentTree.moveSelection(-1)
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun handleDown() {
+        instrumentTree.moveSelection(1)
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun handleA() {
+        instrumentTree.executeSelected()?.let { command ->
+            _pendingCommand.tryEmit(command)
+        }
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun handleB() {
+        if (!instrumentTree.navigateBack()) {
+            // Root back action if needed, or ignore
+        }
+        _treeState.value = instrumentTree.getState()
+    }
 
     // App-session state for the boot sequence
     private val _hasBootedInSession = MutableStateFlow(value = false)

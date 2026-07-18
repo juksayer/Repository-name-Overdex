@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,22 +20,41 @@ import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
 import com.example.overdex.model.navigation.*
+import kotlinx.coroutines.delay
 
 @Composable
-fun DirectoryWorkspace(
-    path: String,
-    nodes: List<DirectoryNode>,
-    selectedIndex: Int,
-    onNodeSelected: (DirectoryNode) -> Unit
+fun DirectoryTree(
+    visibleNodes: List<FlattenedNode>,
+    selectedPath: String,
+    onNodeSelected: (TreeNode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        TerminalPathIndicator(path = path)
-        
-        nodes.forEachIndexed { index, node ->
+    // "Ownership of Time" - sequential reveal count
+    var revealCount by remember(visibleNodes) { mutableIntStateOf(0) }
+    
+    LaunchedEffect(visibleNodes) {
+        for (i in 1..visibleNodes.size) {
+            revealCount = i
+            delay(50L) // Deterministic reveal speed
+        }
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        visibleNodes.take(revealCount).forEach { flattened ->
+            val isSelected = selectedPath == flattened.path
+            val label = when (val node = flattened.node) {
+                is DirectoryNode -> {
+                    val prefix = if (flattened.isExpanded) "▼ " else "▶ "
+                    "$prefix${node.name}/"
+                }
+                is ActionNode -> node.name
+            }
+
             TerminalMenuOption(
-                label = node.displayName,
-                selected = selectedIndex == index,
-                onClick = { onNodeSelected(node) }
+                label = label,
+                selected = isSelected,
+                modifier = Modifier.padding(start = (flattened.depth * 16).dp),
+                onClick = { onNodeSelected(flattened.node) }
             )
         }
     }

@@ -299,3 +299,11 @@ The Observation Layer is the performance.
 Droidball simply makes that performance visible.
 
 Never allow a high-confidence recommendation to be built on low-confidence observations
+
+Principle
+
+We have confidence. We trade it for our users' trust.
+
+Explanation
+
+Confidence is the currency of Overdex. Every subsystem exists to increase confidence through observation, corroboration, provenance, and predictable behavior. That accumulated confidence is exchanged for the user's trust. If a feature cannot increase confidence, it should be reconsidered.
