@@ -1,6 +1,15 @@
 ODX-FI Service Drawer Specification v1
 Purpose
 
+The fiction serves the interaction. Never the other way around
+
+ODX-FI Design Rule #001
+
+Editorial devices always take precedence over physical realism.
+
+If violating physics improves clarity, consistency, or delight,
+the violation is correct.
+
 The Service Drawer conceals the LCD used during maintenance and Service Operations.
 
 During normal operation it remains closed, preserving the appearance of a dedicated handheld.

@@ -131,3 +131,13 @@ The Pokédex documents Pokémon. My Binders document your relationship with Pok�
 Recognizers should recover evidence, not reject imperfect evidence
 
 Learn before the battle. Observe during the battle. Remember after the battle. Improve before the next one.
+
+# Evidence
+
+Describe what exists.
+
+Do not invent filenames, screenshots, recordings, or artifacts.
+
+If evidence was generated, reference its actual filename and location.
+
+If evidence was not generated, explicitly state that verification is pending.

@@ -297,3 +297,5 @@ It does not belong.
 The Observation Layer is the performance.
 
 Droidball simply makes that performance visible.
+
+Never allow a high-confidence recommendation to be built on low-confidence observations
