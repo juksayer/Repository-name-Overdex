@@ -34,7 +34,6 @@ import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.screens.ResearcherModeOverlay
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -45,6 +44,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class OverlayState {
     COLLAPSED,
@@ -135,7 +135,7 @@ fun PokedexFrame(
 
     LaunchedEffect(unlockMessage) {
         if (unlockMessage != null) {
-            delay(30)
+            delay(30.milliseconds)
             unlockMessage = null
         }
     }
@@ -202,7 +202,7 @@ fun PokedexFrame(
             Spacer(modifier = Modifier.width(16.dp))
 
             // Refined hardware instrumentation prototype: 5s breathing cycle
-            BreathingLED(Color.Red, 5000)
+            BreathingLED(Color.Red, cycleDurationMillis = 5000)
         }
 
         // Main Screen Area
@@ -550,7 +550,7 @@ fun FilterSettingsOverlay(
 
             if (isResearcherUnlocked) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Divider(color = TerminalPurple.copy(alpha = 0.3f))
+                HorizontalDivider(color = TerminalPurple.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
@@ -815,8 +815,8 @@ fun ServiceControls(
 @Composable
 fun BreathingLED(
     color: Color,
-    cycleDurationMillis: Int = 4000,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    cycleDurationMillis: Int = 4000
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "breathing_led")
     val progress by infiniteTransition.animateFloat(
@@ -857,18 +857,6 @@ fun BreathingLED(
                     style = Stroke(width = 1.dp.toPx())
                 )
             }
-    )
-}
-
-@Composable
-fun LightDot(color: Color) {
-    Box(
-        modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .size(16.dp)
-            .clip(CircleShape)
-            .background(color)
-            .border(1.dp, Color.Black, CircleShape)
     )
 }
 

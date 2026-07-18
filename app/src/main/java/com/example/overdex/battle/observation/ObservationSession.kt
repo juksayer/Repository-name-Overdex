@@ -6,9 +6,9 @@ package com.example.overdex.battle.observation
  * reconciled into a BattleTimeline through the observation pipeline.
  */
 class ObservationSession(
-    val sessionId: String,
+    @Suppress("unused") val sessionId: String,
     val state: ObservationSessionState = ObservationSessionState.CREATED,
-    val workspace: ObservationWorkspace = ObservationWorkspace()
+    val workspace: ObservationWorkspace = ObservationWorkspace(),
 ) {
     /**
      * Submits a transient observation to the session workspace.

@@ -1,8 +1,7 @@
-# Tasks - Manual Observation Source
+# Tasks - Low-Risk Hygiene
 
-- [x] `[x]` Setup Debug Directory Structure
-- [x] `[x]` Implement `ManualObservationSource.kt`
-- [x] `[x]` Implement `ObservationFactory.kt`
-- [x] `[x]` Implement `ObservationPipelineDemo.kt`
-- [x] `[x]` Verify Build and Pipeline Execution
-- [x] `[x]` Update Walkthrough
+- [x] `[x]` Clean up `PokedexComponents.kt`
+- [x] `[x]` Clean up `PokedexViewModel.kt`
+- [x] `[x]` Clean up Battle Domain files (`ObservationSession.kt`, `BattleTimeline.kt`)
+- [x] `[x]` General formatting and consistency check
+- [x] `[x]` Final build verification

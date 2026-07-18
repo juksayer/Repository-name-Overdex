@@ -7,5 +7,5 @@ import com.example.overdex.battle.timeline.event.TimelineEvent
  * Represents an immutable ledger of events captured during a single battle session.
  */
 class BattleTimeline(
-    val events: List<TimelineEvent>
+    val events: List<TimelineEvent>,
 )

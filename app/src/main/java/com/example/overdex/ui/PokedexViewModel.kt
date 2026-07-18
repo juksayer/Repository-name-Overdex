@@ -34,16 +34,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _searchRequest = MutableStateFlow(SearchRequest())
     val searchRequest = _searchRequest.asStateFlow()
 
-    private val _observationSessionState = MutableStateFlow(ObservationSessionState.IDLE)
+    private val _observationSessionState = MutableStateFlow(value = ObservationSessionState.IDLE)
     val observationSessionState = _observationSessionState.asStateFlow()
 
     val spriteProvider: SpriteProvider = FallbackSpriteProvider(
         primary = LocalSpriteProvider(application.assets),
-        secondary = GithubSpriteProvider()
+        secondary = GithubSpriteProvider(),
     )
 
     // App-session state for the boot sequence
-    private val _hasBootedInSession = MutableStateFlow(false)
+    private val _hasBootedInSession = MutableStateFlow(value = false)
     val hasBootedInSession = _hasBootedInSession.asStateFlow()
 
     fun markBooted() {
@@ -76,16 +76,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             Log.d("STARTUP", "1: ViewModel init")
 
             // Battle Timeline Milestone Proof
-            val proofTimeline = com.example.overdex.model.BattleTimeline()
-            proofTimeline.record(com.example.overdex.model.BattleEvent(type = com.example.overdex.model.BattleEventType.BATTLE_STARTED))
+            val proofTimeline = BattleTimeline()
+            proofTimeline.record(BattleEvent(type = BattleEventType.BATTLE_STARTED))
             proofTimeline.record(
-                com.example.overdex.model.BattleEvent(
-                    type = com.example.overdex.model.BattleEventType.POKEMON_IDENTIFIED,
-                    actor = com.example.overdex.model.BattleActor.ENEMY,
+                BattleEvent(
+                    type = BattleEventType.POKEMON_IDENTIFIED,
+                    actor = BattleActor.ENEMY,
                     pokemonId = 6,
                 )
             )
-            proofTimeline.record(com.example.overdex.model.BattleEvent(type = com.example.overdex.model.BattleEventType.BATTLE_ENDED))
+            proofTimeline.record(BattleEvent(type = BattleEventType.BATTLE_ENDED))
 
             val gameMasterText = gameMasterLoader.loadRawJson()
             println("GameMaster length = ${gameMasterText.length}")
@@ -166,7 +166,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         ?: listOf("Normal")
                 val spriteUrl = spriteProvider.getSpriteUrl(id = id)
 
-                if (id == 152 || id == 249 || id == 445 || id == 1000) {
+                if ((id == 152) || (id == 249) || (id == 445) || (id == 1000)) {
                     Log.d(
                         "TYPE_DEBUG",
                         "#$id importedPokemon=${importedPokemon != null} rawTypes=$rawTypes"
@@ -342,16 +342,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             _searchRequest.value.copy(
                 type = type
             )
-    }
-
-    fun startDroidBallService() {
-        _observationSessionState.value = ObservationSessionState.SERVICE_ACTIVE
-    }
-
-    fun stopDroidBallService() {
-        if (_observationSessionState.value == ObservationSessionState.SERVICE_ACTIVE) {
-            _observationSessionState.value = ObservationSessionState.IDLE
-        }
     }
 
     private val pokemonNameCache = mutableMapOf<Int, String>()
