@@ -26,6 +26,7 @@ import com.example.overdex.data.*
 import com.example.overdex.model.*
 import com.example.overdex.model.observation.ObservationSessionState
 import kotlinx.coroutines.launch
+import com.example.overdex.model.navigation.*
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
@@ -137,14 +138,15 @@ fun
     ) {
         composable("main_menu") {
             var selectedIndex by remember { mutableIntStateOf(0) }
+            var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
 
-            val options = remember {
+            val nodes = remember {
                 listOf(
-                    MenuOption("overdex", { navController.navigate("list") }),
-                    MenuOption("roster", { navController.navigate("roster_menu") }),
-                    MenuOption("capture test", { navController.navigate("capture_verification") }),
-                    MenuOption("trainer profile", { navController.navigate("trainer_profile") }),
-                    MenuOption("readme", { navController.navigate("readme") })
+                    DirectoryNode("specimens", NodeKind.DIRECTORY, action = { navController.navigate("specimens") }),
+                    DirectoryNode("battle", NodeKind.DIRECTORY, action = { navController.navigate("battle") }),
+                    DirectoryNode("observation", NodeKind.DIRECTORY, action = { navController.navigate("observation") }),
+                    DirectoryNode("trainer", NodeKind.DIRECTORY, action = { navController.navigate("trainer") }),
+                    DirectoryNode("tools", NodeKind.DIRECTORY, action = { navController.navigate("tools") })
                 )
             }
 
@@ -154,16 +156,24 @@ fun
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onUp = {
-                    if (selectedIndex > 0) selectedIndex--
+                    if (phase == MainMenuPhase.READY && selectedIndex > 0) {
+                        selectedIndex--
+                    }
                 },
                 onDown = {
-                    if (selectedIndex < options.size - 1) selectedIndex++
+                    if (phase == MainMenuPhase.READY && selectedIndex < nodes.size - 1) {
+                        selectedIndex++
+                    }
                 },
                 onA = {
-                    options[selectedIndex].onActivate()
+                    if (phase == MainMenuPhase.READY) {
+                        nodes[selectedIndex].action?.invoke()
+                    }
                 },
                 onStart = {
-                    options[selectedIndex].onActivate()
+                    if (phase == MainMenuPhase.READY) {
+                        nodes[selectedIndex].action?.invoke()
+                    }
                 },
                 onSelect = { /* Reserved */ },
                 onB = { /* No action on root screen */ },
@@ -173,8 +183,113 @@ fun
                     hasBootedInSession = hasBootedInSession,
                     onBootComplete = { viewModel.markBooted() },
                     selectedIndex = selectedIndex,
-                    options = options,
-                    trainerIdentity = trainerIdentity
+                    nodes = nodes,
+                    trainerIdentity = trainerIdentity,
+                    onPhaseChange = { phase = it }
+                )
+            }
+        }
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
                 )
             }
         }
@@ -197,6 +312,110 @@ fun
                 )
             }
         }
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
         composable("battle_log") {
             PokedexFrame(
                 showBattleOverlay = false,
@@ -211,6 +430,110 @@ fun
                     battleMemory = battleMemory,
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
                 )
             }
         }
@@ -263,13 +586,117 @@ fun
                 )
             }
         }
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
         composable("capture_verification") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
             CaptureVerificationScreen(
                 viewModel = viewModel,
                 collectionViewModel = collectionViewModel,
                 onSaveSuccess = { id ->
-                    navController.navigate("roster/specimen_detail/$id")
+                    navController.navigate("specimens/detail/$id")
                 },
                 onBack = { navController.popBackStack() }
             )
@@ -397,6 +824,110 @@ fun
                 )
             }
         }
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
+        }
         composable("collection") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
             MyCollectionScreen(
@@ -435,17 +966,15 @@ fun
                 onCancel = { navController.popBackStack() }
             )
         }
-        composable("roster_menu") {
+        composable("specimens") {
             var selectedIndex by remember { mutableIntStateOf(0) }
-            val options = listOf(
-                "specimens",
-                "registration assistance",
-                "register specimen",
-                "teams",
-                "leagues",
-                "trained teammates",
-                "untrained teammates"
-            )
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("search", NodeKind.DIRECTORY, action = { navController.navigate("list") }),
+                    DirectoryNode("collection", NodeKind.DIRECTORY, action = { navController.navigate("specimens/collection") }),
+                    DirectoryNode("register", NodeKind.ACTION, action = { navController.navigate("add_pokemon_wizard") })
+                )
+            }
 
             PokedexFrame(
                 showBattleOverlay = false,
@@ -453,96 +982,133 @@ fun
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onUp = { if (selectedIndex > 0) selectedIndex-- },
-                onDown = { if (selectedIndex < options.size - 1) selectedIndex++ },
-                onA = {
-                    val route = when (selectedIndex) {
-                        0 -> "roster/specimens"
-                        1 -> "add_pokemon_wizard"
-                        2 -> "roster/register_specimen"
-                        3 -> "roster/teams"
-                        4 -> "roster/leagues"
-                        5 -> "roster/trained_teammates"
-                        6 -> "roster/untrained_teammates"
-                        else -> "roster_menu"
-                    }
-                    navController.navigate(route)
-                },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
                 onB = { navController.popBackStack() },
-                onStart = { /* Same as A */ },
+                onStart = { nodes[selectedIndex].action?.invoke() },
             ) { _ ->
-                RosterMenuScreen(
+                DirectoryScreen(
+                    path = "/specimens/",
                     selectedIndex = selectedIndex,
-                    onNavigate = { route -> navController.navigate(route) },
-                    onBack = { navController.popBackStack() }
+                    nodes = nodes
                 )
             }
         }
-        composable("roster/register_specimen") {
-            ModuleScreen(
-                title = "Register Specimen",
-                status = ModuleStatus.EXPERIMENTAL,
-                description = "Manual registration interface placeholder.",
-                onBack = { navController.popBackStack() },
+        composable("battle") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("history", NodeKind.DIRECTORY, action = { navController.navigate("battle_history") }),
+                    DirectoryNode("logs", NodeKind.DIRECTORY, action = { navController.navigate("battle_log") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/battle/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
         }
-        composable("roster/teams") {
-            ModuleScreen(
-                title = "Teams",
-                status = ModuleStatus.OFFLINE,
-                description = "Team management and organization placeholder.",
-                onBack = { navController.popBackStack() },
+        composable("observation") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("capture", NodeKind.ACTION, action = { navController.navigate("capture_verification") }),
+                    DirectoryNode("calibration", NodeKind.ACTION, action = { navController.navigate("calibration") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/observation/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
         }
-        composable("roster/leagues") {
-            ModuleScreen(
-                title = "Leagues",
-                status = ModuleStatus.OFFLINE,
-                description = "League participation and tracking placeholder.",
-                onBack = { navController.popBackStack() },
+        composable("trainer") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("profile", NodeKind.ACTION, action = { navController.navigate("trainer_profile") }),
+                    DirectoryNode("timeline", NodeKind.ACTION, action = { navController.navigate("shared_timeline") }),
+                    DirectoryNode("chat", NodeKind.ACTION, action = { navController.navigate("private_chat") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/trainer/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
         }
-        composable("roster/trained_teammates") {
-            ModuleScreen(
-                title = "Trained Teammates",
-                status = ModuleStatus.EXPERIMENTAL,
-                description = "Filtered view for battle-ready specimens.",
-                onBack = { navController.popBackStack() },
+        composable("tools") {
+            var selectedIndex by remember { mutableIntStateOf(0) }
+            val nodes = remember {
+                listOf(
+                    DirectoryNode("readme", NodeKind.ACTION, action = { navController.navigate("readme") })
+                )
+            }
+            PokedexFrame(
+                showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
+                onFilterSettingsChange = { filterSettings = it },
+                onUp = { if (selectedIndex > 0) selectedIndex-- },
+                onDown = { if (selectedIndex < nodes.size - 1) selectedIndex++ },
+                onA = { nodes[selectedIndex].action?.invoke() },
+                onB = { navController.popBackStack() },
+                onStart = { nodes[selectedIndex].action?.invoke() },
+            ) { _ ->
+                DirectoryScreen(
+                    path = "/tools/",
+                    selectedIndex = selectedIndex,
+                    nodes = nodes
+                )
+            }
         }
-        composable("roster/untrained_teammates") {
-            ModuleScreen(
-                title = "Untrained Teammates",
-                status = ModuleStatus.EXPERIMENTAL,
-                description = "Filtered view for specimens requiring training.",
-                onBack = { navController.popBackStack() },
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
-        }
-        composable("roster/specimens") {
+        composable("specimens/collection") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
             SpecimensScreen(
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
-                onItemClick = { id -> navController.navigate("roster/specimen_detail/$id") },
+                onItemClick = { id -> navController.navigate("specimens/detail/$id") },
                 onBack = { navController.popBackStack() }
             )
         }
         composable(
-            route = "roster/specimen_detail/{id}",
+            route = "specimens/detail/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id") ?: ""
@@ -551,12 +1117,12 @@ fun
                 ownedId = id,
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
-                onEdit = { ownedId -> navController.navigate("roster/edit_specimen/$ownedId") },
+                onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
                 onBack = { navController.popBackStack() }
             )
         }
         composable(
-            route = "roster/edit_specimen/{id}",
+            route = "specimens/edit/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id") ?: ""

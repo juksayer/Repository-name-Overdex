@@ -5,30 +5,41 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.components.*
-import com.example.overdex.ui.theme.TerminalDimGreen
+import com.example.overdex.ui.theme.*
 import com.example.overdex.model.TrainerIdentity
+import com.example.overdex.model.navigation.*
 import kotlinx.coroutines.delay
 
-data class MenuOption(
-    val label: String,
-    val onActivate: () -> Unit,
-    val isEnabled: Boolean = true
-)
+enum class MainMenuPhase {
+    BOOT,
+    MENU_BUILD,
+    READY
+}
 
 @Composable
 fun MainMenuScreen(
     hasBootedInSession: Boolean,
     onBootComplete: () -> Unit,
     selectedIndex: Int = 0,
-    options: List<MenuOption> = emptyList(),
-    trainerIdentity: TrainerIdentity? = null
+    nodes: List<DirectoryNode> = emptyList(),
+    trainerIdentity: TrainerIdentity? = null,
+    onPhaseChange: (MainMenuPhase) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
     // Local state for the sequential lines
+    var phase by remember(hasBootedInSession) {
+        mutableStateOf(if (hasBootedInSession) MainMenuPhase.READY else MainMenuPhase.BOOT)
+    }
+    
+    // Notify parent of initial phase
+    SideEffect { onPhaseChange(phase) }
+
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
+    var menuRevealCount by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) nodes.size else 0) }
 
     val bootLines = remember(trainerIdentity) {
         listOf(
@@ -40,60 +51,90 @@ fun MainMenuScreen(
             "loading move database................ [335]",
             "loading type effectiveness........... [ok]",
             "overdex ready",
-            "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "TheRealestSquid"}",
-            "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "737032186666"}",
-            "",
         )
     }
 
     LaunchedEffect(hasBootedInSession) {
         if (!hasBootedInSession) {
-            // 1. Sequential Reveal
+            // 1. BOOT Phase
+            phase = MainMenuPhase.BOOT
+            onPhaseChange(phase)
             for (i in 1..bootLines.size) {
                 bootStep = i
-                
-                // Trigger onBootComplete immediately after the final line is appended
-                if (i == bootLines.size) {
-                    onBootComplete()
-                }
-
                 val baseDelay = if (i < 3) 400L else 100L
                 delay(baseDelay)
             }
+
+            // Short pause on "OVERDEX READY"
+            delay(200L)
+
+            // 2. CLEAR Transition & MENU_BUILD Phase
+            phase = MainMenuPhase.MENU_BUILD
+            onPhaseChange(phase)
+            
+            // Sequential menu reveal
+            for (i in 1..nodes.size) {
+                menuRevealCount = i
+                val revealDelay = if (i == 1) 120L else 70L
+                delay(revealDelay)
+            }
+
+            // Final intentional pause before READY
+            delay(200L)
+            phase = MainMenuPhase.READY
+            onPhaseChange(phase)
+            onBootComplete()
         } else {
-            // If already booted, ensure menu is visible instantly
+            // Already booted
             bootStep = bootLines.size
+            menuRevealCount = nodes.size
+            phase = MainMenuPhase.READY
+            onPhaseChange(phase)
         }
     }
 
     TerminalScreen {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-        ) {
-            bootLines.take(bootStep).forEach { line ->
-                TerminalText(
-                    text = line,
-                    color = TerminalDimGreen,
-                    fontSize = 12.sp
-                )
-            }
-
-            if (bootStep >= bootLines.size) {
-                TerminalHeader(text = "system check")
-
-                TerminalSection(title = "modules", spacing = 0) {
-                    options.forEachIndexed { index, option ->
-                        TerminalMenuOption(
-                            label = option.label,
-                            selected = selectedIndex == index
-                        ) {
-                            option.onActivate()
-                        }
-                    }
+        if (phase == MainMenuPhase.BOOT) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+            ) {
+                bootLines.take(bootStep).forEach { line ->
+                    TerminalText(
+                        text = line,
+                        color = TerminalDimGreen,
+                        fontSize = 12.sp
+                    )
+                }
+                
+                // Show trainer info only during boot diagnostics
+                if (bootStep >= bootLines.size) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TerminalText(
+                        text = "TRAINER: ${trainerIdentity?.displayName?.uppercase() ?: "THEREALESTSQUID"}",
+                        color = TerminalDimGreen,
+                        fontSize = 12.sp
+                    )
+                    TerminalText(
+                        text = "ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "737032186666"}",
+                        color = TerminalDimGreen,
+                        fontSize = 12.sp
+                    )
                 }
             }
+        } else {
+            // OPERATIONAL Workspace (MENU_BUILD or READY)
+            DirectoryWorkspace(
+                path = "/",
+                nodes = nodes.take(menuRevealCount),
+                selectedIndex = if (phase == MainMenuPhase.READY) selectedIndex else -1,
+                onNodeSelected = { node ->
+                    if (phase == MainMenuPhase.READY) {
+                        node.action?.invoke()
+                    }
+                }
+            )
         }
     }
 }

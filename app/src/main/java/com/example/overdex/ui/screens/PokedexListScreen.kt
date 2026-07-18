@@ -105,8 +105,10 @@ fun PokedexListScreen(
         viewModel = viewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
+            TerminalPathIndicator(path = "/specimens/search/")
+            
             if (keyboardController.isVisible) {
-                TerminalHeader("input module: search")
+                TerminalHeader("input module")
                 SearchBar(query = searchQuery, selected = false)
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -185,7 +187,7 @@ fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> 
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (selected) "▶" else " ",
+                text = if (selected) ">" else " ",
                 color = if (selected) TerminalBlack else TerminalGreen,
                 fontSize = 14.sp,
                 modifier = Modifier.width(20.dp)

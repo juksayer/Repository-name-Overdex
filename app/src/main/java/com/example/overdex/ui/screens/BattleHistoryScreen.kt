@@ -30,7 +30,7 @@ fun BattleHistoryScreen(
     val history = remember { repository.getHistory() }
 
     TerminalScreen {
-        TerminalHeader("battle.history")
+        TerminalPathIndicator(path = "/battle/history/")
         
         if (history.isEmpty()) {
             Spacer(modifier = Modifier.height(24.dp))

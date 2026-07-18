@@ -90,7 +90,7 @@ fun QrScannerScreen(
         ) { _ ->
             TerminalScreen {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    TerminalHeader(text = "scan trainer qr")
+                    TerminalPathIndicator(path = "/trainer/partner/scan")
                     
                     if (hasCameraPermission) {
                         Box(

@@ -14,6 +14,8 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.PokedexViewModel
 
+import com.example.overdex.ui.components.*
+
 @Composable
 fun ReadmeScreen(
     filterSettings: FilterSettings,
@@ -44,10 +46,14 @@ fun ReadmeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TerminalPathIndicator(path = "/tools/readme")
+            
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = pages[currentPage].title,
                     color = TerminalGreen,
@@ -63,12 +69,17 @@ fun ReadmeScreen(
             }
             
             // Current page number display (e.g. 1/3)
-            Text(
-                text = "${currentPage + 1}/${pages.size}",
-                color = TerminalDimGreen,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "${currentPage + 1}/${pages.size}",
+                    color = TerminalDimGreen,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
         }
     }
 }

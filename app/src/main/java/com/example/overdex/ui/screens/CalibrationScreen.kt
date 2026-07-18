@@ -16,14 +16,18 @@ import com.example.overdex.CalibrationRegion
 import com.example.overdex.ui.components.CalibrationMode
 import com.example.overdex.ui.components.DPad
 
+import com.example.overdex.ui.components.*
+
 @Composable
 fun CalibrationScreen(
     calibrationManager: CalibrationManager
 ) {
-
-    var selectedRegion by remember {
-        mutableStateOf(CalibrationRegion.ENEMY_NAME)
-    }
+    TerminalScreen {
+        TerminalPathIndicator(path = "/observation/calibration")
+        
+        var selectedRegion by remember {
+            mutableStateOf(CalibrationRegion.ENEMY_NAME)
+        }
 
     var selectedMode by remember {
         mutableStateOf(CalibrationMode.POSITION)
@@ -220,4 +224,5 @@ fun CalibrationScreen(
             Text("LOAD")
         }
     }
+}
 }

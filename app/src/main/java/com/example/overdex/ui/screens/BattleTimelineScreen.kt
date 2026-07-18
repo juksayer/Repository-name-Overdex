@@ -25,7 +25,7 @@ fun BattleTimelineScreen(
     val startTime = battleMemory.startTime
 
     TerminalScreen {
-        TerminalHeader("battle.log")
+        TerminalPathIndicator(path = "/battle/logs/")
         TerminalText(text = "session_history: active", color = TerminalDimGreen)
         
         Spacer(modifier = Modifier.height(16.dp))

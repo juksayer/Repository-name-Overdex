@@ -10,7 +10,7 @@ import java.util.UUID
 
 /**
  * A Registration Session groups one or more observations into a single Specimen
- * before it is committed to the Roster.
+ * before it is committed to the specimen collection.
  */
 data class RegistrationSession(
     val id: String = UUID.randomUUID().toString(),

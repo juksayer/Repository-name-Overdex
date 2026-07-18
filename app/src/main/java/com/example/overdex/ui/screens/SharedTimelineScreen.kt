@@ -42,9 +42,7 @@ fun SharedTimelineScreen(
     ) { _ ->
         TerminalScreen {
             Column(modifier = Modifier.fillMaxSize()) {
-                TerminalHeader(
-                    text = partnerIdentity?.displayName ?: "shared timeline"
-                )
+                TerminalPathIndicator(path = "/trainer/timeline")
                 
                 Spacer(modifier = Modifier.height(16.dp))
 

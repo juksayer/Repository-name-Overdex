@@ -19,6 +19,28 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
+import com.example.overdex.model.navigation.*
+
+@Composable
+fun DirectoryWorkspace(
+    path: String,
+    nodes: List<DirectoryNode>,
+    selectedIndex: Int,
+    onNodeSelected: (DirectoryNode) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        TerminalPathIndicator(path = path)
+        
+        nodes.forEachIndexed { index, node ->
+            TerminalMenuOption(
+                label = node.displayName,
+                selected = selectedIndex == index,
+                onClick = { onNodeSelected(node) }
+            )
+        }
+    }
+}
+
 @Composable
 fun TerminalScreen(
     content: @Composable ColumnScope.() -> Unit
@@ -31,6 +53,16 @@ fun TerminalScreen(
     ) {
         content()
     }
+}
+
+@Composable
+fun TerminalPathIndicator(path: String) {
+    Text(
+        text = path,
+        color = TerminalDimGreen,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
 }
 
 @Composable
@@ -70,7 +102,6 @@ fun TerminalMenuOption(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(if (selected) TerminalGreen else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -78,8 +109,8 @@ fun TerminalMenuOption(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = if (selected) "▶ $label" else "  $label",
-                color = if (selected) TerminalBlack else TerminalGreen,
+                text = if (selected) "> $label" else "  $label",
+                color = if (selected) TerminalGreen else TerminalDimGreen,
                 fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
             )

@@ -46,13 +46,12 @@ fun SpecimensScreen(
         viewModel = pokedexViewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
-            TerminalHeader(text = "specimens")
+            TerminalPathIndicator(path = "/specimens/collection/")
 
             Text(
-                text = "${ownedPokemon.size} REGISTERED",
+                text = "${ownedPokemon.size} specimens found",
                 color = TerminalDimGreen,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
 
@@ -112,7 +111,7 @@ fun SpecimenListItem(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (selected) "▶" else " ",
+                    text = if (selected) ">" else " ",
                     color = if (selected) TerminalBlack else TerminalGreen,
                     fontSize = 14.sp,
                     modifier = Modifier.width(20.dp)

@@ -40,6 +40,7 @@ fun QrIdentityScreen(
         onB = onBack
     ) { _ ->
         TerminalScreen {
+            TerminalPathIndicator(path = "/trainer/profile/share")
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,

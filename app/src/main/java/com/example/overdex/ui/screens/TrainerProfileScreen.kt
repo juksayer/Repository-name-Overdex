@@ -197,7 +197,7 @@ fun TrainerProfileScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState)
             ) {
-                TerminalHeader(text = "trainer profile")
+                TerminalPathIndicator(path = "/trainer/profile")
                 
                 Spacer(modifier = Modifier.height(16.dp))
 

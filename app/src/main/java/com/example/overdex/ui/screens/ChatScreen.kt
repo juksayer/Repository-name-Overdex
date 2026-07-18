@@ -71,7 +71,7 @@ fun ChatScreen(
     ) { _ ->
         TerminalScreen {
             Column(modifier = Modifier.fillMaxSize()) {
-                TerminalHeader(text = partnerIdentity?.displayName?.let { " $it" } ?: "private chat")
+                TerminalPathIndicator(path = "/trainer/chat")
                 
                 Spacer(modifier = Modifier.height(8.dp))
 

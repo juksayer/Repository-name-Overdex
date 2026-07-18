@@ -1,73 +1,38 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.overdex.ui.components.*
+import com.example.overdex.model.navigation.*
 
 @Preview
 @Composable
-fun RosterMenuScreenPreview() {
-    RosterMenuScreen(
+fun DirectoryScreenPreview() {
+    DirectoryScreen(
+        path = "/specimens/",
         selectedIndex = 0,
-        onNavigate = {},
-        onBack = {}
+        nodes = listOf(
+            DirectoryNode("search", NodeKind.DIRECTORY),
+            DirectoryNode("collection", NodeKind.DIRECTORY),
+            DirectoryNode("register", NodeKind.ACTION)
+        )
     )
 }
 
 @Composable
-fun RosterMenuScreen(
+fun DirectoryScreen(
+    path: String,
     selectedIndex: Int,
-    onNavigate: (String) -> Unit,
-    onBack: () -> Unit
+    nodes: List<DirectoryNode>
 ) {
-    val options = remember {
-        listOf(
-            "specimens",
-            "registration assistance",
-            "register specimen",
-            "teams",
-            "leagues",
-            "trained teammates",
-            "untrained teammates"
-        )
-    }
-
     TerminalScreen {
-        TerminalHeader(text = "roster")
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TerminalSection(title = "navigation") {
-            options.forEachIndexed { index, label ->
-                TerminalMenuOption(
-                    label = label,
-                    selected = selectedIndex == index,
-                    onClick = { 
-                        val route = when (index) {
-                            0 -> "roster/specimens"
-                            1 -> "add_pokemon_wizard"
-                            2 -> "roster/register_specimen"
-                            3 -> "roster/teams"
-                            4 -> "roster/leagues"
-                            5 -> "roster/trained_teammates"
-                            6 -> "roster/untrained_teammates"
-                            else -> "roster_menu"
-                        }
-                        onNavigate(route)
-                    }
-                )
+        DirectoryWorkspace(
+            path = path,
+            nodes = nodes,
+            selectedIndex = selectedIndex,
+            onNodeSelected = { node ->
+                node.action?.invoke()
             }
-        }
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        TerminalButton(
-            text = "back",
-            onClick = onBack,
-            selected = false
         )
     }
 }
