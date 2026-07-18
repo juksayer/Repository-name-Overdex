@@ -1,15 +1,10 @@
-# Tasks - Battle Timeline Expansion
+# Tasks - Observation Session Foundation
 
-- [x] `[x]` Expand Battle Event Taxonomy in `com.example.overdex.battle.timeline.event`
-    - [x] `BattleLifecycleEvents.kt`: `BattleStarted`, `BattleEnded`
-    - [x] `CombatEvents.kt`: `FastMovePerformed`, `ChargedMoveStarted`, `ChargedMoveResolved`, `ShieldUsed`
-    - [x] `StatusEvents.kt`: `PokemonSwitched`, `PokemonFainted`
-- [x] `[x]` Create Evidence Implementations in `com.example.overdex.battle.timeline.evidence`
-    - [x] `EvidenceTypes.kt`: `VisualEvidence`, `AudioEvidence`, `StateEvidence`
-- [x] `[x]` Expand `ObservationSource` in `com.example.overdex.battle.timeline.observer`
-    - [x] Add `SCREEN_CAPTURE`, `AUDIO_CAPTURE`, `DROIDBALL`, `REMOTE_PARTNER`, `SYSTEM_INFERENCE`
-- [x] `[x]` Verify package structure and placeholder status of `BattleTimelineBuilder`
-- [x] `[x]` Build and Deploy
-    - [x] Run build: `./gradlew :app:assembleDebug` [SUCCESS]
-    - [x] Deploy to device [SUCCESS]
+- [x] `[x]` Create package structure and base files in `com.example.overdex.battle.observation`
+    - [x] `ObservationSession.kt`: Session ID, state, and `ObservationWorkspace` ownership.
+    - [x] `ObservationSessionState.kt`: Lifecycle enum (`CREATED`, `ACTIVE`, etc.).
+    - [x] `Observation.kt`: Transient observation model with `ObserverId`.
+    - [x] `ObservationWorkspace.kt`: Mutable collection for active battle memory.
+    - [x] `ObservationReconciler.kt`: Interface for timeline event transformation.
+- [x] `[x]` Verify package structure and compilation
 - [x] `[x]` Update Walkthrough

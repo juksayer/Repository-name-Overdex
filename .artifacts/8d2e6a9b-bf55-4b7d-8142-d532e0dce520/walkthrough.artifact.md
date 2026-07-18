@@ -1,28 +1,36 @@
-# Walkthrough - Battle Timeline Expansion
+# Walkthrough - Observation Session Foundation
 
-I have expanded the Battle Timeline architecture with concrete event types, evidence implementations, and a refined observer model. This establishes the domain vocabulary for Pokémon GO battles while strictly maintaining the "observation-first" architecture.
+I have established the core architecture for battle observation, creating a dedicated home for transient data and the process of reconciling it into the final ledger.
 
 ## Changes Made
 
-### Battle Event Taxonomy
-Established the core observable events for a battle session in `com.example.overdex.battle.timeline.event`:
-- **Lifecycle**: [BattleStarted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/BattleLifecycleEvents.kt), [BattleEnded](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/BattleLifecycleEvents.kt)
-- **Combat**: [FastMovePerformed](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ChargedMoveStarted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ChargedMoveResolved](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt), [ShieldUsed](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/CombatEvents.kt)
-- **Status**: [PokemonSwitched](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/StatusEvents.kt), [PokemonFainted](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/event/StatusEvents.kt)
+### Observation Domain
+Created a new top-level package `com.example.overdex.battle.observation` to house the lifecycle and workspace of an active battle observation:
+- **[ObservationSession](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt)**: The primary owner of a battle's observation lifecycle. It maintains the session identity and state.
+- **[ObservationSessionState](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSessionState.kt)**: Defines the lifecycle of the session itself (`CREATED`, `ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED`).
+- **[ObservationWorkspace](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationWorkspace.kt)**: Acts as the "active memory" for the session, providing a mutable space where raw evidence and transient observations are accumulated.
+- **[Observation](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/Observation.kt)**: A data-first representation of a single observed fact, including its source, evidence, and confidence.
 
-### Evidence Vocabulary
-Defined the primary source evidence types in `com.example.overdex.battle.timeline.evidence`:
-- **[EvidenceTypes.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/evidence/EvidenceTypes.kt)**: Introduced `VisualEvidence`, `AudioEvidence`, and `StateEvidence` to capture raw inputs from the device and application.
-
-### Observer Model Refinement
-- **[ObservationSource](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/observer/ObservationSource.kt)**: Expanded to explicitly include `SCREEN_CAPTURE`, `AUDIO_CAPTURE`, `DROIDBALL`, `REMOTE_PARTNER`, and `SYSTEM_INFERENCE`.
+### The Reconciliation Pipeline
+- **[ObservationReconciler](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationReconciler.kt)**: Established the interface responsible for bridging the gap between the "messy" real-time workspace and the immutable `BattleTimeline`.
 
 ## Verification Results
 
+### Automated Tests
+- Build successful: `./gradlew :app:assembleDebug`
+
 ### Manual Verification
-- Verified all file paths and package declarations.
-- Confirmed that event types are restricted to observable actions (e.g., `ShieldUsed`) rather than inferred mechanics.
-- Ensured `BattleTimelineBuilder` remains a pure placeholder to preserve the immutability design space.
+- Verified the directory structure:
+    ```
+    battle/
+      observation/
+        Observation.kt
+        ObservationReconciler.kt
+        ObservationSession.kt
+        ObservationSessionState.kt
+        ObservationWorkspace.kt
+    ```
+- Confirmed that `ObservationSession` only handles the observation process lifecycle, remaining decoupled from Pokémon GO game logic.
 
 > [!TIP]
-> By focusing on the "what was seen" (e.g., `FastMovePerformed`) rather than "what it means" (e.g., `EnergyGenerated`), the Battle Timeline serves as a reliable ledger that remains decoupled from the shifting game mechanics of Pokémon GO.
+> The separation of `ObservationWorkspace` from `BattleTimeline` ensures that we can freely revise, update, or discard transient data while a battle is in progress without corrupting the permanent record of truth.
