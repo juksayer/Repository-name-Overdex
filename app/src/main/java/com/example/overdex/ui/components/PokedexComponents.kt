@@ -13,6 +13,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowLeft
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -26,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,6 +65,110 @@ data class FilterSettings(
 )
 
 @Composable
+fun InstrumentButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    icon: ImageVector? = null,
+    color: Color = Color(0xFF1A1A1A), // Deep charcoal
+    enabled: Boolean = true
+) {
+    Box(
+        modifier = modifier
+            .size(width = 64.dp, height = 44.dp) // Industrial proportions
+            .clip(RoundedCornerShape(4.dp))
+            .background(color)
+            .drawBehind {
+                // Subtle top highlight
+                drawLine(
+                    color = Color.White.copy(alpha = 0.1f),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+                // Subtle bottom shadow
+                drawLine(
+                    color = Color.Black.copy(alpha = 0.4f),
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 2.dp.toPx()
+                )
+            }
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(24.dp)
+            )
+        } else if (label != null) {
+            Text(
+                text = label,
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+        }
+    }
+}
+
+@Composable
+fun InstrumentLCD(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+            .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+            .padding(8.dp)
+    ) {
+        // LCD Surface
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF121510)) // Dim greenish-black LCD
+                .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
+                .padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "== ODX-FI SERVICE ==",
+                color = TerminalPurple.copy(alpha = 0.5f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "READY",
+                color = TerminalGreen.copy(alpha = 0.7f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "OBSERVATION ENGINE",
+                color = TerminalGreen.copy(alpha = 0.5f),
+                fontSize = 10.sp,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+            Text(
+                text = "OFFLINE",
+                color = TerminalGreen.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+        }
+    }
+}
+
+@Composable
 fun PokedexFrame(
     onUp: () -> Unit = {},
     onDown: () -> Unit = {},
@@ -85,23 +194,12 @@ fun PokedexFrame(
     val currentState = instrumentState ?: vmState
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
-    val drawerOpen = currentState != ObservationSessionState.IDLE
 
+    // Permanent Front Panel doesn't use rail animations
     val crtPadding by animateDpAsState(
         targetValue = if (serviceMode) 0.dp else 32.dp,
         label = "crtPadding"
     )
-
-    val dpadOffset by animateDpAsState(
-        targetValue = if (serviceMode) (-24).dp else 0.dp,
-        label = "dpadOffset"
-    )
-
-    val buttonsOffset by animateDpAsState(
-        targetValue = if (serviceMode) (8).dp else 0.dp,
-        label = "buttonsOffset"
-    )
-
 
     val context = LocalContext.current
     val researcherManager = remember { ResearcherManager(context) }
@@ -211,7 +309,7 @@ fun PokedexFrame(
                 .fillMaxWidth()
                 .weight(1f)
                 .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                .padding(bottom = 24.dp, start = 12.dp, end = 12.dp)
+                .padding(bottom = 16.dp, start = 12.dp, end = 12.dp)
                 .padding(top = crtPadding)
         ) {
             Box(
@@ -313,74 +411,50 @@ fun PokedexFrame(
                 }
             }
         }
-// ----- Future Service Module Seam -----
 
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = Color.Black.copy(alpha = 0.35f)
-        )
-
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = Color.White.copy(alpha = 0.08f)
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        ServiceDrawer(drawerOpen)
-
-// Control Panel
-        if (serviceMode) {
-            ServiceControls(
-                onUp = { handleInput("UP"); onUp() },
-                onDown = { handleInput("DOWN"); onDown() },
-                onLeft = { handleInput("LEFT"); onLeft() },
-                onRight = { handleInput("RIGHT"); onRight() },
-                onA = { handleInput("A"); onA() },
-                onB = { handleInput("B"); onB() },
-                onSelect = { handleInput("SELECT"); onSelect() },
-                onStart = { handleInput("START"); onStart() },
-                modifier = Modifier.padding(top = 16.dp)
-            )
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        // Permanent Front Panel Assembly
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(Color.Black.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                .border(1.dp, Color.Black.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Navigation Column (Left)
+            Column(
+                modifier = Modifier.width(72.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceEvenly,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // D-Pad
-                DPad(
-                    modifier = Modifier.offset(x = dpadOffset),
-                    onUp = { handleInput("UP"); onUp() },
-                    onDown = { handleInput("DOWN"); onDown() },
-                    onLeft = { handleInput("LEFT"); onLeft() },
-                    onRight = { handleInput("RIGHT"); onRight() }
-                )
+                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = { handleInput("UP"); onUp() })
+                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = { handleInput("DOWN"); onDown() })
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = { handleInput("LEFT"); onLeft() })
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = { handleInput("RIGHT"); onRight() })
+            }
 
-                // Buttons Area
-                Column(
-                    modifier = Modifier.offset(x = buttonsOffset),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Row {
-                        ActionButton("B", Color.Black, onClick = { handleInput("B"); onB() })
-                        Spacer(modifier = Modifier.width(16.dp))
-                        ActionButton("A", Color.Black, onClick = { handleInput("A"); onA() })
-                    }
+            // Instrumentation Display (Center)
+            InstrumentLCD(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(horizontal = 8.dp)
+            )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Select/Start
-                    Row {
-                        PillButton("SELECT", onClick = { handleInput("SELECT"); onSelect() })
-                        Spacer(modifier = Modifier.width(8.dp))
-                        PillButton("START", onClick = { handleInput("START"); onStart() })
-                    }
-                }
+            // Action Column (Right)
+            Column(
+                modifier = Modifier.width(72.dp).fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceEvenly,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                InstrumentButton(label = "A", onClick = { handleInput("A"); onA() })
+                InstrumentButton(label = "B", onClick = { handleInput("B"); onB() })
+                InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() })
+                InstrumentButton(label = "START", onClick = { handleInput("START"); onStart() })
             }
         }
     }
@@ -605,210 +679,6 @@ fun SettingSlider(label: String, value: Float, min: Float, max: Float, onValueCh
                 inactiveTrackColor = TerminalDarkGreen
             )
         )
-    }
-}
-
-@Composable
-fun DPad(
-    onUp: () -> Unit,
-    onDown: () -> Unit,
-    onLeft: () -> Unit,
-    onRight: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(120.dp)
-            .padding(4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Horizontal Bar
-        Box(
-            modifier = Modifier
-                .width(112.dp)
-                .height(36.dp)
-                .background(Color.Black, RoundedCornerShape(4.dp))
-        )
-        // Vertical Bar
-        Box(
-            modifier = Modifier
-                .width(36.dp)
-                .height(112.dp)
-                .background(Color.Black, RoundedCornerShape(4.dp))
-        )
-
-        // Buttons with Press-and-Hold Repetition
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f).repeatableAction(onUp))
-            Row(Modifier.fillMaxWidth().weight(1f)) {
-                Box(Modifier.fillMaxHeight().weight(1f).repeatableAction(onLeft))
-                Spacer(Modifier.width(36.dp))
-                Box(Modifier.fillMaxHeight().weight(1f).repeatableAction(onRight))
-            }
-            Box(Modifier.fillMaxWidth().weight(1f).repeatableAction(onDown))
-        }
-    }
-}
-
-@Composable
-fun ActionButton(label: String, color: Color, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(color)
-                .clickable { onClick() }
-                .border(2.dp, Color.DarkGray, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            // Content if needed
-        }
-        Text(text = label, color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun PillButton(label: String, onClick: () -> Unit = {}) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .width(40.dp)
-                .height(12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color.DarkGray)
-                .clickable { onClick() }
-        )
-        Text(text = label, color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun ServiceDrawer(isOpen: Boolean, modifier: Modifier = Modifier) {
-    val drawerHeight by animateDpAsState(
-        targetValue = if (isOpen) 72.dp else 6.dp, // 6dp height for the closed "face"
-        animationSpec = if (isOpen) {
-            spring(
-                dampingRatio = 0.5f, // Physical settling/rebound
-                stiffness = Spring.StiffnessLow // Slower, mechanical feel
-            )
-        } else {
-            // Closing is typically more deliberate/mechanical
-            tween(durationMillis = 400, easing = FastOutSlowInEasing)
-        },
-        label = "drawerHeight"
-    )
-
-    // Outer Seam (Recess in the device shell)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(drawerHeight)
-            .padding(horizontal = 70.dp)
-            .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(2.dp))
-            .padding(0.5.dp) // The physical gap (seam)
-    ) {
-        // Drawer Panel Face
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(1.dp))
-                .background(if (isOpen) PokedexGreen else Color.Black.copy(alpha = 0.12f))
-                .drawBehind {
-                    if (!isOpen) {
-                        // Top highlight (Light hitting the top chamfer/edge)
-                        drawLine(
-                            color = Color.White.copy(alpha = 0.08f),
-                            start = Offset(0f, 0.5.dp.toPx()),
-                            end = Offset(this.size.width, 0.5.dp.toPx()),
-                            strokeWidth = 1.dp.toPx()
-                        )
-                    }
-                }
-                .border(
-                    BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.15f)),
-                    RoundedCornerShape(1.dp)
-                )
-        ) {
-            if (!isOpen) {
-                // "PUSH" Embossed Marking
-                Text(
-                    "PUSH",
-                    fontSize = 4.sp,
-                    color = Color.Black.copy(alpha = 0.35f),
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 0.5.dp)
-                )
-
-                // Emergency release pinhole
-                Box(
-                    modifier = Modifier
-                        .padding(top = 1.dp, end = 2.dp)
-                        .size(1.2.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .border(0.2.dp, Color.White.copy(alpha = 0.1f), CircleShape)
-                        .align(Alignment.TopEnd)
-                )
-            } else {
-                // Interior of the drawer (Empty for now)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(4.dp)
-                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-                        .border(1.dp, Color.Black.copy(alpha = 0.1f), RoundedCornerShape(2.dp))
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ServiceControls(
-    onUp: () -> Unit,
-    onDown: () -> Unit,
-    onLeft: () -> Unit,
-    onRight: () -> Unit,
-    onA: () -> Unit,
-    onB: () -> Unit,
-    onSelect: () -> Unit,
-    onStart: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Left Column: Vertical Navigation Column
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            PillButton("UP", onUp)
-            PillButton("DOWN", onDown)
-            PillButton("LEFT", onLeft)
-            PillButton("RIGHT", onRight)
-        }
-
-        // Center Area: Unobstructed
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Right Column: Service Buttons
-        Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            PillButton("A", onA)
-            PillButton("B", onB)
-            PillButton("SELECT", onSelect)
-            PillButton("START", onStart)
-        }
     }
 }
 

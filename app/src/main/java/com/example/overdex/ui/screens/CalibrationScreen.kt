@@ -95,20 +95,23 @@ fun CalibrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
 
-        DPad(
-            onUp = {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Button(onClick = {
                 if (selectedMode == CalibrationMode.POSITION) moveUp() else increaseHeight()
-            },
-            onDown = {
-                if (selectedMode == CalibrationMode.POSITION) moveDown() else decreaseHeight()
-            },
-            onLeft = {
-                if (selectedMode == CalibrationMode.POSITION) moveLeft() else decreaseWidth()
-            },
-            onRight = {
-                if (selectedMode == CalibrationMode.POSITION) moveRight() else increaseWidth()
+            }) { Text("UP") }
+            Row {
+                Button(onClick = {
+                    if (selectedMode == CalibrationMode.POSITION) moveLeft() else decreaseWidth()
+                }) { Text("LEFT") }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    if (selectedMode == CalibrationMode.POSITION) moveRight() else increaseWidth()
+                }) { Text("RIGHT") }
             }
-        )
+            Button(onClick = {
+                if (selectedMode == CalibrationMode.POSITION) moveDown() else decreaseHeight()
+            }) { Text("DOWN") }
+        }
 
         Button(
             onClick = {
