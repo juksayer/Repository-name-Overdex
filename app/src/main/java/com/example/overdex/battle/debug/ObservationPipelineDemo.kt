@@ -15,15 +15,17 @@ object ObservationPipelineDemo {
     fun run() {
         Log.d(TAG, "Starting Observation Pipeline Demo...")
 
-        // 1. Setup Session and Builder
+        // 1. Setup Session and Dispatcher
         val session = ObservationSession(sessionId = "DEMO_SESSION_001")
         val builder = BattleTimelineBuilder()
-        val source = ManualObservationSource()
+        val dispatcher = ObservationDispatcher()
 
-        // 2. Emit Observations
-        Log.d(TAG, "Emitting observations...")
-        source.emit(ObservationFactory.createVisualObservation("UI_CAM", "uri://frames/001"), session)
-        source.emit(ObservationFactory.createStateObservation("SYS_INT", "BATTLE_STATE", "STARTED"), session)
+        // 2. Register and Start Observers
+        Log.d(TAG, "Configuring observers...")
+        dispatcher.register(DebugObserver())
+
+        Log.d(TAG, "Starting observers...")
+        dispatcher.startAll(session)
 
         Log.d(TAG, "Workspace contains ${session.workspace.observations.size} observations.")
 
@@ -49,6 +51,9 @@ object ObservationPipelineDemo {
         val timeline = builder.build()
 
         Log.d(TAG, "Final BattleTimeline contains ${timeline.events.size} events.")
+
+        // 5. Cleanup
+        dispatcher.stopAll()
         Log.d(TAG, "Demo completed successfully.")
     }
 }
