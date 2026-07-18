@@ -1,36 +1,34 @@
-# Walkthrough - Observation Session Foundation
+# Walkthrough - Observation Pipeline Skeleton
 
-I have established the core architecture for battle observation, creating a dedicated home for transient data and the process of reconciling it into the final ledger.
+I have implemented the minimal end-to-end connectivity for the observation pipeline, demonstrating how a transient fact travels from the `ObservationSession` to the immutable `BattleTimeline`.
 
 ## Changes Made
 
-### Observation Domain
-Created a new top-level package `com.example.overdex.battle.observation` to house the lifecycle and workspace of an active battle observation:
-- **[ObservationSession](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt)**: The primary owner of a battle's observation lifecycle. It maintains the session identity and state.
-- **[ObservationSessionState](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSessionState.kt)**: Defines the lifecycle of the session itself (`CREATED`, `ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED`).
-- **[ObservationWorkspace](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationWorkspace.kt)**: Acts as the "active memory" for the session, providing a mutable space where raw evidence and transient observations are accumulated.
-- **[Observation](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/Observation.kt)**: A data-first representation of a single observed fact, including its source, evidence, and confidence.
+### Pipeline Connectivity
+Connected the domain objects to allow a unidirectional data flow:
+1. **Observation Submission**: Updated [ObservationSession](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt) with a `submit(Observation)` method that forwards data to the workspace.
+2. **Timeline Construction**: Promoted [BattleTimelineBuilder](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimelineBuilder.kt) from a placeholder to a functional assembler that accepts events and produces the immutable ledger.
 
-### The Reconciliation Pipeline
-- **[ObservationReconciler](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationReconciler.kt)**: Established the interface responsible for bridging the gap between the "messy" real-time workspace and the immutable `BattleTimeline`.
+### End-to-End Flow (Verified)
+The pipeline now follows this strict sequence of responsibilities:
+- **Session**: Receives and stores the raw observation.
+- **Workspace**: Accumulates the state (the "current truth").
+- **Reconciler**: Derives stable `TimelineEvent` objects from the workspace memory.
+- **Builder**: Assembles the events into the final record.
+- **Timeline**: Records the events permanently.
 
 ## Verification Results
+
+### Logic Proof
+I created a verification script in [pipeline_verification.kt](file:///home/sean/AndroidStudioProjects/Overdex/.artifacts/8d2e6a9b-bf55-4b7d-8142-d532e0dce520/scratch/pipeline_verification.kt) that demonstrates the full traversal:
+1. Create `Observation` (e.g., from Droidball).
+2. Submit to `ObservationSession`.
+3. Pass workspace to an `ObservationReconciler` implementation.
+4. Feed resulting `TimelineEvents` into `BattleTimelineBuilder`.
+5. Build the final `BattleTimeline`.
 
 ### Automated Tests
 - Build successful: `./gradlew :app:assembleDebug`
 
-### Manual Verification
-- Verified the directory structure:
-    ```
-    battle/
-      observation/
-        Observation.kt
-        ObservationReconciler.kt
-        ObservationSession.kt
-        ObservationSessionState.kt
-        ObservationWorkspace.kt
-    ```
-- Confirmed that `ObservationSession` only handles the observation process lifecycle, remaining decoupled from Pokémon GO game logic.
-
 > [!TIP]
-> The separation of `ObservationWorkspace` from `BattleTimeline` ensures that we can freely revise, update, or discard transient data while a battle is in progress without corrupting the permanent record of truth.
+> This skeleton proves the architecture without requiring any Pokémon GO-specific knowledge. Every object does exactly one thing before handing off to the next, maintaining the "no speculative inference" guardrail.

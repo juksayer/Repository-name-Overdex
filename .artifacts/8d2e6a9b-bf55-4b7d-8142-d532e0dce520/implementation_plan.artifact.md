@@ -1,53 +1,44 @@
-# Implementation Plan - Observation Session Foundation (Refined)
+# Implementation Plan - Observation Pipeline Skeleton (Refined)
 
-This plan establishes the `ObservationSession` domain, which represents the mutable workspace for collecting and reconciling observations during an active battle. This layer sits between evidence collection and the immutable `BattleTimeline`.
+This plan establishes the minimal end-to-end observation pipeline, connecting the `ObservationSession` to the `BattleTimeline` while strictly separating event derivation (Reconciliation) from ledger construction (Builder).
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Minimal Observers**: I have removed the "observer list" from the initial session model to avoid speculative abstraction. We will track observation sources at the individual `Observation` level for now.
+> **Builder Responsibility**: `BattleTimelineBuilder` is no longer a placeholder. It now owns the responsibility of accepting derived events and constructing the immutable `BattleTimeline`.
 
 > [!NOTE]
-> **Workspace Scope**: `ObservationWorkspace` is designed to be the "source of current truth" for an active battle, prepared to eventually handle hypotheses and conflicts beyond simple observation storage.
+> **Reconciler Scope**: `ObservationReconciler` remains focused purely on deriving `TimelineEvent` objects from observations, returning a list of events rather than a finished timeline.
 
 ## Proposed Changes
 
-I will create a new package `com.example.overdex.battle.observation` to house the observation domain.
-
 ### `com.example.overdex.battle.observation`
 
-#### [NEW] [ObservationSession.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt)
-Represents an active observation workspace.
-- Holds session ID and current lifecycle state.
-- Owns an `ObservationWorkspace`. The resulting observations are eventually reconciled into a `BattleTimeline` through the observation pipeline.
+#### [MODIFY] [ObservationSession.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt)
+- Add `submit(observation: Observation)` method to forward observations to the owned `ObservationWorkspace`.
 
-#### [NEW] [ObservationSessionState.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSessionState.kt)
-Enum for the session lifecycle: `CREATED`, `ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED`.
+#### [MODIFY] [ObservationReconciler.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationReconciler.kt)
+- Maintain the current contract: `fun reconcile(workspace: ObservationWorkspace): List<TimelineEvent>`.
 
-#### [NEW] [Observation.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/Observation.kt)
-Represents a single transient observation before reconciliation.
-- Properties: timestamp, evidence collection, confidence score, and `ObserverId`.
+### `com.example.overdex.battle.timeline`
 
-#### [NEW] [ObservationWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationWorkspace.kt)
-The mutable "active memory" of the session. Initially a collection of observations, but structured to support future hypothesis and conflict management.
-
-#### [NEW] [ObservationReconciler.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationReconciler.kt)
-Interface defining the responsibility of transforming transient observations into immutable `TimelineEvent` objects.
-
-## Architectural Principles
-- **Separation of Concerns**: Observation logic is distinct from the immutable ledger (`BattleTimeline`).
-- **Responsibility-Driven API**: `ObservationReconciler` defines a clear transition point in the domain logic.
-- **Side-by-Side Evolution**: Built alongside existing code to allow for incremental migration.
+#### [MODIFY] [BattleTimelineBuilder.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/timeline/BattleTimelineBuilder.kt)
+- Implement `addEvent(event: TimelineEvent)` to accumulate derived events.
+- Implement `build(): BattleTimeline` to produce the final immutable record.
 
 ## Guardrails
-- **No Gameplay Logic**: No energy counting, fast move timing, or strategy recommendations.
-- **No Abstraction Bloat**: Removed observer lists and placeholder classes that don't have an immediate purpose.
-- **No Existing Model Edits**: Do not modify files in `com.example.overdex.model.observation`.
+- **Responsibility Isolation**: No object in this pipeline should infer more than its responsibility requires (Session stores, Workspace accumulates, Reconciler derives, Builder assembles, Timeline records).
+- **No Implementation Logic**: Reconciler implementations used for validation will be trivial.
+- **Side-Effect Free**: Submission of an observation does not trigger automatic reconciliation.
+- **Strict Boundaries**: The session does not know about the builder; the reconciler does not know about the finished timeline.
 
 ## Verification Plan
 
 ### Manual Verification
-- Verify the physical directory structure: `battle/observation/`.
-- Ensure all package declarations and imports are correct.
-- Confirm `BattleTimelineBuilder` and `TimelineEvent` are referenced according to the architectural flow.
+- I will create a temporary verification script in the `scratch/` directory to demonstrate the full pipeline:
+  1. Create `Observation`
+  2. `session.submit(observation)`
+  3. `reconciler.reconcile(session.workspace)` -> `List<TimelineEvent>`
+  4. `builder.addEvent(event)`
+  5. `builder.build()` -> `BattleTimeline`
 - Build the project to ensure no compilation errors: `./gradlew :app:assembleDebug`.

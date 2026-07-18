@@ -9,4 +9,11 @@ class ObservationSession(
     val sessionId: String,
     val state: ObservationSessionState = ObservationSessionState.CREATED,
     val workspace: ObservationWorkspace = ObservationWorkspace()
-)
+) {
+    /**
+     * Submits a transient observation to the session workspace.
+     */
+    fun submit(observation: Observation) {
+        workspace.add(observation)
+    }
+}
