@@ -1,0 +1,5 @@
+- [/] Refine `PresentationState.kt` (Semantic models & naming)
+- [ ] Refine `PresentationMapper.kt` (Mapping to new models)
+- [ ] Update `Droidball.kt` (Consume refined state)
+- [ ] Update `PokedexComponents.kt` (HUD updates)
+- [ ] Verify build and serialization readiness

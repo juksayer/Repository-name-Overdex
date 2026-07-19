@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,27 +16,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.overdex.EnemyPokemonMemory
-import com.example.overdex.model.DecisionAnalysis
-import com.example.overdex.model.RecommendedAction
-import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
-import com.example.overdex.ui.theme.TerminalPurple
 import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.SpriteProvider
+import com.example.overdex.presentation.*
 
 /**
  * A horizontal row of enemy Pokémon sprites, serving as a persistent memory of the opponent's team.
+ * Refactored to consume semantic [PresentationState] models.
  */
 @Composable
 fun EnemyTeamMemoryOverlay(
-    enemyTeam: List<EnemyPokemonMemory>,
-    decision: DecisionAnalysis? = null,
+    opponent: OpponentTeamPresentation,
+    tactical: TacticalPresentation? = null,
     spriteProvider: SpriteProvider = GithubSpriteProvider()
 ) {
     Row(
@@ -50,43 +44,49 @@ fun EnemyTeamMemoryOverlay(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // Strategic Indicator at the start
-        if (decision != null) {
-            DecisionIcon(decision)
+        if (tactical != null) {
+            DecisionIcon(tactical)
         }
         
         // Enemy Pokémon Blocks
-        enemyTeam.forEach { pokemon ->
-            EnemyPokemonBlock(pokemon, spriteProvider)
+        opponent.members.forEach { member ->
+            EnemyPokemonBlock(member, spriteProvider)
         }
     }
 }
 
 @Composable
-fun DecisionIcon(decision: DecisionAnalysis) {
-    val icon = when (decision.recommendedAction) {
-        RecommendedAction.SWITCH_NOW -> Icons.Default.Sync
-        RecommendedAction.FARM_ENERGY -> Icons.Default.Bolt
-        RecommendedAction.SHIELD_LIKELY_REQUIRED -> Icons.Default.Shield
-        RecommendedAction.STAY_AND_FIGHT -> Icons.Default.Check
+fun DecisionIcon(tactical: TacticalPresentation) {
+    val icon = when (tactical.primaryGuidance) {
+        TacticalAction.SWITCH_NOW -> Icons.Default.Sync
+        TacticalAction.FARM_ENERGY -> Icons.Default.Bolt
+        TacticalAction.SHIELD_LIKELY_REQUIRED -> Icons.Default.Shield
+        TacticalAction.STAY_AND_FIGHT -> Icons.Default.Check
         else -> Icons.Default.Info
+    }
+    
+    val tint = when (tactical.threat) {
+        TacticalAdvantage.HIGH -> Color.Red
+        TacticalAdvantage.MEDIUM -> Color.Yellow
+        else -> TerminalGreen
     }
     
     Icon(
         imageVector = icon,
         contentDescription = null,
-        tint = if (decision.isEnemyThreatening) Color.Red else TerminalGreen,
+        tint = tint,
         modifier = Modifier.size(16.dp)
     )
 }
 
 @Composable
 fun EnemyPokemonBlock(
-    pokemon: EnemyPokemonMemory,
+    member: EnemyMemberPresentation,
     spriteProvider: SpriteProvider = GithubSpriteProvider()
 ) {
     // Strategic Resolution: Resolve ID from species name if possible
-    // Note: In a future brick, EnemyPokemonMemory should store speciesId directly.
-    val speciesId = when (pokemon.species.lowercase()) {
+    // Note: In a future brick, EnemyMemberPresentation should provide speciesId.
+    val speciesId = member.speciesId ?: when (member.species.lowercase()) {
         "swampert" -> 260
         "talonflame" -> 663
         "azumarill" -> 184
@@ -95,8 +95,8 @@ fun EnemyPokemonBlock(
 
     val spriteUrl = spriteProvider.getSpriteUrl(id = speciesId)
 
-    val isFainted = !pokemon.alive
-    val isActive = pokemon.isActive && !isFainted
+    val isFainted = !member.isAlive
+    val isActive = member.isActive && !isFainted
 
     Box(
         modifier = Modifier
@@ -144,7 +144,7 @@ fun EnemyPokemonBlock(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth((pokemon.estimatedEnergy.coerceIn(0, 100)) / 100f)
+                        .fillMaxWidth(member.energyLevel)
                         .fillMaxHeight()
                         .background(if (isActive) Color.White else TerminalGreen)
                 )

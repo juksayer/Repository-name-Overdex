@@ -185,6 +185,7 @@ fun PokedexFrame(
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     instrumentState: ObservationSessionState? = null,
+    pipelineStatus: com.example.overdex.data.observation.PipelineStatus? = null,
     isLogoInteractive: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
@@ -249,6 +250,16 @@ fun PokedexFrame(
 
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
+
+    val presentationState = remember(currentState, pipelineStatus, battleMemory, currentMatchup, currentDecision) {
+        com.example.overdex.presentation.PresentationMapper.map(
+            instrumentState = currentState,
+            pipelineStatus = pipelineStatus,
+            battleMemory = battleMemory,
+            matchup = currentMatchup,
+            decision = currentDecision
+        )
+    }
 
     LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
@@ -341,7 +352,10 @@ fun PokedexFrame(
                 if (showBattleOverlay && serviceMode) {
                     Column {
                         // DroidBall (Service indicator and control)
-                        AndroidPokeballLogo(
+                        // Architecture: Droidball is a specialized observation-aware view of the logo.
+                        // When presentation state is present, we use Droidball to reflect the state.
+                        Droidball(
+                            presentationState = presentationState,
                             modifier = Modifier
                                 .size(40.dp)
                                 .pointerInput(Unit) {
@@ -359,16 +373,15 @@ fun PokedexFrame(
 
                         if (overlayState == OverlayState.EXPANDED) {
                             EnemyTeamMemoryOverlay(
-                                enemyTeam = battleMemory.enemyTeam,
-                                decision = currentDecision,
+                                opponent = presentationState.team.opponent,
+                                tactical = presentationState.tactical,
                                 spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
                             )
                             
                             // Live Move Panel - Displays moves for the active enemy
                             LiveMovePanel(
-                                activePokemon = battleMemory.enemyTeam.find { it.isActive },
-                                viewModel = viewModel,
-                                matchup = currentMatchup
+                                opponent = presentationState.team.opponent,
+                                tactical = presentationState.tactical
                             )
                         }
                     }

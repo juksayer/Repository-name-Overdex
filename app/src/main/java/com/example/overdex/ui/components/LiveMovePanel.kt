@@ -1,7 +1,6 @@
 package com.example.overdex.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -12,36 +11,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.EnemyPokemonMemory
-import com.example.overdex.model.Effectiveness
-import com.example.overdex.model.Move
-import com.example.overdex.model.Pokemon
-import com.example.overdex.model.MatchupAnalysis
-import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
-import com.example.overdex.ui.theme.TerminalPurple
+import com.example.overdex.presentation.*
 
 /**
  * A highly compressed move display focusing on type relationship and threat level.
+ * Refactored to consume semantic [PresentationState] models.
  */
 @Composable
 fun LiveMovePanel(
-    activePokemon: EnemyPokemonMemory?,
-    viewModel: PokedexViewModel?,
-    matchup: MatchupAnalysis? = null
+    opponent: OpponentTeamPresentation,
+    tactical: TacticalPresentation
 ) {
-    var pokemonData by remember { mutableStateOf<Pokemon?>(null) }
-
-    LaunchedEffect(activePokemon?.species) {
-        if (viewModel != null && activePokemon != null) {
-            pokemonData = viewModel.getPokemonByName(activePokemon.species)
-        } else {
-            pokemonData = null
-        }
-    }
-
-    if (activePokemon == null || pokemonData == null) return
+    if (opponent.activeSpecies == null) return
 
     Row(
         modifier = Modifier
@@ -52,51 +36,55 @@ fun LiveMovePanel(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Fast Move
-        pokemonData!!.fastMoves.firstOrNull()?.let { move ->
-            val effectiveness = matchup?.enemyFastMoveMatchup?.effectiveness ?: Effectiveness.NEUTRAL
-            CompactMoveIcon(move, effectiveness)
+        val fastMove = opponent.knownMoves.find { it.isFast }
+        if (fastMove != null) {
+            MoveIndicator(fastMove)
         }
-        
-        // Vertical Divider
-        Box(modifier = Modifier.width(0.5.dp).height(12.dp).background(TerminalDimGreen.copy(alpha = 0.3f)))
 
         // Charged Moves
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            pokemonData!!.chargedMoves.take(2).forEach { move ->
-                val effectiveness = matchup?.enemyChargedMoveMatchups?.find { it.moveName == move.name }?.effectiveness 
-                    ?: Effectiveness.NEUTRAL
-                CompactMoveIcon(move, effectiveness)
-            }
+        val chargedMoves = opponent.knownMoves.filter { !it.isFast }
+        chargedMoves.forEach { move ->
+            MoveIndicator(move)
+        }
+        
+        if (opponent.knownMoves.isEmpty()) {
+            Text(
+                text = "AWAITING MOVES",
+                color = TerminalDimGreen,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
         }
     }
 }
 
 @Composable
-fun CompactMoveIcon(move: Move, effectiveness: Effectiveness) {
-    Box(
-        modifier = Modifier
-            .background(
-                color = move.type.color.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(2.dp)
-            )
-            .border(
-                width = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) 1.dp else 0.5.dp,
-                color = if (effectiveness == Effectiveness.SUPER_EFFECTIVE) Color.Red else move.type.color.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(2.dp)
-            )
-            .padding(horizontal = 4.dp, vertical = 2.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PokemonTypeIcon(
-                type = move.type,
-                style = TypeIconStyle.OVERDEX,
-                modifier = Modifier.size(10.dp)
-            )
-            
-            if (effectiveness == Effectiveness.SUPER_EFFECTIVE) {
-                Spacer(modifier = Modifier.width(2.dp))
-                Box(modifier = Modifier.size(2.dp).background(Color.Red, RoundedCornerShape(1.dp)))
-            }
-        }
+private fun MoveIndicator(move: SemanticMove) {
+    val color = when (move.effectiveness) {
+        MoveEffectiveness.SUPER_EFFECTIVE -> Color.Red
+        MoveEffectiveness.NEUTRAL -> Color.White
+        MoveEffectiveness.NOT_VERY_EFFECTIVE -> TerminalGreen
+        MoveEffectiveness.IMMUNE -> TerminalDimGreen
+        MoveEffectiveness.UNKNOWN -> Color.Gray
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        // Simple dot for type
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(move.type.color, RoundedCornerShape(1.dp))
+        )
+        
+        Spacer(modifier = Modifier.width(4.dp))
+        
+        Text(
+            text = move.name.uppercase(),
+            color = color,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
     }
 }

@@ -390,7 +390,8 @@ fun CaptureVerificationScreen(
                 viewModel.setObservationSessionState(ObservationSessionState.IDLE)
             }
             else onBack()
-        }
+        },
+        pipelineStatus = pipelineStatus
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (captureLibrary.isNotEmpty()) {

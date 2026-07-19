@@ -1,0 +1,6 @@
+- [x] Implement `PresentationState.kt` (Semantic models, no UI types)
+- [x] Implement `PresentationMapper.kt` (Pure transformation logic)
+- [x] Integrate `PresentationState` into `PokedexFrame`
+- [x] Refactor `Droidball` to consume semantic state
+- [x] Verify architectural separation (no UI imports in presentation package)
+- [x] Verify build and state synchronization
