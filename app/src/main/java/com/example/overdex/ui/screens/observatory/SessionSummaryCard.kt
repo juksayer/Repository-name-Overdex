@@ -3,6 +3,7 @@ package com.example.overdex.ui.screens.observatory
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
@@ -18,7 +19,7 @@ import java.util.*
 fun SessionSummaryCard(recording: ObservationRecording) {
     val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.ROOT)
     val durationMs = recording.endTime - recording.startTime
-    val sourcesSeen = recording.events.map { it.sourceType }.distinct()
+    val eventCounts = recording.events.groupingBy { it.sourceType }.eachCount()
 
     Column {
         TerminalSection(title = "SESSION SUMMARY") {
@@ -41,19 +42,27 @@ fun SessionSummaryCard(recording: ObservationRecording) {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            TerminalText(text = "EVIDENCE SOURCES SEEN:", color = TerminalPurple, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            TerminalText(text = "EVENT STATISTICS:", color = TerminalPurple, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
             
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 EvidenceSourceType.entries.forEach { type ->
-                    val seen = sourcesSeen.contains(type)
-                    TerminalText(
-                        text = "${if (seen) "[X]" else "[ ]"} ${type.name.take(3)}",
-                        color = if (seen) TerminalPurple else TerminalDimGreen,
-                        fontSize = 10.sp
-                    )
+                    val count = eventCounts[type] ?: 0
+                    Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                        TerminalText(
+                            text = type.name.take(3),
+                            color = if (count > 0) TerminalPurple else TerminalDimGreen,
+                            fontSize = 10.sp
+                        )
+                        TerminalText(
+                            text = count.toString(),
+                            color = if (count > 0) Color.White else TerminalDimGreen,
+                            fontSize = 12.sp,
+                            fontWeight = if (count > 0) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
+                        )
+                    }
                 }
             }
         }

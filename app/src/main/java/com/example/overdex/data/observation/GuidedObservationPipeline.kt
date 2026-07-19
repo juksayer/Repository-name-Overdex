@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import com.example.overdex.model.CaptureTemplate
 import com.example.overdex.model.observation.*
+import com.example.overdex.battle.debug.observatory.*
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -22,7 +23,7 @@ sealed class ObservationStage(val label: String) {
     companion object {
         val ALL = listOf(
             LocatingAnchors, Species, CombatPower, ShadowStatus,
-            FastMove, ChargedMoveA, ChargedMoveB, Complete
+            FastMove, ChargedMoveA, ChargedMoveB, Complete,
         )
     }
 }
@@ -60,6 +61,35 @@ object GuidedObservationPipeline {
         val allResults = session.recognitionResults.toMutableMap()
         val allObservations = session.observations.toMutableList()
 
+        // Observatory Causality: Record session start
+        ObservationRecorder.record(
+            EvidenceSourceType.SYSTEM,
+            SystemEventPayload("SessionStarted", "Objective: ${objective.label}")
+        )
+
+        fun recordSessionDecisions(currentStage: String) {
+            val resolved = session.resolveResults()
+            resolved.forEach { (field, winners) ->
+                val absoluteWinner = winners.maxByOrNull { it.confidence }
+                if (absoluteWinner != null) {
+                    val competitors = session.recognitionResults[field]?.map { 
+                        DecisionCompetitor(it.recognizer, it.value?.toString(), it.confidence)
+                    } ?: emptyList()
+
+                    ObservationRecorder.record(
+                        EvidenceSourceType.DECISION,
+                        DecisionEvaluatedPayload(
+                            field = field,
+                            winningValue = absoluteWinner.value?.toString(),
+                            winningConfidence = absoluteWinner.confidence,
+                            competitors = competitors,
+                            observationStage = currentStage
+                        )
+                    )
+                }
+            }
+        }
+
         fun update(stage: ObservationStage) {
             val resultsCount = allResults.values.sumOf { it.size }
 
@@ -69,7 +99,21 @@ object GuidedObservationPipeline {
                 recognitionResults = allResults.toMap()
             )
 
+            // Observatory: Record Decisions & Progress
+            recordSessionDecisions(stage.label)
+
             val progress = session.evaluateProgress()
+            
+            // Observatory: Record Progress
+            ObservationRecorder.record(
+                EvidenceSourceType.DECISION,
+                ProgressUpdatedPayload(
+                    percentComplete = progress.percentComplete,
+                    isComplete = progress.isComplete,
+                    observationStage = stage.label
+                )
+            )
+
             android.util.Log.d("PIPELINE_INSTRUMENTATION", "Stage: ${stage.label} | Results: $resultsCount | Observations: ${allObservations.size} | Progress: ${(progress.percentComplete * 100).toInt()}%")
             onUpdate(PipelineStatus(stage, completed.toSet(), allResults.toMap(), allObservations.toList(), captureId, session))
         }
@@ -85,7 +129,7 @@ object GuidedObservationPipeline {
 
                 // 1. Locate Anchors
                 update(ObservationStage.LocatingAnchors)
-                val detectedAnchors = SimpleAnchorDetector.detectAnchors(bitmap)
+                val detectedAnchors = SimpleAnchorDetector.detectAnchors(bitmap, ObservationStage.LocatingAnchors.label)
                 completed.add(ObservationStage.LocatingAnchors)
 
                 val regions = template.regions.associateBy { it.id }
@@ -94,14 +138,14 @@ object GuidedObservationPipeline {
                 update(ObservationStage.Species)
                 val speciesRegion = regions["SpeciesName"]
                 if (speciesRegion != null) {
-                    processRegion(captureId, bitmap, speciesRegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, speciesRegion, allObservations, allResults, detectedAnchors, ObservationStage.Species.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: SpeciesName | MISSING (Not in template)")
                 }
                 
                 val candyRegion = regions["CandyPanel"]
                 if (candyRegion != null) {
-                    processRegion(captureId, bitmap, candyRegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, candyRegion, allObservations, allResults, detectedAnchors, ObservationStage.Species.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CandyPanel | MISSING (Not in template)")
                 }
@@ -111,7 +155,7 @@ object GuidedObservationPipeline {
                 update(ObservationStage.CombatPower)
                 val cpRegion = regions["CombatPower"]
                 if (cpRegion != null) {
-                    processRegion(captureId, bitmap, cpRegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, cpRegion, allObservations, allResults, detectedAnchors, ObservationStage.CombatPower.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: CombatPower | MISSING (Not in template)")
                 }
@@ -121,7 +165,7 @@ object GuidedObservationPipeline {
                 update(ObservationStage.ShadowStatus)
                 val fastMoveRegion = regions["FastMoveRow"] ?: regions["SummaryFastMove"]
                 if (fastMoveRegion != null) {
-                    processRegion(captureId, bitmap, fastMoveRegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, fastMoveRegion, allObservations, allResults, detectedAnchors, ObservationStage.ShadowStatus.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: FastMoveRow/SummaryFastMove | MISSING (Not in template)")
                 }
@@ -135,7 +179,7 @@ object GuidedObservationPipeline {
                 update(ObservationStage.ChargedMoveA)
                 val chgARegion = regions["ChargedMoveRowA"]
                 if (chgARegion != null) {
-                    processRegion(captureId, bitmap, chgARegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, chgARegion, allObservations, allResults, detectedAnchors, ObservationStage.ChargedMoveA.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowA | MISSING (Not in template)")
                 }
@@ -145,7 +189,7 @@ object GuidedObservationPipeline {
                 update(ObservationStage.ChargedMoveB)
                 val chgBRegion = regions["ChargedMoveRowB"]
                 if (chgBRegion != null) {
-                    processRegion(captureId, bitmap, chgBRegion, allObservations, allResults, detectedAnchors)
+                    processRegion(captureId, bitmap, chgBRegion, allObservations, allResults, detectedAnchors, ObservationStage.ChargedMoveB.label)
                 } else {
                     android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ChargedMoveRowB | MISSING (Not in template)")
                 }
@@ -187,12 +231,31 @@ object GuidedObservationPipeline {
 
             // Check if objective is complete before finalizing state
             val progress = session.evaluateProgress()
+            val integrity = session.evaluateIntegrity()
+
+            // Observatory: Record Integrity
+            ObservationRecorder.record(
+                EvidenceSourceType.DECISION,
+                IntegrityCheckedPayload(
+                    status = integrity.status.name,
+                    resolvedFields = integrity.resolvedFields,
+                    missingFields = integrity.missingFields,
+                    conflictingFields = integrity.conflictingFields
+                )
+            )
+
             if (progress.isComplete) {
                 session = session.copy(
                     completedAt = System.currentTimeMillis(),
                     state = SessionPhase.COMPLETED
                 )
                 android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: COMPLETED")
+
+                // Observatory Causality: Record session completion
+                ObservationRecorder.record(
+                    EvidenceSourceType.SYSTEM,
+                    SystemEventPayload("SessionCompleted", "Progress: 100%")
+                )
             } else {
                 android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: ACTIVE (Awaiting more evidence)")
             }
@@ -203,6 +266,13 @@ object GuidedObservationPipeline {
         } catch (e: CancellationException) {
             session = session.copy(state = SessionPhase.CANCELLED)
             android.util.Log.d("ODX_TRACE", "[$captureId][Session State] Lifecycle: CANCELLED")
+
+            // Observatory Causality: Record session cancellation
+            ObservationRecorder.record(
+                EvidenceSourceType.SYSTEM,
+                SystemEventPayload("SessionCancelled", "Reason: CancellationException")
+            )
+
             onUpdate(PipelineStatus(ObservationStage.Complete, emptySet(), session.recognitionResults, session.observations, captureId, session))
             throw e
         }
@@ -214,13 +284,14 @@ object GuidedObservationPipeline {
         region: com.example.overdex.model.CaptureRegion,
         obsList: MutableList<CaptureObservation>,
         resultsMap: MutableMap<String, List<RecognitionResult<*>>>,
-        anchors: List<AnchorObservation>
+        anchors: List<AnchorObservation>,
+        stage: String = "UNKNOWN"
     ) {
         android.util.Log.d("ODX_TRACE", "[$captureId][OCR Region] ID: ${region.id} | Processing...")
         
         val obs = crop(bitmap, region, anchors)
         obsList.add(obs)
-        val results = ObservationRecognizer.recognize(obs)
+        val results = ObservationRecognizer.recognize(obs, stage)
         
         // Cumulative Observation Memory: Append new results to the existing list for this region
         val currentResults = resultsMap[region.id] ?: emptyList()
@@ -253,7 +324,7 @@ object GuidedObservationPipeline {
         // Target bounds for cropping (initially matching calibration)
         var leftPx = calLeft
         val topPx = calTop
-        var rightPx = calLeft + calWidth
+        val rightPx = calLeft + calWidth
         val bottomPx = calTop + calHeight
 
         // 2. Brick #121.5: Anchor-Based Refinement for Move Regions
@@ -263,7 +334,7 @@ object GuidedObservationPipeline {
             
             // Find high-confidence move-related anchors that intersect with this region
             val moveAnchors = anchors.filter { anchor ->
-                anchor.confidence >= ANCHOR_CONFIDENCE_THRESHOLD &&
+                (anchor.confidence >= ANCHOR_CONFIDENCE_THRESHOLD) &&
                 (anchor.type == AnchorType.MoveIcon || 
                  anchor.type == AnchorType.FastMoveIcon || 
                  anchor.type == AnchorType.ChargedMoveIcon) &&

@@ -4,6 +4,10 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import com.example.overdex.model.observation.AnchorObservation
 import com.example.overdex.model.observation.AnchorType
+import com.example.overdex.battle.debug.observatory.ObservationRecorder
+import com.example.overdex.battle.debug.observatory.AnchorDetectedPayload
+import com.example.overdex.battle.debug.observatory.EvidenceSourceType
+import com.example.overdex.battle.debug.observatory.RectData
 
 /**
  * Initial implementation of an anchor detector.
@@ -12,7 +16,7 @@ import com.example.overdex.model.observation.AnchorType
  */
 object SimpleAnchorDetector : AnchorDetector {
 
-    override suspend fun detectAnchors(bitmap: Bitmap): List<AnchorObservation> {
+    override suspend fun detectAnchors(bitmap: Bitmap, stage: String): List<AnchorObservation> {
         val anchors = mutableListOf<AnchorObservation>()
         val width = bitmap.width
         val height = bitmap.height
@@ -34,13 +38,24 @@ object SimpleAnchorDetector : AnchorDetector {
                 val bounds = findBlobBounds(bitmap, scanX, y, searchMinX, searchMaxX, searchMinY, searchMaxY)
 
                 if (isValidMoveIcon(bounds, width)) {
-                    anchors.add(
-                        AnchorObservation(
-                            type = AnchorType.MoveIcon,
-                            bounds = bounds,
-                            confidence = calculateConfidence(bounds, width)
+                    val anchor = AnchorObservation(
+                        type = AnchorType.MoveIcon,
+                        bounds = bounds,
+                        confidence = calculateConfidence(bounds, width)
+                    )
+                    anchors.add(anchor)
+
+                    // Observatory Evidence: Record the detected anchor
+                    ObservationRecorder.record(
+                        EvidenceSourceType.VISION,
+                        AnchorDetectedPayload(
+                            anchorType = anchor.type.name,
+                            bounds = RectData(bounds.left, bounds.top, bounds.right, bounds.bottom),
+                            confidence = anchor.confidence,
+                            observationStage = stage
                         )
                     )
+
                     // Skip ahead past the detected icon to find the next one
                     y = bounds.bottom + (height * 0.01f).toInt().coerceAtLeast(1)
                     continue

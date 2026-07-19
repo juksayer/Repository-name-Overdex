@@ -160,6 +160,7 @@ fun TerminalText(
     color: Color = TerminalGreen,
     fontSize: TextUnit = 14.sp,
     fontWeight: FontWeight? = null,
+    fontFamily: androidx.compose.ui.text.font.FontFamily? = null,
     textAlign: androidx.compose.ui.text.style.TextAlign? = null
 ) {
     Text(
@@ -167,6 +168,7 @@ fun TerminalText(
         color = color,
         fontSize = fontSize,
         fontWeight = fontWeight,
+        fontFamily = fontFamily,
         textAlign = textAlign,
         modifier = modifier
     )

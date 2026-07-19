@@ -43,8 +43,15 @@ fun TimelineEventRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         TerminalText(
-            text = String.format(Locale.ROOT, "%06d", event.sequenceNumber),
+            text = if (isSelected) "▶" else " ",
             color = TerminalPurple,
+            fontSize = 10.sp,
+            modifier = Modifier.width(12.dp)
+        )
+
+        TerminalText(
+            text = String.format(Locale.ROOT, "%06d", event.sequenceNumber),
+            color = if (isSelected) Color.White else TerminalPurple,
             fontSize = 10.sp,
             modifier = Modifier.width(54.dp)
         )

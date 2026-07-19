@@ -13,5 +13,5 @@ enum class EvidenceSourceType {
     TIMING,
     SYSTEM,
     MANUAL,
-    CONFIDENCE // Placeholder for future use
+    DECISION
 }
