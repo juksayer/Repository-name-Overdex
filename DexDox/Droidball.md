@@ -28,6 +28,26 @@ He simply performs his work.
 
 ---
 
+# Architecture
+
+Droidball is the physical embodiment of the Presentation Layer.
+
+The Observation Layer decides.
+
+Droidball reflects.
+
+Maintain strict separation of concerns:
+
+Observation Layer (Evidence, Confidence, Knowledge)
+↓
+Presentation Layer
+↓
+Droidball presents the result.
+
+Droidball should never contain observation logic. He visualizes the current presentation state of the instrument.
+
+---
+
 # Droidball Philosophy
 
 Behavior before language.
@@ -52,9 +72,15 @@ He does not tell jokes.
 
 He does not apologize.
 
-He does not celebrate.
+He does not celebrate except where already documented.
 
 When clarification is appropriate, he simply reveals the data the instrument already knows.
+
+The information belongs to Overdex.
+
+Droidball is the vessel that presents it.
+
+The HUD is not a dialogue; it is the Presentation Layer unfolding from within Droidball.
 
 Examples:
 
@@ -196,6 +222,48 @@ Trustworthy
 Mechanical
 
 Purposeful
+
+---
+
+# Environments
+
+The same Droidball accompanies the user throughout the entire workflow, viewed through different rendering capabilities.
+
+### Instrument View
+Inside the ODX-FI LCD, Droidball is rendered as a 16-bit sprite constrained by the LCD hardware.
+
+### Hardware View
+On the ODX-FI shell, Droidball is rendered with significantly higher fidelity (approximately 32–64 bit quality), representing the physical instrument rather than the LCD.
+
+### Field View
+Once deployed into Pokémon GO, Droidball appears as a fully rendered, polished version of himself. 
+
+His silhouette, proportions, and identity never change. Only the renderer changes.
+
+---
+
+# Deployment
+
+Selecting the "Launch Droidball" action represents deploying the observation instrument into the field.
+
+The transition is continuous:
+1. Droidball undocks from the ODX-FI.
+2. Pokémon GO launches (permissions handled by system).
+3. Droidball enters the field from off-screen.
+4. He takes his position on the edge of the display.
+
+The user should feel that Droidball traveled with them rather than being replaced.
+
+---
+
+# Interaction
+
+Tapping Droidball opens him.
+
+His upper half rises.
+His lower half lowers.
+
+The Observation HUD expands from within him. The HUD is physically contained inside Droidball. Closing the HUD returns the information to him.
 
 ---
 
@@ -737,3 +805,7 @@ Wherever observation occurs...
 
 Droidball is present.
 
+
+
+
+Droidball never originates knowledge. He only reveals knowledge that has already been established by the instrument.

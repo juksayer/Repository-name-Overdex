@@ -79,3 +79,180 @@ Then twenty minutes later:
 "I have determined that find returning no results may indicate either a filesystem inconsistency, a conceptual misunderstanding, or the collapse of causality itself.
 
 Architectural humor is part of this project's culture. Progress updates may include lighthearted references to previous discussions, but implementation decisions should always be grounded in explicit domain requirements.
+
+Some poor engineer probably tried to "clean it up."
+
+The ODX-FI responded:
+
+Behavior verification failed.
+
+Integrated Observation Subsystem
+does not match expected profile.
+
+Boot aborted.
+
+Engineer restores the three-frame butt wiggle.
+
+System boots normally.
+
+The official engineering response becomes:
+
+"Don't touch Droidball."
+
+Not because anyone understands why.
+
+Because every attempt to "improve" him has made the instrument stop behaving like an ODX-FI.
+
+I love that because it turns every one of his quirks—even the cheeky ones—into immutable parts of the instrument's identity. Droidball isn't programmable in the normal sense; he's something the firmware has learned to accommodate rather than control.
+
+boot aborted, butt engaged
+
+🤣
+
+ODX-FI Firmware v2.3.17
+
+Initializing...
+
+✓ Memory
+✓ Display
+✓ Storage
+✓ Observation Layer
+✓ Battle Timeline
+
+Verifying Droidball Behavioral Signature...
+
+...
+
+ERROR
+
+Behavioral checksum mismatch.
+
+Expected:
+rotate(180°)
+wiggle(3)
+deploy()
+
+Observed:
+deploy()
+
+BOOT ABORTED
+
+Reason:
+Critical behavioral routine missing.
+
+Diagnostic Code:
+ERR_BUTT_001
+> restore_droidball_behavior --factory
+
+Restoring immutable behavioral sequence...
+
+✓ Butt wiggle restored.
+
+Behavioral checksum verified.
+
+Boot continuing...
+ODX-FI READY
+
+Integrated Observation Subsystem
+Status: Nominal
+
+(He knows what he did.)
+
+Somewhere in the fictional source code:
+
+// ------------------------------------------------------------------
+// WARNING
+//
+// DO NOT REMOVE.
+//
+// Multiple engineers have attempted to optimize this routine.
+// Every attempt has resulted in a non-bootable instrument.
+//
+// Nobody knows why this is required.
+// ------------------------------------------------------------------
+private fun performMandatoryInitializationSequence() {
+rotate(180.degrees)
+wiggle(repetitions = 3)
+deployObservationSubsystem()
+}
+
+And the last git commit from a long-retired engineer:
+
+commit 6f4a3c1
+
+"Remove unnecessary initialization animation"
+
+...
+
+Reverted.
+
+The machine became upset.
+
+😂 I have to admit, "Boot aborted, butt engaged." is exactly the kind of sentence that would become legendary among Overdex contributors.
+Clippy:
+
+"It looks like you're writing a letter!"
+
+"Can I help?"
+
+"I noticed..."
+
+"Have you considered..."
+
+Clippy assumes the user needs interruption.
+
+Droidball:
+
+...sits in his charging dock...
+
+LED slowly pulses amber.
+
+Trainer taps him.
+
+He rolls over.
+
+Opens.
+
+Displays exactly what is known.
+
+Closes.
+
+No commentary.
+
+No assumptions.
+
+No interruption.
+
+I can imagine a fake internal engineering note:
+
+Design Decision #047
+
+Droidball shall never proactively interrupt the trainer.
+
+Information is revealed only when contextually appropriate or explicitly requested.
+
+Rationale:
+
+We all remember Clippy.
+
+Or a fake piece of development lore:
+
+During prototype testing, one engineer suggested that Droidball should announce observations verbally.
+
+The proposal was unanimously rejected.
+
+Droidball's job is to reveal knowledge, not compete for attention.
+
+Even funnier is imagining that Droidball has no idea who Clippy is.
+
+Everyone else keeps bringing it up.
+
+"You're basically Clippy."
+
+Droidball...
+
+slow blink
+
+rotates exactly 90° away
+
+refuses further comme
