@@ -181,6 +181,7 @@ fun PokedexFrame(
     onSelect: () -> Unit = {},
     onStart: () -> Unit = {},
     onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     instrumentState: ObservationSessionState? = null,
@@ -399,6 +400,10 @@ fun PokedexFrame(
                         onLaunchProbe = {
                             showResearcherSettings = false
                             onLaunchProbe()
+                        },
+                        onLaunchObservatory = {
+                            showResearcherSettings = false
+                            onLaunchObservatory()
                         },
                         onClose = { showResearcherSettings = false }
                     )

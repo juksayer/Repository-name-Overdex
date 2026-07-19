@@ -32,6 +32,7 @@ import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
 import com.example.overdex.ui.screens.*
+import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme
 import kotlin.system.exitProcess
 
@@ -146,6 +147,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenChat -> navController.navigate("private_chat")
                 InstrumentCommand.OpenReadme -> navController.navigate("readme")
                 InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
+                InstrumentCommand.OpenSignalObservatory -> navController.navigate("signal_observatory")
             }
         }
     }
@@ -169,6 +171,8 @@ fun PokedexApp(
                 onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
                 onStart = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
                 onSelect = { /* Reserved */ },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
                 isLogoInteractive = true
             ) { _ ->
                 MainMenuScreen(
@@ -191,6 +195,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
                 onB = { navController.popBackStack() }
             ) { battleMemory ->
                 BattleHistoryScreen(
@@ -210,6 +216,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
                 onB = { navController.popBackStack() }
             ) { battleMemory ->
                 BattleTimelineScreen(
@@ -260,6 +268,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
                 onA = { /* Reserved */ },
                 onB = { navController.popBackStack() }
             ) { _ ->
@@ -346,6 +356,8 @@ fun PokedexApp(
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
                 onBack = { navController.popBackStack() },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
                 onPokemonClick = { id ->
                     viewModel.viewModelScope.launch {
                         viewModel.getPokemonById(id)?.let {
@@ -398,6 +410,8 @@ fun PokedexApp(
                     onEvolutionClick = { evolutionId ->
                         navController.navigate("detail/$evolutionId")
                     },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
                     viewModel = viewModel
                 )
             }
@@ -441,19 +455,54 @@ fun PokedexApp(
         }
         composable("add_pokemon_wizard") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
-            AddOwnedPokemonWizard(
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onFinish = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
-            )
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                onB = { navController.popBackStack() }
+            ) {
+                AddOwnedPokemonWizard(
+                    pokedexViewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onFinish = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
         }
         composable("accessibility_probe") {
-            AccessibilityProbeScreen(
-                onBack = { navController.popBackStack() }
-            )
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                onB = { navController.popBackStack() }
+            ) {
+                AccessibilityProbeScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("signal_observatory") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                onB = { navController.popBackStack() }
+            ) {
+                SignalObservatoryScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

@@ -21,6 +21,9 @@ import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.model.navigation.*
+import com.example.overdex.battle.debug.observatory.ObservationRecorder
+import com.example.overdex.battle.debug.observatory.EvidenceSourceType
+import com.example.overdex.battle.debug.accessibility.AccessibilityProbeManager
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -66,7 +69,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )),
             DirectoryNode("tools", listOf(
                 ActionNode("readme", InstrumentCommand.OpenReadme),
-                ActionNode("probe", InstrumentCommand.OpenAccessibilityProbe)
+                ActionNode("probe", InstrumentCommand.OpenAccessibilityProbe),
+                ActionNode("observatory", InstrumentCommand.OpenSignalObservatory)
             ))
         )
     )
@@ -111,7 +115,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setObservationSessionState(state: ObservationSessionState) {
+        val oldState = _observationSessionState.value
         _observationSessionState.value = state
+        
+        // Lifecycle management for ObservationRecorder
+        if (state == ObservationSessionState.SERVICE_ACTIVE && oldState != ObservationSessionState.SERVICE_ACTIVE) {
+            // Droidball deployed - Start recording
+            ObservationRecorder.startRecording(getApplication()) 
+        } else if (state != ObservationSessionState.SERVICE_ACTIVE && oldState == ObservationSessionState.SERVICE_ACTIVE) {
+            // Droidball docked - Stop recording
+            val recording = ObservationRecorder.stopRecording()
+            if (recording != null) {
+                Log.d("OBSERVATION_RECORDER", "Session captured: ${recording.sessionId} with ${recording.events.size} events")
+            }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

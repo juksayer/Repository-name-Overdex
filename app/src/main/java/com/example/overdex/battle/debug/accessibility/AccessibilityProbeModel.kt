@@ -1,6 +1,9 @@
 package com.example.overdex.battle.debug.accessibility
 
+import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
 import com.example.overdex.battle.debug.observatory.EvidenceEvent
+import com.example.overdex.battle.debug.observatory.RectData
+import com.example.overdex.battle.debug.observatory.SessionMetadata
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -17,41 +20,8 @@ data class AccessibilityProbeEvent(
     val bounds: RectData?,
     val viewIdResourceName: String?,
     val nodeTree: AccessibilityProbeNode?,
-    val rawEventData: Map<String, String> = emptyMap() // Simplified for serialization stability
+    val rawEventData: Map<String, String> = emptyMap()
 ) : EvidenceEvent
-
-@Serializable
-data class AccessibilityProbeNode(
-    val className: String?,
-    val text: String?,
-    val contentDescription: String?,
-    val viewId: String?,
-    val clickable: Boolean,
-    val focusable: Boolean,
-    val visible: Boolean,
-    val enabled: Boolean,
-    val bounds: RectData,
-    val children: List<AccessibilityProbeNode> = emptyList()
-)
-
-@Serializable
-data class RectData(
-    val left: Int,
-    val top: Int,
-    val right: Int,
-    val bottom: Int
-)
-
-@Serializable
-data class SessionMetadata(
-    val deviceModel: String,
-    val androidVersion: Int,
-    val screenResolution: String,
-    val displayDensity: Float,
-    val refreshRate: Float?,
-    val orientation: Int,
-    val startTimeMillis: Long
-)
 
 @Serializable
 data class ObservatorySummary(

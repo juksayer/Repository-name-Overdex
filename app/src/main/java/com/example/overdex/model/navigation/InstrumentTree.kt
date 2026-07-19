@@ -29,6 +29,7 @@ sealed interface InstrumentCommand {
     data object OpenChat : InstrumentCommand
     data object OpenReadme : InstrumentCommand
     data object OpenAccessibilityProbe : InstrumentCommand
+    data object OpenSignalObservatory : InstrumentCommand
 }
 
 @Stable

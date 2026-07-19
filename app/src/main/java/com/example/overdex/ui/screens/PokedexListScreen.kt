@@ -37,6 +37,8 @@ fun PokedexListScreen(
     onSelect: () -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit,
+    onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
     onPokemonClick: (Int) -> Unit
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
@@ -102,6 +104,8 @@ fun PokedexListScreen(
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
         onStart = onStart,
+        onLaunchProbe = onLaunchProbe,
+        onLaunchObservatory = onLaunchObservatory,
         viewModel = viewModel
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {

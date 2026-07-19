@@ -1,18 +1,15 @@
 package com.example.overdex.battle.debug.accessibility
 
 import android.content.Context
-import android.os.Build
-import android.util.DisplayMetrics
-import android.view.WindowManager
-import com.example.overdex.battle.debug.observatory.EvidenceEvent
-import com.example.overdex.battle.debug.observatory.EvidenceSource
+import com.example.overdex.battle.debug.observatory.*
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 /**
  * Singleton manager for the Accessibility Probe evidence source.
- * Handles recording state, sequence numbering, and session metadata.
+ * Acts as an EvidenceSource and delegates recording to the central ObservationRecorder.
  */
 object AccessibilityProbeManager : EvidenceSource {
     override val name = "AccessibilityProbe"
@@ -50,6 +47,20 @@ object AccessibilityProbeManager : EvidenceSource {
     fun onEventReceived(event: AccessibilityProbeEvent) {
         if (isRecording) {
             events.add(event)
+            
+            // Delegate to central recorder
+            val payload = AccessibilityPayload(
+                eventType = event.eventType,
+                packageName = event.packageName,
+                className = event.className,
+                text = event.text,
+                contentDescription = event.contentDescription,
+                bounds = event.bounds,
+                viewIdResourceName = event.viewIdResourceName,
+                nodeTree = event.nodeTree,
+                rawEventData = event.rawEventData
+            )
+            ObservationRecorder.record(EvidenceSourceType.ACCESSIBILITY, payload)
         }
     }
 
@@ -60,20 +71,9 @@ object AccessibilityProbeManager : EvidenceSource {
     }
 
     fun captureMetadata(context: Context) {
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val display = wm.defaultDisplay
-        val metrics = DisplayMetrics()
-        display.getMetrics(metrics)
-
-        metadata = SessionMetadata(
-            deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
-            androidVersion = Build.VERSION.SDK_INT,
-            screenResolution = "${metrics.widthPixels}x${metrics.heightPixels}",
-            displayDensity = metrics.density,
-            refreshRate = display.refreshRate,
-            orientation = context.resources.configuration.orientation,
-            startTimeMillis = this.startTimeMillis,
-        )
+        ObservationRecorder.startRecording(context)
+        // We'll keep a copy of metadata for the independent summary too
+        // In a real app we'd expose this through ObservationRecorder
     }
 
     fun getSummary(): ObservatorySummary {

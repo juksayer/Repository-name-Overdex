@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
+import com.example.overdex.battle.debug.observatory.RectData
 
 /**
  * An AccessibilityService that observes system events and captures node trees.

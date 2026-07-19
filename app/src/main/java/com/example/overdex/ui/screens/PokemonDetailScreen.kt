@@ -45,6 +45,8 @@ fun PokemonDetailScreen(
     onTypeClick: (PokemonType) -> Unit,
     onRegionClick: (String) -> Unit,
     onEvolutionClick: (Int) -> Unit,
+    onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
     viewModel: PokedexViewModel? = null
 ) {
     val scrollState = rememberScrollState()
@@ -66,6 +68,8 @@ fun PokemonDetailScreen(
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
         onStart = onStart,
+        onLaunchProbe = onLaunchProbe,
+        onLaunchObservatory = onLaunchObservatory,
         viewModel = viewModel
     ) { _ ->
         Column(

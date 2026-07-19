@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.debug.accessibility.*
+import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import java.util.Locale

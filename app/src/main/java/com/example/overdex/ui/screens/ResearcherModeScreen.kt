@@ -21,6 +21,7 @@ import com.example.overdex.ui.theme.TerminalPurple
 @Composable
 fun ResearcherModeOverlay(
     onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
     onClose: () -> Unit
 ) {
     Surface(
@@ -64,6 +65,16 @@ fun ResearcherModeOverlay(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("LAUNCH ACCESSIBILITY PROBE", color = TerminalGreen)
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Button(
+                onClick = onLaunchObservatory,
+                colors = ButtonDefaults.buttonColors(containerColor = TerminalGreen.copy(alpha = 0.1f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("LAUNCH TIMELINE VIEWER", color = TerminalGreen)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
