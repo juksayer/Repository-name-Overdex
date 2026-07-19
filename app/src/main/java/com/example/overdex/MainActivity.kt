@@ -145,6 +145,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenTimeline -> navController.navigate("shared_timeline")
                 InstrumentCommand.OpenChat -> navController.navigate("private_chat")
                 InstrumentCommand.OpenReadme -> navController.navigate("readme")
+                InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
             }
         }
     }
@@ -175,6 +176,7 @@ fun PokedexApp(
                     onBootComplete = { viewModel.markBooted() },
                     visibleNodes = treeState.visibleNodes,
                     selectedPath = treeState.selectedPath,
+                    scrollOffset = treeState.scrollOffset,
                     trainerIdentity = trainerIdentity,
                     onPhaseChange = { phase = it }
                 )
@@ -446,6 +448,11 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onFinish = { navController.popBackStack() },
                 onCancel = { navController.popBackStack() }
+            )
+        }
+        composable("accessibility_probe") {
+            AccessibilityProbeScreen(
+                onBack = { navController.popBackStack() }
             )
         }
     }

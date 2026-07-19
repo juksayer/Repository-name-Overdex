@@ -27,8 +27,12 @@ fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
     selectedPath: String,
     onNodeSelected: (TreeNode) -> Unit,
+    scrollOffset: Int = 0,
     modifier: Modifier = Modifier
 ) {
+    val VIEWPORT_SIZE = 12
+    val viewportNodes = visibleNodes.drop(scrollOffset).take(VIEWPORT_SIZE)
+
     // "Ownership of Time" - sequential reveal count
     var revealCount by remember(visibleNodes) { mutableIntStateOf(0) }
     
@@ -40,22 +44,26 @@ fun DirectoryTree(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        visibleNodes.take(revealCount).forEach { flattened ->
-            val isSelected = selectedPath == flattened.path
-            val label = when (val node = flattened.node) {
-                is DirectoryNode -> {
-                    val prefix = if (flattened.isExpanded) "▼ " else "▶ "
-                    "$prefix${node.name}/"
+        viewportNodes.forEach { flattened ->
+            // Only reveal if the index in the full list is within revealCount
+            val fullIndex = visibleNodes.indexOf(flattened)
+            if (fullIndex < revealCount) {
+                val isSelected = selectedPath == flattened.path
+                val label = when (val node = flattened.node) {
+                    is DirectoryNode -> {
+                        val prefix = if (flattened.isExpanded) "▼ " else "▶ "
+                        "$prefix${node.name}/"
+                    }
+                    is ActionNode -> node.name
                 }
-                is ActionNode -> node.name
-            }
 
-            TerminalMenuOption(
-                label = label,
-                selected = isSelected,
-                modifier = Modifier.padding(start = (flattened.depth * 16).dp),
-                onClick = { onNodeSelected(flattened.node) }
-            )
+                TerminalMenuOption(
+                    label = label,
+                    selected = isSelected,
+                    modifier = Modifier.padding(start = (flattened.depth * 16).dp),
+                    onClick = { onNodeSelected(flattened.node) }
+                )
+            }
         }
     }
 }
@@ -122,7 +130,7 @@ fun TerminalMenuOption(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+            .padding(vertical = 2.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

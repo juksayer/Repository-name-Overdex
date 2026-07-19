@@ -28,6 +28,7 @@ sealed interface InstrumentCommand {
     data object OpenTimeline : InstrumentCommand
     data object OpenChat : InstrumentCommand
     data object OpenReadme : InstrumentCommand
+    data object OpenAccessibilityProbe : InstrumentCommand
 }
 
 @Stable
@@ -42,13 +43,16 @@ data class TreeState(
     val rootNodes: List<TreeNode> = emptyList(),
     val expandedPaths: Set<String> = emptySet(),
     val selectedPath: String = "",
-    val visibleNodes: List<FlattenedNode> = emptyList()
+    val visibleNodes: List<FlattenedNode> = emptyList(),
+    val scrollOffset: Int = 0
 )
 
 class InstrumentTree(initialNodes: List<TreeNode>) {
     private var rootNodes = initialNodes
     private var expandedPaths = mutableSetOf<String>()
     private var selectedPath = ""
+    private var scrollOffset = 0
+    private val VIEWPORT_SIZE = 12
 
     init {
         // Initialize selection to the first node if available
@@ -56,6 +60,7 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         if (projection.isNotEmpty()) {
             selectedPath = projection.first().path
         }
+        updateViewport()
     }
 
     fun getState(): TreeState {
@@ -64,7 +69,8 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
             rootNodes = rootNodes,
             expandedPaths = expandedPaths.toSet(),
             selectedPath = selectedPath,
-            visibleNodes = projection
+            visibleNodes = projection,
+            scrollOffset = scrollOffset
         )
     }
 
@@ -74,6 +80,7 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         if (currentIndex != -1) {
             val newIndex = (currentIndex + delta).coerceIn(0, projection.size - 1)
             selectedPath = projection[newIndex].path
+            updateViewport()
         }
     }
 
@@ -81,7 +88,7 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         val projection = project()
         val flattened = projection.find { it.path == selectedPath } ?: return null
         
-        return when (val node = flattened.node) {
+        val command = when (val node = flattened.node) {
             is DirectoryNode -> {
                 toggle(flattened.path)
                 null
@@ -90,29 +97,49 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
                 node.command
             }
         }
+        updateViewport()
+        return command
     }
 
     fun navigateBack(): Boolean {
         val projection = project()
         val flattened = projection.find { it.path == selectedPath } ?: return false
 
-        // If it's an expanded directory, collapse it
-        if (flattened.node is DirectoryNode && expandedPaths.contains(flattened.path)) {
+        val changed = if (flattened.node is DirectoryNode && expandedPaths.contains(flattened.path)) {
             expandedPaths.remove(flattened.path)
-            return true
-        }
-
-        // Otherwise, move selection to parent
-        val parentPath = flattened.path.substringBeforeLast("/", "")
-        if (parentPath.isNotEmpty()) {
-            if (expandedPaths.contains(parentPath)) {
-                expandedPaths.remove(parentPath)
+            true
+        } else {
+            val parentPath = flattened.path.substringBeforeLast("/", "")
+            if (parentPath.isNotEmpty()) {
+                if (expandedPaths.contains(parentPath)) {
+                    expandedPaths.remove(parentPath)
+                }
+                selectedPath = parentPath
+                true
+            } else {
+                false
             }
-            selectedPath = parentPath
-            return true
         }
         
-        return false
+        if (changed) {
+            updateViewport()
+        }
+        return changed
+    }
+
+    private fun updateViewport() {
+        val projection = project()
+        val selectedIndex = projection.indexOfFirst { it.path == selectedPath }
+        if (selectedIndex == -1) return
+
+        if (selectedIndex < scrollOffset) {
+            scrollOffset = selectedIndex
+        } else if (selectedIndex >= scrollOffset + VIEWPORT_SIZE) {
+            scrollOffset = selectedIndex - VIEWPORT_SIZE + 1
+        }
+        
+        // Final bounds check
+        scrollOffset = scrollOffset.coerceIn(0, (projection.size - VIEWPORT_SIZE).coerceAtLeast(0))
     }
 
     private fun toggle(path: String) {

@@ -25,6 +25,7 @@ fun MainMenuScreen(
     onBootComplete: () -> Unit,
     visibleNodes: List<FlattenedNode> = emptyList(),
     selectedPath: String = "",
+    scrollOffset: Int = 0,
     trainerIdentity: TrainerIdentity? = null,
     onPhaseChange: (MainMenuPhase) -> Unit = {},
     onNodeSelected: (TreeNode) -> Unit = {}
@@ -129,6 +130,7 @@ fun MainMenuScreen(
             DirectoryTree(
                 visibleNodes = visibleNodes.take(menuRevealCount),
                 selectedPath = if (phase == MainMenuPhase.READY) selectedPath else "",
+                scrollOffset = scrollOffset,
                 onNodeSelected = { node ->
                     if (phase == MainMenuPhase.READY) {
                         onNodeSelected(node)

@@ -75,7 +75,7 @@ fun InstrumentButton(
 ) {
     Box(
         modifier = modifier
-            .size(width = 64.dp, height = 44.dp) // Industrial proportions
+            .size(width = 56.dp, height = 36.dp) // Industrial proportions, adjusted for compressed console
             .clip(RoundedCornerShape(4.dp))
             .background(color)
             .drawBehind {
@@ -180,6 +180,7 @@ fun PokedexFrame(
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
     onStart: () -> Unit = {},
+    onLaunchProbe: () -> Unit = {},
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     instrumentState: ObservationSessionState? = null,
@@ -282,43 +283,49 @@ fun PokedexFrame(
         modifier = Modifier
             .fillMaxSize()
             .background(PokedexGreen)
-            .padding(16.dp)
+            .padding(8.dp) // Tighter bezel aesthetic
     ) {
-        // Top Lights
+        // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 12.dp, start = 8.dp),
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
             AndroidPokeballLogo(
-                modifier = Modifier.size(60.dp),
+                modifier = Modifier.size(54.dp),
                 isInteractive = isLogoInteractive
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(24.dp))
 
-            // Refined hardware instrumentation prototype: 5s breathing cycle
-            BreathingLED(Color.Red, cycleDurationMillis = 5000)
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
+                StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
+                StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
+            }
         }
 
-        // Main Screen Area
+        // Main Screen Area (Dominant Portrait CRT)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                .padding(bottom = 16.dp, start = 12.dp, end = 12.dp)
+                .weight(1.3f) // Increase dominance of CRT
+                .background(Color.DarkGray, RoundedCornerShape(4.dp))
+                .padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
                 .padding(top = crtPadding)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(2.dp))
                     .background(PokedexScreen)
-                    .border(8.dp, PokedexScreenBorder, RoundedCornerShape(4.dp))
-                    .padding(8.dp)
+                    .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
+                    .padding(4.dp)
             ) {
                 // Application Layer (Shader applied here)
                 Box(
@@ -388,7 +395,13 @@ fun PokedexFrame(
                     enter = fadeIn() + expandIn(),
                     exit = fadeOut() + shrinkOut()
                 ) {
-                    ResearcherModeOverlay(onClose = { showResearcherSettings = false })
+                    ResearcherModeOverlay(
+                        onLaunchProbe = {
+                            showResearcherSettings = false
+                            onLaunchProbe()
+                        },
+                        onClose = { showResearcherSettings = false }
+                    )
                 }
 
                 // Unlock Message Overlay
@@ -414,20 +427,20 @@ fun PokedexFrame(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Permanent Front Panel Assembly
+        // Permanent Front Panel Assembly (Compressed Lower Console)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .background(Color.Black.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
-                .border(1.dp, Color.Black.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                .padding(8.dp),
+                .height(170.dp) // Compressed from 220dp
+                .background(Color.Black.copy(alpha = 0.08f), RoundedCornerShape(4.dp))
+                .border(1.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Navigation Column (Left)
             Column(
-                modifier = Modifier.width(72.dp).fillMaxHeight(),
+                modifier = Modifier.width(64.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -442,12 +455,12 @@ fun PokedexFrame(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 4.dp)
             )
 
             // Action Column (Right)
             Column(
-                modifier = Modifier.width(72.dp).fillMaxHeight(),
+                modifier = Modifier.width(64.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -457,6 +470,28 @@ fun PokedexFrame(
                 InstrumentButton(label = "START", onClick = { handleInput("START"); onStart() })
             }
         }
+    }
+}
+
+@Composable
+fun StatusIndicator(
+    label: String,
+    color: Color,
+    cycleDurationMillis: Int = 4000
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = label,
+            color = TerminalDimGreen,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        BreathingLED(color = color, cycleDurationMillis = cycleDurationMillis)
     }
 }
 
