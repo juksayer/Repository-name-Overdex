@@ -4,7 +4,9 @@ import java.util.UUID
 
 /**
  * The permanent record of a completed engagement.
- * It stores raw facts captured during the session.
+ * 
+ * An [ArchivedBattle] serves as the "source of truth" for history and replays. It 
+ * stores the raw factual timeline captured during the session.
  */
 data class ArchivedBattle(
     val id: String = UUID.randomUUID().toString(),

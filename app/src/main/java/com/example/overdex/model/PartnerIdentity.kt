@@ -5,6 +5,11 @@ import java.time.Instant
 
 /**
  * Represents a permanently linked partner trainer.
+ * 
+ * @property trainerId The unique persistent ID of the partner.
+ * @property displayName The public name chosen by the partner.
+ * @property linkedAt Time when the link was established.
+ * @property companionSpecies The current Pokémon species chosen as the partner's mascot.
  */
 @Serializable
 data class PartnerIdentity(

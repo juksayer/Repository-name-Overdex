@@ -19,8 +19,14 @@ object ShadowBonusRecognizer {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
-     * Recognizes the shadow bonus.
-     * Returns a list containing the raw OCR output and the parsed bonus (if found).
+     * Recognizes the shadow bonus value in a move row.
+     * 
+     * This recognizer produces two results:
+     * 1. The raw OCR output for debugging/traceability.
+     * 2. The parsed integer shadow bonus (e.g., extracting 3 from "+3 damage").
+     * 
+     * @param bitmap The cropped image of a move row.
+     * @return A list of [RecognitionResult]s containing raw and parsed data.
      */
     suspend fun recognize(bitmap: Bitmap): List<RecognitionResult<*>> {
         val image = InputImage.fromBitmap(bitmap, 0)

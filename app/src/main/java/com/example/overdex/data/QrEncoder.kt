@@ -7,12 +7,16 @@ import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 
 /**
- * Utility for encoding strings into QR Code bitmaps.
+ * Utility for encoding strings into QR Code bitmaps for trainer identity sharing.
  */
 object QrEncoder {
     
     /**
      * Encodes the given text into a square QR Code bitmap.
+     * 
+     * @param text The string content to encode.
+     * @param size The width and height of the resulting square bitmap in pixels.
+     * @return A [Bitmap] containing the QR code visual.
      */
     fun encode(text: String, size: Int = 512): Bitmap {
         val bitMatrix: BitMatrix = MultiFormatWriter().encode(

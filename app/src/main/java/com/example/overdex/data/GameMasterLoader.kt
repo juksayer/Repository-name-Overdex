@@ -7,6 +7,12 @@ import com.example.overdex.model.GameMasterPokemon
 import kotlinx.serialization.json.Json
 import com.example.overdex.model.GameMasterMove
 
+/**
+ * Responsible for loading and parsing the static GameMaster data from assets.
+ * 
+ * The GameMaster is the primary source of truth for base stats, move pools,
+ * and elemental types for all Pokémon species.
+ */
 class GameMasterLoader(
     private val context: Context
 ) {

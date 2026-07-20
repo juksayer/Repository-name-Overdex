@@ -4,8 +4,15 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 /**
- * A transportable, shareable representation of a trainer containing only 
- * information safe to expose to other Overdex installations.
+ * A transportable, shareable representation of a trainer profile.
+ * 
+ * Contains only information safe to expose to other Overdex installations during
+ * linking and chat.
+ * 
+ * @property trainerId The unique persistent ID of the trainer.
+ * @property displayName The public name shown to others.
+ * @property avatarSeed Used for generating a consistent avatar visual.
+ * @property exportedAt Timestamp when this identity packet was generated.
  */
 @Serializable
 data class PublicTrainerIdentity(

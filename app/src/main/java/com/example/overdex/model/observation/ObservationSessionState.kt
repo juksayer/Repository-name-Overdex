@@ -1,27 +1,21 @@
 package com.example.overdex.model.observation
 
 /**
- * Represents the unified Instrument Operating State of the Overdex.
- * Physical hardware components respond to this state.
+ * Defines the unified Instrument Operating State of Overdex.
+ * 
+ * Physical hardware components and UI overlays respond to this state to adjust their
+ * behavior (e.g., Droidball movement, overlay visibility).
  */
 enum class ObservationSessionState {
-    /**
-     * No active observation or service.
-     */
+    /** No active observation or background service. */
     IDLE,
 
-    /**
-     * Actively capturing/inspecting evidence (e.g., in Capture Verification).
-     */
+    /** Actively capturing or inspecting evidence in the foreground. */
     OBSERVING,
 
-    /**
-     * Calibration mode is active.
-     */
+    /** User is currently calibrating observation regions. */
     CALIBRATING,
 
-    /**
-     * DroidBall background service is active.
-     */
+    /** DroidBall background service is active, listening for battle triggers. */
     SERVICE_ACTIVE
 }

@@ -13,6 +13,15 @@ import com.example.overdex.model.observation.SessionPhase
  */
 object PresentationMapper {
 
+    /**
+     * Maps heterogeneous domain models into a single, unified [PresentationState].
+     * 
+     * @param instrumentState The high-level hardware/operating state.
+     * @param pipelineStatus Status from the active observation pipeline.
+     * @param battleMemory Snapshot of the current battle's remembered facts.
+     * @param matchup Assessment of the active 1v1 combat matchup.
+     * @param decision Tactical recommendations from the decision engine.
+     */
     fun map(
         instrumentState: ObservationSessionState,
         pipelineStatus: PipelineStatus?,

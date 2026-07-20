@@ -7,11 +7,18 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Handles exporting Observation Recordings to external storage.
+ * Handles exporting [ObservationRecording] objects to external storage for analysis.
  */
 object RecordingExporter {
     private val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT)
 
+    /**
+     * Exports a recording to a JSON file.
+     * 
+     * @param context Android context for accessing external storage.
+     * @param recording The recording to export.
+     * @return The [File] object representing the exported JSON.
+     */
     fun exportToJson(context: Context, recording: ObservationRecording): File {
         val fileName = "observation_recording_${dateFormat.format(Date(recording.startTime))}.json"
         val file = File(context.getExternalFilesDir(null), fileName)
@@ -20,6 +27,13 @@ object RecordingExporter {
         return file
     }
 
+    /**
+     * Exports a recording to a human-readable plain text log.
+     * 
+     * @param context Android context for accessing external storage.
+     * @param recording The recording to export.
+     * @return The [File] object representing the exported text file.
+     */
     fun exportToPlainText(context: Context, recording: ObservationRecording): File {
         val fileName = "observation_recording_${dateFormat.format(Date(recording.startTime))}.txt"
         val file = File(context.getExternalFilesDir(null), fileName)

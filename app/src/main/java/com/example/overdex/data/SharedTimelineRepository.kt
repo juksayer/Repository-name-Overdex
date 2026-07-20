@@ -8,14 +8,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 
 /**
- * Manages the chronological feed of events shared between partners.
+ * Manages the chronological feed of events shared between linked partners.
  */
 interface SharedTimelineRepository {
+    /** Reactive flow of the shared event history. */
     val events: StateFlow<List<SharedEvent>>
+
+    /** Records a new event in the shared timeline. */
     suspend fun recordEvent(event: SharedEvent)
+
+    /** Clears all events from the shared timeline. */
     suspend fun clear()
 }
 
+/**
+ * Implementation of [SharedTimelineRepository] using SharedPreferences for persistence.
+ */
 class SharedPreferencesTimelineRepository(private val context: Context) : SharedTimelineRepository {
     private val prefs = context.getSharedPreferences("overdex_timeline_prefs", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }

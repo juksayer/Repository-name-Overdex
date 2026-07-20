@@ -2,6 +2,9 @@ package com.example.overdex.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * A lightweight representation of a Pokémon specimen for sharing over the chat transport.
+ */
 @Serializable
 data class SharedPokemon(
     val speciesId: Int,

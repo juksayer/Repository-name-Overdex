@@ -27,43 +27,36 @@ enum class DroidballLifecycleState {
  * The presentation layer (UI) maps these to specific colors (e.g. Amber, Green).
  */
 enum class DroidballIndicator {
-    /**
-     * Searching, Preparing, Waiting.
-     */
+    /** Searching for visual anchors or features. */
     SEARCHING,
 
-    /**
-     * Observation confirmed, Confidence established.
-     */
+    /** Observation confirmed with high confidence. */
     CONFIRMED,
 
-    /**
-     * Observation active, Anchor alignment.
-     */
+    /** Actively aligning to a visual anchor. */
     ALIGNING,
 
-    /**
-     * Communication, Synchronization.
-     */
+    /** Communicating or synchronizing with external sources. */
     SYNCING,
 
-    /**
-     * Genuine system fault.
-     */
+    /** A system error has occurred. */
     ERROR,
 
-    /**
-     * De-energized.
-     */
+    /** System is idle or de-energized. */
     IDLE
 }
 
 /**
  * A presentation model representing Droidball's current state.
  * 
- * DroidballObservationState is a presentation model derived from the Observation Layer.
+ * DroidballObservationState is derived from the Observation Layer.
  * The Observation Layer decides; Droidball reflects.
  * This model is used exclusively for visualization and does not contain observation logic.
+ * 
+ * @property lifecycle The current phase of Droidball's deployment.
+ * @property indicator The semantic indicator of what Droidball is currently doing.
+ * @property targetRegionId The identifier of the screen region currently being observed.
+ * @property confidence The system's certainty regarding the current observation task.
  */
 data class DroidballObservationState(
     val lifecycle: DroidballLifecycleState = DroidballLifecycleState.DOCKED,

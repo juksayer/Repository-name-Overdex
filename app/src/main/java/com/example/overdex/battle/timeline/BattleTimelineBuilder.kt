@@ -3,8 +3,10 @@ package com.example.overdex.battle.timeline
 import com.example.overdex.battle.timeline.event.TimelineEvent
 
 /**
- * Responsible for the construction of an immutable [BattleTimeline] from
- * derived events.
+ * A builder class responsible for constructing a [BattleTimeline].
+ * 
+ * The builder allows for the incremental addition of events during the 
+ * reconciliation process before producing the final immutable ledger.
  */
 class BattleTimelineBuilder {
     private val events = mutableListOf<TimelineEvent>()

@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 
 /**
  * An architectural boundary representing any source capable of supplying 
- * visual observations to an [ObservationSession].
+ * visual evidence to an [ObservationSession].
  */
 interface ObservationInput {
     /**
@@ -13,9 +13,12 @@ interface ObservationInput {
     val source: SessionSource
 
     /**
-     * Drives the supply of visual evidence to a consumer.
-     * This callback-driven approach supports single-frame, multi-frame, 
-     * and future live observation sources.
+     * Supplies visual evidence to a consumer.
+     * 
+     * This callback-driven approach supports single-frame (screenshots), 
+     * multi-frame (stitched images), and real-time live capture feeds.
+     * 
+     * @param onVisualData A suspendable callback invoked with each [Bitmap] frame.
      */
     suspend fun supply(onVisualData: suspend (Bitmap) -> Unit)
 }

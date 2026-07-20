@@ -7,6 +7,10 @@ import com.example.overdex.model.observation.ChargedMoveObservation
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 
+/**
+ * Responsible for applying [Observation] facts and [BattleState] snapshots 
+ * to a [BattleMemory] instance.
+ */
 object BattleMemoryUpdater {
 
     fun processObservation(observation: Observation, memory: BattleMemory) {

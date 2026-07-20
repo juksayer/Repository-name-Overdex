@@ -1,20 +1,23 @@
 package com.example.overdex.model.observation
 
 /**
- * Interface responsible for distilling a list of observations into a single resolved value.
+ * Interface responsible for distilling a list of competing observations into a single resolved belief.
  */
 interface ObservationResolver {
     /**
-     * Resolves the current best observation for a given set of candidate observations.
-     * Returns null if no observation can be resolved.
+     * Resolves the "best" observation for a given set of candidate observations.
+     * 
+     * @param observations A list of raw observations for a single field or property.
+     * @return The resolved [Observation], or null if no consistent belief can be formed.
      */
     fun resolve(observations: List<Observation>): Observation?
 }
 
 /**
- * Default implementation of [ObservationResolver] that uses the "Highest Confidence Wins" policy.
- * If confidence is equal, it preserves the older observation (first in list).
- * Missing or null observations are ignored.
+ * Default implementation of [ObservationResolver] that uses a "Highest Confidence Wins" policy.
+ * 
+ * If multiple observations have the same highest confidence, it preserves the older
+ * observation (the one that appears earlier in the list).
  */
 class DefaultObservationResolver : ObservationResolver {
     override fun resolve(observations: List<Observation>): Observation? {

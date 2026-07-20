@@ -3,14 +3,16 @@ package com.example.overdex.battle.debug.observatory
 import kotlinx.serialization.Serializable
 
 /**
- * Base interface for all evidence payloads recorded by the Observation Recorder.
- * Ensures type safety and clean serialization for diverse signal types.
+ * Base interface for all evidence payloads recorded by the [ObservationRecorder].
+ * 
+ * Payloads represent the specific data points captured by the observatory, from
+ * raw OCR text to complex accessibility node trees.
  */
 @Serializable
 sealed interface RecordedPayload
 
 /**
- * Payload implementation for Accessibility evidence.
+ * Evidence captured from the Android Accessibility framework.
  */
 @Serializable
 data class AccessibilityPayload(
@@ -26,7 +28,7 @@ data class AccessibilityPayload(
 ) : RecordedPayload
 
 /**
- * Documents a visual capture attempt on a specific screen region.
+ * Metadata regarding a visual capture attempt on a specific screen region.
  */
 @Serializable
 data class VisionCapturePayload(
@@ -37,7 +39,7 @@ data class VisionCapturePayload(
 ) : RecordedPayload
 
 /**
- * Documents a detected visual anchor.
+ * Metadata for a detected visual anchor used for spatial alignment.
  */
 @Serializable
 data class AnchorDetectedPayload(
@@ -48,7 +50,7 @@ data class AnchorDetectedPayload(
 ) : RecordedPayload
 
 /**
- * Documents a recognition attempt (success or failure).
+ * Outcome of a specific recognition attempt (e.g., OCR or pattern matching).
  */
 @Serializable
 data class RecognitionAttemptPayload(
@@ -61,7 +63,7 @@ data class RecognitionAttemptPayload(
 ) : RecordedPayload
 
 /**
- * Represents a competitor in a decision evaluation.
+ * Represents a specific evidence point or competitor considered during a decision evaluation.
  */
 @Serializable
 data class DecisionCompetitor(
@@ -71,7 +73,14 @@ data class DecisionCompetitor(
 )
 
 /**
- * Documents a decision made by the engine regarding a specific field.
+ * Records a decision made by an observation engine regarding the value of a specific field.
+ * 
+ * @property field The name of the field being decided (e.g., "SpeciesName").
+ * @property winningValue The value selected as the best belief.
+ * @property winningConfidence The confidence score associated with the winning value.
+ * @property competitors All candidate values considered during resolution.
+ * @property observationStage The pipeline stage where the decision occurred.
+ * @property contributingEvents A list of sequence numbers for events that influenced this decision.
  */
 @Serializable
 data class DecisionEvaluatedPayload(
@@ -84,7 +93,7 @@ data class DecisionEvaluatedPayload(
 ) : RecordedPayload
 
 /**
- * Documents an integrity check on the session state.
+ * Records the results of a session integrity check.
  */
 @Serializable
 data class IntegrityCheckedPayload(
@@ -95,7 +104,7 @@ data class IntegrityCheckedPayload(
 ) : RecordedPayload
 
 /**
- * Documents a change in the session's progress.
+ * Records a point-in-time snapshot of observation progress.
  */
 @Serializable
 data class ProgressUpdatedPayload(
@@ -105,7 +114,10 @@ data class ProgressUpdatedPayload(
 ) : RecordedPayload
 
 /**
- * System-level event (Session started, stopped, etc.).
+ * Records a system-level event within the observation lifecycle.
+ * 
+ * @property eventName Name of the system event (e.g., "SessionStarted").
+ * @property details Additional contextual information.
  */
 @Serializable
 data class SystemEventPayload(
@@ -113,6 +125,9 @@ data class SystemEventPayload(
     val details: String? = null
 ) : RecordedPayload
 
+/**
+ * A simplified representation of an accessibility node for debugging and recording.
+ */
 @Serializable
 data class AccessibilityProbeNode(
     val className: String?,

@@ -1,25 +1,26 @@
 package com.example.overdex.battle.debug.observatory
 
 /**
- * A formal interface for any component that produces a stream of evidence events
- * for the Signal Observatory.
+ * Interface for any component that produces a stream of evidence events for the observatory.
  */
 interface EvidenceSource {
+    /** The human-readable name of the evidence source. */
     val name: String
     
     /**
-     * Starts recording evidence.
+     * Starts recording evidence from this source.
+     * 
      * @param syncSessionId Optional ID of an active ObservationSession to align timelines.
      */
     fun startRecording(syncSessionId: String? = null)
     
     /**
-     * Stops the current recording session.
+     * Stops the current recording session for this source.
      */
     fun stopRecording()
     
     /**
-     * Clears all recorded events.
+     * Clears all recorded events from this source's buffer.
      */
     fun clear()
     
@@ -30,11 +31,15 @@ interface EvidenceSource {
 }
 
 /**
- * Base interface for all evidence events captured by the observatory.
+ * Base contract for a single event captured by an [EvidenceSource].
  */
 interface EvidenceEvent {
+    /** The monotonic sequence number of the event. */
     val sequenceNumber: Long
+    /** The absolute system time when the event was captured. */
     val timestamp: Long
+    /** The time in milliseconds relative to the start of the recording session. */
     val relativeTimestamp: Long
+    /** The name of the [EvidenceSource] that produced this event. */
     val sourceName: String
 }

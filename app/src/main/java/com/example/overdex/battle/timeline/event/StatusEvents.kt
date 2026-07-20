@@ -3,7 +3,9 @@ package com.example.overdex.battle.timeline.event
 import com.example.overdex.battle.timeline.observer.ObserverId
 
 /**
- * Recorded when a trainer switches their active Pokémon.
+ * A [TimelineEvent] recorded when a trainer switches their active Pokémon.
+ * 
+ * @property pokemonId The identifier of the Pokémon entering the battle.
  */
 data class PokemonSwitched(
     override val timestamp: Long,
@@ -12,7 +14,9 @@ data class PokemonSwitched(
 ) : TimelineEvent
 
 /**
- * Recorded when a Pokémon's HP reaches zero.
+ * A [TimelineEvent] recorded when a Pokémon's HP reaches zero and it leaves the battle.
+ * 
+ * @property pokemonId The identifier of the Pokémon that fainted.
  */
 data class PokemonFainted(
     override val timestamp: Long,

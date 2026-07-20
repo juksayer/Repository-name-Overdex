@@ -2,6 +2,9 @@ package com.example.overdex.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Data model used for importing species from a JSON source.
+ */
 @Serializable
 data class PokemonImport(
     val id: Int,
@@ -14,6 +17,10 @@ data class PokemonImport(
     val prev_evolution: List<EvolutionImport>? = null,
     val next_evolution: List<EvolutionImport>? = null,
 )
+
+/**
+ * Nested evolution data within an import source.
+ */
 @Serializable
 data class EvolutionImport(
     val num: String,

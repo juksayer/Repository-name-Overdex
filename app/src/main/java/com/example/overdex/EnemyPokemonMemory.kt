@@ -3,6 +3,11 @@ package com.example.overdex
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 
+/**
+ * The remembered state of a single opponent Pokémon during a battle.
+ * 
+ * Includes the species identity, estimated current energy, and observed move set.
+ */
 data class EnemyPokemonMemory(
     val species: String,
     var alive: Boolean = true,

@@ -3,6 +3,10 @@ package com.example.overdex
 import android.content.Context
 import android.content.SharedPreferences
 
+/**
+ * Manages the "Researcher Mode" feature toggle, which unlocks advanced 
+ * debugging and observation tools.
+ */
 class ResearcherManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 

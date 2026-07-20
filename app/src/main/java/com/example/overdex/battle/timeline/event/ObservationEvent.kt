@@ -5,8 +5,13 @@ import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.confidence.ConfidenceScore
 
 /**
- * Represents an observation captured during battle, supported by [Evidence]
- * and qualified by a [ConfidenceScore].
+ * A [TimelineEvent] representing an observation captured during battle.
+ * 
+ * Observation events are the primary record of evidence-based beliefs in the
+ * timeline, supporting the auditability of Overdex's intelligence.
+ * 
+ * @property evidence The underlying [Evidence] (e.g., image frame) supporting this event.
+ * @property confidence The system's certainty regarding the observation at the time of record.
  */
 data class ObservationEvent(
     override val timestamp: Long,

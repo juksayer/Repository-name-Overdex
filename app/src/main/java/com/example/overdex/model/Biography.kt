@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 
 /**
  * Encapsulates the entire multi-section biography for a Pokémon.
+ * 
+ * Biography data is part of the Reference Knowledge layer and provides rich
+ * narrative and historical context for each species.
  */
 @Serializable
 data class PokemonBiography(
@@ -12,13 +15,19 @@ data class PokemonBiography(
 
 /**
  * A discrete block of biographical information.
+ * 
+ * @property type The thematic category of the information.
+ * @property title The header for the section.
+ * @property subtitle An optional sub-header.
+ * @property content A list of strings, where each item represents a paragraph or bullet point.
+ * @property references A list of citations supporting the information in this section.
  */
 @Serializable
 data class BiographySection(
     val type: BiographySectionType,
     val title: String,
-    val subtitle: String? = null, // Future enhancement: added optional subtitle support
-    val content: List<String>, // Each item is a paragraph or bullet point
+    val subtitle: String? = null,
+    val content: List<String>,
     val references: List<BiographyReference> = emptyList()
 )
 

@@ -11,6 +11,14 @@ object RecognitionObservationMapper {
 
     /**
      * Maps a [RecognitionResult] to a specific [Observation] subclass based on the [regionId].
+     * 
+     * This component is responsible for assigning semantic meaning to raw recognized values.
+     * For example, a string value from "SpeciesName" becomes a [PokemonNameObservation].
+     * 
+     * @param regionId The identifier of the region that produced the result.
+     * @param result The recognized value and its associated confidence.
+     * @param source The origin of the observation (defaults to OCR).
+     * @return A domain-specific [Observation], or null if mapping is not defined for the region.
      */
     fun map(
         regionId: String,

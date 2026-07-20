@@ -4,9 +4,12 @@ import android.content.res.AssetManager
 import android.util.Log
 
 /**
- * Abstraction for resolving Pokémon sprite locations.
+ * Abstraction for resolving the visual asset (sprite) for a specific Pokémon.
  */
 interface SpriteProvider {
+    /**
+     * Returns the URI or URL for the requested sprite variant.
+     */
     fun getSpriteUrl(
         id: Int,
         isShiny: Boolean = false,
@@ -14,6 +17,7 @@ interface SpriteProvider {
         isPurified: Boolean = false
     ): String
 
+    /** Returns true if the sprite for the given species is available in this provider. */
     fun exists(id: Int, isShiny: Boolean = false): Boolean
 }
 

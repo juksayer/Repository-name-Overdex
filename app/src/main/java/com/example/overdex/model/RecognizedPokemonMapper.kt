@@ -1,9 +1,12 @@
 package com.example.overdex.model
 
 /**
- * Maps a [RecognizedPokemon] (best understanding from vision) to an [OwnedPokemon] (persistence model).
+ * Maps a [RecognizedPokemon] belief to an [OwnedPokemon] persistence record.
+ * 
+ * This transformation occurs once the trainer confirms the system's best 
+ * understanding of a specimen.
  *
- * @param speciesId The Pokédex ID of the recognized species.
+ * @param speciesId The canonical Pokédex ID of the recognized species.
  */
 fun RecognizedPokemon.toOwnedPokemon(speciesId: Int): OwnedPokemon {
     return OwnedPokemon(

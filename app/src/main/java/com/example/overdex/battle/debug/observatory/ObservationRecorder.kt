@@ -8,8 +8,11 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Singleton coordinator for recording evidence during an Observation Session.
- * Acts as the "Flight Recorder" for the Overdex observation architecture.
+ * Singleton coordinator for recording evidence during an observation session.
+ * 
+ * Acting as a "Flight Recorder," the [ObservationRecorder] captures a high-fidelity
+ * stream of visual, system, and decision-making events. This recording can be
+ * exported for analysis, replay, or debugging the observation pipeline.
  */
 object ObservationRecorder {
     private var isRecording = false
@@ -22,6 +25,11 @@ object ObservationRecorder {
 
     private var _lastRecording: ObservationRecording? = null
 
+    /**
+     * Initializes a new recording session and captures device metadata.
+     * 
+     * @param context Android context used to capture screen resolution and density.
+     */
     fun startRecording(context: Context) {
         if (isRecording) return
         

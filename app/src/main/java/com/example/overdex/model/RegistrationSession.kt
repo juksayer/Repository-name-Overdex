@@ -5,8 +5,16 @@ import com.example.overdex.model.observation.Observation as DomainObservation
 import java.util.UUID
 
 /**
- * A Registration Session groups one or more observations into a single Specimen
- * before it is committed to the specimen collection.
+ * A grouping of [DomainObservation] facts captured for a specific specimen 
+ * before it is committed to the collection.
+ * 
+ * The session persists throughout an observation attempt, allowing multiple 
+ * captures to contribute evidence toward a single resolved specimen identity.
+ * 
+ * @property id Unique identifier for the session.
+ * @property observations Chronological history of facts captured in this session.
+ * @property createdAt Timestamp of session initiation.
+ * @property isComplete True if the session has reached its objective.
  */
 data class RegistrationSession(
     val id: String = UUID.randomUUID().toString(),

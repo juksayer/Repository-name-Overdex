@@ -19,6 +19,13 @@ object SpeciesNameRecognizer {
             .replace(Regex("^\\d+"), "")    // Remove "15"
             .trim()
     }
+
+    /**
+     * Extracts the Pokémon species name from the provided bitmap.
+     * 
+     * @param bitmap The cropped image of the species name region.
+     * @return A [RecognitionResult] containing the normalized species name.
+     */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)
         return try {

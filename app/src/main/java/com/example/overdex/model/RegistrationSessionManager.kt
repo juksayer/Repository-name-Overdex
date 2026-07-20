@@ -6,16 +6,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Single owner of the active registration session.
- * Manages the lifecycle of a RegistrationSession.
+ * Central coordinator for the active [RegistrationSession] lifecycle.
+ * 
+ * This manager owns the state of the current registration attempt, allowing
+ * different screens and recognizers to contribute evidence to a shared session.
  */
 object RegistrationSessionManager {
     private val _activeSession = MutableStateFlow<RegistrationSession?>(null)
+    /** Reactive flow of the current active session. */
     val activeSession: StateFlow<RegistrationSession?> = _activeSession.asStateFlow()
 
     /**
      * Starts a new registration session. 
-     * If another session is active, it is replaced with a new session.
+     * 
+     * If another session is already active, it is replaced with a new empty session.
      * @param initialObservations Optional list of observations to prepopulate the session.
      */
     fun startSession(initialObservations: List<DomainObservation> = emptyList()) {

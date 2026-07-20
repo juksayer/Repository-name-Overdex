@@ -15,22 +15,31 @@ import kotlinx.serialization.json.Json
 import java.time.Instant
 
 /**
- * Manages the connection with another trainer.
+ * Manages the connection, identity, and lifecycle of a linked partner trainer.
  */
 interface PartnerRepository {
+    /** Reactive flow of the current linked partner (or null if unlinked). */
     val partner: StateFlow<PartnerIdentity?>
 
+    /**
+     * Establishes a link with another trainer identity.
+     */
     suspend fun link(
         identity: PublicTrainerIdentity,
         myIdentity: TrainerIdentity,
         recordLinkEvent: (SharedEvent) -> Unit
     )
 
+    /** Terminate the link with the current partner. */
     suspend fun unlink()
 
+    /** Establishes a link with a synthetic debug partner for development. */
     suspend fun linkDebugPartner()
 }
 
+/**
+ * Implementation of [PartnerRepository] using SharedPreferences for persistence.
+ */
 class SharedPreferencesPartnerRepository(private val context: Context) : PartnerRepository {
     private val prefs = context.getSharedPreferences("overdex_partner_prefs", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }

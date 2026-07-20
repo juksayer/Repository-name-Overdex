@@ -5,6 +5,13 @@ import com.example.overdex.model.CaptureRegion
 import com.example.overdex.model.CaptureTemplate
 import com.example.overdex.model.ObservationType
 
+/**
+ * Manages the definitions and user adjustments for visual capture templates.
+ * 
+ * Capture templates define the default regions of interest for different Pokémon GO
+ * screens. This manager handles loading these defaults and applying persistent
+ * user calibrations.
+ */
 class CaptureTemplateManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("capture_templates", Context.MODE_PRIVATE)
 

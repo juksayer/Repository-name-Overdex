@@ -7,13 +7,18 @@ import com.example.overdex.battle.debug.observatory.*
 
 /**
  * Entry point for the recognition pipeline.
- * Routes captured observations to specialized recognizers based on their region ID.
+ * 
+ * Routes captured [CaptureObservation]s to specialized recognizers based on their region ID.
+ * It also handles the recording of recognition attempts to the [ObservationRecorder].
  */
 object ObservationRecognizer {
     
     /**
      * Recognizes structured data from a capture observation.
-     * @return A list of RecognitionResults containing the extracted values.
+     * 
+     * @param observation The raw visual evidence captured from a screen region.
+     * @param stage The current stage of the observation pipeline (for logging/debugging).
+     * @return A list of [RecognitionResult]s containing the extracted values.
      */
     suspend fun recognize(observation: CaptureObservation, stage: String = "UNKNOWN"): List<RecognitionResult<*>> {
         val results = mutableListOf<RecognitionResult<*>>()

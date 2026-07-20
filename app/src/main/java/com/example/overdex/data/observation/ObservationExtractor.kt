@@ -7,17 +7,18 @@ import com.example.overdex.model.ObservationRegionState
 /**
  * Engine responsible for extracting raw bitmap data from calibrated observation regions.
  *
- * This is a pure producer that separates image extraction from downstream interpretation
- * (OCR, LCD, etc.), following the "One producer, many consumers" architecture.
+ * This component acts as a bridge between the full screen capture and the specialized
+ * recognizers. It calculates pixel coordinates from normalized region definitions
+ * and performs the actual bitmap cropping.
  */
 object ObservationExtractor {
 
     /**
-     * Extracts bitmap observations for a set of region states.
+     * Extracts bitmap observations for a set of region states from a source bitmap.
      *
-     * @param source The full source display bitmap.
-     * @param states The current runtime states of the regions to extract.
-     * @return A collection of cropped Observations.
+     * @param source The full source display bitmap (e.g., a full screenshot).
+     * @param states The current runtime states (coordinates and size) of the regions to extract.
+     * @return A collection of [Observation] objects containing the cropped bitmaps.
      */
     fun extract(source: Bitmap, states: List<ObservationRegionState>): List<Observation> {
         val width = source.width

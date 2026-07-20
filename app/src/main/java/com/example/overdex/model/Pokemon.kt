@@ -1,5 +1,11 @@
 package com.example.overdex.model
 
+/**
+ * The canonical Reference Knowledge model for a Pokémon species.
+ * 
+ * This class contains static data about a species, including its types, move pool,
+ * and base stats. It serves as the primary reference for the intelligence layer.
+ */
 data class Pokemon(
     val id: Int,
     val name: String,
@@ -22,8 +28,14 @@ data class Pokemon(
     val baseDefense: Int = 0,
     val baseStamina: Int = 0,
 ) {
+    /** The Pokédex ID formatted with a leading hash and padding (e.g., #006). */
     val formattedId: String get() = "#${id.toString().padStart(3, '0')}"
 
+    /**
+     * Calculates the type effectiveness multipliers for this Pokémon.
+     * 
+     * @return A map of [PokemonType] to their damage multiplier relative to 1.0.
+     */
     fun getWeaknesses(): Map<PokemonType, Double> {
         val multipliers = mutableMapOf<PokemonType, Double>()
         types.forEach { type ->

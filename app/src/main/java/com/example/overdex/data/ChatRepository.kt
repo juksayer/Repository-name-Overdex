@@ -19,14 +19,29 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
+/**
+ * Manages the trainer's chat history and message distribution.
+ */
 interface ChatRepository {
+    /** Reactive flow of the complete message history. */
     val messages: StateFlow<List<ChatMessage>>
+
+    /** Sends a plain text message. */
     suspend fun send(text: String, myIdentity: TrainerIdentity)
+
+    /** Shares a specific Pokémon specimen in the chat. */
     suspend fun sendPokemon(ownedPokemon: OwnedPokemon, species: Pokemon, myIdentity: TrainerIdentity)
+
+    /** Processes an incoming message (either from transport or local). */
     suspend fun receive(message: ChatMessage)
+
+    /** Attaches a transport layer for live message synchronization. */
     fun setTransport(transport: ChatTransport)
 }
 
+/**
+ * Implementation of [ChatRepository] that persists messages in SharedPreferences.
+ */
 class SharedPreferencesChatRepository(
     private val context: Context
 ) : ChatRepository {

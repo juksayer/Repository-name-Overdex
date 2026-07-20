@@ -4,6 +4,12 @@ import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Utility for producing structured, hierarchical log traces of the observation pipeline.
+ * 
+ * TraceLogger provides clear visibility into the state of recognition, timing,
+ * and confidence scores for a specific capture.
+ */
 object TraceLogger {
     private const val TAG = "ODX_TRACE"
     private val startTimes = ConcurrentHashMap<String, Long>()

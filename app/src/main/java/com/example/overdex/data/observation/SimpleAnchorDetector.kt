@@ -11,11 +11,20 @@ import com.example.overdex.battle.debug.observatory.RectData
 
 /**
  * Initial implementation of an anchor detector.
+ * 
  * Locates move/type icons on the left side of move rows using a deterministic
- * bright-blob detection algorithm.
+ * bright-blob detection algorithm. This provides the spatial foundation for
+ * refined coordinate calculations.
  */
 object SimpleAnchorDetector : AnchorDetector {
 
+    /**
+     * Scans the bitmap for stable visual anchors.
+     * 
+     * @param bitmap The full capture to scan.
+     * @param stage The current observation stage for recording.
+     * @return A list of [AnchorObservation]s representing detected UI elements.
+     */
     override suspend fun detectAnchors(bitmap: Bitmap, stage: String): List<AnchorObservation> {
         val anchors = mutableListOf<AnchorObservation>()
         val width = bitmap.width

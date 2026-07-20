@@ -14,8 +14,14 @@ object MoveNameRecognizer {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
-     * Extracts the move name from a bitmap.
-     * Assumes the move name is the primary text block in the row.
+     * Extracts the move name from the provided bitmap.
+     * 
+     * Assumes the move name is the primary text block in the row. It filters out
+     * typical "noise" found in move rows such as damage numbers, "bonus" text,
+     * and UI elements like "Power Up" or "Stardust".
+     * 
+     * @param bitmap The cropped image of a move row.
+     * @return A [RecognitionResult] containing the extracted move name.
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)

@@ -17,16 +17,30 @@ data class PresentationState(
     val timeline: TimelinePresentation = TimelinePresentation()
 )
 
+/**
+ * Defines the logical lifecycle of the Overdex instrument hardware.
+ */
 enum class InstrumentLifecycle {
+    /** Hardware is powered off or inactive. */
     IDLE,
+    /** System is initializing sensors and recognizers. */
     BOOTING,
+    /** User is adjusting region offsets. */
     CALIBRATING,
+    /** Full tactical display is active. */
     DEPLOYED,
+    /** Background monitoring is active. */
     SERVICE_ACTIVE
 }
 
 /**
  * Describes the current activity and progress of the Observation Layer.
+ * 
+ * @property focus The specific UI element being targeted for observation.
+ * @property activity The technical task being performed (e.g., OCR).
+ * @property status Semantic indicator for Droidball/UI alerts.
+ * @property progress Overall completion of the session objective (0.0 to 1.0).
+ * @property captureId Identifier for the specific visual capture being processed.
  */
 data class ObservationPresentation(
     val focus: ObservationFocus = ObservationFocus.IDLE,
@@ -38,6 +52,9 @@ data class ObservationPresentation(
     val estimate: ObservationEstimate = ObservationEstimate()
 )
 
+/**
+ * Specific target areas for visual focus during an observation attempt.
+ */
 enum class ObservationFocus {
     IDLE,
     ANCHORS,
@@ -50,6 +67,9 @@ enum class ObservationFocus {
     COMPLETE
 }
 
+/**
+ * Technical tasks performed by the observation pipeline.
+ */
 enum class ObservationActivity {
     IDLE,
     LOCATING_ANCHORS,
@@ -62,15 +82,27 @@ enum class ObservationActivity {
     FINALIZING_SESSION
 }
 
+/**
+ * High-level status indicators for the observation engine.
+ */
 enum class ObservationIndicator {
+    /** Observation engine is inactive. */
     OFF,
+    /** Actively searching for patterns or text. */
     SEARCHING,
+    /** Calibrating to visual anchors. */
     ALIGNING,
+    /** Information confirmed with high confidence. */
     CONFIRMED,
+    /** Synchronizing with external sources or GameMaster. */
     SYNCING,
+    /** A technical fault has occurred. */
     ERROR
 }
 
+/**
+ * Data requirements that must be met to satisfy an observation objective.
+ */
 enum class ObservationRequirement {
     SPECIES,
     COMBAT_POWER,
@@ -79,12 +111,20 @@ enum class ObservationRequirement {
     CHARGED_MOVE_B
 }
 
+/**
+ * Predictive metrics for the current observation session.
+ */
 data class ObservationEstimate(
     val remainingObservations: Int = 0
 )
 
 /**
  * Tactical recommendations derived from Intelligence Layer analysis.
+ * 
+ * @property primaryGuidance The suggested tactical action for the trainer.
+ * @property urgency How critical the recommended action is.
+ * @property threat Assessment of the opponent's advantage.
+ * @property advantage Assessment of the player's advantage.
  */
 data class TacticalPresentation(
     val primaryGuidance: TacticalAction = TacticalAction.UNKNOWN,
@@ -100,11 +140,17 @@ data class TacticalPresentation(
  * Semantic evidence supporting a tactical recommendation.
  */
 sealed class TacticalEvidence {
+    /** Evidence based on elemental type advantages. */
     data class TypeAdvantage(val advantage: TacticalAdvantage) : TacticalEvidence()
+    /** Evidence based on a move that was actually observed. */
     data class ObservedMove(val moveName: String, val isFast: Boolean) : TacticalEvidence()
+    /** Evidence based on current energy estimation. */
     data class EnergyLead(val isLeading: Boolean) : TacticalEvidence()
 }
 
+/**
+ * High-level tactical actions recommended to the player.
+ */
 enum class TacticalAction {
     UNKNOWN,
     STAY_AND_FIGHT,
@@ -115,6 +161,9 @@ enum class TacticalAction {
     SELECT_SPECIES_MANUALLY
 }
 
+/**
+ * Priority levels for tactical guidance.
+ */
 enum class TacticalPriority {
     NONE,
     LOW,
@@ -123,6 +172,9 @@ enum class TacticalPriority {
     CRITICAL
 }
 
+/**
+ * Semantic assessments of combat advantage or threat.
+ */
 enum class TacticalAdvantage {
     NEUTRAL,
     LOW,
@@ -130,11 +182,17 @@ enum class TacticalAdvantage {
     HIGH
 }
 
+/**
+ * Presentation of both teams in the current engagement.
+ */
 data class TeamPresentation(
     val opponent: OpponentTeamPresentation = OpponentTeamPresentation(),
     val player: PlayerTeamPresentation = PlayerTeamPresentation()
 )
 
+/**
+ * Status and identification of the opponent's team members.
+ */
 data class OpponentTeamPresentation(
     val activeSpecies: String? = null,
     val activeSpeciesId: Int? = null,
@@ -144,6 +202,9 @@ data class OpponentTeamPresentation(
     val members: List<EnemyMemberPresentation> = emptyList()
 )
 
+/**
+ * Status of a single Pokémon in the opponent's team.
+ */
 data class EnemyMemberPresentation(
     val species: String,
     val speciesId: Int?,
@@ -152,6 +213,9 @@ data class EnemyMemberPresentation(
     val energyLevel: Float // 0.0 to 1.0
 )
 
+/**
+ * A Pokémon move and its effectiveness in the current matchup context.
+ */
 data class SemanticMove(
     val name: String,
     val type: PokemonType,
@@ -159,6 +223,9 @@ data class SemanticMove(
     val effectiveness: MoveEffectiveness
 )
 
+/**
+ * Simplified effectiveness categories for UI display.
+ */
 enum class MoveEffectiveness {
     SUPER_EFFECTIVE,
     NEUTRAL,
@@ -167,18 +234,30 @@ enum class MoveEffectiveness {
     UNKNOWN
 }
 
+/**
+ * Status of the player's active Pokémon and resources.
+ */
 data class PlayerTeamPresentation(
     val activeSpecies: String? = null,
     val shieldsUsed: Int = 0
 )
 
+/**
+ * Status of the Battle Timeline during an engagement.
+ */
 data class TimelinePresentation(
     val status: TimelineStatus = TimelineStatus.IDLE,
     val eventCount: Int = 0
 )
 
+/**
+ * Connectivity and recording status of the timeline.
+ */
 enum class TimelineStatus {
+    /** Timeline is inactive. */
     IDLE,
+    /** Actively recording battle events. */
     RECORDING,
+    /** Successfully synchronized with a partner or archive. */
     SYNCHRONIZED
 }

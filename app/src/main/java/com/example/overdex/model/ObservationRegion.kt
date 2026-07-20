@@ -5,15 +5,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * Represents a named area of the Observation Display that represents a meaningful game element.
+ * Represents a named, immutable area of the Pokémon GO UI target for inspection.
  *
- * Observation Region is the permanent architectural term used by Overdex.
- * Future recognizers will receive an Observation Region to target their inspection.
- *
- * Note: The fact that an Observation Region is currently rectangular is an implementation detail.
- * Coordinates are normalized (0.0 to 1.0) relative to the source display dimensions.
- *
- * ObservationRegion is an immutable definition.
+ * Observation Regions are the permanent architectural descriptors used by Overdex
+ * to target recognizers (OCR, ML, etc.) to specific screen coordinates.
+ * Coordinates are normalized (0.0 to 1.0) to ensure resolution independence.
+ * 
+ * @property name The identifier for the region (e.g., "Species").
+ * @property x The normalized horizontal start position.
+ * @property y The normalized vertical start position.
+ * @property width The normalized width of the region.
+ * @property height The normalized height of the region.
  */
 data class ObservationRegion(
     val name: String,

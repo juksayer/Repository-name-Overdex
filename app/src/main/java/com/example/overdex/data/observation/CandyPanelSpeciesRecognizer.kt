@@ -14,6 +14,15 @@ import kotlinx.coroutines.tasks.await
 object CandyPanelFamilyRecognizer {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
+    /**
+     * Extracts the species family name from the Candy Panel.
+     * 
+     * It searches for text patterns like "Mewtwo Candy" or "Charizard Mega Energy"
+     * and isolates the species prefix.
+     * 
+     * @param bitmap The cropped image of the candy panel.
+     * @return A [RecognitionResult] containing the identified family name.
+     */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)
         return try {

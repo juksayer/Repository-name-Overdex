@@ -40,6 +40,16 @@ data class PipelineStatus(
     val session: ObservationSession? = null
 )
 
+/**
+ * Manages the sequential, stage-based observation process for a trainer.
+ * 
+ * This engine coordinates the interaction between an [ObservationInput], a [CaptureTemplate],
+ * and the [ObservationRecognizer]. it maintains session state, handles coordinate 
+ * refinement using anchors, and broadcasts progress updates to the UI.
+ * 
+ * It is responsible for the "Guided" experience where the system moves through stages
+ * like Species -> CP -> Moves.
+ */
 object GuidedObservationPipeline {
 
     private const val ANCHOR_CONFIDENCE_THRESHOLD = 0.8f
@@ -47,6 +57,15 @@ object GuidedObservationPipeline {
 
     private val defaultResolver = DefaultObservationResolver()
 
+    /**
+     * Executes the guided observation sequence.
+     * 
+     * @param input The source of visual evidence.
+     * @param template The region definitions used for cropping.
+     * @param existingSession An optional existing session to resume.
+     * @param objective The goal of the observation (e.g., Register vs Identify).
+     * @param onUpdate Callback invoked with each progress update.
+     */
     suspend fun run(
         input: ObservationInput,
         template: CaptureTemplate,

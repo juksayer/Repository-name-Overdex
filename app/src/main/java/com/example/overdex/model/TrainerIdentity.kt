@@ -10,6 +10,14 @@ import kotlinx.serialization.encoding.Encoder
 import java.time.Instant
 import java.util.UUID
 
+/**
+ * Represents the local trainer's persistent identity and profile.
+ * 
+ * @property displayName The local name shown to other trainers.
+ * @property trainerId The unique, immutable UUID for this trainer.
+ * @property createdAt Timestamp when the profile was first created.
+ * @property pokemonGoTrainerCode The trainer's numeric friend code from Pokémon GO.
+ */
 @Serializable
 data class TrainerIdentity(
     val displayName: String? = null,

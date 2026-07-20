@@ -37,6 +37,12 @@ import com.example.overdex.ui.theme.OverdexTheme
 import kotlin.system.exitProcess
 
 
+/**
+ * The primary entry point and UI container for the Overdex application.
+ * 
+ * MainActivity coordinates the initialization of core repositories and managers,
+ * and hosts the Jetpack Compose navigation graph for the handheld instrument.
+ */
 class MainActivity : ComponentActivity() {
     private lateinit var mediaManager: MediaManager
     private lateinit var calibrationManager: CalibrationManager

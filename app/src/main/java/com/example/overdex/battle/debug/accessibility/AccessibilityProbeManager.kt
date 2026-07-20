@@ -9,7 +9,10 @@ import kotlinx.serialization.encodeToString
 
 /**
  * Singleton manager for the Accessibility Probe evidence source.
- * Acts as an EvidenceSource and delegates recording to the central ObservationRecorder.
+ * 
+ * This manager coordinates the capture of UI events from the [AccessibilityProbeService]
+ * and ensures they are recorded both locally (for summary reporting) and globally
+ * via the [ObservationRecorder].
  */
 object AccessibilityProbeManager : EvidenceSource {
     override val name = "AccessibilityProbe"
@@ -23,6 +26,7 @@ object AccessibilityProbeManager : EvidenceSource {
 
     private val json = Json { prettyPrint = true }
 
+    /** Returns true if the probe is currently recording events. */
     fun isActive() = isRecording
 
     override fun startRecording(syncSessionId: String?) {

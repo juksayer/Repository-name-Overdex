@@ -5,10 +5,14 @@ import android.util.Log
 import com.google.firebase.FirebaseApp
 
 /**
- * Factory for creating the appropriate ChatTransport.
+ * Factory for creating the appropriate [ChatTransport] based on system availability.
  */
 object ChatTransportFactory {
     
+    /**
+     * Creates a transport layer, preferring Firebase and falling back to a Mock
+     * implementation if Firebase initialization fails.
+     */
     fun create(
         context: Context,
         myTrainerId: String,

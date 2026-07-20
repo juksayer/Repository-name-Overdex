@@ -3,6 +3,14 @@ package com.example.overdex.model
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 
+/**
+ * Enumeration of all Pokémon elemental types.
+ * 
+ * Each type includes its associated hex color for consistent UI rendering and
+ * provides logic for determining its offensive and defensive matchups.
+ * 
+ * @property colorHex The ARGB hex value for the type's signature color.
+ */
 @Serializable
 enum class PokemonType(val colorHex: Long) {
     NORMAL(0xFFA8A77A),
@@ -24,8 +32,12 @@ enum class PokemonType(val colorHex: Long) {
     FAIRY(0xFFD685AD),
     DARK(0xFF705746);
 
+    /** The Compose [Color] representation of the type. */
     val color: Color get() = Color(colorHex)
 
+    /**
+     * Returns the list of types that this type is weak against (defensive).
+     */
     fun getWeaknesses(): List<PokemonType> {
         return when (this) {
             NORMAL -> listOf(FIGHTING)

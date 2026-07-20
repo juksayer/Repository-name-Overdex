@@ -2,6 +2,9 @@ package com.example.overdex
 
 import android.content.Context
 
+/**
+ * Manages the persistence of user-defined calibration offsets for battle UI regions.
+ */
 class CalibrationManager(context: Context) {
 
     private val prefs =

@@ -5,10 +5,25 @@ import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.battle.debug.observatory.*
 
+/**
+ * The core logic for evaluating the status and success of a registration session.
+ * 
+ * The Registration Engine analyzes the collection of observations in an [ObservationSession],
+ * resolves competing evidence, and produces a [RegistrationAssessment] that recommends
+ * the next action for the trainer.
+ */
 object RegistrationEngine {
 
     private val defaultResolver = DefaultObservationResolver()
 
+    /**
+     * Evaluates a session's observations to produce a registration assessment.
+     * 
+     * @param session The active observation session containing historical evidence.
+     * @param manualSpecies A species manually selected by the user (if any).
+     * @param viewModel The Pokedex data source used for validation and normalization.
+     * @return A [RegistrationAssessment] containing confidence scores and recommended actions.
+     */
     suspend fun assess(
         session: ObservationSession,
         manualSpecies: Pokemon?,

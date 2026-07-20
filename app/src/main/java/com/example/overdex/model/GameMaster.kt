@@ -2,12 +2,21 @@ package com.example.overdex.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * The root container for the static game data loaded from external sources.
+ * 
+ * This represents the "Raw Reference Knowledge" as defined by external game data
+ * before it is normalized into the Overdex domain model.
+ */
 @Serializable
 data class GameMaster(
     val pokemon: List<GameMasterPokemon>,
     val moves: List<GameMasterMove>
 )
 
+/**
+ * Raw base stats for a Pokémon as defined in the game files.
+ */
 @Serializable
 data class BaseStats(
     val atk: Int,
@@ -15,6 +24,9 @@ data class BaseStats(
     val hp: Int
 )
 
+/**
+ * Raw species data entry in the GameMaster.
+ */
 @Serializable
 data class GameMasterPokemon(
     val dex: Int,
@@ -26,6 +38,9 @@ data class GameMasterPokemon(
     val baseStats: BaseStats? = null
 )
 
+/**
+ * Raw move data entry in the GameMaster.
+ */
 @Serializable
 data class GameMasterMove(
     val moveId: String,

@@ -1,7 +1,7 @@
 package com.example.overdex.model
 
 /**
- * Placeholder for future battle outcome and lifecycle analysis results.
+ * Assessment of a completed battle's technical and competitive lifecycle.
  */
 data class BattleLifecycleAnalysis(
     val battleId: String,

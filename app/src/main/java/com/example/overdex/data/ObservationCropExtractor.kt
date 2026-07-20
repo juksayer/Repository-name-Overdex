@@ -5,13 +5,16 @@ import com.example.overdex.model.CaptureTemplate
 import com.example.overdex.model.observation.CaptureObservation
 
 /**
- * Extracts individual bitmaps for each region defined in a CaptureTemplate.
+ * Responsible for extracting individual bitmaps for each region defined in a [CaptureTemplate].
  */
 object ObservationCropExtractor {
     
     /**
-     * Extracts crops from a source bitmap based on the provided template.
-     * @return A list of CaptureObservation objects containing the region ID and cropped Bitmap.
+     * Extracts crops from a source bitmap based on the provided template definitions.
+     * 
+     * @param source The full source image.
+     * @param template The template defining the regions to crop.
+     * @return A list of [CaptureObservation] objects.
      */
     fun extract(source: Bitmap, template: CaptureTemplate): List<CaptureObservation> {
         val observations = mutableListOf<CaptureObservation>()

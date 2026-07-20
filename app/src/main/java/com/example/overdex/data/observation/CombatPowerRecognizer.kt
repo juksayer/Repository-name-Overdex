@@ -14,8 +14,13 @@ object CombatPowerRecognizer {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
-     * Extracts the numeric CP value from a bitmap.
-     * Removes prefixes like "CP" or "cp" and ignores non-numeric characters.
+     * Extracts the numeric CP value from the provided bitmap.
+     * 
+     * Removes prefixes like "CP" or "cp" and ignores all non-numeric characters
+     * to isolate the combat power digits.
+     * 
+     * @param bitmap The cropped image of the CP region.
+     * @return A [RecognitionResult] containing the parsed integer CP value.
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<Int> {
         val image = InputImage.fromBitmap(bitmap, 0)

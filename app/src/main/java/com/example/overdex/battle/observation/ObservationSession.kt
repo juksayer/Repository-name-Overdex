@@ -1,9 +1,15 @@
 package com.example.overdex.battle.observation
 
 /**
- * Represents an active observation workspace for a single battle.
- * Owns an [ObservationWorkspace]. The resulting observations are eventually
- * reconciled into a BattleTimeline through the observation pipeline.
+ * Represents an active observation session for a single live battle.
+ * 
+ * The session manages the lifecycle of observations and owns an [ObservationWorkspace]
+ * where evidence is collected. Once the session is complete, its observations are
+ * typically reconciled into the Battle Timeline.
+ * 
+ * @property sessionId A unique identifier for the battle session.
+ * @property state The current lifecycle phase of the session.
+ * @property workspace The mutable storage area where incoming observations are collected.
  */
 class ObservationSession(
     @Suppress("unused") val sessionId: String,

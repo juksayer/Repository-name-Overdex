@@ -8,11 +8,20 @@ import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
 import com.example.overdex.battle.debug.observatory.RectData
 
 /**
- * An AccessibilityService that observes system events and captures node trees.
- * Only processes events when AccessibilityProbeManager is active.
+ * An [AccessibilityService] that observes system events and captures UI node trees.
+ * 
+ * This service acts as a low-level sensor for the observatory. It only processes
+ * and broadcasts events when the [AccessibilityProbeManager] is in an active 
+ * recording state.
  */
 class AccessibilityProbeService : AccessibilityService() {
 
+    /**
+     * Invoked by the system when an accessibility event occurs.
+     * 
+     * Captures the current node tree and event metadata, packages them into an
+     * [AccessibilityProbeEvent], and sends it to the manager.
+     */
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (!AccessibilityProbeManager.isActive()) return
 
