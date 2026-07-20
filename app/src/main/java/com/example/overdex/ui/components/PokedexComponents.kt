@@ -378,8 +378,8 @@ fun PokedexFrame(
                                 spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
                             )
                             
-                            // Live Move Panel - Displays moves for the active enemy
-                            LiveMovePanel(
+                            // Live Move Analysis Panel - Displays moves for the active enemy
+                            LiveMoveAnalysisPanel(
                                 opponent = presentationState.team.opponent,
                                 tactical = presentationState.tactical
                             )

@@ -55,6 +55,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ActionNode("register", InstrumentCommand.AddSpecimen)
             )),
             DirectoryNode("battle", listOf(
+                ActionNode("preview", InstrumentCommand.OpenBattlePreview),
                 ActionNode("history", InstrumentCommand.OpenBattleHistory),
                 ActionNode("logs", InstrumentCommand.OpenBattleLogs)
             )),

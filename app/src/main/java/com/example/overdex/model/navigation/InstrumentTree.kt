@@ -30,6 +30,7 @@ sealed interface InstrumentCommand {
     data object OpenReadme : InstrumentCommand
     data object OpenAccessibilityProbe : InstrumentCommand
     data object OpenSignalObservatory : InstrumentCommand
+    data object OpenBattlePreview : InstrumentCommand
 }
 
 @Stable

@@ -1,0 +1,5 @@
+- [x] Extract canonical panels to `BattlePanels.kt`
+- [x] Rename `LiveMovePanel` to `LiveMoveAnalysisPanel` and update usages
+- [x] Expand `BattlePreviewData` with additional scenarios
+- [x] Update `BattlePreviewScreen` to use extracted panels
+- [x] Verify scenarios via Compose Preview

@@ -148,6 +148,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenReadme -> navController.navigate("readme")
                 InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
                 InstrumentCommand.OpenSignalObservatory -> navController.navigate("signal_observatory")
+                InstrumentCommand.OpenBattlePreview -> navController.navigate("battle_preview")
             }
         }
     }
@@ -501,6 +502,21 @@ fun PokedexApp(
             ) {
                 SignalObservatoryScreen(
                     onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("battle_preview") {
+            PokedexFrame(
+                showBattleOverlay = false,
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                onB = { navController.popBackStack() }
+            ) {
+                BattlePreviewScreen(
+                    state = com.example.overdex.presentation.preview.BattlePreviewData.mewtwoDemo()
                 )
             }
         }
