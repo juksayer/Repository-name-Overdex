@@ -58,6 +58,10 @@ Intelligence understands.
 
 Presentation communicates.
 
+Article is the root.
+
+Everything in Overdex is about an Article.
+
 ---
 
 ## Interface
@@ -89,6 +93,8 @@ Evidence beats assumptions.
 When uncertain, say so.
 
 Trust is the product.
+
+Modules communicate through Articles.
 
 ---
 

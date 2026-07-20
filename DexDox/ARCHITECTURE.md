@@ -24,11 +24,14 @@ Interpretation never flows downward.
 
 # System Architecture
 
-```
+```text
                     Presentation Layer
                            ▲
                            │
                    Intelligence Layer
+                           ▲
+                           │
+                 Dynamic Knowledge Layer
                            ▲
                            │
                      Archive Layer
@@ -54,9 +57,11 @@ Each layer consumes the outputs of the layer beneath it.
 
 # Layer Responsibilities
 
-## Knowledge Layer
+## Reference Knowledge Layer
 
 Provides static Pokémon information.
+
+Reference Knowledge answers: **"What is generally true?"**
 
 Examples include:
 
@@ -64,10 +69,8 @@ Examples include:
 - Move database
 - Type effectiveness
 - Base stats
-- Evolutions
-- Cry playback
 
-Knowledge exists independently of any battle.
+Reference Knowledge exists independently of any battle.
 
 ---
 
@@ -85,14 +88,6 @@ Responsibilities:
 - OCR
 - Recognition
 - Observation Session Workspace
-
-Current recognizers include:
-
-- Species
-- Combat Power
-- Fast Move
-- Charged Moves
-- Shadow Bonus
 
 The Observation Layer never performs inference.
 
@@ -130,8 +125,6 @@ Responsibilities include:
 
 - Battle Timeline
 - Battle Events
-- Specimen history
-- Team history
 
 History represents the past.
 
@@ -147,10 +140,26 @@ Responsibilities include:
 
 - Archived battles
 - Long-term storage
-- Import / export
-- Career statistics
 
 Archive represents permanence.
+
+---
+
+## Dynamic Knowledge Layer
+
+Purpose:
+
+Establish the system's current best understanding of the battle.
+
+Dynamic Knowledge answers: **"What do we currently believe about this battle?"**
+
+Dynamic Knowledge is formed by combining Observations with Reference Knowledge.
+
+Examples:
+
+- Confirmed opponent species
+- Confirmed move sets
+- Known shield count
 
 ---
 
@@ -158,7 +167,7 @@ Archive represents permanence.
 
 Purpose:
 
-Derive meaning from remembered information.
+Derive meaning from Dynamic Knowledge.
 
 Possible responsibilities:
 
@@ -166,7 +175,6 @@ Possible responsibilities:
 - Move counting
 - Shield tracking
 - Matchup evaluation
-- Confidence scoring
 - Recommendation engine
 
 Intelligence never edits observations.
@@ -235,37 +243,25 @@ Consumers read from the shared workspace.
 
 # Battle Data Flow
 
-```
+```text
 Observation Layer
-
         │
-
         ▼
-
 Memory Layer
-
         │
-
         ▼
-
 History Layer
-
         │
-
         ▼
-
 Archive Layer
-
         │
-
         ▼
-
+Dynamic Knowledge Layer  ◄───  Reference Knowledge Layer
+        │
+        ▼
 Intelligence Layer
-
         │
-
         ▼
-
 Presentation Layer
 ```
 
