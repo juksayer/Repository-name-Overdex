@@ -1,7 +1,13 @@
 package com.example.overdex.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.example.overdex.ui.theme.TerminalDimGreen
+import com.example.overdex.ui.theme.TerminalGreen
+import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,36 +16,61 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.AnchorRegion
 import com.example.overdex.CalibrationManager
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.example.overdex.CalibrationRegion
 import com.example.overdex.ui.components.CalibrationMode
-import com.example.overdex.ui.components.DPad
-
+import com.example.overdex.ui.components.rememberHandheldFocusManager
 import com.example.overdex.ui.components.*
+
+enum class CalibrationFocus {
+    TARGET,
+    MODE,
+    X_AXIS,
+    Y_AXIS,
+    TEST,
+    SAVE,
+    LOAD
+}
 
 @Composable
 fun CalibrationScreen(
-    calibrationManager: CalibrationManager
+    calibrationManager: CalibrationManager,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {}
 ) {
-    TerminalScreen {
-        TerminalPathIndicator(path = "/observation/calibration")
-        
-        var selectedRegion by remember {
-            mutableStateOf(CalibrationRegion.ENEMY_NAME)
-        }
-
-    var selectedMode by remember {
-        mutableStateOf(CalibrationMode.POSITION)
+    val focusManager = rememberHandheldFocusManager(CalibrationFocus.TARGET)
+    
+    val visibleItems = remember {
+        listOf(
+            CalibrationFocus.TARGET,
+            CalibrationFocus.MODE,
+            CalibrationFocus.X_AXIS,
+            CalibrationFocus.Y_AXIS,
+            CalibrationFocus.TEST,
+            CalibrationFocus.SAVE,
+            CalibrationFocus.LOAD
+        )
     }
 
-    var calibration by remember {
-        mutableStateOf(calibrationManager.load())
+    LaunchedEffect(visibleItems) {
+        focusManager.updateItems(visibleItems)
     }
 
-    var statusMessage by remember {
-        mutableStateOf("Ready")
-    }
+    var selectedRegion by remember { mutableStateOf(CalibrationRegion.ENEMY_NAME) }
+    var selectedMode by remember { mutableStateOf(CalibrationMode.POSITION) }
+    var calibration by remember { mutableStateOf(calibrationManager.load()) }
+    var statusMessage by remember { mutableStateOf("Ready") }
+
+    val regions = listOf(
+        CalibrationRegion.ENEMY_NAME,
+        CalibrationRegion.HP_BAR,
+        CalibrationRegion.TEAM_ICONS,
+        CalibrationRegion.MOVE_BANNER
+    )
+    var regionIndex by remember { mutableStateOf(0) }
 
     val activeRegion = when (selectedRegion) {
         CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
@@ -69,163 +100,131 @@ fun CalibrationScreen(
     fun increaseHeight() = updateActiveRegion { it.copy(height = it.height + 10f) }
     fun decreaseHeight() = updateActiveRegion { it.copy(height = it.height - 10f) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    TerminalScreen {
+        TerminalPathIndicator(path = "/observation/calibration")
 
-        Text("Calibration")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Target: $selectedRegion")
-        Text("Mode: ${if (selectedMode == CalibrationMode.POSITION) "Position" else "Size"}", fontSize = 14.sp)
-        Text("Status: $statusMessage")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("X: ${activeRegion.x}")
-        Text("Y: ${activeRegion.y}")
-        Text("Width: ${activeRegion.width}")
-        Text("Height: ${activeRegion.height}")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = {
-                if (selectedMode == CalibrationMode.POSITION) moveUp() else increaseHeight()
-            }) { Text("UP") }
-            Row {
-                Button(onClick = {
-                    if (selectedMode == CalibrationMode.POSITION) moveLeft() else decreaseWidth()
-                }) { Text("LEFT") }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    if (selectedMode == CalibrationMode.POSITION) moveRight() else increaseWidth()
-                }) { Text("RIGHT") }
-            }
-            Button(onClick = {
-                if (selectedMode == CalibrationMode.POSITION) moveDown() else decreaseHeight()
-            }) { Text("DOWN") }
-        }
-
-        Button(
-            onClick = {
-                selectedMode = if (selectedMode == CalibrationMode.POSITION) {
-                    CalibrationMode.SIZE
-                } else {
-                    CalibrationMode.POSITION
-                }
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            Text("SELECT")
-        }
+            TerminalHeader("CALIBRATION MODULE")
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 0: Target Region
+            TerminalMenuOption(
+                label = "TARGET: ${selectedRegion.name}",
+                selected = focusManager.currentItem == CalibrationFocus.TARGET,
+                onClick = {}
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // 1: Mode
+            TerminalMenuOption(
+                label = "MODE: ${if (selectedMode == CalibrationMode.POSITION) "POSITION" else "SIZE"}",
+                selected = focusManager.currentItem == CalibrationFocus.MODE,
+                onClick = {}
+            )
 
-        Button(
-            onClick = { selectedRegion = CalibrationRegion.ENEMY_NAME }
-        ) {
-            Text("Enemy Name")
-        }
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Button(
-            onClick = { selectedRegion = CalibrationRegion.HP_BAR }
-        ) {
-            Text("HP Bar")
-        }
+            // 2: Horizontal Axis (X or Width)
+            TerminalMenuOption(
+                label = if (selectedMode == CalibrationMode.POSITION) "X-POS: ${activeRegion.x}" else "WIDTH: ${activeRegion.width}",
+                selected = focusManager.currentItem == CalibrationFocus.X_AXIS,
+                onClick = {}
+            )
 
-        Button(
-            onClick = { selectedRegion = CalibrationRegion.TEAM_ICONS }
-        ) {
-            Text("Team Icons")
-        }
+            // 3: Vertical Axis (Y or Height)
+            TerminalMenuOption(
+                label = if (selectedMode == CalibrationMode.POSITION) "Y-POS: ${activeRegion.y}" else "HEIGHT: ${activeRegion.height}",
+                selected = focusManager.currentItem == CalibrationFocus.Y_AXIS,
+                onClick = {}
+            )
 
-        Button(
-            onClick = { selectedRegion = CalibrationRegion.MOVE_BANNER }
-        ) {
-            Text("Move Banner")
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // 4: Test
+            TerminalMenuOption(
+                label = "TEST REGION",
+                selected = focusManager.currentItem == CalibrationFocus.TEST,
+                onClick = {}
+            )
 
-        Button(
-            onClick = {
+            // 5: Save
+            TerminalMenuOption(
+                label = "SAVE CONFIGURATION",
+                selected = focusManager.currentItem == CalibrationFocus.SAVE,
+                onClick = {}
+            )
 
-                calibration = when (selectedRegion) {
+            // 6: Load
+            TerminalMenuOption(
+                label = "LOAD CONFIGURATION",
+                selected = focusManager.currentItem == CalibrationFocus.LOAD,
+                onClick = {}
+            )
 
-                    CalibrationRegion.ENEMY_NAME ->
-                        calibration.copy(
-                            enemyNameRegion = AnchorRegion(
-                                x = 100f,
-                                y = 200f,
-                                width = 300f,
-                                height = 50f
-                            )
-                        )
+            Spacer(modifier = Modifier.weight(1f))
 
-                    CalibrationRegion.HP_BAR ->
-                        calibration.copy(
-                            hpBarRegion = AnchorRegion(
-                                x = 400f,
-                                y = 100f,
-                                width = 500f,
-                                height = 25f
-                            )
-                        )
-
-                    CalibrationRegion.TEAM_ICONS ->
-                        calibration.copy(
-                            teamIconsRegion = AnchorRegion(
-                                x = 50f,
-                                y = 500f,
-                                width = 200f,
-                                height = 100f
-                            )
-                        )
-
-                    CalibrationRegion.MOVE_BANNER ->
-                        calibration.copy(
-                            moveBannerRegion = AnchorRegion(
-                                x = 999f,
-                                y = 999f,
-                                width = 999f,
-                                height = 999f
-                            )
-                        )
-
-                    CalibrationRegion.NONE ->
-                        calibration
-                }
-            }
-        ) {
-            Text("TEST REGION")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                calibrationManager.save(calibration)
-                statusMessage = "Saved"
-            }
-        ) {
-            Text("SAVE")
-        }
-
-        Button(
-            onClick = {
-                calibration = calibrationManager.load()
-                statusMessage = "Loaded"
-            }
-        ) {
-            Text("LOAD")
+            TerminalText(
+                text = "STATUS: $statusMessage",
+                color = TerminalPurple,
+                fontSize = 12.sp
+            )
         }
     }
-}
+
+    // Input Handling
+    SideEffect {
+        onUp { focusManager.moveUp() }
+        onDown { focusManager.moveDown() }
+        onLeft {
+            when (focusManager.currentItem) {
+                CalibrationFocus.TARGET -> {
+                    regionIndex = (regionIndex - 1 + regions.size) % regions.size
+                    selectedRegion = regions[regionIndex]
+                }
+                CalibrationFocus.MODE -> selectedMode = if (selectedMode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
+                CalibrationFocus.X_AXIS -> if (selectedMode == CalibrationMode.POSITION) moveLeft() else decreaseWidth()
+                CalibrationFocus.Y_AXIS -> if (selectedMode == CalibrationMode.POSITION) moveDown() else decreaseHeight()
+                else -> {}
+            }
+        }
+        onRight {
+            when (focusManager.currentItem) {
+                CalibrationFocus.TARGET -> {
+                    regionIndex = (regionIndex + 1) % regions.size
+                    selectedRegion = regions[regionIndex]
+                }
+                CalibrationFocus.MODE -> selectedMode = if (selectedMode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
+                CalibrationFocus.X_AXIS -> if (selectedMode == CalibrationMode.POSITION) moveRight() else increaseWidth()
+                CalibrationFocus.Y_AXIS -> if (selectedMode == CalibrationMode.POSITION) moveUp() else increaseHeight()
+                else -> {}
+            }
+        }
+        onA {
+            when (focusManager.currentItem) {
+                CalibrationFocus.TEST -> {
+                    calibration = when (selectedRegion) {
+                        CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = AnchorRegion(100f, 200f, 300f, 50f))
+                        CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = AnchorRegion(400f, 100f, 500f, 25f))
+                        CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = AnchorRegion(50f, 500f, 200f, 100f))
+                        CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = AnchorRegion(999f, 999f, 999f, 999f))
+                        CalibrationRegion.NONE -> calibration
+                    }
+                    statusMessage = "Test region applied"
+                }
+                CalibrationFocus.SAVE -> {
+                    calibrationManager.save(calibration)
+                    statusMessage = "Saved"
+                }
+                CalibrationFocus.LOAD -> {
+                    calibration = calibrationManager.load()
+                    statusMessage = "Loaded"
+                }
+                else -> {}
+            }
+        }
+    }
 }

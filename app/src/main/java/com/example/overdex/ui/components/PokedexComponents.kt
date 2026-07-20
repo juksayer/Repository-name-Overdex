@@ -42,6 +42,7 @@ import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,6 +51,19 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
+
+/**
+ * Glass Shield: Restricts all touch input to the CRT area.
+ * The CRT is an observation-only display and never accepts operator input.
+ */
+fun Modifier.glassShield(): Modifier = this.pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            event.changes.forEach { it.consume() }
+        }
+    }
+}
 
 enum class OverlayState {
     COLLAPSED,
@@ -193,6 +207,19 @@ fun PokedexFrame(
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
 
+    // Overlay Input Registration
+    var settingsUp by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var settingsDown by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var settingsLeft by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var settingsRight by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var settingsA by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var settingsB by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    var researcherUp by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var researcherDown by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var researcherA by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var researcherB by remember { mutableStateOf<(() -> Unit)?>(null) }
+
     val vmState by viewModel?.observationSessionState?.collectAsState() ?: remember { mutableStateOf(ObservationSessionState.IDLE) }
     val currentState = instrumentState ?: vmState
 
@@ -330,6 +357,7 @@ fun PokedexFrame(
                 .background(Color.DarkGray, RoundedCornerShape(4.dp))
                 .padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
                 .padding(top = crtPadding)
+                .glassShield() // The Glass Shield enforcement point
         ) {
             Box(
                 modifier = Modifier
@@ -356,19 +384,7 @@ fun PokedexFrame(
                         // When presentation state is present, we use Droidball to reflect the state.
                         Droidball(
                             presentationState = presentationState,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onDoubleTap = {
-                                            overlayState = if (overlayState == OverlayState.EXPANDED) {
-                                                OverlayState.COLLAPSED
-                                            } else {
-                                                OverlayState.EXPANDED
-                                            }
-                                        }
-                                    )
-                                }
+                            modifier = Modifier.size(40.dp)
                         )
 
                         if (overlayState == OverlayState.EXPANDED) {
@@ -400,7 +416,13 @@ fun PokedexFrame(
                             showSettings = false
                             showResearcherSettings = true 
                         },
-                        onClose = { showSettings = false }
+                        onClose = { showSettings = false },
+                        onUp = { settingsUp = it },
+                        onDown = { settingsDown = it },
+                        onLeft = { settingsLeft = it },
+                        onRight = { settingsRight = it },
+                        onA = { settingsA = it },
+                        onB = { settingsB = it }
                     )
                 }
 
@@ -418,7 +440,11 @@ fun PokedexFrame(
                             showResearcherSettings = false
                             onLaunchObservatory()
                         },
-                        onClose = { showResearcherSettings = false }
+                        onClose = { showResearcherSettings = false },
+                        onUp = { researcherUp = it },
+                        onDown = { researcherDown = it },
+                        onA = { researcherA = it },
+                        onB = { researcherB = it }
                     )
                 }
 
@@ -462,10 +488,28 @@ fun PokedexFrame(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = { handleInput("UP"); onUp() })
-                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = { handleInput("DOWN"); onDown() })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = { handleInput("LEFT"); onLeft() })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = { handleInput("RIGHT"); onRight() })
+                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = { 
+                    handleInput("UP")
+                    if (showResearcherSettings) researcherUp?.invoke()
+                    else if (showSettings) settingsUp?.invoke()
+                    else onUp()
+                })
+                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = { 
+                    handleInput("DOWN")
+                    if (showResearcherSettings) researcherDown?.invoke()
+                    else if (showSettings) settingsDown?.invoke()
+                    else onDown()
+                })
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = { 
+                    handleInput("LEFT")
+                    if (showSettings) settingsLeft?.invoke()
+                    else onLeft()
+                })
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = { 
+                    handleInput("RIGHT")
+                    if (showSettings) settingsRight?.invoke()
+                    else onRight()
+                })
             }
 
             // Instrumentation Display (Center)
@@ -482,10 +526,24 @@ fun PokedexFrame(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(label = "A", onClick = { handleInput("A"); onA() })
-                InstrumentButton(label = "B", onClick = { handleInput("B"); onB() })
+                InstrumentButton(label = "A", onClick = { 
+                    handleInput("A")
+                    if (showResearcherSettings) researcherA?.invoke()
+                    else if (showSettings) settingsA?.invoke()
+                    else onA()
+                })
+                InstrumentButton(label = "B", onClick = { 
+                    handleInput("B")
+                    if (showResearcherSettings) researcherB?.invoke()
+                    else if (showSettings) settingsB?.invoke()
+                    else onB()
+                })
                 InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() })
-                InstrumentButton(label = "START", onClick = { handleInput("START"); onStart() })
+                InstrumentButton(label = "START", onClick = { 
+                    handleInput("START")
+                    if (serviceMode) showSettings = true
+                    onStart()
+                })
             }
         }
     }
@@ -636,14 +694,84 @@ fun AndroidPokeballLogo(
     }
 }
 
+enum class FilterFocus {
+    ENABLED,
+    SCANLINES,
+    CURVATURE,
+    NOISE,
+    RESEARCHER,
+    CLOSE
+}
+
 @Composable
 fun FilterSettingsOverlay(
     settings: FilterSettings,
     onSettingsChange: (FilterSettings) -> Unit,
     isResearcherUnlocked: Boolean = false,
     onOpenResearcher: () -> Unit = {},
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {}
 ) {
+    val focusManager = rememberHandheldFocusManager(FilterFocus.ENABLED)
+    
+    val visibleItems = remember(settings.isEnabled, isResearcherUnlocked) {
+        buildList {
+            add(FilterFocus.ENABLED)
+            if (settings.isEnabled) {
+                add(FilterFocus.SCANLINES)
+                add(FilterFocus.CURVATURE)
+                add(FilterFocus.NOISE)
+            }
+            if (isResearcherUnlocked) {
+                add(FilterFocus.RESEARCHER)
+            }
+            add(FilterFocus.CLOSE)
+        }
+    }
+
+    LaunchedEffect(visibleItems) {
+        focusManager.updateItems(visibleItems)
+    }
+
+    SideEffect {
+        onUp { focusManager.moveUp() }
+        onDown { focusManager.moveDown() }
+        onLeft {
+            if (settings.isEnabled) {
+                when (focusManager.currentItem) {
+                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity - 0.05f).coerceIn(0f, 1f)))
+                    FilterFocus.CURVATURE -> onSettingsChange(settings.copy(crtCurvature = (settings.crtCurvature - 0.05f).coerceIn(0f, 0.5f)))
+                    FilterFocus.NOISE -> onSettingsChange(settings.copy(noiseIntensity = (settings.noiseIntensity - 0.05f).coerceIn(0f, 0.5f)))
+                    else -> {}
+                }
+            }
+        }
+        onRight {
+            if (settings.isEnabled) {
+                when (focusManager.currentItem) {
+                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity + 0.05f).coerceIn(0f, 1f)))
+                    FilterFocus.CURVATURE -> onSettingsChange(settings.copy(crtCurvature = (settings.crtCurvature + 0.05f).coerceIn(0f, 0.5f)))
+                    FilterFocus.NOISE -> onSettingsChange(settings.copy(noiseIntensity = (settings.noiseIntensity + 0.05f).coerceIn(0f, 0.5f)))
+                    else -> {}
+                }
+            }
+        }
+        onA {
+            when (focusManager.currentItem) {
+                FilterFocus.ENABLED -> onSettingsChange(settings.copy(isEnabled = !settings.isEnabled))
+                FilterFocus.RESEARCHER -> onOpenResearcher()
+                FilterFocus.CLOSE -> onClose()
+                else -> {}
+            }
+        }
+        onB { onClose() }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = TerminalBlack.copy(alpha = 0.95f),
@@ -659,20 +787,49 @@ fun FilterSettingsOverlay(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val closeSelected = focusManager.currentItem == FilterFocus.CLOSE
                 Text("FILTER SETTINGS", fontWeight = FontWeight.Bold, color = TerminalPurple)
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TerminalGreen)
-                }
+                Text(
+                    text = if (closeSelected) "[ CLOSE ]" else "  CLOSE  ",
+                    color = if (closeSelected) TerminalGreen else TerminalDimGreen,
+                    modifier = Modifier.padding(4.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SettingToggle("Enabled", settings.isEnabled) { onSettingsChange(settings.copy(isEnabled = it)) }
+            SettingToggle(
+                label = "Enabled", 
+                value = settings.isEnabled, 
+                selected = focusManager.currentItem == FilterFocus.ENABLED
+            ) { onSettingsChange(settings.copy(isEnabled = it)) }
 
             if (settings.isEnabled) {
-                SettingSlider("Scanlines", settings.scanlineIntensity, 0f, 1f) { onSettingsChange(settings.copy(scanlineIntensity = it)) }
-                SettingSlider("Curvature", settings.crtCurvature, 0f, 0.5f) { onSettingsChange(settings.copy(crtCurvature = it)) }
-                SettingSlider("Noise", settings.noiseIntensity, 0f, 0.5f) { onSettingsChange(settings.copy(noiseIntensity = it)) }
+                SettingSlider(
+                    label = "Scanlines", 
+                    value = settings.scanlineIntensity, 
+                    min = 0f, 
+                    max = 1f, 
+                    selected = focusManager.currentItem == FilterFocus.SCANLINES
+                ) { onSettingsChange(settings.copy(scanlineIntensity = it)) }
+                
+                SettingSlider(
+                    label = "Curvature", 
+                    value = settings.crtCurvature, 
+                    min = 0f, 
+                    max = 0.5f, 
+                    selected = focusManager.currentItem == FilterFocus.CURVATURE
+                ) { onSettingsChange(settings.copy(crtCurvature = it)) }
+                
+                SettingSlider(
+                    label = "Noise", 
+                    value = settings.noiseIntensity, 
+                    min = 0f, 
+                    max = 0.5f, 
+                    selected = focusManager.currentItem == FilterFocus.NOISE
+                ) { onSettingsChange(settings.copy(noiseIntensity = it)) }
+            } else {
+                Text("FILTERS DISABLED", color = TerminalDimGreen, fontSize = 12.sp, modifier = Modifier.padding(vertical = 16.dp))
             }
 
             if (isResearcherUnlocked) {
@@ -680,17 +837,15 @@ fun FilterSettingsOverlay(
                 HorizontalDivider(color = TerminalPurple.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = onOpenResearcher,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = TerminalPurple.copy(alpha = 0.2f),
-                        contentColor = TerminalPurple
-                    ),
-                    shape = RoundedCornerShape(4.dp),
-                    border = BorderStroke(1.dp, TerminalPurple)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (focusManager.currentItem == FilterFocus.RESEARCHER) TerminalPurple.copy(alpha = 0.2f) else Color.Transparent)
+                        .border(1.dp, if (focusManager.currentItem == FilterFocus.RESEARCHER) TerminalPurple else Color.Transparent)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("OPEN RESEARCHER MODE", fontWeight = FontWeight.Bold)
+                    Text("OPEN RESEARCHER MODE", fontWeight = FontWeight.Bold, color = TerminalPurple)
                 }
             }
         }
@@ -698,42 +853,61 @@ fun FilterSettingsOverlay(
 }
 
 @Composable
-fun SettingToggle(label: String, value: Boolean, onValueChange: (Boolean) -> Unit) {
+fun SettingToggle(label: String, value: Boolean, selected: Boolean, onValueChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(if (selected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+            .border(1.dp, if (selected) TerminalGreen else Color.Transparent)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label)
-        Switch(
-            checked = value,
-            onCheckedChange = onValueChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = TerminalGreen,
-                checkedTrackColor = TerminalDarkGreen,
-                uncheckedThumbColor = TerminalDimGreen,
-                uncheckedTrackColor = TerminalBlack
-            )
+        Text(label, color = if (selected) TerminalGreen else TerminalDimGreen)
+        Text(
+            text = if (value) "[ ON ]" else "[ OFF ]",
+            color = if (selected) TerminalGreen else TerminalDimGreen,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
         )
     }
 }
 
 @Composable
-fun SettingSlider(label: String, value: Float, min: Float, max: Float, onValueChange: (Float) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Text("$label: ${String.format(Locale.ROOT, "%.2f", value)}")
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = min..max,
-            colors = SliderDefaults.colors(
-                thumbColor = TerminalGreen,
-                activeTrackColor = TerminalGreen,
-                inactiveTrackColor = TerminalDarkGreen
+fun SettingSlider(label: String, value: Float, min: Float, max: Float, selected: Boolean, onValueChange: (Float) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(if (selected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+            .border(1.dp, if (selected) TerminalGreen else Color.Transparent)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text(label, color = if (selected) TerminalGreen else TerminalDimGreen)
+            Text(
+                text = String.format(Locale.ROOT, "%.2f", value),
+                color = if (selected) TerminalGreen else TerminalDimGreen,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
             )
-        )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(TerminalBlack)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth((value - min) / (max - min))
+                    .fillMaxHeight()
+                    .background(if (selected) TerminalGreen else TerminalDimGreen)
+            )
+        }
     }
 }
+
 
 @Composable
 fun BreathingLED(

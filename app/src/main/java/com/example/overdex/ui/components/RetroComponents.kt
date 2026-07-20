@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -27,27 +28,44 @@ fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
     selectedPath: String,
     onNodeSelected: (TreeNode) -> Unit,
-    scrollOffset: Int = 0,
     modifier: Modifier = Modifier
 ) {
-    val VIEWPORT_SIZE = 12
-    val viewportNodes = visibleNodes.drop(scrollOffset).take(VIEWPORT_SIZE)
-
-    // "Ownership of Time" - sequential reveal count
-    var revealCount by remember(visibleNodes) { mutableIntStateOf(0) }
+    val listState = rememberLazyListState()
     
-    LaunchedEffect(visibleNodes) {
-        for (i in 1..visibleNodes.size) {
-            revealCount = i
-            delay(50L) // Deterministic reveal speed
+    // Sync selection with scroll position
+    LaunchedEffect(selectedPath) {
+        val selectedIndex = visibleNodes.indexOfFirst { it.path == selectedPath }
+        if (selectedIndex != -1) {
+            val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
+            val isSelectedVisible = visibleItemsInfo.any { it.index == selectedIndex }
+            
+            if (!isSelectedVisible) {
+                // If not visible, snap to it. 
+                // Using animateScrollToItem might be too slow for D-pad, 
+                // but let's try it for smoothness first.
+                listState.animateScrollToItem(selectedIndex)
+            }
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        viewportNodes.forEach { flattened ->
-            // Only reveal if the index in the full list is within revealCount
-            val fullIndex = visibleNodes.indexOf(flattened)
-            if (fullIndex < revealCount) {
+    // "Ownership of Time" - sequential reveal count
+    var revealCount by remember(visibleNodes.size) { mutableIntStateOf(0) }
+    
+    LaunchedEffect(visibleNodes.size) {
+        for (i in 1..visibleNodes.size) {
+            revealCount = i
+            delay(30L) // Slightly faster for tree expansion
+        }
+    }
+
+    androidx.compose.foundation.lazy.LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        items(visibleNodes.size) { index ->
+            val flattened = visibleNodes[index]
+            if (index < revealCount) {
                 val isSelected = selectedPath == flattened.path
                 val label = when (val node = flattened.node) {
                     is DirectoryNode -> {

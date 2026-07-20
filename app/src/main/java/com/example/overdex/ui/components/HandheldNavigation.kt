@@ -75,6 +75,68 @@ class HandheldNavigationController(
     }
 }
 
+/**
+ * Generic state holder for interface-driven focus navigation.
+ * Tracks logical identity [T] instead of integer positions.
+ */
+@Stable
+class HandheldFocusManager<T>(
+    initialItem: T? = null
+) {
+    var currentItem by mutableStateOf(initialItem)
+        private set
+
+    private var items by mutableStateOf(emptyList<T>())
+
+    /**
+     * Updates the navigation graph. If the previous [currentItem] is no longer 
+     * present, selects the nearest valid neighbor.
+     */
+    fun updateItems(newItems: List<T>) {
+        val oldItems = items
+        val oldItem = currentItem
+        items = newItems
+
+        if (newItems.isEmpty()) {
+            currentItem = null
+            return
+        }
+
+        if (oldItem == null || !newItems.contains(oldItem)) {
+            val oldIndex = oldItems.indexOf(oldItem)
+            currentItem = if (oldIndex != -1) {
+                newItems[oldIndex.coerceIn(0, newItems.size - 1)]
+            } else {
+                newItems.first()
+            }
+        }
+    }
+
+    fun moveUp() {
+        val index = items.indexOf(currentItem)
+        if (index > 0) {
+            currentItem = items[index - 1]
+        }
+    }
+
+    fun moveDown() {
+        val index = items.indexOf(currentItem)
+        if (index != -1 && index < items.size - 1) {
+            currentItem = items[index + 1]
+        }
+    }
+
+    fun moveLeft() { /* Interface-specific implementation */ }
+    fun moveRight() { /* Interface-specific implementation */ }
+}
+
+@Composable
+fun <T> rememberHandheldFocusManager(
+    initialItem: T? = null
+): HandheldFocusManager<T> {
+    return remember { HandheldFocusManager(initialItem) }
+}
+
 @Composable
 fun rememberHandheldNavigationController(
     initialIndex: Int = 0,

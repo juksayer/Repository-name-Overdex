@@ -181,7 +181,6 @@ fun PokedexApp(
                     onBootComplete = { viewModel.markBooted() },
                     visibleNodes = treeState.visibleNodes,
                     selectedPath = treeState.selectedPath,
-                    scrollOffset = treeState.scrollOffset,
                     trainerIdentity = trainerIdentity,
                     onPhaseChange = { phase = it }
                 )
@@ -262,20 +261,36 @@ fun PokedexApp(
                     viewModel.setObservationSessionState(ObservationSessionState.IDLE)
                 }
             }
+
+            var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
             PokedexFrame(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
+                onUp = { upHandler?.invoke() },
+                onDown = { downHandler?.invoke() },
+                onLeft = { leftHandler?.invoke() },
+                onRight = { rightHandler?.invoke() },
+                onA = { aHandler?.invoke() },
+                onB = { navController.popBackStack() },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                onA = { /* Reserved */ },
-                onB = { navController.popBackStack() }
+                onLaunchObservatory = { navController.navigate("signal_observatory") }
             ) { _ ->
                 CalibrationScreen(
-                    calibrationManager = calibrationManager
+                    calibrationManager = calibrationManager,
+                    onUp = { upHandler = it },
+                    onDown = { downHandler = it },
+                    onLeft = { leftHandler = it },
+                    onRight = { rightHandler = it },
+                    onA = { aHandler = it }
                 )
             }
         }

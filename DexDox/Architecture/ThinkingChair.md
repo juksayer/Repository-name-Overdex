@@ -18,6 +18,7 @@ Early designs considered a "mascot" character to provide tips and flavor text (s
 
 Alternatives Considered
 
+- **The Custodian**:
 - **The Helper**: A character that speaks to the trainer and offers unsolicited advice.
 - **The Guide**: A tutorial-driven interface that explains every screen.
 
