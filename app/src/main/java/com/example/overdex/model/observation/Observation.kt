@@ -5,6 +5,7 @@ import com.example.overdex.model.Confidence
 sealed class Observation {
     abstract val timestamp: Long
     abstract val source: ObservationSource
+    abstract val observerId: String
     abstract val confidence: Confidence
 }
 
@@ -12,6 +13,7 @@ data class PokemonNameObservation(
     val species: String,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
 
@@ -20,6 +22,7 @@ data class FastMoveObservation(
     val moveName: String,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
 
@@ -28,6 +31,7 @@ data class ChargedMoveObservation(
     val moveName: String,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
 
@@ -35,6 +39,7 @@ data class CombatPowerObservation(
     val cp: Int,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
 
@@ -42,6 +47,7 @@ data class ShadowStatusObservation(
     val isShadow: Boolean,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
 
@@ -49,5 +55,6 @@ data class EvolutionFamilyObservation(
     val familySpecies: String,
     override val timestamp: Long = System.currentTimeMillis(),
     override val source: ObservationSource,
+    override val observerId: String,
     override val confidence: Confidence
 ) : Observation()

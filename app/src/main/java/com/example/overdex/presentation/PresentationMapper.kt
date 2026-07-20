@@ -105,7 +105,7 @@ object PresentationMapper {
         if (stage == ObservationStage.Complete) return ObservationIndicator.CONFIRMED
 
         val results = status.results[stage.label]
-        val maxConfidence = results?.maxOfOrNull { it.confidence } ?: 0f
+        val maxConfidence = results?.maxOfOrNull { it.confidence.score } ?: 0f
 
         return when {
             maxConfidence >= 0.8f -> ObservationIndicator.CONFIRMED

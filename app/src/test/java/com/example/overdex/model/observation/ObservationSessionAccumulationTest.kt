@@ -1,52 +1,59 @@
 package com.example.overdex.model.observation
 
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ObservationSessionAccumulationTest {
 
+    private val source = ObservationSource.OCR
+    private val confidence = Confidence(ConfidenceLevel.OBSERVED, 1.0f)
+    private val resolver = DefaultObservationResolver()
+
     @Test
     fun `session accumulation - adding results to existing results`() {
-        val r1 = RecognitionResult("Pikachu", 1.0f, "R1")
+        val o1 = PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)
         val session1 = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(r1))
+            history = mapOf("SpeciesName" to listOf(o1))
         )
 
-        val r2 = RecognitionResult(500, 1.0f, "R2")
+        val o2 = CombatPowerObservation(500, source = source, observerId = "R2", confidence = confidence)
         // Simulating GuidedObservationPipeline accumulation logic
-        val allResults = session1.recognitionResults.toMutableMap()
-        val currentResults = allResults["CP"] ?: emptyList()
-        allResults["CP"] = currentResults + listOf(r2)
+        val allHistory = session1.history.toMutableMap()
+        val currentHistory = allHistory["CombatPower"] ?: emptyList()
+        allHistory["CombatPower"] = currentHistory + listOf(o2)
 
-        val session2 = session1.copy(recognitionResults = allResults.toMap())
+        val session2 = session1.copy(history = allHistory.toMap())
 
-        assertEquals(2, session2.recognitionResults.size)
-        assertTrue(session2.recognitionResults.containsKey("Species"))
-        assertTrue(session2.recognitionResults.containsKey("CP"))
-        assertEquals("Pikachu", session2.recognitionResults["Species"]?.first()?.value)
-        assertEquals(500, session2.recognitionResults["CP"]?.first()?.value)
+        assertEquals(2, session2.history.size)
+        assertTrue(session2.history.containsKey("SpeciesName"))
+        assertTrue(session2.history.containsKey("CombatPower"))
+        assertEquals("Pikachu", (session2.history["SpeciesName"]?.first() as PokemonNameObservation).species)
+        assertEquals(500, (session2.history["CombatPower"]?.first() as CombatPowerObservation).cp)
     }
 
     @Test
     fun `session accumulation - appending results to same region`() {
-        val r1 = RecognitionResult("Pikachu", 0.8f, "R1")
+        val o1 = PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = Confidence(ConfidenceLevel.OBSERVED, 0.8f))
         val session1 = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(r1))
+            history = mapOf("SpeciesName" to listOf(o1))
         )
 
-        val r2 = RecognitionResult("Raichu", 0.9f, "R1")
-        val allResults = session1.recognitionResults.toMutableMap()
-        val currentResults = allResults["Species"] ?: emptyList()
-        allResults["Species"] = currentResults + listOf(r2)
+        val o2 = PokemonNameObservation("Raichu", source = source, observerId = "R1", confidence = Confidence(ConfidenceLevel.OBSERVED, 0.9f))
+        val allHistory = session1.history.toMutableMap()
+        val currentHistory = allHistory["SpeciesName"] ?: emptyList()
+        allHistory["SpeciesName"] = currentHistory + listOf(o2)
 
-        val session2 = session1.copy(recognitionResults = allResults.toMap())
+        val session2 = session1.copy(history = allHistory.toMap())
 
-        assertEquals(1, session2.recognitionResults.size)
-        val speciesHistory = session2.recognitionResults["Species"]
+        assertEquals(1, session2.history.size)
+        val speciesHistory = session2.history["SpeciesName"]
         assertEquals(2, speciesHistory?.size)
         
         // Resolution should pick the higher confidence one
-        assertEquals("Raichu", session2.resolveResults()["Species"]?.first()?.value)
+        val resolved = resolver.resolve(speciesHistory ?: emptyList())
+        assertEquals("Raichu", (resolved as PokemonNameObservation).species)
     }
 }

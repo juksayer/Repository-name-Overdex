@@ -9,14 +9,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.model.observation.*
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
 @Composable
 fun ObservationWorkspaceViewer(
-    recognitionResults: Map<String, List<RecognitionResult<*>>>,
+    history: Map<String, List<Observation>>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -32,12 +32,12 @@ fun ObservationWorkspaceViewer(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            recognitionResults.forEach { (regionId, results) ->
+            history.forEach { (regionId, observations) ->
                 item {
                     TerminalText(text = regionId.uppercase(), color = TerminalPurple, fontSize = 10.sp)
                 }
-                items(results) { result ->
-                    WorkspaceResultRow(result)
+                items(observations) { obs ->
+                    WorkspaceObservationRow(obs)
                 }
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -48,15 +48,24 @@ fun ObservationWorkspaceViewer(
 }
 
 @Composable
-private fun WorkspaceResultRow(result: RecognitionResult<*>) {
+private fun WorkspaceObservationRow(obs: Observation) {
+    val displayValue = when (obs) {
+        is PokemonNameObservation -> obs.species
+        is CombatPowerObservation -> obs.cp.toString()
+        is FastMoveObservation -> obs.moveName
+        is ChargedMoveObservation -> obs.moveName
+        is ShadowStatusObservation -> "Shadow: ${obs.isShadow}"
+        is EvolutionFamilyObservation -> obs.familySpecies
+    }
+
     Column(modifier = Modifier.padding(start = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TerminalText(text = result.recognizer, color = TerminalDimGreen, fontSize = 9.sp)
-            TerminalText(text = "CONF: ${(result.confidence * 100).toInt()}%", color = TerminalDimGreen, fontSize = 9.sp)
+            TerminalText(text = obs.observerId, color = TerminalDimGreen, fontSize = 9.sp)
+            TerminalText(text = "CONF: ${(obs.confidence.score * 100).toInt()}%", color = TerminalDimGreen, fontSize = 9.sp)
         }
         TerminalText(
-            text = result.value?.toString() ?: "NULL",
-            color = if (result.value != null) Color.White else Color.Gray,
+            text = displayValue,
+            color = Color.White,
             fontSize = 12.sp
         )
     }

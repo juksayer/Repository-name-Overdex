@@ -127,62 +127,47 @@ data class ObservationSession(
     val source: SessionSource = SessionSource.SCREENSHOT,
     val startedAt: Long = System.currentTimeMillis(),
     val completedAt: Long? = null,
-    val observations: List<CaptureObservation> = emptyList(),
-    val recognitionResults: Map<String, List<RecognitionResult<*>>> = emptyMap(),
+    val captures: List<CaptureObservation> = emptyList(),
+    val history: Map<String, List<Observation>> = emptyMap(),
     val assessment: RegistrationAssessment? = null,
     val state: SessionPhase = SessionPhase.CREATED,
     val objective: ObservationObjective = ObservationObjective.RegisterSpecimen
 ) {
     /**
-     * Resolves the current best understanding of the specimen based on all accumulated evidence.
-     * Applies deterministic rules: Higher Confidence Wins, Missing Never Wins, and Equal Confidence
-     * preserves the existing observation.
+     * Flattened list of all observations in the history.
      */
-    fun resolveResults(): Map<String, List<RecognitionResult<*>>> {
-        return recognitionResults.mapValues { (_, results) ->
-            results.groupBy { it.recognizer }.mapNotNull { (_, recognizerResults) ->
-                var currentBest: RecognitionResult<*>? = null
-
-                for (result in recognizerResults) {
-                    // Rule: Missing Never Wins (A missing/null observation must never replace an existing value)
-                    if (result.value == null) continue
-
-                    if (currentBest == null) {
-                        // Rule: New Information Wins
-                        currentBest = result
-                    } else if (result.confidence > currentBest.confidence) {
-                        // Rule: Higher Confidence Wins
-                        currentBest = result
-                    }
-                    // Rule: Equal Confidence (If confidence is equal, preserve existing. Do not oscillate.)
-                    // This is handled by only updating if confidence is strictly greater.
-                }
-
-                currentBest
-            }
-        }
-    }
+    fun allObservations(): List<Observation> = history.values.flatten()
 
     /**
      * Evaluates the integrity of the session's current understanding relative to its [objective].
      */
-    fun evaluateIntegrity(): ObservationIntegrity {
-        val resolved = resolveResults()
+    fun evaluateIntegrity(resolver: ObservationResolver): ObservationIntegrity {
         val required = objective.requiredFields
         
-        val resolvedFields = resolved.keys.filter { field -> 
-            resolved[field]?.any { it.value != null } == true 
-        }.toSet()
+        val resolvedFields = history.filter { (field, observations) ->
+            resolver.resolve(observations) != null
+        }.keys
         
         val missingFields = required - resolvedFields
         
-        // Detect conflicts: A single recognizer reporting different non-null values in history
-        val conflictingFields = recognitionResults.filter { (field, history) ->
-            history.groupBy { it.recognizer }.any { (_, recognizerHistory) ->
-                val uniqueValues = recognizerHistory.mapNotNull { it.value }.distinct()
+        // Detect conflicts: A single observer reporting different values for the same field in history
+        val conflictingFields = history.filter { (field, observations) ->
+            observations.groupBy { it.observerId }.any { (_, observerHistory) ->
+                // This is a simplistic check: if an observer saw multiple different things for the same field.
+                // We compare the domain values.
+                val uniqueValues = observerHistory.map { obs ->
+                    when (obs) {
+                        is PokemonNameObservation -> obs.species
+                        is FastMoveObservation -> obs.moveName
+                        is ChargedMoveObservation -> obs.moveName
+                        is CombatPowerObservation -> obs.cp
+                        is ShadowStatusObservation -> obs.isShadow
+                        is EvolutionFamilyObservation -> obs.familySpecies
+                    }
+                }.distinct()
                 uniqueValues.size > 1
             }
-        }.keys.toSet()
+        }.keys
 
         val status = when {
             conflictingFields.intersect(required).isNotEmpty() -> IntegrityStatus.CONFLICTING
@@ -204,11 +189,11 @@ data class ObservationSession(
      * Progress is calculated based only on [ObservationObjective.requiredFields].
      */
     fun evaluateProgress(): ObservationProgress {
-        val resolved = resolveResults()
         val required = objective.requiredFields
         
+        // Following user feedback: Progress is structural (do we have ANY observation for the field?)
         val completedRequiredFields = required.count { field ->
-            resolved[field]?.any { it.value != null } == true
+            history[field]?.isNotEmpty() == true
         }
         
         val totalRequiredFields = required.size
@@ -218,9 +203,7 @@ data class ObservationSession(
             1.0f
         }
         
-        val resolvedFields = resolved.keys.filter { field -> 
-            resolved[field]?.any { it.value != null } == true 
-        }.toSet()
+        val resolvedFields = history.filter { it.value.isNotEmpty() }.keys
         val missingFields = required - resolvedFields
 
         return ObservationProgress(
@@ -235,8 +218,8 @@ data class ObservationSession(
     /**
      * Recommends the next best observation to make progress toward the [objective].
      */
-    fun nextObservation(): ObservationGuidance {
-        val integrity = evaluateIntegrity()
+    fun nextObservation(resolver: ObservationResolver): ObservationGuidance {
+        val integrity = evaluateIntegrity(resolver)
         if (integrity.status == IntegrityStatus.CONFLICTING) {
             val relevantConflicts = integrity.conflictingFields.intersect(objective.requiredFields)
             if (relevantConflicts.isNotEmpty()) {

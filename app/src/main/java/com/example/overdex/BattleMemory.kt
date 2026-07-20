@@ -30,13 +30,13 @@ data class BattleMemory(
         enemyTeam.clear()
         // Injecting via pipeline instead of direct add
         observationPipeline.onObservationReceived(
-            PokemonNameObservation(species = "Swampert", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+            PokemonNameObservation(species = "Swampert", source = ObservationSource.PROTOTYPE, observerId = "PROTOTYPE", confidence = Confidence(ConfidenceLevel.OBSERVED))
         )
         observationPipeline.onObservationReceived(
-            PokemonNameObservation(species = "Talonflame", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+            PokemonNameObservation(species = "Talonflame", source = ObservationSource.PROTOTYPE, observerId = "PROTOTYPE", confidence = Confidence(ConfidenceLevel.OBSERVED))
         )
         observationPipeline.onObservationReceived(
-            PokemonNameObservation(species = "Azumarill", source = ObservationSource.PROTOTYPE, confidence = Confidence(ConfidenceLevel.OBSERVED))
+            PokemonNameObservation(species = "Azumarill", source = ObservationSource.PROTOTYPE, observerId = "PROTOTYPE", confidence = Confidence(ConfidenceLevel.OBSERVED))
         )
         
         updateSpecies("Swampert") { it.isActive = true }

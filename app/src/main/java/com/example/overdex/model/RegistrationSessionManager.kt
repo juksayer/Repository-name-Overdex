@@ -1,6 +1,6 @@
 package com.example.overdex.model
 
-import com.example.overdex.model.observation.Observation
+import com.example.overdex.model.observation.Observation as DomainObservation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,16 +15,17 @@ object RegistrationSessionManager {
 
     /**
      * Starts a new registration session. 
-     * If another session is active, it is replaced with a new empty session.
+     * If another session is active, it is replaced with a new session.
+     * @param initialObservations Optional list of observations to prepopulate the session.
      */
-    fun startSession() {
-        _activeSession.value = RegistrationSession()
+    fun startSession(initialObservations: List<DomainObservation> = emptyList()) {
+        _activeSession.value = RegistrationSession(observations = initialObservations)
     }
 
     /**
      * Adds an observation to the active session.
      */
-    fun addObservation(observation: Observation) {
+    fun addObservation(observation: DomainObservation) {
         _activeSession.value = _activeSession.value?.addObservation(observation)
     }
 

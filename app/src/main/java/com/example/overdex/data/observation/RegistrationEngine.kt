@@ -3,9 +3,11 @@ package com.example.overdex.data.observation
 import com.example.overdex.model.observation.*
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.PokedexViewModel
-import kotlinx.coroutines.flow.first
+import com.example.overdex.battle.debug.observatory.*
 
 object RegistrationEngine {
+
+    private val defaultResolver = DefaultObservationResolver()
 
     suspend fun assess(
         session: ObservationSession,
@@ -13,15 +15,18 @@ object RegistrationEngine {
         viewModel: PokedexViewModel
     ): RegistrationAssessment {
         val captureId = session.sessionId
-        val recognitionResults = session.resolveResults()
+        val history = session.history
         
         val missing = mutableListOf<String>()
         val conflicts = mutableListOf<String>()
         val candidates = mutableListOf<CandidateSpecies>()
         
-        // 1. Resolve Evidence
-        val rawSpecies = recognitionResults["SpeciesName"]?.firstOrNull { it.recognizer == "SpeciesNameRecognizer" }?.value as? String
-        val rawFamily = recognitionResults["CandyPanel"]?.firstOrNull { it.recognizer == "CandyPanelFamilyRecognizer" }?.value as? String
+        // 1. Resolve Evidence using DefaultObservationResolver
+        val speciesNameObs = history["SpeciesName"]?.let { defaultResolver.resolve(it) } as? PokemonNameObservation
+        val candyPanelObs = history["CandyPanel"]?.let { defaultResolver.resolve(it) } as? EvolutionFamilyObservation
+        
+        val rawSpecies = speciesNameObs?.species
+        val rawFamily = candyPanelObs?.familySpecies
         
         val normalizedSpeciesName = SpeciesNormalizer.normalize(rawSpecies)
         val normalizedFamilyName = CandyNormalizer.normalize(rawFamily)
@@ -31,7 +36,7 @@ object RegistrationEngine {
             solvedSpecies = viewModel.getPokemonByName(normalizedSpeciesName)
         }
 
-        // 2. Conflict Detection
+        // 2. Conflict Detection (Integrity logic can also be called here)
         if (normalizedSpeciesName != null && normalizedFamilyName != null) {
             val familyList = viewModel.getEvolutionFamily(normalizedFamilyName)
             if (familyList.isNotEmpty() && !familyList.contains(normalizedSpeciesName)) {
@@ -44,7 +49,7 @@ object RegistrationEngine {
             candidates.add(CandidateSpecies(
                 id = solvedSpecies.id,
                 name = solvedSpecies.name,
-                confidence = if (manualSpecies != null) 1.0f else 0.8f,
+                confidence = if (manualSpecies != null) 1.0f else speciesNameObs?.confidence?.score ?: 0.0f,
                 reasoning = if (manualSpecies != null) "Manually Confirmed" else "Matched Species Name OCR"
             ))
         } else if (normalizedFamilyName != null) {
@@ -54,7 +59,7 @@ object RegistrationEngine {
                     candidates.add(CandidateSpecies(
                         id = p.id,
                         name = p.name,
-                        confidence = 0.4f,
+                        confidence = (candyPanelObs?.confidence?.score ?: 0.0f) * 0.5f,
                         reasoning = "Member of detected $normalizedFamilyName Family"
                     ))
                 }
@@ -62,8 +67,8 @@ object RegistrationEngine {
         }
 
         // 4. Check Missing
-        if (recognitionResults["CombatPower"] == null) missing.add("Combat Power")
-        if (recognitionResults["FastMoveRow"] == null && recognitionResults["SummaryFastMove"] == null) missing.add("Fast Move")
+        if (history["CombatPower"].isNullOrEmpty()) missing.add("Combat Power")
+        if (history["FastMoveRow"].isNullOrEmpty() && history["SummaryFastMove"].isNullOrEmpty()) missing.add("Fast Move")
 
         // 5. Additive Registration Confidence
         var speciesPoints = 0.0f
@@ -75,10 +80,10 @@ object RegistrationEngine {
 
         if (normalizedSpeciesName != null) speciesPoints = 0.35f
         if (normalizedFamilyName != null) familyPoints = 0.20f
-        if (recognitionResults["CombatPower"] != null) cpPoints = 0.15f
-        if (recognitionResults["FastMoveRow"] != null || recognitionResults["SummaryFastMove"] != null) fastPoints = 0.15f
-        if (recognitionResults["ChargedMoveRowA"] != null) chgAPoints = 0.075f
-        if (recognitionResults["ChargedMoveRowB"] != null) chgBPoints = 0.075f
+        if (history["CombatPower"]?.isNotEmpty() == true) cpPoints = 0.15f
+        if (history["FastMoveRow"]?.isNotEmpty() == true || history["SummaryFastMove"]?.isNotEmpty() == true) fastPoints = 0.15f
+        if (history["ChargedMoveRowA"]?.isNotEmpty() == true) chgAPoints = 0.075f
+        if (history["ChargedMoveRowB"]?.isNotEmpty() == true) chgBPoints = 0.075f
 
         val mainConfidence = (speciesPoints + familyPoints + cpPoints + fastPoints + chgAPoints + chgBPoints).coerceIn(0.0f, 1.0f)
         
@@ -91,16 +96,16 @@ object RegistrationEngine {
         }
 
         // LOG: RegistrationAssessment
-        val fm = (recognitionResults["FastMoveRow"] ?: recognitionResults["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val cma = recognitionResults["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING"
-        val cmb = recognitionResults["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING"
+        val fm = (history["FastMoveRow"] ?: history["SummaryFastMove"])?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
+        val cma = history["ChargedMoveRowA"]?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
+        val cmb = history["ChargedMoveRowB"]?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
 
         TraceLogger.logStage(
             captureId = captureId,
             stage = "RegistrationAssessment",
             species = solvedSpecies?.name ?: normalizedSpeciesName ?: "MISSING",
             family = normalizedFamilyName ?: "MISSING",
-            cp = recognitionResults["CombatPower"]?.firstOrNull()?.value?.toString() ?: "MISSING",
+            cp = history["CombatPower"]?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING",
             fast = fm,
             chgA = cma,
             chgB = cmb,
@@ -123,7 +128,7 @@ object RegistrationEngine {
         )
 
         val verdicts = mutableMapOf<String, String>()
-        verdicts["OCR"] = if (recognitionResults.isNotEmpty()) "PASS" else "FAIL"
+        verdicts["OCR"] = if (history.isNotEmpty()) "PASS" else "FAIL"
         verdicts["Recognition"] = if (candidates.isNotEmpty()) "PASS" else "FAIL"
         verdicts["Assessment"] = "PASS"
         verdicts["Confidence"] = "PASS"

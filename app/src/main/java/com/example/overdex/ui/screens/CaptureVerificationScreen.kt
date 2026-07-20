@@ -5,17 +5,13 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -26,13 +22,8 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
-import com.example.overdex.data.ObservationCropExtractor
 import com.example.overdex.data.observation.*
-import com.example.overdex.model.OwnedPokemon
-import com.example.overdex.model.toOwnedPokemon
 import com.example.overdex.model.observation.*
-import com.example.overdex.model.Confidence
-import com.example.overdex.model.ConfidenceLevel
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
@@ -43,12 +34,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.overdex.ui.theme.TerminalPurple
-import androidx.compose.ui.text.font.FontWeight
 import com.example.overdex.ui.theme.TerminalGreen
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.example.overdex.model.ObservationRegions
 
 enum class CalibrationMode {
     MOVE, WIDTH, HEIGHT
@@ -135,8 +122,8 @@ fun CaptureVerificationScreen(
     var imageSize by remember { mutableStateOf<Size?>(null) }
     
     // Extraction state
-    var observations by remember { mutableStateOf<List<CaptureObservation>?>(null) }
-    var recognitionResults by remember { mutableStateOf<Map<String, List<RecognitionResult<*>>>>(emptyMap()) }
+    var captures by remember { mutableStateOf<List<CaptureObservation>?>(null) }
+    var history by remember { mutableStateOf<Map<String, List<Observation>>>(emptyMap()) }
     var pipelineStatus by remember { mutableStateOf<PipelineStatus?>(null) }
     var isInspectionMode by remember { mutableStateOf(false) }
     var isManualSpeciesSelection by remember { mutableStateOf(false) }
@@ -155,27 +142,25 @@ fun CaptureVerificationScreen(
     val panelState by produceState(
         initialValue = ServiceConsoleModel.createPanelState(
             pipelineStatus?.captureId ?: "00000",
-            recognitionResults,
+            emptyMap(),
             RegistrationAssessment(0f)
         ),
-        key1 = recognitionResults,
+        key1 = history,
         key2 = manualSpecies,
         key3 = pipelineStatus
     ) {
         val currentSession = pipelineStatus?.session ?: ObservationSession(
             sessionId = pipelineStatus?.captureId ?: "00000",
-            recognitionResults = recognitionResults
+            history = history
         )
         val capId = currentSession.sessionId
 
-        // Transition immediately to processing to avoid Schrödinger's Catfidence
-        value = ServiceConsoleModel.createPanelState(capId, recognitionResults, RegistrationAssessment(0f))
-            .copy(isProcessing = true)
+        value = value.copy(isProcessing = true)
 
         val newAssessment = RegistrationEngine.assess(currentSession, manualSpecies, viewModel)
 
-        // Synchronized Update: observations and assessment are now guaranteed to be from the same pass
-        value = ServiceConsoleModel.createPanelState(capId, recognitionResults, newAssessment)
+        // Sync UI model with session history
+        value = ServiceConsoleModel.createPanelState(capId, history, newAssessment)
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -185,8 +170,8 @@ fun CaptureVerificationScreen(
             captureLibrary = uris
             currentIndex = 0
             imageSize = null
-            observations = null
-            recognitionResults = emptyMap()
+            captures = null
+            history = emptyMap()
             isInspectionMode = false
             manualSpecies = null
         }
@@ -200,11 +185,7 @@ fun CaptureVerificationScreen(
     PokedexFrame(
         onUp = {
             if (isManualSpeciesSelection) manualNav.moveUp()
-            else if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
-                ObservationRegions.getState("Species")?.let { state ->
-                    state.offsetY = (state.offsetY - 0.01f).coerceAtLeast(-state.region.y)
-                }
-            } else if (!isInspectionMode && selectedRegionId != null) {
+            else if (!isInspectionMode && selectedRegionId != null) {
                 val region = currentTemplate.regions.find { it.id == selectedRegionId }
                 if (region != null) {
                     val updated = when (calibrationMode) {
@@ -224,11 +205,7 @@ fun CaptureVerificationScreen(
         },
         onDown = {
             if (isManualSpeciesSelection) manualNav.moveDown()
-            else if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
-                ObservationRegions.getState("Species")?.let { state ->
-                    state.offsetY = (state.offsetY + 0.01f).coerceAtMost(1f - state.region.y - state.region.height)
-                }
-            } else if (!isInspectionMode && selectedRegionId != null) {
+            else if (!isInspectionMode && selectedRegionId != null) {
                 val region = currentTemplate.regions.find { it.id == selectedRegionId }
                 if (region != null) {
                     val updated = when (calibrationMode) {
@@ -248,11 +225,7 @@ fun CaptureVerificationScreen(
         },
         onLeft = {
             if (isManualSpeciesSelection) manualNav.moveUp()
-            else if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
-                ObservationRegions.getState("Species")?.let { state ->
-                    state.offsetX = (state.offsetX - 0.01f).coerceAtLeast(-state.region.x)
-                }
-            } else if (!isInspectionMode) {
+            else if (!isInspectionMode) {
                 if (selectedRegionId != null) {
                     val region = currentTemplate.regions.find { it.id == selectedRegionId }
                     if (region != null) {
@@ -275,11 +248,7 @@ fun CaptureVerificationScreen(
         },
         onRight = {
             if (isManualSpeciesSelection) manualNav.moveDown()
-            else if (SHOW_OBSERVATION_REGIONS && !isInspectionMode) {
-                ObservationRegions.getState("Species")?.let { state ->
-                    state.offsetX = (state.offsetX + 0.01f).coerceAtMost(1f - state.region.x - state.region.width)
-                }
-            } else if (!isInspectionMode) {
+            else if (!isInspectionMode) {
                 if (selectedRegionId != null) {
                     val region = currentTemplate.regions.find { it.id == selectedRegionId }
                     if (region != null) {
@@ -317,9 +286,8 @@ fun CaptureVerificationScreen(
             if (isInspectionMode) {
                 showWorkspaceViewer = !showWorkspaceViewer
             } else {
-                // START is now a no-op for template switching.
-                observations = null
-                recognitionResults = emptyMap()
+                captures = null
+                history = emptyMap()
                 pipelineStatus = null
                 selectedRegionId = null
             }
@@ -350,8 +318,8 @@ fun CaptureVerificationScreen(
                             existingSession = pipelineStatus?.session
                         ) { status ->
                             pipelineStatus = status
-                            observations = status.observations
-                            recognitionResults = status.results
+                            captures = status.captures
+                            history = status.results
                         }
                     }
                 }
@@ -363,13 +331,19 @@ fun CaptureVerificationScreen(
                             val candidate = assessment.candidates.first()
                             val speciesData = viewModel.getPokemonById(candidate.id)
                             if (speciesData != null) {
-                                if (collectionViewModel.activeSession.value == null) collectionViewModel.startRegistrationSession()
+                                // BRICK #187: Bridge session history to registration
+                                val currentSession = pipelineStatus?.session
+                                if (currentSession != null) {
+                                    collectionViewModel.startRegistrationSession(currentSession.allObservations())
+                                } else {
+                                    collectionViewModel.startRegistrationSession()
+                                }
+                                
                                 val owned = collectionViewModel.completeRegistrationSession(speciesData.id)
                                 if (owned != null) {
-                                    // Reset session state after successful registration
                                     pipelineStatus = null
-                                    observations = null
-                                    recognitionResults = emptyMap()
+                                    captures = null
+                                    history = emptyMap()
                                     manualSpecies = null
                                     isInspectionMode = false
                                     onSaveSuccess(owned.id)
@@ -453,7 +427,6 @@ fun CaptureVerificationScreen(
                             )
                         }
                     } else {
-                        // Restore full screen lazy column style inside ServiceConsole or wrapper
                         Box(modifier = Modifier.fillMaxSize().background(TerminalBlack)) {
                             ServiceConsole(
                                 panelState = panelState,
@@ -465,7 +438,7 @@ fun CaptureVerificationScreen(
             }
 
             if (showWorkspaceViewer) {
-                ObservationWorkspaceViewer(recognitionResults = recognitionResults)
+                ObservationWorkspaceViewer(history = history)
             }
         }
     }

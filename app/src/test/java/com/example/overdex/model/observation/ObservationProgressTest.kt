@@ -1,5 +1,7 @@
 package com.example.overdex.model.observation
 
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -7,10 +9,13 @@ import org.junit.Test
 
 class ObservationProgressTest {
 
+    private val source = ObservationSource.OCR
+    private val confidence = Confidence(ConfidenceLevel.OBSERVED, 1.0f)
+
     @Test
     fun `evaluateProgress - empty session is 0 percent complete`() {
         val session = ObservationSession(
-            recognitionResults = emptyMap(),
+            history = emptyMap(),
             objective = ObservationObjective.RegisterSpecimen
         )
 
@@ -23,12 +28,12 @@ class ObservationProgressTest {
 
     @Test
     fun `evaluateProgress - partial progress updates correctly`() {
-        val results = mapOf(
-            "SpeciesName" to listOf(RecognitionResult("Pikachu", 1.0f, "R1")),
-            "CombatPower" to listOf(RecognitionResult(500, 1.0f, "R1"))
+        val history = mapOf(
+            "SpeciesName" to listOf(PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)),
+            "CombatPower" to listOf(CombatPowerObservation(500, source = source, observerId = "R1", confidence = confidence))
         )
         val session = ObservationSession(
-            recognitionResults = results,
+            history = history,
             objective = ObservationObjective.RegisterSpecimen
         )
 
@@ -41,13 +46,13 @@ class ObservationProgressTest {
 
     @Test
     fun `evaluateProgress - optional fields do not affect progress percentage`() {
-        val results = mapOf(
-            "SpeciesName" to listOf(RecognitionResult("Pikachu", 1.0f, "R1")),
-            "CombatPower" to listOf(RecognitionResult(500, 1.0f, "R1")),
-            "CandyPanel" to listOf(RecognitionResult("Pikachu Candy", 1.0f, "R1")) // Optional
+        val history = mapOf(
+            "SpeciesName" to listOf(PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)),
+            "CombatPower" to listOf(CombatPowerObservation(500, source = source, observerId = "R1", confidence = confidence)),
+            "CandyPanel" to listOf(EvolutionFamilyObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)) // Optional
         )
         val session = ObservationSession(
-            recognitionResults = results,
+            history = history,
             objective = ObservationObjective.RegisterSpecimen
         )
 
@@ -60,14 +65,14 @@ class ObservationProgressTest {
 
     @Test
     fun `evaluateProgress - isComplete true when all required fields present`() {
-        val results = mapOf(
-            "SpeciesName" to listOf(RecognitionResult("Pikachu", 1.0f, "R1")),
-            "CombatPower" to listOf(RecognitionResult(500, 1.0f, "R1")),
-            "FastMoveRow" to listOf(RecognitionResult("Thunder Shock", 1.0f, "R1")),
-            "ChargedMoveRowA" to listOf(RecognitionResult("Discharge", 1.0f, "R1"))
+        val history = mapOf(
+            "SpeciesName" to listOf(PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)),
+            "CombatPower" to listOf(CombatPowerObservation(500, source = source, observerId = "R1", confidence = confidence)),
+            "FastMoveRow" to listOf(FastMoveObservation("Pikachu", "Thunder Shock", source = source, observerId = "R1", confidence = confidence)),
+            "ChargedMoveRowA" to listOf(ChargedMoveObservation("Pikachu", "Discharge", source = source, observerId = "R1", confidence = confidence))
         )
         val session = ObservationSession(
-            recognitionResults = results,
+            history = history,
             objective = ObservationObjective.RegisterSpecimen
         )
 
@@ -78,13 +83,13 @@ class ObservationProgressTest {
 
     @Test
     fun `evaluateProgress - IdentifySpecimen has different requirements`() {
-        val results = mapOf(
-            "SpeciesName" to listOf(RecognitionResult("Pikachu", 1.0f, "R1")),
-            "CombatPower" to listOf(RecognitionResult(500, 1.0f, "R1"))
+        val history = mapOf(
+            "SpeciesName" to listOf(PokemonNameObservation("Pikachu", source = source, observerId = "R1", confidence = confidence)),
+            "CombatPower" to listOf(CombatPowerObservation(500, source = source, observerId = "R1", confidence = confidence))
         )
         // IdentifySpecimen only requires Species and CP (2 fields)
         val session = ObservationSession(
-            recognitionResults = results,
+            history = history,
             objective = ObservationObjective.IdentifySpecimen
         )
 

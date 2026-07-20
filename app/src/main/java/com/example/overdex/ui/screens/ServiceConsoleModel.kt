@@ -22,16 +22,19 @@ data class ServicePanelState(
 
 object ServiceConsoleModel {
     
+    private val defaultResolver = DefaultObservationResolver()
+
     fun createPanelState(
         captureId: String,
-        results: Map<String, List<RecognitionResult<*>>>,
+        history: Map<String, List<Observation>>,
         assessment: RegistrationAssessment
     ): ServicePanelState {
-        android.util.Log.d("PIPELINE_INSTRUMENTATION", "ServiceConsoleModel Input | Results Keys: ${results.keys}")
+        android.util.Log.d("PIPELINE_INSTRUMENTATION", "ServiceConsoleModel Input | History Keys: ${history.keys}")
         val panelObs = mutableListOf<ServiceObservation<*>>()
         
         // Species
-        val speciesRaw = results["SpeciesName"]?.firstOrNull { it.recognizer == "SpeciesNameRecognizer" }?.value as? String
+        val speciesObs = history["SpeciesName"]?.let { defaultResolver.resolve(it) } as? PokemonNameObservation
+        val speciesRaw = speciesObs?.species
         val candidate = assessment.candidates.firstOrNull()
         panelObs.add(ServiceObservation(
             label = "Species Name",
@@ -46,7 +49,8 @@ object ServiceConsoleModel {
         ))
 
         // Family
-        val familyRaw = results["CandyPanel"]?.firstOrNull { it.recognizer == "CandyPanelFamilyRecognizer" }?.value as? String
+        val familyObs = history["CandyPanel"]?.let { defaultResolver.resolve(it) } as? EvolutionFamilyObservation
+        val familyRaw = familyObs?.familySpecies
         panelObs.add(ServiceObservation(
             label = "Evolution Family",
             value = CandyNormalizer.normalize(familyRaw),
@@ -56,7 +60,8 @@ object ServiceConsoleModel {
         ))
 
         // CP
-        val cpRaw = results["CombatPower"]?.firstOrNull { it.recognizer == "CombatPowerRecognizer" }?.value
+        val cpObs = history["CombatPower"]?.let { defaultResolver.resolve(it) } as? CombatPowerObservation
+        val cpRaw = cpObs?.cp
         panelObs.add(ServiceObservation(
             label = "Combat Power",
             value = cpRaw?.toString(),
@@ -66,9 +71,9 @@ object ServiceConsoleModel {
         ))
 
         // LOG: ServicePanelState
-        val res_fm = (results["FastMoveRow"] ?: results["SummaryFastMove"])?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
-        val res_cma = results["ChargedMoveRowA"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
-        val res_cmb = results["ChargedMoveRowB"]?.firstOrNull()?.value?.toString() ?: "MISSING (No RecognitionResult)"
+        val res_fm = (history["FastMoveRow"] ?: history["SummaryFastMove"])?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
+        val res_cma = history["ChargedMoveRowA"]?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
+        val res_cmb = history["ChargedMoveRowB"]?.let { defaultResolver.resolve(it) }?.toString() ?: "MISSING"
 
         TraceLogger.logStage(
             captureId = captureId,

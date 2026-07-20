@@ -1,77 +1,62 @@
 package com.example.overdex.model.observation
 
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ObservationResolutionTest {
 
-    @Test
-    fun `resolveResults - higher confidence wins`() {
-        val lowConf = RecognitionResult(value = "Pikachu", confidence = 0.5f, recognizer = "R1")
-        val highConf = RecognitionResult(value = "Raichu", confidence = 0.9f, recognizer = "R1")
+    private val resolver = DefaultObservationResolver()
 
-        val session = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(lowConf, highConf))
+    @Test
+    fun `resolve - higher confidence wins`() {
+        val lowConf = PokemonNameObservation(
+            species = "Pikachu",
+            source = ObservationSource.OCR,
+            observerId = "R1",
+            confidence = Confidence(ConfidenceLevel.OBSERVED, 0.5f)
+        )
+        val highConf = PokemonNameObservation(
+            species = "Raichu",
+            source = ObservationSource.OCR,
+            observerId = "R1",
+            confidence = Confidence(ConfidenceLevel.OBSERVED, 0.9f)
         )
 
-        val resolved = session.resolveResults()
-        assertEquals("Raichu", resolved["Species"]?.firstOrNull()?.value)
+        val resolved = resolver.resolve(listOf(lowConf, highConf)) as? PokemonNameObservation
+        assertEquals("Raichu", resolved?.species)
     }
 
     @Test
-    fun `resolveResults - missing never wins`() {
-        val existing = RecognitionResult(value = "Pikachu", confidence = 0.8f, recognizer = "R1")
-        val missing = RecognitionResult<String>(value = null, confidence = 1.0f, recognizer = "R1")
-
-        val session = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(existing, missing))
+    fun `resolve - equal confidence preserves existing`() {
+        val first = PokemonNameObservation(
+            species = "Pikachu",
+            source = ObservationSource.OCR,
+            observerId = "R1",
+            confidence = Confidence(ConfidenceLevel.OBSERVED, 0.8f)
+        )
+        val second = PokemonNameObservation(
+            species = "Raichu",
+            source = ObservationSource.OCR,
+            observerId = "R1",
+            confidence = Confidence(ConfidenceLevel.OBSERVED, 0.8f)
         )
 
-        val resolved = session.resolveResults()
-        assertEquals("Pikachu", resolved["Species"]?.firstOrNull()?.value)
+        val resolved = resolver.resolve(listOf(first, second)) as? PokemonNameObservation
+        assertEquals("Pikachu", resolved?.species)
     }
 
     @Test
-    fun `resolveResults - equal confidence preserves existing`() {
-        val first = RecognitionResult(value = "Pikachu", confidence = 0.8f, recognizer = "R1")
-        val second = RecognitionResult(value = "Raichu", confidence = 0.8f, recognizer = "R1")
-
-        val session = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(first, second))
+    fun `resolve - new information wins`() {
+        val newInfo = PokemonNameObservation(
+            species = "Pikachu",
+            source = ObservationSource.OCR,
+            observerId = "R1",
+            confidence = Confidence(ConfidenceLevel.OBSERVED, 0.1f)
         )
 
-        val resolved = session.resolveResults()
-        assertEquals("Pikachu", resolved["Species"]?.firstOrNull()?.value)
-    }
-
-    @Test
-    fun `resolveResults - new information wins`() {
-        val newInfo = RecognitionResult(value = "Pikachu", confidence = 0.1f, recognizer = "R1")
-
-        val session = ObservationSession(
-            recognitionResults = mapOf("Species" to listOf(newInfo))
-        )
-
-        val resolved = session.resolveResults()
-        assertEquals("Pikachu", resolved["Species"]?.firstOrNull()?.value)
-    }
-    
-    @Test
-    fun `resolveResults - multiple recognizers are resolved independently`() {
-        val r1a = RecognitionResult(value = "Pikachu", confidence = 0.5f, recognizer = "R1")
-        val r1b = RecognitionResult(value = "Raichu", confidence = 0.8f, recognizer = "R1")
-        val r2a = RecognitionResult(value = "Thunder Shock", confidence = 0.9f, recognizer = "R2")
-        val r2b = RecognitionResult(value = "Quick Attack", confidence = 0.4f, recognizer = "R2")
-
-        val session = ObservationSession(
-            recognitionResults = mapOf("Data" to listOf(r1a, r1b, r2a, r2b))
-        )
-
-        val resolved = session.resolveResults()
-        val dataResults = resolved["Data"] ?: emptyList()
-        
-        assertEquals(2, dataResults.size)
-        assertEquals("Raichu", dataResults.find { it.recognizer == "R1" }?.value)
-        assertEquals("Thunder Shock", dataResults.find { it.recognizer == "R2" }?.value)
+        val resolved = resolver.resolve(listOf(newInfo)) as? PokemonNameObservation
+        assertEquals("Pikachu", resolved?.species)
     }
 }

@@ -25,8 +25,12 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
 
     val activeSession: StateFlow<RegistrationSession?> = RegistrationSessionManager.activeSession
 
-    fun startRegistrationSession() {
-        RegistrationSessionManager.startSession()
+    /**
+     * Starts a new registration session.
+     * @param initialObservations Optional list of observations to prepopulate the session.
+     */
+    fun startRegistrationSession(initialObservations: List<Observation> = emptyList()) {
+        RegistrationSessionManager.startSession(initialObservations)
     }
 
     fun addObservation(observation: Observation) {
