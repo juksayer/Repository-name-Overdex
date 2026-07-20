@@ -1,0 +1,265 @@
+# Ownership Audit
+
+Purpose
+
+Every concept in Overdex should have exactly one owner.
+
+Ownership defines responsibility.
+
+Responsibility defines boundaries.
+
+When ownership is unclear, architecture begins to drift.
+
+---
+
+# Rules
+
+Every concept should have one primary owner.
+
+Other layers may consume information.
+
+Other layers may transform information.
+
+Ownership never transfers.
+
+If multiple layers appear to own the same concept, reconsider the design.
+
+---
+
+# Knowledge
+
+Owns:
+
+- Pokémon species
+- Moves
+- Typing
+- Base statistics
+- Forms
+- Evolution
+- Static game data
+
+Does not own:
+
+- Current battle
+- Observations
+- Recommendations
+- Trainer history
+
+Question:
+
+Can this information exist before a battle begins?
+
+If yes, Knowledge probably owns it.
+
+---
+
+# Observation
+
+Owns:
+
+- Raw observations
+- Evidence
+- Confidence
+- Observation provenance
+- Observation sessions
+- Active observation workspace
+
+Does not own:
+
+- Battle history
+- Trainer preferences
+- Recommendations
+
+Question:
+
+Was this directly observed?
+
+If yes, Observation probably owns it.
+
+---
+
+# Memory
+
+Owns:
+
+- Current battle state
+- Working memory
+- Temporary calculations
+- Live battle context
+
+Does not own:
+
+- Permanent history
+- Static knowledge
+
+Question:
+
+Would losing power erase this without harming the trainer's long-term record?
+
+If yes, Memory probably owns it.
+
+---
+
+# History
+
+Owns:
+
+- Battle timelines
+- Ordered events
+- Chronology
+- Session reconstruction
+
+Does not own:
+
+- Rendering
+- OCR
+- Species database
+
+Question:
+
+Does ordering matter?
+
+If yes, History probably owns it.
+
+---
+
+# Archive
+
+Owns:
+
+- Persistence
+- Storage
+- Retrieval
+- Long-term preservation
+
+Does not own:
+
+- Interpretation
+- UI
+- Recommendations
+
+Question:
+
+If every ViewModel disappeared, would this still be worth keeping?
+
+If yes, Archive probably owns it.
+
+---
+
+# Intelligence
+
+Owns:
+
+- Recommendations
+- Pattern recognition
+- Matchup analysis
+- Prediction
+- Divination
+- Coaching
+- Explanation
+
+Never owns:
+
+- Facts
+- Evidence
+- History
+
+Question:
+
+Is this an interpretation?
+
+If yes, Intelligence probably owns it.
+
+---
+
+# Presentation
+
+Owns:
+
+- CRT
+- HUD
+- Audio
+- Trainer communication
+- Replay rendering
+- Visual language
+
+Never owns:
+
+- Battle state
+- Knowledge
+- Recommendations
+
+Presentation communicates.
+
+It never decides.
+
+---
+
+# Cross-Layer Ownership
+
+Knowledge
+↓
+
+Observation
+↓
+
+Memory
+↓
+
+History
+↓
+
+Archive
+↓
+
+Intelligence
+↓
+
+Presentation
+
+Information flows downward.
+
+Ownership does not.
+
+---
+
+# Ownership Smells
+
+A class probably has the wrong owner if it:
+
+- Stores knowledge and observations together.
+- Performs OCR while rendering UI.
+- Generates recommendations during persistence.
+- Knows about Android widgets inside the engine.
+- Mutates history while presenting it.
+- Requires another layer to explain its own data.
+
+---
+
+# Ownership Questions
+
+When reviewing any class:
+
+What does this class own?
+
+What does it consume?
+
+What does it produce?
+
+Could another layer own this more naturally?
+
+Does this class know something it should merely observe?
+
+Does this class remember something it should archive?
+
+Does this class interpret something it should merely present?
+
+---
+
+# Litmus Test
+
+Ownership should be explainable in one sentence.
+
+If ownership requires a paragraph...
+
+ownership is probably wrong.

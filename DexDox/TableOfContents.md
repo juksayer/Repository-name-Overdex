@@ -26,10 +26,13 @@ User interface philosophy
 Device identity
 Interaction standards
 Part III — System Architecture
-OVERMON_ARCHITECTURE.md
+ARCHITECTURE.md
 High-level application architecture
 Data flow
 System responsibilities
+Architecture/ThinkingChair.md
+Architectural Decision Records (ADR)
+"The why behind the what"
 BattleEngine.md
 Battle engine design
 Observation pipeline

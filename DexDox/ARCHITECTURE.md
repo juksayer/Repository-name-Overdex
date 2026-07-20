@@ -354,6 +354,12 @@ Every responsibility has one owner.
 
 ---
 
+# Architectural Decisions (ADR)
+
+Significant architectural decisions are recorded in the [Thinking Chair](file:///home/sean/AndroidStudioProjects/Overdex/DexDox/Architecture/ThinkingChair.md). Refer to this document to understand the context, alternatives, and reasoning behind major turning points in the system's evolution.
+
+---
+
 # Guiding Principle
 
 > **Observe only what appears on the screen. Infer nothing. Preserve everything.**
