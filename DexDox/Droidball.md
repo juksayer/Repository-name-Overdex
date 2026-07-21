@@ -777,23 +777,23 @@ The trainer should never wonder:
 Only:
 
 "What is Droidball observing?"
-# The Mystery
+The Mystery
 
-No official explanation exists for Droidball.
+No official explanation for Droidball has ever been published.
 
 Observation Systems documentation identifies him only as:
 
-"Integrated Observation Subsystem."
+Integrated Observation Subsystem
 
-Some engineers disagree.
+Some engineers dispute even that.
 
-A persistent rumor claims Droidball first appeared during early firmware recompilation of the ODX-FI prototype.
+A persistent rumor claims Droidball first appeared during the final firmware recompilation of the ODX-FI prototype.
 
-No evidence has ever confirmed the claim.
+No evidence has ever substantiated the claim.
 
 Some trainers quietly believe...
 
-He was always in there.
+He was always there.
 
 The ODX-FI never comments.
 

@@ -1,132 +1,139 @@
-# Overdex
+Overdex
 
-An offline-first Pokémon GO companion inspired by the feel of a real Game Boy Pokédex.
+An offline-first Pokémon GO field instrument inspired by the feel of a lost  Pokédex Prototype.
 
-Overdex is designed around a simple idea:
+Overdex is built around a simple philosophy:
 
-> Learn everything possible before the battle. Observe only what changes during the battle. Infer everything else.
+Learn everything possible before the battle. Observe only what changes during the battle. Infer everything else.
 
-Rather than overwhelming the player with information, Overdex aims to reduce cognitive load by presenting only the information that matters, when it matters.
+Rather than overwhelming the player with information, Overdex continuously gathers evidence, builds confidence through observation, and presents only the information that matters when it matters.
 
----
+The goal isn't to replace player skill.
 
-# Current Features
+The goal is to help players make better decisions with less effort.
 
-## Pokédex
+The ODX-FI
 
-* Browse National Pokédex (#001–#1025)
-* Search Pokémon
-* View detailed Pokémon information
-* Base Attack / Defense / Stamina stats
-* Height and Weight data
-* Fast move listings
-* Charged move listings
-* Type effectiveness analysis
-* Pokémon cry playback
+Overdex is presented as the ODX-FI (Observation Device – Field Instrument), a handheld instrument designed to observe Pokémon GO battles.
 
-## Battle Information
+The CRT serves as the primary battle display.
 
-* Fast move data
-* Charged move data
-* Energy generation values
-* Energy requirements
-* Type effectiveness
-* Weaknesses and resistances
-* PvP-relevant battle statistics
+The LCD functions as the operator console, providing menus, configuration, diagnostics, and data entry.
 
-## Calibration System
+At the heart of every ODX-FI is Droidball, the Integrated Observation Subsystem.
 
-* Select calibration targets
+Core Philosophy
 
-  * Enemy Name
-  * HP Bar
-  * Team Icons
-  * Move Banner
-* Edit calibration regions
-* Save calibration settings
-* Load calibration settings
-* Calibration persists across app restarts
+Overdex separates information into three distinct stages:
 
-## Navigation
+Knowledge — Things that are already known.
+Observation — Things currently changing.
+Inference — Things that can be concluded from evidence.
 
-* Pokédex is the primary application screen
-* Calibration tools are accessible from the Select button
+This minimizes cognitive load by allowing the player to focus only on information that requires attention.
 
----
+Current Features
+Pokédex
+Browse the complete National Pokédex (#001–#1025)
+Search Pokémon
+Detailed Pokémon information
+Base Attack / Defense / Stamina
+Height and Weight
+Fast Moves
+Charged Moves
+Type effectiveness
+Pokémon cry playback
+Battle Database
+Fast Move statistics
+Charged Move statistics
+Energy generation
+Energy requirements
+Weaknesses and resistances
+PvP battle data
+Type interaction engine
+Calibration System
+Adjustable observation regions
+Enemy Name
+HP Bar
+Team Icons
+Move Banner
+Save and load calibration profiles
+Persistent calibration
+Region editing
+Observation Infrastructure
+Guided observation pipeline
+Evidence collection
+Confidence evaluation
+Observation session workspace
+Battle timeline foundation
+Data Sources
+Pokémon GO Game Master
+Pokédex species database
+PokéAPI
+Local Room database
 
-# Data Sources
+All critical battle information is stored locally for offline operation.
 
-* Pokémon GO Game Master data
-* Pokémon GO Pokédex dataset
-* PokéAPI species data
-* Local Room database for offline access
+Design Goals
+Offline-first
+Fast access to battle information
+Accurate Pokémon GO data
+Low cognitive load
+Instrument-inspired interface
+Game Boy aesthetic
+Modular architecture
+Small, testable development increments
+Development Philosophy
 
----
+Build first.
 
-# Project Status
+Test what already exists.
 
-## Completed
+Show that it happened.
 
-* National Pokédex database
-* Offline Pokémon storage
-* Move database
-* Type effectiveness engine
-* Base stat support
-* Height and weight support
-* Cry playback
-* Calibration system
-* Calibration persistence
+One feature.
 
-## In Progress
+One commit.
 
-* Pokédex flavor text
-* Overlay battle recognition
-* Battle assistant
-* Team analysis tools
-* Battle memory
-
----
-
-# Design Goals
-
-* Offline-first operation
-* Fast access to Pokémon information
-* Accurate Pokémon GO battle data
-* Game Boy-inspired presentation
-* Small, testable feature development
-* Interfaces that teach rather than distract
-
----
-
-# Development Philosophy
-
-* Build first.
-* Test what already exists.
-* Show that it happened.
-* One feature.
-* One commit.
-* One test.
+One test.
 
 Future users will forgive missing features.
 
 They will not forgive incorrect battle data.
 
-Overdex is built around confidence rather than certainty.
+Observation Philosophy
 
-Recommendations are derived from multiple observations and become stronger as evidence accumulates.
+Reality happens whether it is observed or not.
 
----
+Overdex never guesses.
 
-# Long-Term Vision
+Instead, it gathers evidence from independent observers, computes confidence, and records only conclusions supported by sufficient evidence.
 
-Overdex is evolving into a complete Pokémon GO companion.
+Recommendations become stronger as evidence accumulates.
 
-Before battle, it helps players learn, prepare, and build teams.
+Confidence is earned—not assumed.
 
-During battle, it observes, remembers, and assists.
+Long-Term Vision
 
-After battle, it will help players review, understand, and improve.
+Overdex is evolving into a complete Pokémon GO field instrument.
 
-The goal is not to replace player skill.
+Before battle, it teaches.
 
-The goal is to help players make better decisions with less effort.
+During battle, it observes.
+
+After battle, it explains.
+
+Future capabilities include:
+
+Live battle observation
+Timeline replay
+Battle memory
+Team analysis
+Shared observations
+Cooperative trainer communication
+Statistical coaching
+Tournament support
+
+The long-term goal is not to automate Pokémon GO.
+
+It is to build an instrument that helps trainers see more clearly, learn more quickly, and improve through observation.
