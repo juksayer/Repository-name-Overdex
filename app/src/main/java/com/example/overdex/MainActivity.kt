@@ -36,7 +36,6 @@ import com.example.overdex.ui.components.DefaultLCDStatus
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme
-import kotlin.system.exitProcess
 
 
 /**
@@ -79,7 +78,7 @@ class MainActivity : ComponentActivity() {
 
         val calibration = calibrationManager.load()
         if (!calibration.isCalibrated()) {
-
+            // TODO: Trigger calibration flow if required
         }
         Log.d(
             "OVERDEX_CALIBRATION",
@@ -169,7 +168,7 @@ fun PokedexApp(
         composable("main_menu") {
             var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
             val context = androidx.compose.ui.platform.LocalContext.current
-            val researcherManager = remember { com.example.overdex.ResearcherManager(context) }
+            val researcherManager = remember { ResearcherManager(context) }
             val isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
             val observationState by viewModel.observationSessionState.collectAsState()
 

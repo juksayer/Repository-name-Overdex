@@ -10,12 +10,10 @@ import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import com.example.overdex.model.TrainerIdentity
-import com.example.overdex.model.navigation.*
 import kotlinx.coroutines.delay
 
 enum class MainMenuPhase {
     BOOT,
-    MENU_BUILD,
     READY
 }
 

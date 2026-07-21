@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -22,7 +21,6 @@ import com.example.overdex.ui.theme.TerminalPurple
 
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.navigation.*
-import kotlinx.coroutines.delay
 
 @Composable
 fun InstrumentStatusView(
@@ -31,7 +29,6 @@ fun InstrumentStatusView(
     partnerIdentity: com.example.overdex.model.PartnerIdentity? = null,
     isResearcherUnlocked: Boolean = false,
     observationState: com.example.overdex.model.observation.ObservationSessionState = com.example.overdex.model.observation.ObservationSessionState.IDLE,
-    recordCount: Int = 1025, // Intent: Displays current database statistics
 ) {
     Column(
         modifier = modifier
@@ -51,7 +48,7 @@ fun InstrumentStatusView(
         TerminalSection("ACTIVE SUBSYSTEMS") {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TerminalText("DB_ENGINE")
-                TerminalText("${recordCount}_LCL", color = TerminalGreen)
+                TerminalText("1025_LCL", color = TerminalGreen)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TerminalText("RECOGNITION")
@@ -65,13 +62,10 @@ fun InstrumentStatusView(
                 TerminalText("OBS_STATE")
                 TerminalText(observationState.name, color = TerminalGreen)
             }
-        }
-
-        if (isResearcherUnlocked) {
-            TerminalSection("DIAGNOSTICS") {
+            if (isResearcherUnlocked) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TerminalText("RESEARCHER_MODE")
-                    TerminalText("ACTIVE", color = TerminalPurple)
+                    TerminalText("UNLOCKED", color = TerminalPurple)
                 }
             }
         }
@@ -132,8 +126,6 @@ fun LCDDirectoryTree(
                 )
             }
         }
-    }
-}
     }
 }
 

@@ -1,6 +1,5 @@
 package com.example.overdex.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -76,7 +75,6 @@ fun Modifier.glassShield(): Modifier = this
     .focusProperties { canFocus = false }
 
 enum class OverlayState {
-    COLLAPSED,
     EXPANDED
 }
 
