@@ -20,69 +20,120 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
+import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.navigation.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun DirectoryTree(
-    visibleNodes: List<FlattenedNode>,
-    selectedPath: String,
-    onNodeSelected: (TreeNode) -> Unit,
-    modifier: Modifier = Modifier
+fun InstrumentStatusView(
+    trainerIdentity: TrainerIdentity?,
+    modifier: Modifier = Modifier,
+    partnerIdentity: com.example.overdex.model.PartnerIdentity? = null,
+    isResearcherUnlocked: Boolean = false,
+    observationState: com.example.overdex.model.observation.ObservationSessionState = com.example.overdex.model.observation.ObservationSessionState.IDLE,
+    recordCount: Int = 1025, // Intent: Displays current database statistics
 ) {
-    val listState = rememberLazyListState()
-    
-    // Sync selection with scroll position
-    LaunchedEffect(selectedPath) {
-        val selectedIndex = visibleNodes.indexOfFirst { it.path == selectedPath }
-        if (selectedIndex != -1) {
-            val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
-            val isSelectedVisible = visibleItemsInfo.any { it.index == selectedIndex }
-            
-            if (!isSelectedVisible) {
-                // If not visible, snap to it. 
-                // Using animateScrollToItem might be too slow for D-pad, 
-                // but let's try it for smoothness first.
-                listState.animateScrollToItem(selectedIndex)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        TerminalHeader("INSTRUMENT STATUS")
+        
+        TerminalSection("OPERATOR") {
+            TerminalText("NAME: ${trainerIdentity?.displayName?.uppercase() ?: "RESEARCHER"}")
+            TerminalText("ID: ${trainerIdentity?.trainerId?.toString()?.take(8) ?: "00000000"}")
+            if (partnerIdentity != null) {
+                TerminalText("LINK: ${partnerIdentity.displayName?.uppercase() ?: "UNKNOWN"}", color = TerminalGreen)
             }
         }
-    }
 
-    // "Ownership of Time" - sequential reveal count
-    var revealCount by remember(visibleNodes.size) { mutableIntStateOf(0) }
-    
-    LaunchedEffect(visibleNodes.size) {
-        for (i in 1..visibleNodes.size) {
-            revealCount = i
-            delay(30L) // Slightly faster for tree expansion
+        TerminalSection("ACTIVE SUBSYSTEMS") {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TerminalText("DB_ENGINE")
+                TerminalText("${recordCount}_LCL", color = TerminalGreen)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TerminalText("RECOGNITION")
+                TerminalText("READY", color = TerminalGreen)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TerminalText("DROIDBALL")
+                TerminalText("DOCKED", color = TerminalGreen)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TerminalText("OBS_STATE")
+                TerminalText(observationState.name, color = TerminalGreen)
+            }
         }
-    }
 
-    androidx.compose.foundation.lazy.LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        items(visibleNodes.size) { index ->
-            val flattened = visibleNodes[index]
-            if (index < revealCount) {
-                val isSelected = selectedPath == flattened.path
-                val label = when (val node = flattened.node) {
-                    is DirectoryNode -> {
-                        val prefix = if (flattened.isExpanded) "▼ " else "▶ "
-                        "$prefix${node.name}/"
-                    }
-                    is ActionNode -> node.name
+        if (isResearcherUnlocked) {
+            TerminalSection("DIAGNOSTICS") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TerminalText("RESEARCHER_MODE")
+                    TerminalText("ACTIVE", color = TerminalPurple)
                 }
+            }
+        }
 
-                TerminalMenuOption(
-                    label = label,
-                    selected = isSelected,
-                    modifier = Modifier.padding(start = (flattened.depth * 16).dp),
-                    onClick = { onNodeSelected(flattened.node) }
+        Spacer(modifier = Modifier.weight(1f))
+        
+        TerminalText(
+            text = "SYSTEM READY",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontWeight = FontWeight.Bold,
+            color = TerminalPurple
+        )
+    }
+}
+
+@Composable
+fun LCDDirectoryTree(
+    visibleNodes: List<FlattenedNode>,
+    selectedPath: String,
+    modifier: Modifier = Modifier
+) {
+    // Monochrome firmware palette
+    val lcdGreen = TerminalGreen.copy(alpha = 0.8f)
+    val lcdBlack = Color(0xFF121510) // Match InstrumentLCD background
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        visibleNodes.forEach { flattened ->
+            val isSelected = selectedPath == flattened.path
+            val node = flattened.node
+            
+            val label = when (node) {
+                is DirectoryNode -> {
+                    val prefix = if (flattened.isExpanded) "[-] " else "[+] "
+                    "$prefix${node.name.uppercase()}"
+                }
+                is ActionNode -> "  ${node.name.uppercase()}"
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (isSelected) lcdGreen else Color.Transparent)
+                    .padding(horizontal = 2.dp, vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isSelected) "> $label" else "  $label",
+                    color = if (isSelected) lcdBlack else lcdGreen,
+                    fontSize = 10.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = (flattened.depth * 4).dp)
                 )
             }
         }
+    }
+}
     }
 }
 

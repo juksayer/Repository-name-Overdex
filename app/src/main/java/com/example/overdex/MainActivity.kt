@@ -31,6 +31,8 @@ import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.components.LCDDirectoryTree
+import com.example.overdex.ui.components.DefaultLCDStatus
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme
@@ -166,6 +168,10 @@ fun PokedexApp(
     ) {
         composable("main_menu") {
             var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val researcherManager = remember { com.example.overdex.ResearcherManager(context) }
+            val isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
+            val observationState by viewModel.observationSessionState.collectAsState()
 
             PokedexFrame(
                 showBattleOverlay = false,
@@ -180,14 +186,25 @@ fun PokedexApp(
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
-                isLogoInteractive = true
+                isLogoInteractive = true,
+                lcdContent = {
+                    if (phase == MainMenuPhase.READY) {
+                        LCDDirectoryTree(
+                            visibleNodes = treeState.visibleNodes,
+                            selectedPath = treeState.selectedPath
+                        )
+                    } else {
+                        DefaultLCDStatus()
+                    }
+                }
             ) { _ ->
                 MainMenuScreen(
                     hasBootedInSession = hasBootedInSession,
                     onBootComplete = { viewModel.markBooted() },
-                    visibleNodes = treeState.visibleNodes,
-                    selectedPath = treeState.selectedPath,
                     trainerIdentity = trainerIdentity,
+                    partnerIdentity = partnerIdentity,
+                    isResearcherUnlocked = isResearcherUnlocked,
+                    observationState = observationState,
                     onPhaseChange = { phase = it }
                 )
             }

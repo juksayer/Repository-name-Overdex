@@ -43,6 +43,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.material3.LocalRippleConfiguration
 import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,17 +56,24 @@ import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Glass Shield: Restricts all touch input to the CRT area.
- * The CRT is an observation-only display and never accepts operator input.
+ * Glass Shield: Architecturally removes the Composable subtree from the interaction model.
+ * It consumes all pointer events in the [PointerEventPass.Initial] pass, preventing
+ * children from receiving them. 
+ * 
+ * This ensures the CRT remains a passive display surface.
  */
-fun Modifier.glassShield(): Modifier = this.pointerInput(Unit) {
-    awaitPointerEventScope {
-        while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Initial)
-            event.changes.forEach { it.consume() }
+fun Modifier.glassShield(): Modifier = this
+    .pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                // Consume all changes to stop propagation to children
+                event.changes.forEach { it.consume() }
+            }
         }
     }
-}
+    // Structural focus suppression
+    .focusProperties { canFocus = false }
 
 enum class OverlayState {
     COLLAPSED,
@@ -133,7 +143,8 @@ fun InstrumentButton(
 
 @Composable
 fun InstrumentLCD(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
@@ -142,43 +153,50 @@ fun InstrumentLCD(
             .padding(8.dp)
     ) {
         // LCD Surface
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF121510)) // Dim greenish-black LCD
                 .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "== ODX-FI SERVICE ==",
-                color = TerminalPurple.copy(alpha = 0.5f),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "READY",
-                color = TerminalGreen.copy(alpha = 0.7f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "OBSERVATION ENGINE",
-                color = TerminalGreen.copy(alpha = 0.5f),
-                fontSize = 10.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Text(
-                text = "OFFLINE",
-                color = TerminalGreen.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
+            content()
         }
+    }
+}
+
+@Composable
+fun DefaultLCDStatus() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "== ODX-FI SERVICE ==",
+            color = TerminalPurple.copy(alpha = 0.5f),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "READY",
+            color = TerminalGreen.copy(alpha = 0.7f),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "OBSERVATION ENGINE",
+            color = TerminalGreen.copy(alpha = 0.5f),
+            fontSize = 10.sp,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
+        Text(
+            text = "OFFLINE",
+            color = TerminalGreen.copy(alpha = 0.7f),
+            fontSize = 12.sp,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+        )
     }
 }
 
@@ -201,6 +219,7 @@ fun PokedexFrame(
     instrumentState: ObservationSessionState? = null,
     pipelineStatus: com.example.overdex.data.observation.PipelineStatus? = null,
     isLogoInteractive: Boolean = false,
+    lcdContent: @Composable () -> Unit = { DefaultLCDStatus() },
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
     var showSettings by remember { mutableStateOf(false) }
@@ -359,111 +378,116 @@ fun PokedexFrame(
                 .padding(top = crtPadding)
                 .glassShield() // The Glass Shield enforcement point
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(PokedexScreen)
-                    .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
-                    .padding(4.dp)
+            // Structural Indication Suppression
+            CompositionLocalProvider(
+                LocalRippleConfiguration provides null
             ) {
-                // Application Layer (Shader applied here)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(PokedexScreen)
+                        .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
+                        .padding(4.dp)
                 ) {
-                    content(battleMemory)
-                }
-
-                // HUD Overlay Layer (Kept clean and sharp)
-                if (showBattleOverlay && serviceMode) {
-                    Column {
-                        // DroidBall (Service indicator and control)
-                        // Architecture: Droidball is a specialized observation-aware view of the logo.
-                        // When presentation state is present, we use Droidball to reflect the state.
-                        Droidball(
-                            presentationState = presentationState,
-                            modifier = Modifier.size(40.dp)
-                        )
-
-                        if (overlayState == OverlayState.EXPANDED) {
-                            EnemyTeamMemoryOverlay(
-                                opponent = presentationState.team.opponent,
-                                tactical = presentationState.tactical,
-                                spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
-                            )
-                            
-                            // Live Move Analysis Panel - Displays moves for the active enemy
-                            LiveMoveAnalysisPanel(
-                                opponent = presentationState.team.opponent,
-                                tactical = presentationState.tactical
-                            )
-                        }
-                    }
-                }
-
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showSettings,
-                    enter = fadeIn() + expandIn(),
-                    exit = fadeOut() + shrinkOut()
-                ) {
-                    FilterSettingsOverlay(
-                        settings = filterSettings,
-                        onSettingsChange = onFilterSettingsChange,
-                        isResearcherUnlocked = isResearcherUnlocked,
-                        onOpenResearcher = { 
-                            showSettings = false
-                            showResearcherSettings = true 
-                        },
-                        onClose = { showSettings = false },
-                        onUp = { settingsUp = it },
-                        onDown = { settingsDown = it },
-                        onLeft = { settingsLeft = it },
-                        onRight = { settingsRight = it },
-                        onA = { settingsA = it },
-                        onB = { settingsB = it }
-                    )
-                }
-
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showResearcherSettings,
-                    enter = fadeIn() + expandIn(),
-                    exit = fadeOut() + shrinkOut()
-                ) {
-                    ResearcherModeOverlay(
-                        onLaunchProbe = {
-                            showResearcherSettings = false
-                            onLaunchProbe()
-                        },
-                        onLaunchObservatory = {
-                            showResearcherSettings = false
-                            onLaunchObservatory()
-                        },
-                        onClose = { showResearcherSettings = false },
-                        onUp = { researcherUp = it },
-                        onDown = { researcherDown = it },
-                        onA = { researcherA = it },
-                        onB = { researcherB = it }
-                    )
-                }
-
-                // Unlock Message Overlay
-                if (unlockMessage != null) {
+                    // Application Layer (Shader applied here)
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.8f)),
-                        contentAlignment = Alignment.Center
+                            .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
                     ) {
-                        Text(
-                            text = unlockMessage!!,
-                            color = TerminalGreen,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                        content(battleMemory)
+                    }
+
+                    // HUD Overlay Layer (Kept clean and sharp)
+                    if (showBattleOverlay && serviceMode) {
+                        Column {
+                            // DroidBall (Service indicator and control)
+                            // Architecture: Droidball is a specialized observation-aware view of the logo.
+                            // When presentation state is present, we use Droidball to reflect the state.
+                            Droidball(
+                                presentationState = presentationState,
+                                modifier = Modifier.size(40.dp)
+                            )
+
+                            if (overlayState == OverlayState.EXPANDED) {
+                                EnemyTeamMemoryOverlay(
+                                    opponent = presentationState.team.opponent,
+                                    tactical = presentationState.tactical,
+                                    spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
+                                )
+                                
+                                // Live Move Analysis Panel - Displays moves for the active enemy
+                                LiveMoveAnalysisPanel(
+                                    opponent = presentationState.team.opponent,
+                                    tactical = presentationState.tactical
+                                )
+                            }
+                        }
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showSettings,
+                        enter = fadeIn() + expandIn(),
+                        exit = fadeOut() + shrinkOut()
+                    ) {
+                        FilterSettingsOverlay(
+                            settings = filterSettings,
+                            onSettingsChange = onFilterSettingsChange,
+                            isResearcherUnlocked = isResearcherUnlocked,
+                            onOpenResearcher = { 
+                                showSettings = false
+                                showResearcherSettings = true 
+                            },
+                            onClose = { showSettings = false },
+                            onUp = { settingsUp = it },
+                            onDown = { settingsDown = it },
+                            onLeft = { settingsLeft = it },
+                            onRight = { settingsRight = it },
+                            onA = { settingsA = it },
+                            onB = { settingsB = it }
                         )
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showResearcherSettings,
+                        enter = fadeIn() + expandIn(),
+                        exit = fadeOut() + shrinkOut()
+                    ) {
+                        ResearcherModeOverlay(
+                            onLaunchProbe = {
+                                showResearcherSettings = false
+                                onLaunchProbe()
+                            },
+                            onLaunchObservatory = {
+                                showResearcherSettings = false
+                                onLaunchObservatory()
+                            },
+                            onClose = { showResearcherSettings = false },
+                            onUp = { researcherUp = it },
+                            onDown = { researcherDown = it },
+                            onA = { researcherA = it },
+                            onB = { researcherB = it }
+                        )
+                    }
+
+                    // Unlock Message Overlay
+                    if (unlockMessage != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.8f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = unlockMessage!!,
+                                color = TerminalGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
@@ -518,7 +542,9 @@ fun PokedexFrame(
                     .weight(1f)
                     .fillMaxHeight()
                     .padding(horizontal = 4.dp)
-            )
+            ) {
+                lcdContent()
+            }
 
             // Action Column (Right)
             Column(
@@ -557,7 +583,8 @@ fun StatusIndicator(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.glassShield()
     ) {
         Text(
             text = label,
@@ -616,7 +643,7 @@ fun AndroidPokeballLogo(
         modifier = modifier
             .then(if (isInteractive) Modifier.pointerInput(Unit) {
                 detectTapGestures(onTap = { trigger++ })
-            } else Modifier)
+            } else Modifier.glassShield())
             .graphicsLayer { rotationZ = rotation.value }
     ) {
         val w = size.width

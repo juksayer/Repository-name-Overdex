@@ -23,11 +23,11 @@ enum class MainMenuPhase {
 fun MainMenuScreen(
     hasBootedInSession: Boolean,
     onBootComplete: () -> Unit,
-    visibleNodes: List<FlattenedNode> = emptyList(),
-    selectedPath: String = "",
     trainerIdentity: TrainerIdentity? = null,
+    partnerIdentity: com.example.overdex.model.PartnerIdentity? = null,
+    isResearcherUnlocked: Boolean = false,
+    observationState: com.example.overdex.model.observation.ObservationSessionState = com.example.overdex.model.observation.ObservationSessionState.IDLE,
     onPhaseChange: (MainMenuPhase) -> Unit = {},
-    onNodeSelected: (TreeNode) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -40,7 +40,6 @@ fun MainMenuScreen(
     SideEffect { onPhaseChange(phase) }
 
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
-    var menuRevealCount by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) visibleNodes.size else 0) }
 
     val bootLines = remember(trainerIdentity) {
         listOf(
@@ -69,26 +68,13 @@ fun MainMenuScreen(
             // Short pause on "OVERDEX READY"
             delay(200L)
 
-            // 2. CLEAR Transition & MENU_BUILD Phase
-            phase = MainMenuPhase.MENU_BUILD
-            onPhaseChange(phase)
-            
-            // Sequential menu reveal
-            for (i in 1..visibleNodes.size) {
-                menuRevealCount = i
-                val revealDelay = if (i == 1) 120L else 70L
-                delay(revealDelay)
-            }
-
-            // Final intentional pause before READY
-            delay(200L)
+            // 2. READY Phase
             phase = MainMenuPhase.READY
             onPhaseChange(phase)
             onBootComplete()
         } else {
             // Already booted
             bootStep = bootLines.size
-            menuRevealCount = visibleNodes.size
             phase = MainMenuPhase.READY
             onPhaseChange(phase)
         }
@@ -126,14 +112,11 @@ fun MainMenuScreen(
             }
         } else {
             // OPERATIONAL Workspace (MENU_BUILD or READY)
-            DirectoryTree(
-                visibleNodes = visibleNodes.take(menuRevealCount),
-                selectedPath = if (phase == MainMenuPhase.READY) selectedPath else "",
-                onNodeSelected = { node ->
-                    if (phase == MainMenuPhase.READY) {
-                        onNodeSelected(node)
-                    }
-                }
+            InstrumentStatusView(
+                trainerIdentity = trainerIdentity,
+                partnerIdentity = partnerIdentity,
+                isResearcherUnlocked = isResearcherUnlocked,
+                observationState = observationState
             )
         }
     }
