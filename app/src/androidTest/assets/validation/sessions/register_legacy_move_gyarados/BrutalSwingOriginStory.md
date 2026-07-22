@@ -1,4 +1,4 @@
-it started with "where is brutal swing"
+"where is brutal swing?"
 "if i know which side brutal swing is on, i automatically know where Dragon Pulse is"
 "what moves does charizard have again, all of them? i list them in order of how common or meta they are."
 "if i know charizard's moves, i can make more informed decisions"
