@@ -777,6 +777,38 @@ The trainer should never wonder:
 Only:
 
 "What is Droidball observing?"
+
+Droidball Design Principles v1
+
+Not his appearance.
+
+His behavior.
+
+Things like:
+
+Identity
+Droidball is not a drone.
+Droidball is not a pet.
+Droidball is the field embodiment of Overdex.
+Energy
+Docked = recharge.
+Undocked = autonomous operation.
+Heavy observation consumes energy.
+Docking restores both battery and synchronization.
+Communication
+Docking initiates synchronization.
+LED indicates state.
+Audio conveys acquisition and confidence.
+No unnecessary mechanical antenna.
+Personality
+Helpful.
+Curious.
+Quiet unless it has something meaningful to communicate.
+Professional, but playful enough to fit Pokémon.
+Presence
+Before battle: assists preparation.
+During battle: becomes the Service LCD overlay.
+After battle: returns observations to ODX-FI.
 # The Mystery
 
 No official explanation exists for Droidball.
