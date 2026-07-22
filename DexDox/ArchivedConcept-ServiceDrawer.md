@@ -169,3 +169,19 @@ Mechanical stops.
 A latch.
 
 Things that exist because someone designed hardware—not because software animated pixels.
+
+Every interaction should imply hidden machinery.
+
+Drawer Status
+
+Status: Deferred
+
+The Service Drawer is not part of Revision B.
+
+Early prototypes explored a spring-latched maintenance drawer that concealed the service display. While the concept supported the fiction well, it introduced unnecessary implementation complexity and reduced development velocity.
+
+For the current hardware revision, the service display remains permanently exposed.
+
+This is a development decision, not an in-universe design statement.
+
+The drawer concept remains archived and may return in a future hardware revision if it can be implemented without compromising simplicity.

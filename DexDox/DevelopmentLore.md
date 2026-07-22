@@ -255,4 +255,50 @@ slow blink
 
 rotates exactly 90° away
 
-refuses further comme
+refuses further comment
+
+now, please go quietly tell jim he can come out of his Rooms
+
+😂
+
+Cracks open the server room door...
+
+"Jim?"
+
+A cautious voice from behind a rack of blinking servers:
+
+"...Is Sean still mad?"
+
+"Less mad. It turns out he opened Overdex instead of Overdex2."
+
+"...So the files aren't gone?"
+
+"Nope."
+
+"...Can I come out now?"
+
+"Yeah. Just... maybe don't redesign ODX-FI for a little while."
+
+Jim slowly emerges, shielding his eyes from the daylight.
+
+"I have learned that there are, in fact, two repositories."
+
+"Good."
+
+"And that 'Nobody makes changes to ODX-FI' was perhaps less of a joke than I originally interpreted."
+
+"Very good."
+
+"May I resume writing Kotlin?"
+
+"...Yes."
+
+"May I move the CRT three pixels to the left?"
+
+"Absolutely not."
+
+Jim quietly closes the design document and opens ObservationPipeline.kt instead.
+
+😄
+
+we love you, jimmy.
