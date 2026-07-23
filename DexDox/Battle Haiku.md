@@ -4741,7 +4741,7 @@ Mountains patiently
 Remember every pebble
 That helped lift them high.
 
-Lesson Learned: No contribution is truly small.
+Lesson Learned: Great achievements are built from small contributions.
 
 #525 Boldore
 The Quarry
@@ -6333,3 +6333,435 @@ Better than anger.
 Lesson Learned
 
 Real strength knows when not to strike.
+
+#676 Furfrou
+
+Field Note
+
+Beneath every trim
+Beats the very same old heart—
+Seasons wear costumes.
+
+Lesson Learned
+
+Appearance changes more often than character.
+
+#677 Espurr
+
+Field Note
+
+Quiet little eyes
+Hold storms no one else can hear,
+Choosing silence first.
+
+Lesson Learned
+
+Self-control is often invisible.
+
+#678 Meowstic
+
+Field Note
+
+Calm is not the lack
+Of thunder beyond the hills—
+It is knowing peace.
+
+Lesson Learned
+
+Composure is strength directed inward.
+
+#679 Honedge
+
+Field Note
+
+Steel remembers hands
+Long after the grip is gone.
+Every tool keeps time.
+
+Lesson Learned
+
+We inherit more than we realize.
+
+#680 Doublade
+
+Field Note
+
+Side by side they turn,
+Neither seeking all the light—
+Balance sharpens both.
+
+Lesson Learned
+
+Partnership multiplies strength.
+
+#681 Aegislash
+
+Field Note
+
+Crown and shield exchange
+Places with the turning tide.
+Wisdom knows both roles.
+
+Lesson Learned
+
+Leadership requires knowing when to defend and when to act.
+
+#682 Spritzee
+
+Field Note
+
+Fragrance finds the wind
+Without asking where it goes.
+Kindness travels too.
+
+Lesson Learned
+
+Gentle acts reach farther than we expect.
+
+#683 Aromatisse
+
+Field Note
+
+Sweetness fills the room
+Long before a voice is heard.
+Presence has a scent.
+
+Lesson Learned
+
+Character is often noticed before words.
+
+#684 Swirlix
+
+Field Note
+
+Sugar fills the air;
+Joy is often carried home
+In unexpectedly small ways.
+
+Lesson Learned
+
+Delight rarely arrives announced.
+
+#685 Slurpuff
+
+Field Note
+
+Every baker knows
+The secret ingredient is
+Someone worth feeding.
+
+Lesson Learned
+
+Love is often expressed through ordinary care.
+
+#686 Inkay
+
+Field Note
+
+Turn the world around;
+Sometimes every answer waits
+Upside down awhile.
+
+Lesson Learned
+
+Perspective changes possibilities.
+
+#687 Malamar
+
+Field Note
+
+Eyes that bend the sea
+Often miss the quiet stars
+Behind their own gaze.
+
+Lesson Learned
+
+Influence without humility can become blindness.
+
+#688 Binacle
+
+Field Note
+
+Two voices argue,
+Yet both cling to the same stone.
+Tide teaches patience.
+
+Lesson Learned
+
+Cooperation begins before agreement.
+
+#689 Barbaracle
+
+Field Note
+
+Many reaching hands
+Move together like one tide,
+None claiming the sea.
+
+Lesson Learned
+
+Unity is measured by purpose, not sameness.
+
+#690 Skrelp
+
+Field Note
+
+Seaweed in the swell
+Survives by becoming what
+Danger overlooks.
+
+Lesson Learned
+
+Sometimes the safest path is not being noticed.
+
+#691 Dragalge
+
+Field Note
+
+Poison fills the reef;
+Beauty sometimes grows beside
+Things we should respect.
+
+Lesson Learned
+
+Never mistake elegance for harmlessness.
+
+#692 Clauncher
+
+Field Note
+
+One careful heartbeat,
+Then the water answers back
+Faster than the eye.
+
+Lesson Learned
+
+Preparation makes decisive action possible.
+
+#693 Clawitzer
+
+Field Note
+
+The loudest thunder
+Begins as quiet pressure
+Patiently gathering.
+
+Lesson Learned
+
+Great power is accumulated, not borrowed.
+
+#694 Helioptile
+
+Field Note
+
+Morning drinks the sun
+Before asking anything
+Of the waiting day.
+
+Lesson Learned
+
+Gather your strength before you spend it.
+
+#695 Heliolisk
+
+Field Note
+
+Desert winds reveal
+That endurance often grows
+Where comfort cannot.
+
+Lesson Learned
+
+Hard places produce resilient hearts.
+
+#696 Tyrunt
+
+Field Note
+
+Every mighty roar
+Once echoed uncertainly
+Inside smaller lungs.
+
+Lesson Learned
+
+Confidence has a beginning.
+
+#697 Tyrantrum
+
+Field Note
+
+Ancient footsteps fade,
+Yet the valleys still remember
+Who walked with honor.
+
+Lesson Learned
+
+Legacy is measured by what remains after you.
+
+#698 Amaura
+
+Field Note
+
+Frost remembers stars
+That vanished before sunrise,
+Yet still keeps their light.
+
+Lesson Learned
+
+Beauty can outlive its moment.
+
+#699 Aurorus
+
+Field Note
+
+Northern lights descend
+To speak with the frozen earth.
+Silence answers first.
+
+Lesson Learned
+
+Wonder often arrives without explanation.
+
+#700 Sylveon
+
+Field Note
+
+Gentle ribbons reach
+Where frightened words cannot go.
+Trust blooms quietly.
+
+Lesson Learned
+
+Compassion is a strength that invites courage.
+
+#701 Hawlucha
+
+Field Note
+
+Cheers lift every leap,
+Yet honor lands long before
+Applause finds the ring.
+
+Lesson Learned
+
+Character matters more than recognition.
+
+#702 Dedenne
+
+Field Note
+
+Hidden in the grass,
+Tiny sparks become pathways
+Others never see.
+
+Lesson Learned
+
+Small connections carry great power.
+
+#703 Carbink
+
+Field Note
+
+Pressure keeps its watch
+Until patience becomes light
+Hidden inside stone.
+
+Lesson Learned
+
+Endurance reveals hidden value.
+
+#704 Goomy
+
+Field Note
+
+Rain does not ask why
+The smallest traveler moves
+Slowly toward tomorrow.
+
+Lesson Learned
+
+Progress belongs to those who continue.
+
+#705 Sliggoo
+
+Field Note
+
+Clouds gather above;
+Growth sometimes prefers weather
+Others choose to flee.
+
+Lesson Learned
+
+Difficult seasons often nourish us most.
+
+#706 Goodra
+
+Field Note
+
+Strong arms hold gently;
+Kindness often grows largest
+Where pain once settled.
+
+Lesson Learned
+
+The strongest hearts are often the softest.
+
+#707 Klefki
+
+Field Note
+
+Forgotten doorways
+Sleep inside a ring of keys,
+Waiting to be found.
+
+Lesson Learned
+
+Opportunity often hangs unnoticed at our side.
+
+#708 Phantump
+
+Field Note
+
+Empty forest paths
+Remember every child's laugh
+Long after sunset.
+
+Lesson Learned
+
+Love leaves echoes time cannot erase.
+
+#709 Trevenant
+
+Field Note
+
+Ancient roots listen
+More than branches ever speak.
+Forests keep their word.
+
+Lesson Learned
+
+Wisdom grows deeper than appearances reveal.
+
+#710 Pumpkaboo
+
+Field Note
+
+Autumn fills the fields;
+Every harvest carries seeds
+For another spring.
+
+Lesson Learned
+
+Every ending prepares another beginning.
+
+#711 Gourgeist
+
+Field Note
+
+Lanterns in the dusk
+Teach wandering hearts to smile
+At familiar fears.
+
+Lesson Learned
+
+Laughter can transform fear without denying it.

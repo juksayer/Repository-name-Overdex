@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.text.font.FontFamily
 import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -84,28 +85,37 @@ fun InstrumentButton(
     modifier: Modifier = Modifier,
     label: String? = null,
     icon: ImageVector? = null,
-    color: Color = Color(0xFF1A1A1A), // Deep charcoal
+    color: Color = Color.DarkGray,
+    labelColor: Color = Color.White.copy(alpha = 0.6f),
     enabled: Boolean = true
 ) {
     Box(
         modifier = modifier
-            .size(width = 56.dp, height = 36.dp) // Industrial proportions, adjusted for compressed console
-            .clip(RoundedCornerShape(4.dp))
+            .size(width = 56.dp, height = 36.dp)
             .background(color)
             .drawBehind {
-                // Subtle top highlight
+                // Precision chamfers and depth
+                val strokeWidth = 1.dp.toPx()
+                // Top Highlight
                 drawLine(
-                    color = Color.White.copy(alpha = 0.1f),
+                    color = Color.White.copy(alpha = 0.05f),
                     start = Offset(0f, 0f),
                     end = Offset(size.width, 0f),
-                    strokeWidth = 1.dp.toPx()
+                    strokeWidth = strokeWidth
                 )
-                // Subtle bottom shadow
+                // Right Shadow
                 drawLine(
-                    color = Color.Black.copy(alpha = 0.4f),
+                    color = Color.Black.copy(alpha = 0.5f),
+                    start = Offset(size.width, 0f),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = strokeWidth
+                )
+                // Bottom Shadow
+                drawLine(
+                    color = Color.Black.copy(alpha = 0.8f),
                     start = Offset(0f, size.height),
                     end = Offset(size.width, size.height),
-                    strokeWidth = 2.dp.toPx()
+                    strokeWidth = strokeWidth * 2
                 )
             }
             .clickable(enabled = enabled, onClick = onClick)
@@ -116,16 +126,16 @@ fun InstrumentButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(24.dp)
+                tint = labelColor,
+                modifier = Modifier.size(20.dp)
             )
         } else if (label != null) {
             Text(
                 text = label,
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 13.sp,
+                color = labelColor,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                fontFamily = FontFamily.Monospace
             )
         }
     }
@@ -150,14 +160,6 @@ fun InstrumentLCD(
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "== ODX-FI SERVICE ==",
-                color = TerminalPurple.copy(alpha = 0.5f),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = "READY",
                 color = TerminalGreen.copy(alpha = 0.7f),
@@ -332,7 +334,7 @@ fun PokedexFrame(
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
-            AndroidPokeballLogo(
+            Droidball(
                 modifier = Modifier.size(54.dp),
                 isInteractive = isLogoInteractive
             )
@@ -494,18 +496,18 @@ fun PokedexFrame(
                     else if (showSettings) settingsUp?.invoke()
                     else onUp()
                 })
-                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = { 
+                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = {
                     handleInput("DOWN")
                     if (showResearcherSettings) researcherDown?.invoke()
                     else if (showSettings) settingsDown?.invoke()
                     else onDown()
                 })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = { 
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = {
                     handleInput("LEFT")
                     if (showSettings) settingsLeft?.invoke()
                     else onLeft()
                 })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = { 
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = {
                     handleInput("RIGHT")
                     if (showSettings) settingsRight?.invoke()
                     else onRight()
@@ -561,137 +563,77 @@ fun StatusIndicator(
     ) {
         Text(
             text = label,
-            color = TerminalDimGreen,
-            fontSize = 9.sp,
+            color = Color.White.copy(alpha = 0.4f),
+            fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            fontFamily = FontFamily.Monospace
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         BreathingLED(color = color, cycleDurationMillis = cycleDurationMillis)
     }
 }
 
 @Composable
-fun AndroidPokeballLogo(
+fun Droidball(
     modifier: Modifier = Modifier,
     isInteractive: Boolean = false
 ) {
-    var trigger by remember { mutableIntStateOf(0) }
-    val rotation = remember { Animatable(0f) }
-    val wakeIntensity = remember { Animatable(0f) }
-    val eyesAlpha = remember { Animatable(1f) }
-
-    LaunchedEffect(trigger) {
-        if (trigger > 0) {
-            // Phase 1: Wake (Brighten and thicken)
-            launch {
-                wakeIntensity.animateTo(1f, tween(400))
-            }
-
-            // Phase 2: Acknowledge (Inertial rotation ~15 degrees)
-            rotation.animateTo(
-                targetValue = 15f,
-                animationSpec = spring(
-                    dampingRatio = 0.6f, // Subtle overshoot
-                    stiffness = Spring.StiffnessLow
-                )
-            )
-
-            // Phase 3: Blink (Mechanical acknowledgements)
-            delay(100)
-            eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f); delay(100)
-            eyesAlpha.snapTo(0f); delay(60); eyesAlpha.snapTo(1f)
-
-            delay(500)
-
-            // Phase 4: Rest
-            launch {
-                wakeIntensity.animateTo(0f, tween(600))
-            }
-            rotation.animateTo(0f, tween(600))
-        }
-    }
-
-    Canvas(
+    Box(
         modifier = modifier
-            .then(if (isInteractive) Modifier.pointerInput(Unit) {
-                detectTapGestures(onTap = { trigger++ })
-            } else Modifier)
-            .graphicsLayer { rotationZ = rotation.value }
-    ) {
-        val w = size.width
-        val h = size.height
-
-        // Android Head Shape
-        val path = Path().apply {
-            addArc(
-                oval = Rect(0f, 0f, w, h),
-                startAngleDegrees = 180f,
-                sweepAngleDegrees = 180f
-            )
-        }
-
-        val animatedRed = androidx.compose.ui.graphics.lerp(Color.Red, Color(0xFFFF4444), wakeIntensity.value)
-
-        drawContext.canvas.save()
-        drawPath(path, color = Color.White)
-
-        // Top half Red (clip to head shape)
-        drawPath(path, color = animatedRed)
-
-        // Middle black line
-        drawRect(
-            color = Color.Black,
-            topLeft = Offset(0f, h / 2 - 2.dp.toPx()),
-            size = size.copy(height = 4.dp.toPx())
-        )
-
-        // Center circle
-        drawCircle(
-            color = Color.Black,
-            radius = 10.dp.toPx(),
-            center = center
-        )
-        drawCircle(
-            color = Color.White,
-            radius = 6.dp.toPx(),
-            center = center
-        )
-
-        // Eyes
-        drawCircle(
-            color = Color.White.copy(alpha = eyesAlpha.value),
-            radius = 4.dp.toPx(),
-            center = Offset(w * 0.3f, h * 0.3f)
-        )
-        drawCircle(
-            color = Color.White.copy(alpha = eyesAlpha.value),
-            radius = 4.dp.toPx(),
-            center = Offset(w * 0.7f, h * 0.3f)
-        )
-
-        drawContext.canvas.restore()
-
-        // Border
-        val strokeWidth = androidx.compose.ui.unit.lerp(2.dp, 3.dp, wakeIntensity.value).toPx()
-        drawPath(path, color = Color.Black, style = Stroke(width = strokeWidth))
-
-        // Antennas
-        drawLine(
-            color = animatedRed,
-            start = Offset(w * 0.3f, h * 0.1f),
-            end = Offset(w * 0.2f, -h * 0.1f),
-            strokeWidth = 4.dp.toPx(),
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = animatedRed,
-            start = Offset(w * 0.7f, h * 0.1f),
-            end = Offset(w * 0.8f, -h * 0.1f),
-            strokeWidth = 4.dp.toPx(),
-            cap = StrokeCap.Round
-        )
-    }
+            .size(64.dp)
+            .drawBehind {
+                // Housing recess
+                drawCircle(
+                    color = Color.DarkGray,
+                    radius = size.width / 2
+                )
+                // Spherical Body
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.LightGray, Color.Gray),
+                        center = center.copy(x = center.x - 10f, y = center.y - 10f),
+                        radius = size.width / 2.2f
+                    ),
+                    radius = size.width / 2.2f
+                )
+                // Lens Housing
+                drawCircle(
+                    color = Color.DarkGray,
+                    radius = size.width / 4,
+                    center = center
+                )
+                // Primary Blue Lens
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF80D8FF), Color(0xFF0091EA), Color(0xFF01579B)),
+                        center = center.copy(y = center.y - 2f),
+                        radius = size.width / 5
+                    ),
+                    radius = size.width / 5,
+                    center = center
+                )
+                // Secondary sensor
+                drawCircle(
+                    color = Color.Black,
+                    radius = 3.dp.toPx(),
+                    center = Offset(center.x + 10.dp.toPx(), center.y + 10.dp.toPx())
+                )
+                // Antennas
+                val antennaColor = Color(0xFF5D5D5D)
+                drawLine(
+                    color = antennaColor,
+                    start = Offset(center.x - 5.dp.toPx(), center.y - 15.dp.toPx()),
+                    end = Offset(center.x - 12.dp.toPx(), center.y - 28.dp.toPx()),
+                    strokeWidth = 1.dp.toPx()
+                )
+                drawLine(
+                    color = antennaColor,
+                    start = Offset(center.x + 5.dp.toPx(), center.y - 15.dp.toPx()),
+                    end = Offset(center.x + 12.dp.toPx(), center.y - 28.dp.toPx()),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+    )
 }
 
 enum class FilterFocus {

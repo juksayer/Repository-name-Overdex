@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.example.overdex.presentation.*
 
 /**
- * Droidball: Integrated Observation Subsystem.
+ * Droidball: The physical embodiment of the ODX-Fi
  * 
  * This component visualizes the observation state by mapping [PresentationState] 
  * to its physical representation.
@@ -31,8 +31,8 @@ fun Droidball(
     }
 
     Box(modifier = modifier.size(40.dp)) {
-        AndroidPokeballLogo(
-            modifier = Modifier.fillMaxSize(),
+        Droidball(
+            modifier = Modifier.size(54.dp),
             isInteractive = false
         )
         
