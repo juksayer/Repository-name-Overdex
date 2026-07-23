@@ -6,4 +6,4 @@
 "if we know exactly which moves charizard has, we automatically know who our safe swap is."
 "IS charizard still alive? did he get swapped out? when he comes back, will he have enough energy for a blast burn?"
 
-it all just cascaded like that. one feature beget the other.
+it all just casca![img.png](img.png)ded like that. one feature beget the other.

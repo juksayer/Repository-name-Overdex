@@ -6921,3 +6921,530 @@ The difficult part.
 Lesson Learned
 
 Precision is prepared long before action.
+
+#725 Litten
+
+Field Note
+
+Evening warms the porch;
+Some fires choose quiet company
+Before open flame.
+
+Lesson Learned
+
+Trust grows best at its own pace.
+
+#726 Torracat
+
+Field Note
+
+Sparks race through the dusk,
+Yet every ember still knows
+Where it found its flame.
+
+Lesson Learned
+
+Confidence remembers its beginnings.
+
+#727 Incineroar
+
+Field Note
+
+Crowds cheer every roar;
+Character is measured when
+The arena empties.
+
+Lesson Learned
+
+Integrity outlasts applause.
+
+I wanted to avoid wrestling entirely. Everybody knows Incineroar is the heel wrestler Pokémon. The more interesting observation is that applause is temporary.
+
+#728 Popplio
+
+Field Note
+
+Gentle waves return
+Again and again, shaping
+Shores they never keep.
+
+Lesson Learned
+
+Persistence is often mistaken for gentleness.
+
+#729 Brionne
+
+Field Note
+
+Every practiced step
+Leaves the ocean just a bit
+More graceful than before.
+
+Lesson Learned
+
+Excellence is built one rehearsal at a time.
+
+#730 Primarina
+
+Field Note
+
+Songs cross open seas
+Carrying hearts farther than
+Voices ever could.
+
+Lesson Learned
+
+Beauty is a bridge between strangers.
+
+#731 Pikipek
+
+Field Note
+
+One patient tapping
+Finds the hollow hidden deep
+Inside living wood.
+
+Lesson Learned
+
+Persistence uncovers what haste overlooks.
+
+#732 Trumbeak
+
+Field Note
+
+Fruit ripens slowly;
+Hunger learns the rhythm of
+Waiting without fear.
+
+Lesson Learned
+
+Timing is part of wisdom.
+
+#733 Toucannon
+
+Field Note
+
+Bright colors declare,
+Yet the forest judges by
+What returns each spring.
+
+Lesson Learned
+
+Reputation is sustained by consistency.
+
+#734 Yungoos
+
+Field Note
+
+Morning greets the path
+Before deciding whether
+Food waits farther on.
+
+Lesson Learned
+
+Opportunity favors those already moving.
+
+#735 Gumshoos
+
+Field Note
+
+Every long patrol
+Teaches more than any map
+Ever hoped to show.
+
+Lesson Learned
+
+Experience outlasts instruction.
+
+#736 Grubbin
+
+Field Note
+
+Beneath fallen leaves
+Tomorrow quietly chews
+Through yesterday's forest.
+
+Lesson Learned
+
+Renewal often begins out of sight.
+
+#737 Charjabug
+
+Field Note
+
+Stillness stores the storm;
+Quiet days are gathering
+Tomorrow's thunder.
+
+Lesson Learned
+
+Preparation is rarely dramatic.
+
+#738 Vikavolt
+
+Field Note
+
+Lightning finds its mark
+Only after careful aim
+Has already won.
+
+Lesson Learned
+
+Precision gives power its purpose.
+
+#739 Crabrawler
+
+Field Note
+
+Waves erase the prints
+Of every eager challenger.
+The tide keeps no score.
+
+Lesson Learned
+
+Every day offers another chance to improve.
+
+#740 Crabominable
+
+Field Note
+
+Snow remembers fists
+Only until spring arrives
+With quieter strength.
+
+Lesson Learned
+
+Power alone leaves little behind.
+
+#741 Oricorio
+
+Field Note
+
+Every different dance
+Speaks the language of one wind
+Through another step.
+
+Lesson Learned
+
+Individuality enriches tradition.
+
+#742 Cutiefly
+
+Field Note
+
+Tiny wings return
+Carrying more spring between
+Flowers than themselves.
+
+Lesson Learned
+
+Small acts often sustain great things.
+
+#743 Ribombee
+
+Field Note
+
+Meadows bloom because
+Countless gentle visitors
+Never seek applause.
+
+Lesson Learned
+
+Quiet service keeps the world alive.
+
+#744 Rockruff
+
+Field Note
+
+Every winding trail
+Looks a little less uncertain
+Walked beside a friend.
+
+Lesson Learned
+
+Loyalty gives courage.
+
+#745 Lycanroc
+
+Field Note
+
+Moonlight finds the stone;
+Character reveals itself
+Under changing skies.
+
+Lesson Learned
+
+Circumstances reveal what habits have built.
+
+#746 Wishiwashi
+
+Field Note
+
+One fish knows the tide.
+Thousands together become
+The sea's own answer.
+
+Lesson Learned
+
+Unity creates possibilities impossible alone.
+
+#747 Mareanie
+
+Field Note
+
+Thorns guard tender roots;
+Even gentle gardens grow
+Their own careful fences.
+
+Lesson Learned
+
+Healthy boundaries protect what matters.
+
+#748 Toxapex
+
+Field Note
+
+Quiet beneath waves,
+Patient enough to outlast
+The strongest current.
+
+Lesson Learned
+
+Resilience often appears immovable
+
+#749 Mudbray
+
+Field Note
+
+Heavy little steps
+Leave trails lighter hearts ignore.
+Roads begin this way.
+
+Lesson Learned
+
+Every worthwhile journey begins with ordinary work.
+
+#750 Mudsdale
+
+Field Note
+
+Strong backs cross the hills
+Without asking who receives
+The harvest they bear.
+
+Lesson Learned
+
+Reliability is one of the quietest virtues.
+
+#751 Dewpider
+
+Field Note
+
+Tiny mirrored worlds
+Drift beneath forgotten leaves
+Carrying the sky.
+
+Lesson Learned
+
+Even the smallest lives reflect something greater.
+
+#752 Araquanid
+
+Field Note
+
+Every fragile breath
+Is guarded by patient care
+Strong enough to float.
+
+Lesson Learned
+
+Protection is a form of strength.
+
+#753 Fomantis
+
+Field Note
+
+Morning greets the dew
+Long before the flower knows
+Spring has truly come.
+
+Lesson Learned
+
+Growth begins before it is visible.
+
+#754 Lurantis
+
+Field Note
+
+Blossoms imitate
+What the insects long to find.
+Wisdom wears disguise.
+
+Lesson Learned
+
+Success often comes through understanding others.
+
+#756 Shiinotic
+
+Field Note
+
+Moonlight fills the spores;
+Every wandering traveler
+Dreams a little deeper.
+
+Lesson Learned
+
+Not every invitation should be accepted.
+
+#757 Salandit
+
+Field Note
+
+Smoke curls through the stones
+Before anyone notices
+Fire has arrived.
+
+Lesson Learned
+
+Influence often begins unnoticed.
+
+#758 Salazzle
+
+Field Note
+
+Ash hides glowing coals;
+Charm can warm the weary heart
+Or consume the careless.
+
+Lesson Learned
+
+Charisma carries responsibility.
+
+#759 Stufful
+
+Field Note
+
+Softness hides its strength;
+Meadows learn this every spring
+The first time they bloom.
+
+Lesson Learned
+
+Never confuse gentleness with weakness.
+
+#760 Bewear
+
+Field Note
+
+Arms meant for holding
+Must first learn their own great strength
+Before offering peace.
+
+Lesson Learned
+
+Good intentions still require wisdom.
+
+
+#761 Bounsweet
+
+Field Note
+
+Sweetness fills the air
+Long before the fruit believes
+It has ripened yet.
+
+Lesson Learned
+
+Potential often appears before confidence.
+
+#762 Steenee
+
+Field Note
+
+Every careful turn
+Practices tomorrow's grace
+Before anyone sees.
+
+Lesson Learned
+
+Confidence is rehearsed in private.
+
+#763 Tsareena
+
+Field Note
+
+Tall grasses bow low,
+Not because they fear the wind—
+They know how to bend.
+
+Lesson Learned
+
+Dignity does not demand attention.
+
+#764 Comfey
+
+Field Note
+
+Flowers leave their stems
+To travel where healing waits
+Instead of remaining.
+
+Lesson Learned
+
+Compassion goes where it is needed.
+
+
+
+#765 Oranguru
+
+Field Note
+
+Ancient eyes observe
+Three answers before speaking
+Even one aloud.
+
+Lesson Learned
+
+Wisdom listens longer than it speaks.
+
+#766 Passimian
+
+Field Note
+
+Every thrown branch trusts
+Another hand will receive
+Without asking why.
+
+Lesson Learned
+
+Teams are built on earned trust.
+
+This one felt almost inevitable.
+
+Passimian doesn't just throw things.
+
+Its entire life revolves around cooperation.
+
+#767 Wimpod
+
+Field Note
+
+First footsteps retreat;
+Even courage sometimes learns
+By surviving first.
+
+Lesson Learned
+
+There is no shame in living to try again.
+
+#768 Golisopod
+
+Field Note
+
+Scarred shells tell the sea
+Every battle left behind,
+Never carried home.
+
+Lesson Learned
+
+Experience should strengthen us, not imprison us.
