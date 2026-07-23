@@ -206,10 +206,14 @@ fun PokedexApp(
     ) {
         composable("main_menu") {
             var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
-
+            val instrumentState by viewModel.observationSessionState.collectAsState()
+            val deploymentState by viewModel.deploymentState.collectAsState()
+            val frameCount by viewModel.frameCount.collectAsState()
             ODXFiShell(
+                instrumentState = instrumentState,
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 showBattleOverlay = false,
-                viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onUp = { if (phase == MainMenuPhase.READY) viewModel.handleUp() },
@@ -220,8 +224,6 @@ fun PokedexApp(
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
                 isLogoInteractive = true
             ) { _ ->
                 MainMenuScreen(
