@@ -182,7 +182,7 @@ fun CaptureVerificationScreen(
         isInspectionMode = false
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             if (isManualSpeciesSelection) manualNav.moveUp()
             else if (!isInspectionMode && selectedRegionId != null) {

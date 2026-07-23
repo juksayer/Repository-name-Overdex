@@ -24,7 +24,7 @@ import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.components.ODXFiShell
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.theme.*
@@ -51,7 +51,7 @@ fun PokemonDetailScreen(
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             scope.launch {
                 scrollState.animateScrollBy(-500f)

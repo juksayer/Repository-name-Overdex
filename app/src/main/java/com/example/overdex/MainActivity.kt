@@ -38,7 +38,7 @@ import com.example.overdex.model.navigation.*
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.components.ODXFiShell
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme
@@ -207,7 +207,7 @@ fun PokedexApp(
         composable("main_menu") {
             var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
 
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -236,7 +236,7 @@ fun PokedexApp(
         }
         
         composable("battle_history") {
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -259,7 +259,7 @@ fun PokedexApp(
             }
         }
         composable("battle_log") {
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -320,7 +320,7 @@ fun PokedexApp(
             var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
             var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -525,7 +525,7 @@ fun PokedexApp(
         }
         composable("add_pokemon_wizard") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -547,7 +547,7 @@ fun PokedexApp(
             }
         }
         composable("accessibility_probe") {
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -564,7 +564,7 @@ fun PokedexApp(
             }
         }
         composable("signal_observatory") {
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,
@@ -581,7 +581,7 @@ fun PokedexApp(
             }
         }
         composable("battle_preview") {
-            PokedexFrame(
+            ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,
                 filterSettings = filterSettings,

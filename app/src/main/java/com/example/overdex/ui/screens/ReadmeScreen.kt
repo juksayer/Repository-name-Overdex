@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.components.ODXFiShell
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.components.FilterSettings
@@ -28,7 +28,7 @@ fun ReadmeScreen(
     var currentPage by remember { mutableIntStateOf(0) }
     val pages = readmePages
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {}, // Scrolling disabled per requirements
         onDown = {},
         onLeft = { if (currentPage > 0) currentPage-- },

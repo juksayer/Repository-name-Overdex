@@ -21,7 +21,7 @@ import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.PokedexFrame
+import com.example.overdex.ui.components.ODXFiShell
 import com.example.overdex.ui.components.SearchBar
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.FilterSettings
@@ -69,7 +69,7 @@ fun PokedexListScreen(
         nav.setIndex(0)
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()

@@ -54,7 +54,7 @@ fun EditSpecimenScreen(
         }
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
@@ -72,7 +72,7 @@ fun EditSpecimenScreen(
         onLeft = { if (keyboardController.isVisible) keyboardController.handleLeft() },
         onRight = { if (keyboardController.isVisible) keyboardController.handleRight() },
         onA = {
-            val specimen = editedState ?: return@PokedexFrame
+            val specimen = editedState ?: return@ODXFiShell
             if (keyboardController.isVisible) {
                 val currentText = when (selectedIndex) {
                     0 -> specimen.displayName ?: ""

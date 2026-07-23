@@ -104,7 +104,7 @@ fun AddOwnedPokemonWizard(
         }
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 val charArray = cpValue.toCharArray()

@@ -69,7 +69,7 @@ fun MyCollectionScreen(
         totalItems = ownedPokemon.size + 1
     )
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()

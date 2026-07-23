@@ -28,7 +28,7 @@ fun ModuleScreen(
     onStart: () -> Unit = {},
     onSelect: () -> Unit = {}
 ) {
-    PokedexFrame(
+    ODXFiShell(
         onA = onBack,
         onB = onBack,
         onStart = onStart,

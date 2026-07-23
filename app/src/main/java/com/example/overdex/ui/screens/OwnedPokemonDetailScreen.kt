@@ -156,7 +156,7 @@ fun OwnedPokemonDetailScreen(
         return
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = {
             nav.moveUp()
         },
@@ -176,7 +176,7 @@ fun OwnedPokemonDetailScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 TerminalText(text = "RECORD NOT FOUND")
             }
-            return@PokedexFrame
+            return@ODXFiShell
         }
 
         val scrollState = rememberScrollState()

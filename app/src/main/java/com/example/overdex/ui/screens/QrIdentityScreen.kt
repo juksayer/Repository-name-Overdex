@@ -36,7 +36,7 @@ fun QrIdentityScreen(
         }
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onB = onBack
     ) { _ ->
         TerminalScreen {

@@ -195,7 +195,7 @@ fun InstrumentLCD(
 }
 
 @Composable
-fun PokedexFrame(
+fun ODXFiShell(
     onUp: () -> Unit = {},
     onDown: () -> Unit = {},
     onLeft: () -> Unit = {},

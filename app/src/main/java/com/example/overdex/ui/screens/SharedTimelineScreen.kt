@@ -37,7 +37,7 @@ fun SharedTimelineScreen(
         }
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onB = onBack
     ) { _ ->
         TerminalScreen {

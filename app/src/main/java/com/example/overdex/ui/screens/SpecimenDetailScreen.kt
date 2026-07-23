@@ -46,8 +46,8 @@ fun SpecimenDetailScreen(
             }
         }
     }
-    
-    PokedexFrame(
+
+    ODXFiShell(
         onUp = {
             scope.launch {
                 scrollState.animateScrollBy(-500f)
@@ -68,7 +68,7 @@ fun SpecimenDetailScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 TerminalText(text = "SPECIMEN NOT FOUND")
             }
-            return@PokedexFrame
+            return@ODXFiShell
         }
 
         Column(

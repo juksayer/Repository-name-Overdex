@@ -34,7 +34,7 @@ fun SpecimensScreen(
     
     var selectedIndex by remember { mutableIntStateOf(0) }
 
-    PokedexFrame(
+    ODXFiShell(
         onUp = { if (selectedIndex > 0) selectedIndex-- },
         onDown = { if (selectedIndex < ownedPokemon.size - 1) selectedIndex++ },
         onA = {

@@ -85,7 +85,7 @@ fun QrScannerScreen(
             onBack = onBack
         )
     } else {
-        PokedexFrame(
+        ODXFiShell(
             onB = onBack
         ) { _ ->
             TerminalScreen {
@@ -196,7 +196,7 @@ fun TrainerFoundPreview(
     onDone: () -> Unit,
     onBack: () -> Unit
 ) {
-    PokedexFrame(
+    ODXFiShell(
         onB = onBack,
         onA = { onLink(identity) }
     ) { _ ->

@@ -177,7 +177,7 @@ fun TrainerProfileScreen(
         )
     }
 
-    PokedexFrame(
+    ODXFiShell(
         onB = onBack,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
