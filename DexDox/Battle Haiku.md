@@ -7393,8 +7393,6 @@ Lesson Learned
 
 Compassion goes where it is needed.
 
-
-
 #765 Oranguru
 
 Field Note
@@ -7419,12 +7417,6 @@ Lesson Learned
 
 Teams are built on earned trust.
 
-This one felt almost inevitable.
-
-Passimian doesn't just throw things.
-
-Its entire life revolves around cooperation.
-
 #767 Wimpod
 
 Field Note
@@ -7448,3 +7440,124 @@ Never carried home.
 Lesson Learned
 
 Experience should strengthen us, not imprison us.
+
+#769 Sandygast
+
+Field Note
+
+Every empty shore
+Quietly remembers those
+Who stopped there awhile.
+
+Lesson Learned
+
+Places remember us longer than we imagine.
+
+#770 Palossand
+
+Field Note
+
+Tides reclaim the walls
+Built against tomorrow's waves.
+Sand begins again.
+
+Lesson Learned
+
+Lasting strength comes from rebuilding, not resisting change.
+
+#771 Pyukumuku
+
+Field Note
+
+Resting with the tide,
+It measures the passing days
+One wave at a time.
+
+Lesson Learned
+
+Contentment asks for less than ambition.
+
+
+#772 Type: Null
+
+Field Note
+
+Borrowed pieces wait,
+Wondering whether they make
+Something wholly new.
+
+Lesson Learned
+
+Identity is discovered, not assembled.
+
+#773 Silvally
+
+Field Note
+
+Freed from borrowed names,
+Every path becomes its own
+With the mask laid down.
+
+Lesson Learned
+
+Freedom begins with accepting who you are.
+
+#774 Minior
+
+Field Note
+
+Stone protects the star
+Until the open heavens
+Ask it who it is.
+
+Lesson Learned
+
+Sometimes our defenses hide our brightest qualities.
+
+#775 Komala
+
+Field Note
+
+Dreams hold to the branch
+While daylight quietly turns
+Beneath sleeping eyes.
+
+Lesson Learned
+
+Rest is part of living well.
+
+#776 Turtonator
+
+Field Note
+
+Ancient shell turned forth,
+Every scar faces danger
+Before the heart does.
+
+Lesson Learned
+
+Preparation protects what is most valuable.
+
+#777 Togedemaru
+
+Field Note
+
+Every lifted spine
+Hides a heart still choosing joy
+After every storm.
+
+Lesson Learned
+
+Defending yourself need not harden your spirit.
+
+#778 Mimikyu
+
+Field Note
+
+Beneath borrowed cloth
+Beats the same quiet longing
+Every heart has known.
+
+Lesson Learned
+
+We all hope to be loved for who we truly are.
