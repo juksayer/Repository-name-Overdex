@@ -20,6 +20,10 @@ import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.model.observation.ObservationSessionState
+import com.example.overdex.model.observation.InstrumentDeploymentState
+import com.example.overdex.battle.observation.ObservationSession
+import com.example.overdex.battle.observation.DroidballService
+import com.example.overdex.battle.observation.DroidballFact
 import com.example.overdex.model.navigation.*
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
@@ -40,6 +44,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _observationSessionState = MutableStateFlow(value = ObservationSessionState.IDLE)
     val observationSessionState = _observationSessionState.asStateFlow()
+
+    private val _deploymentState = MutableStateFlow(InstrumentDeploymentState.IDLE)
+    val deploymentState = _deploymentState.asStateFlow()
+
+    private val _frameCount = MutableStateFlow(0L)
+    val frameCount = _frameCount.asStateFlow()
+
+    private var currentSession: ObservationSession? = null
 
     val spriteProvider: SpriteProvider = FallbackSpriteProvider(
         primary = LocalSpriteProvider(application.assets),
@@ -113,6 +125,59 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     fun markBooted() {
         _hasBootedInSession.value = true
+    }
+
+    fun startObservation() {
+        if (_deploymentState.value != InstrumentDeploymentState.IDLE) return
+        _deploymentState.value = InstrumentDeploymentState.REQUESTING_PERMISSIONS
+    }
+
+    fun onPermissionsGranted() {
+        _deploymentState.value = InstrumentDeploymentState.READY
+    }
+
+    fun deployInstrument(resultCode: Int, data: android.content.Intent) {
+        _deploymentState.value = InstrumentDeploymentState.DEPLOYING
+        
+        // Initialize Session
+        val sessionId = java.util.UUID.randomUUID().toString()
+        currentSession = ObservationSession(sessionId)
+        _frameCount.value = 0
+        
+        // Start Service
+        DroidballService.start(getApplication(), resultCode, data)
+        
+        // Listen for facts
+        viewModelScope.launch {
+            DroidballService.facts.collect { fact ->
+                when (fact) {
+                    is DroidballFact.Started -> {
+                        // Service is up, but no frames yet
+                    }
+                    is DroidballFact.FrameCaptured -> {
+                        if (_deploymentState.value == InstrumentDeploymentState.DEPLOYING || _deploymentState.value == InstrumentDeploymentState.READY) {
+                            _deploymentState.value = InstrumentDeploymentState.OBSERVING
+                        }
+                        currentSession?.incrementFrameCount()
+                        _frameCount.value = currentSession?.frameCount ?: 0
+                    }
+                    is DroidballFact.Stopped -> {
+                        _deploymentState.value = InstrumentDeploymentState.IDLE
+                    }
+                    is DroidballFact.Error -> {
+                        Log.e("DROIDBALL_SERVICE", "Error: ${fact.message}")
+                        stopObservation()
+                    }
+                }
+            }
+        }
+    }
+
+    fun stopObservation() {
+        _deploymentState.value = InstrumentDeploymentState.RETURNING
+        DroidballService.stop(getApplication())
+        currentSession = null
+        _deploymentState.value = InstrumentDeploymentState.IDLE
     }
 
     fun setObservationSessionState(state: ObservationSessionState) {

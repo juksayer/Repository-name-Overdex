@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
@@ -143,6 +144,8 @@ fun InstrumentButton(
 
 @Composable
 fun InstrumentLCD(
+    deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
+    frameCount: Long = 0,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -161,7 +164,14 @@ fun InstrumentLCD(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "READY",
+                text = when (deploymentState) {
+                    InstrumentDeploymentState.IDLE -> "READY"
+                    InstrumentDeploymentState.REQUESTING_PERMISSIONS -> "PERMISSIONS"
+                    InstrumentDeploymentState.READY -> "PRIMED"
+                    InstrumentDeploymentState.DEPLOYING -> "DEPLOYING"
+                    InstrumentDeploymentState.OBSERVING -> "OBSERVING"
+                    InstrumentDeploymentState.RETURNING -> "RETURNING"
+                },
                 color = TerminalGreen.copy(alpha = 0.7f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -175,8 +185,8 @@ fun InstrumentLCD(
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
             )
             Text(
-                text = "OFFLINE",
-                color = TerminalGreen.copy(alpha = 0.7f),
+                text = if (deploymentState == InstrumentDeploymentState.OBSERVING) "ACTIVE ($frameCount)" else "OFFLINE",
+                color = if (deploymentState == InstrumentDeploymentState.OBSERVING) TerminalGreen else TerminalGreen.copy(alpha = 0.7f),
                 fontSize = 12.sp,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
             )
@@ -198,6 +208,8 @@ fun PokedexFrame(
     onStart: () -> Unit = {},
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
+    deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
+    frameCount: Long = 0,
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     showBattleOverlay: Boolean = true,
     instrumentState: ObservationSessionState? = null,
@@ -223,7 +235,12 @@ fun PokedexFrame(
     var researcherB by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     val vmState by viewModel?.observationSessionState?.collectAsState() ?: remember { mutableStateOf(ObservationSessionState.IDLE) }
+    val vmDeploymentState by viewModel?.deploymentState?.collectAsState() ?: remember { mutableStateOf(InstrumentDeploymentState.IDLE) }
+    val vmFrameCount by viewModel?.frameCount?.collectAsState() ?: remember { mutableStateOf(0L) }
+
     val currentState = instrumentState ?: vmState
+    val currentDeploymentState = if (viewModel != null) vmDeploymentState else deploymentState
+    val currentFrameCount = if (viewModel != null) vmFrameCount else frameCount
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
 
@@ -516,6 +533,8 @@ fun PokedexFrame(
 
             // Instrumentation Display (Center)
             InstrumentLCD(
+                deploymentState = currentDeploymentState,
+                frameCount = currentFrameCount,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -580,7 +599,6 @@ fun Droidball(
 ) {
     Box(
         modifier = modifier
-            .size(64.dp)
             .drawBehind {
                 // Housing recess
                 drawCircle(

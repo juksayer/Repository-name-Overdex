@@ -13,13 +13,24 @@ package com.example.overdex.battle.observation
  */
 class ObservationSession(
     @Suppress("unused") val sessionId: String,
-    val state: ObservationSessionState = ObservationSessionState.CREATED,
+    var state: ObservationSessionState = ObservationSessionState.CREATED,
     val workspace: ObservationWorkspace = ObservationWorkspace(),
 ) {
+    /** The total number of frames processed during this session. */
+    var frameCount: Long = 0
+        private set
+
     /**
      * Submits a transient observation to the session workspace.
      */
     fun submit(observation: Observation) {
         workspace.add(observation)
+    }
+
+    /**
+     * Increments the frame count.
+     */
+    fun incrementFrameCount() {
+        frameCount++
     }
 }

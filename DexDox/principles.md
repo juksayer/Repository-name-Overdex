@@ -240,12 +240,31 @@ Ideas that should not be forgotten.
 ```text
 TODO (Architecture)
 
-PokedexFrame currently owns BattleMemory and Matchup analysis.
+PokedexFrame should not own application state.
 
 Long-term:
-Move ownership into a ViewModel or controller.
+Active modules own their data and behavior.
+PokedexFrame owns only the instrument shell.
 
-PokedexFrame should remain responsible only for rendering and hardware behavior.
+Responsibilities include:
+
+- Rendering the physical instrument
+- Routing hardware controls
+- Hosting the CRT workspace
+- Hosting the Instrument LCD
+- Rendering hardware indicators
+- Droidball presentation
+
+PokedexFrame never owns battle state,
+knowledge, observations, recommendations,
+or module-specific logic.
+
+It presents the currently active module.
+
+The Instrument LCD is a presentation surface.
+
+Its contents are owned by the active module,
+not by PokedexFrame.
 ```
 
 ---

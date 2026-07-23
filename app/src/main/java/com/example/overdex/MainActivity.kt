@@ -1,5 +1,13 @@
 package com.example.overdex
 
+import android.content.Context
+import android.content.Intent
+import android.media.projection.MediaProjectionManager
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.ViewModelProvider
+import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.ui.screens.CalibrationScreen
 import android.util.Log
 import android.os.Bundle
@@ -51,6 +59,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var timelineRepository: SharedTimelineRepository
     private lateinit var chatRepository: ChatRepository
     private var selectedRegion = CalibrationRegion.NONE
+
+    private val mediaProjectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val viewModel = ViewModelProvider(this)[PokedexViewModel::class.java]
+        if (result.resultCode == RESULT_OK && result.data != null) {
+            viewModel.deployInstrument(result.resultCode, result.data!!)
+        } else {
+            viewModel.stopObservation()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +123,18 @@ class MainActivity : ComponentActivity() {
                         partnerIdentity = partnerIdentity,
                         timelineEvents = timelineEvents,
                         chatMessages = chatMessages,
+                        onStartObservation = { 
+                            if (!Settings.canDrawOverlays(this@MainActivity)) {
+                                val intent = Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:$packageName")
+                                )
+                                startActivity(intent)
+                            } else {
+                                val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                                mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+                            }
+                        },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -129,6 +160,7 @@ fun PokedexApp(
     partnerIdentity: PartnerIdentity?,
     timelineEvents: List<SharedEvent>,
     chatMessages: List<ChatMessage>,
+    onStartObservation: () -> Unit = {},
     modifier: Modifier = Modifier
 ){
     val navController = rememberNavController()
@@ -137,6 +169,14 @@ fun PokedexApp(
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
 
     val treeState by viewModel.treeState.collectAsState()
+    val deploymentState by viewModel.deploymentState.collectAsState()
+    val frameCount by viewModel.frameCount.collectAsState()
+
+    LaunchedEffect(deploymentState) {
+        if (deploymentState == InstrumentDeploymentState.REQUESTING_PERMISSIONS) {
+            onStartObservation()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.pendingCommand.collect { command ->
@@ -176,10 +216,12 @@ fun PokedexApp(
                 onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
                 onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
                 onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
-                onStart = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
+                onStart = { if (phase == MainMenuPhase.READY) viewModel.startObservation() },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 isLogoInteractive = true
             ) { _ ->
                 MainMenuScreen(
@@ -199,10 +241,12 @@ fun PokedexApp(
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onStart = { /* Reserved */ },
+                onStart = { viewModel.startObservation() },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) { battleMemory ->
                 BattleHistoryScreen(
@@ -220,10 +264,12 @@ fun PokedexApp(
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onStart = { /* Reserved */ },
+                onStart = { viewModel.startObservation() },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) { battleMemory ->
                 BattleTimelineScreen(
@@ -285,10 +331,12 @@ fun PokedexApp(
                 onRight = { rightHandler?.invoke() },
                 onA = { aHandler?.invoke() },
                 onB = { navController.popBackStack() },
-                onStart = { /* Reserved */ },
+                onStart = { viewModel.startObservation() },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") }
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount
             ) { _ ->
                 CalibrationScreen(
                     calibrationManager = calibrationManager,
@@ -484,6 +532,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) {
                 AddOwnedPokemonWizard(
@@ -504,6 +554,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) {
                 AccessibilityProbeScreen(
@@ -519,6 +571,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) {
                 SignalObservatoryScreen(
@@ -534,6 +588,8 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 onB = { navController.popBackStack() }
             ) {
                 BattlePreviewScreen(
