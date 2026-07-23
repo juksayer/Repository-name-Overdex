@@ -307,3 +307,9 @@ We have confidence. We trade it for our users' trust.
 Explanation
 
 Confidence is the currency of Overdex. Every subsystem exists to increase confidence through observation, corroboration, provenance, and predictable behavior. That accumulated confidence is exchanged for the user's trust. If a feature cannot increase confidence, it should be reconsidered.
+
+Recommendations should reflect the trainer, not just the metagame.
+
+Cognitive Load Principle
+
+During a battle, assume the trainer is operating at or near maximum cognitive load. Every feature must justify its presence by reducing the amount of information the trainer must actively remember, infer, or compute. Overdex exists not to present more information, but to carry part of the battle's mental workload so the trainer can remain focused, adaptable, and in flow.
