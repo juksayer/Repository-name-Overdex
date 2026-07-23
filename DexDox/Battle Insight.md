@@ -1,0 +1,9 @@
+Sometimes I'll pretend to panic switch in a good counter, but I switch in the wrong one on purpose. Now when the opponent panic switches, they'll realize they just had the favorable matchup, and willingly threw it away. Now their switch timer won't be up until after yours. And Braviary is just sitting in the penalty box, seething, staring at the timer, waiting to get back on the field.
+
+I love braviary. I think that was the first pokemon I used that knew Brave Bird. People don't expect you to throw brave bird the very moment it is ready, because you'll debuff yourself. Well, silly, I have a confuser or charmer ready to immediately swap in and gladly stress out the opponent, and when they panic switch, that means we just successfully chose the closing matchup.
+
+The user is focused on the battle, we assume they are at maximum cognitive load, because I am at maximum cognitive load. If we can hold one decision for the user, one nudge, anything that could be useful, we reduce that cognitive load. Some Bruce Lee shit. Flow like water. Regain mental bandwidth, make better informed decisions faster.
+
+I think it was a gradual drift. I notice that I make mistakes during cognitive load. The mistakes happen during the same events. I'm playing safe and predictably, and sometimes that isn't the best choice. I decided to try and determine when these heavy load events happen, and do whatever I can to make it even worse. It's like running up to a dude juggling chainsaws, and unexpectedly throwing a bowling ball in the mix, somebody is getting hurt, were probably all getting hurt. But I'll hurt less
+
+Sacrificial swap is dirty, but effective. I don't even bother counting how many dragon breaths I got hit with. That is when the lopsided team shines. Your sac swap doesn't matter. They think they got rid of my fire type so their grass is safe. It's not, I use two fire types, they both run incinerate, and my 3rd? Gourgeist with incinerate.

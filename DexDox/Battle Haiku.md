@@ -6765,3 +6765,159 @@ At familiar fears.
 Lesson Learned
 
 Laughter can transform fear without denying it.
+
+#712 Bergmite
+
+Field Note
+
+Winter shapes the stone
+Patiently, without asking
+Whether spring agrees.
+
+Lesson Learned
+
+Lasting change requires patience, not permission.
+
+#713 Avalugg
+
+Field Note
+
+Glaciers never rush;
+Even mountains learn to move
+One season at a time.
+
+Lesson Learned
+
+Great strength is often measured in endurance.
+
+#714 Noibat
+
+Field Note
+
+Echoes leave the cave
+Long before the morning sun
+Finds their tiny wings.
+
+Lesson Learned
+
+Every voice begins by searching.
+
+#715 Noivern
+
+Field Note
+
+Sound becomes the sky;
+Silence learns to make room for
+Those who know their song.
+
+Lesson Learned
+
+Confidence is clarity, not volume.
+
+#716 Xerneas
+
+Field Note
+
+Every forest breathes
+Because unseen roots remember
+How to share the rain.
+
+Lesson Learned
+
+Life flourishes through generosity.
+
+#717 Yveltal
+
+Field Note
+
+Autumn leaves descend,
+Feeding springs they will not see.
+Endings nourish life.
+
+Lesson Learned
+
+Every ending serves a beginning.
+
+#718 Zygarde
+
+Field Note
+
+Countless unseen threads
+Quietly hold every hill
+Together each day.
+
+Lesson Learned
+
+Balance depends upon countless unseen acts.
+
+#719 Diancie
+
+Field Note
+
+Crystal catches dawn
+Only after years beneath
+Mountains without light.
+
+Lesson Learned
+
+Radiance is often forged in obscurity.
+
+#720 Hoopa
+
+Field Note
+
+Open every door;
+Curiosity decides
+Which ones stay open.
+
+Lesson Learned
+
+Opportunity requires discernment.
+
+#721 Volcanion
+
+Field Note
+
+Steam meets ancient fire;
+Opposites discover strength
+By working as one.
+
+Lesson Learned
+
+Harmony is not the absence of differences.
+
+#722 Rowlet
+
+Field Note
+
+Dawn rests in its eyes;
+Wisdom often chooses soft
+Feathers over noise.
+
+Lesson Learned
+
+Gentleness and intelligence often walk together.
+
+#723 Dartrix
+
+Field Note
+
+Every careful plume
+Speaks of practice long before
+Elegance appears.
+
+Lesson Learned
+
+Refinement is earned through repetition.
+
+#724 Decidueye
+
+Field Note
+
+Arrow leaves the string;
+Patience had already made
+The difficult part.
+
+Lesson Learned
+
+Precision is prepared long before action.
