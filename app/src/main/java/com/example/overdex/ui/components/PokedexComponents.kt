@@ -352,7 +352,7 @@ fun ODXFiShell(
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
-            Droidball(
+            AndroidPokeballLogo(
                 modifier = Modifier.size(54.dp),
                 isInteractive = isLogoInteractive
             )
@@ -593,66 +593,194 @@ fun StatusIndicator(
     }
 }
 
+
+
 @Composable
-fun Droidball(
+fun AndroidPokeballLogo(
     modifier: Modifier = Modifier,
     isInteractive: Boolean = false
 ) {
-    Box(
-        modifier = modifier
-            .drawBehind {
-                // Housing recess
-                drawCircle(
-                    color = Color.DarkGray,
-                    radius = size.width / 2
-                )
-                // Spherical Body
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color.LightGray, Color.Gray),
-                        center = center.copy(x = center.x - 10f, y = center.y - 10f),
-                        radius = size.width / 2.2f
-                    ),
-                    radius = size.width / 2.2f
-                )
-                // Lens Housing
-                drawCircle(
-                    color = Color.DarkGray,
-                    radius = size.width / 4,
-                    center = center
-                )
-                // Primary Blue Lens
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF80D8FF), Color(0xFF0091EA), Color(0xFF01579B)),
-                        center = center.copy(y = center.y - 2f),
-                        radius = size.width / 5
-                    ),
-                    radius = size.width / 5,
-                    center = center
-                )
-                // Secondary sensor
-                drawCircle(
-                    color = Color.Black,
-                    radius = 3.dp.toPx(),
-                    center = Offset(center.x + 10.dp.toPx(), center.y + 10.dp.toPx())
-                )
-                // Antennas
-                val antennaColor = Color(0xFF5D5D5D)
-                drawLine(
-                    color = antennaColor,
-                    start = Offset(center.x - 5.dp.toPx(), center.y - 15.dp.toPx()),
-                    end = Offset(center.x - 12.dp.toPx(), center.y - 28.dp.toPx()),
-                    strokeWidth = 1.dp.toPx()
-                )
-                drawLine(
-                    color = antennaColor,
-                    start = Offset(center.x + 5.dp.toPx(), center.y - 15.dp.toPx()),
-                    end = Offset(center.x + 12.dp.toPx(), center.y - 28.dp.toPx()),
-                    strokeWidth = 1.dp.toPx()
-                )
+    var trigger by remember { mutableIntStateOf(0) }
+    val rotation = remember { Animatable(0f) }
+    val wakeIntensity = remember { Animatable(0f) }
+    val eyesAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(trigger) {
+        if (trigger > 0) {
+            // Phase 1: Wake
+            launch {
+                wakeIntensity.animateTo(1f, tween(400))
             }
-    )
+
+            // Phase 2: Acknowledge
+            rotation.animateTo(
+                targetValue = 15f,
+                animationSpec = spring(
+                    dampingRatio = 0.6f,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+
+            // Phase 3: Blink
+            delay(100)
+            eyesAlpha.snapTo(0f)
+            delay(60)
+            eyesAlpha.snapTo(1f)
+            delay(100)
+            eyesAlpha.snapTo(0f)
+            delay(60)
+            eyesAlpha.snapTo(1f)
+
+            delay(500)
+
+            // Phase 4: Rest
+            launch {
+                wakeIntensity.animateTo(0f, tween(600))
+            }
+            rotation.animateTo(0f, tween(600))
+        }
+    }
+
+    Canvas(
+        modifier = modifier
+            .then(
+                if (isInteractive) {
+                    Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                android.util.Log.d("DROIDBALL", "TAP RECEIVED")
+                                trigger++
+                            }
+                        )
+                    }
+                } else {
+                    Modifier
+                }
+            )
+            .graphicsLayer {
+                rotationZ = rotation.value
+            }
+    ) {
+        val w = size.width
+        val h = size.height
+
+        // Droidball body
+        val path = Path().apply {
+            addArc(
+                oval = Rect(0f, 0f, w, h),
+                startAngleDegrees = 180f,
+                sweepAngleDegrees = 180f
+            )
+        }
+
+        val animatedRed = androidx.compose.ui.graphics.lerp(
+            Color.Red,
+            Color(0xFFFF4444),
+            wakeIntensity.value
+        )
+
+        drawContext.canvas.save()
+
+        // Lower half
+        drawPath(
+            path = path,
+            color = Color.White
+        )
+
+        // Upper half
+        drawPath(
+            path = path,
+            color = animatedRed
+        )
+
+        // Middle black line
+        drawRect(
+            color = Color.Black,
+            topLeft = Offset(
+                0f,
+                h / 2 - 2.dp.toPx()
+            ),
+            size = size.copy(
+                height = 4.dp.toPx()
+            )
+        )
+
+        // Center circle
+        drawCircle(
+            color = Color.Black,
+            radius = 10.dp.toPx(),
+            center = center
+        )
+
+        drawCircle(
+            color = Color.White,
+            radius = 6.dp.toPx(),
+            center = center
+        )
+
+        // Eyes
+        drawCircle(
+            color = Color.White.copy(alpha = eyesAlpha.value),
+            radius = 4.dp.toPx(),
+            center = Offset(
+                w * 0.3f,
+                h * 0.3f
+            )
+        )
+
+        drawCircle(
+            color = Color.White.copy(alpha = eyesAlpha.value),
+            radius = 4.dp.toPx(),
+            center = Offset(
+                w * 0.7f,
+                h * 0.3f
+            )
+        )
+
+        drawContext.canvas.restore()
+
+        // Border
+        val strokeWidth = androidx.compose.ui.unit.lerp(
+            2.dp,
+            3.dp,
+            wakeIntensity.value
+        ).toPx()
+
+        drawPath(
+            path = path,
+            color = Color.Black,
+            style = Stroke(width = strokeWidth)
+        )
+
+        // Antennas
+        drawLine(
+            color = animatedRed,
+            start = Offset(
+                w * 0.3f,
+                h * 0.1f
+            ),
+            end = Offset(
+                w * 0.2f,
+                -h * 0.1f
+            ),
+            strokeWidth = 4.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+
+        drawLine(
+            color = animatedRed,
+            start = Offset(
+                w * 0.7f,
+                h * 0.1f
+            ),
+            end = Offset(
+                w * 0.8f,
+                -h * 0.1f
+            ),
+            strokeWidth = 4.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+    }
 }
 
 enum class FilterFocus {
