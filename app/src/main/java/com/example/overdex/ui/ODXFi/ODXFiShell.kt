@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForward
@@ -208,10 +210,10 @@ fun ODXFiShell(
     onB: () -> Unit = {},
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
-    onSelect: () -> Unit = {},
+
     onStart: () -> Unit = {},
-    onLaunchProbe: () -> Unit = {},
-    onLaunchObservatory: () -> Unit = {},
+
+
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
 
@@ -269,7 +271,7 @@ fun ODXFiShell(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Left Button
                 IconButton(onClick = onLeft) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Left")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Left")
                 }
 
                 // Center element (optional)
@@ -282,7 +284,7 @@ fun ODXFiShell(
 
                 // Right Button
                 IconButton(onClick = onRight) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "Right")
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Right")
                 }
             }
 

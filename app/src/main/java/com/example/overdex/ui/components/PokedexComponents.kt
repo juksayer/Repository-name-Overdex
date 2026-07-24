@@ -46,6 +46,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.text.font.FontFamily
+import com.example.overdex.ui.ODXFi.InstrumentButton
 import com.example.overdex.ui.lcdDisplayEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -507,7 +508,7 @@ fun ODXFiShell(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = { 
+                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = {
                     handleInput("UP")
                     if (showResearcherSettings) researcherUp?.invoke()
                     else if (showSettings) settingsUp?.invoke()
@@ -699,6 +700,7 @@ fun FilterSettingsOverlay(
     }
 
     SideEffect {
+
         onUp { focusManager.moveUp() }
         onDown { focusManager.moveDown() }
         onLeft {
