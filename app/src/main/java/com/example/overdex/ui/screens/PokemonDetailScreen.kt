@@ -24,13 +24,14 @@ import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.components.ODXFiShell
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 import androidx.compose.foundation.clickable
+import com.example.overdex.ui.ODXFi.ODXFiShell
 
 @Composable
 fun PokemonDetailScreen(

@@ -18,6 +18,7 @@ import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.model.SharedEvent
 import com.example.overdex.model.SharedEventType
 import com.example.overdex.model.MilestoneType
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import java.time.LocalDate

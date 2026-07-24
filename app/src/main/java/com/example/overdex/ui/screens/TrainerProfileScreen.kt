@@ -21,6 +21,7 @@ import com.example.overdex.data.PartnerRepository
 import com.example.overdex.data.SpriteProvider
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.PartnerIdentity
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch

@@ -20,8 +20,9 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.example.overdex.model.Pokemon
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.ODXFiShell
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.SearchBar
 import com.example.overdex.ui.components.TypeBadge
 import com.example.overdex.ui.components.FilterSettings
@@ -110,13 +111,13 @@ fun PokedexListScreen(
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
             TerminalPathIndicator(path = "/specimens/search/")
-            
+
             if (keyboardController.isVisible) {
                 TerminalHeader("input module")
                 SearchBar(query = searchQuery, selected = false)
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 TerminalKeyboard(
                     layout = keyboardController.layout,
                     currentRow = keyboardController.currentRow,
@@ -125,13 +126,13 @@ fun PokedexListScreen(
                 )
             } else {
                 SearchBar(
-                    query = searchQuery, 
+                    query = searchQuery,
                     selected = nav.selectedIndex == 0,
-                    onSearchClick = { 
+                    onSearchClick = {
                         nav.handleTouch(0)
                     }
                 )
-                
+
                 searchRequest.activeFilters.forEach { filter ->
                     AssistChip(
                         onClick = {

@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.MyCollectionViewModel
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
@@ -156,21 +157,13 @@ fun OwnedPokemonDetailScreen(
         return
     }
 
-    ODXFiShell(
-        onUp = {
+    ODXFiShell(onUp = {
             nav.moveUp()
-        },
-        onDown = {
+        }, onDown = {
             nav.moveDown()
-        },
-        onA = {
+        }, onA = {
             nav.activate()
-        },
-        onB = onBack,
-        filterSettings = filterSettings,
-        onFilterSettingsChange = onFilterSettingsChange,
-        viewModel = pokedexViewModel,
-    ) { _ ->
+        }, onB = onBack, filterSettings = filterSettings, onFilterSettingsChange = onFilterSettingsChange, viewModel = pokedexViewModel,) { _ ->
         val owned = ownedPokemon
         if (owned == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

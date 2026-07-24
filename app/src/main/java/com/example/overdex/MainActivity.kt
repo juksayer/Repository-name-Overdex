@@ -38,7 +38,7 @@ import com.example.overdex.model.navigation.*
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.components.ODXFiShell
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme

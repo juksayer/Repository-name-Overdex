@@ -20,6 +20,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.MyCollectionViewModel
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
@@ -103,7 +104,7 @@ fun MyCollectionScreen(
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         viewModel = pokedexViewModel
-    ) { _ ->
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (keyboardController.isVisible) {
                 TerminalHeader(text = "input module: search")

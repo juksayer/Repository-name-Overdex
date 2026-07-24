@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -60,11 +61,8 @@ import com.example.overdex.presentation.InstrumentLifecycle
 import com.example.overdex.presentation.ObservationIndicator
 import com.example.overdex.presentation.PresentationState
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.BreathingLED
-import com.example.overdex.ui.components.Droidball
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.OverlayState
-import com.example.overdex.ui.components.StatusIndicator
 import com.example.overdex.ui.theme.PokedexGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.delay
@@ -147,13 +145,77 @@ fun InstrumentButton(
         }
     }
 }
-
 /**
  * Droidball: The physical embodiment of the ODX-Fi
  *
  * This component visualizes the observation state by mapping [PresentationState]
  * to its physical representation.
  */
+
+
+@Composable
+fun Droidball(
+    modifier: Modifier = Modifier,
+    isInteractive: Boolean = false
+) {
+    Box(
+        modifier = modifier
+            .drawBehind {
+                // Housing recess
+                drawCircle(
+                    color = Color.DarkGray,
+                    radius = size.width / 2
+                )
+                // Spherical Body
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.LightGray, Color.Gray),
+                        center = center.copy(x = center.x - 10f, y = center.y - 10f),
+                        radius = size.width / 2.2f
+                    ),
+                    radius = size.width / 2.2f
+                )
+                // Lens Housing
+                drawCircle(
+                    color = Color.DarkGray,
+                    radius = size.width / 4,
+                    center = center
+                )
+                // Primary Blue Lens
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF80D8FF), Color(0xFF0091EA), Color(0xFF01579B)),
+                        center = center.copy(y = center.y - 2f),
+                        radius = size.width / 5
+                    ),
+                    radius = size.width / 5,
+                    center = center
+                )
+                // Secondary sensor
+                drawCircle(
+                    color = Color.Black,
+                    radius = 3.dp.toPx(),
+                    center = Offset(center.x + 10.dp.toPx(), center.y + 10.dp.toPx())
+                )
+                // Antennas
+                val antennaColor = Color(0xFF5D5D5D)
+                drawLine(
+                    color = antennaColor,
+                    start = Offset(center.x - 5.dp.toPx(), center.y - 15.dp.toPx()),
+                    end = Offset(center.x - 12.dp.toPx(), center.y - 28.dp.toPx()),
+                    strokeWidth = 1.dp.toPx()
+                )
+                drawLine(
+                    color = antennaColor,
+                    start = Offset(center.x + 5.dp.toPx(), center.y - 15.dp.toPx()),
+                    end = Offset(center.x + 12.dp.toPx(), center.y - 28.dp.toPx()),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+    )
+}
+
+
 @Composable
 fun Droidball(
     presentationState: PresentationState,
@@ -316,9 +378,10 @@ fun ODXFiShell(
     onB: () -> Unit = {},
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
-
+    onSelect: () -> Unit = {},
     onStart: () -> Unit = {},
-
+    onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
 
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
@@ -446,44 +509,12 @@ fun ODXFiShell(
             currentDecision = null
         }
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(PokedexGreen)
             .padding(8.dp) // Tighter bezel aesthetic
     ) {
-        // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp, start = 8.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            // Device Emblem (Permanent branding)
-            Droidball(
-                modifier = Modifier.size(54.dp),
-                isInteractive = isLogoInteractive
-            )
-
-            Spacer(modifier = Modifier.width(24.dp))
-
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
-                StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
-                StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(PokedexGreen)
-                .padding(8.dp) // Tighter bezel aesthetic
-        ) {
             // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
             Row(
                 modifier = Modifier
@@ -512,7 +543,7 @@ fun ODXFiShell(
                     StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
                 }
             }
-        }
+
 
             @Composable
     fun DPad(

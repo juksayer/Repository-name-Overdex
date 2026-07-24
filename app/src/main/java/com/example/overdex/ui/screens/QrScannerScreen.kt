@@ -26,6 +26,7 @@ import com.example.overdex.data.PublicIdentitySerializer
 import com.example.overdex.data.QrCodeAnalyzer
 import com.example.overdex.data.PartnerRepository
 import com.example.overdex.model.PublicTrainerIdentity
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch

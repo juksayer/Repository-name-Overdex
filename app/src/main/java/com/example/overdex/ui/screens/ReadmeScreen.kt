@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.ui.components.ODXFiShell
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.components.FilterSettings
@@ -48,7 +48,7 @@ fun ReadmeScreen(
                 .padding(16.dp),
         ) {
             TerminalPathIndicator(path = "/tools/readme")
-            
+
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -67,7 +67,7 @@ fun ReadmeScreen(
                     fontSize = 16.sp
                 )
             }
-            
+
             // Current page number display (e.g. 1/3)
             Row(
                 modifier = Modifier.fillMaxWidth(),
