@@ -241,8 +241,8 @@ fun CaptureVerificationScreen(
                             )
                         }
                     }
-                } else if (currentIndex > 0) {
-                    currentIndex--
+                } else if (currentTemplate.regions.isNotEmpty()) {
+                    selectedRegionId = currentTemplate.regions.last().id
                 }
             }
         },
@@ -264,8 +264,8 @@ fun CaptureVerificationScreen(
                             )
                         }
                     }
-                } else if (currentIndex < captureLibrary.size - 1) {
-                    currentIndex++
+                } else if (currentTemplate.regions.isNotEmpty()) {
+                    selectedRegionId = currentTemplate.regions.first().id
                 }
             }
         },
