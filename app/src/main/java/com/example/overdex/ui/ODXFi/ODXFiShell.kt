@@ -2,6 +2,7 @@ package com.example.overdex.ui.ODXFi
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,8 +31,11 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,10 +48,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.presentation.InstrumentLifecycle
@@ -53,12 +61,30 @@ import com.example.overdex.presentation.ObservationIndicator
 import com.example.overdex.presentation.PresentationState
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.BreathingLED
+import com.example.overdex.ui.components.Droidball
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.OverlayState
+import com.example.overdex.ui.components.StatusIndicator
+import com.example.overdex.ui.theme.PokedexGreen
 import com.example.overdex.ui.theme.TerminalGreen
+import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.time.Duration.Companion.milliseconds
 
+
+/**
+ * Glass Shield: Restricts all touch input to the CRT area.
+ * The CRT is an observation-only display and never accepts operator input.
+ */
+fun Modifier.glassShield(): Modifier = this.pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            event.changes.forEach { it.consume() }
+        }
+    }
+}
 
 @Composable
 fun InstrumentButton(
@@ -210,6 +236,29 @@ fun InstrumentLCD(
     }
 }
 
+
+@Composable
+fun StatusIndicator(
+    label: String,
+    color: Color,
+    cycleDurationMillis: Int = 4000
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.4f),
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        BreathingLED(color = color, cycleDurationMillis = cycleDurationMillis)
+    }
+}
+
 @Composable
 fun BreathingLED(
     color: Color,
@@ -305,8 +354,167 @@ fun ODXFiShell(
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
 
+    // Permanent Front Panel doesn't use rail animations
+    val crtPadding by animateDpAsState(
+        targetValue = if (serviceMode) 0.dp else 32.dp,
+        label = "crtPadding"
+    )
 
-    @Composable
+    val context = LocalContext.current
+    val researcherManager = remember { ResearcherManager(context) }
+    var isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
+
+    // Konami Code Detection
+    val konamiCode = remember { listOf("UP", "UP", "DOWN", "DOWN", "LEFT", "RIGHT", "LEFT", "RIGHT", "B", "A") }
+    var currentSequence by remember { mutableStateOf(emptyList<String>()) }
+    var unlockMessage by remember { mutableStateOf<String?>(null) }
+
+    // BattleMemory - Restore local lifecycle
+    val battleMemory = remember { com.example.overdex.BattleMemory() }
+    var currentDecision by remember { mutableStateOf<com.example.overdex.model.DecisionAnalysis?>(null) }
+
+    val handleInput = { input: String ->
+        val nextSequence = currentSequence + input
+        if (konamiCode.take(nextSequence.size) == nextSequence) {
+            currentSequence = nextSequence
+            if (currentSequence.size == konamiCode.size) {
+                researcherManager.setUnlocked(true)
+                isResearcherUnlocked = true
+                showSettings = true
+                unlockMessage = "ACCESS LEVEL UPDATED\nRESEARCHER MODE ENABLED"
+                currentSequence = emptyList()
+            }
+        } else {
+            // Reset if sequence broken, but allow starting new sequence with 'UP'
+            currentSequence = if (input == "UP") listOf("UP") else emptyList()
+        }
+    }
+
+    LaunchedEffect(unlockMessage) {
+        if (unlockMessage != null) {
+            delay(30.milliseconds)
+            unlockMessage = null
+        }
+    }
+
+    // Simulation is now managed by the ViewModel/Service lifecycle
+    LaunchedEffect(serviceMode) {
+        if (serviceMode) {
+            battleMemory.runPrototypeSimulation()
+        }
+    }
+
+    // Matchup Intelligence Foundation Verification
+    var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
+
+    val presentationState = remember(currentState, pipelineStatus, battleMemory, currentMatchup, currentDecision) {
+        com.example.overdex.presentation.PresentationMapper.map(
+            instrumentState = currentState,
+            pipelineStatus = pipelineStatus,
+            battleMemory = battleMemory,
+            matchup = currentMatchup,
+            decision = currentDecision
+        )
+    }
+
+    LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
+        val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
+        if (viewModel != null && activeEnemy != null) {
+            val enemyData = viewModel.getPokemonByName(activeEnemy.species)
+            val playerData = viewModel.getPokemonByName(battleMemory.playerActivePokemon ?: "Charizard")
+
+            if (enemyData != null && playerData != null) {
+                val matchupAnalysis = com.example.overdex.data.matchup.MatchupEngine.analyze(
+                    player = playerData,
+                    enemy = enemyData,
+                    enemyMemory = activeEnemy
+                )
+                currentMatchup = matchupAnalysis
+
+                val decision = com.example.overdex.data.matchup.DecisionEngine.analyze(matchupAnalysis)
+                currentDecision = decision
+
+                android.util.Log.d("MATCHUP_ENGINE", "Analysis: ${matchupAnalysis.playerSpecies} vs ${matchupAnalysis.enemySpecies}")
+                android.util.Log.d("MATCHUP_ENGINE", "Advantage: ${matchupAnalysis.playerAdvantage} | Threat: ${matchupAnalysis.enemyThreatLevel}")
+
+                android.util.Log.d("DECISION_ENGINE", "Recommendation: ${decision.recommendedAction} (Priority: ${decision.actionPriority})")
+                android.util.Log.d("DECISION_ENGINE", "Reasoning: ${decision.reasoning}")
+                android.util.Log.d("DECISION_ENGINE", "Shield Recommended: ${decision.shieldRecommended}")
+            }
+        } else {
+            currentMatchup = null
+            currentDecision = null
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PokedexGreen)
+            .padding(8.dp) // Tighter bezel aesthetic
+    ) {
+        // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp, start = 8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Device Emblem (Permanent branding)
+            Droidball(
+                modifier = Modifier.size(54.dp),
+                isInteractive = isLogoInteractive
+            )
+
+            Spacer(modifier = Modifier.width(24.dp))
+
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
+                StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
+                StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PokedexGreen)
+                .padding(8.dp) // Tighter bezel aesthetic
+        ) {
+            // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp, start = 8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                // Device Emblem (Permanent branding)
+                Droidball(
+                    modifier = Modifier.size(54.dp),
+                    isInteractive = isLogoInteractive
+                )
+
+                Spacer(modifier = Modifier.width(24.dp))
+
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
+                    StatusIndicator(
+                        label = "OBS",
+                        color = Color(0xFFFFA500),
+                        cycleDurationMillis = 3000
+                    )
+                    StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
+                }
+            }
+        }
+
+            @Composable
     fun DPad(
         onUp: () -> Unit,
         onDown: () -> Unit,
@@ -347,7 +555,7 @@ fun ODXFiShell(
 
             // Down Button
             IconButton(onClick = onDown) {
-                Icon(Icons.Default.ArrowDownward, contentDescription = "Down")
+                Icon(Icons.Default.ArrowDownward, contentDescription = "Down")}
             }
         }
     }
