@@ -42,6 +42,7 @@ import com.example.overdex.ui.components.ODXFiShell
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
 import com.example.overdex.ui.theme.OverdexTheme
+import kotlin.invoke
 import kotlin.system.exitProcess
 
 
