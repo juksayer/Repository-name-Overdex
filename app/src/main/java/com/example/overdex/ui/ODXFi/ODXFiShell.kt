@@ -1,5 +1,11 @@
 package com.example.overdex.ui.ODXFi
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,8 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +56,8 @@ import com.example.overdex.ui.components.BreathingLED
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.OverlayState
 import com.example.overdex.ui.theme.TerminalGreen
+import kotlin.math.PI
+import kotlin.math.cos
 
 
 @Composable
@@ -200,6 +210,53 @@ fun InstrumentLCD(
     }
 }
 
+@Composable
+fun BreathingLED(
+    color: Color,
+    modifier: Modifier = Modifier,
+    cycleDurationMillis: Int = 4000
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing_led")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(cycleDurationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "led_progress"
+    )
+
+    // Smooth sinusoidal curve (0.3 to 1.0 range) for natural physics.
+    val alpha = 0.3f + 0.7f * ((1f - cos(progress * 2 * PI).toFloat()) / 2f)
+
+    Box(
+        modifier = modifier
+            .padding(horizontal = 4.dp)
+            .size(12.dp)
+            .drawWithContent {
+                // Restrained bloom - supports the illusion of an illuminated lens.
+                drawCircle(
+                    color = color.copy(alpha = alpha * 0.1f),
+                    radius = size.minDimension / 2 * 1.2f,
+                    center = center
+                )
+                // LED Surface
+                drawCircle(
+                    color = color.copy(alpha = alpha),
+                    radius = size.minDimension / 2,
+                    center = center
+                )
+                // Hardware bezel
+                drawCircle(
+                    color = Color.Black,
+                    radius = size.minDimension / 2,
+                    center = center,
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+    )
+}
 @Composable
 fun ODXFiShell(
     onUp: () -> Unit = {},

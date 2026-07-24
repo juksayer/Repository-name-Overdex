@@ -387,14 +387,6 @@ fun ODXFiShell(
                     .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
                     .padding(4.dp)
             ) {
-                // Application Layer (Shader applied here)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
-                ) {
-                    content(battleMemory)
-                }
 
                 // HUD Overlay Layer (Kept clean and sharp)
                 if (showBattleOverlay && serviceMode) {
@@ -591,6 +583,54 @@ fun StatusIndicator(
         Spacer(modifier = Modifier.height(6.dp))
         BreathingLED(color = color, cycleDurationMillis = cycleDurationMillis)
     }
+}
+
+@Composable
+fun BreathingLED(
+    color: Color,
+    modifier: Modifier = Modifier,
+    cycleDurationMillis: Int = 4000
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing_led")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(cycleDurationMillis, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "led_progress"
+    )
+
+    // Smooth sinusoidal curve (0.3 to 1.0 range) for natural physics.
+    val alpha = 0.3f + 0.7f * ((1f - cos(progress * 2 * PI).toFloat()) / 2f)
+
+    Box(
+        modifier = modifier
+            .padding(horizontal = 4.dp)
+            .size(12.dp)
+            .drawWithContent {
+                // Restrained bloom - supports the illusion of an illuminated lens.
+                drawCircle(
+                    color = color.copy(alpha = alpha * 0.1f),
+                    radius = size.minDimension / 2 * 1.2f,
+                    center = center
+                )
+                // LED Surface
+                drawCircle(
+                    color = color.copy(alpha = alpha),
+                    radius = size.minDimension / 2,
+                    center = center
+                )
+                // Hardware bezel
+                drawCircle(
+                    color = Color.Black,
+                    radius = size.minDimension / 2,
+                    center = center,
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+    )
 }
 
 @Composable
@@ -871,53 +911,6 @@ fun SettingSlider(label: String, value: Float, min: Float, max: Float, selected:
 }
 
 
-@Composable
-fun BreathingLED(
-    color: Color,
-    modifier: Modifier = Modifier,
-    cycleDurationMillis: Int = 4000
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "breathing_led")
-    val progress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(cycleDurationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "led_progress"
-    )
-
-    // Smooth sinusoidal curve (0.3 to 1.0 range) for natural physics.
-    val alpha = 0.3f + 0.7f * ((1f - cos(progress * 2 * PI).toFloat()) / 2f)
-
-    Box(
-        modifier = modifier
-            .padding(horizontal = 4.dp)
-            .size(12.dp)
-            .drawWithContent {
-                // Restrained bloom - supports the illusion of an illuminated lens.
-                drawCircle(
-                    color = color.copy(alpha = alpha * 0.1f),
-                    radius = size.minDimension / 2 * 1.2f,
-                    center = center
-                )
-                // LED Surface
-                drawCircle(
-                    color = color.copy(alpha = alpha),
-                    radius = size.minDimension / 2,
-                    center = center
-                )
-                // Hardware bezel
-                drawCircle(
-                    color = Color.Black,
-                    radius = size.minDimension / 2,
-                    center = center,
-                    style = Stroke(width = 1.dp.toPx())
-                )
-            }
-    )
-}
 
 @Composable
 fun SearchBar(
