@@ -29,11 +29,12 @@ fun ModuleScreen(
     onSelect: () -> Unit = {}
 ) {
     ODXFiShell(
+        viewModel = requireNotNull(viewModel),
         onA = onBack,
         onB = onBack,
         onStart = onStart,
         onSelect = onSelect,
-        viewModel = viewModel,
+
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         showBattleOverlay = false
@@ -41,13 +42,13 @@ fun ModuleScreen(
         TerminalScreen {
             TerminalHeader(title)
             TerminalText(text = "module_status: ${status.label}", color = TerminalDimGreen)
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             TerminalText(text = description)
-            
+
             Spacer(modifier = Modifier.weight(1f))
-            
+
             TerminalButton(text = "back", onClick = onBack, selected = true)
         }
     }

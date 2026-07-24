@@ -365,6 +365,7 @@ fun CaptureVerificationScreen(
             }
             else onBack()
         },
+        viewModel = viewModel,
         pipelineStatus = pipelineStatus
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

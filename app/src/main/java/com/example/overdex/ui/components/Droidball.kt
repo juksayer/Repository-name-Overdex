@@ -19,7 +19,7 @@ import com.example.overdex.presentation.*
 fun Droidball(
     presentationState: PresentationState,
     modifier: Modifier = Modifier
-) {
+){
     // Presentation Layer: Mapping semantic indicators to physical colors
     val ledColor = when (presentationState.observation.status) {
         ObservationIndicator.SEARCHING -> Color(0xFFFFB300) // Amber
@@ -32,8 +32,8 @@ fun Droidball(
 
     Box(modifier = modifier.size(40.dp)) {
         Droidball(
-            modifier = Modifier.size(54.dp),
-            isInteractive = false
+            presentationState = presentationState,
+            modifier = Modifier.size(54.dp)
         )
         
         if (presentationState.instrument != InstrumentLifecycle.IDLE) {

@@ -39,6 +39,7 @@ import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.ObservationSessionState
+import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -210,8 +211,9 @@ fun ODXFiShell(
     onLaunchObservatory: () -> Unit = {},
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
-    viewModel: com.example.overdex.ui.PokedexViewModel? = null,
+
     showBattleOverlay: Boolean = true,
+    viewModel: PokedexViewModel? = null,
     instrumentState: ObservationSessionState? = null,
     pipelineStatus: com.example.overdex.data.observation.PipelineStatus? = null,
     isLogoInteractive: Boolean = false,
@@ -234,13 +236,11 @@ fun ODXFiShell(
     var researcherA by remember { mutableStateOf<(() -> Unit)?>(null) }
     var researcherB by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-    val vmState by viewModel?.observationSessionState?.collectAsState() ?: remember { mutableStateOf(ObservationSessionState.IDLE) }
-    val vmDeploymentState by viewModel?.deploymentState?.collectAsState() ?: remember { mutableStateOf(InstrumentDeploymentState.IDLE) }
-    val vmFrameCount by viewModel?.frameCount?.collectAsState() ?: remember { mutableStateOf(0L) }
 
-    val currentState = instrumentState ?: vmState
-    val currentDeploymentState = if (viewModel != null) vmDeploymentState else deploymentState
-    val currentFrameCount = if (viewModel != null) vmFrameCount else frameCount
+
+    val currentState = instrumentState ?: ObservationSessionState.IDLE
+    val currentDeploymentState = deploymentState
+    val currentFrameCount = frameCount
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
 
