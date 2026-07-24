@@ -210,6 +210,7 @@ fun PokedexApp(
             val deploymentState by viewModel.deploymentState.collectAsState()
             val frameCount by viewModel.frameCount.collectAsState()
             ODXFiShell(
+
                 instrumentState = instrumentState,
                 deploymentState = deploymentState,
                 frameCount = frameCount,
@@ -363,6 +364,7 @@ fun PokedexApp(
         }
         composable("trainer_profile") {
             TrainerProfileScreen(
+                viewModel = viewModel,
                 trainerIdentity = trainerIdentity,
                 partnerIdentity = partnerIdentity,
                 trainerRepository = trainerRepository,

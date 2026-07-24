@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens
 
+import com.example.overdex.ui.PokedexViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -37,10 +38,9 @@ enum class ProfileFocus {
     CHAT,
     UNLINK,
     BACK
-}
-
-@Composable
+}@Composable
 fun TrainerProfileScreen(
+    viewModel: PokedexViewModel,
     trainerIdentity: TrainerIdentity?,
     partnerIdentity: PartnerIdentity?,
     trainerRepository: TrainerRepository,
@@ -178,6 +178,7 @@ fun TrainerProfileScreen(
     }
 
     ODXFiShell(
+        viewModel = viewModel,
         onB = onBack,
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,

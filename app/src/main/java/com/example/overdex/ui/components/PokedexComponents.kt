@@ -39,6 +39,7 @@ import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.ObservationSessionState
+import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -212,6 +213,7 @@ fun ODXFiShell(
     frameCount: Long = 0,
 
     showBattleOverlay: Boolean = true,
+    viewModel: PokedexViewModel? = null,
     instrumentState: ObservationSessionState? = null,
     pipelineStatus: com.example.overdex.data.observation.PipelineStatus? = null,
     isLogoInteractive: Boolean = false,

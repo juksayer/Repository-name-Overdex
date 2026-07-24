@@ -47,7 +47,7 @@ fun PokemonDetailScreen(
     onEvolutionClick: (Int) -> Unit,
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
-    viewModel: PokedexViewModel? = null
+    viewModel: PokedexViewModel,
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()

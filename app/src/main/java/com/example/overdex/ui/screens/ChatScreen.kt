@@ -59,6 +59,7 @@ fun ChatScreen(
     }
 
     ODXFiShell(
+        viewModel = pokedexViewModel,
         onB = onBack,
         onA = {
             if (inputText.isNotBlank() && trainerIdentity != null) {
