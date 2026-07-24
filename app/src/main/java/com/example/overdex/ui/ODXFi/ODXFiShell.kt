@@ -523,7 +523,7 @@ fun ODXFiShell(
                 verticalAlignment = Alignment.Top
             ) {
                 // Device Emblem (Permanent branding)
-                Droidball(
+                AndroidPokeballLogo(
                     modifier = Modifier.size(54.dp),
                     isInteractive = isLogoInteractive
                 )
