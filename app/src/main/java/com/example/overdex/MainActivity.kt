@@ -495,6 +495,14 @@ fun PokedexApp(
         composable("specimens/collection") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
             var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+
+
             SpecimensScreen(
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
