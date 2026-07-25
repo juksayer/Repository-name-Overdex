@@ -2,6 +2,7 @@ package com.example.overdex
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 /**
  * Manages the "Researcher Mode" feature toggle, which unlocks advanced 
@@ -20,6 +21,6 @@ class ResearcherManager(context: Context) {
     }
 
     fun setUnlocked(unlocked: Boolean) {
-        prefs.edit().putBoolean(KEY_UNLOCKED, unlocked).apply()
+        prefs.edit { putBoolean(KEY_UNLOCKED, unlocked) }
     }
 }

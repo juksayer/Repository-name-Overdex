@@ -1,6 +1,6 @@
 package com.example.overdex.ui.screens
 
-import android.graphics.Bitmap
+
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -129,6 +129,7 @@ fun CaptureVerificationScreen(
     var isManualSpeciesSelection by remember { mutableStateOf(false) }
     var manualSpecies by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
     var selectedRegionId by remember { mutableStateOf<String?>(null) }
+    var regionCursorIndex by remember { mutableIntStateOf(0) }
     var calibrationMode by remember { mutableStateOf(CalibrationMode.MOVE) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
     var showWorkspaceViewer by remember { mutableStateOf(false) }
@@ -242,7 +243,9 @@ fun CaptureVerificationScreen(
                         }
                     }
                 } else if (currentTemplate.regions.isNotEmpty()) {
-                    selectedRegionId = currentTemplate.regions.last().id
+                    regionCursorIndex =
+                        (regionCursorIndex - 1 + currentTemplate.regions.size) %
+                                currentTemplate.regions.size
                 }
             }
         },
@@ -265,7 +268,8 @@ fun CaptureVerificationScreen(
                         }
                     }
                 } else if (currentTemplate.regions.isNotEmpty()) {
-                    selectedRegionId = currentTemplate.regions.first().id
+                    regionCursorIndex =
+                        (regionCursorIndex + 1) % currentTemplate.regions.size
                 }
             }
         },
@@ -303,7 +307,13 @@ fun CaptureVerificationScreen(
                 }
             } else if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } else if (!isInspectionMode && selectedRegionId == null) {
+                if (currentTemplate.regions.isNotEmpty()) {
+                    selectedRegionId = currentTemplate.regions[regionCursorIndex].id
+                }
             } else if (!isInspectionMode) {
+                selectedRegionId = null
+            } else {
                 scope.launch {
                     val request = ImageRequest.Builder(context).data(captureLibrary[currentIndex]).allowHardware(false).build()
                     val result = context.imageLoader.execute(request)
@@ -323,7 +333,7 @@ fun CaptureVerificationScreen(
                         }
                     }
                 }
-            } else {
+
                 val assessment = panelState.assessment
                 when (assessment.recommendedAction) {
                     RegistrationAction.REGISTER -> {
@@ -382,7 +392,8 @@ fun CaptureVerificationScreen(
                     template = currentTemplate,
                     isVisible = isOverlayVisible,
                     imageSize = imageSize,
-                    selectedRegionId = selectedRegionId,
+                    selectedRegionId = selectedRegionId
+                        ?: currentTemplate.regions.getOrNull(regionCursorIndex)?.id,
                     onRegionSelect = { selectedRegionId = it },
                     onRegionUpdate = { updatedRegion ->
                         manager.saveAdjustment(currentTemplate.name, updatedRegion)
