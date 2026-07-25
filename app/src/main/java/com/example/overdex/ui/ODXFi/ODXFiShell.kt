@@ -202,6 +202,8 @@ fun InstrumentLCD(
 
 @Composable
 fun ODXFiShell(
+    presentationState: PresentationState,
+    modifier: Modifier = Modifier,
     onUp: () -> Unit = {},
     onDown: () -> Unit = {},
     onLeft: () -> Unit = {},

@@ -46,6 +46,7 @@ fun SpecimensScreen(
                 onItemClick(ownedPokemon[selectedIndex].id)
             }
         }
+        onB { onBack() }
 
     }
 

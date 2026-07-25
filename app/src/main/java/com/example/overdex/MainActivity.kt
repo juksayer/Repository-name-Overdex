@@ -494,6 +494,7 @@ fun PokedexApp(
         }
         composable("specimens/collection") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
+
             var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
             var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
             var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -502,13 +503,33 @@ fun PokedexApp(
             var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
 
+            ODXFiShell(
+                showBattleOverlay = false,
+                onUp = { upHandler?.invoke() },
+                onDown = { downHandler?.invoke() },
+                onA = { aHandler?.invoke() },
+                onB = { bHandler?.invoke() },
+                viewModel = viewModel,
+                filterSettings = filterSettings,
+                onFilterSettingsChange = { filterSettings = it },
+                onLaunchProbe = { navController.navigate("accessibility_probe") },
+                onLaunchObservatory = { navController.navigate("signal_observatory") },
+                deploymentState = deploymentState,
+                frameCount = frameCount
+            ) {
+                SpecimensScreen(
+                    pokedexViewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    onItemClick = { id -> navController.navigate("specimens/detail/$id") },
+                    onBack = { navController.popBackStack() },
+                    onUp = { upHandler = it },
+                    onDown = { downHandler = it },
+                    onA = { aHandler = it },
+                    onB = { bHandler = it },
 
-            SpecimensScreen(
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                onItemClick = { id -> navController.navigate("specimens/detail/$id") },
-                onBack = { navController.popBackStack() }
-            )
+
+                                    )
+                            }
         }
         composable(
             route = "specimens/detail/{id}",
