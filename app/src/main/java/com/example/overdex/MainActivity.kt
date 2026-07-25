@@ -564,7 +564,13 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onFinish = { navController.popBackStack() },
-                    onCancel = { navController.popBackStack() }
+                    onCancel = { navController.popBackStack() },
+                    onUp = { upHandler = it },
+                    onDown = { downHandler = it },
+                    onLeft = { leftHandler = it },
+                    onRight = { rightHandler = it },
+                    onA = { aHandler = it },
+                    onB = { bHandler = it }
                 )
             }
         }
