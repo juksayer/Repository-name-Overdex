@@ -7,6 +7,8 @@ import com.example.overdex.data.observation.GuidedObservationPipeline
 import com.example.overdex.model.observation.ObservationObjective
 import com.example.overdex.model.observation.ObservationSession
 import com.example.overdex.model.observation.ObservationInput
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.*
 import com.example.overdex.model.observation.SessionSource
 import android.graphics.Bitmap
 import kotlinx.coroutines.runBlocking
@@ -90,15 +92,26 @@ class ObservationEngineValidator {
     }
 
     private fun validateSession(sessionName: String, session: ObservationSession, expected: JsonObject) {
-        val resolved = session.resolveResults()
+        val resolver = DefaultObservationResolver()
+        val resolved = session.history.mapValues { (_, observations) ->
+            resolver.resolve(observations)
+        }
         val expectedFields = expected["expectedResolvedFields"]?.let { it as? JsonObject } ?: JsonObject(emptyMap())
-        
+
         expectedFields.forEach { (field, expectedValue) ->
             val actualResults = resolved[field]
-            val actualValue = actualResults?.firstOrNull()?.value
-            
+            val actualValue = when (actualResults) {
+                is PokemonNameObservation -> actualResults.species
+                is FastMoveObservation -> actualResults.moveName
+                is ChargedMoveObservation -> actualResults.moveName
+                is CombatPowerObservation -> actualResults.cp
+                is ShadowStatusObservation -> actualResults.isShadow
+                is EvolutionFamilyObservation -> actualResults.familySpecies
+                null -> null
+            }
+
             val expectedContent = expectedValue.jsonPrimitive.content
-            
+
             assertEquals(
                 "[$sessionName] Mismatch in field: $field",
                 expectedContent,
@@ -111,7 +124,7 @@ class ObservationEngineValidator {
             assertEquals(
                 "[$sessionName] Mismatch in Integrity Status",
                 expectedIntegrity,
-                session.evaluateIntegrity().status.name
+                session.evaluateIntegrity(resolver).status.name
             )
         }
         
