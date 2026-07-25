@@ -541,6 +541,14 @@ fun PokedexApp(
 
             ODXFiShell(
                 showBattleOverlay = false,
+                onUp = { upHandler?.invoke() },
+                onDown = { downHandler?.invoke() },
+                onLeft = { leftHandler?.invoke() },
+                onRight = { rightHandler?.invoke() },
+                onA = { aHandler?.invoke() },
+                onB = { bHandler?.invoke() },
+                onStart = { viewModel.startObservation() },
+                onSelect = { /* Reserved */ },
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
@@ -548,7 +556,7 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+
             ) {
                 AddOwnedPokemonWizard(
                     pokedexViewModel = viewModel,
