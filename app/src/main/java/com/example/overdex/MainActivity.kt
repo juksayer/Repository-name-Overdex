@@ -216,6 +216,7 @@ fun PokedexApp(
                 deploymentState = deploymentState,
                 frameCount = frameCount,
                 showBattleOverlay = false,
+
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
                 onUp = { if (phase == MainMenuPhase.READY) viewModel.handleUp() },
@@ -530,6 +531,14 @@ fun PokedexApp(
         }
         composable("add_pokemon_wizard") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
+
+            var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
             ODXFiShell(
                 showBattleOverlay = false,
                 viewModel = viewModel,

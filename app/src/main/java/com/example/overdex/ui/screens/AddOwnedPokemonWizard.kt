@@ -34,7 +34,13 @@ fun AddOwnedPokemonWizard(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onFinish: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {}
 ) {
     var currentStep by remember { mutableStateOf(WizardStep.SPECIES_SEARCH) }
     var selectedSpecies by remember { mutableStateOf<Pokemon?>(null) }
@@ -104,8 +110,8 @@ fun AddOwnedPokemonWizard(
         }
     }
 
-    ODXFiShell(
-        onUp = {
+    SideEffect {
+        onUp {
             if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 val charArray = cpValue.toCharArray()
                 val currentDigit = charArray[nav.selectedIndex].digitToInt()
@@ -114,8 +120,9 @@ fun AddOwnedPokemonWizard(
             } else {
                 nav.moveUp()
             }
-        },
-        onDown = {
+        }
+
+        onDown {
             if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 val charArray = cpValue.toCharArray()
                 val currentDigit = charArray[nav.selectedIndex].digitToInt()
@@ -124,28 +131,34 @@ fun AddOwnedPokemonWizard(
             } else {
                 nav.moveDown()
             }
-        },
-        onLeft = {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex > 0) nav.moveUp()
-        },
-        onRight = {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) nav.moveDown()
-        },
-        onA = {
+        }
+
+        onLeft {
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex > 0) {
+                nav.moveUp()
+            }
+        }
+
+        onRight {
+            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+                nav.moveDown()
+            }
+        }
+
+        onA {
             handleActivate(nav.selectedIndex)
-        },
-        onB = {
+        }
+
+        onB {
             when (currentStep) {
                 WizardStep.SPECIES_SEARCH -> onCancel()
                 WizardStep.CP_INPUT -> currentStep = WizardStep.SPECIES_SEARCH
                 WizardStep.ATTRIBUTES -> currentStep = WizardStep.CP_INPUT
             }
-        },
-        filterSettings = filterSettings,
-        onFilterSettingsChange = onFilterSettingsChange,
-        viewModel = pokedexViewModel
-    ) { _ ->
-        Column(modifier = Modifier.fillMaxSize()) {
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
             TerminalHeader(text = "register specimen - ${currentStep.ordinal + 1}/3")
 
             when (currentStep) {
@@ -183,7 +196,7 @@ fun AddOwnedPokemonWizard(
             }
         }
     }
-}
+
 
 @Composable
 fun SpeciesSearchStep(
