@@ -63,7 +63,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             DirectoryNode("specimens", listOf(
                 ActionNode("search", InstrumentCommand.OpenSearch),
-                DirectoryNode("collection", emptyList()), // Placeholder for now
+                ActionNode("collection", InstrumentCommand.OpenCollection), // Placeholder for now
                 ActionNode("register", InstrumentCommand.AddSpecimen)
             )),
             DirectoryNode("battle", listOf(
