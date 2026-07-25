@@ -32,7 +32,13 @@ fun MyCollectionScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onItemClick: (String) -> Unit,
     onAddClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {}
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val searchQuery by collectionViewModel.searchQuery.collectAsState()
@@ -56,7 +62,51 @@ fun MyCollectionScreen(
             }
         }
     )
-    
+    SideEffect {
+        onUp {
+            if (keyboardController.isVisible) {
+                keyboardController.handleUp()
+            } else {
+                nav.moveUp()
+            }
+        }
+
+        onDown {
+            if (keyboardController.isVisible) {
+                keyboardController.handleDown()
+            } else {
+                nav.moveDown()
+            }
+        }
+
+        onLeft {
+            if (keyboardController.isVisible) {
+                keyboardController.handleLeft()
+            }
+        }
+
+        onRight {
+            if (keyboardController.isVisible) {
+                keyboardController.handleRight()
+            }
+        }
+
+        onA {
+            if (keyboardController.isVisible) {
+                keyboardController.handleA(searchQuery) {
+                    collectionViewModel.updateSearchQuery(it)
+                }
+            } else {
+                nav.activate()
+            }
+        }
+
+        onB {
+            if (!keyboardController.handleB()) {
+                onBack()
+            }
+        }
+    }
     // Sync UI selection state back to ViewModel if needed for state restoration
     LaunchedEffect(nav.selectedIndex) {
         collectionViewModel.updateSelectedIndex(nav.selectedIndex)
@@ -69,41 +119,7 @@ fun MyCollectionScreen(
         totalItems = ownedPokemon.size + 1
     )
 
-    ODXFiShell(
-        onUp = {
-            if (keyboardController.isVisible) {
-                keyboardController.handleUp()
-            } else {
-                nav.moveUp()
-            }
-        },
-        onDown = {
-            if (keyboardController.isVisible) {
-                keyboardController.handleDown()
-            } else {
-                nav.moveDown()
-            }
-        },
-        onLeft = {
-            if (keyboardController.isVisible) keyboardController.handleLeft()
-        },
-        onRight = {
-            if (keyboardController.isVisible) keyboardController.handleRight()
-        },
-        onA = {
-            if (keyboardController.isVisible) {
-                keyboardController.handleA(searchQuery) { collectionViewModel.updateSearchQuery(it) }
-            } else {
-                nav.activate()
-            }
-        },
-        onB = {
-            if (!keyboardController.handleB()) onBack()
-        },
-        filterSettings = filterSettings,
-        onFilterSettingsChange = onFilterSettingsChange,
-        viewModel = pokedexViewModel
-    ) { _ ->
+
         Column(modifier = Modifier.fillMaxSize()) {
             if (keyboardController.isVisible) {
                 TerminalHeader(text = "input module: search")
@@ -174,7 +190,7 @@ fun MyCollectionScreen(
             }
         }
     }
-}
+
 
 @Composable
 fun RegisterSpecimenItem(selected: Boolean, onClick: () -> Unit) {

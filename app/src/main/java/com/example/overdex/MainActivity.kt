@@ -517,11 +517,16 @@ fun PokedexApp(
                 deploymentState = deploymentState,
                 frameCount = frameCount
             ) {
-                SpecimensScreen(
+                MyCollectionScreen(
                     pokedexViewModel = viewModel,
                     collectionViewModel = collectionViewModel,
-                    onItemClick = { id -> navController.navigate("specimens/detail/$id") },
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onAddClick = { navController.navigate("add_pokemon_wizard") },
                     onBack = { navController.popBackStack() },
+                    onItemClick = { id ->
+                        navController.navigate("specimens/detail/$id")
+                    },
                     onUp = { upHandler = it },
                     onDown = { downHandler = it },
                     onA = { aHandler = it },
