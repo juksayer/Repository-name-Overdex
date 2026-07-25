@@ -529,11 +529,15 @@ fun PokedexApp(
                     },
                     onUp = { upHandler = it },
                     onDown = { downHandler = it },
+                    onLeft = { leftHandler = it },
+                    onRight = { rightHandler = it },
                     onA = { aHandler = it },
                     onB = { bHandler = it },
 
+                    )
 
-                                    )
+
+
                             }
         }
         composable(
