@@ -21,9 +21,9 @@ data class BattleMemory(
     val observedEnemyPokemon: MutableList<String> = mutableListOf(),
     val enemyTeam: MutableList<EnemyPokemonMemory> = mutableStateListOf<EnemyPokemonMemory>(),
     var enemyRemainingPokemon: Int? = null,
-    var playerActivePokemon: String? = "Charizard", // Prototype default
-    val playerTeam: MutableList<String> = mutableStateListOf("Charizard", "Venusaur", "Blastoise"),
-    val battleHistory: MutableList<BattleEvent> = mutableStateListOf<BattleEvent>(),
+    val battleHistory: MutableList<BattleEvent> = mutableListOf<BattleEvent>(),
+    var playerActivePokemon: String? = null,
+    val playerTeam: MutableList<String> = mutableStateListOf<String>(),
     var startTime: Long = System.currentTimeMillis(),
     var playerLead: String? = null,
     var enemyLead: String? = null,
