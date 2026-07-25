@@ -27,12 +27,27 @@ fun SpecimensScreen(
     pokedexViewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
     onItemClick: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {}
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val listState = rememberLazyListState()
     
     var selectedIndex by remember { mutableIntStateOf(0) }
+    SideEffect {
+        onUp { if (selectedIndex > 0) selectedIndex-- }
+        onDown { if (selectedIndex < ownedPokemon.size - 1) selectedIndex++ }
+        onA {
+            onB { onBack() }
+            if (selectedIndex in ownedPokemon.indices) {
+                onItemClick(ownedPokemon[selectedIndex].id)
+            }
+        }
+
+    }
 
     ODXFiShell(
         onUp = { if (selectedIndex > 0) selectedIndex-- },
