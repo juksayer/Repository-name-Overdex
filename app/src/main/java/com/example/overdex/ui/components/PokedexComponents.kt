@@ -288,13 +288,6 @@ fun ODXFiShell(
         }
     }
 
-    // Simulation is now managed by the ViewModel/Service lifecycle
-    LaunchedEffect(serviceMode) {
-        if (serviceMode) {
-            battleMemory.runPrototypeSimulation()
-        }
-    }
-
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
 

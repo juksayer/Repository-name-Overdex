@@ -79,10 +79,7 @@ fun BattleHistoryItem(
         }
     }
 
-    // Determine placeholder result for prototype
-    // In a real analyzer, this would be computed
-    val result = if (battle.timeline.any { it.type == com.example.overdex.model.BattleEventType.POKEMON_FAINTED }) 
-        "Victory" else "Defeat"
+    val result = "Unknown"
 
     Column(
         modifier = Modifier
@@ -97,7 +94,7 @@ fun BattleHistoryItem(
         ) {
             TerminalText(
                 text = result.uppercase(),
-                color = if (result == "Victory") TerminalGreen else TerminalPurple,
+                color = TerminalDimGreen,
                 fontSize = 16.sp
             )
             TerminalText(

@@ -63,7 +63,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             DirectoryNode("specimens", listOf(
                 ActionNode("search", InstrumentCommand.OpenSearch),
-                ActionNode("collection", InstrumentCommand.OpenCollection), // Placeholder for now
+                ActionNode("collection", InstrumentCommand.OpenCollection),
                 ActionNode("register", InstrumentCommand.AddSpecimen)
             )),
             DirectoryNode("battle", listOf(
@@ -265,7 +265,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 Move("Mud Shot", PokemonType.GROUND, 3, 9, isFast = true, 2),
                 Move("Vine Whip", PokemonType.GRASS, 5, 8, isFast = true, 2)
             )
-            
+
             val commonChargedMoves = listOf(
                 Move("Hydro Cannon", PokemonType.WATER, 80, 40, isFast = false),
                 Move("Frenzy Plant", PokemonType.GRASS, 100, 45, isFast = false),
@@ -344,12 +344,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     Log.d("OVERDEX", "Move EnergyGain = ${bubble?.energyGain}")
                 }
 
-// Assign moves based on type for some realism
-
-
-
-                // Assign moves based on type for some realism
-
                 val fastMoves = gameMasterPokemon?.fastMoves
                     ?.mapNotNull { moveId ->
                         gameMasterLoader.getMove(moveId)?.let { move ->
@@ -367,12 +361,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             )
                         }
                     }
-                    ?.ifEmpty { null }
-                    ?: run {
-                        Log.d("MOVE_FALLBACK", "FAST fallback for #$id $name")
-                        commonFastMoves.filter { it.type in mappedTypes }
-                            .ifEmpty { listOf(commonFastMoves.random()) }
-                    }
+                    ?: emptyList()
 
                 val chargedMoves = gameMasterPokemon?.chargedMoves
                     ?.mapNotNull { moveId ->
@@ -390,11 +379,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             )
                         }
                     }
-                    //?.take(3)
-                    ?.ifEmpty { null }
-                    ?: commonChargedMoves.filter { it.type in mappedTypes }
-                        .ifEmpty { listOf(commonChargedMoves.random()) }
-                        .take(2)
+                    ?: emptyList()
                 pokemonEntities.add(
                     PokemonEntity(
                         id = id,
