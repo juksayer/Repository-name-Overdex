@@ -1,6 +1,5 @@
 package com.example.overdex.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -9,7 +8,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,7 +15,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -53,7 +50,6 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -241,8 +237,6 @@ fun ODXFiShell(
 
 
     val currentState = instrumentState ?: ObservationSessionState.IDLE
-    val currentDeploymentState = deploymentState
-    val currentFrameCount = frameCount
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
 
@@ -553,8 +547,8 @@ fun ODXFiShell(
             // Instrumentation Display (Center)
             InstrumentLCD(
                 presentationState = presentationState,
-                deploymentState = currentDeploymentState,
-                frameCount = currentFrameCount,
+                deploymentState = deploymentState,
+                frameCount = frameCount,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()

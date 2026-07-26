@@ -247,8 +247,43 @@ data class PlayerTeamPresentation(
  */
 data class TimelinePresentation(
     val status: TimelineStatus = TimelineStatus.IDLE,
-    val eventCount: Int = 0
+    val eventCount: Int = 0,
+    val events: List<SemanticTimelineEvent> = emptyList()
 )
+
+/**
+ * A battle event reduced to the information required by presentation surfaces.
+ */
+data class SemanticTimelineEvent(
+    val type: SemanticTimelineEventType,
+    val actor: SemanticBattleActor,
+    val pokemonId: Int? = null,
+    val value: Int? = null,
+    val timestamp: Long
+)
+
+/**
+ * Battle-event categories exposed to the Presentation Layer.
+ */
+enum class SemanticTimelineEventType {
+    BATTLE_STARTED,
+    BATTLE_ENDED,
+    POKEMON_IDENTIFIED,
+    POKEMON_SWITCHED,
+    POKEMON_FAINTED,
+    CHARGED_MOVE_THROWN,
+    SHIELD_USED,
+    ENERGY_UPDATED
+}
+
+/**
+ * Battle participants exposed to the Presentation Layer.
+ */
+enum class SemanticBattleActor {
+    PLAYER,
+    ENEMY,
+    SYSTEM
+}
 
 /**
  * Connectivity and recording status of the timeline.
