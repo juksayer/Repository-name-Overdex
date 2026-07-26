@@ -286,7 +286,9 @@ fun ODXFiShell(
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
 
-    val presentationState = remember(currentState, pipelineStatus, battleMemory, currentMatchup, currentDecision) {
+    val timelineEventCount = battleMemory.timeline.events.size
+
+    val presentationState = remember(currentState, pipelineStatus, battleMemory, currentMatchup, currentDecision, timelineEventCount) {
         com.example.overdex.presentation.PresentationMapper.map(
             instrumentState = currentState,
             pipelineStatus = pipelineStatus,

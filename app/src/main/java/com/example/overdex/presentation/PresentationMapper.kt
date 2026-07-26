@@ -250,10 +250,38 @@ object PresentationMapper {
 
     private fun mapTimeline(battleMemory: BattleMemory?): TimelinePresentation {
         if (battleMemory == null) return TimelinePresentation()
-        
+
+        val events = battleMemory.timeline.events.map { event ->
+            SemanticTimelineEvent(
+                type = when (event.type) {
+                    BattleEventType.BATTLE_STARTED -> SemanticTimelineEventType.BATTLE_STARTED
+                    BattleEventType.BATTLE_ENDED -> SemanticTimelineEventType.BATTLE_ENDED
+                    BattleEventType.POKEMON_IDENTIFIED -> SemanticTimelineEventType.POKEMON_IDENTIFIED
+                    BattleEventType.POKEMON_SWITCHED -> SemanticTimelineEventType.POKEMON_SWITCHED
+                    BattleEventType.POKEMON_FAINTED -> SemanticTimelineEventType.POKEMON_FAINTED
+                    BattleEventType.CHARGED_MOVE_THROWN -> SemanticTimelineEventType.CHARGED_MOVE_THROWN
+                    BattleEventType.SHIELD_USED -> SemanticTimelineEventType.SHIELD_USED
+                    BattleEventType.ENERGY_UPDATED -> SemanticTimelineEventType.ENERGY_UPDATED
+                },
+                actor = when (event.actor) {
+                    BattleActor.PLAYER -> SemanticBattleActor.PLAYER
+                    BattleActor.ENEMY -> SemanticBattleActor.ENEMY
+                    BattleActor.SYSTEM -> SemanticBattleActor.SYSTEM
+                },
+                pokemonId = event.pokemonId,
+                value = event.value,
+                timestamp = event.timestamp
+            )
+        }
+
         return TimelinePresentation(
-            status = if (battleMemory.startTime > 0) TimelineStatus.RECORDING else TimelineStatus.IDLE,
-            eventCount = battleMemory.battleHistory.size
+            status = if (battleMemory.startTime > 0) {
+                TimelineStatus.RECORDING
+            } else {
+                TimelineStatus.IDLE
+            },
+            eventCount = events.size,
+            events = events
         )
     }
 }
