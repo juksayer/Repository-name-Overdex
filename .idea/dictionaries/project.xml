@@ -646,6 +646,7 @@
       <w>Piplup</w>
       <w>Plusle</w>
       <w>Poipole</w>
+      <w>Pokeball</w>
       <w>Politoed</w>
       <w>Poliwag</w>
       <w>Poliwhirl</w>
@@ -727,6 +728,7 @@
       <w>Sandyshocks</w>
       <w>Sawk</w>
       <w>Sawsbuck</w>
+      <w>Scanlines</w>
       <w>Scatterbug</w>
       <w>Sceptile</w>
       <w>Scizor</w>
@@ -996,8 +998,10 @@
       <w>empoleon</w>
       <w>farfetch'd</w>
       <w>garchomp</w>
+      <w>konami</w>
       <w>overdex</w>
       <w>pokemon</w>
+      <w>scanlines</w>
     </words>
   </dictionary>
 </component>

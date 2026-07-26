@@ -146,6 +146,7 @@ fun InstrumentButton(
 
 @Composable
 fun InstrumentLCD(
+    presentationState: com.example.overdex.presentation.PresentationState,
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
     modifier: Modifier = Modifier
@@ -551,6 +552,7 @@ fun ODXFiShell(
 
             // Instrumentation Display (Center)
             InstrumentLCD(
+                presentationState = presentationState,
                 deploymentState = currentDeploymentState,
                 frameCount = currentFrameCount,
                 modifier = Modifier
