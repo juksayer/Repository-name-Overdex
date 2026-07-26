@@ -192,7 +192,6 @@ fun PokedexApp(
                 InstrumentCommand.OpenProfile -> navController.navigate("trainer_profile")
                 InstrumentCommand.OpenTimeline -> navController.navigate("shared_timeline")
                 InstrumentCommand.OpenChat -> navController.navigate("private_chat")
-                InstrumentCommand.OpenReadme -> navController.navigate("readme")
                 InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
                 InstrumentCommand.OpenSignalObservatory -> navController.navigate("signal_observatory")
                 InstrumentCommand.OpenBattlePreview -> navController.navigate("battle_preview")
@@ -301,16 +300,7 @@ fun PokedexApp(
                 onFilterSettingsChange = { filterSettings = it }
             )
         }
-        composable("readme") {
-            ReadmeScreen(
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onStart = {}, 
-                onSelect = { /* Reserved */ },
-                onBack = { navController.popBackStack() },
-                viewModel = viewModel
-            )
-        }
+
         composable("calibration") {
             DisposableEffect(Unit) {
                 viewModel.setObservationSessionState(ObservationSessionState.CALIBRATING)

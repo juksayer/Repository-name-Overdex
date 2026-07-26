@@ -81,7 +81,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ActionNode("chat", InstrumentCommand.OpenChat)
             )),
             DirectoryNode("tools", listOf(
-                ActionNode("readme", InstrumentCommand.OpenReadme),
+
                 ActionNode("probe", InstrumentCommand.OpenAccessibilityProbe),
                 ActionNode("observatory", InstrumentCommand.OpenSignalObservatory)
             ))
