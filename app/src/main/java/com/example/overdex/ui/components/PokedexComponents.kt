@@ -162,33 +162,8 @@ fun InstrumentLCD(
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = when (deploymentState) {
-                    InstrumentDeploymentState.IDLE -> "READY"
-                    InstrumentDeploymentState.REQUESTING_PERMISSIONS -> "PERMISSIONS"
-                    InstrumentDeploymentState.READY -> "PRIMED"
-                    InstrumentDeploymentState.DEPLOYING -> "DEPLOYING"
-                    InstrumentDeploymentState.OBSERVING -> "OBSERVING"
-                    InstrumentDeploymentState.RETURNING -> "RETURNING"
-                },
-                color = TerminalGreen.copy(alpha = 0.7f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "OBSERVATION ENGINE",
-                color = TerminalGreen.copy(alpha = 0.5f),
-                fontSize = 10.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            Text(
-                text = if (deploymentState == InstrumentDeploymentState.OBSERVING) "ACTIVE ($frameCount)" else "OFFLINE",
-                color = if (deploymentState == InstrumentDeploymentState.OBSERVING) TerminalGreen else TerminalGreen.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
+
+
         }
     }
 }
