@@ -1,5 +1,9 @@
 package com.example.overdex.data.observation
 
+import com.example.overdex.model.BattleActor
+import com.example.overdex.model.BattleEvent
+import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.observation.PokemonNameObservation
 import com.example.overdex.BattleMemory
 import com.example.overdex.BattleMemoryUpdater
 import com.example.overdex.model.observation.Observation
@@ -23,5 +27,16 @@ class BattleObservationPipeline(
         
         // Forward to updater
         BattleMemoryUpdater.processObservation(observation, memory)
+        if (observation is PokemonNameObservation) {
+            memory.timeline.record(
+                BattleEvent(
+                    timestamp = observation.timestamp,
+                    type = BattleEventType.POKEMON_IDENTIFIED,
+                    actor = BattleActor.ENEMY,
+                    message = observation.species,
+                    confidence = observation.confidence
+                )
+            )
+        }
     }
 }
