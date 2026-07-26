@@ -259,6 +259,7 @@ data class SemanticTimelineEvent(
     val actor: SemanticBattleActor,
     val pokemonId: Int? = null,
     val value: Int? = null,
+    val message: String? = null,
     val timestamp: Long
 )
 

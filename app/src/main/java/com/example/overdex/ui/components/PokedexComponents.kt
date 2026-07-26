@@ -147,6 +147,10 @@ fun InstrumentLCD(
     frameCount: Long = 0,
     modifier: Modifier = Modifier
 ) {
+    val latestIdentifiedPokemon = presentationState.timeline.events
+        .lastOrNull {
+            it.type == com.example.overdex.presentation.SemanticTimelineEventType.POKEMON_IDENTIFIED
+        }
     Box(
         modifier = modifier
             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
@@ -162,7 +166,22 @@ fun InstrumentLCD(
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            latestIdentifiedPokemon?.let { event ->
+                Text(
+                    text = event.actor.name,
+                    color = TerminalGreen.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace
+                )
 
+                Text(
+                    text = event.message ?: "UNKNOWN",
+                    color = TerminalGreen,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
 
         }
     }

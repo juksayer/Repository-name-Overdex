@@ -269,6 +269,7 @@ object PresentationMapper {
                     BattleActor.SYSTEM -> SemanticBattleActor.SYSTEM
                 },
                 pokemonId = event.pokemonId,
+                message = event.message,
                 value = event.value,
                 timestamp = event.timestamp
             )

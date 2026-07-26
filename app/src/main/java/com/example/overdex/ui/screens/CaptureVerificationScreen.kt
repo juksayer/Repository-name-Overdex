@@ -22,6 +22,9 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.example.overdex.CaptureTemplateManager
+import com.example.overdex.data.observation.BattleObservationPipeline
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.PokemonNameObservation
 import com.example.overdex.data.observation.*
 import com.example.overdex.model.observation.*
 import com.example.overdex.model.observation.ObservationSessionState
@@ -125,6 +128,7 @@ fun CaptureVerificationScreen(
     var captures by remember { mutableStateOf<List<CaptureObservation>?>(null) }
     var history by remember { mutableStateOf<Map<String, List<Observation>>>(emptyMap()) }
     var pipelineStatus by remember { mutableStateOf<PipelineStatus?>(null) }
+
     var isInspectionMode by remember { mutableStateOf(false) }
     var isManualSpeciesSelection by remember { mutableStateOf(false) }
     var manualSpecies by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
@@ -133,6 +137,9 @@ fun CaptureVerificationScreen(
     var calibrationMode by remember { mutableStateOf(CalibrationMode.MOVE) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
     var showWorkspaceViewer by remember { mutableStateOf(false) }
+    var pendingBattleObservation by remember {
+        mutableStateOf<Observation?>(null)
+    }
 
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val manualNav = rememberHandheldNavigationController(
@@ -331,6 +338,15 @@ fun CaptureVerificationScreen(
                             captures = status.captures
                             history = status.results
                         }
+                        val completedSession = pipelineStatus?.session
+                        val speciesObservation = completedSession
+                            ?.history
+                            ?.get("SpeciesName")
+                            ?.let { observations ->
+                                DefaultObservationResolver().resolve(observations)
+                            } as? PokemonNameObservation
+
+                        pendingBattleObservation = speciesObservation
                     }
                 }
 
@@ -377,7 +393,17 @@ fun CaptureVerificationScreen(
         },
         viewModel = viewModel,
         pipelineStatus = pipelineStatus
-    ) {
+    ) { battleMemory ->
+
+        LaunchedEffect(pendingBattleObservation) {
+            val observation = pendingBattleObservation ?: return@LaunchedEffect
+
+            BattleObservationPipeline(battleMemory)
+                .onObservationReceived(observation)
+
+            pendingBattleObservation = null
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (captureLibrary.isNotEmpty()) {
                 AsyncImage(
@@ -385,7 +411,11 @@ fun CaptureVerificationScreen(
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,
-                    onState = { if (it is AsyncImagePainter.State.Success) imageSize = it.painter.intrinsicSize }
+                    onState = {
+                        if (it is AsyncImagePainter.State.Success) {
+                            imageSize = it.painter.intrinsicSize
+                        }
+                    }
                 )
 
                 CaptureTemplateOverlay(
@@ -398,12 +428,16 @@ fun CaptureVerificationScreen(
                     onRegionUpdate = { updatedRegion ->
                         manager.saveAdjustment(currentTemplate.name, updatedRegion)
                         currentTemplate = currentTemplate.copy(
-                            regions = currentTemplate.regions.map { if (it.id == updatedRegion.id) updatedRegion else it }
+                            regions = currentTemplate.regions.map {
+                                if (it.id == updatedRegion.id) updatedRegion else it
+                            }
                         )
                     }
                 )
-                
+
                 ObservationRegionOverlay(imageSize = imageSize)
+
+                // ...rest of your existing Box content unchanged...
 
                 if (!isInspectionMode) {
                     Box(
