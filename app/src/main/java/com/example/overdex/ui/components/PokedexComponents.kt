@@ -301,11 +301,17 @@ fun ODXFiShell(
         )
     }
 
-    LaunchedEffect(battleMemory.enemyTeam.find { it.isActive }) {
+    LaunchedEffect(
+        battleMemory.enemyTeam.find { it.isActive },
+        battleMemory.playerActivePokemon
+    ) {
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
+
         if (viewModel != null && activeEnemy != null) {
             val enemyData = viewModel.getPokemonByName(activeEnemy.species)
-            val playerData = viewModel.getPokemonByName(battleMemory.playerActivePokemon ?: "Charizard")
+            val playerData = battleMemory.playerActivePokemon?.let {
+                viewModel.getPokemonByName(it)
+            }
 
             if (enemyData != null && playerData != null) {
                 val matchupAnalysis = com.example.overdex.data.matchup.MatchupEngine.analyze(
@@ -318,12 +324,30 @@ fun ODXFiShell(
                 val decision = com.example.overdex.data.matchup.DecisionEngine.analyze(matchupAnalysis)
                 currentDecision = decision
 
-                android.util.Log.d("MATCHUP_ENGINE", "Analysis: ${matchupAnalysis.playerSpecies} vs ${matchupAnalysis.enemySpecies}")
-                android.util.Log.d("MATCHUP_ENGINE", "Advantage: ${matchupAnalysis.playerAdvantage} | Threat: ${matchupAnalysis.enemyThreatLevel}")
+                android.util.Log.d(
+                    "MATCHUP_ENGINE",
+                    "Analysis: ${matchupAnalysis.playerSpecies} vs ${matchupAnalysis.enemySpecies}"
+                )
+                android.util.Log.d(
+                    "MATCHUP_ENGINE",
+                    "Advantage: ${matchupAnalysis.playerAdvantage} | Threat: ${matchupAnalysis.enemyThreatLevel}"
+                )
 
-                android.util.Log.d("DECISION_ENGINE", "Recommendation: ${decision.recommendedAction} (Priority: ${decision.actionPriority})")
-                android.util.Log.d("DECISION_ENGINE", "Reasoning: ${decision.reasoning}")
-                android.util.Log.d("DECISION_ENGINE", "Shield Recommended: ${decision.shieldRecommended}")
+                android.util.Log.d(
+                    "DECISION_ENGINE",
+                    "Recommendation: ${decision.recommendedAction} (Priority: ${decision.actionPriority})"
+                )
+                android.util.Log.d(
+                    "DECISION_ENGINE",
+                    "Reasoning: ${decision.reasoning}"
+                )
+                android.util.Log.d(
+                    "DECISION_ENGINE",
+                    "Shield Recommended: ${decision.shieldRecommended}"
+                )
+            } else {
+                currentMatchup = null
+                currentDecision = null
             }
         } else {
             currentMatchup = null

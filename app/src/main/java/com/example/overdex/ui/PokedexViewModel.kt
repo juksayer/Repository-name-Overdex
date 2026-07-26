@@ -218,24 +218,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             Log.d("STARTUP", "1: ViewModel init")
 
-            // Battle Timeline Milestone Proof
-            val proofTimeline = BattleTimeline()
-            proofTimeline.record(BattleEvent(type = BattleEventType.BATTLE_STARTED))
-            proofTimeline.record(
-                BattleEvent(
-                    type = BattleEventType.POKEMON_IDENTIFIED,
-                    actor = BattleActor.ENEMY,
-                    pokemonId = 6,
-                )
-            )
-            proofTimeline.record(BattleEvent(type = BattleEventType.BATTLE_ENDED))
-
             val gameMasterText = gameMasterLoader.loadRawJson()
             println("GameMaster length = ${gameMasterText.length}")
 
             Log.d("STARTUP", "2: GameMaster loaded")
 
-            gameMasterLoader.testParse()
 
             Log.d("STARTUP", "3: Starting populateFullPokedex")
 

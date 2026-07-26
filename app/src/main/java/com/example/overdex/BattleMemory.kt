@@ -80,9 +80,13 @@ data class BattleMemory(
             enemyLead = enemyLead,
             playerShieldsUsed = playerShieldsUsed,
             enemyShieldsUsed = enemyShieldsUsed,
-            result = if (enemyTeam.all { !it.alive }) BattleResult.WIN else BattleResult.UNKNOWN,
-            overallConfidence = 0.9f,
-            sourcesUsed = setOf(ObservationSource.PROTOTYPE),
+            result = if (enemyTeam.isNotEmpty() && enemyTeam.all { !it.alive }) {
+                BattleResult.WIN
+            } else {
+                BattleResult.UNKNOWN
+            },
+            overallConfidence = 0.0f,
+            sourcesUsed = emptySet(),
             seenFastMoves = seenFastMoves.toMap(),
             seenChargedMoves = seenChargedMoves.toMap()
         )
