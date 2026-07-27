@@ -263,3 +263,31 @@ Ownership should be explainable in one sentence.
 If ownership requires a paragraph...
 
 ownership is probably wrong.
+
+
+
+OBSERVATION
+owns:
+  Observations
+  Evidence
+  Provenance
+  ObservationSession
+  ObservationWorkspace
+
+REFERENCE KNOWLEDGE
+owns:
+  established game facts used as evidence/context
+
+        Observation + Reference Knowledge
+                     ↓
+INTELLIGENCE
+  weighs available evidence
+  calculates Confidence
+  interprets Confidence
+                     ↓
+PRESENTATION
+  represents Confidence
+  communicates it to trainer
+
+
+The Observation Session Workspace represents the observations and supporting evidence accumulated during an active observation session.

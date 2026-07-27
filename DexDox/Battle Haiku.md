@@ -1,44 +1,56 @@
 #001 Bulbasaur
 
 The First Step
+
 Small seed, steady heart.
 Every champion begins
 With one careful leaf.
 
+
 #002 Ivysaur
 
 Patient Growth
+
 Vines pull battles close.
 Patience blooms before the storm—
 Power takes its time.
 
+
 #003 Venusaur
 
 The Bloom of Resolve
+
 Petals fall like rain.
 Frenzy Plant leaves no doubt now.
 Shields bloom far too late.
 
+
 #004 Charmander
 
 The Small Flame
+
 Tiny ember burns.
 Tomorrow hides in this flame—
 Legends start this small.
 
+
 #005 Charmeleon
 
 Tempered Fire
+
 Fire learns restraint.
 Each battle tempers the heat
 Before wings appear.
 
+
 #006 Charizard
 
 The Open Sky
+
 Sky turns orange-red.
 Blast Burn crashes from above.
 Even dragons flinch.
+
 
 #007 Squirtle
 
@@ -4518,7 +4530,9 @@ Not the smoke above.
 
 Lesson Learned: Feed what makes you stronger.
 
+
 #500 Emboar
+
 The Hearth
 
 The strongest fire
@@ -4527,7 +4541,9 @@ Not itself alone.
 
 Lesson Learned: Strength serves others first.
 
+
 #501 Oshawott
+
 The River Stone
 
 The smoothest river stone
@@ -4536,7 +4552,9 @@ Only patient water.
 
 Lesson Learned: Character is shaped gently, over time.
 
+
 #502 Dewott
+
 The Practice Blade
 
 The wooden sword knows
@@ -4545,7 +4563,9 @@ From today's restraint.
 
 Lesson Learned: Discipline prepares what talent cannot.
 
+
 #503 Samurott
+
 The Crossing
 
 The broadest river
@@ -4554,7 +4574,9 @@ Only steady strokes.
 
 Lesson Learned: Resolve carries us farther than emotion.
 
+
 #504 Patrat
+
 The Lookout
 
 The watchtower sees
@@ -4563,7 +4585,9 @@ Without chasing either.
 
 Lesson Learned: Awareness is not anxiety.
 
+
 #505 Watchog
+
 The Night Watch
 
 The lantern stays lit
@@ -4572,7 +4596,9 @@ Because someone may need it.
 
 Lesson Learned: Vigilance is an act of care.
 
+
 #506 Lillipup
+
 The Companion
 
 Every faithful friend
@@ -4581,7 +4607,9 @@ But a welcome heart.
 
 Lesson Learned: Loyalty builds belonging.
 
+
 #507 Herdier
+
 The Workshop
 
 The old carpenter
@@ -4590,7 +4618,9 @@ Trusting it to time.
 
 Lesson Learned: Care honors what will endure.
 
+
 #508 Stoutland
+
 The Return
 
 Some roads only make
@@ -4599,7 +4629,9 @@ Beside an old friend.
 
 Lesson Learned: The journey is remembered through companionship.
 
+
 #509 Purrloin
+
 The Pocket
 
 The cleverest thief
@@ -4608,7 +4640,9 @@ To leave trust intact.
 
 Lesson Learned: Wisdom knows where to stop.
 
+
 #510 Liepard
+
 The Shadow's Edge
 
 Moonlight needs no claws
@@ -4617,7 +4651,9 @@ Who walks there tonight.
 
 Lesson Learned: Presence speaks before action.
 
+
 #511 Pansage
+
 The Garden
 
 The smallest green leaf
@@ -4626,7 +4662,9 @@ Without hesitation.
 
 Lesson Learned: Growth is an instinct worth trusting.
 
+
 #512 Simisage
+
 The Wild Branch
 
 The forest seldom
@@ -4635,7 +4673,9 @@ Neither should your life.
 
 Lesson Learned: Not every worthy path is orderly.
 
+
 #513 Pansear
+
 The Campfire
 
 The first warming flame
@@ -4644,7 +4684,9 @@ One story at a time.
 
 Lesson Learned: Hospitality begins with warmth.
 
+
 #514 Simisear
+
 The Bonfire
 
 The tallest fire
@@ -4653,7 +4695,9 @@ Not merely impress.
 
 Lesson Learned: Greatness serves before it dazzles.
 
+
 #515 Panpour
+
 The Cup
 
 Every drop of rain
@@ -4662,7 +4706,9 @@ Is worth falling for.
 
 Lesson Learned: Small kindnesses are never wasted.
 
+
 #516 Simipour
+
 The Spring
 
 The clearest water
@@ -4671,7 +4717,9 @@ The river below.
 
 Lesson Learned: Good things need no unnecessary haste.
 
+
 #517 Munna
+
 The Dream
 
 Every quiet dream
@@ -4680,7 +4728,9 @@ Inside sleeping hearts.
 
 Lesson Learned: Imagination begins before intention.
 
+
 #518 Musharna
+
 The Dawn
 
 Morning gently asks
@@ -4689,7 +4739,9 @@ Not all answer yes.
 
 Lesson Learned: Choose your dreams as carefully as your goals.
 
+
 #519 Pidove
+
 The Letter
 
 Every bird returns
@@ -4698,7 +4750,9 @@ It brings remembered roads.
 
 Lesson Learned: Home is something we practice returning to.
 
+
 #520 Tranquill
+
 The Rooftop
 
 The city still hears
@@ -4707,7 +4761,9 @@ Above all the noise.
 
 Lesson Learned: Peace is found, not granted.
 
+
 #521 Unfezant
+
 The Parade
 
 The brightest feathers
@@ -4716,7 +4772,9 @@ Earned through daily flight.
 
 Lesson Learned: Character outlives appearance.
 
+
 #522 Blitzle
+
 The Flash
 
 Lightning sketches paths
@@ -4725,7 +4783,9 @@ Yet still lights the way.
 
 Lesson Learned: Even brief moments can illuminate a lifetime.
 
+
 #523 Zebstrika
+
 The Storm Runner
 
 The storm races on.
@@ -4734,7 +4794,9 @@ Whether to follow.
 
 Lesson Learned: Speed should serve direction.
 
+
 #524 Roggenrola
+
 The Pebble
 
 Mountains patiently
@@ -4743,7 +4805,9 @@ That helped lift them high.
 
 Lesson Learned: Great achievements are built from small contributions.
 
+
 #525 Boldore
+
 The Quarry
 
 The mason sees walls.
@@ -4752,7 +4816,9 @@ The statue within.
 
 Lesson Learned: Vision transforms effort into purpose.
 
+
 #526 Gigalith
+
 The Cathedral
 
 Stone stacked upon stone
@@ -4761,7 +4827,9 @@ Place where echoes pray.
 
 Lesson Learned: Lasting things are built deliberately.
 
+
 #527 Woobat
+
 The Cave
 
 The darkest cavern
@@ -4770,7 +4838,9 @@ Where light never could.
 
 Lesson Learned: Difficulty refines awareness.
 
+
 #528 Swoobat
+
 The Heartbeat
 
 Love often arrives
@@ -4779,7 +4849,9 @@ Learn to recognize it.
 
 Lesson Learned: Some truths are felt before understood.
 
+
 #529 Drilbur
+
 The Tunnel
 
 Every hidden path
@@ -4788,7 +4860,9 @@ Refusing to stop.
 
 Lesson Learned: Persistence discovers possibilities.
 
+
 #530 Excadrill
+
 The Bedrock
 
 The deepest tunnel
@@ -4797,7 +4871,9 @@ One patient strike at a time.
 
 Lesson Learned: True progress is measured beneath the surface.
 
+
 #531 Audino
+
 The Listening
 
 The gentlest healer
@@ -4806,7 +4882,9 @@ And listens longer.
 
 Lesson Learned: Understanding begins with listening.
 
+
 #532 Timburr
+
 The Beam
 
 One rough timber held
@@ -4815,7 +4893,9 @@ Roof another trusts.
 
 Lesson Learned: Every burden can become a shelter.
 
+
 #533 Gurdurr
+
 The Bridge
 
 Every sturdy bridge
@@ -4824,7 +4904,9 @@ Refused to give up.
 
 Lesson Learned: Persistence turns obstacles into pathways.
 
+
 #534 Conkeldurr
+
 The Mason
 
 The oldest builder
@@ -4833,7 +4915,9 @@ Against tomorrow.
 
 Lesson Learned: Build for those you'll never meet.
 
+
 #535 Tympole
+
 The Ripple Song
 
 The smallest chorus
@@ -4842,7 +4926,9 @@ Morning before dawn.
 
 Lesson Learned: Many quiet voices become something beautiful.
 
+
 #536 Palpitoad
+
 The Rain Drum
 
 Before storms arrive
@@ -4851,7 +4937,9 @@ How the raindrops sound.
 
 Lesson Learned: Preparation often feels like intuition.
 
+
 #537 Seismitoad
+
 The Earthbeat
 
 Deep beneath the soil
@@ -4860,7 +4948,9 @@ Mountains standing tall.
 
 Lesson Learned: Stability comes from unseen foundations.
 
+
 #538 Throh
+
 The Mat
 
 Every throw begins
@@ -4869,7 +4959,9 @@ Inside patient minds.
 
 Lesson Learned: Victory begins before action.
 
+
 #539 Sawk
+
 The Bow
 
 Before every match
@@ -4878,7 +4970,9 @@ To lower his head.
 
 Lesson Learned: Respect sharpens skill.
 
+
 #540 Sewaddle
+
 The Needleleaf
 
 One careful stitch joins
@@ -4887,7 +4981,9 @@ They belonged together.
 
 Lesson Learned: Creation often begins with connection.
 
+
 #541 Swadloon
+
 The Blanket
 
 The quiet cocoon
@@ -4896,7 +4992,9 @@ For needing the rain.
 
 Lesson Learned: Rest is part of growing.
 
+
 #542 Leavanny
+
 The Weaver
 
 Every loving hand
@@ -4905,7 +5003,9 @@ Torn than yesterday.
 
 Lesson Learned: Kindness is skilled work.
 
+
 #543 Venipede
+
 The First Step
 
 One hundred small feet
@@ -4914,7 +5014,9 @@ Only one first step.
 
 Lesson Learned: Big goals are walked, not leapt.
 
+
 #544 Whirlipede
+
 The Wheel
 
 The patient wheel turns.
@@ -4923,7 +5025,9 @@ It prepares the road.
 
 Lesson Learned: Progress is not always visible.
 
+
 #545 Scolipede
+
 The Charge
 
 When the moment comes,
@@ -4932,7 +5036,9 @@ Become one decision.
 
 Lesson Learned: Preparation gives courage its footing.
 
+
 #546 Cottonee
+
 The Dandelion
 
 The wandering seed
@@ -4941,7 +5047,9 @@ Only where to land.
 
 Lesson Learned: Trust the journey, not the forecast.
 
+
 #547 Whimsicott
+
 The Breeze
 
 The playful wind knows
@@ -4950,7 +5058,9 @@ Too serious to bend.
 
 Lesson Learned: Joy is wiser than it first appears.
 
+
 #548 Petilil
+
 The Bud
 
 No flower worries
@@ -4959,7 +5069,9 @@ It simply unfolds.
 
 Lesson Learned: Become who you were meant to be.
 
+
 #549 Lilligant
+
 The Dance
 
 Every graceful step
@@ -4968,7 +5080,9 @@ Nobody applauded.
 
 Lesson Learned: Beauty is practiced courage.
 
+
 #550 Basculin
+
 The Rapids
 
 Some rivers demand
@@ -4977,7 +5091,9 @@ Was never an option.
 
 Lesson Learned: Resilience is sometimes choosing motion.
 
+
 #551 Sandile
+
 The Smile
 
 The brightest smile hides
@@ -4986,7 +5102,9 @@ The next three footsteps.
 
 Lesson Learned: Never mistake playfulness for carelessness.
 
+
 #552 Krokorok
+
 The Dunes
 
 Every shifting dune
@@ -4995,7 +5113,9 @@ Without becoming it.
 
 Lesson Learned: Experience informs. It does not imprison.
 
+
 #553 Krookodile
+
 The Hunter's Shade
 
 The patient hunter
@@ -5004,7 +5124,9 @@ Wait for the right step.
 
 Lesson Learned: Discipline outlasts impulse.
 
+
 #554 Darumaka
+
 The Ember's Laugh
 
 One tiny ember
@@ -5013,7 +5135,9 @@ Simply by burning.
 
 Lesson Learned: Optimism is contagious.
 
+
 #555 Darmanitan
+
 The Furnace
 
 The hottest fire
@@ -5022,7 +5146,9 @@ Or consumes the forge.
 
 Lesson Learned: Passion requires direction.
 
+
 #556 Maractus
+
 The Bloom
 
 The desert flower
@@ -5031,7 +5157,9 @@ Places to blossom.
 
 Lesson Learned: Flourish where others see impossibility.
 
+
 #557 Dwebble
+
 The Borrowed Home
 
 The smallest shelter
@@ -5040,7 +5168,9 @@ When storms gather near.
 
 Lesson Learned: Appreciate what protects you.
 
+
 #558 Crustle
+
 The Burden
 
 The heaviest stone
@@ -5049,7 +5179,9 @@ If carried with purpose.
 
 Lesson Learned: Responsibility gives weight meaning.
 
+
 #559 Scraggy
+
 The Belt
 
 The little fighter
@@ -5058,7 +5190,9 @@ And squares up again.
 
 Lesson Learned: Confidence often starts as determination.
 
+
 #560 Scrafty
+
 The Alley
 
 Respect isn't won
@@ -5067,7 +5201,9 @@ It's knowing when not to.
 
 Lesson Learned: Strength without restraint becomes weakness.
 
+
 #561 Sigilyph
+
 The Sky Glyph
 
 The oldest symbols
@@ -5076,7 +5212,9 @@ Of those who look up.
 
 Lesson Learned: Mystery is not a problem to solve, but an invitation.
 
+
 #562 Yamask
+
 The Mask
 
 The face that you wear
@@ -5085,7 +5223,9 @@ Not who you'll become.
 
 Lesson Learned: The past deserves remembrance, not obedience.
 
+
 #563 Cofagrigus
+
 The Tomb
 
 Every ancient door
@@ -5094,7 +5234,9 @@ It guards forgotten names.
 
 Lesson Learned: Honor what came before, without living there.
 
+
 #564 Tirtouga
+
 The Shore
 
 The tide always leaves
@@ -5103,7 +5245,9 @@ For those walking slow.
 
 Lesson Learned: Curiosity rewards patience.
 
+
 #565 Carracosta
+
 The Reef
 
 The oldest turtle
@@ -5112,7 +5256,9 @@ Yet remains itself.
 
 Lesson Learned: Adapt without surrendering yourself.
 
+
 #566 Archen
+
 The Leap
 
 Before there was flight,
@@ -5121,7 +5267,9 @@ Falling wasn't all.
 
 Lesson Learned: Every breakthrough begins as a risk.
 
+
 #567 Archeops
+
 The Wind
 
 The mountain falcon
@@ -5130,7 +5278,9 @@ It watches farther.
 
 Lesson Learned: Perspective changes every decision.
 
+
 #568 Trubbish
+
 The Heap
 
 Even broken things
@@ -5139,7 +5289,9 @@ If returned with care.
 
 Lesson Learned: Nothing is beyond redemption.
 
+
 #569 Garbodor
+
 The Landfill
 
 The world quietly
@@ -5148,7 +5300,9 @@ Back into our hands.
 
 Lesson Learned: We eventually inherit what we leave behind.
 
+
 #570 Zorua
+
 The Reflection
 
 Every disguise hides
@@ -5157,7 +5311,9 @@ Because truth is dear.
 
 Lesson Learned: Vulnerability is earned.
 
+
 #571 Zoroark
+
 The Illusion
 
 The finest illusion
@@ -5166,7 +5322,9 @@ Only what they see.
 
 Lesson Learned: Identity survives misunderstanding.
 
+
 #572 Minccino
+
 The Dustcloth
 
 The smallest kindness
@@ -5175,7 +5333,9 @@ No one thought to look.
 
 Lesson Learned: Care is revealed in little things.
 
+
 #573 Cinccino
+
 The Quilt
 
 Every tidy home
@@ -5184,7 +5344,9 @@ By loving habits.
 
 Lesson Learned: Comfort is created, not found.
 
+
 #574 Gothita
+
 The Window
 
 One curious child
@@ -5193,7 +5355,9 @@ And still find wonder.
 
 Lesson Learned: Curiosity outshines fear.
 
+
 #575 Gothorita
+
 The Eclipse
 
 The moon hides the sun,
@@ -5202,7 +5366,9 @@ Time will come again.
 
 Lesson Learned: Your season will return.
 
+
 #576 Gothitelle
+
 The Observatory
 
 The patient stars tell
@@ -5211,7 +5377,9 @@ Only where they are.
 
 Lesson Learned: Wisdom offers direction, not decisions.
 
+
 #577 Solosis
+
 The First Cell
 
 The smallest answer
@@ -5220,7 +5388,9 @@ Nobody sees yet.
 
 Lesson Learned: Great ideas start quietly.
 
+
 #578 Duosion
+
 The Dialogue
 
 Two voices became
@@ -5229,7 +5399,9 @@ By listening first.
 
 Lesson Learned: Understanding grows between minds.
 
+
 #579 Reuniclus
+
 The Mind
 
 The wisest thinkers
@@ -5238,7 +5410,9 @@ For one more question.
 
 Lesson Learned: Certainty is rarely the end of learning.
 
+
 #580 Ducklett
+
 The Pond
 
 Every calm morning
@@ -5247,8 +5421,10 @@ Were learning to rest.
 
 Lesson Learned: Peace follows patience.
 
+
 #581 Swanna
-The Wake
+
+he Wake
 
 The graceful swan leaves
 Only ripples in the lake—
@@ -5256,7 +5432,9 @@ Never proof of pride.
 
 Lesson Learned: Let your work speak after you've passed.
 
+
 #582 Vanillite
+
 The Snowflake
 
 No winter morning
@@ -5265,7 +5443,9 @@ Perfect snowflake twice.
 
 Lesson Learned: Uniqueness is nature's habit.
 
+
 #583 Vanillish
+
 The Frost
 
 The quietest frost
@@ -5274,7 +5454,9 @@ Before anyone looks.
 
 Lesson Learned: Gentle change is still change.
 
+
 #584 Vanilluxe
+
 The Winter Sky
 
 Snow never argues
@@ -5283,7 +5465,9 @@ It simply falls now.
 
 Lesson Learned: Live the season you're given.
 
+
 #585 Deerling
+
 The Turning
 
 Every changing leaf
@@ -5292,7 +5476,9 @@ Through every season.
 
 Lesson Learned: Growth includes transformation.
 
+
 #586 Sawsbuck
+
 The Forest King
 
 The oldest antlers
@@ -5301,7 +5487,9 @@ Without bending low.
 
 Lesson Learned: Maturity wears its history with grace.
 
+
 #587 Emolga
+
 The Glide
 
 The smallest leap still
@@ -5310,7 +5498,9 @@ To teach it the rest.
 
 Lesson Learned: Courage begins before certainty.
 
+
 #588 Karrablast
+
 The Challenge
 
 Steel is sharpened where
@@ -5319,7 +5509,9 @@ To make each other better.
 
 Lesson Learned: A worthy rival is a rare gift.
 
+
 #589 Escavalier
+
 The Lance
 
 Honor rides ahead
@@ -5328,7 +5520,9 @@ Ever finds its mark.
 
 Lesson Learned: Character leads action.
 
+
 #590 Foongus
+
 The Decoy
 
 Not every bright thing
@@ -5337,7 +5531,9 @@ To welcome your hand.
 
 Lesson Learned: Curiosity needs discernment.
 
+
 #591 Amoonguss
+
 The Invitation
 
 Not every welcome
@@ -5346,7 +5542,9 @@ Look twice before trust.
 
 Lesson Learned: Wisdom greets kindly, but enters carefully.
 
+
 #592 Frillish
+
 The Tide
 
 The sea remembers
@@ -5355,7 +5553,9 @@ It could hold the waves.
 
 Lesson Learned: Control is always temporary.
 
+
 #593 Jellicent
+
 The Deep
 
 The quiet ocean
@@ -5364,7 +5564,9 @@ Only patience dives.
 
 Lesson Learned: Depth rewards those who refuse to hurry.
 
+
 #594 Alomomola
+
 The Current
 
 The strongest current
@@ -5373,7 +5575,9 @@ Safely into port.
 
 Lesson Learned: Compassion is a kind of strength.
 
+
 #595 Joltik
+
 The Spark
 
 The tiniest spark
@@ -5382,7 +5586,9 @@ Hidden in the clouds.
 
 Lesson Learned: Never underestimate small beginnings.
 
+
 #596 Galvantula
+
 The Web
 
 Every careful thread
@@ -5391,7 +5597,9 @@ To stand all alone.
 
 Lesson Learned: The strongest networks are woven patiently.
 
+
 #597 Ferroseed
+
 The Seedpod
 
 The hardest shell keeps
@@ -5400,7 +5608,9 @@ Through one bitter frost.
 
 Lesson Learned: Protection serves growth, not fear.
 
+
 #598 Ferrothorn
+
 The Hedge
 
 The oldest garden
@@ -5409,7 +5619,9 @@ Protect what could bloom.
 
 Lesson Learned: Boundaries allow kindness to flourish.
 
+
 #599 Klink
+
 The Gear
 
 One turning gear knows
@@ -5418,7 +5630,9 @@ Without every tooth.
 
 Lesson Learned: Every role matters.
 
+
 #600 Klang
+
 The Machine
 
 The finest engines
@@ -5427,7 +5641,9 @@ Each part keeps its time.
 
 Lesson Learned: Harmony outperforms haste.
 
+
 #601 Klinklang
+
 The Clock
 
 The oldest clock keeps
@@ -5436,7 +5652,9 @@ Without looking back.
 
 Lesson Learned: Consistency builds trust.
 
+
 #602 Tynamo
+
 The Current
 
 Even tiny streams
@@ -5445,7 +5663,9 @@ The waiting ocean.
 
 Lesson Learned: Small beginnings still belong to great journeys.
 
+
 #603 Eelektrik
+
 The Wire
 
 Power travels where
@@ -5454,7 +5674,9 @@ Long after sparks fade.
 
 Lesson Learned: Lasting strength depends on unseen links.
 
+
 #604 Eelektross
+
 The Storm
 
 The lightning chooses
@@ -5463,7 +5685,9 @@ Only where to fall.
 
 Lesson Learned: Great power owes nothing to pride.
 
+
 #605 Elgyem
+
 The Signal
 
 The distant signal
@@ -5471,6 +5695,7 @@ Asked no one to understand—
 Only to listen.
 
 Lesson Learned: Curiosity begins with attention.
+
 
 #606 Beheeyem
 
@@ -5484,6 +5709,7 @@ Lesson Learned
 
 Distance is measured in more than miles.
 
+
 #607 Litwick
 
 Field Note
@@ -5496,6 +5722,7 @@ Lesson Learned
 
 Not every light leads home.
 
+
 #608 Lampent
 
 Field Note
@@ -5507,6 +5734,7 @@ Another beginning.
 Lesson Learned
 
 Transitions deserve respect.
+
 
 #609 Chandelure
 
@@ -5521,6 +5749,7 @@ Lesson Learned
 Some things illuminate.
 Others merely consume.
 
+
 #610 Axew
 
 Field Note
@@ -5532,6 +5761,7 @@ Patience grows an edge.
 Lesson Learned
 
 Small beginnings still point forward.
+
 
 #611 Fraxure
 
@@ -5545,6 +5775,7 @@ Lesson Learned
 
 Discipline leaves a recognizable sound.
 
+
 #612 Haxorus
 
 Field Note
@@ -5556,6 +5787,7 @@ Long before it must.
 Lesson Learned
 
 Mastery is measured by restraint.
+
 
 #613 Cubchoo
 
@@ -5569,6 +5801,7 @@ Lesson Learned
 
 Embarrassment rarely lasts as long as kindness.
 
+
 #614 Beartic
 
 Field Note
@@ -5580,6 +5813,7 @@ Stand where time stands still.
 Lesson Learned
 
 Great strength can also carry great age.
+
 
 #615 Cryogonal
 
@@ -5594,6 +5828,7 @@ Lesson Learned
 Experience repeats.
 Journeys do not.
 
+
 #616 Shelmet
 
 Field Note
@@ -5605,6 +5840,7 @@ Growth asks us to leave.
 Lesson Learned
 
 Protection should prepare you for freedom.
+
 
 #617 Accelgor
 
@@ -5618,6 +5854,7 @@ Lesson Learned
 
 Speed serves purpose, not ego.
 
+
 #618 Stunfisk
 
 Field Note
@@ -5629,6 +5866,7 @@ Wait without hurry.
 Lesson Learned
 
 You don't have to stand out to be effective.
+
 
 #619 Mienfoo
 
@@ -5642,6 +5880,7 @@ Lesson Learned
 
 Practice is invisible until it isn't.
 
+
 #620 Mienshao
 
 Field Note
@@ -5653,6 +5892,7 @@ Peace sharpens the soul.
 Lesson Learned
 
 Control is the highest form of strength.
+
 
 #621 Druddigon
 
@@ -5666,6 +5906,7 @@ Lesson Learned
 
 Not every guardian seeks recognition.
 
+
 #622 Golett
 
 Field Note
@@ -5677,6 +5918,7 @@ Duty outlives time.
 Lesson Learned
 
 Purpose can survive the one who began it.
+
 
 #623 Golurk
 
@@ -5690,6 +5932,7 @@ Lesson Learned
 
 Great power is often carrying someone else's future.
 
+
 #624 Pawniard
 
 Field Note
@@ -5701,6 +5944,7 @@ Earns another dawn.
 Lesson Learned
 
 Character is forged one decision at a time.
+
 
 #625 Bisharp
 
@@ -5714,6 +5958,7 @@ Lesson Learned
 
 Authority is responsibility made visible.
 
+
 #626 Bouffalant
 
 Field Note
@@ -5725,6 +5970,7 @@ Walk with gratitude.
 Lesson Learned
 
 Strength is inherited, but character is chosen.
+
 
 #627 Rufflet
 
@@ -5738,6 +5984,7 @@ Lesson Learned
 
 Courage is taking flight before certainty arrives.
 
+
 #628 Braviary
 
 Field Note
@@ -5746,7 +5993,7 @@ A cry fills the sky;
 True leaders are recognized
 Long before they're seen.
 
-Lesson Learned
+
 #628 Braviary (Revised)
 
 Field Note
@@ -5761,6 +6008,7 @@ Conviction is acting before hesitation becomes habit.
 
 Integrity carries farther than a loud voice.
 
+
 #629 Vullaby
 
 Field Note
@@ -5772,6 +6020,7 @@ Can become shelter.
 Lesson Learned
 
 Resourcefulness begins where pride ends.
+
 
 #630 Mandibuzz
 
@@ -5785,6 +6034,7 @@ Lesson Learned
 
 Wisdom often begins with accepting reality.
 
+
 #631 Heatmor
 
 Field Note
@@ -5796,6 +6046,7 @@ Hunger teaches focus.
 Lesson Learned
 
 Purpose concentrates scattered effort.
+
 
 #632 Durant
 
@@ -5809,6 +6060,7 @@ Lesson Learned
 
 Consistency outlasts intensity.
 
+
 #633 Deino
 
 Field Note
@@ -5820,6 +6072,7 @@ Others never see.
 Lesson Learned
 
 Growth often begins in uncertainty.
+
 
 #634 Zweilous
 
@@ -5833,6 +6086,7 @@ Lesson Learned
 
 Internal conflict doesn't prevent growth—it often accompanies it.
 
+
 #635 Hydreigon
 
 Field Note
@@ -5844,6 +6098,7 @@ When moving as one.
 Lesson Learned
 
 Great power comes from directing conflict, not eliminating it.
+
 
 #636 Larvesta
 
@@ -5857,6 +6112,7 @@ Lesson Learned
 
 Transformation begins long before anyone notices.
 
+
 #637 Volcarona
 
 Field Note
@@ -5868,6 +6124,7 @@ How to carry dawn.
 Lesson Learned
 
 Greatness is measured by what you illuminate for others.
+
 
 #638 Cobalion
 
@@ -5881,6 +6138,7 @@ Lesson Learned
 
 Leadership is often quiet courage.
 
+
 #639 Terrakion
 
 Field Note
@@ -5892,6 +6150,7 @@ By breaking upon them.
 Lesson Learned
 
 Resolve is strength that doesn't need to chase conflict.
+
 
 #640 Virizion
 
@@ -5905,6 +6164,7 @@ Lesson Learned
 
 Gentleness and resilience are not opposites.
 
+
 #641 Tornadus
 
 Field Note
@@ -5916,6 +6176,7 @@ Where the whirlwind danced.
 Lesson Learned
 
 Influence often outlasts presence.
+
 
 #642 Thundurus
 
@@ -5929,6 +6190,7 @@ Lesson Learned
 
 Visibility brings responsibilities unseen from below.
 
+
 #643 Reshiram
 
 Field Note
@@ -5940,6 +6202,7 @@ But reveal your own.
 Lesson Learned
 
 Truth is illumination, not domination.
+
 
 #644 Zekrom
 
@@ -5953,6 +6216,7 @@ Lesson Learned
 
 Ideals gain meaning only when they become action.
 
+
 #645 Landorus
 
 Field Note
@@ -5964,6 +6228,7 @@ Beneath dirty hands.
 Lesson Learned
 
 Prosperity is cultivated, not discovered.
+
 
 #646 Kyurem
 
@@ -5977,6 +6242,7 @@ Lesson Learned
 
 Even what feels lost may only be waiting to awaken.
 
+
 #647 Keldeo
 
 Field Note
@@ -5988,6 +6254,7 @@ One chose to begin.
 Lesson Learned
 
 Every master was once the smallest companion.
+
 
 #648 Meloetta
 
@@ -6001,6 +6268,7 @@ Lesson Learned
 
 Beauty endures when it carries sincerity.
 
+
 #649 Genesect
 
 Field Note
@@ -6012,6 +6280,7 @@ What was left behind.
 Lesson Learned
 
 Progress is strongest when it remembers its origins.
+
 
 #650 Chespin
 
@@ -6025,6 +6294,7 @@ Lesson Learned
 
 Kindness is strongest when it can protect itself.
 
+
 #651 Quilladin
 
 Field Note
@@ -6036,6 +6306,7 @@ Joy need not be quiet.
 Lesson Learned
 
 Confidence doesn't always arrive gracefully.
+
 
 #652 Chesnaught
 
@@ -6049,6 +6320,7 @@ Lesson Learned
 
 Strength fulfills its purpose when it protects others.
 
+
 #653 Fennekin
 
 Field Note
@@ -6060,6 +6332,7 @@ Warmth before wisdom.
 Lesson Learned
 
 Every craft begins with wonder.
+
 
 #654 Braixen
 
@@ -6073,6 +6346,7 @@ Lesson Learned
 
 Experience is written in the mistakes we survive.
 
+
 #655 Delphox
 
 Field Note
@@ -6085,7 +6359,7 @@ Lesson Learned
 
 Knowledge without compassion becomes destruction.
 
-Kalos, Part II
+
 #656 Froakie
 
 Field Note
@@ -6097,6 +6371,7 @@ Willing to drift first.
 Lesson Learned
 
 Adaptability begins with curiosity.
+
 
 #657 Frogadier
 
@@ -6110,6 +6385,7 @@ Lesson Learned
 
 Beauty isn't diminished by being temporary.
 
+
 #658 Greninja
 
 Field Note
@@ -6121,6 +6397,7 @@ Its deepest current.
 Lesson Learned
 
 Humility often conceals extraordinary ability.
+
 
 #659 Bunnelby
 
@@ -6134,6 +6411,7 @@ Lesson Learned
 
 Great works begin with ordinary effort.
 
+
 #660 Diggersby
 
 Field Note
@@ -6145,6 +6423,7 @@ Without ever seeing.
 Lesson Learned
 
 Much of civilization rests on unseen labor.
+
 
 #661 Fletchling
 
@@ -6158,6 +6437,7 @@ Lesson Learned
 
 Confidence grows from having somewhere to return.
 
+
 #662 Fletchinder
 
 Field Note
@@ -6169,6 +6449,7 @@ Where not to wander.
 Lesson Learned
 
 Discipline gives passion direction.
+
 
 #663 Talonflame
 
@@ -6182,6 +6463,7 @@ Lesson Learned
 
 Ambition should never lose sight of its roots.
 
+
 #664 Scatterbug
 
 Field Note
@@ -6193,6 +6475,7 @@ Though no map exists.
 Lesson Learned
 
 Purpose often arrives before understanding.
+
 
 #665 Spewpa
 
@@ -6206,6 +6489,7 @@ Lesson Learned
 
 Growth is often invisible while it matters most.
 
+
 #666 Vivillon
 
 Field Note
@@ -6217,6 +6501,7 @@ Of those who listen.
 Lesson Learned
 
 Where you've been becomes part of who you are.
+
 
 #667 Litleo
 
@@ -6230,6 +6515,7 @@ Lesson Learned
 
 Confidence begins as a whisper.
 
+
 #668 Pyroar
 
 Field Note
@@ -6241,6 +6527,7 @@ Respect recognized one.
 Lesson Learned
 
 Authority is granted; leadership is earned.
+
 
 #669 Flabébé
 
@@ -6254,6 +6541,7 @@ Lesson Learned
 
 Great change often begins unnoticed.
 
+
 #670 Floette
 
 Field Note
@@ -6265,6 +6553,7 @@ Grace has quiet roots.
 Lesson Learned
 
 Flexibility is not weakness.
+
 
 #671 Florges
 
@@ -6278,13 +6567,6 @@ Lesson Learned
 
 The greatest caretakers leave no monument—only life.
 
-I have to stop and appreciate Florges for a second.
-
-Gardens remember
-Every gentle hand that chose
-To bloom instead of rule.
-
-That feels like something carved into a weathered stone in an old botanical garden.
 
 #672 Skiddo
 
@@ -6298,6 +6580,7 @@ Lesson Learned
 
 Steady progress rarely announces itself.
 
+
 #673 Gogoat
 
 Field Note
@@ -6309,6 +6592,7 @@ After looking down.
 Lesson Learned
 
 Perseverance is renewed with every step.
+
 
 #674 Pancham
 
@@ -6322,6 +6606,7 @@ Lesson Learned
 
 Determination deserves encouragement.
 
+
 #675 Pangoro
 
 Field Note
@@ -6333,6 +6618,7 @@ Better than anger.
 Lesson Learned
 
 Real strength knows when not to strike.
+
 
 #676 Furfrou
 
@@ -6346,6 +6632,7 @@ Lesson Learned
 
 Appearance changes more often than character.
 
+
 #677 Espurr
 
 Field Note
@@ -6357,6 +6644,7 @@ Choosing silence first.
 Lesson Learned
 
 Self-control is often invisible.
+
 
 #678 Meowstic
 
@@ -6370,6 +6658,7 @@ Lesson Learned
 
 Composure is strength directed inward.
 
+
 #679 Honedge
 
 Field Note
@@ -6381,6 +6670,7 @@ Every tool keeps time.
 Lesson Learned
 
 We inherit more than we realize.
+
 
 #680 Doublade
 
@@ -6394,6 +6684,7 @@ Lesson Learned
 
 Partnership multiplies strength.
 
+
 #681 Aegislash
 
 Field Note
@@ -6405,6 +6696,7 @@ Wisdom knows both roles.
 Lesson Learned
 
 Leadership requires knowing when to defend and when to act.
+
 
 #682 Spritzee
 
@@ -6418,6 +6710,7 @@ Lesson Learned
 
 Gentle acts reach farther than we expect.
 
+
 #683 Aromatisse
 
 Field Note
@@ -6429,6 +6722,7 @@ Presence has a scent.
 Lesson Learned
 
 Character is often noticed before words.
+
 
 #684 Swirlix
 
@@ -6442,6 +6736,7 @@ Lesson Learned
 
 Delight rarely arrives announced.
 
+
 #685 Slurpuff
 
 Field Note
@@ -6453,6 +6748,7 @@ Someone worth feeding.
 Lesson Learned
 
 Love is often expressed through ordinary care.
+
 
 #686 Inkay
 
@@ -6466,6 +6762,7 @@ Lesson Learned
 
 Perspective changes possibilities.
 
+
 #687 Malamar
 
 Field Note
@@ -6477,6 +6774,7 @@ Behind their own gaze.
 Lesson Learned
 
 Influence without humility can become blindness.
+
 
 #688 Binacle
 
@@ -6490,6 +6788,7 @@ Lesson Learned
 
 Cooperation begins before agreement.
 
+
 #689 Barbaracle
 
 Field Note
@@ -6501,6 +6800,7 @@ None claiming the sea.
 Lesson Learned
 
 Unity is measured by purpose, not sameness.
+
 
 #690 Skrelp
 
@@ -6514,6 +6814,7 @@ Lesson Learned
 
 Sometimes the safest path is not being noticed.
 
+
 #691 Dragalge
 
 Field Note
@@ -6525,6 +6826,7 @@ Things we should respect.
 Lesson Learned
 
 Never mistake elegance for harmlessness.
+
 
 #692 Clauncher
 
@@ -6538,6 +6840,7 @@ Lesson Learned
 
 Preparation makes decisive action possible.
 
+
 #693 Clawitzer
 
 Field Note
@@ -6549,6 +6852,7 @@ Patiently gathering.
 Lesson Learned
 
 Great power is accumulated, not borrowed.
+
 
 #694 Helioptile
 
@@ -6562,6 +6866,7 @@ Lesson Learned
 
 Gather your strength before you spend it.
 
+
 #695 Heliolisk
 
 Field Note
@@ -6573,6 +6878,7 @@ Where comfort cannot.
 Lesson Learned
 
 Hard places produce resilient hearts.
+
 
 #696 Tyrunt
 
@@ -6586,6 +6892,7 @@ Lesson Learned
 
 Confidence has a beginning.
 
+
 #697 Tyrantrum
 
 Field Note
@@ -6597,6 +6904,7 @@ Who walked with honor.
 Lesson Learned
 
 Legacy is measured by what remains after you.
+
 
 #698 Amaura
 
@@ -6610,6 +6918,7 @@ Lesson Learned
 
 Beauty can outlive its moment.
 
+
 #699 Aurorus
 
 Field Note
@@ -6621,6 +6930,7 @@ Silence answers first.
 Lesson Learned
 
 Wonder often arrives without explanation.
+
 
 #700 Sylveon
 
@@ -6634,6 +6944,7 @@ Lesson Learned
 
 Compassion is a strength that invites courage.
 
+
 #701 Hawlucha
 
 Field Note
@@ -6645,6 +6956,7 @@ Applause finds the ring.
 Lesson Learned
 
 Character matters more than recognition.
+
 
 #702 Dedenne
 
@@ -6658,6 +6970,7 @@ Lesson Learned
 
 Small connections carry great power.
 
+
 #703 Carbink
 
 Field Note
@@ -6669,6 +6982,7 @@ Hidden inside stone.
 Lesson Learned
 
 Endurance reveals hidden value.
+
 
 #704 Goomy
 
@@ -6682,6 +6996,7 @@ Lesson Learned
 
 Progress belongs to those who continue.
 
+
 #705 Sliggoo
 
 Field Note
@@ -6693,6 +7008,7 @@ Others choose to flee.
 Lesson Learned
 
 Difficult seasons often nourish us most.
+
 
 #706 Goodra
 
@@ -6706,6 +7022,7 @@ Lesson Learned
 
 The strongest hearts are often the softest.
 
+
 #707 Klefki
 
 Field Note
@@ -6717,6 +7034,7 @@ Waiting to be found.
 Lesson Learned
 
 Opportunity often hangs unnoticed at our side.
+
 
 #708 Phantump
 
@@ -6730,6 +7048,7 @@ Lesson Learned
 
 Love leaves echoes time cannot erase.
 
+
 #709 Trevenant
 
 Field Note
@@ -6741,6 +7060,7 @@ Forests keep their word.
 Lesson Learned
 
 Wisdom grows deeper than appearances reveal.
+
 
 #710 Pumpkaboo
 
@@ -6754,6 +7074,7 @@ Lesson Learned
 
 Every ending prepares another beginning.
 
+
 #711 Gourgeist
 
 Field Note
@@ -6765,6 +7086,7 @@ At familiar fears.
 Lesson Learned
 
 Laughter can transform fear without denying it.
+
 
 #712 Bergmite
 
@@ -6778,6 +7100,7 @@ Lesson Learned
 
 Lasting change requires patience, not permission.
 
+
 #713 Avalugg
 
 Field Note
@@ -6789,6 +7112,7 @@ One season at a time.
 Lesson Learned
 
 Great strength is often measured in endurance.
+
 
 #714 Noibat
 
@@ -6802,6 +7126,7 @@ Lesson Learned
 
 Every voice begins by searching.
 
+
 #715 Noivern
 
 Field Note
@@ -6813,6 +7138,7 @@ Those who know their song.
 Lesson Learned
 
 Confidence is clarity, not volume.
+
 
 #716 Xerneas
 
@@ -6826,6 +7152,7 @@ Lesson Learned
 
 Life flourishes through generosity.
 
+
 #717 Yveltal
 
 Field Note
@@ -6837,6 +7164,7 @@ Endings nourish life.
 Lesson Learned
 
 Every ending serves a beginning.
+
 
 #718 Zygarde
 
@@ -6850,6 +7178,7 @@ Lesson Learned
 
 Balance depends upon countless unseen acts.
 
+
 #719 Diancie
 
 Field Note
@@ -6861,6 +7190,7 @@ Mountains without light.
 Lesson Learned
 
 Radiance is often forged in obscurity.
+
 
 #720 Hoopa
 
@@ -6874,6 +7204,7 @@ Lesson Learned
 
 Opportunity requires discernment.
 
+
 #721 Volcanion
 
 Field Note
@@ -6885,6 +7216,7 @@ By working as one.
 Lesson Learned
 
 Harmony is not the absence of differences.
+
 
 #722 Rowlet
 
@@ -6898,6 +7230,7 @@ Lesson Learned
 
 Gentleness and intelligence often walk together.
 
+
 #723 Dartrix
 
 Field Note
@@ -6909,6 +7242,7 @@ Elegance appears.
 Lesson Learned
 
 Refinement is earned through repetition.
+
 
 #724 Decidueye
 
@@ -6922,6 +7256,7 @@ Lesson Learned
 
 Precision is prepared long before action.
 
+
 #725 Litten
 
 Field Note
@@ -6934,6 +7269,7 @@ Lesson Learned
 
 Trust grows best at its own pace.
 
+
 #726 Torracat
 
 Field Note
@@ -6945,6 +7281,7 @@ Where it found its flame.
 Lesson Learned
 
 Confidence remembers its beginnings.
+
 
 #727 Incineroar
 
@@ -6960,6 +7297,7 @@ Integrity outlasts applause.
 
 I wanted to avoid wrestling entirely. Everybody knows Incineroar is the heel wrestler Pokémon. The more interesting observation is that applause is temporary.
 
+
 #728 Popplio
 
 Field Note
@@ -6971,6 +7309,7 @@ Shores they never keep.
 Lesson Learned
 
 Persistence is often mistaken for gentleness.
+
 
 #729 Brionne
 
@@ -6984,6 +7323,7 @@ Lesson Learned
 
 Excellence is built one rehearsal at a time.
 
+
 #730 Primarina
 
 Field Note
@@ -6995,6 +7335,7 @@ Voices ever could.
 Lesson Learned
 
 Beauty is a bridge between strangers.
+
 
 #731 Pikipek
 
@@ -7008,6 +7349,7 @@ Lesson Learned
 
 Persistence uncovers what haste overlooks.
 
+
 #732 Trumbeak
 
 Field Note
@@ -7019,6 +7361,7 @@ Waiting without fear.
 Lesson Learned
 
 Timing is part of wisdom.
+
 
 #733 Toucannon
 
@@ -7032,6 +7375,7 @@ Lesson Learned
 
 Reputation is sustained by consistency.
 
+
 #734 Yungoos
 
 Field Note
@@ -7043,6 +7387,7 @@ Food waits farther on.
 Lesson Learned
 
 Opportunity favors those already moving.
+
 
 #735 Gumshoos
 
@@ -7056,6 +7401,7 @@ Lesson Learned
 
 Experience outlasts instruction.
 
+
 #736 Grubbin
 
 Field Note
@@ -7067,6 +7413,7 @@ Through yesterday's forest.
 Lesson Learned
 
 Renewal often begins out of sight.
+
 
 #737 Charjabug
 
@@ -7080,6 +7427,7 @@ Lesson Learned
 
 Preparation is rarely dramatic.
 
+
 #738 Vikavolt
 
 Field Note
@@ -7091,6 +7439,7 @@ Has already won.
 Lesson Learned
 
 Precision gives power its purpose.
+
 
 #739 Crabrawler
 
@@ -7104,6 +7453,7 @@ Lesson Learned
 
 Every day offers another chance to improve.
 
+
 #740 Crabominable
 
 Field Note
@@ -7115,6 +7465,7 @@ With quieter strength.
 Lesson Learned
 
 Power alone leaves little behind.
+
 
 #741 Oricorio
 
@@ -7128,6 +7479,7 @@ Lesson Learned
 
 Individuality enriches tradition.
 
+
 #742 Cutiefly
 
 Field Note
@@ -7139,6 +7491,7 @@ Flowers than themselves.
 Lesson Learned
 
 Small acts often sustain great things.
+
 
 #743 Ribombee
 
@@ -7152,6 +7505,7 @@ Lesson Learned
 
 Quiet service keeps the world alive.
 
+
 #744 Rockruff
 
 Field Note
@@ -7163,6 +7517,7 @@ Walked beside a friend.
 Lesson Learned
 
 Loyalty gives courage.
+
 
 #745 Lycanroc
 
@@ -7176,6 +7531,7 @@ Lesson Learned
 
 Circumstances reveal what habits have built.
 
+
 #746 Wishiwashi
 
 Field Note
@@ -7187,6 +7543,7 @@ The sea's own answer.
 Lesson Learned
 
 Unity creates possibilities impossible alone.
+
 
 #747 Mareanie
 
@@ -7200,6 +7557,7 @@ Lesson Learned
 
 Healthy boundaries protect what matters.
 
+
 #748 Toxapex
 
 Field Note
@@ -7211,6 +7569,7 @@ The strongest current.
 Lesson Learned
 
 Resilience often appears immovable
+
 
 #749 Mudbray
 
@@ -7224,6 +7583,7 @@ Lesson Learned
 
 Every worthwhile journey begins with ordinary work.
 
+
 #750 Mudsdale
 
 Field Note
@@ -7235,6 +7595,7 @@ The harvest they bear.
 Lesson Learned
 
 Reliability is one of the quietest virtues.
+
 
 #751 Dewpider
 
@@ -7248,6 +7609,7 @@ Lesson Learned
 
 Even the smallest lives reflect something greater.
 
+
 #752 Araquanid
 
 Field Note
@@ -7259,6 +7621,7 @@ Strong enough to float.
 Lesson Learned
 
 Protection is a form of strength.
+
 
 #753 Fomantis
 
@@ -7272,6 +7635,7 @@ Lesson Learned
 
 Growth begins before it is visible.
 
+
 #754 Lurantis
 
 Field Note
@@ -7283,6 +7647,7 @@ Wisdom wears disguise.
 Lesson Learned
 
 Success often comes through understanding others.
+
 
 #756 Shiinotic
 
@@ -7296,6 +7661,7 @@ Lesson Learned
 
 Not every invitation should be accepted.
 
+
 #757 Salandit
 
 Field Note
@@ -7307,6 +7673,7 @@ Fire has arrived.
 Lesson Learned
 
 Influence often begins unnoticed.
+
 
 #758 Salazzle
 
@@ -7320,6 +7687,7 @@ Lesson Learned
 
 Charisma carries responsibility.
 
+
 #759 Stufful
 
 Field Note
@@ -7331,6 +7699,7 @@ The first time they bloom.
 Lesson Learned
 
 Never confuse gentleness with weakness.
+
 
 #760 Bewear
 
@@ -7345,6 +7714,7 @@ Lesson Learned
 Good intentions still require wisdom.
 
 
+
 #761 Bounsweet
 
 Field Note
@@ -7356,6 +7726,7 @@ It has ripened yet.
 Lesson Learned
 
 Potential often appears before confidence.
+
 
 #762 Steenee
 
@@ -7369,6 +7740,7 @@ Lesson Learned
 
 Confidence is rehearsed in private.
 
+
 #763 Tsareena
 
 Field Note
@@ -7380,6 +7752,7 @@ They know how to bend.
 Lesson Learned
 
 Dignity does not demand attention.
+
 
 #764 Comfey
 
@@ -7393,6 +7766,7 @@ Lesson Learned
 
 Compassion goes where it is needed.
 
+
 #765 Oranguru
 
 Field Note
@@ -7404,6 +7778,7 @@ Even one aloud.
 Lesson Learned
 
 Wisdom listens longer than it speaks.
+
 
 #766 Passimian
 
@@ -7417,6 +7792,7 @@ Lesson Learned
 
 Teams are built on earned trust.
 
+
 #767 Wimpod
 
 Field Note
@@ -7428,6 +7804,7 @@ By surviving first.
 Lesson Learned
 
 There is no shame in living to try again.
+
 
 #768 Golisopod
 
@@ -7441,6 +7818,7 @@ Lesson Learned
 
 Experience should strengthen us, not imprison us.
 
+
 #769 Sandygast
 
 Field Note
@@ -7453,6 +7831,7 @@ Lesson Learned
 
 Places remember us longer than we imagine.
 
+
 #770 Palossand
 
 Field Note
@@ -7464,6 +7843,7 @@ Sand begins again.
 Lesson Learned
 
 Lasting strength comes from rebuilding, not resisting change.
+
 
 #771 Pyukumuku
 
@@ -7478,6 +7858,7 @@ Lesson Learned
 Contentment asks for less than ambition.
 
 
+
 #772 Type: Null
 
 Field Note
@@ -7489,6 +7870,7 @@ Something wholly new.
 Lesson Learned
 
 Identity is discovered, not assembled.
+
 
 #773 Silvally
 
@@ -7502,6 +7884,7 @@ Lesson Learned
 
 Freedom begins with accepting who you are.
 
+
 #774 Minior
 
 Field Note
@@ -7513,6 +7896,7 @@ Ask it who it is.
 Lesson Learned
 
 Sometimes our defenses hide our brightest qualities.
+
 
 #775 Komala
 
@@ -7526,6 +7910,7 @@ Lesson Learned
 
 Rest is part of living well.
 
+
 #776 Turtonator
 
 Field Note
@@ -7537,6 +7922,7 @@ Before the heart does.
 Lesson Learned
 
 Preparation protects what is most valuable.
+
 
 #777 Togedemaru
 
@@ -7550,6 +7936,7 @@ Lesson Learned
 
 Defending yourself need not harden your spirit.
 
+
 #778 Mimikyu
 
 Field Note
@@ -7561,3 +7948,283 @@ Every heart has known.
 Lesson Learned
 
 We all hope to be loved for who we truly are.
+
+
+#779 Bruxish
+
+Field Note
+
+Coral reefs shimmer;
+Bright colors sometimes announce
+What should not be touched.
+
+Lesson Learned
+
+Not everything beautiful invites approach.
+
+I resisted writing "don't judge a book..."
+
+Nature is full of brilliant warning colors.
+
+Bruxish wears them proudly.
+
+
+#780 Drampa
+
+Field Note
+
+Clouds drift through old horns;
+Gentle souls often carry
+The oldest stories.
+
+Lesson Learned
+
+Kindness grows stronger with age.
+
+I adore Drampa.
+
+It looks like the kind of dragon that would rather tell children stories than guard treasure.
+
+
+#781 Dhelmise
+
+Field Note
+
+Rust anchors the chain;
+The sea remembers every ship
+That forgot respect.
+
+Lesson Learned
+
+History rewards those who learn from it.
+
+
+#782 Jangmo-o
+
+Field Note
+
+Pebbles greet each step,
+Quietly preparing scales
+For tomorrow's storms.
+
+Lesson Learned
+
+Small hardships prepare greater strength.
+
+
+#783 Hakamo-o
+
+Field Note
+
+Every scar becomes
+Another verse in the song
+Armor learns to sing.
+
+Lesson Learned
+
+Experience should be carried with pride.
+
+
+#784 Kommo-o
+
+Field Note
+
+Mountains hear the song
+Long before the traveler
+Understands its call.
+
+Lesson Learned
+
+Leadership inspires before it instructs.
+
+
+That's mythic.
+
+
+#785 Tapu Koko
+
+Field Note
+
+Lightning greets the dawn
+Before the island remembers
+Morning has arrived.
+
+Lesson Learned
+
+Energy is most powerful when it awakens others.
+
+
+#786 Tapu Lele
+
+Field Note
+
+Every whispered prayer
+Finds a gentler place to land
+Beneath open skies.
+
+Lesson Learned
+
+Compassion listens before answering.
+
+
+#787 Tapu Bulu
+
+Field Note
+
+Broken branches bloom;
+Forests heal because someone
+Stayed after the storm.
+
+Lesson Learned
+
+Restoration is an act of devotion.
+
+
+#788 Tapu Fini
+
+Field Note
+
+Mist hides distant shores
+Until wandering hearts learn
+Which way they belong.
+
+Lesson Learned
+
+Clarity often follows patience.
+
+
+#789 Cosmog
+
+Field Note
+
+Every distant star
+Once fit inside a question
+Small enough to hold.
+
+Lesson Learned
+
+Great possibilities often begin quietly.
+
+
+#790 Cosmoem
+
+Field Note
+
+Silent weight remains
+While unseen horizons bend
+Around patient dreams.
+
+Lesson Learned
+
+Growth is not always visible.
+
+
+#791 Solgaleo
+
+Field Note
+
+Morning climbs the hills
+Not because darkness has failed,
+But because it must.
+
+Lesson Learned
+
+Leadership is the courage to rise every day.
+
+Not "the lion of the sun."
+
+The sunrise itself.
+
+
+#792 Lunala
+
+Field Note
+
+Moonlight finds the path
+Hidden from impatient eyes
+Until fear grows still.
+
+Lesson Learned
+
+Wisdom often arrives quietly.
+
+
+#793 Nihilego
+
+Field Note
+
+Waters drift upstream.
+The birds refuse to answer.
+Something is now wrong.
+
+Lesson Learned
+
+Pay attention when the ordinary no longer behaves as expected.
+
+
+
+#794 Buzzwole
+
+Field Note
+
+Forests fell silent.
+Even the strongest old oaks
+Leaned away in thought.
+
+Lesson Learned
+
+Power is measured by its effect on others.
+
+
+
+#795 Pheromosa
+
+Field Note
+
+Nothing touched the grass,
+Yet every blade bent aside
+Before it arrived.
+
+Lesson Learned
+
+Grace can be as overwhelming as strength.
+
+
+#796 Xurkitree
+
+Field Note
+
+Lightning found the earth
+But forgot the sky above.
+The air still trembles.
+
+Lesson Learned
+
+Some forces cannot be understood immediately.
+
+
+#797 Celesteela
+
+Field Note
+
+Mountains learned to fly.
+Smoke climbed without any fire.
+The birds circled once.
+
+Lesson Learned
+
+Sometimes history begins with disbelief.
+
+
+
+#798 Kartana
+
+Field Note
+
+Autumn lost one leaf.
+The mountain wore a new scar
+Before winds arrived.
+
+Lesson Learned
+
+Precision leaves lasting consequences.
