@@ -80,10 +80,10 @@ fun CalibrationStatusPanel(
             CalibrationMode.POSITION -> "Move Box"
             CalibrationMode.SIZE -> "Resize Box"
         })
-        ControlRow("A", "Recognize")
+        ControlRow("A", "Next Region")
         ControlRow("B", "Exit")
-        ControlRow("START", "Switch Template")
-        ControlRow("SELECT", "Toggle UI")
+        ControlRow("START", "Recognize")
+        ControlRow("SELECT", "Pos / Size")
 
         if (saveConfirmation != null && saveConfirmation.contains("Saved")) {
             Spacer(modifier = Modifier.height(8.dp))
@@ -214,7 +214,13 @@ fun CaptureVerificationScreen(
         isInspectionMode = false
     }
 
+    val activeRegion = if (currentTemplate.regions.isNotEmpty()) currentTemplate.regions[regionCursorIndex] else null
+    val lcdLine1 = activeRegion?.let { "REGION: ${it.id.uppercase()}" }
+    val lcdLine2 = "${calibrationMode.name} MODE"
+
     ODXFiShell(
+        lcdLine1 = lcdLine1,
+        lcdLine2 = lcdLine2,
         onUp = {
             if (isManualSpeciesSelection) manualNav.moveUp()
             else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
@@ -294,10 +300,8 @@ fun CaptureVerificationScreen(
         onStart = {
             if (isInspectionMode) {
                 showWorkspaceViewer = !showWorkspaceViewer
-            } else {
-                captures = null
-                history = emptyMap()
-                pipelineStatus = null
+            } else if (captureLibrary.isNotEmpty()) {
+                triggerRecognition()
             }
         },
         onA = {
@@ -312,8 +316,6 @@ fun CaptureVerificationScreen(
             } else if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             } else if (isInspectionMode) {
-                triggerRecognition()
-
                 val assessment = panelState.assessment
                 when (assessment.recommendedAction) {
                     RegistrationAction.REGISTER -> {
@@ -345,14 +347,12 @@ fun CaptureVerificationScreen(
                     else -> {}
                 }
             } else if (currentTemplate.regions.isNotEmpty()) {
-                // Truthful acknowledgement: the region is already active, A just "confirms" it
-                saveConfirmation = "Region Confirmed"
+                regionCursorIndex = (regionCursorIndex + 1) % currentTemplate.regions.size
+                saveConfirmation = "Active: ${currentTemplate.regions[regionCursorIndex].id.uppercase()}"
             }
         },
         onALong = {
-            if (!isInspectionMode && !isManualSpeciesSelection && captureLibrary.isNotEmpty()) {
-                triggerRecognition()
-            }
+            // Disabled on this screen to prioritize discrete region cycling on A
         },
         onB = {
             if (isManualSpeciesSelection) isManualSpeciesSelection = false

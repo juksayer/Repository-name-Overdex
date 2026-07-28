@@ -151,6 +151,8 @@ fun InstrumentLCD(
     presentationState: com.example.overdex.presentation.PresentationState,
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
+    lcdLine1: String? = null,
+    lcdLine2: String? = null,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -172,23 +174,42 @@ fun InstrumentLCD(
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            latestIdentifiedPokemon?.let { event ->
-                Text(
-                    text = event.actor.name,
-                    color = TerminalGreen.copy(alpha = 0.7f),
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace
-                )
+            if (lcdLine1 != null || lcdLine2 != null) {
+                lcdLine1?.let {
+                    Text(
+                        text = it,
+                        color = TerminalGreen.copy(alpha = 0.7f),
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+                lcdLine2?.let {
+                    Text(
+                        text = it,
+                        color = TerminalGreen,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            } else {
+                latestIdentifiedPokemon?.let { event ->
+                    Text(
+                        text = event.actor.name,
+                        color = TerminalGreen.copy(alpha = 0.7f),
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
 
-                Text(
-                    text = event.message ?: "UNKNOWN",
-                    color = TerminalGreen,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+                    Text(
+                        text = event.message ?: "UNKNOWN",
+                        color = TerminalGreen,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
             }
-
         }
     }
 }
@@ -210,6 +231,8 @@ fun ODXFiShell(
     onLaunchObservatory: () -> Unit = {},
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
+    lcdLine1: String? = null,
+    lcdLine2: String? = null,
 
     showBattleOverlay: Boolean = true,
     viewModel: PokedexViewModel? = null,
@@ -552,6 +575,8 @@ fun ODXFiShell(
                 presentationState = presentationState,
                 deploymentState = deploymentState,
                 frameCount = frameCount,
+                lcdLine1 = lcdLine1,
+                lcdLine2 = lcdLine2,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
