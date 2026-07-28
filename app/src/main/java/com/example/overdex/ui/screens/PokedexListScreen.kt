@@ -69,6 +69,25 @@ fun PokedexListScreen(
         nav.setIndex(0)
     }
 
+    fun handleActivatedKey(key: String) {
+        when (key) {
+            "SPACE" -> viewModel.updateSearchQuery(searchQuery + " ")
+            "DELETE" -> {
+                if (searchQuery.isNotEmpty()) {
+                    viewModel.updateSearchQuery(searchQuery.dropLast(1))
+                }
+            }
+            else -> {
+                if (key.startsWith("TYPE:")) {
+                    val typeName = key.removePrefix("TYPE:")
+                    viewModel.updateSearchQuery(searchQuery + typeName + " ")
+                } else {
+                    viewModel.updateSearchQuery(searchQuery + key)
+                }
+            }
+        }
+    }
+
     ODXFiShell(
         onUp = {
             if (keyboardController.isVisible) {
@@ -92,18 +111,31 @@ fun PokedexListScreen(
         },
         onA = {
             if (keyboardController.isVisible) {
-                keyboardController.handleA(searchQuery) { viewModel.updateSearchQuery(it) }
+                keyboardController.handleA(searchQuery) { handleActivatedKey(it) }
             } else {
                 nav.activate()
             }
         },
         onB = {
-            if (!keyboardController.handleB()) onBack()
+            if (!keyboardController.handleB()) {
+                onBack()
+            }
+        },
+        onSelect = {
+            /* No change in this brick */
+        },
+        onStart = {
+            if (!keyboardController.handleStart()) {
+                viewModel.startObservation()
+            }
+        },
+        onKeyActivated = { key ->
+            if (keyboardController.isVisible) {
+                handleActivatedKey(key)
+            }
         },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
-        onSelect = onSelect,
-        onStart = onStart,
         onLaunchProbe = onLaunchProbe,
         onLaunchObservatory = onLaunchObservatory,
         viewModel = viewModel,

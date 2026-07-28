@@ -62,6 +62,7 @@ Great software teaches.
 
 # Learn Once
 
+
 Information should become intuition.
 
 If Overdex helps a player make better decisions even when the application is closed, it has succeeded.
@@ -69,6 +70,7 @@ If Overdex helps a player make better decisions even when the application is clo
 The best feature eventually makes itself unnecessary.
 
 ---
+
 
 # Simplicity Wins
 
@@ -79,6 +81,7 @@ Simplicity should exist in the interface.
 The player should experience clarity regardless of how much work happens beneath the surface.
 
 ---
+
 
 # The Game Boy Principle
 
@@ -98,6 +101,7 @@ Every interaction should feel familiar.
 
 ---
 
+
 # Respect the Player's Attention
 
 Attention is limited.
@@ -109,6 +113,7 @@ Every animation must communicate something meaningful.
 Silence is often better than noise.
 
 ---
+
 
 # Build Something Worth Keeping
 
@@ -132,6 +137,7 @@ Recognizers should recover evidence, not reject imperfect evidence
 
 Learn before the battle. Observe during the battle. Remember after the battle. Improve before the next one.
 
+
 # Evidence
 
 Describe what exists.
@@ -141,3 +147,12 @@ Do not invent filenames, screenshots, recordings, or artifacts.
 If evidence was generated, reference its actual filename and location.
 
 If evidence was not generated, explicitly state that verification is pending.
+
+
+# Invisible Learning
+
+The trainer should become more capable simply by using Overdex.
+
+Concepts introduced during preparation should naturally reappear during observation.
+
+The best tutorial is ordinary use

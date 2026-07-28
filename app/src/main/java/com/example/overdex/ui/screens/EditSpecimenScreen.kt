@@ -54,6 +54,36 @@ fun EditSpecimenScreen(
         }
     }
 
+    fun handleActivatedKey(key: String, specimen: OwnedPokemon) {
+        if (selectedIndex == 0 || selectedIndex == 1) {
+            val currentText = when (selectedIndex) {
+                0 -> specimen.displayName ?: ""
+                1 -> specimen.cp?.toString() ?: ""
+                else -> ""
+            }
+            val newText = when (key) {
+                "SPACE" -> currentText + " "
+                "DELETE" -> if (currentText.isNotEmpty()) currentText.dropLast(1) else currentText
+                else -> currentText + key
+            }
+            editedState = when (selectedIndex) {
+                0 -> specimen.copy(displayName = newText.ifEmpty { null })
+                1 -> specimen.copy(cp = newText.toIntOrNull())
+                else -> specimen
+            }
+        } else {
+            // Move selection
+            if (key != "SPACE" && key != "DELETE") {
+                editedState = when (selectedIndex) {
+                    5 -> specimen.copy(fastMove = key)
+                    6 -> specimen.copy(chargedMove1 = key)
+                    7 -> specimen.copy(chargedMove2 = key)
+                    else -> specimen
+                }
+            }
+        }
+    }
+
     ODXFiShell(
         onUp = {
             if (keyboardController.isVisible) {
@@ -74,55 +104,17 @@ fun EditSpecimenScreen(
         onA = {
             val specimen = editedState ?: return@ODXFiShell
             if (keyboardController.isVisible) {
-                val key = keyboardController.layout[keyboardController.currentRow][keyboardController.currentCol]
-                if (selectedIndex == 0 || selectedIndex == 1) {
-                    val currentText = when (selectedIndex) {
-                        0 -> specimen.displayName ?: ""
-                        1 -> specimen.cp?.toString() ?: ""
-                        else -> ""
-                    }
-                    keyboardController.handleA(currentText) { newText ->
-                        editedState = when (selectedIndex) {
-                            0 -> specimen.copy(displayName = newText.ifEmpty { null })
-                            1 -> specimen.copy(cp = newText.toIntOrNull())
-                            else -> specimen
-                        }
-                    }
-                } else {
-                    // Move Selection Logic: Replacement instead of appending
-                    when (key) {
-                        "DONE" -> keyboardController.close()
-                        "CLEAR" -> {
-                            editedState = when (selectedIndex) {
-                                5 -> specimen.copy(fastMove = null)
-                                6 -> specimen.copy(chargedMove1 = null)
-                                7 -> specimen.copy(chargedMove2 = null)
-                                else -> specimen
-                            }
-                        }
-                        else -> {
-                            if (key.isNotEmpty()) {
-                                editedState = when (selectedIndex) {
-                                    5 -> specimen.copy(fastMove = key)
-                                    6 -> specimen.copy(chargedMove1 = key)
-                                    7 -> specimen.copy(chargedMove2 = key)
-                                    else -> specimen
-                                }
-                            }
-                        }
-                    }
-                }
+                keyboardController.handleA("") { handleActivatedKey(it, specimen) }
             } else {
                 when (selectedIndex) {
                     0, 1 -> {
-                        keyboardController.updateLayout(TestKeyboardLayout)
+                        keyboardController.updateLayout(LettersLayout)
                         keyboardController.open()
                     }
                     5, 6, 7 -> {
                         val moves = if (selectedIndex == 5) species?.fastMoves else species?.chargedMoves
                         val moveNames = moves?.map { it.name.uppercase() } ?: emptyList()
                         val moveLayout = moveNames.chunked(2).toMutableList()
-                        moveLayout.add(listOf("CLEAR", "DONE"))
                         keyboardController.updateLayout(moveLayout)
                         keyboardController.open()
                     }
@@ -138,7 +130,20 @@ fun EditSpecimenScreen(
                 onCancel()
             }
         },
-        viewModel = pokedexViewModel
+        onSelect = {
+            /* No change in this brick */
+        },
+        onStart = {
+            keyboardController.handleStart()
+        },
+        onKeyActivated = { key ->
+            val specimen = editedState ?: return@ODXFiShell
+            if (keyboardController.isVisible) {
+                handleActivatedKey(key, specimen)
+            }
+        },
+        viewModel = pokedexViewModel,
+        keyboardController = keyboardController
     ) {
         TerminalScreen {
             TerminalHeader(text = "edit specimen")
@@ -183,34 +188,6 @@ fun EditSpecimenScreen(
                         selected = selectedIndex == SAVE_BUTTON_INDEX,
                         onClick = { handleSave() }
                     )
-                }
-            }
-            
-            if (keyboardController.isVisible) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(TerminalBlack.copy(alpha = 0.95f))
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    Column {
-                        val currentText = when (selectedIndex) {
-                            0 -> editedState?.displayName ?: ""
-                            1 -> editedState?.cp?.toString() ?: ""
-                            5 -> editedState?.fastMove ?: ""
-                            6 -> editedState?.chargedMove1 ?: ""
-                            7 -> editedState?.chargedMove2 ?: ""
-                            else -> ""
-                        }
-                        TerminalHeader(text = "editing: $currentText")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TerminalKeyboard(
-                            layout = keyboardController.layout,
-                            currentRow = keyboardController.currentRow,
-                            currentColumn = keyboardController.currentCol
-                        )
-                    }
                 }
             }
         }

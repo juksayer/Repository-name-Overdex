@@ -154,6 +154,7 @@ fun InstrumentLCD(
     lcdLine1: String? = null,
     lcdLine2: String? = null,
     keyboardController: TerminalKeyboardController? = null,
+    onKeyActivated: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -180,6 +181,7 @@ fun InstrumentLCD(
                     layout = keyboardController.layout,
                     currentRow = keyboardController.currentRow,
                     currentColumn = keyboardController.currentCol,
+                    onKeyActivated = onKeyActivated,
                     modifier = Modifier.fillMaxSize()
                 )
             } else if (lcdLine1 != null || lcdLine2 != null) {
@@ -242,6 +244,7 @@ fun ODXFiShell(
     lcdLine1: String? = null,
     lcdLine2: String? = null,
     keyboardController: TerminalKeyboardController? = null,
+    onKeyActivated: ((String) -> Unit)? = null,
 
     showBattleOverlay: Boolean = true,
     viewModel: PokedexViewModel? = null,
@@ -587,6 +590,7 @@ fun ODXFiShell(
                 lcdLine1 = lcdLine1,
                 lcdLine2 = lcdLine2,
                 keyboardController = keyboardController,
+                onKeyActivated = onKeyActivated,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -622,7 +626,7 @@ fun ODXFiShell(
                 InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() })
                 InstrumentButton(label = "START", onClick = { 
                     handleInput("START")
-                    if (serviceMode) showSettings = true
+                    if (keyboardController?.isVisible != true && serviceMode) showSettings = true
                     onStart()
                 })
             }
