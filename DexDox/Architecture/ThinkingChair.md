@@ -169,3 +169,7 @@ The terminology audit confirmed that "Preview" was a legacy name. Replay and Liv
 Status
 
 Accepted
+
+
+
+specimens make up teams, teams are organized by leagues, the leagues are entries in the Battle module. 
