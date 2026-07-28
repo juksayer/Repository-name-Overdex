@@ -40,10 +40,6 @@ import com.example.overdex.ui.theme.TerminalPurple
 import com.example.overdex.ui.theme.TerminalGreen
 import androidx.paging.compose.collectAsLazyPagingItems
 
-enum class CalibrationMode {
-    MOVE, WIDTH, HEIGHT
-}
-
 @Composable
 fun CalibrationStatusPanel(
     mode: CalibrationMode,
@@ -61,9 +57,8 @@ fun CalibrationStatusPanel(
         TerminalText(text = "MODE", color = TerminalDimGreen, fontSize = 9.sp)
         TerminalText(
             text = when (mode) {
-                CalibrationMode.MOVE -> "Move Box"
-                CalibrationMode.WIDTH -> "Resize Width"
-                CalibrationMode.HEIGHT -> "Resize Height"
+                CalibrationMode.POSITION -> "Position"
+                CalibrationMode.SIZE -> "Size"
             },
             color = Color.White,
             fontSize = 12.sp
@@ -82,9 +77,8 @@ fun CalibrationStatusPanel(
 
         TerminalText(text = "CONTROLS", color = TerminalDimGreen, fontSize = 9.sp)
         ControlRow("↑↓←→", when (mode) {
-            CalibrationMode.MOVE -> "Move Box"
-            CalibrationMode.WIDTH -> "Resize Width"
-            CalibrationMode.HEIGHT -> "Resize Height"
+            CalibrationMode.POSITION -> "Move Box"
+            CalibrationMode.SIZE -> "Resize Box"
         })
         ControlRow("A", "Recognize")
         ControlRow("B", "Exit")
@@ -132,9 +126,8 @@ fun CaptureVerificationScreen(
     var isInspectionMode by remember { mutableStateOf(false) }
     var isManualSpeciesSelection by remember { mutableStateOf(false) }
     var manualSpecies by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
-    var selectedRegionId by remember { mutableStateOf<String?>(null) }
     var regionCursorIndex by remember { mutableIntStateOf(0) }
-    var calibrationMode by remember { mutableStateOf(CalibrationMode.MOVE) }
+    var calibrationMode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var saveConfirmation by remember { mutableStateOf<String?>(null) }
     var showWorkspaceViewer by remember { mutableStateOf(false) }
     var pendingBattleObservation by remember {
@@ -145,6 +138,37 @@ fun CaptureVerificationScreen(
     val manualNav = rememberHandheldNavigationController(
         itemCount = { pokemonItems.itemCount + 1 }
     )
+
+    val triggerRecognition = {
+        scope.launch {
+            val request = ImageRequest.Builder(context).data(captureLibrary[currentIndex]).allowHardware(false).build()
+            val result = context.imageLoader.execute(request)
+            if (result is SuccessResult) {
+                val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
+                isInspectionMode = true
+                viewModel.setObservationSessionState(ObservationSessionState.OBSERVING)
+                val input = GalleryObservationInput(bitmap)
+                GuidedObservationPipeline.run(
+                    input = input,
+                    template = currentTemplate,
+                    existingSession = pipelineStatus?.session
+                ) { status ->
+                    pipelineStatus = status
+                    captures = status.captures
+                    history = status.results
+                }
+                val completedSession = pipelineStatus?.session
+                val speciesObservation = completedSession
+                    ?.history
+                    ?.get("SpeciesName")
+                    ?.let { observations ->
+                        DefaultObservationResolver().resolve(observations)
+                    } as? PokemonNameObservation
+
+                pendingBattleObservation = speciesObservation
+            }
+        }
+    }
 
     // Consolidated Panel State (Single Synchronized Snapshot)
     val panelState by produceState(
@@ -193,103 +217,77 @@ fun CaptureVerificationScreen(
     ODXFiShell(
         onUp = {
             if (isManualSpeciesSelection) manualNav.moveUp()
-            else if (!isInspectionMode && selectedRegionId != null) {
-                val region = currentTemplate.regions.find { it.id == selectedRegionId }
-                if (region != null) {
-                    val updated = when (calibrationMode) {
-                        CalibrationMode.MOVE -> region.copy(y = (region.y - 0.005f).coerceAtLeast(0f))
-                        CalibrationMode.WIDTH -> region
-                        CalibrationMode.HEIGHT -> region.copy(height = (region.height - 0.005f).coerceAtLeast(0.01f))
-                    }
-                    if (updated != region) {
-                        manager.saveAdjustment(currentTemplate.name, updated)
-                        saveConfirmation = "Settings Saved"
-                        currentTemplate = currentTemplate.copy(
-                            regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
-                        )
-                    }
+            else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
+                val region = currentTemplate.regions[regionCursorIndex]
+                val updated = when (calibrationMode) {
+                    CalibrationMode.POSITION -> region.copy(y = (region.y - 0.005f).coerceAtLeast(0f))
+                    CalibrationMode.SIZE -> region.copy(height = (region.height - 0.005f).coerceAtLeast(0.01f))
+                }
+                if (updated != region) {
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
                 }
             }
         },
         onDown = {
             if (isManualSpeciesSelection) manualNav.moveDown()
-            else if (!isInspectionMode && selectedRegionId != null) {
-                val region = currentTemplate.regions.find { it.id == selectedRegionId }
-                if (region != null) {
-                    val updated = when (calibrationMode) {
-                        CalibrationMode.MOVE -> region.copy(y = (region.y + 0.005f).coerceAtMost(1f - region.height))
-                        CalibrationMode.WIDTH -> region
-                        CalibrationMode.HEIGHT -> region.copy(height = (region.height + 0.005f).coerceAtMost(1f - region.y))
-                    }
-                    if (updated != region) {
-                        manager.saveAdjustment(currentTemplate.name, updated)
-                        saveConfirmation = "Settings Saved"
-                        currentTemplate = currentTemplate.copy(
-                            regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
-                        )
-                    }
+            else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
+                val region = currentTemplate.regions[regionCursorIndex]
+                val updated = when (calibrationMode) {
+                    CalibrationMode.POSITION -> region.copy(y = (region.y + 0.005f).coerceAtMost(1f - region.height))
+                    CalibrationMode.SIZE -> region.copy(height = (region.height + 0.005f).coerceAtMost(1f - region.y))
+                }
+                if (updated != region) {
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
                 }
             }
         },
         onLeft = {
             if (isManualSpeciesSelection) manualNav.moveUp()
-            else if (!isInspectionMode) {
-                if (selectedRegionId != null) {
-                    val region = currentTemplate.regions.find { it.id == selectedRegionId }
-                    if (region != null) {
-                        val updated = when (calibrationMode) {
-                            CalibrationMode.MOVE -> region.copy(x = (region.x - 0.005f).coerceAtLeast(0f))
-                            CalibrationMode.WIDTH -> region.copy(width = (region.width - 0.005f).coerceAtLeast(0.01f))
-                            CalibrationMode.HEIGHT -> region
-                        }
-                        if (updated != region) {
-                            manager.saveAdjustment(currentTemplate.name, updated)
-                            currentTemplate = currentTemplate.copy(
-                                regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
-                            )
-                        }
-                    }
-                } else if (currentTemplate.regions.isNotEmpty()) {
-                    regionCursorIndex =
-                        (regionCursorIndex - 1 + currentTemplate.regions.size) %
-                                currentTemplate.regions.size
+            else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
+                val region = currentTemplate.regions[regionCursorIndex]
+                val updated = when (calibrationMode) {
+                    CalibrationMode.POSITION -> region.copy(x = (region.x - 0.005f).coerceAtLeast(0f))
+                    CalibrationMode.SIZE -> region.copy(width = (region.width - 0.005f).coerceAtLeast(0.01f))
+                }
+                if (updated != region) {
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
                 }
             }
         },
         onRight = {
             if (isManualSpeciesSelection) manualNav.moveDown()
-            else if (!isInspectionMode) {
-                if (selectedRegionId != null) {
-                    val region = currentTemplate.regions.find { it.id == selectedRegionId }
-                    if (region != null) {
-                        val updated = when (calibrationMode) {
-                            CalibrationMode.MOVE -> region.copy(x = (region.x + 0.005f).coerceAtMost(1f - region.width))
-                            CalibrationMode.WIDTH -> region.copy(width = (region.width + 0.005f).coerceAtMost(1f - region.x))
-                            CalibrationMode.HEIGHT -> region
-                        }
-                        if (updated != region) {
-                            manager.saveAdjustment(currentTemplate.name, updated)
-                            currentTemplate = currentTemplate.copy(
-                                regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
-                            )
-                        }
-                    }
-                } else if (currentTemplate.regions.isNotEmpty()) {
-                    regionCursorIndex =
-                        (regionCursorIndex + 1) % currentTemplate.regions.size
+            else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
+                val region = currentTemplate.regions[regionCursorIndex]
+                val updated = when (calibrationMode) {
+                    CalibrationMode.POSITION -> region.copy(x = (region.x + 0.005f).coerceAtMost(1f - region.width))
+                    CalibrationMode.SIZE -> region.copy(width = (region.width + 0.005f).coerceAtMost(1f - region.x))
+                }
+                if (updated != region) {
+                    manager.saveAdjustment(currentTemplate.name, updated)
+                    saveConfirmation = "Settings Saved"
+                    currentTemplate = currentTemplate.copy(
+                        regions = currentTemplate.regions.map { if (it.id == updated.id) updated else it }
+                    )
                 }
             }
         },
         onSelect = { 
             if (!isInspectionMode) {
-                if (selectedRegionId != null) {
-                    calibrationMode = when (calibrationMode) {
-                        CalibrationMode.MOVE -> CalibrationMode.WIDTH
-                        CalibrationMode.WIDTH -> CalibrationMode.HEIGHT
-                        CalibrationMode.HEIGHT -> CalibrationMode.MOVE
-                    }
-                } else {
-                    isOverlayVisible = !isOverlayVisible
+                calibrationMode = when (calibrationMode) {
+                    CalibrationMode.POSITION -> CalibrationMode.SIZE
+                    CalibrationMode.SIZE -> CalibrationMode.POSITION
                 }
             }
         },
@@ -300,7 +298,6 @@ fun CaptureVerificationScreen(
                 captures = null
                 history = emptyMap()
                 pipelineStatus = null
-                selectedRegionId = null
             }
         },
         onA = {
@@ -314,41 +311,8 @@ fun CaptureVerificationScreen(
                 }
             } else if (captureLibrary.isEmpty()) {
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            } else if (!isInspectionMode && selectedRegionId == null) {
-                if (currentTemplate.regions.isNotEmpty()) {
-                    selectedRegionId = currentTemplate.regions[regionCursorIndex].id
-                }
-            } else if (!isInspectionMode) {
-                selectedRegionId = null
-            } else {
-                scope.launch {
-                    val request = ImageRequest.Builder(context).data(captureLibrary[currentIndex]).allowHardware(false).build()
-                    val result = context.imageLoader.execute(request)
-                    if (result is SuccessResult) {
-                        val bitmap = (result.drawable as android.graphics.drawable.BitmapDrawable).bitmap
-                        isInspectionMode = true
-                        viewModel.setObservationSessionState(ObservationSessionState.OBSERVING)
-                        val input = GalleryObservationInput(bitmap)
-                        GuidedObservationPipeline.run(
-                            input = input,
-                            template = currentTemplate,
-                            existingSession = pipelineStatus?.session
-                        ) { status ->
-                            pipelineStatus = status
-                            captures = status.captures
-                            history = status.results
-                        }
-                        val completedSession = pipelineStatus?.session
-                        val speciesObservation = completedSession
-                            ?.history
-                            ?.get("SpeciesName")
-                            ?.let { observations ->
-                                DefaultObservationResolver().resolve(observations)
-                            } as? PokemonNameObservation
-
-                        pendingBattleObservation = speciesObservation
-                    }
-                }
+            } else if (isInspectionMode) {
+                triggerRecognition()
 
                 val assessment = panelState.assessment
                 when (assessment.recommendedAction) {
@@ -380,6 +344,14 @@ fun CaptureVerificationScreen(
                     RegistrationAction.SELECT_SPECIES -> isManualSpeciesSelection = true
                     else -> {}
                 }
+            } else if (currentTemplate.regions.isNotEmpty()) {
+                // Truthful acknowledgement: the region is already active, A just "confirms" it
+                saveConfirmation = "Region Confirmed"
+            }
+        },
+        onALong = {
+            if (!isInspectionMode && !isManualSpeciesSelection && captureLibrary.isNotEmpty()) {
+                triggerRecognition()
             }
         },
         onB = {
@@ -422,9 +394,11 @@ fun CaptureVerificationScreen(
                     template = currentTemplate,
                     isVisible = isOverlayVisible,
                     imageSize = imageSize,
-                    selectedRegionId = selectedRegionId
-                        ?: currentTemplate.regions.getOrNull(regionCursorIndex)?.id,
-                    onRegionSelect = { selectedRegionId = it },
+                    selectedRegionId = currentTemplate.regions.getOrNull(regionCursorIndex)?.id,
+                    onRegionSelect = { id ->
+                        val index = currentTemplate.regions.indexOfFirst { it.id == id }
+                        if (index >= 0) regionCursorIndex = index
+                    },
                     onRegionUpdate = { updatedRegion ->
                         manager.saveAdjustment(currentTemplate.name, updatedRegion)
                         currentTemplate = currentTemplate.copy(
@@ -448,7 +422,7 @@ fun CaptureVerificationScreen(
                     ) {
                         CalibrationStatusPanel(
                             mode = calibrationMode,
-                            regionId = selectedRegionId,
+                            regionId = currentTemplate.regions.getOrNull(regionCursorIndex)?.id,
                             saveConfirmation = saveConfirmation
                         )
                     }

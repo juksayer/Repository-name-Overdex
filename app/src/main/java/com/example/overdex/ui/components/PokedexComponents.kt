@@ -6,6 +6,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,6 +82,7 @@ data class FilterSettings(
 @Composable
 fun InstrumentButton(
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     label: String? = null,
     icon: ImageVector? = null,
@@ -117,7 +119,11 @@ fun InstrumentButton(
                     strokeWidth = strokeWidth * 2
                 )
             }
-            .clickable(enabled = enabled, onClick = onClick)
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -194,6 +200,7 @@ fun ODXFiShell(
     onLeft: () -> Unit = {},
     onRight: () -> Unit = {},
     onA: () -> Unit = {},
+    onALong: () -> Unit = {},
     onB: () -> Unit = {},
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
@@ -557,12 +564,20 @@ fun ODXFiShell(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(label = "A", onClick = { 
-                    handleInput("A")
-                    if (showResearcherSettings) researcherA?.invoke()
-                    else if (showSettings) settingsA?.invoke()
-                    else onA()
-                })
+                InstrumentButton(
+                    label = "A",
+                    onClick = { 
+                        handleInput("A")
+                        if (showResearcherSettings) researcherA?.invoke()
+                        else if (showSettings) settingsA?.invoke()
+                        else onA()
+                    },
+                    onLongClick = {
+                        if (!showResearcherSettings && !showSettings) {
+                            onALong()
+                        }
+                    }
+                )
                 InstrumentButton(label = "B", onClick = { 
                     handleInput("B")
                     if (showResearcherSettings) researcherB?.invoke()

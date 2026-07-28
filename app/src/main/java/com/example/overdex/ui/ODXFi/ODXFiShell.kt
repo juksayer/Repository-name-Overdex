@@ -3,6 +3,7 @@ package com.example.overdex.ui.ODXFi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import com.example.overdex.ui.theme.TerminalGreen
 @Composable
 fun InstrumentButton(
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     label: String? = null,
     icon: ImageVector? = null,
@@ -89,7 +91,11 @@ fun InstrumentButton(
                     strokeWidth = strokeWidth * 2
                 )
             }
-            .clickable(enabled = enabled, onClick = onClick)
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
