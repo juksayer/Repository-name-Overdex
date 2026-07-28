@@ -33,6 +33,11 @@ data class BattleMemory(
 ) {
 
 
+    fun recordEvent(event: BattleEvent) {
+        timeline.record(event)
+        battleHistory.add(event) // Keeping for BattleLogbattleHistory.add(event) // Preserves current battle event history
+    }
+
     private fun recordEvent(
         type: BattleEventType,
         actor: BattleActor = BattleActor.SYSTEM,
@@ -41,16 +46,16 @@ data class BattleMemory(
         message: String? = null,
         confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED)
     ) {
-        val event = BattleEvent(
-            type = type,
-            actor = actor,
-            pokemonId = pokemonId,
-            value = value, 
-            message = message,
-            confidence = confidence
+        recordEvent(
+            BattleEvent(
+                type = type,
+                actor = actor,
+                pokemonId = pokemonId,
+                value = value,
+                message = message,
+                confidence = confidence
+            )
         )
-        timeline.record(event)
-        battleHistory.add(event) // Keeping for BattleLog until it's refactored
     }
 
     private fun updateSpecies(species: String, block: (EnemyPokemonMemory) -> Unit) {
