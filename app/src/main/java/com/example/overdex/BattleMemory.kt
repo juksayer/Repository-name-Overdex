@@ -35,7 +35,45 @@ data class BattleMemory(
 
     fun recordEvent(event: BattleEvent) {
         timeline.record(event)
-        battleHistory.add(event) // Keeping for BattleLogbattleHistory.add(event) // Preserves current battle event history
+        battleHistory.add(event) // Preserves current battle event history
+        deriveState(event)
+    }
+
+    private fun deriveState(event: BattleEvent) {
+        when (event.type) {
+            BattleEventType.SHIELD_USED -> {
+                if (event.actor == BattleActor.PLAYER) {
+                    playerShieldsUsed++
+                } else if (event.actor == BattleActor.ENEMY) {
+                    enemyShieldsUsed++
+                }
+            }
+            BattleEventType.POKEMON_FAINTED -> {
+                if (event.actor == BattleActor.ENEMY) {
+                    val activeIndex = enemyTeam.indexOfFirst { it.isActive }
+                    if (activeIndex != -1) {
+                        enemyTeam[activeIndex] = enemyTeam[activeIndex].copy(
+                            alive = false,
+                            isActive = false
+                        )
+                    }
+                }
+            }
+            BattleEventType.POKEMON_SWITCHED -> {
+                if (event.actor == BattleActor.PLAYER) {
+                    playerActivePokemon = event.message
+                } else if (event.actor == BattleActor.ENEMY) {
+                    val species = event.message
+                    for (i in enemyTeam.indices) {
+                        val isTarget = enemyTeam[i].species == species
+                        if (enemyTeam[i].isActive != isTarget) {
+                            enemyTeam[i] = enemyTeam[i].copy(isActive = isTarget)
+                        }
+                    }
+                }
+            }
+            else -> {}
+        }
     }
 
     private fun recordEvent(
