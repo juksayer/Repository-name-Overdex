@@ -74,27 +74,58 @@ fun EditSpecimenScreen(
         onA = {
             val specimen = editedState ?: return@ODXFiShell
             if (keyboardController.isVisible) {
-                val currentText = when (selectedIndex) {
-                    0 -> specimen.displayName ?: ""
-                    1 -> specimen.cp?.toString() ?: ""
-                    5 -> specimen.fastMove ?: ""
-                    6 -> specimen.chargedMove1 ?: ""
-                    7 -> specimen.chargedMove2 ?: ""
-                    else -> ""
-                }
-                keyboardController.handleA(currentText) { newText ->
-                    editedState = when (selectedIndex) {
-                        0 -> specimen.copy(displayName = newText.ifEmpty { null })
-                        1 -> specimen.copy(cp = newText.toIntOrNull())
-                        5 -> specimen.copy(fastMove = newText.ifEmpty { null })
-                        6 -> specimen.copy(chargedMove1 = newText.ifEmpty { null })
-                        7 -> specimen.copy(chargedMove2 = newText.ifEmpty { null })
-                        else -> specimen
+                val key = keyboardController.layout[keyboardController.currentRow][keyboardController.currentCol]
+                if (selectedIndex == 0 || selectedIndex == 1) {
+                    val currentText = when (selectedIndex) {
+                        0 -> specimen.displayName ?: ""
+                        1 -> specimen.cp?.toString() ?: ""
+                        else -> ""
+                    }
+                    keyboardController.handleA(currentText) { newText ->
+                        editedState = when (selectedIndex) {
+                            0 -> specimen.copy(displayName = newText.ifEmpty { null })
+                            1 -> specimen.copy(cp = newText.toIntOrNull())
+                            else -> specimen
+                        }
+                    }
+                } else {
+                    // Move Selection Logic: Replacement instead of appending
+                    when (key) {
+                        "DONE" -> keyboardController.close()
+                        "CLEAR" -> {
+                            editedState = when (selectedIndex) {
+                                5 -> specimen.copy(fastMove = null)
+                                6 -> specimen.copy(chargedMove1 = null)
+                                7 -> specimen.copy(chargedMove2 = null)
+                                else -> specimen
+                            }
+                        }
+                        else -> {
+                            if (key.isNotEmpty()) {
+                                editedState = when (selectedIndex) {
+                                    5 -> specimen.copy(fastMove = key)
+                                    6 -> specimen.copy(chargedMove1 = key)
+                                    7 -> specimen.copy(chargedMove2 = key)
+                                    else -> specimen
+                                }
+                            }
+                        }
                     }
                 }
             } else {
                 when (selectedIndex) {
-                    0, 1, 5, 6, 7 -> keyboardController.open()
+                    0, 1 -> {
+                        keyboardController.updateLayout(TestKeyboardLayout)
+                        keyboardController.open()
+                    }
+                    5, 6, 7 -> {
+                        val moves = if (selectedIndex == 5) species?.fastMoves else species?.chargedMoves
+                        val moveNames = moves?.map { it.name.uppercase() } ?: emptyList()
+                        val moveLayout = moveNames.chunked(2).toMutableList()
+                        moveLayout.add(listOf("CLEAR", "DONE"))
+                        keyboardController.updateLayout(moveLayout)
+                        keyboardController.open()
+                    }
                     2 -> editedState = specimen.copy(isShadow = !specimen.isShadow, isPurified = false)
                     3 -> editedState = specimen.copy(isPurified = !specimen.isPurified, isShadow = false)
                     4 -> editedState = specimen.copy(isShiny = !specimen.isShiny)
@@ -175,7 +206,7 @@ fun EditSpecimenScreen(
                         TerminalHeader(text = "editing: $currentText")
                         Spacer(modifier = Modifier.height(8.dp))
                         TerminalKeyboard(
-                            layout = TestKeyboardLayout,
+                            layout = keyboardController.layout,
                             currentRow = keyboardController.currentRow,
                             currentColumn = keyboardController.currentCol
                         )

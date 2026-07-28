@@ -23,6 +23,8 @@ import com.example.overdex.ui.theme.*
 
 enum class WizardStep {
     SPECIES_SEARCH,
+    FAST_MOVE_SELECTION,
+    CHARGED_MOVE_SELECTION,
     CP_INPUT,
     ATTRIBUTES
 }
@@ -44,6 +46,8 @@ fun AddOwnedPokemonWizard(
 ) {
     var currentStep by remember { mutableStateOf(WizardStep.SPECIES_SEARCH) }
     var selectedSpecies by remember { mutableStateOf<Pokemon?>(null) }
+    var selectedFastMove by remember { mutableStateOf<String?>(null) }
+    var selectedChargedMoves by remember { mutableStateOf(setOf<String>()) }
     var cpValue by remember { mutableStateOf("0000") }
     var isShadow by remember { mutableStateOf(false) }
     var isPurified by remember { mutableStateOf(false) }
@@ -56,6 +60,8 @@ fun AddOwnedPokemonWizard(
         itemCount = {
             when (currentStep) {
                 WizardStep.SPECIES_SEARCH -> pokemonItems.itemCount + 1 // SearchBar + List
+                WizardStep.FAST_MOVE_SELECTION -> selectedSpecies?.fastMoves?.size ?: 0
+                WizardStep.CHARGED_MOVE_SELECTION -> (selectedSpecies?.chargedMoves?.size ?: 0) + 1 // Moves + NEXT
                 WizardStep.CP_INPUT -> 5 // 4 digits + NEXT
                 WizardStep.ATTRIBUTES -> 4 // 3 toggles + SAVE
             }
@@ -75,8 +81,29 @@ fun AddOwnedPokemonWizard(
                 if (index > 0 && index <= pokemonItems.itemCount) {
                     pokemonItems[index - 1]?.let {
                         selectedSpecies = it
-                        currentStep = WizardStep.CP_INPUT
+                        currentStep = WizardStep.FAST_MOVE_SELECTION
                     }
+                }
+            }
+            WizardStep.FAST_MOVE_SELECTION -> {
+                selectedSpecies?.fastMoves?.getOrNull(index)?.let {
+                    selectedFastMove = it.name
+                    currentStep = WizardStep.CHARGED_MOVE_SELECTION
+                }
+            }
+            WizardStep.CHARGED_MOVE_SELECTION -> {
+                val chargedMovesCount = selectedSpecies?.chargedMoves?.size ?: 0
+                if (index < chargedMovesCount) {
+                    selectedSpecies?.chargedMoves?.getOrNull(index)?.let { move ->
+                        if (selectedChargedMoves.contains(move.name)) {
+                            selectedChargedMoves = selectedChargedMoves - move.name
+                        } else if (selectedChargedMoves.size < 2) {
+                            selectedChargedMoves = selectedChargedMoves + move.name
+                        }
+                    }
+                } else if (index == chargedMovesCount) {
+                    // NEXT button
+                    currentStep = WizardStep.CP_INPUT
                 }
             }
             WizardStep.CP_INPUT -> {
@@ -93,13 +120,17 @@ fun AddOwnedPokemonWizard(
                     2 -> { isShiny = !isShiny }
                     3 -> {
                         selectedSpecies?.let { species ->
+                            val chargedList = selectedChargedMoves.toList()
                             collectionViewModel.addOwnedPokemon(
                                 OwnedPokemon(
                                     speciesId = species.id,
                                     cp = cpValue.toIntOrNull(),
                                     isShadow = isShadow,
                                     isPurified = isPurified,
-                                    isShiny = isShiny
+                                    isShiny = isShiny,
+                                    fastMove = selectedFastMove,
+                                    chargedMove1 = chargedList.getOrNull(0),
+                                    chargedMove2 = chargedList.getOrNull(1)
                                 )
                             )
                             onFinish()
@@ -152,14 +183,16 @@ fun AddOwnedPokemonWizard(
         onB {
             when (currentStep) {
                 WizardStep.SPECIES_SEARCH -> onCancel()
-                WizardStep.CP_INPUT -> currentStep = WizardStep.SPECIES_SEARCH
+                WizardStep.FAST_MOVE_SELECTION -> currentStep = WizardStep.SPECIES_SEARCH
+                WizardStep.CHARGED_MOVE_SELECTION -> currentStep = WizardStep.FAST_MOVE_SELECTION
+                WizardStep.CP_INPUT -> currentStep = WizardStep.CHARGED_MOVE_SELECTION
                 WizardStep.ATTRIBUTES -> currentStep = WizardStep.CP_INPUT
             }
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-            TerminalHeader(text = "register specimen - ${currentStep.ordinal + 1}/3")
+            TerminalHeader(text = "register specimen - ${currentStep.ordinal + 1}/${WizardStep.entries.size}")
 
             when (currentStep) {
                 WizardStep.SPECIES_SEARCH -> {
@@ -171,6 +204,31 @@ fun AddOwnedPokemonWizard(
                             if (it > 0 && it <= pokemonItems.itemCount) {
                                 handleActivate(it)
                             }
+                        }
+                    )
+                }
+                WizardStep.FAST_MOVE_SELECTION -> {
+                    MoveSelectionStep(
+                        title = "SELECT FAST MOVE",
+                        moves = selectedSpecies?.fastMoves ?: emptyList(),
+                        selectedMoves = setOfNotNull(selectedFastMove),
+                        selectedIndex = nav.selectedIndex,
+                        onSelectedIndexChange = {
+                            nav.handleTouch(it)
+                            handleActivate(it)
+                        }
+                    )
+                }
+                WizardStep.CHARGED_MOVE_SELECTION -> {
+                    MoveSelectionStep(
+                        title = "SELECT CHARGED MOVES (1-2)",
+                        moves = selectedSpecies?.chargedMoves ?: emptyList(),
+                        selectedMoves = selectedChargedMoves,
+                        selectedIndex = nav.selectedIndex,
+                        showNext = true,
+                        onSelectedIndexChange = {
+                            nav.handleTouch(it)
+                            handleActivate(it)
                         }
                     )
                 }
@@ -196,6 +254,55 @@ fun AddOwnedPokemonWizard(
             }
         }
     }
+
+
+@Composable
+fun MoveSelectionStep(
+    title: String,
+    moves: List<com.example.overdex.model.Move>,
+    selectedMoves: Set<String>,
+    selectedIndex: Int,
+    showNext: Boolean = false,
+    onSelectedIndexChange: (Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = title,
+            color = TerminalPurple,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(moves.size) { index ->
+                val move = moves[index]
+                TerminalMenuOption(
+                    label = move.name,
+                    selected = selectedIndex == index,
+                    status = if (selectedMoves.contains(move.name)) "SELECTED" else null
+                ) {
+                    onSelectedIndexChange(index)
+                }
+            }
+            
+            if (showNext) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TerminalButton(
+                        text = "NEXT",
+                        onClick = { onSelectedIndexChange(moves.size) },
+                        selected = selectedIndex == moves.size
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 
 @Composable

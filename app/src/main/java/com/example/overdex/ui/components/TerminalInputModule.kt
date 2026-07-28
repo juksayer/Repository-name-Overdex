@@ -7,8 +7,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
  * Controller for the hardware-driven TerminalKeyboard firmware module.
  */
 class TerminalKeyboardController(
-    val layout: List<List<String>> = TestKeyboardLayout
+    initialLayout: List<List<String>> = TestKeyboardLayout
 ) {
+    var layout by mutableStateOf(initialLayout)
     var isVisible by mutableStateOf(false)
     var currentRow by mutableIntStateOf(0)
     var currentCol by mutableIntStateOf(0)
@@ -19,6 +20,12 @@ class TerminalKeyboardController(
 
     fun close() {
         isVisible = false
+    }
+
+    fun updateLayout(newLayout: List<List<String>>) {
+        layout = newLayout
+        currentRow = 0
+        currentCol = 0
     }
 
     fun handleUp() {
