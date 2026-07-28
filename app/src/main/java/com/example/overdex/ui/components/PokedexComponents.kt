@@ -153,6 +153,7 @@ fun InstrumentLCD(
     frameCount: Long = 0,
     lcdLine1: String? = null,
     lcdLine2: String? = null,
+    keyboardController: TerminalKeyboardController? = null,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -171,10 +172,17 @@ fun InstrumentLCD(
                 .fillMaxSize()
                 .background(Color(0xFF121510)) // Dim greenish-black LCD
                 .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = 8.dp, vertical = if (keyboardController?.isVisible == true) 4.dp else 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (lcdLine1 != null || lcdLine2 != null) {
+            if (keyboardController?.isVisible == true) {
+                TerminalKeyboard(
+                    layout = keyboardController.layout,
+                    currentRow = keyboardController.currentRow,
+                    currentColumn = keyboardController.currentCol,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else if (lcdLine1 != null || lcdLine2 != null) {
                 lcdLine1?.let {
                     Text(
                         text = it,
@@ -233,6 +241,7 @@ fun ODXFiShell(
     frameCount: Long = 0,
     lcdLine1: String? = null,
     lcdLine2: String? = null,
+    keyboardController: TerminalKeyboardController? = null,
 
     showBattleOverlay: Boolean = true,
     viewModel: PokedexViewModel? = null,
@@ -577,6 +586,7 @@ fun ODXFiShell(
                 frameCount = frameCount,
                 lcdLine1 = lcdLine1,
                 lcdLine2 = lcdLine2,
+                keyboardController = keyboardController,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()

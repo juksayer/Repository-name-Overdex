@@ -16,7 +16,7 @@ Every feature should make the game feel more effortless, not more complicated.
 
 ## The Foundation
 
-The Pokédex is the foundation.
+The ODX-Fi is the foundation.
 
 The Battle Engine transforms observations into understanding.
 

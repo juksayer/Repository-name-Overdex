@@ -106,63 +106,50 @@ fun PokedexListScreen(
         onStart = onStart,
         onLaunchProbe = onLaunchProbe,
         onLaunchObservatory = onLaunchObservatory,
-        viewModel = viewModel
+        viewModel = viewModel,
+        keyboardController = keyboardController
     ) { _ ->
         Column(modifier = Modifier.fillMaxSize()) {
             TerminalPathIndicator(path = "/specimens/search/")
             
-            if (keyboardController.isVisible) {
-                TerminalHeader("input module")
-                SearchBar(query = searchQuery, selected = false)
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                TerminalKeyboard(
-                    layout = keyboardController.layout,
-                    currentRow = keyboardController.currentRow,
-                    currentColumn = keyboardController.currentCol,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                SearchBar(
-                    query = searchQuery, 
-                    selected = nav.selectedIndex == 0,
-                    onSearchClick = { 
-                        nav.handleTouch(0)
+            SearchBar(
+                query = searchQuery, 
+                selected = nav.selectedIndex == 0,
+                onSearchClick = { 
+                    nav.handleTouch(0)
+                }
+            )
+            
+            searchRequest.activeFilters.forEach { filter ->
+                AssistChip(
+                    onClick = {
+                        viewModel.removeFilter(filter)
+                    },
+                    label = {
+                        Text(filter.label)
                     }
                 )
-                
-                searchRequest.activeFilters.forEach { filter ->
-                    AssistChip(
-                        onClick = {
-                            viewModel.removeFilter(filter)
-                        },
-                        label = {
-                            Text(filter.label)
-                        }
-                    )
-                }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(
-                        count = pokemonItems.itemCount,
-                        key = pokemonItems.itemKey { it.id },
-                        contentType = pokemonItems.itemContentType { "pokemon" }
-                    ) { index ->
-                        // Offset by 1 for the SearchBar
-                        pokemonItems[index]?.let { pokemon ->
-                            PokemonListItem(
-                                pokemon = pokemon,
-                                selected = nav.selectedIndex == (index + 1)
-                            ) {
-                                nav.handleTouch(index + 1)
-                            }
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(
+                    count = pokemonItems.itemCount,
+                    key = pokemonItems.itemKey { it.id },
+                    contentType = pokemonItems.itemContentType { "pokemon" }
+                ) { index ->
+                    // Offset by 1 for the SearchBar
+                    pokemonItems[index]?.let { pokemon ->
+                        PokemonListItem(
+                            pokemon = pokemon,
+                            selected = nav.selectedIndex == (index + 1)
+                        ) {
+                            nav.handleTouch(index + 1)
                         }
                     }
                 }

@@ -112,9 +112,8 @@ Possible directions:
 
 ---
 
-## Maintenance Drawer
+## LCD Display
 
-Future Service LCD drawer.
 
 Ideas include:
 

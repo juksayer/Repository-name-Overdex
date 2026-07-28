@@ -76,7 +76,7 @@ Every pixel earns its place.
 
 Recognition is faster than reading.
 
-The D-pad owns focus.
+The CRT owns focus.
 
 A confirms.
 
