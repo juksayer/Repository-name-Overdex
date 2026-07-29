@@ -20,6 +20,7 @@ import com.example.overdex.model.SharedEventType
 import com.example.overdex.model.MilestoneType
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

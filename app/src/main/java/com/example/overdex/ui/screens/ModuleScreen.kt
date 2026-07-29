@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.overdex.ui.components.*
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.theme.TerminalDimGreen
 
 enum class ModuleStatus(val label: String) {

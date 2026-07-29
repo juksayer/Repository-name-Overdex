@@ -28,6 +28,7 @@ import com.example.overdex.model.observation.PokemonNameObservation
 import com.example.overdex.data.observation.*
 import com.example.overdex.model.observation.*
 import com.example.overdex.model.observation.ObservationSessionState
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.*

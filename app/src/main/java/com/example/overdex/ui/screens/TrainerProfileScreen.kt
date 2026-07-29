@@ -1,6 +1,7 @@
 package com.example.overdex.ui.screens
 
 import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester

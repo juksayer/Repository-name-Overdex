@@ -21,6 +21,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
