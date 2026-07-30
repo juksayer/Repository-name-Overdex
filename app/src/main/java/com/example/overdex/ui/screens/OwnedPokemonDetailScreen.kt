@@ -403,7 +403,10 @@ fun TerminalEditField(
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
             ),
             cursorBrush = SolidColor(TerminalGreen),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                showKeyboardOnFocus = false
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),

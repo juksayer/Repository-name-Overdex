@@ -9,14 +9,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -37,6 +42,25 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+enum class ChatInteractionMode {
+    Navigation,
+    Editing
+}
+
+enum class ChatFocus {
+    MessageInput,
+    SendButton,
+    BackButton
+}
+
+sealed interface KeyboardEditCommand {
+    data class Insert(val text: String) : KeyboardEditCommand
+    object Backspace : KeyboardEditCommand
+    object MoveLeft : KeyboardEditCommand
+    object MoveRight : KeyboardEditCommand
+    object Done : KeyboardEditCommand
+}
+
 @Composable
 fun ChatScreen(
     trainerIdentity: TrainerIdentity?,
@@ -49,8 +73,80 @@ fun ChatScreen(
     onBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var inputText by remember { mutableStateOf("") }
+    var inputText by remember { mutableStateOf(TextFieldValue("")) }
     val listState = rememberLazyListState()
+
+    // Handheld Interaction State
+    var interactionMode by remember { mutableStateOf(ChatInteractionMode.Navigation) }
+    val keyboardController = rememberTerminalKeyboardController()
+    val focusRequester = remember { FocusRequester() }
+
+    val focusableItems = ChatFocus.entries
+    val nav = rememberHandheldNavigationController(
+        itemCount = { focusableItems.size },
+        onActivate = { index ->
+            when (focusableItems[index]) {
+                ChatFocus.MessageInput -> {
+                    interactionMode = ChatInteractionMode.Editing
+                    keyboardController.updateLayout(LettersLayout)
+                    keyboardController.open()
+                }
+                ChatFocus.SendButton -> {
+                    if (inputText.text.isNotBlank() && trainerIdentity != null) {
+                        scope.launch {
+                            chatRepository.send(inputText.text, trainerIdentity)
+                            inputText = TextFieldValue("")
+                        }
+                    }
+                }
+                ChatFocus.BackButton -> onBack()
+            }
+        }
+    )
+
+    val currentFocus = focusableItems[nav.selectedIndex]
+
+    // Sync Compose focus with interaction mode
+    LaunchedEffect(interactionMode) {
+        if (interactionMode == ChatInteractionMode.Editing) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    fun handleKeyboardCommand(command: KeyboardEditCommand) {
+        when (command) {
+            is KeyboardEditCommand.Insert -> {
+                val newText = inputText.text.substring(0, inputText.selection.start) + 
+                             command.text + 
+                             inputText.text.substring(inputText.selection.end)
+                val newSelection = TextRange(inputText.selection.start + command.text.length)
+                inputText = inputText.copy(text = newText, selection = newSelection)
+            }
+            KeyboardEditCommand.Backspace -> {
+                if (inputText.selection.start > 0 || inputText.selection.length > 0) {
+                    val start = if (inputText.selection.length > 0) inputText.selection.start else inputText.selection.start - 1
+                    val end = inputText.selection.end
+                    val newText = inputText.text.substring(0, start) + inputText.text.substring(end)
+                    val newSelection = TextRange(start)
+                    inputText = inputText.copy(text = newText, selection = newSelection)
+                }
+            }
+            KeyboardEditCommand.MoveLeft -> {
+                if (inputText.selection.start > 0) {
+                    inputText = inputText.copy(selection = TextRange(inputText.selection.start - 1))
+                }
+            }
+            KeyboardEditCommand.MoveRight -> {
+                if (inputText.selection.start < inputText.text.length) {
+                    inputText = inputText.copy(selection = TextRange(inputText.selection.start + 1))
+                }
+            }
+            KeyboardEditCommand.Done -> {
+                interactionMode = ChatInteractionMode.Navigation
+                keyboardController.close()
+            }
+        }
+    }
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
@@ -61,12 +157,55 @@ fun ChatScreen(
 
     ODXFiShell(
         viewModel = pokedexViewModel,
-        onB = onBack,
+        onUp = {
+            if (interactionMode == ChatInteractionMode.Editing) keyboardController.handleUp()
+            else nav.moveUp()
+        },
+        onDown = {
+            if (interactionMode == ChatInteractionMode.Editing) keyboardController.handleDown()
+            else nav.moveDown()
+        },
+        onLeft = {
+            if (interactionMode == ChatInteractionMode.Editing) keyboardController.handleLeft()
+        },
+        onRight = {
+            if (interactionMode == ChatInteractionMode.Editing) keyboardController.handleRight()
+        },
         onA = {
-            if (inputText.isNotBlank() && trainerIdentity != null) {
-                scope.launch {
-                    chatRepository.send(inputText, trainerIdentity)
-                    inputText = ""
+            if (interactionMode == ChatInteractionMode.Editing) {
+                keyboardController.handleA(inputText.text) { key ->
+                    when (key) {
+                        "SPACE" -> handleKeyboardCommand(KeyboardEditCommand.Insert(" "))
+                        "DELETE" -> handleKeyboardCommand(KeyboardEditCommand.Backspace)
+                        "#" -> keyboardController.handleModeSwitch()
+                        else -> handleKeyboardCommand(KeyboardEditCommand.Insert(key))
+                    }
+                }
+            } else {
+                nav.activate()
+            }
+        },
+        onB = {
+            if (interactionMode == ChatInteractionMode.Editing) {
+                interactionMode = ChatInteractionMode.Navigation
+                keyboardController.close()
+            } else {
+                onBack()
+            }
+        },
+        onStart = {
+            if (interactionMode == ChatInteractionMode.Editing) {
+                interactionMode = ChatInteractionMode.Navigation
+                keyboardController.close()
+            }
+        },
+        keyboardController = keyboardController,
+        onKeyActivated = { key ->
+            if (interactionMode == ChatInteractionMode.Editing) {
+                when (key) {
+                    "SPACE" -> handleKeyboardCommand(KeyboardEditCommand.Insert(" "))
+                    "DELETE" -> handleKeyboardCommand(KeyboardEditCommand.Backspace)
+                    else -> handleKeyboardCommand(KeyboardEditCommand.Insert(key))
                 }
             }
         }
@@ -114,10 +253,18 @@ fun ChatScreen(
                         .padding(bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val isMessageFocused = currentFocus == ChatFocus.MessageInput
                     TextField(
                         value = inputText,
                         onValueChange = { inputText = it },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .border(
+                                width = 1.dp,
+                                color = if (isMessageFocused) TerminalGreen else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            ),
                         placeholder = { Text("TYPE MESSAGE...", color = TerminalDimGreen, fontSize = 12.sp) },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = TerminalBlack,
@@ -125,9 +272,11 @@ fun ChatScreen(
                             focusedTextColor = TerminalGreen,
                             unfocusedTextColor = TerminalGreen,
                             focusedIndicatorColor = TerminalGreen,
-                            unfocusedIndicatorColor = TerminalDimGreen
+                            unfocusedIndicatorColor = if (isMessageFocused) TerminalGreen else TerminalDimGreen
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        readOnly = interactionMode == ChatInteractionMode.Navigation,
+                        keyboardOptions = KeyboardOptions(showKeyboardOnFocus = false)
                     )
                     
                     Spacer(modifier = Modifier.width(8.dp))
@@ -135,18 +284,23 @@ fun ChatScreen(
                     TerminalButton(
                         text = "SEND",
                         onClick = {
-                            if (inputText.isNotBlank() && trainerIdentity != null) {
+                            if (inputText.text.isNotBlank() && trainerIdentity != null) {
                                 scope.launch {
-                                    chatRepository.send(inputText, trainerIdentity)
-                                    inputText = ""
+                                    chatRepository.send(inputText.text, trainerIdentity)
+                                    inputText = TextFieldValue("")
                                 }
                             }
                         },
+                        selected = currentFocus == ChatFocus.SendButton,
                         modifier = Modifier.width(80.dp)
                     )
                 }
 
-                TerminalButton(text = "back", onClick = onBack)
+                TerminalButton(
+                    text = "back", 
+                    onClick = onBack,
+                    selected = currentFocus == ChatFocus.BackButton
+                )
             }
         }
     }
