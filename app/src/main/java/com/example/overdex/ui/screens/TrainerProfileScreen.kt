@@ -224,9 +224,6 @@ fun TrainerProfileScreen(
                 
                 TerminalButton(
                     text = "edit display name",
-                    onClick = {
-                        nav.handleTouch(focusableItems.indexOf(ProfileFocus.EDIT_NAME))
-                    },
                     selected = currentFocus == ProfileFocus.EDIT_NAME,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.EDIT_NAME]!!)
                 )
@@ -235,9 +232,6 @@ fun TrainerProfileScreen(
 
                 TerminalButton(
                     text = "edit trainer code",
-                    onClick = {
-                        nav.handleTouch(focusableItems.indexOf(ProfileFocus.EDIT_TRAINER_CODE))
-                    },
                     selected = currentFocus == ProfileFocus.EDIT_TRAINER_CODE,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.EDIT_TRAINER_CODE]!!)
                 )
@@ -246,7 +240,6 @@ fun TrainerProfileScreen(
 
                 TerminalButton(
                     text = "show my qr",
-                    onClick = { onShowQr() },
                     selected = currentFocus == ProfileFocus.SHOW_QR,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.SHOW_QR]!!)
                 )
@@ -256,7 +249,6 @@ fun TrainerProfileScreen(
                 if (partnerIdentity == null) {
                     TerminalButton(
                         text = "scan trainer qr",
-                        onClick = { onScanQr() },
                         selected = currentFocus == ProfileFocus.SCAN_QR,
                         modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.SCAN_QR]!!)
                     )
@@ -265,9 +257,6 @@ fun TrainerProfileScreen(
 
                     TerminalButton(
                         text = "link debug partner",
-                        onClick = {
-                            nav.handleTouch(focusableItems.indexOf(ProfileFocus.LINK_DEBUG))
-                        },
                         selected = currentFocus == ProfileFocus.LINK_DEBUG,
                         modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.LINK_DEBUG]!!)
                     )
@@ -294,21 +283,16 @@ fun TrainerProfileScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TerminalButton(
                                 text = "view",
-                                onClick = { nav.handleTouch(focusableItems.indexOf(ProfileFocus.VIEW_TIMELINE)) },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.VIEW_TIMELINE]!!),
                                 selected = currentFocus == ProfileFocus.VIEW_TIMELINE
                             )
                             TerminalButton(
                                 text = "chat",
-                                onClick = { nav.handleTouch(focusableItems.indexOf(ProfileFocus.CHAT)) },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.CHAT]!!),
                                 selected = currentFocus == ProfileFocus.CHAT
                             )
                             TerminalButton(
                                 text = "unlink",
-                                onClick = { 
-                                    nav.handleTouch(focusableItems.indexOf(ProfileFocus.UNLINK))
-                                },
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.UNLINK]!!),
                                 selected = currentFocus == ProfileFocus.UNLINK
                             )
@@ -358,7 +342,6 @@ fun TrainerProfileScreen(
 
                 TerminalButton(
                     text = "back", 
-                    onClick = onBack,
                     selected = currentFocus == ProfileFocus.BACK,
                     modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.BACK]!!)
                 )

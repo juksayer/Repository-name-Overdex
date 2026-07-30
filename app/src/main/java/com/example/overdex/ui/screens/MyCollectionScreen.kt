@@ -1,6 +1,5 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -138,10 +137,7 @@ fun MyCollectionScreen(
 
                 SearchBar(
                     query = searchQuery,
-                    selected = nav.selectedIndex == 0,
-                    onSearchClick = {
-                        nav.handleTouch(0)
-                    }
+                    selected = nav.selectedIndex == 0
                 )
 
                 Text(
@@ -162,10 +158,7 @@ fun MyCollectionScreen(
                     // Persistent Registration Entry
                     item {
                         RegisterSpecimenItem(
-                            selected = nav.selectedIndex == 1,
-                            onClick = {
-                                nav.handleTouch(1)
-                            }
+                            selected = nav.selectedIndex == 1
                         )
                     }
 
@@ -180,10 +173,7 @@ fun MyCollectionScreen(
                             owned = owned,
                             species = species,
                             selected = nav.selectedIndex == index + 2,
-                            pokedexViewModel = pokedexViewModel,
-                            onClick = {
-                                nav.handleTouch(index + 2)
-                            }
+                            pokedexViewModel = pokedexViewModel
                         )
                     }
                 }
@@ -193,11 +183,10 @@ fun MyCollectionScreen(
 
 
 @Composable
-fun RegisterSpecimenItem(selected: Boolean, onClick: () -> Unit) {
+fun RegisterSpecimenItem(selected: Boolean) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) TerminalGreen else TerminalBlack,
             contentColor = if (selected) TerminalBlack else TerminalGreen
@@ -230,13 +219,11 @@ fun OwnedPokemonListItem(
     owned: OwnedPokemon,
     species: Pokemon?,
     selected: Boolean,
-    pokedexViewModel: PokedexViewModel,
-    onClick: () -> Unit
+    pokedexViewModel: PokedexViewModel
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) TerminalGreen else TerminalBlack,
             contentColor = if (selected) TerminalBlack else TerminalGreen

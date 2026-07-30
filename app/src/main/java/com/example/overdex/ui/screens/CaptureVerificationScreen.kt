@@ -430,7 +430,7 @@ fun CaptureVerificationScreen(
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    TerminalButton(text = "load capture library", onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+                    TerminalButton(text = "load capture library")
                 }
             }
 
@@ -444,7 +444,7 @@ fun CaptureVerificationScreen(
                             SpeciesSearchStep(
                                 pokedexViewModel = viewModel,
                                 selectedIndex = manualNav.selectedIndex,
-                                onSelectedIndexChange = { manualNav.handleTouch(it) }
+                                onSelectedIndexChange = { }
                             )
                         }
                     } else {

@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
@@ -11,9 +12,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +35,21 @@ import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import com.example.overdex.ui.components.*
+
+sealed interface PokemonDetailNavItem {
+    data object Back : PokemonDetailNavItem
+    data object Audio : PokemonDetailNavItem
+    data object Artwork : PokemonDetailNavItem
+    data object Region : PokemonDetailNavItem
+    data class Type(val type: PokemonType) : PokemonDetailNavItem
+    data class Evolution(val id: Int, val name: String) : PokemonDetailNavItem
+    data class Weakness(val type: PokemonType) : PokemonDetailNavItem
+    data class Resistance(val type: PokemonType) : PokemonDetailNavItem
+    data class Move(val move: com.example.overdex.model.Move) : PokemonDetailNavItem
+}
 
 @Composable
 fun PokemonDetailScreen(
@@ -41,6 +60,7 @@ fun PokemonDetailScreen(
     onStart: () -> Unit,
     onBackClick: () -> Unit,
     onPlayCry: (String) -> Unit,
+    onWarmUpCry: (String) -> Unit = {},
     onMoveClick: (String) -> Unit,
     onTypeClick: (PokemonType) -> Unit,
     onRegionClick: (String) -> Unit,
@@ -49,21 +69,71 @@ fun PokemonDetailScreen(
     onLaunchObservatory: () -> Unit = {},
     viewModel: PokedexViewModel,
 ) {
+    val navItems = remember(pokemon) {
+        val header = listOf(
+            PokemonDetailNavItem.Back,
+            PokemonDetailNavItem.Audio,
+            PokemonDetailNavItem.Artwork
+        )
+        
+        val body = buildList {
+            add(PokemonDetailNavItem.Region)
+            pokemon.types.forEach { add(PokemonDetailNavItem.Type(it)) }
+            
+            pokemon.prevEvolutions.forEach { add(PokemonDetailNavItem.Evolution(it.num.toInt(), it.name)) }
+            pokemon.nextEvolutions.forEach { add(PokemonDetailNavItem.Evolution(it.num.toInt(), it.name)) }
+            
+            val weaknesses = pokemon.getWeaknesses().filter { it.value > 1.0 }
+            weaknesses.keys.sortedBy { it.ordinal }.forEach {
+                add(PokemonDetailNavItem.Weakness(it))
+            }
+            
+            val resistances = pokemon.getWeaknesses().filter { it.value < 1.0 }
+            resistances.keys.sortedBy { it.ordinal }.forEach {
+                add(PokemonDetailNavItem.Resistance(it))
+            }
+            
+            pokemon.fastMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
+            pokemon.chargedMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
+        }
+        
+        header + body
+    }
+
+    val nav = rememberHandheldNavigationController(
+        key = pokemon.id,
+        itemCount = { navItems.size },
+        onActivate = { index ->
+            when (val item = navItems[index]) {
+                PokemonDetailNavItem.Back -> onBackClick()
+                PokemonDetailNavItem.Artwork -> onPlayCry(pokemon.cryUrl)
+                PokemonDetailNavItem.Audio -> onPlayCry(pokemon.cryUrl)
+                PokemonDetailNavItem.Region -> onRegionClick(pokemon.region)
+                is PokemonDetailNavItem.Type -> onTypeClick(item.type)
+                is PokemonDetailNavItem.Evolution -> onEvolutionClick(item.id)
+                is PokemonDetailNavItem.Weakness -> onTypeClick(item.type)
+                is PokemonDetailNavItem.Resistance -> onTypeClick(item.type)
+                is PokemonDetailNavItem.Move -> onMoveClick(item.move.name)
+            }
+        }
+    )
+
+    val requesters = remember(navItems) {
+        navItems.associateWith { BringIntoViewRequester() }
+    }
+
+    HandheldFocusSync<PokemonDetailNavItem>(nav.selectedIndex, navItems, requesters)
+
+    LaunchedEffect(pokemon.id) {
+        onWarmUpCry(pokemon.cryUrl)
+    }
+
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
     ODXFiShell(
-        onUp = {
-            scope.launch {
-                scrollState.animateScrollBy(-500f)
-            }
-        },
-        onDown = {
-            scope.launch {
-                scrollState.animateScrollBy(500f)
-            }
-        },
+        onUp = { nav.moveUp() },
+        onDown = { nav.moveDown() },
         onB = onBackClick,
-        onA = { onPlayCry(pokemon.cryUrl) },
+        onA = { nav.activate() },
         filterSettings = filterSettings,
         onFilterSettingsChange = onFilterSettingsChange,
         onSelect = onSelect,
@@ -79,26 +149,78 @@ fun PokemonDetailScreen(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBackClick) {
+                // Visual Back Button Target
+                val backItem = PokemonDetailNavItem.Back
+                val isBackSelected = navItems[nav.selectedIndex] == backItem
+                Box(
+                    modifier = Modifier
+                        .bringIntoViewRequester(requesters[backItem]!!)
+                        .border(
+                            width = 2.dp,
+                            color = if (isBackSelected) TerminalGreen else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .background(
+                            color = if (isBackSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(4.dp)
+                ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = TerminalGreen
+                        tint = if (isBackSelected) TerminalGreen else TerminalDimGreen,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Audio Navigation Target
+                val audioItem = PokemonDetailNavItem.Audio
+                val isAudioSelected = navItems[nav.selectedIndex] == audioItem
+                Box(
+                    modifier = Modifier
+                        .bringIntoViewRequester(requesters[audioItem]!!)
+                        .border(
+                            width = 2.dp,
+                            color = if (isAudioSelected) TerminalGreen else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .background(
+                            color = if (isAudioSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Play Cry",
+                        tint = if (isAudioSelected) TerminalGreen else TerminalDimGreen,
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
             
             // Sprite resolution through unified pipeline
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+            val isArtworkSelected = navItems[nav.selectedIndex] == PokemonDetailNavItem.Artwork
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .bringIntoViewRequester(requesters[PokemonDetailNavItem.Artwork]!!)
+                    .border(
+                        width = 2.dp,
+                        color = if (isArtworkSelected) TerminalGreen else Color.Transparent,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
                 AsyncImage(
                     model = pokemon.spriteUrl,
                     contentDescription = pokemon.name,
-                    modifier = Modifier
-                        .size(180.dp)
-                        .clickable { onPlayCry(pokemon.cryUrl) },
+                    modifier = Modifier.size(180.dp),
                     contentScale = ContentScale.Fit,
                 )
             }
@@ -122,16 +244,22 @@ fun PokemonDetailScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     // Region Badge
+                    val regionItem = PokemonDetailNavItem.Region
+                    val isRegionSelected = navItems[nav.selectedIndex] == regionItem
                     Surface(
-                        color = TerminalGreen.copy(alpha = 0.1f),
+                        color = if (isRegionSelected) TerminalGreen else TerminalGreen.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
-                            .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
-                            .clickable { onRegionClick(pokemon.region) }
+                            .bringIntoViewRequester(requesters[regionItem]!!)
+                            .border(
+                                width = 1.dp,
+                                color = if (isRegionSelected) TerminalBlack else TerminalGreen,
+                                shape = RoundedCornerShape(4.dp)
+                            )
                     ) {
                         Text(
                             text = pokemon.region.uppercase(),
-                            color = TerminalGreen,
+                            color = if (isRegionSelected) TerminalBlack else TerminalGreen,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -140,9 +268,20 @@ fun PokemonDetailScreen(
                 }
                 Row {
                     pokemon.types.forEach { type ->
+                        val item = PokemonDetailNavItem.Type(type)
+                        val isSelected = navItems[nav.selectedIndex] == item
                         TypeBadge(
                             type = type,
-                            onClick = { onTypeClick(type) }
+                            onClick = null,
+                            modifier = Modifier
+                                .bringIntoViewRequester(requesters[item]!!)
+                                .then(
+                                    if (isSelected) Modifier.border(
+                                        2.dp,
+                                        TerminalGreen,
+                                        RoundedCornerShape(4.dp)
+                                    ) else Modifier
+                                )
                         )
                     }
                 }
@@ -206,12 +345,18 @@ fun PokemonDetailScreen(
                 ) {
 
                     pokemon.prevEvolutions.forEach { evo ->
+                        val item = PokemonDetailNavItem.Evolution(evo.num.toInt(), evo.name)
+                        val isSelected = navItems[nav.selectedIndex] == item
                         Text(
                             text = evo.name,
-                            color = TerminalGreen,
-                            modifier = Modifier.clickable {
-                                onEvolutionClick(evo.num.toInt())
-                            }
+                            color = if (isSelected) TerminalBlack else TerminalGreen,
+                            modifier = Modifier
+                                .bringIntoViewRequester(requesters[item]!!)
+                                .background(
+                                    if (isSelected) TerminalGreen else Color.Transparent,
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 4.dp)
                         )
 
                         Text(
@@ -228,6 +373,8 @@ fun PokemonDetailScreen(
                     )
 
                     pokemon.nextEvolutions.forEach { evo ->
+                        val item = PokemonDetailNavItem.Evolution(evo.num.toInt(), evo.name)
+                        val isSelected = navItems[nav.selectedIndex] == item
                         Text(
                             text = "↓",
                             color = TerminalDimGreen
@@ -235,10 +382,14 @@ fun PokemonDetailScreen(
 
                         Text(
                             text = evo.name,
-                            color = TerminalGreen,
-                            modifier = Modifier.clickable {
-                                onEvolutionClick(evo.num.toInt())
-                            }
+                            color = if (isSelected) TerminalBlack else TerminalGreen,
+                            modifier = Modifier
+                                .bringIntoViewRequester(requesters[item]!!)
+                                .background(
+                                    if (isSelected) TerminalGreen else Color.Transparent,
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 4.dp)
                         )
                     }
                 }
@@ -247,15 +398,23 @@ fun PokemonDetailScreen(
 
 // Effectiveness
             SectionTitle("Weaknesses")
+            val weaknessItems = navItems.filterIsInstance<PokemonDetailNavItem.Weakness>()
             EffectivenessRow(
-                multipliers = pokemon.getWeaknesses().filter { it.value > 1.0 },
-                onTypeClick = onTypeClick
+                multipliers = pokemon.getWeaknesses(),
+                items = weaknessItems,
+                nav = nav,
+                navItems = navItems,
+                requesters = requesters
             )
             
             SectionTitle("Resistances")
+            val resistanceItems = navItems.filterIsInstance<PokemonDetailNavItem.Resistance>()
             EffectivenessRow(
-                multipliers = pokemon.getWeaknesses().filter { it.value < 1.0 },
-                onTypeClick = onTypeClick
+                multipliers = pokemon.getWeaknesses(),
+                items = resistanceItems,
+                nav = nav,
+                navItems = navItems,
+                requesters = requesters
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -263,12 +422,12 @@ fun PokemonDetailScreen(
             // Moves
             SectionTitle("Fast Moves")
             pokemon.fastMoves.forEach { move ->
+                val item = PokemonDetailNavItem.Move(move)
+                val isSelected = navItems[nav.selectedIndex] == item
                 MoveRow(
                     move = move,
-                    onMoveClick = {
-                        onMoveClick(move.name)
-                    },
-                    onTypeClick = onTypeClick
+                    modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
+                    selected = isSelected
                 )
             }
             
@@ -276,12 +435,12 @@ fun PokemonDetailScreen(
 
             SectionTitle("Charged Moves")
             pokemon.chargedMoves.forEach { move ->
+                val item = PokemonDetailNavItem.Move(move)
+                val isSelected = navItems[nav.selectedIndex] == item
                 MoveRow(
                     move = move,
-                    onMoveClick = {
-                        onMoveClick(move.name)
-                    },
-                    onTypeClick = onTypeClick
+                    modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
+                    selected = isSelected
                 )
             }
         }
@@ -302,18 +461,37 @@ fun SectionTitle(title: String) {
 @Composable
 fun EffectivenessRow(
     multipliers: Map<PokemonType, Double>,
-    onTypeClick: (PokemonType) -> Unit
+    items: List<PokemonDetailNavItem>,
+    nav: HandheldNavigationController,
+    navItems: List<PokemonDetailNavItem>,
+    requesters: Map<PokemonDetailNavItem, BringIntoViewRequester>
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        multipliers.forEach { (type, mult) ->
+        items.forEach { item ->
+            val type = when (item) {
+                is PokemonDetailNavItem.Weakness -> item.type
+                is PokemonDetailNavItem.Resistance -> item.type
+                else -> return@forEach
+            }
+            val mult = multipliers[type] ?: 1.0
+            val isSelected = navItems[nav.selectedIndex] == item
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 TypeBadge(
                     type = type,
                     style = TypeIconStyle.OVERDEX,
-                    onClick = { onTypeClick(type) }
+                    onClick = null,
+                    modifier = Modifier
+                        .bringIntoViewRequester(requesters[item]!!)
+                        .then(
+                            if (isSelected) Modifier.border(
+                                2.dp,
+                                TerminalGreen,
+                                RoundedCornerShape(4.dp)
+                            ) else Modifier
+                        )
                 )
                 Text(
                     text = "%.2fx".format(mult),
@@ -343,17 +521,18 @@ fun FlowRow(
 @Composable
 fun MoveRow(
     move: Move,
-    onMoveClick: (() -> Unit)? = null,
-    onTypeClick: (PokemonType) -> Unit
+    modifier: Modifier = Modifier,
+    selected: Boolean = false
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .border(1.dp, TerminalDimGreen, CardDefaults.shape)
-            .clickable(enabled = onMoveClick != null) {
-                onMoveClick?.invoke()
-            },
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) TerminalGreen else TerminalDimGreen,
+                shape = CardDefaults.shape
+            ),
         colors = CardDefaults.cardColors(
             containerColor = TerminalBlack,
             contentColor = TerminalGreen
@@ -367,9 +546,11 @@ fun MoveRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Type Badge inside MoveRow is not individually navigable here
+                    // based on the requirement to keep the MoveRow as one item.
                     TypeBadge(
                         type = move.type,
-                        onClick = { onTypeClick(move.type) }
+                        onClick = null // Non-navigable within MoveRow for now
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = move.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)

@@ -18,19 +18,27 @@ import kotlinx.coroutines.launch
 @Stable
 class HandheldNavigationController(
     initialIndex: Int = 0,
-    private val itemCount: () -> Int,
-    private val onActivate: (Int) -> Unit = {}
+    itemCount: () -> Int = { 0 },
+    onActivate: (Int) -> Unit = {}
 ) {
     var selectedIndex by mutableIntStateOf(initialIndex)
         internal set
 
+    private var itemCountState by mutableStateOf(itemCount)
+    private var onActivateState by mutableStateOf(onActivate)
+
+    fun updateConfig(
+        itemCount: () -> Int,
+        onActivate: (Int) -> Unit
+    ) {
+        itemCountState = itemCount
+        onActivateState = onActivate
+    }
+
     companion object {
-        fun Saver(
-            itemCount: () -> Int,
-            onActivate: (Int) -> Unit
-        ): Saver<HandheldNavigationController, Int> = Saver(
+        fun Saver(): Saver<HandheldNavigationController, Int> = Saver(
             save = { it.selectedIndex },
-            restore = { HandheldNavigationController(it, itemCount, onActivate) }
+            restore = { HandheldNavigationController(it) }
         )
     }
 
@@ -38,7 +46,7 @@ class HandheldNavigationController(
      * Clamps the selection if the item count decreases.
      */
     fun updateSelection() {
-        val count = itemCount()
+        val count = itemCountState()
         if (count > 0 && selectedIndex >= count) {
             selectedIndex = count - 1
         }
@@ -49,29 +57,32 @@ class HandheldNavigationController(
     }
 
     fun moveDown() {
-        if (selectedIndex < itemCount() - 1) selectedIndex++
+        if (selectedIndex < itemCountState() - 1) selectedIndex++
     }
 
     fun setIndex(index: Int) {
-        val count = itemCount()
+        val count = itemCountState()
         if (index in 0 until count) {
             selectedIndex = index
         }
+    }
+
+    fun activate() {
+        onActivateState(selectedIndex)
     }
 
     /**
      * Handle touch selection logic (first tap selects, second tap activates).
      */
     fun handleTouch(index: Int) {
-        if (selectedIndex == index) {
-            activate()
-        } else {
-            setIndex(index)
+        val count = itemCountState()
+        if (index in 0 until count) {
+            if (selectedIndex == index) {
+                activate()
+            } else {
+                setIndex(index)
+            }
         }
-    }
-
-    fun activate() {
-        onActivate(selectedIndex)
     }
 }
 
@@ -139,15 +150,20 @@ fun <T> rememberHandheldFocusManager(
 
 @Composable
 fun rememberHandheldNavigationController(
+    key: Any? = Unit,
     initialIndex: Int = 0,
     itemCount: () -> Int,
     onActivate: (Int) -> Unit = {}
 ): HandheldNavigationController {
     val controller = rememberSaveable(
-        saver = HandheldNavigationController.Saver(itemCount, onActivate)
+        key,
+        saver = HandheldNavigationController.Saver()
     ) {
-        HandheldNavigationController(initialIndex, itemCount, onActivate)
+        HandheldNavigationController(initialIndex)
     }
+
+    // Direct update during composition ensures fresh callbacks for the very first interaction.
+    controller.updateConfig(itemCount, onActivate)
     
     // Auto-clamp when list content changes
     LaunchedEffect(itemCount()) {

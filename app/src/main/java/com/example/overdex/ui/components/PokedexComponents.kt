@@ -704,7 +704,7 @@ fun BreathingLED(
 @Composable
 fun SearchBar(
     query: String,
-    onSearchClick: () -> Unit = {},
+    onSearchClick: (() -> Unit)? = null,
     selected: Boolean = false
 ) {
     Box(
@@ -714,7 +714,7 @@ fun SearchBar(
             .clip(RoundedCornerShape(24.dp))
             .background(if (selected) TerminalGreen else TerminalBlack)
             .border(1.dp, TerminalGreen, RoundedCornerShape(24.dp))
-            .clickable { onSearchClick() }
+            .then(if (onSearchClick != null) Modifier.clickable { onSearchClick() } else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

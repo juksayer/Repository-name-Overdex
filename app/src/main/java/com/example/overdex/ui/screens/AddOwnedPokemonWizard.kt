@@ -199,12 +199,7 @@ fun AddOwnedPokemonWizard(
                     SpeciesSearchStep(
                         pokedexViewModel = pokedexViewModel,
                         selectedIndex = nav.selectedIndex,
-                        onSelectedIndexChange = { 
-                            nav.handleTouch(it)
-                            if (it > 0 && it <= pokemonItems.itemCount) {
-                                handleActivate(it)
-                            }
-                        }
+                        onSelectedIndexChange = { }
                     )
                 }
                 WizardStep.FAST_MOVE_SELECTION -> {
@@ -213,10 +208,7 @@ fun AddOwnedPokemonWizard(
                         moves = selectedSpecies?.fastMoves ?: emptyList(),
                         selectedMoves = setOfNotNull(selectedFastMove),
                         selectedIndex = nav.selectedIndex,
-                        onSelectedIndexChange = {
-                            nav.handleTouch(it)
-                            handleActivate(it)
-                        }
+                        onSelectedIndexChange = { }
                     )
                 }
                 WizardStep.CHARGED_MOVE_SELECTION -> {
@@ -226,10 +218,7 @@ fun AddOwnedPokemonWizard(
                         selectedMoves = selectedChargedMoves,
                         selectedIndex = nav.selectedIndex,
                         showNext = true,
-                        onSelectedIndexChange = {
-                            nav.handleTouch(it)
-                            handleActivate(it)
-                        }
+                        onSelectedIndexChange = { }
                     )
                 }
                 WizardStep.CP_INPUT -> {
@@ -237,7 +226,7 @@ fun AddOwnedPokemonWizard(
                         speciesName = selectedSpecies?.name ?: "UNKNOWN",
                         cpValue = cpValue,
                         focusIndex = nav.selectedIndex,
-                        onFocusChange = { nav.handleTouch(it) },
+                        onFocusChange = { },
                         onNext = { handleActivate(4) }
                     )
                 }
@@ -247,7 +236,7 @@ fun AddOwnedPokemonWizard(
                         isPurified = isPurified,
                         isShiny = isShiny,
                         focusIndex = nav.selectedIndex,
-                        onFocusChange = { nav.handleTouch(it) },
+                        onFocusChange = { },
                         onAction = { handleActivate(it) }
                     )
                 }
@@ -284,9 +273,7 @@ fun MoveSelectionStep(
                     label = move.name,
                     selected = selectedIndex == index,
                     status = if (selectedMoves.contains(move.name)) "SELECTED" else null
-                ) {
-                    onSelectedIndexChange(index)
-                }
+                )
             }
             
             if (showNext) {
@@ -294,7 +281,6 @@ fun MoveSelectionStep(
                     Spacer(modifier = Modifier.height(16.dp))
                     TerminalButton(
                         text = "NEXT",
-                        onClick = { onSelectedIndexChange(moves.size) },
                         selected = selectedIndex == moves.size
                     )
                 }
@@ -326,10 +312,7 @@ fun SpeciesSearchStep(
     Column {
         SearchBar(
             query = searchQuery,
-            selected = selectedIndex == 0,
-            onSearchClick = {
-                onSelectedIndexChange(0)
-            }
+            selected = selectedIndex == 0
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -347,9 +330,7 @@ fun SpeciesSearchStep(
                     TerminalMenuOption(
                         label = pokemon.name,
                         selected = selectedIndex == index + 1
-                    ) {
-                        onSelectedIndexChange(index + 1)
-                    }
+                    )
                 }
             }
         }
@@ -382,18 +363,13 @@ fun CPInputStep(
             value = cpValue,
             onValueChange = {}, // Handled by D-pad logic
             isFocused = focusIndex < 4,
-            focusedDigitIndex = focusIndex,
-            onDigitFocusChange = onFocusChange
+            focusedDigitIndex = focusIndex
         )
 
         Spacer(modifier = Modifier.height(48.dp))
         
         TerminalButton(
             text = "NEXT", 
-            onClick = { 
-                onFocusChange(4)
-                onNext()
-            },
             selected = focusIndex == 4
         )
     }
@@ -416,39 +392,23 @@ fun AttributesStep(
         AttributeToggle(
             label = "SHADOW", 
             value = isShadow, 
-            selected = focusIndex == 0,
-            onClick = {
-                onFocusChange(0)
-                onAction(0)
-            }
+            selected = focusIndex == 0
         )
         AttributeToggle(
             label = "PURIFIED", 
             value = isPurified, 
-            selected = focusIndex == 1,
-            onClick = {
-                onFocusChange(1)
-                onAction(1)
-            }
+            selected = focusIndex == 1
         )
         AttributeToggle(
             label = "SHINY", 
             value = isShiny, 
-            selected = focusIndex == 2,
-            onClick = {
-                onFocusChange(2)
-                onAction(2)
-            }
+            selected = focusIndex == 2
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
         TerminalButton(
             text = "SAVE SPECIMEN", 
-            onClick = { 
-                onFocusChange(3)
-                onAction(3)
-            },
             selected = focusIndex == 3
         )
     }

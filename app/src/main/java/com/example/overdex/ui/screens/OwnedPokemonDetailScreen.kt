@@ -298,9 +298,6 @@ fun OwnedPokemonDetailScreen(
                 label = "Shadow Form",
                 value = isShadow,
                 selected = focusedField == DetailField.SHADOW,
-                onClick = { 
-                    nav.handleTouch(fields.indexOf(DetailField.SHADOW))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHADOW]!!)
             )
 
@@ -308,9 +305,6 @@ fun OwnedPokemonDetailScreen(
                 label = "Purified Form",
                 value = isPurified,
                 selected = focusedField == DetailField.PURIFIED,
-                onClick = { 
-                    nav.handleTouch(fields.indexOf(DetailField.PURIFIED))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.PURIFIED]!!)
             )
 
@@ -318,9 +312,6 @@ fun OwnedPokemonDetailScreen(
                 label = "Shiny Variant",
                 value = isShiny,
                 selected = focusedField == DetailField.SHINY,
-                onClick = { 
-                    nav.handleTouch(fields.indexOf(DetailField.SHINY))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHINY]!!)
             )
 
@@ -328,18 +319,12 @@ fun OwnedPokemonDetailScreen(
                 label = "Favorite",
                 value = isFavorite,
                 selected = focusedField == DetailField.FAVORITE,
-                onClick = { 
-                    nav.handleTouch(fields.indexOf(DetailField.FAVORITE))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.FAVORITE]!!)
             )
 
             TerminalMenuOption(
                 label = "SHARE WITH PARTNER",
                 selected = focusedField == DetailField.SHARE,
-                onClick = {
-                    nav.handleTouch(fields.indexOf(DetailField.SHARE))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SHARE]!!)
             )
 
@@ -349,18 +334,12 @@ fun OwnedPokemonDetailScreen(
             TerminalMenuOption(
                 label = "SAVE RECORD",
                 selected = focusedField == DetailField.SAVE,
-                onClick = {
-                    nav.handleTouch(fields.indexOf(DetailField.SAVE))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.SAVE]!!)
             )
 
             TerminalMenuOption(
                 label = "DELETE RECORD",
                 selected = focusedField == DetailField.DELETE,
-                onClick = {
-                    nav.handleTouch(fields.indexOf(DetailField.DELETE))
-                },
                 modifier = Modifier.bringIntoViewRequester(requesters[DetailField.DELETE]!!)
             )
 

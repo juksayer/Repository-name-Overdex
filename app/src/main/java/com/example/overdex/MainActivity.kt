@@ -428,7 +428,7 @@ fun PokedexApp(
                 onPokemonClick = { id ->
                     viewModel.viewModelScope.launch {
                         viewModel.getPokemonById(id)?.let {
-                            mediaManager.playSound(it.cryUrl)
+                            mediaManager.warmUp(it.cryUrl)
                         }
                     }
                     navController.navigate("detail/$id")
@@ -460,6 +460,9 @@ fun PokedexApp(
                     },
                     onPlayCry = { url ->
                         mediaManager.playSound(url)
+                    },
+                    onWarmUpCry = { url ->
+                        mediaManager.warmUp(url)
                     },
                     onMoveClick = { moveName ->
                         viewModel.updateSearchQuery(moveName)

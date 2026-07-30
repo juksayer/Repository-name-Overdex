@@ -146,12 +146,12 @@ fun TerminalMenuOption(
     modifier: Modifier = Modifier,
     status: String? = null,
     selected: Boolean = false,
-    onClick: () -> Unit
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = 2.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -199,7 +199,7 @@ fun TerminalText(
 @Composable
 fun TerminalButton(
     text: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     selected: Boolean = false
 ) {
@@ -210,7 +210,7 @@ fun TerminalButton(
                 color = if (selected) TerminalGreen else TerminalGreen.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(4.dp)
             )
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = 8.dp, horizontal = 12.dp)
     ) {
         Text(
@@ -229,7 +229,7 @@ fun HardwareNumericEntry(
     maxDigits: Int = 4,
     isFocused: Boolean = true,
     focusedDigitIndex: Int = 0,
-    onDigitFocusChange: (Int) -> Unit = {}
+    onDigitFocusChange: ((Int) -> Unit)? = null
 ) {
     val paddedValue = value.padStart(maxDigits, '0')
     
@@ -254,7 +254,7 @@ fun HardwareNumericEntry(
                         shape = RoundedCornerShape(4.dp)
                     )
                     .padding(vertical = 8.dp)
-                    .clickable { onDigitFocusChange(i) }
+                    .then(if (onDigitFocusChange != null) Modifier.clickable { onDigitFocusChange(i) } else Modifier)
             ) {
                 Text(
                     text = paddedValue[i].toString(),
@@ -273,14 +273,14 @@ fun AttributeToggle(
     label: String,
     value: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
+    onClick: (() -> Unit)? = null,
     selected: Boolean = false
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(if (selected) TerminalGreen else Color.Transparent)
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

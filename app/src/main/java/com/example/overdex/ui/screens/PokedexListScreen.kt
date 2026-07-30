@@ -146,10 +146,7 @@ fun PokedexListScreen(
             
             SearchBar(
                 query = searchQuery, 
-                selected = nav.selectedIndex == 0,
-                onSearchClick = { 
-                    nav.handleTouch(0)
-                }
+                selected = nav.selectedIndex == 0
             )
             
             searchRequest.activeFilters.forEach { filter ->
@@ -180,9 +177,7 @@ fun PokedexListScreen(
                         PokemonListItem(
                             pokemon = pokemon,
                             selected = nav.selectedIndex == (index + 1)
-                        ) {
-                            nav.handleTouch(index + 1)
-                        }
+                        )
                     }
                 }
             }
@@ -191,11 +186,10 @@ fun PokedexListScreen(
 }
 
 @Composable
-fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false, onClick: () -> Unit) {
+fun PokemonListItem(pokemon: Pokemon, selected: Boolean = false) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) TerminalGreen else TerminalBlack,
             contentColor = if (selected) TerminalBlack else TerminalGreen
