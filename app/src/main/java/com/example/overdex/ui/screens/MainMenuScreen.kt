@@ -40,7 +40,11 @@ fun MainMenuScreen(
     SideEffect { onPhaseChange(phase) }
 
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
-    var menuRevealCount by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) visibleNodes.size else 0) }
+    var menuRevealCount by remember(hasBootedInSession, visibleNodes.size) {
+        mutableIntStateOf(
+            if (hasBootedInSession) visibleNodes.size else 0
+        )
+    }
 
     val bootLines = remember(trainerIdentity) {
         listOf(

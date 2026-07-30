@@ -19,9 +19,12 @@ import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 import com.example.overdex.model.navigation.*
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun DirectoryTree(
@@ -54,17 +57,18 @@ fun DirectoryTree(
     LaunchedEffect(visibleNodes.size) {
         for (i in 1..visibleNodes.size) {
             revealCount = i
-            delay(30L) // Slightly faster for tree expansion
+            delay(30L.milliseconds) // Slightly faster for tree expansion
         }
     }
+    val scrollState = rememberScrollState()
 
-    androidx.compose.foundation.lazy.LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxWidth(),
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items(visibleNodes.size) { index ->
-            val flattened = visibleNodes[index]
+        visibleNodes.forEachIndexed { index, flattened ->
             if (index < revealCount) {
                 val isSelected = selectedPath == flattened.path
                 val label = when (val node = flattened.node) {

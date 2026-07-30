@@ -151,6 +151,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun PokedexApp(
+    modifier: Modifier = Modifier,
     mediaManager: MediaManager,
     calibrationManager: CalibrationManager,
     trainerRepository: TrainerRepository,
@@ -162,7 +163,7 @@ fun PokedexApp(
     timelineEvents: List<SharedEvent>,
     chatMessages: List<ChatMessage>,
     onStartObservation: () -> Unit = {},
-    modifier: Modifier = Modifier
+
 ){
     val navController = rememberNavController()
     val viewModel: PokedexViewModel = viewModel()
@@ -439,7 +440,7 @@ fun PokedexApp(
             arguments = listOf(navArgument("id") { type = NavType.IntType }),
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: 0
-            var pokemon by remember { mutableStateOf<com.example.overdex.model.Pokemon?>(null) }
+            var pokemon by remember { mutableStateOf<Pokemon?>(null) }
 
             LaunchedEffect(id) {
                 pokemon = viewModel.getPokemonById(id)
