@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.overdex.ui.theme.TerminalPurple
 import com.example.overdex.ui.theme.TerminalGreen
 import androidx.paging.compose.collectAsLazyPagingItems
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun CalibrationStatusPanel(
@@ -135,10 +136,31 @@ fun CaptureVerificationScreen(
         mutableStateOf<Observation?>(null)
     }
 
-    val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
+    val keyboardController = rememberTerminalKeyboardController()
+    val localSearchQueryFlow = remember { MutableStateFlow("") }
+    val localSearchQuery by localSearchQueryFlow.collectAsState()
+
+    val pokemonItems = remember(localSearchQueryFlow) {
+        viewModel.createSearchFlow(localSearchQueryFlow)
+    }.collectAsLazyPagingItems()
+
     val manualNav = rememberHandheldNavigationController(
         itemCount = { pokemonItems.itemCount + 1 }
     )
+
+    fun handleActivatedKey(key: String) {
+        when (key) {
+            "SPACE" -> localSearchQueryFlow.value += " "
+            "DELETE" -> {
+                if (localSearchQuery.isNotEmpty()) {
+                    localSearchQueryFlow.value = localSearchQuery.dropLast(1)
+                }
+            }
+            else -> {
+                localSearchQueryFlow.value += key
+            }
+        }
+    }
 
     val triggerRecognition = {
         scope.launch {
@@ -223,7 +245,8 @@ fun CaptureVerificationScreen(
         lcdLine1 = lcdLine1,
         lcdLine2 = lcdLine2,
         onUp = {
-            if (isManualSpeciesSelection) manualNav.moveUp()
+            if (keyboardController.isVisible) keyboardController.handleUp()
+            else if (isManualSpeciesSelection) manualNav.moveUp()
             else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
                 val region = currentTemplate.regions[regionCursorIndex]
                 val updated = when (calibrationMode) {
@@ -240,7 +263,8 @@ fun CaptureVerificationScreen(
             }
         },
         onDown = {
-            if (isManualSpeciesSelection) manualNav.moveDown()
+            if (keyboardController.isVisible) keyboardController.handleDown()
+            else if (isManualSpeciesSelection) manualNav.moveDown()
             else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
                 val region = currentTemplate.regions[regionCursorIndex]
                 val updated = when (calibrationMode) {
@@ -257,7 +281,8 @@ fun CaptureVerificationScreen(
             }
         },
         onLeft = {
-            if (isManualSpeciesSelection) manualNav.moveUp()
+            if (keyboardController.isVisible) keyboardController.handleLeft()
+            else if (isManualSpeciesSelection) manualNav.moveUp()
             else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
                 val region = currentTemplate.regions[regionCursorIndex]
                 val updated = when (calibrationMode) {
@@ -274,7 +299,8 @@ fun CaptureVerificationScreen(
             }
         },
         onRight = {
-            if (isManualSpeciesSelection) manualNav.moveDown()
+            if (keyboardController.isVisible) keyboardController.handleRight()
+            else if (isManualSpeciesSelection) manualNav.moveDown()
             else if (!isInspectionMode && currentTemplate.regions.isNotEmpty()) {
                 val region = currentTemplate.regions[regionCursorIndex]
                 val updated = when (calibrationMode) {
@@ -306,9 +332,13 @@ fun CaptureVerificationScreen(
             }
         },
         onA = {
-            if (isManualSpeciesSelection) {
+            if (keyboardController.isVisible) {
+                keyboardController.handleA(localSearchQuery) { handleActivatedKey(it) }
+            } else if (isManualSpeciesSelection) {
                 val index = manualNav.selectedIndex
-                if (index > 0 && index <= pokemonItems.itemCount) {
+                if (index == 0) {
+                    keyboardController.open()
+                } else if (index > 0 && index <= pokemonItems.itemCount) {
                     pokemonItems[index - 1]?.let {
                         manualSpecies = it
                         isManualSpeciesSelection = false
@@ -356,7 +386,8 @@ fun CaptureVerificationScreen(
             // Disabled on this screen to prioritize discrete region cycling on A
         },
         onB = {
-            if (isManualSpeciesSelection) isManualSpeciesSelection = false
+            if (keyboardController.isVisible) keyboardController.handleB()
+            else if (isManualSpeciesSelection) isManualSpeciesSelection = false
             else if (showWorkspaceViewer) showWorkspaceViewer = false
             else if (isInspectionMode) {
                 isInspectionMode = false
@@ -364,6 +395,8 @@ fun CaptureVerificationScreen(
             }
             else onBack()
         },
+        keyboardController = keyboardController,
+        onKeyActivated = { if (keyboardController.isVisible) handleActivatedKey(it) },
         viewModel = viewModel,
         pipelineStatus = pipelineStatus
     ) { battleMemory ->
@@ -442,7 +475,8 @@ fun CaptureVerificationScreen(
                     if (isManualSpeciesSelection) {
                         Box(modifier = Modifier.fillMaxSize().background(TerminalBlack.copy(alpha = 0.95f))) {
                             SpeciesSearchStep(
-                                pokedexViewModel = viewModel,
+                                searchQuery = localSearchQuery,
+                                pokemonItems = pokemonItems,
                                 selectedIndex = manualNav.selectedIndex,
                                 onSelectedIndexChange = { }
                             )

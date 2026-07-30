@@ -198,21 +198,32 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagedPokemon: Flow<PagingData<Pokemon>> = _searchQuery
-        .flatMapLatest { query ->
-            Pager(
-                config = PagingConfig(pageSize = 50, enablePlaceholders = false),
-            ) {
-                searchRepository.search(
-                    query = query,
-                    type = _searchRequest.value.type
-                )
-            }.flow
-        }
-        .map { pagingData ->
-            pagingData.map { entity -> entity.toDomain() }
-        }
-        .cachedIn(viewModelScope)
+    val pagedPokemon: Flow<PagingData<Pokemon>> = createSearchFlow(_searchQuery, _searchRequest.map { it.type })
+
+    /**
+     * Creates an independent, paged search flow.
+     * 
+     * @param queryFlow A flow of search strings.
+     * @param typeFlow A flow of optional type filters.
+     * @return A flow of PagingData that maintains its own loading state.
+     */
+    //Design Note: PokedexViewModel provides a reusable mechanism for constructing independent search sessions. Individual workflows, such as Register Specimen, own their transient search state while sharing the same repository and paging infrastructure.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun createSearchFlow(
+        queryFlow: Flow<String>,
+        typeFlow: Flow<PokemonType?> = flowOf(null)
+    ): Flow<PagingData<Pokemon>> {
+        return combine(queryFlow, typeFlow) { q, t -> q to t }
+            .flatMapLatest { (q, t) ->
+                Pager(
+                    config = PagingConfig(pageSize = 50, enablePlaceholders = false),
+                ) {
+                    searchRepository.search(query = q, type = t)
+                }.flow
+            }
+            .map { pagingData -> pagingData.map { it.toDomain() } }
+            .cachedIn(viewModelScope)
+    }
 
     init {
         viewModelScope.launch {

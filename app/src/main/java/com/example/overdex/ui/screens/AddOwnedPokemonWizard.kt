@@ -14,8 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.Pokemon
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
@@ -36,13 +38,7 @@ fun AddOwnedPokemonWizard(
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onFinish: () -> Unit,
-    onCancel: () -> Unit,
-    onUp: (() -> Unit) -> Unit = {},
-    onDown: (() -> Unit) -> Unit = {},
-    onLeft: (() -> Unit) -> Unit = {},
-    onRight: (() -> Unit) -> Unit = {},
-    onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
+    onCancel: () -> Unit
 ) {
     var currentStep by remember { mutableStateOf(WizardStep.SPECIES_SEARCH) }
     var selectedSpecies by remember { mutableStateOf<Pokemon?>(null) }
@@ -53,8 +49,14 @@ fun AddOwnedPokemonWizard(
     var isPurified by remember { mutableStateOf(false) }
     var isShiny by remember { mutableStateOf(false) }
 
+    val keyboardController = rememberTerminalKeyboardController()
+    val localSearchQueryFlow = remember { MutableStateFlow("") }
+    val localSearchQuery by localSearchQueryFlow.collectAsState()
+
     // For Species Search list navigation
-    val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
+    val pokemonItems = remember(localSearchQueryFlow) {
+        pokedexViewModel.createSearchFlow(localSearchQueryFlow)
+    }.collectAsLazyPagingItems()
 
     val nav = rememberHandheldNavigationController(
         itemCount = {
@@ -68,20 +70,16 @@ fun AddOwnedPokemonWizard(
         }
     )
 
-    // Separate activation logic to avoid circular reference during initialization
-    LaunchedEffect(nav.selectedIndex, currentStep) {
-        // This is a bit tricky since we want to handle activation on 'A' press,
-        // but rememberHandheldNavigationController's onActivate is called on handleTouch too.
-        // Actually, let's just define handleActivate here.
-    }
-
     fun handleActivate(index: Int) {
         when (currentStep) {
             WizardStep.SPECIES_SEARCH -> {
-                if (index > 0 && index <= pokemonItems.itemCount) {
+                if (index == 0) {
+                    keyboardController.open()
+                } else if (index > 0 && index <= pokemonItems.itemCount) {
                     pokemonItems[index - 1]?.let {
                         selectedSpecies = it
                         currentStep = WizardStep.FAST_MOVE_SELECTION
+                        nav.setIndex(0) // Reset focus for next step
                     }
                 }
             }
@@ -89,6 +87,7 @@ fun AddOwnedPokemonWizard(
                 selectedSpecies?.fastMoves?.getOrNull(index)?.let {
                     selectedFastMove = it.name
                     currentStep = WizardStep.CHARGED_MOVE_SELECTION
+                    nav.setIndex(0)
                 }
             }
             WizardStep.CHARGED_MOVE_SELECTION -> {
@@ -104,11 +103,13 @@ fun AddOwnedPokemonWizard(
                 } else if (index == chargedMovesCount) {
                     // NEXT button
                     currentStep = WizardStep.CP_INPUT
+                    nav.setIndex(0)
                 }
             }
             WizardStep.CP_INPUT -> {
                 if (index == 4) {
                     currentStep = WizardStep.ATTRIBUTES
+                    nav.setIndex(0)
                 } else {
                     nav.moveDown() // Move to next digit
                 }
@@ -141,9 +142,26 @@ fun AddOwnedPokemonWizard(
         }
     }
 
-    SideEffect {
-        onUp {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+    fun handleActivatedKey(key: String) {
+        when (key) {
+            "SPACE" -> localSearchQueryFlow.value += " "
+            "DELETE" -> {
+                if (localSearchQuery.isNotEmpty()) {
+                    localSearchQueryFlow.value = localSearchQuery.dropLast(1)
+                }
+            }
+            else -> {
+                localSearchQueryFlow.value += key
+            }
+        }
+    }
+
+    ODXFiShell(
+        viewModel = pokedexViewModel,
+        onUp = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleUp()
+            } else if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 val charArray = cpValue.toCharArray()
                 val currentDigit = charArray[nav.selectedIndex].digitToInt()
                 charArray[nav.selectedIndex] = ((currentDigit + 1) % 10).digitToChar()
@@ -151,10 +169,11 @@ fun AddOwnedPokemonWizard(
             } else {
                 nav.moveUp()
             }
-        }
-
-        onDown {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+        },
+        onDown = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleDown()
+            } else if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 val charArray = cpValue.toCharArray()
                 val currentDigit = charArray[nav.selectedIndex].digitToInt()
                 charArray[nav.selectedIndex] = ((currentDigit + 9) % 10).digitToChar()
@@ -162,42 +181,70 @@ fun AddOwnedPokemonWizard(
             } else {
                 nav.moveDown()
             }
-        }
-
-        onLeft {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex > 0) {
+        },
+        onLeft = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleLeft()
+            } else if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex > 0) {
                 nav.moveUp()
             }
-        }
-
-        onRight {
-            if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
+        },
+        onRight = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleRight()
+            } else if (currentStep == WizardStep.CP_INPUT && nav.selectedIndex < 4) {
                 nav.moveDown()
             }
-        }
-
-        onA {
-            handleActivate(nav.selectedIndex)
-        }
-
-        onB {
-            when (currentStep) {
-                WizardStep.SPECIES_SEARCH -> onCancel()
-                WizardStep.FAST_MOVE_SELECTION -> currentStep = WizardStep.SPECIES_SEARCH
-                WizardStep.CHARGED_MOVE_SELECTION -> currentStep = WizardStep.FAST_MOVE_SELECTION
-                WizardStep.CP_INPUT -> currentStep = WizardStep.CHARGED_MOVE_SELECTION
-                WizardStep.ATTRIBUTES -> currentStep = WizardStep.CP_INPUT
+        },
+        onA = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleA(localSearchQuery) { handleActivatedKey(it) }
+            } else {
+                handleActivate(nav.selectedIndex)
             }
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+        },
+        onB = {
+            if (keyboardController.isVisible) {
+                keyboardController.handleB()
+            } else {
+                when (currentStep) {
+                    WizardStep.SPECIES_SEARCH -> onCancel()
+                    WizardStep.FAST_MOVE_SELECTION -> {
+                        currentStep = WizardStep.SPECIES_SEARCH
+                        nav.setIndex(0)
+                    }
+                    WizardStep.CHARGED_MOVE_SELECTION -> {
+                        currentStep = WizardStep.FAST_MOVE_SELECTION
+                        nav.setIndex(0)
+                    }
+                    WizardStep.CP_INPUT -> {
+                        currentStep = WizardStep.CHARGED_MOVE_SELECTION
+                        nav.setIndex(0)
+                    }
+                    WizardStep.ATTRIBUTES -> {
+                        currentStep = WizardStep.CP_INPUT
+                        nav.setIndex(0)
+                    }
+                }
+            }
+        },
+        keyboardController = keyboardController,
+        onKeyActivated = { key ->
+            if (keyboardController.isVisible) {
+                handleActivatedKey(key)
+            }
+        },
+        filterSettings = filterSettings,
+        onFilterSettingsChange = onFilterSettingsChange
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             TerminalHeader(text = "register specimen - ${currentStep.ordinal + 1}/${WizardStep.entries.size}")
 
             when (currentStep) {
                 WizardStep.SPECIES_SEARCH -> {
                     SpeciesSearchStep(
-                        pokedexViewModel = pokedexViewModel,
+                        searchQuery = localSearchQuery,
+                        pokemonItems = pokemonItems,
                         selectedIndex = nav.selectedIndex,
                         onSelectedIndexChange = { }
                     )
@@ -243,6 +290,7 @@ fun AddOwnedPokemonWizard(
             }
         }
     }
+}
 
 
 @Composable
@@ -293,13 +341,11 @@ fun MoveSelectionStep(
 
 @Composable
 fun SpeciesSearchStep(
-    pokedexViewModel: PokedexViewModel,
+    searchQuery: String,
+    pokemonItems: androidx.paging.compose.LazyPagingItems<Pokemon>,
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit
 ) {
-
-    val searchQuery by pokedexViewModel.searchQuery.collectAsState()
-    val pokemonItems = pokedexViewModel.pagedPokemon.collectAsLazyPagingItems()
     val listState = rememberLazyListState()
 
     HandheldListSync(
@@ -413,5 +459,3 @@ fun AttributesStep(
         )
     }
 }
-
-

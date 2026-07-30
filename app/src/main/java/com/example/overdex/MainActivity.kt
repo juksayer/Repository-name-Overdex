@@ -575,48 +575,14 @@ fun PokedexApp(
         }
         composable("add_pokemon_wizard") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
-
-            var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-            ODXFiShell(
-                showBattleOverlay = false,
-                onUp = { upHandler?.invoke() },
-                onDown = { downHandler?.invoke() },
-                onLeft = { leftHandler?.invoke() },
-                onRight = { rightHandler?.invoke() },
-                onA = { aHandler?.invoke() },
-                onB = { bHandler?.invoke() },
-                onStart = { viewModel.startObservation() },
-                onSelect = { /* Reserved */ },
-                viewModel = viewModel,
+            AddOwnedPokemonWizard(
+                pokedexViewModel = viewModel,
+                collectionViewModel = collectionViewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-
-            ) {
-                AddOwnedPokemonWizard(
-                    pokedexViewModel = viewModel,
-                    collectionViewModel = collectionViewModel,
-                    filterSettings = filterSettings,
-                    onFilterSettingsChange = { filterSettings = it },
-                    onFinish = { navController.popBackStack() },
-                    onCancel = { navController.popBackStack() },
-                    onUp = { upHandler = it },
-                    onDown = { downHandler = it },
-                    onLeft = { leftHandler = it },
-                    onRight = { rightHandler = it },
-                    onA = { aHandler = it },
-                    onB = { bHandler = it }
-                )
-            }
+                onFinish = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
+            )
         }
         composable("accessibility_probe") {
             ODXFiShell(

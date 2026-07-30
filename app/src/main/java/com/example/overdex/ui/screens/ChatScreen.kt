@@ -78,12 +78,10 @@ fun ChatScreen(
     var inputText by remember { mutableStateOf(TextFieldValue("")) }
     val listState = rememberLazyListState()
 
-    Log.e("ODX_CHAT", "ChatScreen composed")
 
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(5000)
-        Log.e("ODX_CHAT", "Auto-triggering onBack for testing")
-        onBack()
+                onBack()
     }
 
     // Handheld Interaction State

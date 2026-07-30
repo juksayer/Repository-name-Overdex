@@ -55,219 +55,281 @@ Even dragons flinch.
 #007 Squirtle
 
 Quiet Resilience
+
 Little turtle grins.
 Behind a shell waits a tide
 Stronger than it seems.
 
+
 #008 Wartortle
 
 The Turning Tide
+
 Waves answer its call.
 Tail draws circles through the surf—
 Calm before the flood.
 
+
 #009 Blastoise
 
 Unyielding Current
+
 Cannons find their mark.
 Hydro torrents wear foes down.
 Stone learns how to swim.
 
+
 #010 Caterpie
 
 Every Journey Begins Small
+
 Small feet cross the grass.
 No one fears the first footstep—
 Until they should.
 
+
 #011 Metapod
 
 The Waiting Season
+
 Silent in the bark.
 Strength is often hidden where
 Nothing seems to move.
 
+
 #012 Butterfree
 
 Gentle Victories
+
 Soft wings ride the breeze.
 Sleep steals victory unseen—
 Beauty wins battles.
 
+
 #013 Weedle
 
 The Smallest Thorn
+
 One careless footstep,
 Tiny barbs teach giant foes
 To respect the small.
 
+
 #014 Kakuna
 
 The Silent Forge
+
 Still as forest stone.
 The patient survive longest—
 Time sharpens the sting.
 
+
 #015 Beedrill
 
 The Swarm's Judgment
+
 Golden lances flash.
 One mistake invites the swarm.
 Retreat comes too late.
 
+
 #016 Pidgey
 
 First Flight
+
 Morning winds whisper.
 Every master once looked up
 To this little bird.
 
+
 #017 Pidgeotto
 
 Eyes Above
+
 Circling above,
 Waiting for the perfect dive—
 Patience hunts the bold.
 
+
 #018 Pidgeot
 
 Master of the Wind
+
 Sky belongs to none.
 Yet every feather declares:
 "This wind answers me."
 
+
 #019 Rattata
 
 The Overlooked
+
 Ignored for too long,
 Small teeth steal impossible
 Victories from pride.
 
+
 #020 Raticate
 
 Street Wisdom
+
 Street survivor's grin.
 Every scar remembers why
 The weak bite hardest.
 
+
 #021 Spearow
 
 The Reckless Wing
+
 Sharp eyes never blink.
 The reckless strike first and fast—
 The wise strike once more.
 
+
 #022 Fearow
 
 The Hunter's Cry
+
 Sky splits at its cry.
 Mercy cannot catch its wings;
 Only speed survives.
 
+
 #023 Ekans
 
 The Waiting Strike
+
 Silent through the grass.
 Every battle has a point—
 It waits for the right one.
 
+
 #024 Arbok
 
 The Shape of Fear
+
 Patterned eyes deceive.
 Fear wins battles long before
 Fangs ever descend.
 
+
 #025 Pikachu
 
 The First Spark
+
 Lightning gathers still.
 One spark turns a hopeless fight
 Into roaring cheers.
 
+
 #026 Raichu
 
 Mastered Thunder
+
 Thunder walks the earth.
 Power mastered through calm hands
 Needs no boast at all.
 
+
 #027 Sandshrew
 
 Beneath the Storm
+
 Claws beneath the dust.
 Storms cannot unearth the one
 Who learned to endure.
 
+
 #028 Sandslash
 
 Scars of Honor
+
 Steel claws greet the dawn.
 Every scar upon its hide
 Was earned standing firm.
 
+
 #029 Nidoran♀
 
 The Brave Bloom
+
 Small but resolute.
 The fiercest hearts often bloom
 Before strength is seen.
 
+
 #030 Nidorina
 
 Quiet Strength
+
 Grace hides sharpened horns.
 Those who mistake calm for weak
 Rarely do twice.
 
+
 #031 Nidoqueen
 
 The Guardian Queen
+
 A mountain stands watch.
 Gentle hearts become granite
 When their own are threatened.
 
+
 #032 Nidoran♂
 
 The Eager Horn
+
 Eager little horn.
 Courage often runs ahead
 Of wisdom at first.
 
+
 #033 Nidorino
 
 The Lowered Horn
+
 One lowered head speaks.
 Some battles are won before
 The first horn collides.
 
+
 #034 Nidoking
 
 The Uncrowned King
+
 The earth holds its breath.
 Kings need neither crown nor throne—
 Only room to charge.
 
+
 #035 Clefairy
 
 Moonlit Wonder
+
 Moonlight softly falls.
 Joy can hide surprising strength;
 Never laugh too soon.
 
+
 #036 Clefable
 
 The Oldest Wish
+
 Stars know her true name.
 The oldest magic whispers
 Where footsteps leave none.
 
+
 #037 Vulpix
 
 Nine Dancing Embers
+
 Nine bright tails dancing.
 Every ember tells a tale
 The fire remembers.
+
 
 #038 Ninetales
 
