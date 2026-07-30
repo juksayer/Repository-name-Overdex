@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens
 
+import androidx.activity.compose.BackHandler
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.example.overdex.data.ChatRepository
@@ -76,6 +78,14 @@ fun ChatScreen(
     var inputText by remember { mutableStateOf(TextFieldValue("")) }
     val listState = rememberLazyListState()
 
+    Log.e("ODX_CHAT", "ChatScreen composed")
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(5000)
+        Log.e("ODX_CHAT", "Auto-triggering onBack for testing")
+        onBack()
+    }
+
     // Handheld Interaction State
     var interactionMode by remember { mutableStateOf(ChatInteractionMode.Navigation) }
     val keyboardController = rememberTerminalKeyboardController()
@@ -99,17 +109,25 @@ fun ChatScreen(
                         }
                     }
                 }
-                ChatFocus.BackButton -> onBack()
+                ChatFocus.BackButton -> {
+                    Log.e("ODX_CHAT", "BackButton activated")
+                    onBack()
+                }
             }
         }
     )
 
     val currentFocus = focusableItems[nav.selectedIndex]
 
+    BackHandler {
+        Log.e("ODX_CHAT", "System BackHandler triggered")
+        onBack()
+    }
+
     // Sync Compose focus with interaction mode
     LaunchedEffect(interactionMode) {
         if (interactionMode == ChatInteractionMode.Editing) {
-            focusRequester.requestFocus()
+            // focusRequester.requestFocus() // Experiment B: Disabled focus request
         }
     }
 
@@ -190,6 +208,7 @@ fun ChatScreen(
                 interactionMode = ChatInteractionMode.Navigation
                 keyboardController.close()
             } else {
+                Log.e("ODX_CHAT", "B-Button pressed")
                 onBack()
             }
         },

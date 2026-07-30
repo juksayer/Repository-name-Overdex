@@ -1,0 +1,5 @@
+- [ ] Experiment B: `readOnly` Transition Without Programmatic Focus
+- [ ] Experiment A: `requestFocus()` Alone (Baseline Editable)
+- [ ] Experiment D: Focus a Non-TextField Control
+- [ ] Experiment C: Sequenced Transition
+- [ ] Identify minimal set of conditions for IME appearance

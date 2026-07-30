@@ -27,7 +27,7 @@ fun MainMenuScreen(
     selectedPath: String = "",
     trainerIdentity: TrainerIdentity? = null,
     onPhaseChange: (MainMenuPhase) -> Unit = {},
-    onNodeSelected: (TreeNode) -> Unit = {}
+    onNodeSelected: (FlattenedNode) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 

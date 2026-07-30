@@ -216,7 +216,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         viewModelScope.launch {
-            Log.d("STARTUP", "1: ViewModel init")
+            Log.d("STARTUP", "1: ViewModel init [BUILD JULY30_A]")
 
             val gameMasterText = gameMasterLoader.loadRawJson()
             println("GameMaster length = ${gameMasterText.length}")

@@ -8,6 +8,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -135,7 +136,8 @@ fun TrainerProfileScreen(
                         unfocusedContainerColor = TerminalBlack,
                         focusedTextColor = TerminalGreen,
                         unfocusedTextColor = TerminalGreen
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(showKeyboardOnFocus = false)
                 )
             },
             confirmButton = {
@@ -163,7 +165,8 @@ fun TrainerProfileScreen(
                         unfocusedContainerColor = TerminalBlack,
                         focusedTextColor = TerminalGreen,
                         unfocusedTextColor = TerminalGreen
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(showKeyboardOnFocus = false)
                 )
             },
             confirmButton = {

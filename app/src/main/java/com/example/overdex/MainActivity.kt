@@ -235,7 +235,18 @@ fun PokedexApp(
                     visibleNodes = treeState.visibleNodes,
                     selectedPath = treeState.selectedPath,
                     trainerIdentity = trainerIdentity,
-                    onPhaseChange = { phase = it }
+                    onPhaseChange = { phase = it },
+                    onNodeSelected = { node ->
+                        when (node.path) {
+                            "/trainer/chat" -> navController.navigate("private_chat")
+                            "/trainer/profile" -> navController.navigate("trainer_profile")
+                            "/trainer/collection" -> navController.navigate("specimens/collection")
+                            "/observation/search" -> navController.navigate("list")
+                            "/observation/history" -> navController.navigate("battle_history")
+                            "/observation/logs" -> navController.navigate("battle_log")
+                            "/system/calibration" -> navController.navigate("calibration")
+                        }
+                    }
                 )
             }
         }

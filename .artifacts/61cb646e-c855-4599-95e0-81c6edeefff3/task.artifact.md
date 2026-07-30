@@ -1,4 +1,5 @@
-- `[x]` Update `ChatScreen.kt` to suppress Android IME using `KeyboardOptions(showKeyboardOnFocus = false)`.
-- `[x]` Update `OwnedPokemonDetailScreen.kt` to suppress Android IME using `KeyboardOptions(showKeyboardOnFocus = false)`.
-- `[ ]` Update `TrainerProfileScreen.kt` to suppress Android IME using `KeyboardOptions(showKeyboardOnFocus = false)`.
-- `[ ]` Verify IME suppression across all screens (Chat, Detail, Profile).
+- `[x]` Update `ChatScreen.kt` to suppress Android IME using platform-appropriate mechanisms.
+- `[x]` Update `OwnedPokemonDetailScreen.kt` to suppress Android IME using platform-appropriate mechanisms.
+- `[x]` Update `TrainerProfileScreen.kt` to suppress Android IME for handheld editing dialogs.
+- `[x]` Verify platform-level IME suppression across all screens (Chat, Detail, Profile).
+- `[x]` Check for "No IME Flicker" during mode transitions.

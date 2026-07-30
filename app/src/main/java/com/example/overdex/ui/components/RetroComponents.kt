@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
     selectedPath: String,
-    onNodeSelected: (TreeNode) -> Unit,
+    onNodeSelected: (FlattenedNode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -83,7 +83,7 @@ fun DirectoryTree(
                     label = label,
                     selected = isSelected,
                     modifier = Modifier.padding(start = (flattened.depth * 16).dp),
-                    onClick = { onNodeSelected(flattened.node) }
+                    onClick = { onNodeSelected(flattened) }
                 )
             }
         }
