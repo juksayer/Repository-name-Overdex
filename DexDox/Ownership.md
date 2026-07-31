@@ -371,3 +371,9 @@ workspaceStack
 activeWorkspace
 
 instead of storing both.
+
+Navigation Context Ownership Invariant
+
+Only the component that currently owns the active navigation context may dispatch navigation 
+intents. Intents originating from stale contexts must be ignored rather than allowing navigation 
+state to become inconsistent.

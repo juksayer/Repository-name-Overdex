@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import android.os.SystemClock
 import android.util.Log
+import java.util.UUID
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -272,6 +274,17 @@ fun ODXFiShell(
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
+
+    val currentRoute = com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute.current
+    val owningRoute = remember { currentRoute }
+    val instanceId = remember { UUID.randomUUID().toString().take(8) }
+
+    DisposableEffect(instanceId) {
+        com.example.overdex.diagnostics.DiagnosticLogger.logLifecycle(instanceId, "INIT", currentRoute)
+        onDispose {
+            com.example.overdex.diagnostics.DiagnosticLogger.logLifecycle(instanceId, "DISPOSE", currentRoute)
+        }
+    }
 
     // Overlay Input Registration
     var settingsUp by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -637,7 +650,15 @@ fun ODXFiShell(
                     handleInput("B")
                     if (showResearcherSettings) researcherB?.invoke()
                     else if (showSettings) settingsB?.invoke()
-                    else onB()
+                    else {
+                        val isOwner = currentRoute == owningRoute
+                        com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
+                        if (isOwner) {
+                            onB()
+                        } else {
+                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
+                        }
+                    }
                 })
                 InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() })
                 InstrumentButton(label = "START", onClick = {

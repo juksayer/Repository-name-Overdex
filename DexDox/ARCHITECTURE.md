@@ -369,3 +369,5 @@ Navigation operations may only mutate navigation state while the requesting navi
 still owns the request. Stale callbacks, delayed input, duplicated intents, replayed events, or any
 other request that has outlived its ownership must be ignored rather than allowing navigation state
 to become inconsistent.
+
+Instrument the boundary, then let the evidence determine the next brick.

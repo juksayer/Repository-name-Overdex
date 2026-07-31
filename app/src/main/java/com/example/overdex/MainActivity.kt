@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.overdex.media.MediaManager
 import androidx.lifecycle.lifecycleScope
 import com.example.overdex.data.*
@@ -201,452 +202,459 @@ fun PokedexApp(
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = "main_menu",
-        modifier = modifier,
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
+    CompositionLocalProvider(
+        com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides currentRoute
     ) {
-        composable("main_menu") {
-            var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
-            val instrumentState by viewModel.observationSessionState.collectAsState()
-            val deploymentState by viewModel.deploymentState.collectAsState()
-            val frameCount by viewModel.frameCount.collectAsState()
-            ODXFiShell(
+        NavHost(
+            navController = navController,
+            startDestination = "main_menu",
+            modifier = modifier,
+        ) {
+            composable("main_menu") {
+                var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
+                val instrumentState by viewModel.observationSessionState.collectAsState()
+                val deploymentState by viewModel.deploymentState.collectAsState()
+                val frameCount by viewModel.frameCount.collectAsState()
+                ODXFiShell(
 
-                instrumentState = instrumentState,
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                showBattleOverlay = false,
+                    instrumentState = instrumentState,
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    showBattleOverlay = false,
 
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onUp = { if (phase == MainMenuPhase.READY) viewModel.handleUp() },
-                onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
-                onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
-                onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
-                onStart = { if (phase == MainMenuPhase.READY) viewModel.startObservation() },
-                onSelect = { /* Reserved */ },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                isLogoInteractive = true
-            ) { _ ->
-                MainMenuScreen(
-                    hasBootedInSession = hasBootedInSession,
-                    onBootComplete = { viewModel.markBooted() },
-                    visibleNodes = treeState.visibleNodes,
-                    selectedPath = treeState.selectedPath,
-                    trainerIdentity = trainerIdentity,
-                    onPhaseChange = { phase = it },
-                    onNodeSelected = { node ->
-                        when (node.path) {
-                            "/trainer/chat" -> navController.navigate("private_chat")
-                            "/trainer/profile" -> navController.navigate("trainer_profile")
-                            "/trainer/collection" -> navController.navigate("specimens/collection")
-                            "/observation/search" -> navController.navigate("list")
-                            "/observation/history" -> navController.navigate("battle_history")
-                            "/observation/logs" -> navController.navigate("battle_log")
-                            "/system/calibration" -> navController.navigate("calibration")
-                        }
-                    }
-                )
-            }
-        }
-        
-        composable("battle_history") {
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onStart = { viewModel.startObservation() },
-                onSelect = { /* Reserved */ },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                onB = { navController.debugPopBackStack() }
-            ) { battleMemory ->
-                BattleHistoryScreen(
-                    viewModel = viewModel,
-                    onBattleClick = { id -> 
-                        navController.navigate("module/battle.summary/OFFLINE/View details for battle $id.")
-                    },
-                    onBack = { navController.debugPopBackStack() }
-                )
-            }
-        }
-        composable("battle_log") {
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onStart = { viewModel.startObservation() },
-                onSelect = { /* Reserved */ },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                onB = { navController.debugPopBackStack() }
-            ) { battleMemory ->
-                BattleTimelineScreen(
-                    battleMemory = battleMemory,
-                    viewModel = viewModel,
-                    onBack = { navController.debugPopBackStack() }
-                )
-            }
-        }
-        composable("module/{title}/{status}/{description}") { backStackEntry: NavBackStackEntry ->
-            val title = backStackEntry.arguments?.getString("title") ?: "module"
-            val statusStr = backStackEntry.arguments?.getString("status") ?: "UNAVAILABLE"
-            val description = backStackEntry.arguments?.getString("description") ?: ""
-            
-            val status = try { ModuleStatus.valueOf(statusStr) } catch(_: Exception) { ModuleStatus.UNAVAILABLE }
-            
-            ModuleScreen(
-                title = title,
-                status = status,
-                description = description,
-                onBack = { navController.debugPopBackStack() },
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it }
-            )
-        }
-
-        composable("calibration") {
-            DisposableEffect(Unit) {
-                viewModel.setObservationSessionState(ObservationSessionState.CALIBRATING)
-                onDispose {
-                    viewModel.setObservationSessionState(ObservationSessionState.IDLE)
-                }
-            }
-
-            var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onUp = { upHandler?.invoke() },
-                onDown = { downHandler?.invoke() },
-                onLeft = { leftHandler?.invoke() },
-                onRight = { rightHandler?.invoke() },
-                onA = { aHandler?.invoke() },
-                onB = { navController.debugPopBackStack() },
-                onStart = { viewModel.startObservation() },
-                onSelect = { /* Reserved */ },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount
-            ) { _ ->
-                CalibrationScreen(
-                    calibrationManager = calibrationManager,
-                    onUp = { upHandler = it },
-                    onDown = { downHandler = it },
-                    onLeft = { leftHandler = it },
-                    onRight = { rightHandler = it },
-                    onA = { aHandler = it }
-                )
-            }
-        }
-        composable("capture_verification") {
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            CaptureVerificationScreen(
-                viewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                onSaveSuccess = { id ->
-                    navController.navigate("specimens/detail/$id")
-                },
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("trainer_profile") {
-            TrainerProfileScreen(
-                viewModel = viewModel,
-                trainerIdentity = trainerIdentity,
-                partnerIdentity = partnerIdentity,
-                trainerRepository = trainerRepository,
-                partnerRepository = partnerRepository,
-                spriteProvider = viewModel.spriteProvider,
-                avatarSpeciesId = 1,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onShowQr = { navController.navigate("qr_identity") },
-                onScanQr = { navController.navigate("qr_scanner") },
-                onViewTimeline = { navController.navigate("shared_timeline") },
-                onChat = { navController.navigate("private_chat") },
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("private_chat") {
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            ChatScreen(
-                trainerIdentity = trainerIdentity,
-                partnerIdentity = partnerIdentity,
-                messages = chatMessages,
-                chatRepository = chatRepository,
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                onPokemonClick = { id -> 
-                    viewModel.viewModelScope.launch {
-                        viewModel.getPokemonById(id)?.let {
-                            mediaManager.playSound(it.cryUrl)
-                        }
-                    }
-                    navController.navigate("detail/$id") 
-                },
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("shared_timeline") {
-            SharedTimelineScreen(
-                partnerIdentity = partnerIdentity,
-                events = timelineEvents,
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("qr_identity") {
-            QrIdentityScreen(
-                trainerIdentity = trainerIdentity,
-                trainerRepository = trainerRepository,
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("qr_scanner") {
-            QrScannerScreen(
-                trainerIdentity = trainerIdentity,
-                partnerRepository = partnerRepository,
-                timelineRepository = timelineRepository,
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable("list") {
-            PokedexListScreen(
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
-                onStart = { /* Reserved */ },
-                onSelect = { /* Reserved */ },
-                onBack = { navController.debugPopBackStack() },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                onPokemonClick = { id ->
-                    viewModel.viewModelScope.launch {
-                        viewModel.getPokemonById(id)?.let {
-                            mediaManager.warmUp(it.cryUrl)
-                        }
-                    }
-                    navController.navigate("detail/$id")
-                }
-            )
-        }
-        composable(
-            route = "detail/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.IntType }),
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("id") ?: 0
-            var pokemon by remember { mutableStateOf<Pokemon?>(null) }
-
-            LaunchedEffect(id) {
-                pokemon = viewModel.getPokemonById(id)
-            }
-
-            if (pokemon != null) {
-                PokemonDetailScreen(
-                    pokemon = pokemon!!,
                     filterSettings = filterSettings,
-                    onFilterSettingsChange = { newSettings ->
-                        filterSettings = newSettings
-                    },
-                    onStart = { /* Reserved */ },
+                    onFilterSettingsChange = { filterSettings = it },
+                    onUp = { if (phase == MainMenuPhase.READY) viewModel.handleUp() },
+                    onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
+                    onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
+                    onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
+                    onStart = { if (phase == MainMenuPhase.READY) viewModel.startObservation() },
                     onSelect = { /* Reserved */ },
-                    onBackClick = { navController.debugPopBackStack() },
-                    onPlayCry = { url ->
-                        mediaManager.playSound(url)
-                    },
-                    onWarmUpCry = { url ->
-                        mediaManager.warmUp(url)
-                    },
-                    onMoveClick = { moveName ->
-                        viewModel.updateSearchQuery(moveName)
-                        navController.debugPopBackStack()
-                    },
-                    onTypeClick = { type ->
-                        viewModel.updateTypeFilter(type)
-                        viewModel.updateSearchQuery(type.name)
-                        navController.debugPopBackStack()
-                    },
-                    onRegionClick = { region ->
-                        viewModel.updateSearchQuery(region)
-                        navController.debugPopBackStack()
-                    },
-                    onEvolutionClick = { evolutionId ->
-                        navController.navigate("detail/$evolutionId")
-                    },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
-                    viewModel = viewModel
-                )
-            }
-        }
-        composable("specimens/collection") {
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            val keyboardController = rememberTerminalKeyboardController()
-
-            var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-            var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-
-            ODXFiShell(
-                showBattleOverlay = false,
-                onUp = { upHandler?.invoke() },
-                onDown = { downHandler?.invoke() },
-                onLeft = { leftHandler?.invoke() },
-                onRight = { rightHandler?.invoke() },
-                onA = { aHandler?.invoke() },
-                onB = { bHandler?.invoke() },
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                keyboardController = keyboardController,
-                onKeyActivated = { key ->
-                    val currentQuery = collectionViewModel.searchQuery.value
-                    when (key) {
-                        "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
-                        "DELETE" -> {
-                            if (currentQuery.isNotEmpty()) {
-                                collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
+                    isLogoInteractive = true
+                ) { _ ->
+                    MainMenuScreen(
+                        hasBootedInSession = hasBootedInSession,
+                        onBootComplete = { viewModel.markBooted() },
+                        visibleNodes = treeState.visibleNodes,
+                        selectedPath = treeState.selectedPath,
+                        trainerIdentity = trainerIdentity,
+                        onPhaseChange = { phase = it },
+                        onNodeSelected = { node ->
+                            when (node.path) {
+                                "/trainer/chat" -> navController.navigate("private_chat")
+                                "/trainer/profile" -> navController.navigate("trainer_profile")
+                                "/trainer/collection" -> navController.navigate("specimens/collection")
+                                "/observation/search" -> navController.navigate("list")
+                                "/observation/history" -> navController.navigate("battle_history")
+                                "/observation/logs" -> navController.navigate("battle_log")
+                                "/system/calibration" -> navController.navigate("calibration")
                             }
                         }
-                        else -> {
-                            collectionViewModel.updateSearchQuery(currentQuery + key)
-                        }
+                    )
+                }
+            }
+            
+            composable("battle_history") {
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onStart = { viewModel.startObservation() },
+                    onSelect = { /* Reserved */ },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() }
+                ) { battleMemory ->
+                    BattleHistoryScreen(
+                        viewModel = viewModel,
+                        onBattleClick = { id -> 
+                            navController.navigate("module/battle.summary/OFFLINE/View details for battle $id.")
+                        },
+                        onBack = { navController.debugPopBackStack() }
+                    )
+                }
+            }
+            composable("battle_log") {
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onStart = { viewModel.startObservation() },
+                    onSelect = { /* Reserved */ },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() }
+                ) { battleMemory ->
+                    BattleTimelineScreen(
+                        battleMemory = battleMemory,
+                        viewModel = viewModel,
+                        onBack = { navController.debugPopBackStack() }
+                    )
+                }
+            }
+            composable("module/{title}/{status}/{description}") { backStackEntry: NavBackStackEntry ->
+                val title = backStackEntry.arguments?.getString("title") ?: "module"
+                val statusStr = backStackEntry.arguments?.getString("status") ?: "UNAVAILABLE"
+                val description = backStackEntry.arguments?.getString("description") ?: ""
+                
+                val status = try { ModuleStatus.valueOf(statusStr) } catch(_: Exception) { ModuleStatus.UNAVAILABLE }
+                
+                ModuleScreen(
+                    title = title,
+                    status = status,
+                    description = description,
+                    onBack = { navController.debugPopBackStack() },
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it }
+                )
+            }
+
+            composable("calibration") {
+                DisposableEffect(Unit) {
+                    viewModel.setObservationSessionState(ObservationSessionState.CALIBRATING)
+                    onDispose {
+                        viewModel.setObservationSessionState(ObservationSessionState.IDLE)
                     }
                 }
-            ) {
-                MyCollectionScreen(
+
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onLeft = { leftHandler?.invoke() },
+                    onRight = { rightHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { navController.debugPopBackStack() },
+                    onStart = { viewModel.startObservation() },
+                    onSelect = { /* Reserved */ },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount
+                ) { _ ->
+                    CalibrationScreen(
+                        calibrationManager = calibrationManager,
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onLeft = { leftHandler = it },
+                        onRight = { rightHandler = it },
+                        onA = { aHandler = it }
+                    )
+                }
+            }
+            composable("capture_verification") {
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                CaptureVerificationScreen(
+                    viewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    onSaveSuccess = { id ->
+                        navController.navigate("specimens/detail/$id")
+                    },
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("trainer_profile") {
+                TrainerProfileScreen(
+                    viewModel = viewModel,
+                    trainerIdentity = trainerIdentity,
+                    partnerIdentity = partnerIdentity,
+                    trainerRepository = trainerRepository,
+                    partnerRepository = partnerRepository,
+                    spriteProvider = viewModel.spriteProvider,
+                    avatarSpeciesId = 1,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onShowQr = { navController.navigate("qr_identity") },
+                    onScanQr = { navController.navigate("qr_scanner") },
+                    onViewTimeline = { navController.navigate("shared_timeline") },
+                    onChat = { navController.navigate("private_chat") },
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("private_chat") {
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                ChatScreen(
+                    trainerIdentity = trainerIdentity,
+                    partnerIdentity = partnerIdentity,
+                    messages = chatMessages,
+                    chatRepository = chatRepository,
+                    pokedexViewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    onPokemonClick = { id -> 
+                        viewModel.viewModelScope.launch {
+                            viewModel.getPokemonById(id)?.let {
+                                mediaManager.playSound(it.cryUrl)
+                            }
+                        }
+                        navController.navigate("detail/$id") 
+                    },
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("shared_timeline") {
+                SharedTimelineScreen(
+                    partnerIdentity = partnerIdentity,
+                    events = timelineEvents,
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("qr_identity") {
+                QrIdentityScreen(
+                    trainerIdentity = trainerIdentity,
+                    trainerRepository = trainerRepository,
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("qr_scanner") {
+                QrScannerScreen(
+                    trainerIdentity = trainerIdentity,
+                    partnerRepository = partnerRepository,
+                    timelineRepository = timelineRepository,
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("list") {
+                PokedexListScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
+                    onStart = { /* Reserved */ },
+                    onSelect = { /* Reserved */ },
+                    onBack = { navController.debugPopBackStack() },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    onPokemonClick = { id ->
+                        viewModel.viewModelScope.launch {
+                            viewModel.getPokemonById(id)?.let {
+                                mediaManager.warmUp(it.cryUrl)
+                            }
+                        }
+                        navController.navigate("detail/$id")
+                    }
+                )
+            }
+            composable(
+                route = "detail/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.IntType }),
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("id") ?: 0
+                var pokemon by remember { mutableStateOf<Pokemon?>(null) }
+
+                LaunchedEffect(id) {
+                    pokemon = viewModel.getPokemonById(id)
+                }
+
+                if (pokemon != null) {
+                    PokemonDetailScreen(
+                        pokemon = pokemon!!,
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { newSettings ->
+                            filterSettings = newSettings
+                        },
+                        onStart = { /* Reserved */ },
+                        onSelect = { /* Reserved */ },
+                        onBackClick = { navController.debugPopBackStack() },
+                        onPlayCry = { url ->
+                            mediaManager.playSound(url)
+                        },
+                        onWarmUpCry = { url ->
+                            mediaManager.warmUp(url)
+                        },
+                        onMoveClick = { moveName ->
+                            viewModel.updateSearchQuery(moveName)
+                            navController.debugPopBackStack()
+                        },
+                        onTypeClick = { type ->
+                            viewModel.updateTypeFilter(type)
+                            viewModel.updateSearchQuery(type.name)
+                            navController.debugPopBackStack()
+                        },
+                        onRegionClick = { region ->
+                            viewModel.updateSearchQuery(region)
+                            navController.debugPopBackStack()
+                        },
+                        onEvolutionClick = { evolutionId ->
+                            navController.navigate("detail/$evolutionId")
+                        },
+                        onLaunchProbe = { navController.navigate("accessibility_probe") },
+                        onLaunchObservatory = { navController.navigate("signal_observatory") },
+                        viewModel = viewModel
+                    )
+                }
+            }
+            composable("specimens/collection") {
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                val keyboardController = rememberTerminalKeyboardController()
+
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onLeft = { leftHandler?.invoke() },
+                    onRight = { rightHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { bHandler?.invoke() },
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    keyboardController = keyboardController,
+                    onKeyActivated = { key ->
+                        val currentQuery = collectionViewModel.searchQuery.value
+                        when (key) {
+                            "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
+                            "DELETE" -> {
+                                if (currentQuery.isNotEmpty()) {
+                                    collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
+                                }
+                            }
+                            else -> {
+                                collectionViewModel.updateSearchQuery(currentQuery + key)
+                            }
+                        }
+                    }
+                ) {
+                    MyCollectionScreen(
+                        pokedexViewModel = viewModel,
+                        collectionViewModel = collectionViewModel,
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { filterSettings = it },
+                        onAddClick = { navController.navigate("add_pokemon_wizard") },
+                        onBack = { navController.debugPopBackStack() },
+                        onItemClick = { id ->
+                            navController.navigate("specimens/detail/$id")
+                        },
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onLeft = { leftHandler = it },
+                        onRight = { rightHandler = it },
+                        onA = { aHandler = it },
+                        onB = { bHandler = it },
+                        keyboardController = keyboardController
+                    )
+                }
+            }
+            composable(
+                route = "specimens/detail/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id") ?: ""
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                SpecimenDetailScreen(
+                    ownedId = id,
+                    pokedexViewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable(
+                route = "specimens/edit/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id") ?: ""
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                EditSpecimenScreen(
+                    ownedId = id,
+                    pokedexViewModel = viewModel,
+                    collectionViewModel = collectionViewModel,
+                    onFinish = { navController.debugPopBackStack() },
+                    onCancel = { navController.debugPopBackStack() }
+                )
+            }
+            composable("add_pokemon_wizard") {
+                val collectionViewModel: MyCollectionViewModel = viewModel()
+                AddOwnedPokemonWizard(
                     pokedexViewModel = viewModel,
                     collectionViewModel = collectionViewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onAddClick = { navController.navigate("add_pokemon_wizard") },
-                    onBack = { navController.debugPopBackStack() },
-                    onItemClick = { id ->
-                        navController.navigate("specimens/detail/$id")
-                    },
-                    onUp = { upHandler = it },
-                    onDown = { downHandler = it },
-                    onLeft = { leftHandler = it },
-                    onRight = { rightHandler = it },
-                    onA = { aHandler = it },
-                    onB = { bHandler = it },
-                    keyboardController = keyboardController
+                    onFinish = { navController.debugPopBackStack() },
+                    onCancel = { navController.debugPopBackStack() }
                 )
             }
-        }
-        composable(
-            route = "specimens/detail/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            SpecimenDetailScreen(
-                ownedId = id,
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
-                onBack = { navController.debugPopBackStack() }
-            )
-        }
-        composable(
-            route = "specimens/edit/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            EditSpecimenScreen(
-                ownedId = id,
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                onFinish = { navController.debugPopBackStack() },
-                onCancel = { navController.debugPopBackStack() }
-            )
-        }
-        composable("add_pokemon_wizard") {
-            val collectionViewModel: MyCollectionViewModel = viewModel()
-            AddOwnedPokemonWizard(
-                pokedexViewModel = viewModel,
-                collectionViewModel = collectionViewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onFinish = { navController.debugPopBackStack() },
-                onCancel = { navController.debugPopBackStack() }
-            )
-        }
-        composable("accessibility_probe") {
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                onB = { navController.debugPopBackStack() }
-            ) {
-                AccessibilityProbeScreen(
-                    onBack = { navController.debugPopBackStack() }
-                )
+            composable("accessibility_probe") {
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() }
+                ) {
+                    AccessibilityProbeScreen(
+                        onBack = { navController.debugPopBackStack() }
+                    )
+                }
             }
-        }
-        composable("signal_observatory") {
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                onB = { navController.debugPopBackStack() }
-            ) {
-                SignalObservatoryScreen(
-                    onBack = { navController.debugPopBackStack() }
-                )
+            composable("signal_observatory") {
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() }
+                ) {
+                    SignalObservatoryScreen(
+                        onBack = { navController.debugPopBackStack() }
+                    )
+                }
             }
-        }
-        composable("battle_preview") {
-            ODXFiShell(
-                showBattleOverlay = false,
-                viewModel = viewModel,
-                filterSettings = filterSettings,
-                onFilterSettingsChange = { filterSettings = it },
-                onLaunchProbe = { navController.navigate("accessibility_probe") },
-                onLaunchObservatory = { navController.navigate("signal_observatory") },
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                onB = { navController.debugPopBackStack() }
-            ) {
-                BattlePreviewScreen(
-                    state = com.example.overdex.presentation.preview.BattlePreviewData.mewtwoDemo()
-                )
+            composable("battle_preview") {
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() }
+                ) {
+                    BattlePreviewScreen(
+                        state = com.example.overdex.presentation.preview.BattlePreviewData.mewtwoDemo()
+                    )
+                }
             }
         }
     }
@@ -656,6 +664,6 @@ private fun androidx.navigation.NavController.debugPopBackStack(): Boolean {
     val before = currentDestination?.route
     val popped = popBackStack()
     val after = currentDestination?.route
-    android.util.Log.d("NavDebug", "popBackStack before=$before popped=$popped after=$after")
+    com.example.overdex.diagnostics.DiagnosticLogger.logNav("popBackStack", before, popped, after)
     return popped
 }
