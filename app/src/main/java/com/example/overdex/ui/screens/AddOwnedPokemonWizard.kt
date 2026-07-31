@@ -156,8 +156,19 @@ fun AddOwnedPokemonWizard(
         }
     }
 
+    val lcdLine1 = "REGISTRATION"
+    val lcdLine2 = when (currentStep) {
+        WizardStep.SPECIES_SEARCH -> "STEP 1: SPECIES"
+        WizardStep.FAST_MOVE_SELECTION -> "STEP 2: FAST MOVE"
+        WizardStep.CHARGED_MOVE_SELECTION -> "STEP 3: CHARGED MOVES"
+        WizardStep.CP_INPUT -> "STEP 4: CP INPUT"
+        WizardStep.ATTRIBUTES -> "STEP 5: ATTRIBUTES"
+    }
+
     ODXFiShell(
         viewModel = pokedexViewModel,
+        lcdLine1 = lcdLine1,
+        lcdLine2 = lcdLine2,
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
