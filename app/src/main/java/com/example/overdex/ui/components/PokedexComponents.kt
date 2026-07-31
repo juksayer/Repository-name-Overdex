@@ -14,9 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.*
@@ -38,6 +37,7 @@ import com.example.overdex.ui.theme.*
 import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.PokedexViewModel
+import com.example.overdex.presentation.*
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -148,7 +148,7 @@ fun InstrumentButton(
 
 @Composable
 fun InstrumentLCD(
-    presentationState: com.example.overdex.presentation.PresentationState,
+    presentationState: PresentationState,
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
     lcdLine1: String? = null,
@@ -159,7 +159,7 @@ fun InstrumentLCD(
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
         .lastOrNull {
-            it.type == com.example.overdex.presentation.SemanticTimelineEventType.POKEMON_IDENTIFIED
+            it.type == SemanticTimelineEventType.POKEMON_IDENTIFIED
         }
     Box(
         modifier = modifier
@@ -203,21 +203,130 @@ fun InstrumentLCD(
                     )
                 }
             } else {
-                latestIdentifiedPokemon?.let { event ->
-                    Text(
-                        text = event.actor.name,
-                        color = TerminalGreen.copy(alpha = 0.7f),
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
+                // Semantic Presentation Rendering
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Header / Identified Pokemon
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        latestIdentifiedPokemon?.let { event ->
+                            Text(
+                                text = event.actor.name,
+                                color = TerminalGreen.copy(alpha = 0.7f),
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
 
-                    Text(
-                        text = event.message ?: "UNKNOWN",
-                        color = TerminalGreen,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                            Text(
+                                text = event.message ?: "UNKNOWN",
+                                color = TerminalGreen,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        } ?: run {
+                            Text(
+                                text = presentationState.instrument.name,
+                                color = TerminalGreen.copy(alpha = 0.5f),
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    // Tactical & Observation Graphical Layer
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Tactical Evidence (Moves, Advantages)
+                        if (presentationState.tactical.evidence.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                DecisionIcon(presentationState.tactical)
+                                
+                                presentationState.tactical.evidence.forEach { evidence ->
+                                    when (evidence) {
+                                        is TacticalEvidence.ObservedMove -> {
+                                            // Find move type from opponent known moves if available to keep it direct
+                                            val moveType = presentationState.team.opponent.knownMoves
+                                                .find { it.name == evidence.moveName }?.type ?: PokemonType.NORMAL
+                                            
+                                            TypeBadge(
+                                                type = moveType,
+                                                style = TypeIconStyle.OVERDEX,
+                                                modifier = Modifier.scale(0.7f)
+                                            )
+                                        }
+                                        is TacticalEvidence.TypeAdvantage -> {
+                                            // Represented by DecisionIcon tint primarily, but could add small indicator
+                                        }
+                                        is TacticalEvidence.EnergyLead -> {
+                                            Icon(
+                                                imageVector = androidx.compose.material.icons.Icons.Default.Bolt,
+                                                contentDescription = null,
+                                                tint = Color.Yellow,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Observation Requirements (Missing icons)
+                        if (presentationState.observation.missingRequirements.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ObservationRequirement.entries.forEach { req ->
+                                    val isMissing = presentationState.observation.missingRequirements.contains(req)
+                                    val icon = when (req) {
+                                        ObservationRequirement.SPECIES -> androidx.compose.material.icons.Icons.Default.Search
+                                        ObservationRequirement.COMBAT_POWER -> androidx.compose.material.icons.Icons.Default.Info
+                                        ObservationRequirement.FAST_MOVE -> androidx.compose.material.icons.Icons.Default.Bolt
+                                        ObservationRequirement.CHARGED_MOVE_A -> androidx.compose.material.icons.Icons.Default.Star
+                                        ObservationRequirement.CHARGED_MOVE_B -> androidx.compose.material.icons.Icons.Default.Star
+                                    }
+                                    
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isMissing) TerminalGreen.copy(alpha = 0.2f) else TerminalGreen,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Bottom: Player Status / Lifecycle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = presentationState.team.player.activeSpecies?.uppercase() ?: "---",
+                            color = TerminalGreen.copy(alpha = 0.6f),
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        
+                        Text(
+                            text = "SHIELDS: ${presentationState.team.player.shieldsUsed}/2",
+                            color = TerminalGreen.copy(alpha = 0.6f),
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }
