@@ -25,7 +25,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.*
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.example.overdex.ui.components.ObservationOverlay
+import com.example.overdex.ui.components.BattleOverlay
 
 /**
  * The technical infrastructure layer for the ODX-FI.
@@ -162,7 +162,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
         overlayView = ComposeView(this).apply {
             setContent {
-                ObservationOverlay()
+                BattleOverlay()
             }
         }
         

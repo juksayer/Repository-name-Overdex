@@ -117,6 +117,27 @@ Additional recognizers can be added without changing the overall architecture.
 
 ---
 
+# Production Observers
+
+Recognition is performed by independent observers.
+
+Each observer owns exactly one observable aspect of the battle.
+
+Examples include:
+
+- SpeciesObserver
+- CombatPowerObserver
+- FastMoveObserver
+- ChargedMoveObserver
+- ShadowStatusObserver
+- HealthObserver
+- ShieldObserver
+
+Observers publish observations into the Observation Session Workspace.
+
+Observers do not communicate directly with one another.
+---
+
 # Observation Lifecycle
 
 1. Battle begins.

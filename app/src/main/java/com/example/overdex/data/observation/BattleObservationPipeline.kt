@@ -12,7 +12,7 @@ import com.example.overdex.model.observation.Observation
  * An event-driven pipeline that routes observations into [BattleMemory].
  * 
  * This component acts as the bridge between the Observation Layer and the Memory Layer.
- * It performs basic filtering (e.g., confidence thresholds) before updating the 
+ * It performs basic filtering (e.g., confidence thresholds) before updating the
  * active battle state.
  */
 class BattleObservationPipeline(

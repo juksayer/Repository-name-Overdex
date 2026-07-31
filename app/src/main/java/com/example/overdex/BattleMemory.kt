@@ -18,7 +18,6 @@ data class BattleMemory(
     val seenPokemon: MutableSet<String> = mutableSetOf(),
     val seenFastMoves: MutableMap<String, MutableSet<String>> = mutableMapOf(),
     val seenChargedMoves: MutableMap<String, MutableSet<String>> = mutableMapOf(),
-    val observedEnemyPokemon: MutableList<String> = mutableListOf(),
     val enemyTeam: MutableList<EnemyPokemonMemory> = mutableStateListOf<EnemyPokemonMemory>(),
     var enemyRemainingPokemon: Int? = null,
     val battleHistory: MutableList<BattleEvent> = mutableListOf<BattleEvent>(),

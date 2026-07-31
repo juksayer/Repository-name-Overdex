@@ -8,7 +8,7 @@ import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 
 /**
- * Responsible for applying [Observation] facts and [BattleState] snapshots 
+ * Responsible for applying [Observation] facts and [BattleState] snapshots
  * to a [BattleMemory] instance.
  */
 object BattleMemoryUpdater {
@@ -59,8 +59,8 @@ object BattleMemoryUpdater {
 
             memory.seenPokemon.add(pokemon)
 
-            if (!memory.observedEnemyPokemon.contains(pokemon)) {
-                memory.observedEnemyPokemon.add(pokemon)
+            if (!memory.seenPokemon.contains(pokemon)) {
+                memory.seenPokemon.add(pokemon)
             }
 
             state.enemyFastMove?.let { move ->

@@ -19,13 +19,13 @@ import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.flow.collect
 
 /**
- * The floating field presentation of the Observation Session.
+ * The floating field presentation of the Battle Observation Session.
  * 
  * This overlay mimics the Instrument LCD and provides real-time feedback
  * while the trainer is in the field (e.g., in Pokémon GO).
  */
 @Composable
-fun ObservationOverlay() {
+fun BattleOverlay() {
     // In a real implementation, this would observe the Coordinator's state.
     // For Git #197, we observe the service facts directly to prove the flow.
     var frameCount by remember { mutableLongStateOf(0) }
