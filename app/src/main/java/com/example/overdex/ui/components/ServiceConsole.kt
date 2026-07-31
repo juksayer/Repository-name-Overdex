@@ -24,6 +24,7 @@ import com.example.overdex.ui.theme.*
 @Composable
 fun ServiceConsole(
     panelState: ServicePanelState,
+    effectiveAction: RegistrationAction,
     modifier: Modifier = Modifier,
     onManualSelect: () -> Unit = {}
 ) {
@@ -81,7 +82,7 @@ fun ServiceConsole(
 
         // Action Area
         val assessment = panelState.assessment
-        val actionText = when (assessment.recommendedAction) {
+        val actionText = when (effectiveAction) {
             RegistrationAction.REGISTER -> "A: REGISTER SPECIMEN"
             RegistrationAction.SELECT_SPECIES -> "A: SELECT SPECIES MANUALLY"
             RegistrationAction.CAPTURE_SECOND_SCREEN -> "A: CAPTURE MOVES"

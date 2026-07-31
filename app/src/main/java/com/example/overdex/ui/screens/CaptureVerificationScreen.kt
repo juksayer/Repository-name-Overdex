@@ -2,6 +2,7 @@ package com.example.overdex.ui.screens
 
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -218,6 +219,18 @@ fun CaptureVerificationScreen(
         value = ServiceConsoleModel.createPanelState(capId, history, newAssessment)
     }
 
+    val effectiveAction = remember(panelState, pipelineStatus) {
+        val recommendedAction = panelState.assessment.recommendedAction
+        if (recommendedAction == RegistrationAction.NONE &&
+            pipelineStatus?.currentStage == ObservationStage.Complete &&
+            !panelState.isProcessing
+        ) {
+            RegistrationAction.SELECT_SPECIES
+        } else {
+            recommendedAction
+        }
+    }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris ->
@@ -238,8 +251,24 @@ fun CaptureVerificationScreen(
     }
 
     val activeRegion = if (currentTemplate.regions.isNotEmpty()) currentTemplate.regions[regionCursorIndex] else null
-    val lcdLine1 = activeRegion?.let { "REGION: ${it.id.uppercase()}" }
-    val lcdLine2 = "${calibrationMode.name} MODE"
+    val lcdLine1 = if (isInspectionMode) {
+        if (panelState.isProcessing) "PROCESSING..."
+        else "ID: ${panelState.captureId}"
+    } else {
+        activeRegion?.let { "REGION: ${it.id.uppercase()}" }
+    }
+
+    val lcdLine2 = if (isInspectionMode) {
+        when (effectiveAction) {
+            RegistrationAction.REGISTER -> "A: REGISTER"
+            RegistrationAction.SELECT_SPECIES -> "A: SELECT SPECIES"
+            RegistrationAction.CAPTURE_SECOND_SCREEN -> "A: CAPTURE MOVES"
+            RegistrationAction.VERIFY_CP -> "A: VERIFY CP"
+            RegistrationAction.NONE -> "AWAITING DATA"
+        }
+    } else {
+        "${calibrationMode.name} MODE"
+    }
 
     ODXFiShell(
         lcdLine1 = lcdLine1,
@@ -348,7 +377,11 @@ fun CaptureVerificationScreen(
                 launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             } else if (isInspectionMode) {
                 val assessment = panelState.assessment
-                when (assessment.recommendedAction) {
+                Log.d(
+                    "CAPTURE",
+                    "recommended=${assessment.recommendedAction} effective=$effectiveAction inspection=$isInspectionMode"
+                )
+                when (effectiveAction) {
                     RegistrationAction.REGISTER -> {
                         scope.launch {
                             val candidate = assessment.candidates.first()
@@ -361,7 +394,7 @@ fun CaptureVerificationScreen(
                                 } else {
                                     collectionViewModel.startRegistrationSession()
                                 }
-                                
+
                                 val owned = collectionViewModel.completeRegistrationSession(speciesData.id)
                                 if (owned != null) {
                                     pipelineStatus = null
@@ -374,7 +407,12 @@ fun CaptureVerificationScreen(
                             }
                         }
                     }
-                    RegistrationAction.SELECT_SPECIES -> isManualSpeciesSelection = true
+
+                    RegistrationAction.SELECT_SPECIES -> {
+                        Log.d("CAPTURE", "Entering SELECT_SPECIES")
+                        isManualSpeciesSelection = true
+                    }
+
                     else -> {}
                 }
             } else if (currentTemplate.regions.isNotEmpty()) {
@@ -485,6 +523,7 @@ fun CaptureVerificationScreen(
                         Box(modifier = Modifier.fillMaxSize().background(TerminalBlack)) {
                             ServiceConsole(
                                 panelState = panelState,
+                                effectiveAction = effectiveAction,
                                 onManualSelect = { isManualSpeciesSelection = true }
                             )
                         }

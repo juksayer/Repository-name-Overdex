@@ -331,3 +331,154 @@ Recommendations should reflect the trainer, not just the metagame.
 Cognitive Load Principle
 
 During a battle, assume the trainer is operating at or near maximum cognitive load. Every feature must justify its presence by reducing the amount of information the trainer must actively remember, infer, or compute. Overdex exists not to present more information, but to carry part of the battle's mental workload so the trainer can remain focused, adaptable, and in flow.
+Trainer Effort
+
+Trainer effort is an architectural metric.
+
+Every architectural decision should ultimately reduce one or more of the following:
+
+Physical effort
+Cognitive effort
+Time
+Repetition
+Uncertainty
+
+Architectural improvements that do not reduce trainer effort should justify themselves through another constitutional principle (such as correctness, safety, or maintainability).
+
+Constitutional Principle — Trainer Effort
+
+Trainer effort is an architectural metric.
+
+Every architectural decision should ultimately reduce one or more of the following:
+
+Physical effort
+Cognitive effort
+Time
+Repetition
+Uncertainty
+
+Architectural improvements that do not directly reduce trainer effort shall justify themselves through another constitutional principle, including but not limited to:
+
+Correctness
+Safety
+Reliability
+Maintainability
+Trustworthiness
+
+Trainer effort is not the only architectural metric.
+
+It is one of the primary architectural metrics.
+
+Constitutional Principle — One Unit of Uncertainty
+
+Every manual interaction shall resolve exactly one uncertainty.
+
+Manual interactions exist to increase certainty, not merely advance workflow.
+
+Good:
+
+Unknown species
+↓
+Choose Bulbasaur
+↓
+Species known
+
+Good:
+
+Unknown fast move
+↓
+Choose Vine Whip
+↓
+Fast move known
+
+Poor:
+
+Species known
+↓
+Next
+↓
+Confirm
+↓
+Save
+
+Those interactions advance the workflow without increasing certainty.
+
+They should be removed or justified.
+
+Architectural Interpretation
+
+This principle naturally maps onto the existing Overdex architecture.
+
+Observation resolves observational uncertainty.
+
+Knowledge resolves interpretive uncertainty.
+
+Intelligence resolves decision uncertainty.
+
+Presentation communicates certainty.
+
+Workflow should request trainer intervention only for uncertainty the system cannot reasonably resolve.
+
+Evaluation
+
+Every proposed feature should answer two independent questions.
+
+Architectural Evaluation
+
+Did the implementation improve:
+
+Correctness?
+Reliability?
+Maintainability?
+Ownership?
+Trustworthiness?
+Trainer Evaluation
+
+Did the implementation reduce:
+
+Time?
+Physical effort?
+Cognitive effort?
+Repetition?
+Uncertainty?
+
+Both evaluations should succeed.
+
+Architecture alone is insufficient.
+
+Reduced effort alone is insufficient.
+
+The system should improve both whenever reasonably possible.
+
+Constitutional Guardrail
+
+No metric of trainer effort may increase without a documented architectural justification.
+
+If a proposal introduces:
+
+additional screens
+additional button presses
+additional decisions
+additional confirmations
+additional waiting
+
+it must explicitly identify the constitutional principle that justifies the increased effort.
+
+Otherwise, the change should not be accepted.
+Restoration Principle
+
+When restoring existing functionality, implementation shall first restore the original architectural contract before considering redesign, optimization, or enhancement.
+Interpretation Principle
+
+Evidence may be interpreted exactly once at each architectural boundary.
+
+Monotonicity Principle
+
+Each architectural layer shall reduce uncertainty without increasing it.
+
+Architectural layers exist to reduce uncertainty. User interfaces exist to reduce trainer effort. Neither shall increase the responsibility of the other.
+Work orders should minimize interpretation.
+
+If a reviewer can reasonably ask,
+
+"What exactly counts as redundant?"

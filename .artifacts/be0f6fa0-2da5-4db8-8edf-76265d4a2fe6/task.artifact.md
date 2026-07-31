@@ -1,0 +1,6 @@
+- `[x]` Implement `effectiveAction` derivation in `CaptureVerificationScreen.kt`
+- `[x]` Update `onA` handler in `CaptureVerificationScreen.kt` to use `effectiveAction`
+- `[x]` Update `ServiceConsole` to accept and display `effectiveAction`
+- `[x]` Verify architectural ownership and engine independence
+- `[x]` Run manual verification cases (A-F)
+- `[x]` Run automated tests (`RegistrationObservationFlowTest`)
