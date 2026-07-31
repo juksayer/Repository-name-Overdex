@@ -28,6 +28,7 @@
       <w>Arbok</w>
       <w>Arboliva</w>
       <w>Arcanine</w>
+      <w>Arceus</w>
       <w>Archaludon</w>
       <w>Archen</w>
       <w>Archeops</w>
@@ -42,6 +43,7 @@
       <w>Aron</w>
       <w>Arrokuda</w>
       <w>Articuno</w>
+      <w>Audino</w>
       <w>Aurorus</w>
       <w>Avalugg</w>
       <w>Axew</w>
@@ -98,6 +100,7 @@
       <w>Budew</w>
       <w>Buizel</w>
       <w>Bulbasaur</w>
+      <w>Bulu</w>
       <w>Buneary</w>
       <w>Bunnelby</w>
       <w>Burmy</w>
@@ -132,6 +135,7 @@
       <w>Chatot</w>
       <w>Cherrim</w>
       <w>Cherubi</w>
+      <w>Chesnaught</w>
       <w>Chespin</w>
       <w>Chewtle</w>
       <w>Chi-Yu</w>
@@ -248,6 +252,7 @@
       <w>Duskull</w>
       <w>Dustox</w>
       <w>Dwebble</w>
+      <w>Earthbeat</w>
       <w>Eelektrik</w>
       <w>Eelektross</w>
       <w>Eevee</w>
@@ -270,6 +275,7 @@
       <w>Espeon</w>
       <w>Espurr</w>
       <w>Eternatus</w>
+      <w>Excadrill</w>
       <w>Exeggcute</w>
       <w>Exeggutor</w>
       <w>Exploud</w>
@@ -301,6 +307,7 @@
       <w>Flygon</w>
       <w>Fomantis</w>
       <w>Foongus</w>
+      <w>Forme</w>
       <w>Forretress</w>
       <w>Fraxure</w>
       <w>Frigibax</w>
@@ -342,6 +349,7 @@
       <w>Gloom</w>
       <w>Gogoat</w>
       <w>Golbat</w>
+      <w>Goldeen</w>
       <w>Golduck</w>
       <w>Golem</w>
       <w>Golett</w>
@@ -376,6 +384,7 @@
       <w>Gurdurr</w>
       <w>Guzzlord</w>
       <w>Gyarados</w>
+      <w>Hakamo</w>
       <w>Hakamo-o</w>
       <w>Happiny</w>
       <w>Hariyama</w>
@@ -385,15 +394,19 @@
       <w>Haunter</w>
       <w>Hawlucha</w>
       <w>Haxorus</w>
+      <w>Hearthfire</w>
       <w>Heatmor</w>
       <w>Heatran</w>
       <w>Heliolisk</w>
       <w>Helioptile</w>
       <w>Heracross</w>
       <w>Herdier</w>
+      <w>Hippopotas</w>
+      <w>Hippowdon</w>
       <w>Hitmonchan</w>
       <w>Hitmonlee</w>
       <w>Hitmontop</w>
+      <w>Hoenn</w>
       <w>Honchkrow</w>
       <w>Honedge</w>
       <w>Hoopa</w>
@@ -414,6 +427,7 @@
       <w>Infernape</w>
       <w>Inkay</w>
       <w>Ivysaur</w>
+      <w>Jangmo</w>
       <w>Jangmo-o</w>
       <w>Jellicent</w>
       <w>Jigglypuff</w>
@@ -428,6 +442,7 @@
       <w>Kadabra</w>
       <w>Kakuna</w>
       <w>Kangaskhan</w>
+      <w>Kanto</w>
       <w>Karrablast</w>
       <w>Kartana</w>
       <w>Kecleon</w>
@@ -445,6 +460,7 @@
       <w>Klinklang</w>
       <w>Koffing</w>
       <w>Komala</w>
+      <w>Kommo</w>
       <w>Kommo-o</w>
       <w>Koraidon</w>
       <w>Krabby</w>
@@ -465,6 +481,7 @@
       <w>Latias</w>
       <w>Latios</w>
       <w>Leafeon</w>
+      <w>Leavanny</w>
       <w>Lechonk</w>
       <w>Ledian</w>
       <w>Ledyba</w>
@@ -567,6 +584,7 @@
       <w>Muk</w>
       <w>Munchlax</w>
       <w>Munkidori</w>
+      <w>Munna</w>
       <w>Murkrow</w>
       <w>Musharna</w>
       <w>Nacli</w>
@@ -602,6 +620,7 @@
       <w>Onix</w>
       <w>Oranguru</w>
       <w>Orbeetle</w>
+      <w>Oricorio</w>
       <w>Orthworm</w>
       <w>Oshawott</w>
       <w>Overdex</w>
@@ -611,6 +630,7 @@
       <w>Palafin</w>
       <w>Palkia</w>
       <w>Palossand</w>
+      <w>Palpitoad</w>
       <w>Pancham</w>
       <w>Pangoro</w>
       <w>Panpour</w>
@@ -677,6 +697,7 @@
       <w>Quaquaval</w>
       <w>Quaxly</w>
       <w>Quaxwell</w>
+      <w>Quilava</w>
       <w>Quilladin</w>
       <w>Qwilfish</w>
       <w>Raboot</w>
@@ -724,6 +745,7 @@
       <w>Salazzle</w>
       <w>Samurott</w>
       <w>Sandaconda</w>
+      <w>Sandile</w>
       <w>Sandshrew</w>
       <w>Sandslash</w>
       <w>Sandygast</w>
@@ -873,6 +895,7 @@
       <w>Thievul</w>
       <w>Throh</w>
       <w>Thundurus</w>
+      <w>Timburr</w>
       <w>Ting-Lu</w>
       <w>Tinkatink</w>
       <w>Tinkaton</w>
@@ -890,6 +913,8 @@
       <w>Torracat</w>
       <w>Torterra</w>
       <w>Totodile</w>
+      <w>Toucannon</w>
+      <w>Toxapex</w>
       <w>Toxel</w>
       <w>Toxicroak</w>
       <w>Toxtricity</w>
@@ -903,6 +928,7 @@
       <w>Tsareena</w>
       <w>Turtonator</w>
       <w>Turtwig</w>
+      <w>Tympole</w>
       <w>Tynamo</w>
       <w>Typhlosion</w>
       <w>Tyranitar</w>
@@ -911,6 +937,7 @@
       <w>Tyrunt</w>
       <w>Umbreon</w>
       <w>Unfezant</w>
+      <w>Unova</w>
       <w>Unown</w>
       <w>Ursaluna</w>
       <w>Ursaring</w>
@@ -922,6 +949,7 @@
       <w>Vaporeon</w>
       <w>Varoom</w>
       <w>Veluza</w>
+      <w>Venipede</w>
       <w>Venomoth</w>
       <w>Venonat</w>
       <w>Venusaur</w>

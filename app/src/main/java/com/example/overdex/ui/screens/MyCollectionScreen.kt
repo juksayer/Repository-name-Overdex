@@ -37,13 +37,13 @@ fun MyCollectionScreen(
     onLeft: (() -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
+    onB: (() -> Unit) -> Unit = {},
+    keyboardController: TerminalKeyboardController
 ) {
     val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val searchQuery by collectionViewModel.searchQuery.collectAsState()
     val selectedIndex by collectionViewModel.selectedIndex.collectAsState()
     val listState = rememberLazyListState()
-    val keyboardController = rememberTerminalKeyboardController()
 
     val nav = rememberHandheldNavigationController(
         initialIndex = selectedIndex,
@@ -92,8 +92,19 @@ fun MyCollectionScreen(
 
         onA {
             if (keyboardController.isVisible) {
-                keyboardController.handleA(searchQuery) {
-                    collectionViewModel.updateSearchQuery(it)
+                keyboardController.handleA(searchQuery) { key ->
+                    val currentQuery = collectionViewModel.searchQuery.value
+                    when (key) {
+                        "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
+                        "DELETE" -> {
+                            if (currentQuery.isNotEmpty()) {
+                                collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
+                            }
+                        }
+                        else -> {
+                            collectionViewModel.updateSearchQuery(currentQuery + key)
+                        }
+                    }
                 }
             } else {
                 nav.activate()
@@ -101,7 +112,10 @@ fun MyCollectionScreen(
         }
 
         onB {
-            if (!keyboardController.handleB()) {
+            if (keyboardController.isVisible) {
+                keyboardController.close()
+                nav.setIndex(0) // Return focus to search bar
+            } else {
                 onBack()
             }
         }
@@ -120,19 +134,6 @@ fun MyCollectionScreen(
 
 
         Column(modifier = Modifier.fillMaxSize()) {
-            if (keyboardController.isVisible) {
-                TerminalHeader(text = "input module: search")
-                SearchBar(query = searchQuery, selected = false)
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                TerminalKeyboard(
-                    layout = keyboardController.layout,
-                    currentRow = keyboardController.currentRow,
-                    currentColumn = keyboardController.currentCol,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
                 TerminalHeader(text = "my collection")
 
                 SearchBar(
@@ -177,7 +178,6 @@ fun MyCollectionScreen(
                         )
                     }
                 }
-            }
         }
     }
 

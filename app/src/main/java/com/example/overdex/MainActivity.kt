@@ -38,6 +38,7 @@ import com.example.overdex.model.navigation.*
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.components.FilterSettings
+import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.screens.*
 import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
@@ -263,14 +264,14 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+                onB = { navController.debugPopBackStack() }
             ) { battleMemory ->
                 BattleHistoryScreen(
                     viewModel = viewModel,
                     onBattleClick = { id -> 
                         navController.navigate("module/battle.summary/OFFLINE/View details for battle $id.")
                     },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.debugPopBackStack() }
                 )
             }
         }
@@ -286,12 +287,12 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+                onB = { navController.debugPopBackStack() }
             ) { battleMemory ->
                 BattleTimelineScreen(
                     battleMemory = battleMemory,
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.debugPopBackStack() }
                 )
             }
         }
@@ -306,7 +307,7 @@ fun PokedexApp(
                 title = title,
                 status = status,
                 description = description,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.debugPopBackStack() },
                 viewModel = viewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it }
@@ -337,7 +338,7 @@ fun PokedexApp(
                 onLeft = { leftHandler?.invoke() },
                 onRight = { rightHandler?.invoke() },
                 onA = { aHandler?.invoke() },
-                onB = { navController.popBackStack() },
+                onB = { navController.debugPopBackStack() },
                 onStart = { viewModel.startObservation() },
                 onSelect = { /* Reserved */ },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
@@ -363,7 +364,7 @@ fun PokedexApp(
                 onSaveSuccess = { id ->
                     navController.navigate("specimens/detail/$id")
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("trainer_profile") {
@@ -381,7 +382,7 @@ fun PokedexApp(
                 onScanQr = { navController.navigate("qr_scanner") },
                 onViewTimeline = { navController.navigate("shared_timeline") },
                 onChat = { navController.navigate("private_chat") },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("private_chat") {
@@ -401,21 +402,21 @@ fun PokedexApp(
                     }
                     navController.navigate("detail/$id") 
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("shared_timeline") {
             SharedTimelineScreen(
                 partnerIdentity = partnerIdentity,
                 events = timelineEvents,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("qr_identity") {
             QrIdentityScreen(
                 trainerIdentity = trainerIdentity,
                 trainerRepository = trainerRepository,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("qr_scanner") {
@@ -423,7 +424,7 @@ fun PokedexApp(
                 trainerIdentity = trainerIdentity,
                 partnerRepository = partnerRepository,
                 timelineRepository = timelineRepository,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable("list") {
@@ -433,7 +434,7 @@ fun PokedexApp(
                 onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
                 onStart = { /* Reserved */ },
                 onSelect = { /* Reserved */ },
-                onBack = { navController.popBackStack() },
+                onBack = { navController.debugPopBackStack() },
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 onPokemonClick = { id ->
@@ -466,9 +467,7 @@ fun PokedexApp(
                     },
                     onStart = { /* Reserved */ },
                     onSelect = { /* Reserved */ },
-                    onBackClick = {
-                        navController.popBackStack()
-                    },
+                    onBackClick = { navController.debugPopBackStack() },
                     onPlayCry = { url ->
                         mediaManager.playSound(url)
                     },
@@ -477,16 +476,16 @@ fun PokedexApp(
                     },
                     onMoveClick = { moveName ->
                         viewModel.updateSearchQuery(moveName)
-                        navController.popBackStack()
+                        navController.debugPopBackStack()
                     },
                     onTypeClick = { type ->
                         viewModel.updateTypeFilter(type)
                         viewModel.updateSearchQuery(type.name)
-                        navController.popBackStack()
+                        navController.debugPopBackStack()
                     },
                     onRegionClick = { region ->
                         viewModel.updateSearchQuery(region)
-                        navController.popBackStack()
+                        navController.debugPopBackStack()
                     },
                     onEvolutionClick = { evolutionId ->
                         navController.navigate("detail/$evolutionId")
@@ -499,6 +498,7 @@ fun PokedexApp(
         }
         composable("specimens/collection") {
             val collectionViewModel: MyCollectionViewModel = viewModel()
+            val keyboardController = rememberTerminalKeyboardController()
 
             var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
             var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -512,6 +512,8 @@ fun PokedexApp(
                 showBattleOverlay = false,
                 onUp = { upHandler?.invoke() },
                 onDown = { downHandler?.invoke() },
+                onLeft = { leftHandler?.invoke() },
+                onRight = { rightHandler?.invoke() },
                 onA = { aHandler?.invoke() },
                 onB = { bHandler?.invoke() },
                 viewModel = viewModel,
@@ -520,7 +522,22 @@ fun PokedexApp(
                 onLaunchProbe = { navController.navigate("accessibility_probe") },
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
-                frameCount = frameCount
+                frameCount = frameCount,
+                keyboardController = keyboardController,
+                onKeyActivated = { key ->
+                    val currentQuery = collectionViewModel.searchQuery.value
+                    when (key) {
+                        "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
+                        "DELETE" -> {
+                            if (currentQuery.isNotEmpty()) {
+                                collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
+                            }
+                        }
+                        else -> {
+                            collectionViewModel.updateSearchQuery(currentQuery + key)
+                        }
+                    }
+                }
             ) {
                 MyCollectionScreen(
                     pokedexViewModel = viewModel,
@@ -528,7 +545,7 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onAddClick = { navController.navigate("add_pokemon_wizard") },
-                    onBack = { navController.popBackStack() },
+                    onBack = { navController.debugPopBackStack() },
                     onItemClick = { id ->
                         navController.navigate("specimens/detail/$id")
                     },
@@ -538,12 +555,9 @@ fun PokedexApp(
                     onRight = { rightHandler = it },
                     onA = { aHandler = it },
                     onB = { bHandler = it },
-
-                    )
-
-
-
-                            }
+                    keyboardController = keyboardController
+                )
+            }
         }
         composable(
             route = "specimens/detail/{id}",
@@ -556,7 +570,7 @@ fun PokedexApp(
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
                 onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.debugPopBackStack() }
             )
         }
         composable(
@@ -569,8 +583,8 @@ fun PokedexApp(
                 ownedId = id,
                 pokedexViewModel = viewModel,
                 collectionViewModel = collectionViewModel,
-                onFinish = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
+                onFinish = { navController.debugPopBackStack() },
+                onCancel = { navController.debugPopBackStack() }
             )
         }
         composable("add_pokemon_wizard") {
@@ -580,8 +594,8 @@ fun PokedexApp(
                 collectionViewModel = collectionViewModel,
                 filterSettings = filterSettings,
                 onFilterSettingsChange = { filterSettings = it },
-                onFinish = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() }
+                onFinish = { navController.debugPopBackStack() },
+                onCancel = { navController.debugPopBackStack() }
             )
         }
         composable("accessibility_probe") {
@@ -594,10 +608,10 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+                onB = { navController.debugPopBackStack() }
             ) {
                 AccessibilityProbeScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.debugPopBackStack() }
                 )
             }
         }
@@ -611,10 +625,10 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+                onB = { navController.debugPopBackStack() }
             ) {
                 SignalObservatoryScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.debugPopBackStack() }
                 )
             }
         }
@@ -628,7 +642,7 @@ fun PokedexApp(
                 onLaunchObservatory = { navController.navigate("signal_observatory") },
                 deploymentState = deploymentState,
                 frameCount = frameCount,
-                onB = { navController.popBackStack() }
+                onB = { navController.debugPopBackStack() }
             ) {
                 BattlePreviewScreen(
                     state = com.example.overdex.presentation.preview.BattlePreviewData.mewtwoDemo()
@@ -636,4 +650,12 @@ fun PokedexApp(
             }
         }
     }
+}
+
+private fun androidx.navigation.NavController.debugPopBackStack(): Boolean {
+    val before = currentDestination?.route
+    val popped = popBackStack()
+    val after = currentDestination?.route
+    android.util.Log.d("NavDebug", "popBackStack before=$before popped=$popped after=$after")
+    return popped
 }

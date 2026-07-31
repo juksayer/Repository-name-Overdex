@@ -354,6 +354,7 @@ Every responsibility has one owner.
 
 Significant architectural decisions are recorded in the [Thinking Chair](file:///home/sean/AndroidStudioProjects/Overdex/DexDox/Architecture/ThinkingChair.md). Refer to this document to understand the context, alternatives, and reasoning behind major turning points in the system's evolution.
 
+
 ---
 
 # Guiding Principle
@@ -361,3 +362,10 @@ Significant architectural decisions are recorded in the [Thinking Chair](file://
 > **Observe only what appears on the screen. Infer nothing. Preserve everything.**
 
 Everything else in Overdex is built upon that foundation.
+
+# Navigation Ownership Invariant
+
+Navigation operations may only mutate navigation state while the requesting navigation context 
+still owns the request. Stale callbacks, delayed input, duplicated intents, replayed events, or any
+other request that has outlived its ownership must be ignored rather than allowing navigation state
+to become inconsistent.

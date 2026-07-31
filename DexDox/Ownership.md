@@ -291,3 +291,83 @@ PRESENTATION
 
 
 The Observation Session Workspace represents the observations and supporting evidence accumulated during an active observation session.
+| Responsibility                                      | Owner                      | Why                                                              |
+| --------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
+| Physical input (keyboard, touch, controller, voice) | Observation                | Normalizes platform-specific events into observations.           |
+| Intent                                              | Intent Layer               | Converts observations into device-independent intents.           |
+| Session lifetime                                    | SessionManager             | Owns the current application session.                            |
+| Navigation history                                  | SessionManager             | Owns the workspace stack.                                        |
+| Active workspace                                    | SessionManager (derived)   | Computed as the top of the workspace stack.                      |
+| Workspace state                                     | Individual Workspace       | Each workspace owns its own domain state.                        |
+| Selection                                           | Individual Workspace       | `selectedPokemon`, `selectedRegion`, etc. No universal cursor.   |
+| Domain logic                                        | Individual Workspace       | Acts on intents within its own domain.                           |
+| Navigation requests                                 | Workspace → SessionManager | Workspace requests navigation; SessionManager mutates the stack. |
+| Presentation                                        | Droidball                  | Embodiment of the Presentation layer.                            |
+| CRT/LCD/Overlay/LEDs/Sound/Haptics                  | Droidball                  | Different presentation media, one presenter.                     |
+| Rendering                                           | Droidball                  | Consumes exposed workspace state and presents it.                |
+
+
+Then I'd capture the architectural rules we've discovered alongside it:
+
+Rule 1
+
+Observation never assigns meaning.
+
+It reports:
+
+A pressed
+Screen tapped
+Voice command heard
+
+Nothing more.
+
+Rule 2
+
+Intent is device-independent.
+
+Whether it came from:
+
+keyboard
+touchscreen
+controller
+voice
+
+the workspace receives the same intent.
+
+Rule 3
+
+Modules expose state.
+
+They do not render themselves.
+
+Rule 4
+
+Presentation belongs to Droidball.
+
+Everything the trainer experiences is mediated through Droidball.
+
+Rule 5
+
+SessionManager owns navigation, not workspaces.
+
+It owns:
+
+workspaceStack
+
+and exposes
+
+activeWorkspace
+
+as derived state.
+
+Rule 6
+
+Prefer authoritative state over duplicated state.
+
+For example:
+
+workspaceStack
+↓
+activeWorkspace
+
+instead of storing both.
