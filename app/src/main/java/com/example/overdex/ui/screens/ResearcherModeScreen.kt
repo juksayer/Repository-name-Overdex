@@ -28,6 +28,7 @@ enum class ResearcherFocus {
     PHOSPHOR,
     PROBE,
     OBSERVATORY,
+    MATCH_SIGHT,
     DEBUG_OVERLAY,
     OCR_BOXES,
     EXPERIMENTAL,
@@ -38,6 +39,7 @@ enum class ResearcherFocus {
 fun ResearcherModeOverlay(
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
+    onLaunchMatchSight: () -> Unit = {},
     onClose: () -> Unit,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
@@ -56,6 +58,7 @@ fun ResearcherModeOverlay(
             ResearcherFocus.PHOSPHOR,
             ResearcherFocus.PROBE,
             ResearcherFocus.OBSERVATORY,
+            ResearcherFocus.MATCH_SIGHT,
             ResearcherFocus.DEBUG_OVERLAY,
             ResearcherFocus.OCR_BOXES,
             ResearcherFocus.EXPERIMENTAL,
@@ -74,6 +77,7 @@ fun ResearcherModeOverlay(
             when (focusManager.currentItem) {
                 ResearcherFocus.PROBE -> onLaunchProbe()
                 ResearcherFocus.OBSERVATORY -> onLaunchObservatory()
+                ResearcherFocus.MATCH_SIGHT -> onLaunchMatchSight()
                 ResearcherFocus.CLOSE -> onClose()
                 else -> {}
             }
@@ -141,6 +145,19 @@ fun ResearcherModeOverlay(
                 contentAlignment = Alignment.Center
             ) {
                 Text("LAUNCH TIMELINE VIEWER", color = if (focusManager.currentItem == ResearcherFocus.OBSERVATORY) TerminalGreen else TerminalDimGreen)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+                    .border(1.dp, if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen else Color.Transparent)
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("LAUNCH MATCH SIGHT", color = if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen else TerminalDimGreen)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

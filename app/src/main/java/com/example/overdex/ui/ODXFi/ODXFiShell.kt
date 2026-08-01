@@ -257,6 +257,7 @@ fun ODXFiShell(
     onStart: () -> Unit = {},
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
+    onLaunchMatchSight: () -> Unit = {},
     deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
     frameCount: Long = 0,
     lcdLine1: String? = null,
@@ -538,6 +539,10 @@ fun ODXFiShell(
                         onLaunchObservatory = {
                             showResearcherSettings = false
                             onLaunchObservatory()
+                        },
+                        onLaunchMatchSight = {
+                            showResearcherSettings = false
+                            onLaunchMatchSight()
                         },
                         onClose = { showResearcherSettings = false },
                         onUp = { researcherUp = it },
