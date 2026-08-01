@@ -532,7 +532,7 @@ fun CaptureVerificationScreen(
             }
 
             if (showWorkspaceViewer) {
-                ObservationWorkspaceViewer(history = history)
+                BattleWorkspaceViewer(history = history)
             }
         }
     }

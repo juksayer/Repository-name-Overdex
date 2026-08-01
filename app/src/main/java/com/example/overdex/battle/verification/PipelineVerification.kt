@@ -28,7 +28,7 @@ fun verifyPipeline() {
 
     // 4. Pass workspace to reconciler
     val reconciler = object : ObservationReconciler {
-        override fun reconcile(workspace: ObservationWorkspace): List<TimelineEvent> {
+        override fun reconcile(workspace: BattleWorkspace): List<TimelineEvent> {
             // Trivial mapping for verification
             return workspace.observations.map { obs ->
                 object : TimelineEvent {

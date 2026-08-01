@@ -147,7 +147,7 @@ This document provides a complete inventory of Overdex source files related to t
 - [ObservationReconciler.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationReconciler.kt)
 - [ObservationSession.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSession.kt)
 - [ObservationSessionState.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationSessionState.kt)
-- [ObservationWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationWorkspace.kt)
+- [BattleWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/BattleWorkspace.kt)
 
 **battle/observation/debug/**
 - [ManualObservationSource.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/debug/ManualObservationSource.kt)
@@ -189,7 +189,7 @@ This document provides a complete inventory of Overdex source files related to t
 **ui/components/**
 - [BattleOverlay.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/BattleOverlay.kt)
 - [ObservationRegionOverlay.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/ObservationRegionOverlay.kt)
-- [ObservationSessionWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/ObservationSessionWorkspace.kt)
+- [BattleWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/BattleWorkspace.kt)
 
 **test/model/observation/**
 - [ObservationGuidanceTest.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/test/java/com/example/overdex/model/observation/ObservationGuidanceTest.kt)
@@ -298,7 +298,7 @@ This document provides a complete inventory of Overdex source files related to t
 - [ObservationSessionState.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/model/observation/ObservationSessionState.kt)
 
 **ui/components/**
-- [ObservationSessionWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/ObservationSessionWorkspace.kt)
+- [BattleWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/BattleWorkspace.kt)
 
 **ui/screens/observatory/**
 - [SessionSummaryCard.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/observatory/SessionSummaryCard.kt)
@@ -357,7 +357,7 @@ This document provides a complete inventory of Overdex source files related to t
 ## Workspace
 
 **battle/observation/**
-- [ObservationWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/ObservationWorkspace.kt)
+- [BattleWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/BattleWorkspace.kt)
 
 **ui/components/**
-- [ObservationSessionWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/ObservationSessionWorkspace.kt)
+- [BattleWorkspace.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/BattleWorkspace.kt)

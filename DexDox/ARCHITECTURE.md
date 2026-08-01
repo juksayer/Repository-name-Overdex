@@ -87,7 +87,7 @@ Responsibilities:
 - Screen capture
 - OCR
 - Recognition
-- Observation Session Workspace
+- Battle Workspace
 
 The Observation Layer never performs inference.
 
@@ -224,7 +224,7 @@ Recognition Modules
 
       ▼
 
-Observation Session Workspace
+Battle Workspace
 
       │
 
@@ -233,7 +233,7 @@ Observation Session Workspace
 Memory Layer
 ```
 
-The Observation Session Workspace is the integration point for all recognition modules.
+The Battle Workspace is the integration point for all recognition modules.
 
 Every recognizer contributes observations independently.
 

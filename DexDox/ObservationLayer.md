@@ -38,7 +38,7 @@ The Observation Layer is responsible for:
 - Running OCR and recognition
 - Identifying visible battle information
 - Packaging observations
-- Maintaining the active Observation Session Workspace
+- Maintaining the active Battle Workspace
 
 It is **not** responsible for:
 
@@ -79,7 +79,7 @@ Recognition
 
       ▼
 
-Observation Session Workspace
+Battle Workspace
 
       │
 
@@ -90,9 +90,9 @@ Higher Layers
 
 ---
 
-# Observation Session Workspace
+# Battle Workspace
 
-The Observation Session Workspace represents everything currently known about the active battle.
+The Battle Workspace represents everything currently known about the active battle.
 
 It acts as a shared source of truth for later systems.
 
@@ -133,7 +133,7 @@ Examples include:
 - HealthObserver
 - ShieldObserver
 
-Observers publish observations into the Observation Session Workspace.
+Observers publish observations into the Battle Workspace.
 
 Observers do not communicate directly with one another.
 ---
@@ -141,7 +141,7 @@ Observers do not communicate directly with one another.
 # Observation Lifecycle
 
 1. Battle begins.
-2. Observation Session Workspace is created.
+2. Battle Workspace is created.
 3. Screen captures are analyzed.
 4. Recognizers publish observations.
 5. Workspace is updated.
@@ -179,7 +179,7 @@ Each module contributes only the information it owns.
 
 ## Shared Workspace
 
-All recognized information is collected into a single Observation Session Workspace.
+All recognized information is collected into a single Battle Workspace.
 
 Consumers read from the workspace instead of communicating directly with recognizers.
 

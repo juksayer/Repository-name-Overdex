@@ -15,7 +15,7 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalPurple
 
 @Composable
-fun ObservationWorkspaceViewer(
+fun BattleWorkspaceViewer(
     history: Map<String, List<Observation>>,
     modifier: Modifier = Modifier
 ) {
@@ -25,7 +25,7 @@ fun ObservationWorkspaceViewer(
             .background(TerminalBlack.copy(alpha = 0.9f))
             .padding(16.dp)
     ) {
-        TerminalHeader(text = "observation session workspace", color = TerminalPurple)
+        TerminalHeader(text = "battle workspace", color = TerminalPurple)
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(

@@ -3,7 +3,7 @@ package com.example.overdex.battle.observation
 /**
  * Represents an active observation session for a single live battle.
  * 
- * The session manages the lifecycle of observations and owns an [ObservationWorkspace]
+ * The session manages the lifecycle of observations and owns a [BattleWorkspace]
  * where evidence is collected. Once the session is complete, its observations are
  * typically reconciled into the Battle Timeline.
  * 
@@ -14,7 +14,7 @@ package com.example.overdex.battle.observation
 class ObservationSession(
     @Suppress("unused") val sessionId: String,
     var state: ObservationSessionState = ObservationSessionState.CREATED,
-    val workspace: ObservationWorkspace = ObservationWorkspace(),
+    val workspace: BattleWorkspace = BattleWorkspace(),
 ) {
     /** The total number of frames processed during this session. */
     var frameCount: Long = 0

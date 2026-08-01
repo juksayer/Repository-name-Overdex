@@ -482,3 +482,16 @@ Work orders should minimize interpretation.
 If a reviewer can reasonably ask,
 
 "What exactly counts as redundant?"
+
+Domain Vocabulary Ownership
+
+Every module owns its own vocabulary.
+
+A significant domain term introduced by one module becomes part of that module's language and shall not be reused as the primary name of a component in another module.
+
+Modules should communicate their ownership through language rather than package structure.
+
+A contributor should be able to identify a file's domain from its filename along
+Vocabulary Uniqueness
+
+When introducing a new module, prefer a new domain-specific noun over reusing an existing architectural noun.

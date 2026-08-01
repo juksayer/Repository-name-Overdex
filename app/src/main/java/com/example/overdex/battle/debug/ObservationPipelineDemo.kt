@@ -31,7 +31,7 @@ object ObservationPipelineDemo {
 
         // 3. Reconcile
         val reconciler = object : ObservationReconciler {
-            override fun reconcile(workspace: ObservationWorkspace): List<TimelineEvent> {
+            override fun reconcile(workspace: BattleWorkspace): List<TimelineEvent> {
                 // Intentionally trivial reconciliation for demo
                 return workspace.observations.map { obs ->
                     // Map every observation to a basic event for visibility

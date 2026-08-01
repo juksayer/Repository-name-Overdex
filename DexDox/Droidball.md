@@ -676,7 +676,7 @@ Droidball does not own observations.
 
 He contributes them.
 
-The Observation Session Workspace remains the single source of truth.
+The Battle Workspace remains the single source of truth.
 
 Droidball simply visualizes the progress of observation.
 

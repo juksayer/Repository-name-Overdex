@@ -272,7 +272,7 @@ owns:
   Evidence
   Provenance
   ObservationSession
-  ObservationWorkspace
+  Battle Workspace
 
 REFERENCE KNOWLEDGE
 owns:
@@ -290,7 +290,7 @@ PRESENTATION
   communicates it to trainer
 
 
-The Observation Session Workspace represents the observations and supporting evidence accumulated during an active observation session.
+The Battle Workspace represents the observations and supporting evidence accumulated during an active observation session.
 | Responsibility                                      | Owner                      | Why                                                              |
 | --------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
 | Physical input (keyboard, touch, controller, voice) | Observation                | Normalizes platform-specific events into observations.           |

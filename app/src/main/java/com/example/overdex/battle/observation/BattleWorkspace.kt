@@ -6,7 +6,7 @@ package com.example.overdex.battle.observation
  * The workspace accumulates raw [Observation]s from multiple sources and provides
  * the shared data pool used by the [ObservationReconciler] to commit events to history.
  */
-class ObservationWorkspace {
+class BattleWorkspace {
     private val _observations = mutableListOf<Observation>()
     /** The complete list of observations collected during this session. */
     val observations: List<Observation> get() = _observations
