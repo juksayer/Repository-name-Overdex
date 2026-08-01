@@ -5,5 +5,6 @@ enum class CalibrationRegion {
     ENEMY_NAME,
     HP_BAR,
     TEAM_ICONS,
-    MOVE_BANNER
+    MOVE_BANNER,
+    COUNTDOWN
 }

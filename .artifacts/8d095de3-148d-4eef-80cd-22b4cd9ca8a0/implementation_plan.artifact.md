@@ -1,83 +1,56 @@
-# Implementation Plan — Match Sight Bootstrapping (Brick A)
+# Git #261 — Match Countdown Implementation Plan
 
-Establish the first developer-facing diagnostic surface for **Match**. This brick creates the destination for Match diagnostics without modifying the Battle architecture or introducing new publication mechanisms.
+Introduce the first production battle fact: `MatchCountdown`. This brick establishes the pattern of an observer witnessing a real battle fact and submitting it to an active `Match`.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> This brick is strictly a presentation change. No new `Match` state will be introduced, and no new publication mechanisms (like `StateFlow<Match?>`) will be added to `PokedexViewModel`.
-
-### Presentation Invariant
-
-Match Sight is a read-only diagnostic surface.
-
-It presents existing Battle state only.
-
-If no Battle state is available, Match Sight presents the absence of diagnostic information.
-
-It never fabricates or derives information.
+> The observer registration will be integrated into `PokedexViewModel.deployInstrument`, which is the current "production" entry point for starting a battle.
 
 ## Proposed Changes
 
-### Core Model & Navigation
+### Battle Component
 
-#### [NEW] [InstrumentCommand.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/model/navigation/InstrumentCommand.kt)
-- Move the `InstrumentCommand` sealed interface from `InstrumentTree.kt` to this new file to clarify ownership.
-- Add `data object OpenMatchSight : InstrumentCommand` to the interface.
+#### [MODIFY] [Match.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/Match.kt)
+- Add a list to store `MatchCountdown` instances.
+- Add a `submit(countdown: MatchCountdown)` method.
 
-#### [MODIFY] [InstrumentTree.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/model/navigation/InstrumentTree.kt)
-- Remove the `InstrumentCommand` definition (it now lives in its own file).
-- Update the default instrument tree initialization (if it were here, but it's in `PokedexViewModel.kt`).
+#### [NEW] [MatchCountdown.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/MatchCountdown.kt)
+- Define `MatchCountdown` data class (timestamp: Long, value: CountdownValue).
+- Define `CountdownValue` enum (THREE, TWO, ONE, GO, UNKNOWN).
+
+#### [NEW] [MatchCountdownRecognizer.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/MatchCountdownRecognizer.kt)
+- Implement `recognize(bitmap: Bitmap): CountdownValue` using ML Kit Text Recognition.
+
+#### [NEW] [MatchCountdownObserver.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/MatchCountdownObserver.kt)
+- Implement `Observer` interface.
+- Crop the configured countdown region from incoming frames.
+- Use `MatchCountdownRecognizer` to identify the countdown value.
+- Submit `MatchCountdown` to the active `Match`.
+
+---
+
+### Data Component
+
+#### [MODIFY] [BattleCalibration.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/data/BattleCalibration.kt)
+- Add `countdownRegion: AnchorRegion` to the `BattleCalibration` data class.
+
+---
+
+### UI / Pipeline Component
 
 #### [MODIFY] [PokedexViewModel.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt)
-- Update the `instrumentTree` initialization to include `ActionNode("sight", InstrumentCommand.OpenMatchSight)` under the `battle` directory.
-
-### Developer UI
-
-#### [MODIFY] [ResearcherModeScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/ResearcherModeScreen.kt)
-- Add `MATCH_SIGHT` to the `ResearcherFocus` enum.
-- Add a "LAUNCH MATCH SIGHT" button in the `ResearcherModeOverlay` under the "SIGNAL OBSERVATORY" section.
-- Wire the button to an `onLaunchMatchSight` callback.
-
-#### [NEW] [MatchSightScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MatchSightScreen.kt)
-- Create a new Composable screen for Match diagnostics.
-- The initial implementation displays a diagnostic placeholder:
-    - Header: `MATCH SIGHT`
-    - Status: `No active diagnostics.`
-    - Context: `Waiting for Battle...`
-
-### Application Integration
-
-#### [MODIFY] [MainActivity.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/MainActivity.kt)
-- Handle `InstrumentCommand.OpenMatchSight` in the `pendingCommand` collection logic to navigate to `"match_sight"`.
-- Add `composable("match_sight")` to the `NavHost`.
-- Pass `onLaunchMatchSight = { navController.navigate("match_sight") }` to `ODXFiShell` and `ResearcherModeOverlay`.
-
-## Future Growth
-
-Future Match Sight bricks shall consume additional Match state only after that state exists through independently approved Battle bricks.
-
-They shall not require new Match state or ownership changes.
+- Wire `MatchCountdownObserver` into the match deployment flow.
+- Ensure the observer is started when the match begins and stopped when it ends.
 
 ## Verification Plan
 
 ### Automated Tests
-- N/A.
+- Create unit tests for `MatchCountdownRecognizer` with sample images of "3", "2", "1", and "GO".
+- Create unit tests for `MatchCountdownObserver` to verify it correctly crops and submits facts.
 
 ### Manual Verification
-1. **Navigation**: Open the Developer Menu and verify "LAUNCH MATCH SIGHT" exists and functions.
-2. **Terminal Navigation**: Verify `battle/sight` exists in the instrument tree and navigates correctly.
-3. **Stability**: Ensure `MatchSightScreen` loads and displays the placeholder without crashing, regardless of whether a match is active.
-4. **Non-Interference**: Verify that starting and stopping a match (via normal observation) is unaffected by the presence of the Match Sight screen.
-5. **Read-Only**: Confirm no UI elements in Match Sight attempt to modify application or battle state.
-6. **Exit Behavior**: Verify that leaving Match Sight returns to the previous screen without affecting Battle state.
-
-## Definition of Done
-
-The implementation is complete when:
-- Match Sight is reachable through developer navigation.
-- Match Sight loads without requiring an active Match.
-- Match Sight displays only placeholder diagnostics.
-- No Battle architecture has changed.
-- No publication mechanisms have been introduced.
-- Existing Battle behavior is unchanged.
+1. Deploy the instrument in a live Pokémon GO battle.
+2. Observe the logs to verify that `MatchCountdown` facts are being submitted to the `Match` during the pre-battle countdown.
+3. Verify that unknown or noisy frames do not produce fabricated countdown values.
+4. Verify that no `BattleEvent`s are created and no other battle behavior (timers, replay, etc.) is triggered.
