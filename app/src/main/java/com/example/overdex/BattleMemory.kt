@@ -8,7 +8,7 @@ import com.example.overdex.model.observation.PokemonNameObservation
 import kotlinx.coroutines.delay
 
 /**
- * The mutable runtime memory of an active battle session.
+ * The mutable runtime memory of an active Match.
  * 
  * BattleMemory accumulates observations, tracks estimated energy levels, and 
  * maintains the state of both the player's and the opponent's teams during 

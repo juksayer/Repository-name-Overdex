@@ -30,7 +30,7 @@ class SpeciesObserver(
 
     private var scope: CoroutineScope? = null
 
-    override fun start(session: ObservationSession) {
+    override fun start(match: Match) {
         if (scope != null) return
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -38,7 +38,7 @@ class SpeciesObserver(
 
         newScope.launch {
             input.supply { bitmap ->
-                session.incrementFrameCount()
+                match.incrementFrameCount()
 
                 if (calibration.isCalibrated()) {
                     val cropped = cropEnemyName(bitmap)

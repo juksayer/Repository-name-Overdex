@@ -21,7 +21,7 @@ import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.model.observation.InstrumentDeploymentState
-import com.example.overdex.battle.observation.ObservationSession
+import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballFact
 import com.example.overdex.model.navigation.*
@@ -51,7 +51,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _frameCount = MutableStateFlow(0L)
     val frameCount = _frameCount.asStateFlow()
 
-    private var currentSession: ObservationSession? = null
+    private var currentMatch: Match? = null
 
     val spriteProvider: SpriteProvider = FallbackSpriteProvider(
         primary = LocalSpriteProvider(application.assets),
@@ -139,9 +139,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun deployInstrument(resultCode: Int, data: android.content.Intent) {
         _deploymentState.value = InstrumentDeploymentState.DEPLOYING
         
-        // Initialize Session
-        val sessionId = java.util.UUID.randomUUID().toString()
-        currentSession = ObservationSession(sessionId)
+        // Initialize Match
+        val matchId = java.util.UUID.randomUUID().toString()
+        currentMatch = Match(matchId)
         _frameCount.value = 0
         
         // Start Service
@@ -158,8 +158,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         if (_deploymentState.value == InstrumentDeploymentState.DEPLOYING || _deploymentState.value == InstrumentDeploymentState.READY) {
                             _deploymentState.value = InstrumentDeploymentState.OBSERVING
                         }
-                        currentSession?.incrementFrameCount()
-                        _frameCount.value = currentSession?.frameCount ?: 0
+                        currentMatch?.incrementFrameCount()
+                        _frameCount.value = currentMatch?.frameCount ?: 0
                     }
                     is DroidballFact.Stopped -> {
                         _deploymentState.value = InstrumentDeploymentState.IDLE
@@ -176,7 +176,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun stopObservation() {
         _deploymentState.value = InstrumentDeploymentState.RETURNING
         DroidballService.stop(getApplication())
-        currentSession = null
+        currentMatch = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }
 
@@ -192,7 +192,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             // Droidball docked - Stop recording
             val recording = ObservationRecorder.stopRecording()
             if (recording != null) {
-                Log.d("OBSERVATION_RECORDER", "Session captured: ${recording.sessionId} with ${recording.events.size} events")
+                Log.d("OBSERVATION_RECORDER", "Match captured: ${recording.matchId} with ${recording.events.size} events")
             }
         }
     }

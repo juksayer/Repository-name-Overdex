@@ -648,19 +648,19 @@ Information is available immediately.
 
 Hardware simply takes time to move.
 
-# Observation Session
+# Match
 
-Droidball is aware of Observation Sessions.
+Droidball is aware of Matches.
 
-When a session begins:
+When a match begins:
 
 He deploys.
 
-When the session completes:
+When the match completes:
 
 He returns to the dock.
 
-When a session is abandoned:
+When a match is abandoned:
 
 He quietly returns home.
 

@@ -10,12 +10,12 @@ interface EvidenceSource {
     /**
      * Starts recording evidence from this source.
      * 
-     * @param syncSessionId Optional ID of an active ObservationSession to align timelines.
+     * @param syncMatchId Optional ID of an active Match to align timelines.
      */
-    fun startRecording(syncSessionId: String? = null)
+    fun startRecording(syncMatchId: String? = null)
     
     /**
-     * Stops the current recording session for this source.
+     * Stops the current recording Match for this source.
      */
     fun stopRecording()
     
@@ -38,7 +38,7 @@ interface EvidenceEvent {
     val sequenceNumber: Long
     /** The absolute system time when the event was captured. */
     val timestamp: Long
-    /** The time in milliseconds relative to the start of the recording session. */
+    /** The time in milliseconds relative to the start of the recording Match. */
     val relativeTimestamp: Long
     /** The name of the [EvidenceSource] that produced this event. */
     val sourceName: String

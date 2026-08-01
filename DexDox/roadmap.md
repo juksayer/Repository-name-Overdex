@@ -84,7 +84,7 @@ Completed Foundation
 
 Next
 
--   Observation Session support
+-   Match support
 -   Species recognition
 -   Move recognition
 -   Shadow recognition

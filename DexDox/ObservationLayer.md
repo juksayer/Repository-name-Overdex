@@ -8,7 +8,7 @@
 
 The Observation Layer is the first stage of the Overdex battle intelligence pipeline.
 
-Its responsibility is to observe the Pokémon GO battle screen, extract factual information, and package those observations into a structured session workspace.
+Its responsibility is to observe the Pokémon GO battle screen, extract factual information, and package those observations into a structured Match workspace.
 
 The Observation Layer **does not** make decisions, predict outcomes, or recommend actions.
 
@@ -138,10 +138,10 @@ Observers publish observations into the Battle Workspace.
 Observers do not communicate directly with one another.
 ---
 
-# Observation Lifecycle
+# Match Lifecycle
 
 1. Battle begins.
-2. Battle Workspace is created.
+2. Match workspace is created.
 3. Screen captures are analyzed.
 4. Recognizers publish observations.
 5. Workspace is updated.

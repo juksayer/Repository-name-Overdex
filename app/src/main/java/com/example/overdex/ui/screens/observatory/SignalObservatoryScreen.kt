@@ -31,7 +31,7 @@ fun SignalObservatoryScreen(
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                SessionSummaryCard(recording = lastRecording)
+                MatchSummaryCard(recording = lastRecording)
                 
                 SourceFilterBar(
                     activeFilters = activeFilters,

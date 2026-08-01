@@ -5,7 +5,7 @@ import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.observer.ObserverId
 
 /**
- * Represents a single transient observation during an active battle session.
+ * Represents a single transient observation during an active Match.
  * 
  * Unlike the immutable events in the Battle Timeline, an [Observation] is a raw,
  * intermediate data point that qualifies "who saw what" before it is reconciled

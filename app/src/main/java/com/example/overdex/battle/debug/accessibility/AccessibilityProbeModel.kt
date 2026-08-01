@@ -3,7 +3,7 @@ package com.example.overdex.battle.debug.accessibility
 import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
 import com.example.overdex.battle.debug.observatory.EvidenceEvent
 import com.example.overdex.battle.debug.observatory.RectData
-import com.example.overdex.battle.debug.observatory.SessionMetadata
+import com.example.overdex.battle.debug.observatory.MatchMetadata
 import android.view.accessibility.AccessibilityEvent
 import kotlinx.serialization.Serializable
 
@@ -41,7 +41,7 @@ data class AccessibilityProbeEvent(
 ) : EvidenceEvent
 
 /**
- * A summary of the evidence collected during an accessibility probe session.
+ * A summary of the evidence collected during an accessibility probe Match.
  */
 @Serializable
 data class ObservatorySummary(
@@ -49,12 +49,9 @@ data class ObservatorySummary(
     val nodesWithText: Int,
     val nodesWithContentDescription: Int,
     val nodesWithBounds: Int,
-    val metadata: SessionMetadata? = null
+    val metadata: MatchMetadata? = null
 )
 
-/**
- * The data structure used for exporting accessibility probe results.
- */
 @Serializable
 data class ExportData(
     val summary: ObservatorySummary,

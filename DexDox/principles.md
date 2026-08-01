@@ -495,3 +495,14 @@ A contributor should be able to identify a file's domain from its filename along
 Vocabulary Uniqueness
 
 When introducing a new module, prefer a new domain-specific noun over reusing an existing architectural noun.
+Module Vocabulary Ownership
+
+Every module owns its filenames and architectural vocabulary.
+
+A filename introduced by one module shall not be reused by another module.
+
+When a module requires a similar concept, it shall develop its own domain-specific terminology.
+
+Generic architectural nouns are reserved for shared infrastructure.
+
+Reviewers shall reject new architectural filenames that violate module vocabulary ownership.

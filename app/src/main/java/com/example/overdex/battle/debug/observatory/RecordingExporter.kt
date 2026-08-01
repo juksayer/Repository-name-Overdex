@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Handles exporting [ObservationRecording] objects to external storage for analysis.
+ * Handles exporting [MatchRecording] objects to external storage for analysis.
  */
 object RecordingExporter {
     private val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT)
@@ -19,8 +19,8 @@ object RecordingExporter {
      * @param recording The recording to export.
      * @return The [File] object representing the exported JSON.
      */
-    fun exportToJson(context: Context, recording: ObservationRecording): File {
-        val fileName = "observation_recording_${dateFormat.format(Date(recording.startTime))}.json"
+    fun exportToJson(context: Context, recording: MatchRecording): File {
+        val fileName = "match_recording_${dateFormat.format(Date(recording.startTime))}.json"
         val file = File(context.getExternalFilesDir(null), fileName)
         val jsonString = RecordingSerializer.serialize(recording)
         file.writeText(jsonString)
@@ -34,13 +34,13 @@ object RecordingExporter {
      * @param recording The recording to export.
      * @return The [File] object representing the exported text file.
      */
-    fun exportToPlainText(context: Context, recording: ObservationRecording): File {
-        val fileName = "observation_recording_${dateFormat.format(Date(recording.startTime))}.txt"
+    fun exportToPlainText(context: Context, recording: MatchRecording): File {
+        val fileName = "match_recording_${dateFormat.format(Date(recording.startTime))}.txt"
         val file = File(context.getExternalFilesDir(null), fileName)
         
         val sb = StringBuilder()
         sb.append("OBSERVATION RECORDING\n")
-        sb.append("Session ID: ${recording.sessionId}\n")
+        sb.append("Match ID: ${recording.matchId}\n")
         sb.append("Start: ${Date(recording.startTime)}\n")
         sb.append("End: ${Date(recording.endTime)}\n")
         sb.append("------------------------------------------------\n\n")

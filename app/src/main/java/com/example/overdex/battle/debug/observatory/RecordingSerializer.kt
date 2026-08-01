@@ -4,7 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
 /**
- * Handles JSON serialization for [ObservationRecording] objects.
+ * Handles JSON serialization for [MatchRecording] objects.
  */
 object RecordingSerializer {
     private val json = Json {
@@ -14,12 +14,12 @@ object RecordingSerializer {
     }
 
     /** Serializes a recording to a JSON string. */
-    fun serialize(recording: ObservationRecording): String {
+    fun serialize(recording: MatchRecording): String {
         return json.encodeToString(recording)
     }
 
     /** Deserializes a recording from a JSON string. */
-    fun deserialize(jsonString: String): ObservationRecording {
+    fun deserialize(jsonString: String): MatchRecording {
         return json.decodeFromString(jsonString)
     }
 }

@@ -15,8 +15,8 @@ object ObservationPipelineDemo {
     fun run() {
         Log.d(TAG, "Starting Observation Pipeline Demo...")
 
-        // 1. Setup Session and Dispatcher
-        val session = ObservationSession(sessionId = "DEMO_SESSION_001")
+        // 1. Setup Match and Dispatcher
+        val match = Match(matchId = "DEMO_MATCH_001")
         val builder = BattleTimelineBuilder()
         val dispatcher = ObservationDispatcher()
 
@@ -25,9 +25,9 @@ object ObservationPipelineDemo {
         dispatcher.register(DebugObserver())
 
         Log.d(TAG, "Starting observers...")
-        dispatcher.startAll(session)
+        dispatcher.startAll(match)
 
-        Log.d(TAG, "Workspace contains ${session.workspace.observations.size} observations.")
+        Log.d(TAG, "Workspace contains ${match.workspace.observations.size} observations.")
 
         // 3. Reconcile
         val reconciler = object : ObservationReconciler {
@@ -43,7 +43,7 @@ object ObservationPipelineDemo {
             }
         }
 
-        val events = reconciler.reconcile(session.workspace)
+        val events = reconciler.reconcile(match.workspace)
         Log.d(TAG, "Reconciler produced ${events.size} TimelineEvents.")
 
         // 4. Assemble Timeline

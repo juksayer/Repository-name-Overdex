@@ -49,7 +49,7 @@ Press A
 
 ↓
 
-Observation Session begins
+Match begins
 
 ↓
 

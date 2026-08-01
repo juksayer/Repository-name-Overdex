@@ -8,7 +8,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Singleton coordinator for recording evidence during an observation session.
+ * Singleton coordinator for recording evidence during a Match.
  * 
  * Acting as a "Flight Recorder," the [ObservationRecorder] captures a high-fidelity
  * stream of visual, system, and decision-making events. This recording can be
@@ -16,17 +16,17 @@ import java.util.concurrent.atomic.AtomicLong
  */
 object ObservationRecorder {
     private var isRecording = false
-    private var sessionId: String? = null
+    private var matchId: String? = null
     private var startTime: Long = 0
-    private var metadata: SessionMetadata? = null
+    private var metadata: MatchMetadata? = null
     
     private val events = mutableListOf<RecordedEvent>()
     private val sequenceCounter = AtomicLong(0)
 
-    private var _lastRecording: ObservationRecording? = null
+    private var _lastRecording: MatchRecording? = null
 
     /**
-     * Initializes a new recording session and captures device metadata.
+     * Initializes a new recording Match and captures device metadata.
      * 
      * @param context Android context used to capture screen resolution and density.
      */
@@ -34,19 +34,19 @@ object ObservationRecorder {
         if (isRecording) return
         
         clear()
-        this.sessionId = UUID.randomUUID().toString()
+        this.matchId = UUID.randomUUID().toString()
         this.startTime = System.currentTimeMillis()
         this.metadata = captureMetadata(context)
         this.isRecording = true
     }
 
-    private fun captureMetadata(context: Context): SessionMetadata {
+    private fun captureMetadata(context: Context): MatchMetadata {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val display = wm.defaultDisplay
         val metrics = DisplayMetrics()
         display.getMetrics(metrics)
 
-        return SessionMetadata(
+        return MatchMetadata(
             deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
             androidVersion = Build.VERSION.SDK_INT,
             screenResolution = "${metrics.widthPixels}x${metrics.heightPixels}",
@@ -57,11 +57,11 @@ object ObservationRecorder {
         )
     }
 
-    fun stopRecording(): ObservationRecording? {
+    fun stopRecording(): MatchRecording? {
         if (!isRecording) return null
         
-        val recording = ObservationRecording(
-            sessionId = sessionId ?: "",
+        val recording = MatchRecording(
+            matchId = matchId ?: "",
             startTime = startTime,
             endTime = System.currentTimeMillis(),
             metadata = metadata,
@@ -78,7 +78,7 @@ object ObservationRecorder {
         
         val timestamp = System.currentTimeMillis()
         val event = RecordedEvent(
-            sessionId = sessionId ?: "",
+            matchId = this.matchId ?: "",
             sequenceNumber = sequenceCounter.incrementAndGet(),
             timestamp = timestamp,
             relativeTimestamp = timestamp - startTime,
@@ -92,7 +92,7 @@ object ObservationRecorder {
     fun clear() {
         events.clear()
         sequenceCounter.set(0)
-        sessionId = null
+        matchId = null
         startTime = 0
         metadata = null
         isRecording = false
@@ -100,7 +100,7 @@ object ObservationRecorder {
 
     // Query API
     fun isRecording() = isRecording
-    fun currentSessionId() = sessionId
+    fun currentMatchId() = matchId
     fun eventCount() = events.size
     fun getEvents() = events.toList()
     fun getLastRecording() = _lastRecording

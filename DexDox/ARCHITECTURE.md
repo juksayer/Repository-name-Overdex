@@ -107,7 +107,7 @@ Memory transforms live observations into persistent battle memory.
 
 Examples:
 
-- Observation Sessions
+- Matches
 - Battle Memory
 - Current battle state
 

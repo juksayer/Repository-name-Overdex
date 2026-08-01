@@ -93,7 +93,7 @@ data class DecisionEvaluatedPayload(
 ) : RecordedPayload
 
 /**
- * Records the results of a session integrity check.
+ * Records the results of a Match integrity check.
  */
 @Serializable
 data class IntegrityCheckedPayload(
@@ -116,7 +116,7 @@ data class ProgressUpdatedPayload(
 /**
  * Records a system-level event within the observation lifecycle.
  * 
- * @property eventName Name of the system event (e.g., "SessionStarted").
+ * @property eventName Name of the system event (e.g., "MatchStarted").
  * @property details Additional contextual information.
  */
 @Serializable

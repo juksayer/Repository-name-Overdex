@@ -1,0 +1,106 @@
+# Terms of Ownership
+
+## Purpose
+
+Architectural terminology is exclusive.
+
+Once a primary term has been adopted by a module or architectural layer,
+that term becomes part of that module's vocabulary and shall not be reused
+by unrelated modules.
+
+This document defines those ownership boundaries.
+
+---
+
+## Match
+
+Status
+Reserved
+
+Owner
+Battle
+
+Definition
+One live Pokémon GO battle.
+
+Notes
+The Match is the primary runtime object of the Battle module.
+Future tournament structures are composed of Matches.
+
+Examples
+BattleMatch
+MatchTimeline
+MatchWorkspace
+
+---
+
+## Observation
+
+Status
+Reserved
+
+Owner
+Battle
+
+Definition
+A fact directly observed during a Match.
+
+---
+
+## Timeline
+
+Status
+Reserved
+
+Owner
+Battle
+
+Definition
+Chronological history of a Match.
+
+---
+
+## Calibration
+
+Status
+Reserved
+
+Owner
+Instrument
+
+Definition
+Alignment of observation regions with the capture source.
+
+---
+
+## Session
+
+Status
+Retired
+
+Previous Owner
+Multiple modules
+
+Reason
+Originally intended to describe an active interaction. Over time the term accumulated unrelated meanings across battle, registration, UI, and application state until it no longer conveyed architectural ownership.
+
+The term is retired. Future modules shall adopt vocabulary specific to their own domain rather than reuse Session.
+
+---
+
+## Workspace
+
+Status
+Retired
+
+Reason
+Originally described several unrelated editable areas. The term became too generic to communicate ownership.
+
+Replacement
+Determined by the owning module.
+
+---
+
+## Pending
+
+Terms currently under evaluation. These words should not be introduced into new code until ownership has been established.

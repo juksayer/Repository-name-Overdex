@@ -21,17 +21,17 @@ object AccessibilityProbeManager : EvidenceSource {
     private val events = mutableListOf<AccessibilityProbeEvent>()
     private val sequenceCounter = AtomicLong(0)
     private var startTimeMillis: Long = 0
-    private var syncSessionId: String? = null
-    private var metadata: SessionMetadata? = null
+    private var syncMatchId: String? = null
+    private var metadata: MatchMetadata? = null
 
     private val json = Json { prettyPrint = true }
 
     /** Returns true if the probe is currently recording events. */
     fun isActive() = isRecording
 
-    override fun startRecording(syncSessionId: String?) {
+    override fun startRecording(syncMatchId: String?) {
         clear()
-        this.syncSessionId = syncSessionId
+        this.syncMatchId = syncMatchId
         this.startTimeMillis = System.currentTimeMillis()
         this.isRecording = true
     }
@@ -43,7 +43,7 @@ object AccessibilityProbeManager : EvidenceSource {
     override fun clear() {
         events.clear()
         sequenceCounter.set(0)
-        syncSessionId = null
+        syncMatchId = null
     }
 
     override fun getEvents(): List<EvidenceEvent> = events.toList()

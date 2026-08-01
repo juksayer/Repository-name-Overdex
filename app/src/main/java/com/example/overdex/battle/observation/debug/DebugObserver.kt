@@ -1,6 +1,6 @@
 package com.example.overdex.battle.observation.debug
 
-import com.example.overdex.battle.observation.ObservationSession
+import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -14,9 +14,9 @@ class DebugObserver(
     override val name: String = "Debug Observer"
 ) : Observer {
 
-    override fun start(session: ObservationSession) {
+    override fun start(match: Match) {
         // Emit visual observation
-        session.submit(
+        match.submit(
             ObservationFactory.createVisualObservation(
                 sourceId = observerId.id,
                 frameUri = "uri://frames/debug_001"
@@ -24,7 +24,7 @@ class DebugObserver(
         )
 
         // Emit state observation
-        session.submit(
+        match.submit(
             ObservationFactory.createStateObservation(
                 sourceId = observerId.id,
                 key = "BATTLE_STATE",

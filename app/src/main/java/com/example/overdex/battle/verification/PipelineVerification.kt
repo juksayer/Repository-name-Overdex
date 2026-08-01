@@ -11,8 +11,8 @@ class PipelineVerification {
 }
 
 fun verifyPipeline() {
-    // 1. Setup the session
-    val session = ObservationSession(sessionId = "BATTLE_001")
+    // 1. Setup the match
+    val match = Match(matchId = "MATCH_001")
 
     // 2. Simulate an observation (e.g. from Droidball)
     val observation = Observation(
@@ -22,9 +22,9 @@ fun verifyPipeline() {
         confidence = ConfidenceScore(0.95f, ConfidenceLevel.CONFIRMED)
     )
 
-    // 3. Submit to the session
-    session.submit(observation)
-    println("Observation submitted to session: ${session.sessionId}")
+    // 3. Submit to the match
+    match.submit(observation)
+    println("Observation submitted to match: ${match.matchId}")
 
     // 4. Pass workspace to reconciler
     val reconciler = object : ObservationReconciler {
@@ -39,7 +39,7 @@ fun verifyPipeline() {
         }
     }
 
-    val derivedEvents = reconciler.reconcile(session.workspace)
+    val derivedEvents = reconciler.reconcile(match.workspace)
     println("Reconciler derived ${derivedEvents.size} events")
 
     // 5. Assemble the timeline

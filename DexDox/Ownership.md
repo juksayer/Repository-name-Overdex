@@ -61,8 +61,8 @@ Owns:
 - Evidence
 - Confidence
 - Observation provenance
-- Observation sessions
-- Active observation workspace
+- Matches
+- Active Match workspace
 
 Does not own:
 
@@ -107,7 +107,7 @@ Owns:
 - Battle timelines
 - Ordered events
 - Chronology
-- Session reconstruction
+- Match reconstruction
 
 Does not own:
 
@@ -290,7 +290,7 @@ PRESENTATION
   communicates it to trainer
 
 
-The Battle Workspace represents the observations and supporting evidence accumulated during an active observation session.
+The Match workspace represents the observations and supporting evidence accumulated during an active Match.
 | Responsibility                                      | Owner                      | Why                                                              |
 | --------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
 | Physical input (keyboard, touch, controller, voice) | Observation                | Normalizes platform-specific events into observations.           |
