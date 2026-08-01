@@ -506,3 +506,15 @@ When a module requires a similar concept, it shall develop its own domain-specif
 Generic architectural nouns are reserved for shared infrastructure.
 
 Reviewers shall reject new architectural filenames that violate module vocabulary ownership.
+
+---
+
+# Vocabulary Retirement
+
+## Vocabulary Retirement Principle
+
+Retiring a term does not invalidate existing implementations. It prevents future architectural ambiguity. Existing uses shall be retired incrementally through focused vocabulary bricks rather than broad refactoring.
+
+## Vocabulary Retirement Policy
+
+Retired terms shall not be reused for newly created source files, packages, architectural layers, or runtime concepts. If a retired term appears appropriate for a new component, a new vocabulary brick shall be created before introducing it. **Retired terms shall not be reactivated.**

@@ -12,6 +12,16 @@ This document defines those ownership boundaries.
 
 ---
 
+## Status Definitions
+
+### Reserved
+A **Reserved** term is exclusive to a single module or architectural layer. It represents a primary concept within that module's ontology and shall not be reused by unrelated modules.
+
+### Retired
+A **Retired** term is forbidden for all future use. It has been removed from the project's active vocabulary because it has become ambiguous, overloaded, or no longer reflects the architectural direction. Retired terms shall not be reactivated.
+
+---
+
 ## Match
 
 Status
@@ -37,13 +47,25 @@ MatchWorkspace
 ## Observation
 
 Status
-Reserved
+Retired
 
-Owner
-Battle
+Historical
+Yes
 
-Definition
-A fact directly observed during a Match.
+Reason
+Originally intended to describe directly perceived battle facts. The term accumulated multiple unrelated meanings (Battle runtime, OCR, UI, Overlays, etc.) until it no longer communicated architectural ownership.
+
+Policy
+Observation is Retired. It shall not appear in the names of:
+- packages
+- source files
+- classes
+- interfaces
+- composables
+- architectural layers
+- primary runtime concepts
+
+Existing usages are retained as **historical artifacts** until individually retired through dedicated vocabulary bricks. Retired terms shall not be reactivated.
 
 ---
 
