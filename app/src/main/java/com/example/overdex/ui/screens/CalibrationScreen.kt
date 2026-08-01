@@ -68,26 +68,30 @@ fun CalibrationScreen(
         CalibrationRegion.ENEMY_NAME,
         CalibrationRegion.HP_BAR,
         CalibrationRegion.TEAM_ICONS,
-        CalibrationRegion.MOVE_BANNER
+        CalibrationRegion.MOVE_BANNER,
+        CalibrationRegion.COUNTDOWN
+
     )
     var regionIndex by remember { mutableStateOf(0) }
 
     val activeRegion = when (selectedRegion) {
+        CalibrationRegion.NONE -> calibration.enemyNameRegion
         CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
         CalibrationRegion.HP_BAR -> calibration.hpBarRegion
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
-        CalibrationRegion.NONE -> calibration.enemyNameRegion
+        CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
     }
 
     fun updateActiveRegion(transform: (AnchorRegion) -> AnchorRegion) {
         val updated = transform(activeRegion)
         calibration = when (selectedRegion) {
+            CalibrationRegion.NONE -> calibration.copy(enemyNameRegion = updated)
             CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = updated)
             CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
             CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
-            else -> calibration.copy(enemyNameRegion = updated)
+            CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
         }
     }
 
@@ -206,14 +210,15 @@ fun CalibrationScreen(
         onA {
             when (focusManager.currentItem) {
                 CalibrationFocus.TEST -> {
-                    calibration = when (selectedRegion) {
-                        CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = AnchorRegion(100f, 200f, 300f, 50f))
-                        CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = AnchorRegion(400f, 100f, 500f, 25f))
-                        CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = AnchorRegion(50f, 500f, 200f, 100f))
-                        CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = AnchorRegion(999f, 999f, 999f, 999f))
-                        CalibrationRegion.NONE -> calibration
+                    val activeRegion = when (selectedRegion) {
+                        CalibrationRegion.NONE -> calibration.enemyNameRegion
+                        CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
+                        CalibrationRegion.HP_BAR -> calibration.hpBarRegion
+                        CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
+                        CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
+                        CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
                     }
-                    statusMessage = "Test region applied"
+
                 }
                 CalibrationFocus.SAVE -> {
                     calibrationManager.save(calibration)
