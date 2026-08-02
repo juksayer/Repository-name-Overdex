@@ -13,7 +13,12 @@ object CountdownRecognizer {
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)
         val result = recognizer.process(image).await()
-        val recognizedText = result.text.trim()
+        val recognizedText = result.text
+            .trim()
+            .replace(" ", "")
+        //.replace(Regex("\\s+"), "")
+
+
         return RecognitionResult(
             value = recognizedText,
             confidence = if (recognizedText.isNotEmpty()) 1.0f else 0.0f,
