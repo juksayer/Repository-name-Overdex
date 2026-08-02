@@ -115,3 +115,5 @@ Ask these questions before implementing a feature:
 - Can it be explained by the layer that owns it?
 
 If the answer is "no," reconsider the design.
+
+An Article is the canonical aggregation point for evidence and confidence.

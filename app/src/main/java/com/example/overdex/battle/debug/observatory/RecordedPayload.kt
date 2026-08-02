@@ -42,7 +42,8 @@ data class VisionCapturePayload(
  * Metadata for a detected visual anchor used for spatial alignment.
  */
 @Serializable
-data class AnchorDetectedPayload(
+data class
+AnchorDetectedPayload(
     val anchorType: String,
     val bounds: RectData,
     val confidence: Float,

@@ -4,8 +4,7 @@ The Overdex Ontology defines the concepts that exist within the Overdex universe
 
 ## Article
 
-An Article is the canonical subject of knowledge. It provides the stable identity to which observations, evidence, knowledge, relationships, and history are attached over time.
-
+An Article is the canonical subject of knowledge. It provides the stable identity to which evidence, confidence, knowledge, relationships, and history are attached over time.
 ## Event
 
 An Event is an objective change in the state of one or more Articles.
