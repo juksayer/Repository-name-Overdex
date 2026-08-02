@@ -18,10 +18,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Production observer responsible for identifying the opponent Pokémon species.
+ * Production observer responsible for identifying the countdown numbers.
  *
  * This observer monitors the enemy name region of the screen and uses OCR
- * to recognize the species name.
+ * to recognize the Countdown numbers.
  */
 class CountdownObserver(
     private val input: ObservationInput,
@@ -48,18 +48,22 @@ class CountdownObserver(
                     val cropped = cropCountdown(bitmap)
                     if (cropped != null) {
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
+                        Log.d(
+                            "CountdownObserver",
+                            "Witnessed countdown: ${recognitionResult.value}"
+                        )
                         
                         // We only submit if we have a confident recognition
                         if (recognitionResult.confidence >= 0.8f) {
                             val observation = RecognitionObservationMapper.map(
-                                regionId = "SpeciesName",
+                                regionId = "CountdownName",
                                 result = recognitionResult,
                                 source = ObservationSource.OCR
                             )
                             
                         if (observation != null) {
                             // TODO: Fix domain mismatch between model.observation and battle.observation
-                            Log.d("SpeciesObserver", "Observed: $observation")
+                            Log.d("CountdownObserver", "Observed: $observation")
                         }
                         }
                     }
