@@ -16,9 +16,17 @@ object CountdownRecognizer {
         val recognizedText = result.text
             .trim()
             .replace(" ", "")
+            .uppercase()
         //.replace(Regex("\\s+"), "")
 
 
+        if (recognizedText !in setOf("3", "2", "1", "GO")) {
+            return RecognitionResult(
+                value = null,
+                confidence = 0.0f,
+                recognizer = "CountdownRecognizer"
+            )
+        }
         return RecognitionResult(
             value = recognizedText,
             confidence = if (recognizedText.isNotEmpty()) 1.0f else 0.0f,
