@@ -54,7 +54,7 @@ class CountdownObserver(
                         )
                         
                         // We only submit if we have a confident recognition
-                        if (recognitionResult.confidence >= 0.8f) {
+                        if (recognitionResult.value != null) {
                             val observation = RecognitionObservationMapper.map(
                                 regionId = "CountdownName",
                                 result = recognitionResult,
