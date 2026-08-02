@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
+import com.example.overdex.data.observation.CountdownRecognizer
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.data.observation.RecognitionObservationMapper
 import com.example.overdex.data.observation.SpeciesNameRecognizer
@@ -46,7 +47,7 @@ class CountdownObserver(
                 if (calibration.isCalibrated()) {
                     val cropped = cropCountdown(bitmap)
                     if (cropped != null) {
-                        val recognitionResult = SpeciesNameRecognizer.recognize(cropped)
+                        val recognitionResult = CountdownRecognizer.recognize(cropped)
                         
                         // We only submit if we have a confident recognition
                         if (recognitionResult.confidence >= 0.8f) {

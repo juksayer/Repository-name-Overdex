@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "species": "Bulbasaur",
+    "fieldNote": [
+      {
+        "id": "001-001",
+        "title": "The First Step",
+        "lines": [
+          "Small seed, steady heart.",
+          "Every champion begins",
+          "With one careful leaf."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "species": "Pikachu",
+    "fieldNote": [
+      {
+        "id": "025-001",
+        "title": "The First Spark",
+        "lines": [
+          "Lightning gathers still.",
+          "One spark turns a hopeless fight",
+          "Into roaring cheers."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  }
+]
