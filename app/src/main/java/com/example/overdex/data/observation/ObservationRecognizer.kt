@@ -3,7 +3,10 @@ package com.example.overdex.data.observation
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.model.observation.AnchorObservation
-import com.example.overdex.battle.debug.observatory.*
+import com.example.overdex.battle.debug.observatory.EvidenceSourceType
+import com.example.overdex.battle.debug.observatory.ObservationRecorder
+import com.example.overdex.battle.debug.observatory.RecognitionAttemptPayload
+import com.example.overdex.battle.debug.observatory.VisionCapturePayload
 
 /**
  * Entry point for the recognition pipeline.

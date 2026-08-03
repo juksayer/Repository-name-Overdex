@@ -1,9 +1,14 @@
 package com.example.overdex.data.observation
 
-import com.example.overdex.model.observation.*
+import com.example.overdex.model.observation.CandidateSpecies
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.EvolutionFamilyObservation
+import com.example.overdex.model.observation.ObservationSession
+import com.example.overdex.model.observation.PokemonNameObservation
+import com.example.overdex.model.observation.RegistrationAction
+import com.example.overdex.model.observation.RegistrationAssessment
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.battle.debug.observatory.*
 
 /**
  * The core logic for evaluating the status and success of a registration session.

@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
-import com.example.overdex.data.observation.CountdownRecognizer
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.data.observation.RecognitionObservationMapper
 import com.example.overdex.data.observation.SpeciesNameRecognizer

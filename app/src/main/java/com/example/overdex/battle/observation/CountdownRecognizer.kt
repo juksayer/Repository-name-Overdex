@@ -1,4 +1,4 @@
-package com.example.overdex.data.observation
+package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import com.example.overdex.model.observation.RecognitionResult

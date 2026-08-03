@@ -1,7 +1,11 @@
 package com.example.overdex.data.matchup
 
 import com.example.overdex.EnemyPokemonMemory
-import com.example.overdex.model.*
+import com.example.overdex.model.AdvantageLevel
+import com.example.overdex.model.Effectiveness
+import com.example.overdex.model.MatchupAnalysis
+import com.example.overdex.model.MoveMatchup
+import com.example.overdex.model.Pokemon
 
 object MatchupEngine {
 

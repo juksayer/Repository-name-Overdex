@@ -1,6 +1,11 @@
 package com.example.overdex.model
 
-import com.example.overdex.model.observation.*
+import com.example.overdex.model.observation.ChargedMoveObservation
+import com.example.overdex.model.observation.CombatPowerObservation
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.FastMoveObservation
+import com.example.overdex.model.observation.ObservationResolver
+import com.example.overdex.model.observation.ShadowStatusObservation
 import com.example.overdex.model.observation.Observation as DomainObservation
 import java.util.UUID
 

@@ -1,6 +1,11 @@
 package com.example.overdex.data.matchup
 
-import com.example.overdex.model.*
+import com.example.overdex.model.AdvantageLevel
+import com.example.overdex.model.DecisionAnalysis
+import com.example.overdex.model.Effectiveness
+import com.example.overdex.model.MatchupAnalysis
+import com.example.overdex.model.RecommendedAction
+import com.example.overdex.model.StrategicPriority
 
 object DecisionEngine {
 

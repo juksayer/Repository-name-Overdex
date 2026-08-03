@@ -2,7 +2,15 @@ package com.example.overdex.data.observation
 
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
-import com.example.overdex.model.observation.*
+import com.example.overdex.model.observation.ChargedMoveObservation
+import com.example.overdex.model.observation.CombatPowerObservation
+import com.example.overdex.model.observation.EvolutionFamilyObservation
+import com.example.overdex.model.observation.FastMoveObservation
+import com.example.overdex.model.observation.Observation
+import com.example.overdex.model.observation.ObservationSource
+import com.example.overdex.model.observation.PokemonNameObservation
+import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.model.observation.ShadowStatusObservation
 
 /**
  * Mapper responsible for converting raw [RecognitionResult] artifacts into domain [Observation] facts.

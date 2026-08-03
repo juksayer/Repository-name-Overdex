@@ -3,8 +3,23 @@ package com.example.overdex.data.observation
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.example.overdex.model.CaptureTemplate
-import com.example.overdex.model.observation.*
-import com.example.overdex.battle.debug.observatory.*
+import com.example.overdex.model.observation.AnchorObservation
+import com.example.overdex.model.observation.AnchorType
+import com.example.overdex.model.observation.CaptureObservation
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.Observation
+import com.example.overdex.model.observation.ObservationInput
+import com.example.overdex.model.observation.ObservationObjective
+import com.example.overdex.model.observation.ObservationSession
+import com.example.overdex.model.observation.SessionPhase
+import com.example.overdex.battle.debug.observatory.DecisionCompetitor
+import com.example.overdex.battle.debug.observatory.DecisionEvaluatedPayload
+import com.example.overdex.battle.debug.observatory.EvidenceSourceType
+import com.example.overdex.battle.debug.observatory.IntegrityCheckedPayload
+import com.example.overdex.battle.debug.observatory.ObservationRecorder
+import com.example.overdex.battle.debug.observatory.ProgressUpdatedPayload
+import com.example.overdex.battle.debug.observatory.SystemEventPayload
+import com.example.overdex.battle.debug.observatory.VisionCapturePayload
 import kotlinx.coroutines.CancellationException
 
 /**

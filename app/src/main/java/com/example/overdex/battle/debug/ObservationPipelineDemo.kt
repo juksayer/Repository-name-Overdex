@@ -1,10 +1,13 @@
 package com.example.overdex.battle.debug
 
 import android.util.Log
-import com.example.overdex.battle.observation.*
-import com.example.overdex.battle.observation.debug.*
-import com.example.overdex.battle.timeline.*
-import com.example.overdex.battle.timeline.event.*
+import com.example.overdex.battle.observation.BattleWorkspace
+import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.ObservationDispatcher
+import com.example.overdex.battle.observation.ObservationReconciler
+import com.example.overdex.battle.observation.debug.DebugObserver
+import com.example.overdex.battle.timeline.BattleTimelineBuilder
+import com.example.overdex.battle.timeline.event.TimelineEvent
 
 /**
  * Developer-only demonstration of the end-to-end observation pipeline.

@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.CalibrationManager
-import com.example.overdex.CalibrationRegion
+import com.example.overdex.ui.components.CalibrationRegion
 import com.example.overdex.ui.components.CalibrationMode
 import com.example.overdex.ui.components.rememberHandheldFocusManager
 import com.example.overdex.ui.components.*

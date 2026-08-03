@@ -1,4 +1,4 @@
-package com.example.overdex
+package com.example.overdex.ui.components
 
 enum class CalibrationRegion {
     NONE,
