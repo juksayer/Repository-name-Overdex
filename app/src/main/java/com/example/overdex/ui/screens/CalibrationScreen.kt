@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.AnchorRegion
+import com.example.overdex.model.AnchorRegion
 import com.example.overdex.CalibrationManager
 import com.example.overdex.CalibrationRegion
 import com.example.overdex.ui.components.CalibrationMode

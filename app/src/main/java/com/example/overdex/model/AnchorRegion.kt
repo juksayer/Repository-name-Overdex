@@ -1,4 +1,4 @@
-package com.example.overdex
+package com.example.overdex.model
 
 /**
  * Defines a static region on the screen used for spatial anchoring.

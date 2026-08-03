@@ -1,7 +1,7 @@
 package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
-import com.example.overdex.BattleCalibration
+import com.example.overdex.data.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.data.observation.RecognitionObservationMapper

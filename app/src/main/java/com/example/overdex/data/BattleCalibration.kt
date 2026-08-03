@@ -1,5 +1,6 @@
-package com.example.overdex
+package com.example.overdex.data
 
+import com.example.overdex.model.AnchorRegion
 /**
  * Defines the user-calibrated regions for different battle UI elements.
  *

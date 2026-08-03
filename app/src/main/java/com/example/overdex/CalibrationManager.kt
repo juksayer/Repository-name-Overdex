@@ -1,6 +1,8 @@
 package com.example.overdex
 
+import com.example.overdex.model.AnchorRegion
 import android.content.Context
+import com.example.overdex.data.BattleCalibration
 
 /**
  * Manages the persistence of user-defined calibration offsets for battle UI regions.

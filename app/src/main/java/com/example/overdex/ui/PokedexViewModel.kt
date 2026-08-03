@@ -152,6 +152,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val match = Match(matchId)
         currentMatch = match
         _frameCount.value = 0
+        Log.d("DEPLOY", "1 Match created")
         
         // Re-initialize dispatcher to ensure observers are registered exactly once per deployment
         observationDispatcher = ObservationDispatcher()
@@ -160,6 +161,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val input = DroidballObservationInput()
         val calibration = CalibrationManager(getApplication()).load()
         
+        Log.d("DEPLOY", "2 Registering observers")
         observationDispatcher.register(SpeciesObserver(input, calibration))
         observationDispatcher.register(CountdownObserver(input, calibration))
 
@@ -168,6 +170,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         startDroidBallService()
 
         // Start Observation lifecycle
+        Log.d("DEPLOY", "3 Starting observers")
         observationDispatcher.startAll(match)
         
         // Listen for facts

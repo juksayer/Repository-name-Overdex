@@ -2,7 +2,7 @@ package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.example.overdex.BattleCalibration
+import com.example.overdex.data.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.observation.CountdownRecognizer
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
@@ -36,14 +36,17 @@ class CountdownObserver(
 
     override fun start(match: Match) {
         if (scope != null) return
+        Log.d("COUNTDOWN", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
 
         newScope.launch {
+            Log.d("COUNTDOWN", "waiting for frames")
             input.supply { bitmap ->
+                Log.d("COUNTDOWN", "bitmap received")
                 match.incrementFrameCount()
-
+                Log.d("COUNTDOWN", "Calibration: ${calibration.isCalibrated()}")
                 if (calibration.isCalibrated()) {
                     val cropped = cropCountdown(bitmap)
                     if (cropped != null) {

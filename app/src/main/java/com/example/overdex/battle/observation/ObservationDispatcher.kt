@@ -1,5 +1,7 @@
 package com.example.overdex.battle.observation
 
+import android.util.Log
+
 /**
  * Coordinator responsible for managing the lifecycle of multiple [Observer] instances.
  * 
@@ -28,7 +30,11 @@ class ObservationDispatcher {
      * Starts all registered observers and attaches them to the provided match.
      */
     fun startAll(match: Match) {
-        observers.forEach { it.start(match) }
+        Log.d("DEPLOY", "4 startAll()")
+        observers.forEach {
+            Log.d("DEPLOY", "Starting ${it.javaClass.simpleName}")
+            it.start(match)
+        }
     }
 
     /**
