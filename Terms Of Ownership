@@ -1,0 +1,128 @@
+# Terms of Ownership
+
+## Purpose
+
+Architectural terminology is exclusive.
+
+Once a primary term has been adopted by a module or architectural layer,
+that term becomes part of that module's vocabulary and shall not be reused
+by unrelated modules.
+
+This document defines those ownership boundaries.
+
+---
+
+## Status Definitions
+
+### Reserved
+A **Reserved** term is exclusive to a single module or architectural layer. It represents a primary concept within that module's ontology and shall not be reused by unrelated modules.
+
+### Retired
+A **Retired** term is forbidden for all future use. It has been removed from the project's active vocabulary because it has become ambiguous, overloaded, or no longer reflects the architectural direction. Retired terms shall not be reactivated.
+
+---
+
+## Match
+
+Status
+Reserved
+
+Owner
+Battle
+
+Definition
+One live Pokémon GO battle.
+
+Notes
+The Match is the primary runtime object of the Battle module.
+Future tournament structures are composed of Matches.
+
+Examples
+BattleMatch
+MatchTimeline
+MatchWorkspace
+
+---
+
+## Observation
+
+Status
+Retired
+
+Historical
+Yes
+
+Reason
+Originally intended to describe directly perceived battle facts. The term accumulated multiple unrelated meanings (Battle runtime, OCR, UI, Overlays, etc.) until it no longer communicated architectural ownership.
+
+Policy
+Observation is Retired. It shall not appear in the names of:
+- packages
+- source files
+- classes
+- interfaces
+- composables
+- architectural layers
+- primary runtime concepts
+
+Existing usages are retained as **historical artifacts** until individually retired through dedicated vocabulary bricks. Retired terms shall not be reactivated.
+
+---
+
+## Timeline
+
+Status
+Reserved
+
+Owner
+Battle
+
+Definition
+Chronological history of a Match.
+
+---
+
+## Calibration
+
+Status
+Reserved
+
+Owner
+Instrument
+
+Definition
+Alignment of observation regions with the capture source.
+
+---
+
+## Session
+
+Status
+Retired
+
+Previous Owner
+Multiple modules
+
+Reason
+Originally intended to describe an active interaction. Over time the term accumulated unrelated meanings across battle, registration, UI, and application state until it no longer conveyed architectural ownership.
+
+The term is retired. Future modules shall adopt vocabulary specific to their own domain rather than reuse Session.
+
+---
+
+## Workspace
+
+Status
+Retired
+
+Reason
+Originally described several unrelated editable areas. The term became too generic to communicate ownership.
+
+Replacement
+Determined by the owning module.
+
+---
+
+## Pending
+
+Terms currently under evaluation. These words should not be introduced into new code until ownership has been established.

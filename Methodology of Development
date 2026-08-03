@@ -1,0 +1,16 @@
+I also think the five-step progression deserves to become a general engineering pattern, not just a note for this bug:
+
+Observe — Collect evidence without changing behavior.
+Understand — Identify which architectural layer violated its responsibility.
+Correct — Fix the responsible layer.
+Protect — Introduce a permanent invariant that prevents impossible state.
+Simplify — Remove temporary diagnostics while leaving the invariant.
+
+That isn't just a debugging checklist; it's a development methodology. It complements principles like "Build first; Test what exists; Show that it happened" by describing how architectural faults should be resolved.
+
+Finally, I think you've landed on an important distinction:
+
+Guards are implementation techniques.
+Invariants are architectural truths.
+
+The documentation should state invariants. The code may implement those invariants with guards, locks, ownership tokens, or other mechanisms, but those are implementation details. Future contributors should be free to change the implementation as long as the invariant continues to hold.
