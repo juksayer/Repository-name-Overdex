@@ -334,3 +334,8 @@ The same principle governs both the software and the way the software itself evo
 
 ---
 
+Observation is the input interface.
+
+Presentation is the output interface.
+
+Everything in between is internal.

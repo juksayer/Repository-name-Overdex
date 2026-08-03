@@ -147,6 +147,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         // Start Service
         DroidballService.start(getApplication(), resultCode, data)
+        startDroidBallService()
         
         // Listen for facts
         viewModelScope.launch {
@@ -177,8 +178,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun stopObservation() {
         _deploymentState.value = InstrumentDeploymentState.RETURNING
         DroidballService.stop(getApplication())
+        stopDroidBallService()
         currentMatch = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
+    }
+
+    fun startDroidBallService() {
+        setObservationSessionState(ObservationSessionState.SERVICE_ACTIVE)
+    }
+
+    fun stopDroidBallService() {
+        if (_observationSessionState.value == ObservationSessionState.SERVICE_ACTIVE) {
+            setObservationSessionState(ObservationSessionState.IDLE)
+        }
     }
 
     fun setObservationSessionState(state: ObservationSessionState) {

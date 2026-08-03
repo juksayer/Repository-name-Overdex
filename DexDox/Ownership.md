@@ -37,6 +37,7 @@ Owns:
 - Forms
 - Evolution
 - Static game data
+- Evidence
 
 Does not own:
 
@@ -57,9 +58,8 @@ If yes, Knowledge probably owns it.
 
 Owns:
 
-- Raw observations
-- Evidence
-- Confidence
+
+
 - Observation provenance
 - Matches
 - Active Match workspace
@@ -157,6 +157,7 @@ Owns:
 - Divination
 - Coaching
 - Explanation
+- Confidence
 
 Never owns:
 

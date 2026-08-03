@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.media.ImageReader
 import android.media.projection.MediaProjection
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import android.graphics.Bitmap
 import android.hardware.display.DisplayManager
+import android.util.Log
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.*
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -69,6 +71,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
+
+    private val projectionCallback = object : MediaProjection.Callback() {
+        override fun onStop() {
+            Log.d("DroidballService", "MediaProjection stopped by system")
+            stopSelf()
+        }
+    }
     
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -92,7 +101,15 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val data = intent?.getParcelableExtra<Intent>("data")
 
         if (resultCode == Activity.RESULT_OK && data != null) {
-            startForeground(NOTIFICATION_ID, createNotification())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    createNotification(),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, createNotification())
+            }
             setupMediaProjection(resultCode, data)
             setupOverlay()
             _facts.tryEmit(DroidballFact.Started)
@@ -106,6 +123,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun setupMediaProjection(resultCode: Int, data: Intent) {
         val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, data)
+        mediaProjection?.registerCallback(projectionCallback, null)
         
         val metrics = resources.displayMetrics
         val width = metrics.widthPixels
@@ -205,6 +223,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         
         overlayView?.let { windowManager.removeView(it) }
         imageReader?.close()
+        mediaProjection?.unregisterCallback(projectionCallback)
         mediaProjection?.stop()
         serviceScope.cancel()
         super.onDestroy()
