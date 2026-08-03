@@ -1,5 +1,5 @@
-- [x] Fix MediaProjection callback crash in `DroidballService`
-    - [x] Define `MediaProjection.Callback`
-    - [x] Register callback in `setupMediaProjection` before `createVirtualDisplay`
-    - [x] Unregister callback in `onDestroy`
-- [x] Verify build and fix on Android 15
+- [x] Wire `ObservationDispatcher` into `PokedexViewModel`
+    - [x] Add `observationDispatcher` property
+    - [x] Update `deployInstrument()` to register and start observers
+    - [x] Update `stopObservation()` to stop observers
+- [x] Verify build and production lifecycle

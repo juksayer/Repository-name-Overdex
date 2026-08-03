@@ -46,13 +46,14 @@ Each layer owns one responsibility.
 
 Knowledge knows.
 
----<!-- TERMINOLOGY AUDIT:
+---!← TERMINOLOGY AUDIT:
 "Knowledge" may predate the formal distinction between Reference Knowledge
 and Dynamic Knowledge. Do not change yet. Revisit after Architecture,
 Ownership, and KnowledgeLayer have been reconciled.
--->
+→
 
 Observation observes.
+ObservationDispatcher owns observer lifecycles, not observation logic
 
 Memory remembers.
 

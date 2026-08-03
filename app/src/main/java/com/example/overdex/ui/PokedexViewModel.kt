@@ -24,6 +24,11 @@ import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballFact
+import com.example.overdex.battle.observation.ObservationDispatcher
+import com.example.overdex.battle.observation.SpeciesObserver
+import com.example.overdex.battle.observation.CountdownObserver
+import com.example.overdex.data.observation.DroidballObservationInput
+import com.example.overdex.CalibrationManager
 import com.example.overdex.model.navigation.*
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
@@ -50,6 +55,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _frameCount = MutableStateFlow(0L)
     val frameCount = _frameCount.asStateFlow()
+
+    private var observationDispatcher = ObservationDispatcher()
 
     private var currentMatch: Match? = null
 
@@ -142,12 +149,26 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         // Initialize Match
         val matchId = java.util.UUID.randomUUID().toString()
-        currentMatch = Match(matchId)
+        val match = Match(matchId)
+        currentMatch = match
         _frameCount.value = 0
         
+        // Re-initialize dispatcher to ensure observers are registered exactly once per deployment
+        observationDispatcher = ObservationDispatcher()
+        
+        // Load calibration and register production observers
+        val input = DroidballObservationInput()
+        val calibration = CalibrationManager(getApplication()).load()
+        
+        observationDispatcher.register(SpeciesObserver(input, calibration))
+        observationDispatcher.register(CountdownObserver(input, calibration))
+
         // Start Service
         DroidballService.start(getApplication(), resultCode, data)
         startDroidBallService()
+
+        // Start Observation lifecycle
+        observationDispatcher.startAll(match)
         
         // Listen for facts
         viewModelScope.launch {
@@ -160,8 +181,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         if (_deploymentState.value == InstrumentDeploymentState.DEPLOYING || _deploymentState.value == InstrumentDeploymentState.READY) {
                             _deploymentState.value = InstrumentDeploymentState.OBSERVING
                         }
-                        currentMatch?.incrementFrameCount()
-                        _frameCount.value = currentMatch?.frameCount ?: 0
+                        match.incrementFrameCount()
+                        _frameCount.value = match.frameCount
                     }
                     is DroidballFact.Stopped -> {
                         _deploymentState.value = InstrumentDeploymentState.IDLE
@@ -179,6 +200,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _deploymentState.value = InstrumentDeploymentState.RETURNING
         DroidballService.stop(getApplication())
         stopDroidBallService()
+        observationDispatcher.stopAll()
         currentMatch = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }
