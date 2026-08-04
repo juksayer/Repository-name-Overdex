@@ -79,13 +79,14 @@ class SpeciesObserver(
         val w = (region.width * width).toInt().coerceAtMost(width - left)
         val h = (region.height * height).toInt().coerceAtMost(height - top)
 
-        return if (w > 0 && h > 0) {
-            try {
-                Bitmap.createBitmap(bitmap, left, top, w, h)
-            } catch (e: Exception) {
-                null
-            }
-        } else {
+        if (w < 32 || h < 32) {
+            android.util.Log.w("SpeciesObserver", "Crop dimensions too small for ML Kit: ${w}x${h}")
+            return null
+        }
+
+        return try {
+            Bitmap.createBitmap(bitmap, left, top, w, h)
+        } catch (e: Exception) {
             null
         }
     }

@@ -1,8 +1,11 @@
-# Tasks - Git #276: Countdown Presentation
+# Tasks - Git #279: Expanded Countdown Recognition
 
-- [x] Modify `BattleOverlay.kt`
-    - [x] Add `countdownValue` state
-    - [x] Update `LaunchedEffect` to handle `CountdownWitnessed`
-    - [x] Display `countdownValue` in UI
+- [x] Modify `CalibrationManager.kt`
+    - [x] Expand default `countdownRegion` coordinates
+- [x] Modify `CountdownRecognizer.kt`
+    - [x] Add "VS" and "GETREADY" to accepted set
+    - [x] Return normalized text even on failure for transparency
+- [x] Modify `CountdownObserver.kt`
+    - [x] Update sensing loop to log normalized OCR string on match failure
 - [x] Verify build
 - [x] Final walkthrough

@@ -12,28 +12,32 @@ object CountdownRecognizer {
 
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         val image = InputImage.fromBitmap(bitmap, 0)
-        val result = recognizer.process(image).await()
-        val recognizedText = result.text
-            .trim()
-            .replace(" ", "")
-            .uppercase()
-        //.replace(Regex("\\s+"), "")
+        return try {
+            val result = recognizer.process(image).await()
+            val recognizedText = result.text
+                .trim()
+                .replace(" ", "")
+                .uppercase()
 
-
-        if (recognizedText !in setOf("3", "2", "1", "GO")) {
-            return RecognitionResult(
-                value = null,
-                confidence = 0.0f,
-                recognizer = "CountdownRecognizer"
-            )
+            val targets = setOf("VS", "GETREADY", "3", "2", "1", "GO")
+            
+            if (recognizedText in targets) {
+                RecognitionResult(
+                    value = recognizedText,
+                    confidence = 1.0f,
+                    recognizer = "CountdownRecognizer"
+                )
+            } else {
+                RecognitionResult(
+                    value = if (recognizedText.isNotEmpty()) recognizedText else null,
+                    confidence = 0.0f,
+                    recognizer = "CountdownRecognizer"
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("COUNTDOWN_RECOGNIZER", "Recognition failed", e)
+            RecognitionResult(null, 0.0f, "CountdownRecognizer")
         }
-        return RecognitionResult(
-            value = recognizedText,
-            confidence = if (recognizedText.isNotEmpty()) 1.0f else 0.0f,
-            recognizer = "CountdownRecognizer"
-        )
-
-
     }
 }
 

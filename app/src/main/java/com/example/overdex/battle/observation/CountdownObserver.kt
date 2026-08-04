@@ -53,12 +53,14 @@ class CountdownObserver(
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
 
                         val value = recognitionResult.value
-                        if (value != null && value in setOf("3", "2", "1", "GO")) {
+                        if (recognitionResult.confidence >= 1.0f && value != null) {
                             val witness = CountdownWitness(value, System.currentTimeMillis())
                             Log.d("CountdownObserver", "CountdownWitness(value=$value)")
                             
                             // Publish the witness to the rest of the instrument
                             DroidballService.emitFact(DroidballFact.CountdownWitnessed(value))
+                        } else if (value != null) {
+                            Log.d("CountdownObserver", "Normalized OCR string: $value")
                         }
                     }
                 }
@@ -81,13 +83,14 @@ class CountdownObserver(
         val w = (region.width * width).toInt().coerceAtMost(width - left)
         val h = (region.height * height).toInt().coerceAtMost(height - top)
 
-        return if (w > 0 && h > 0) {
-            try {
-                Bitmap.createBitmap(bitmap, left, top, w, h)
-            } catch (e: Exception) {
-                null
-            }
-        } else {
+        if (w < 32 || h < 32) {
+            Log.w("CountdownObserver", "Crop dimensions too small for ML Kit: ${w}x${h}")
+            return null
+        }
+
+        return try {
+            Bitmap.createBitmap(bitmap, left, top, w, h)
+        } catch (e: Exception) {
             null
         }
     }

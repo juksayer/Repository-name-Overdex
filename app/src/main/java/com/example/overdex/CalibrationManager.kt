@@ -64,40 +64,65 @@ class CalibrationManager(context: Context) {
 
     fun load(): BattleCalibration {
 
-        val enemyRegion = AnchorRegion(
-            x = prefs.getFloat(ENEMY_X, 0.75f),
-            y = prefs.getFloat(ENEMY_Y, 0.10f),
-            width = prefs.getFloat(ENEMY_W, 0.20f),
-            height = prefs.getFloat(ENEMY_H, 0.04f)
-        )
+        val enemyWidth = prefs.getFloat(ENEMY_W, 0f)
+        val enemyRegion = if (enemyWidth > 0f) {
+            AnchorRegion(
+                x = prefs.getFloat(ENEMY_X, 0.75f),
+                y = prefs.getFloat(ENEMY_Y, 0.10f),
+                width = enemyWidth,
+                height = prefs.getFloat(ENEMY_H, 0.04f)
+            )
+        } else {
+            AnchorRegion(x = 0.75f, y = 0.10f, width = 0.20f, height = 0.04f)
+        }
 
-        val hpRegion = AnchorRegion(
-            x = prefs.getFloat(HP_X, 0.65f),
-            y = prefs.getFloat(HP_Y, 0.14f),
-            width = prefs.getFloat(HP_W, 0.30f),
-            height = prefs.getFloat(HP_H, 0.02f)
-        )
+        val hpWidth = prefs.getFloat(HP_W, 0f)
+        val hpRegion = if (hpWidth > 0f) {
+            AnchorRegion(
+                x = prefs.getFloat(HP_X, 0.65f),
+                y = prefs.getFloat(HP_Y, 0.14f),
+                width = hpWidth,
+                height = prefs.getFloat(HP_H, 0.02f)
+            )
+        } else {
+            AnchorRegion(x = 0.65f, y = 0.14f, width = 0.30f, height = 0.02f)
+        }
 
-        val teamRegion = AnchorRegion(
-            x = prefs.getFloat(TEAM_X, 0.65f),
-            y = prefs.getFloat(TEAM_Y, 0.16f),
-            width = prefs.getFloat(TEAM_W, 0.30f),
-            height = prefs.getFloat(TEAM_H, 0.04f)
-        )
+        val teamWidth = prefs.getFloat(TEAM_W, 0f)
+        val teamRegion = if (teamWidth > 0f) {
+            AnchorRegion(
+                x = prefs.getFloat(TEAM_X, 0.65f),
+                y = prefs.getFloat(TEAM_Y, 0.16f),
+                width = teamWidth,
+                height = prefs.getFloat(TEAM_H, 0.04f)
+            )
+        } else {
+            AnchorRegion(x = 0.65f, y = 0.16f, width = 0.30f, height = 0.04f)
+        }
 
-        val moveRegion = AnchorRegion(
-            x = prefs.getFloat(MOVE_X, 0.10f),
-            y = prefs.getFloat(MOVE_Y, 0.15f),
-            width = prefs.getFloat(MOVE_W, 0.80f),
-            height = prefs.getFloat(MOVE_H, 0.10f)
-        )
+        val moveWidth = prefs.getFloat(MOVE_W, 0f)
+        val moveRegion = if (moveWidth > 0f) {
+            AnchorRegion(
+                x = prefs.getFloat(MOVE_X, 0.10f),
+                y = prefs.getFloat(MOVE_Y, 0.15f),
+                width = moveWidth,
+                height = prefs.getFloat(MOVE_H, 0.10f)
+            )
+        } else {
+            AnchorRegion(x = 0.10f, y = 0.15f, width = 0.80f, height = 0.10f)
+        }
 
-        val countdownRegion = AnchorRegion(
-            x = prefs.getFloat("countdown_x", 0.30f),
-            y = prefs.getFloat("countdown_y", 0.25f),
-            width = prefs.getFloat("countdown_w", 0.40f),
-            height = prefs.getFloat("countdown_h", 0.15f)
-        )
+        val countdownWidth = prefs.getFloat("countdown_w", 0f)
+        val countdownRegion = if (countdownWidth > 0f) {
+            AnchorRegion(
+                x = prefs.getFloat("countdown_x", 0.25f),
+                y = prefs.getFloat("countdown_y", 0.25f),
+                width = countdownWidth,
+                height = prefs.getFloat("countdown_h", 0.30f)
+            )
+        } else {
+            AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
+        }
 
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
