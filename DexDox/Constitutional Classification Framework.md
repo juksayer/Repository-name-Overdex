@@ -20,7 +20,7 @@ The Constitution defines the enduring principles of the project. Constitutional 
 
 Overdex is governed by an evidence-first philosophy.
 
-Neither the runtime nor the architecture begins with conclusions. Both begin with observation. Observations are organized into knowledge, refined through reasoning, and only then become the basis for action.
+Neither the runtime nor the architecture begins with conclusions. Both begin with witnesses. Witnesses are organized into knowledge, refined through reasoning, and only then become the basis for action.
 
 Architectural authority is earned through constitutional evidence, reasoning, and precedent—not through implementation, seniority, naming, or preference.
 
@@ -48,13 +48,13 @@ Authority may not.
 
 # Article III — Observation
 
-Observation reports reality.
+Witnesses reports reality.
 
-Observation does not assign meaning.
+A witness does not assign meaning.
 
 Its responsibility is to faithfully record events as they occur.
 
-Observation produces observations.
+Witnesses produce events.
 
 Nothing more.
 
@@ -62,11 +62,11 @@ Nothing more.
 
 # Article IV — Knowledge
 
-Knowledge organizes observations into coherent facts.
+Knowledge organizes events witnessed into coherent knowledge.
 
 Knowledge represents what is currently justified by available evidence.
 
-Knowledge may evolve as new observations are acquired.
+Knowledge may evolve as new events are witnesses.
 
 ---
 
@@ -76,7 +76,7 @@ Intelligence reasons from Knowledge.
 
 It produces recommendations, conclusions, and decisions.
 
-Intelligence never alters observations.
+Intelligence never alters events witnessed.
 
 Reasoning shall always remain distinguishable from evidence.
 
@@ -112,7 +112,7 @@ Authoritative state shall have exactly one owner.
 
 Only the owner may mutate that state.
 
-All other components observe.
+All other components consume, derive, or present that state.
 
 Whenever possible, derived state shall be computed rather than duplicated.
 
@@ -259,7 +259,7 @@ The runtime follows an evidence-first process:
 ```
 Reality
     ↓
-Observation
+Events Witnessed
     ↓
 Knowledge
     ↓
@@ -285,9 +285,9 @@ Classification
 Project evolution likewise proceeds through observation and accumulated knowledge:
 
 ```
-Experience
+Event Witnessed
     ↓
-Observation
+Event Reasoning
     ↓
 Constitutional Knowledge
     ↓
@@ -296,11 +296,11 @@ Precedent
 Architecture
 ```
 
-The runtime produces experience.
+The runtime produces signals.
 
-Experience produces architectural observations.
+Signals produce Events to be Witnessed.
 
-Those observations become Constitutional Knowledge.
+Those Witnessed Events become Constitutional Knowledge.
 
 Constitutional Knowledge establishes precedent.
 
@@ -328,13 +328,13 @@ Architecture evolves through precedent.
 
 The project does not begin by deciding what is true.
 
-It begins by observing, then knowing, then reasoning, and finally acting.
+It begins by witnessing, then knowing, then reasoning, and finally acting.
 
 The same principle governs both the software and the way the software itself evolves.
 
 ---
 
-Observation is the input interface.
+Signals and events are the input interface.
 
 Presentation is the output interface.
 
