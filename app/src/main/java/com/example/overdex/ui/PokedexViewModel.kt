@@ -4,41 +4,54 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.*
-import com.example.overdex.data.PokemonJsonLoader
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
+import com.example.overdex.CalibrationManager
+import com.example.overdex.battle.debug.observatory.ObservationRecorder
+import com.example.overdex.battle.observation.CountdownObserver
+import com.example.overdex.battle.observation.DroidballFact
+import com.example.overdex.battle.observation.DroidballService
+import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.ObservationDispatcher
+import com.example.overdex.battle.observation.SpeciesObserver
+import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
+import com.example.overdex.data.GithubSpriteProvider
+import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.data.PokemonJsonLoader
+import com.example.overdex.data.PokemonSearchRepository
+import com.example.overdex.data.SpeciesJsonLoader
+import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.PokemonEntity
+import com.example.overdex.data.observation.DroidballObservationInput
 import com.example.overdex.model.Evolution
 import com.example.overdex.model.EvolutionImport
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
 import com.example.overdex.model.SearchRequest
+import com.example.overdex.model.navigation.ActionNode
+import com.example.overdex.model.navigation.DirectoryNode
+import com.example.overdex.model.navigation.InstrumentCommand
+import com.example.overdex.model.navigation.InstrumentTree
+import com.example.overdex.model.observation.InstrumentDeploymentState
+import com.example.overdex.model.observation.ObservationSessionState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import com.example.overdex.data.SpeciesJsonLoader
-import com.example.overdex.data.PokemonSearchRepository
-import com.example.overdex.data.SpriteProvider
-import com.example.overdex.data.GithubSpriteProvider
-import com.example.overdex.data.LocalSpriteProvider
-import com.example.overdex.data.FallbackSpriteProvider
-import com.example.overdex.model.observation.ObservationSessionState
-import com.example.overdex.model.observation.InstrumentDeploymentState
-import com.example.overdex.battle.observation.Match
-import com.example.overdex.battle.observation.DroidballService
-import com.example.overdex.battle.observation.DroidballFact
-import com.example.overdex.battle.observation.ObservationDispatcher
-import com.example.overdex.battle.observation.SpeciesObserver
-import com.example.overdex.battle.observation.CountdownObserver
-import com.example.overdex.data.observation.DroidballObservationInput
-import com.example.overdex.CalibrationManager
-import com.example.overdex.model.navigation.*
-import com.example.overdex.battle.debug.observatory.ObservationRecorder
-import com.example.overdex.battle.debug.observatory.EvidenceSourceType
-import com.example.overdex.battle.debug.accessibility.AccessibilityProbeManager
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
@@ -199,6 +212,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     is DroidballFact.Error -> {
                         Log.e("DROIDBALL_SERVICE", "Error: ${fact.message}")
                         stopObservation()
+                    }
+                    is DroidballFact.CountdownWitnessed -> {
+                        // Git #275: Publication only. No presentation or intelligence yet.
                     }
                 }
             }

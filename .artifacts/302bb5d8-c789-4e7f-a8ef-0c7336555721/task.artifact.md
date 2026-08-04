@@ -1,7 +1,8 @@
-# Tasks - Git #274: Countdown Witness Proof of Concept
+# Tasks - Git #276: Countdown Presentation
 
-- [x] Modify `CountdownObserver.kt`
-    - [x] Define local `CountdownWitness` data class
-    - [x] Update recognition logic to instantiate and log `CountdownWitness`
-    - [x] Remove retired mapping logic
-- [x] Verify build and logs
+- [x] Modify `BattleOverlay.kt`
+    - [x] Add `countdownValue` state
+    - [x] Update `LaunchedEffect` to handle `CountdownWitnessed`
+    - [x] Display `countdownValue` in UI
+- [x] Verify build
+- [x] Final walkthrough

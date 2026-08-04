@@ -56,6 +56,9 @@ class CountdownObserver(
                         if (value != null && value in setOf("3", "2", "1", "GO")) {
                             val witness = CountdownWitness(value, System.currentTimeMillis())
                             Log.d("CountdownObserver", "CountdownWitness(value=$value)")
+                            
+                            // Publish the witness to the rest of the instrument
+                            DroidballService.emitFact(DroidballFact.CountdownWitnessed(value))
                         }
                     }
                 }

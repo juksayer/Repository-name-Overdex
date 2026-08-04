@@ -64,6 +64,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         fun stop(context: Context) {
             context.stopService(Intent(context, DroidballService::class.java))
         }
+
+        /**
+         * The single publication API for Battle facts.
+         */
+        fun emitFact(fact: DroidballFact) {
+            _facts.tryEmit(fact)
+        }
     }
 
     private lateinit var windowManager: WindowManager
@@ -237,4 +244,5 @@ sealed class DroidballFact {
     object Stopped : DroidballFact()
     object FrameCaptured : DroidballFact()
     data class Error(val message: String) : DroidballFact()
+    data class CountdownWitnessed(val value: String) : DroidballFact()
 }
