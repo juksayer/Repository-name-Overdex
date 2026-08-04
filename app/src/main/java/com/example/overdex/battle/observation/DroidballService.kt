@@ -43,8 +43,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private const val NOTIFICATION_ID = 197
         private const val CHANNEL_ID = "droidball_observation"
         
-        private val _facts = MutableSharedFlow<DroidballFact>(extraBufferCapacity = 1)
-        val facts = _facts.asSharedFlow()
+        private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 1)
+        val signals = _signals.asSharedFlow()
 
         private val _frames = MutableSharedFlow<Bitmap>(extraBufferCapacity = 1)
         val frames = _frames.asSharedFlow()
@@ -66,10 +66,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         /**
-         * The single publication API for Battle facts.
+         * The single publication API for instrument signals.
          */
-        fun emitFact(fact: DroidballFact) {
-            _facts.tryEmit(fact)
+        fun emitSignal(signal: DroidballSignal) {
+            _signals.tryEmit(signal)
         }
     }
 
@@ -119,7 +119,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             }
             setupMediaProjection(resultCode, data)
             setupOverlay()
-            _facts.tryEmit(DroidballFact.Started)
+            _signals.tryEmit(DroidballSignal.Started)
         } else {
             stopSelf()
         }
@@ -154,7 +154,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 bitmap.copyPixelsFromBuffer(buffer)
                 
                 _frames.tryEmit(bitmap)
-                _facts.tryEmit(DroidballFact.FrameCaptured)
+                _signals.tryEmit(DroidballSignal.FrameCaptured)
                 
                 image.close()
             }, null)
@@ -223,7 +223,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
-        _facts.tryEmit(DroidballFact.Stopped)
+        _signals.tryEmit(DroidballSignal.Stopped)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -239,10 +239,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     override fun onBind(intent: Intent?): IBinder? = null
 }
 
-sealed class DroidballFact {
-    object Started : DroidballFact()
-    object Stopped : DroidballFact()
-    object FrameCaptured : DroidballFact()
-    data class Error(val message: String) : DroidballFact()
-    data class CountdownWitnessed(val value: String) : DroidballFact()
+sealed class DroidballSignal {
+    object Started : DroidballSignal()
+    object Stopped : DroidballSignal()
+    object FrameCaptured : DroidballSignal()
+    data class Error(val message: String) : DroidballSignal()
+    data class CountdownWitnessed(val value: String) : DroidballSignal()
 }

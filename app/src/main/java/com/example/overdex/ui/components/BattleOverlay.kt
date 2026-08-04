@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.battle.observation.DroidballFact
+import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.ui.theme.TerminalGreen
@@ -27,22 +27,22 @@ import kotlinx.coroutines.flow.collect
 @Composable
 fun BattleOverlay() {
     // In a real implementation, this would observe the Coordinator's state.
-    // For Git #197, we observe the service facts directly to prove the flow.
+    // For Git #197, we observe the service signals directly to prove the flow.
     var frameCount by remember { mutableLongStateOf(0) }
     var status by remember { mutableStateOf("DEPLOYING") }
     var countdownValue by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        DroidballService.facts.collect { fact ->
-            when (fact) {
-                is DroidballFact.FrameCaptured -> {
+        DroidballService.signals.collect { signal ->
+            when (signal) {
+                is DroidballSignal.FrameCaptured -> {
                     frameCount++
                     status = "OBSERVING"
                 }
-                is DroidballFact.Started -> status = "READY"
-                is DroidballFact.Stopped -> status = "RETURNING"
-                is DroidballFact.CountdownWitnessed -> {
-                    countdownValue = fact.value
+                is DroidballSignal.Started -> status = "READY"
+                is DroidballSignal.Stopped -> status = "RETURNING"
+                is DroidballSignal.CountdownWitnessed -> {
+                    countdownValue = signal.value
                 }
                 else -> {}
             }

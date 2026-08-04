@@ -8,5 +8,5 @@ data class BattleLifecycleAnalysis(
     val isComplete: Boolean = false,
     val result: BattleResult = BattleResult.UNKNOWN,
     val durationSeconds: Long = 0,
-    val factsRecorded: Int = 0
+    val eventsWitnessed: Int = 0
 )

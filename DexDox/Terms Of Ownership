@@ -123,6 +123,30 @@ Determined by the owning module.
 
 ---
 
-## Pending
+## Fact
 
-Terms currently under evaluation. These words should not be introduced into new code until ownership has been established.
+Status
+Retired
+
+Reason
+The term implies absolute certainty. Overdex intentionally models confidence and evidence rather than claiming infallible truth.
+
+Replacement
+Evidence, Observation, Witness, Signal, Knowledge, Confidence.
+
+---
+
+## Signal
+
+Status
+Reserved
+
+Owner
+Instrument
+
+Definition
+A technical perception or state change broadcast by the instrument's sensing layer.
+
+---
+
+## Pending

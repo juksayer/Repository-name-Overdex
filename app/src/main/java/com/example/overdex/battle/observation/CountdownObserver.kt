@@ -58,7 +58,7 @@ class CountdownObserver(
                             Log.d("CountdownObserver", "CountdownWitness(value=$value)")
                             
                             // Publish the witness to the rest of the instrument
-                            DroidballService.emitFact(DroidballFact.CountdownWitnessed(value))
+                            DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))
                         } else if (value != null) {
                             Log.d("CountdownObserver", "Normalized OCR string: $value")
                         }

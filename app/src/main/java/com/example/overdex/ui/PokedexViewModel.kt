@@ -12,7 +12,7 @@ import androidx.paging.map
 import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.CountdownObserver
-import com.example.overdex.battle.observation.DroidballFact
+import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
@@ -192,28 +192,28 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         Log.d("DEPLOY", "3 Starting observers")
         observationDispatcher.startAll(match)
         
-        // Listen for facts
+        // Listen for signals
         viewModelScope.launch {
-            DroidballService.facts.collect { fact ->
-                when (fact) {
-                    is DroidballFact.Started -> {
+            DroidballService.signals.collect { signal ->
+                when (signal) {
+                    is DroidballSignal.Started -> {
                         // Service is up, but no frames yet
                     }
-                    is DroidballFact.FrameCaptured -> {
+                    is DroidballSignal.FrameCaptured -> {
                         if (_deploymentState.value == InstrumentDeploymentState.DEPLOYING || _deploymentState.value == InstrumentDeploymentState.READY) {
                             _deploymentState.value = InstrumentDeploymentState.OBSERVING
                         }
                         match.incrementFrameCount()
                         _frameCount.value = match.frameCount
                     }
-                    is DroidballFact.Stopped -> {
+                    is DroidballSignal.Stopped -> {
                         _deploymentState.value = InstrumentDeploymentState.IDLE
                     }
-                    is DroidballFact.Error -> {
-                        Log.e("DROIDBALL_SERVICE", "Error: ${fact.message}")
+                    is DroidballSignal.Error -> {
+                        Log.e("DROIDBALL_SERVICE", "Error: ${signal.message}")
                         stopObservation()
                     }
-                    is DroidballFact.CountdownWitnessed -> {
+                    is DroidballSignal.CountdownWitnessed -> {
                         // Git #275: Publication only. No presentation or intelligence yet.
                     }
                 }
