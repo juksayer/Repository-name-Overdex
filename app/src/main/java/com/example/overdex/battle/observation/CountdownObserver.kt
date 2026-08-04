@@ -5,13 +5,9 @@ import android.util.Log
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
-import com.example.overdex.data.observation.RecognitionObservationMapper
-import com.example.overdex.data.observation.SpeciesNameRecognizer
 import com.example.overdex.model.observation.ObservationInput
-import com.example.overdex.model.observation.ObservationSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -33,6 +29,11 @@ class CountdownObserver(
 
     private var scope: CoroutineScope? = null
 
+    /**
+     * Represents a discrete perception of a countdown element.
+     */
+    data class CountdownWitness(val value: String, val timestamp: Long)
+
     override fun start(match: Match) {
         if (scope != null) return
         Log.d("COUNTDOWN", "start()")
@@ -50,23 +51,11 @@ class CountdownObserver(
                     val cropped = cropCountdown(bitmap)
                     if (cropped != null) {
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
-                        Log.d(
-                            "CountdownObserver",
-                            "Witnessed countdown: ${recognitionResult.value}"
-                        )
-                        
-                        // We only submit if we have a confident recognition
-                        if (recognitionResult.value != null) {
-                            val observation = RecognitionObservationMapper.map(
-                                regionId = "CountdownName",
-                                result = recognitionResult,
-                                source = ObservationSource.OCR
-                            )
-                            
-                        if (observation != null) {
-                            // TODO: Fix domain mismatch between model.observation and battle.observation
-                            Log.d("CountdownObserver", "Observed: $observation")
-                        }
+
+                        val value = recognitionResult.value
+                        if (value != null && value in setOf("3", "2", "1", "GO")) {
+                            val witness = CountdownWitness(value, System.currentTimeMillis())
+                            Log.d("CountdownObserver", "CountdownWitness(value=$value)")
                         }
                     }
                 }

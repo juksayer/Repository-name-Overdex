@@ -56,6 +56,7 @@ private fun WorkspaceObservationRow(obs: Observation) {
         is ChargedMoveObservation -> obs.moveName
         is ShadowStatusObservation -> "Shadow: ${obs.isShadow}"
         is EvolutionFamilyObservation -> obs.familySpecies
+        is CountdownObservation -> "Countdown: ${obs.value}"
     }
 
     Column(modifier = Modifier.padding(start = 8.dp)) {

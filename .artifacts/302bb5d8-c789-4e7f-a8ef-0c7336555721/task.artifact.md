@@ -1,9 +1,7 @@
-# Tasks - Default Parameters for Anchor Detectors
+# Tasks - Git #274: Countdown Witness Proof of Concept
 
-- [x] Modify `BattleCalibration.kt`
-- [x] Modify `CalibrationManager.kt`
-- [x] Create `AnchorDetectorConfig.kt`
-- [x] Update `AnchorDetector.kt` interface
-- [x] Update `SimpleAnchorDetector.kt` implementation
-- [x] Verify changes with automated tests (Build verified)
-- [x] Final verification and walkthrough
+- [x] Modify `CountdownObserver.kt`
+    - [x] Define local `CountdownWitness` data class
+    - [x] Update recognition logic to instantiate and log `CountdownWitness`
+    - [x] Remove retired mapping logic
+- [x] Verify build and logs

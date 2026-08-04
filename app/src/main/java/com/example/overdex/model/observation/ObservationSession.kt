@@ -171,6 +171,7 @@ data class ObservationSession(
                         is CombatPowerObservation -> obs.cp
                         is ShadowStatusObservation -> obs.isShadow
                         is EvolutionFamilyObservation -> obs.familySpecies
+                        is CountdownObservation -> obs.value
                     }
                 }.distinct()
                 uniqueValues.size > 1
