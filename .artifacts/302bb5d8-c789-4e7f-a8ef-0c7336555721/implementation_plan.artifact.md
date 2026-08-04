@@ -1,34 +1,60 @@
-# Implementation Plan - Git #274: Countdown Witness Proof of Concept
+# Implementation Plan — Git #276: Countdown Presentation
 
-This plan focuses strictly on proving that the `CountdownRecognizer` can produce a module-specific "Witness" within the Battle domain. It avoids side effects like Match submission or UI updates to ensure a clean, isolated validation of the sensing logic.
+This plan establishes the **presentation boundary** for Battle countdowns. It allows the Battle Overlay to subscribe to published `CountdownWitnessed` facts and display them to the trainer without introducing any downstream reasoning or persistence.
+
+## Objective
+
+Establish the **presentation boundary** for Battle countdowns.
 
 ## User Review Required
 
 > [!NOTE]
-> This is a transitional step. The "Witness" created here is internal to the `CountdownObserver` and will be logged to verify the ML Kit recognition performance before it is integrated into the Battle Timeline.
+> This commit completes the first end-to-end Battle pipeline:
+>
+> ```
+> CountdownRecognizer
+>         ↓
+> CountdownWitness
+>         ↓
+> DroidballFact.CountdownWitnessed
+>         ↓
+> BattleOverlay
+> ```
+>
+> The countdown is presented to the trainer exactly as published.
 
 ## Proposed Changes
 
-### Battle Observation Layer
+### Presentation Layer
 
-#### [MODIFY] [CountdownObserver.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/CountdownObserver.kt)
-- Define a local `data class CountdownWitness(val value: String, val timestamp: Long)`.
-- Update the `supply` block to:
-    - Capture the recognition result from `CountdownRecognizer`.
-    - If the result is "3", "2", "1", or "GO", instantiate a `CountdownWitness`.
-    - Log the witness exactly as requested: `CountdownWitness(value=...)`.
-- Remove the existing `RecognitionObservationMapper.map` call to avoid using retired/scrapped logic.
-- Ensure no calls to `match.submit()` or `DroidballService`.
+#### [MODIFY] [BattleOverlay.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/BattleOverlay.kt)
+- Add a `countdownValue` state using `remember { mutableStateOf<String?>(null) }`.
+- Update the `LaunchedEffect` to handle `DroidballFact.CountdownWitnessed` and update `countdownValue`.
+- Update the UI to display the `countdownValue` prominently if it is not null.
+
+## Not Included
+
+- Match integration
+- Timeline integration
+- Memory
+- Intelligence
+- Recommendations
+- Articles
+- Persistence
+- Anchor acquisition
+- Additional recognizers
 
 ## Verification Plan
 
-### Automated Tests
-- Run `app:assembleDebug` to ensure no syntax errors.
+### Automated
+- `app:assembleDebug`
 
-### Manual Verification
-- Deploy the instrument and monitor `Logcat`.
-- Verify that the logs show:
-  - `CountdownWitness(value=3)`
-  - `CountdownWitness(value=2)`
-  - `CountdownWitness(value=1)`
-  - `CountdownWitness(value=GO)`
+### Manual
+1. Deploy the instrument.
+2. Observe the following sequence in the Battle Overlay:
+   - `3`
+   - `2`
+   - `1`
+   - `GO`
+3. Verify synchronization with the in-game countdown.
+4. Verify `Logcat` continues to show `CountdownWitness(value=...)` alongside the UI updates.

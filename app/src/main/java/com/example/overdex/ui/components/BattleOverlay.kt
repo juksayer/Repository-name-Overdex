@@ -30,6 +30,7 @@ fun BattleOverlay() {
     // For Git #197, we observe the service facts directly to prove the flow.
     var frameCount by remember { mutableLongStateOf(0) }
     var status by remember { mutableStateOf("DEPLOYING") }
+    var countdownValue by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         DroidballService.facts.collect { fact ->
@@ -40,6 +41,9 @@ fun BattleOverlay() {
                 }
                 is DroidballFact.Started -> status = "READY"
                 is DroidballFact.Stopped -> status = "RETURNING"
+                is DroidballFact.CountdownWitnessed -> {
+                    countdownValue = fact.value
+                }
                 else -> {}
             }
         }
@@ -57,24 +61,34 @@ fun BattleOverlay() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = status,
-                color = TerminalGreen,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = "FRAMES: $frameCount",
-                color = TerminalGreen.copy(alpha = 0.7f),
-                fontSize = 10.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-            )
+            if (countdownValue != null) {
+                Text(
+                    text = countdownValue!!,
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+            } else {
+                Text(
+                    text = status,
+                    color = TerminalGreen,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
 
-            if (status == "OBSERVING") {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "FRAMES: $frameCount",
+                    color = TerminalGreen.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+            }
+
+            if (status == "OBSERVING" && countdownValue == null) {
                 Box(
                     modifier = Modifier
                         .padding(top = 4.dp)
