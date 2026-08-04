@@ -4,6 +4,7 @@ import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 import com.example.overdex.model.observation.ChargedMoveObservation
 import com.example.overdex.model.observation.CombatPowerObservation
+import com.example.overdex.model.observation.CountdownObservation
 import com.example.overdex.model.observation.EvolutionFamilyObservation
 import com.example.overdex.model.observation.FastMoveObservation
 import com.example.overdex.model.observation.Observation
@@ -71,6 +72,13 @@ object RecognitionObservationMapper {
             "ChargedMoveRowA", "ChargedMoveRowB" -> ChargedMoveObservation(
                 species = "UNKNOWN",
                 moveName = value as String,
+                timestamp = timestamp,
+                source = source,
+                observerId = observerId,
+                confidence = confidence
+            )
+            "CountdownName" -> CountdownObservation(
+                value = value as String,
                 timestamp = timestamp,
                 source = source,
                 observerId = observerId,

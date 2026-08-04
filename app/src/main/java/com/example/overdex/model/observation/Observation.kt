@@ -86,3 +86,14 @@ data class EvolutionFamilyObservation(
     override val observerId: String,
     override val confidence: Confidence
 ) : Observation()
+
+/**
+ * An observation of a countdown timer (e.g., "3", "2", "1", "GO").
+ */
+data class CountdownObservation(
+    val value: String,
+    override val timestamp: Long = System.currentTimeMillis(),
+    override val source: ObservationSource,
+    override val observerId: String,
+    override val confidence: Confidence
+) : Observation()

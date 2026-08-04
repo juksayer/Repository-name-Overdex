@@ -12,7 +12,12 @@ interface AnchorDetector {
      * 
      * @param bitmap The image to scan.
      * @param stage The semantic stage of observation (for debugging/logging).
+     * @param config Optional configuration for the detector.
      * @return A list of detected [AnchorObservation]s.
      */
-    suspend fun detectAnchors(bitmap: Bitmap, stage: String = "UNKNOWN"): List<AnchorObservation>
+    suspend fun detectAnchors(
+        bitmap: Bitmap,
+        stage: String = "UNKNOWN",
+        config: AnchorDetectorConfig = AnchorDetectorConfig.DEFAULT
+    ): List<AnchorObservation>
 }

@@ -1,8 +1,8 @@
 package com.example.overdex
 
-import com.example.overdex.model.AnchorRegion
 import android.content.Context
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.model.AnchorRegion
 
 /**
  * Manages the persistence of user-defined calibration offsets for battle UI regions.
@@ -65,38 +65,46 @@ class CalibrationManager(context: Context) {
     fun load(): BattleCalibration {
 
         val enemyRegion = AnchorRegion(
-            x = prefs.getFloat(ENEMY_X, 0f),
-            y = prefs.getFloat(ENEMY_Y, 0f),
-            width = prefs.getFloat(ENEMY_W, 0f),
-            height = prefs.getFloat(ENEMY_H, 0f)
+            x = prefs.getFloat(ENEMY_X, 0.75f),
+            y = prefs.getFloat(ENEMY_Y, 0.10f),
+            width = prefs.getFloat(ENEMY_W, 0.20f),
+            height = prefs.getFloat(ENEMY_H, 0.04f)
         )
 
         val hpRegion = AnchorRegion(
-            x = prefs.getFloat(HP_X, 0f),
-            y = prefs.getFloat(HP_Y, 0f),
-            width = prefs.getFloat(HP_W, 0f),
-            height = prefs.getFloat(HP_H, 0f)
+            x = prefs.getFloat(HP_X, 0.65f),
+            y = prefs.getFloat(HP_Y, 0.14f),
+            width = prefs.getFloat(HP_W, 0.30f),
+            height = prefs.getFloat(HP_H, 0.02f)
         )
 
         val teamRegion = AnchorRegion(
-            x = prefs.getFloat(TEAM_X, 0f),
-            y = prefs.getFloat(TEAM_Y, 0f),
-            width = prefs.getFloat(TEAM_W, 0f),
-            height = prefs.getFloat(TEAM_H, 0f)
+            x = prefs.getFloat(TEAM_X, 0.65f),
+            y = prefs.getFloat(TEAM_Y, 0.16f),
+            width = prefs.getFloat(TEAM_W, 0.30f),
+            height = prefs.getFloat(TEAM_H, 0.04f)
         )
 
         val moveRegion = AnchorRegion(
-            x = prefs.getFloat(MOVE_X, 0f),
-            y = prefs.getFloat(MOVE_Y, 0f),
-            width = prefs.getFloat(MOVE_W, 0f),
-            height = prefs.getFloat(MOVE_H, 0f)
+            x = prefs.getFloat(MOVE_X, 0.10f),
+            y = prefs.getFloat(MOVE_Y, 0.15f),
+            width = prefs.getFloat(MOVE_W, 0.80f),
+            height = prefs.getFloat(MOVE_H, 0.10f)
+        )
+
+        val countdownRegion = AnchorRegion(
+            x = prefs.getFloat("countdown_x", 0.30f),
+            y = prefs.getFloat("countdown_y", 0.25f),
+            width = prefs.getFloat("countdown_w", 0.40f),
+            height = prefs.getFloat("countdown_h", 0.15f)
         )
 
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
             hpBarRegion = hpRegion,
             teamIconsRegion = teamRegion,
-            moveBannerRegion = moveRegion
+            moveBannerRegion = moveRegion,
+            countdownRegion = countdownRegion
         )
     }
 }

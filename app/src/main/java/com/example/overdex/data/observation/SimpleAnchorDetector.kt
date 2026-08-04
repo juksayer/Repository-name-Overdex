@@ -23,28 +23,42 @@ object SimpleAnchorDetector : AnchorDetector {
      * 
      * @param bitmap The full capture to scan.
      * @param stage The current observation stage for recording.
+     * @param config Configuration for the detector.
      * @return A list of [AnchorObservation]s representing detected UI elements.
      */
-    override suspend fun detectAnchors(bitmap: Bitmap, stage: String): List<AnchorObservation> {
+    override suspend fun detectAnchors(
+        bitmap: Bitmap,
+        stage: String,
+        config: AnchorDetectorConfig
+    ): List<AnchorObservation> {
         val anchors = mutableListOf<AnchorObservation>()
         val width = bitmap.width
         val height = bitmap.height
 
         // Pokémon GO summary screens typically have move rows in the bottom half.
-        val searchMinY = (height * 0.4f).toInt()
-        val searchMaxY = (height * 0.95f).toInt()
-        val searchMinX = (width * 0.02f).toInt()
-        val searchMaxX = (width * 0.30f).toInt()
+        val searchMinY = (height * config.searchMinY).toInt()
+        val searchMaxY = (height * config.searchMaxY).toInt()
+        val searchMinX = (width * config.searchMinX).toInt()
+        val searchMaxX = (width * config.searchMaxX).toInt()
 
         // scanX is placed where the colored badge or white glyph of the icon is likely to be.
-        val scanX = (width * 0.10f).toInt().coerceIn(0, width - 1)
+        val scanX = (width * config.scanX).toInt().coerceIn(0, width - 1)
 
         var y = searchMinY
         while (y < searchMaxY) {
             val pixel = bitmap.getPixel(scanX, y)
-            if (isBright(pixel)) {
+            if (isBright(pixel, config.brightnessThreshold)) {
                 // Potential icon hit, find its full bounds
-                val bounds = findBlobBounds(bitmap, scanX, y, searchMinX, searchMaxX, searchMinY, searchMaxY)
+                val bounds = findBlobBounds(
+                    bitmap,
+                    scanX,
+                    y,
+                    searchMinX,
+                    searchMaxX,
+                    searchMinY,
+                    searchMaxY,
+                    config.brightnessThreshold
+                )
 
                 if (isValidMoveIcon(bounds, width)) {
                     val anchor = AnchorObservation(
@@ -77,28 +91,37 @@ object SimpleAnchorDetector : AnchorDetector {
         return anchors
     }
 
-    private fun isBright(pixel: Int): Boolean {
+    private fun isBright(pixel: Int, threshold: Int): Boolean {
         val r = (pixel shr 16) and 0xFF
         val g = (pixel shr 8) and 0xFF
         val b = pixel and 0xFF
-        // Icons are significantly brighter than the dark move-row background (< 60).
-        return (r + g + b) / 3 > 100
+        // Icons are significantly brighter than the dark move-row background.
+        return (r + g + b) / 3 > threshold
     }
 
-    private fun findBlobBounds(bitmap: Bitmap, x: Int, y: Int, minX: Int, maxX: Int, minY: Int, maxY: Int): Rect {
+    private fun findBlobBounds(
+        bitmap: Bitmap,
+        x: Int,
+        y: Int,
+        minX: Int,
+        maxX: Int,
+        minY: Int,
+        maxY: Int,
+        threshold: Int
+    ): Rect {
         var left = x
         var right = x
         var top = y
         var bottom = y
 
         // Expand vertically
-        while (top > minY && isBright(bitmap.getPixel(x, top - 1))) top--
-        while (bottom < maxY - 1 && isBright(bitmap.getPixel(x, bottom + 1))) bottom++
+        while (top > minY && isBright(bitmap.getPixel(x, top - 1), threshold)) top--
+        while (bottom < maxY - 1 && isBright(bitmap.getPixel(x, bottom + 1), threshold)) bottom++
 
         // Expand horizontally from the vertical center
         val centerY = (top + bottom) / 2
-        while (left > minX && isBright(bitmap.getPixel(left - 1, centerY))) left--
-        while (right < maxX - 1 && isBright(bitmap.getPixel(right + 1, centerY))) right++
+        while (left > minX && isBright(bitmap.getPixel(left - 1, centerY), threshold)) left--
+        while (right < maxX - 1 && isBright(bitmap.getPixel(right + 1, centerY), threshold)) right++
 
         return Rect(left, top, right, bottom)
     }
