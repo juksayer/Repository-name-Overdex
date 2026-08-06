@@ -1,6 +1,7 @@
 package com.example.overdex
 
 import android.content.Context
+import android.util.Log
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.AnchorRegion
 
@@ -9,6 +10,7 @@ import com.example.overdex.model.AnchorRegion
  */
 class CalibrationManager(context: Context) {
 
+    //overmon is historical artifact. a reminder of where we came from
     private val prefs =
         context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
 
@@ -124,6 +126,11 @@ class CalibrationManager(context: Context) {
             AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
         }
 
+        Log.d(
+            "CALIBRATION",
+            "Countdown: x=${countdownRegion.x}, y=${countdownRegion.y}, w=${countdownRegion.width}, h=${countdownRegion.height}"
+
+        )
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
             hpBarRegion = hpRegion,

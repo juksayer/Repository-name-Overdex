@@ -3,7 +3,14 @@ package com.example.overdex.presentation
 import com.example.overdex.BattleMemory
 import com.example.overdex.data.observation.ObservationStage
 import com.example.overdex.data.observation.PipelineStatus
-import com.example.overdex.model.*
+import com.example.overdex.model.AdvantageLevel
+import com.example.overdex.model.BattleActor
+import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.DecisionAnalysis
+import com.example.overdex.model.Effectiveness
+import com.example.overdex.model.MatchupAnalysis
+import com.example.overdex.model.RecommendedAction
+import com.example.overdex.model.StrategicPriority
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.model.observation.SessionPhase
 
@@ -69,7 +76,7 @@ object PresentationMapper {
 
     private fun mapObservationFocus(stage: ObservationStage): ObservationFocus {
         return when (stage) {
-            ObservationStage.LocatingAnchors -> ObservationFocus.ANCHORS
+
             ObservationStage.Species -> ObservationFocus.SPECIES
             ObservationStage.CombatPower -> ObservationFocus.COMBAT_POWER
             ObservationStage.ShadowStatus -> ObservationFocus.SHADOW
@@ -82,7 +89,7 @@ object PresentationMapper {
 
     private fun mapObservationActivity(stage: ObservationStage): ObservationActivity {
         return when (stage) {
-            ObservationStage.LocatingAnchors -> ObservationActivity.LOCATING_ANCHORS
+
             ObservationStage.Species -> ObservationActivity.IDENTIFYING_SPECIES
             ObservationStage.CombatPower -> ObservationActivity.MEASURING_COMBAT_POWER
             ObservationStage.ShadowStatus -> ObservationActivity.DETECTING_SHADOW_STATUS
@@ -110,7 +117,6 @@ object PresentationMapper {
         if (phase == SessionPhase.CANCELLED) return ObservationIndicator.ERROR
 
         val stage = status.currentStage
-        if (stage == ObservationStage.LocatingAnchors) return ObservationIndicator.ALIGNING
         if (stage == ObservationStage.Complete) return ObservationIndicator.CONFIRMED
 
         val results = status.results[stage.label]

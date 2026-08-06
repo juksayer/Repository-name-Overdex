@@ -33,7 +33,7 @@ object ObservationCropExtractor {
                     val cropped = Bitmap.createBitmap(source, left, top, cropWidth, cropHeight)
                     observations.add(CaptureObservation(region.id, cropped))
                 } catch (e: Exception) {
-                    android.util.Log.e("CROP_EXTRACTOR", "Failed to crop ${region.id}", e)
+                    android.util.Log.e("CROP_EXTRACTOR", ("Failed to crop ${region.id}"), e)
                 }
             }
         }
