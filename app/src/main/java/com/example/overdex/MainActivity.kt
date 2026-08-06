@@ -65,7 +65,6 @@ import com.example.overdex.ui.screens.BattleHistoryScreen
 import com.example.overdex.ui.screens.BattlePreviewScreen
 import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
-import com.example.overdex.ui.screens.CaptureVerificationScreen
 import com.example.overdex.ui.screens.ChatScreen
 import com.example.overdex.ui.screens.EditSpecimenScreen
 import com.example.overdex.ui.screens.MainMenuPhase
@@ -219,7 +218,6 @@ fun PokedexApp(
             onStartObservation()
         }
     }
-
     LaunchedEffect(Unit) {
         viewModel.pendingCommand.collect { command ->
             when (command) {
@@ -228,8 +226,11 @@ fun PokedexApp(
                 InstrumentCommand.AddSpecimen -> navController.navigate("add_pokemon_wizard")
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("battle_log")
-                InstrumentCommand.OpenCapture -> navController.navigate("capture_verification")
+
+                // Temporary redirect while the registration workspace is removed.
+                InstrumentCommand.OpenCapture -> navController.navigate("calibration")
                 InstrumentCommand.OpenCalibration -> navController.navigate("calibration")
+
                 InstrumentCommand.OpenProfile -> navController.navigate("trainer_profile")
                 InstrumentCommand.OpenTimeline -> navController.navigate("shared_timeline")
                 InstrumentCommand.OpenChat -> navController.navigate("private_chat")
@@ -406,17 +407,7 @@ fun PokedexApp(
                     )
                 }
             }
-            composable("capture_verification") {
-                val collectionViewModel: MyCollectionViewModel = viewModel()
-                CaptureVerificationScreen(
-                    viewModel = viewModel,
-                    collectionViewModel = collectionViewModel,
-                    onSaveSuccess = { id ->
-                        navController.navigate("specimens/detail/$id")
-                    },
-                    onBack = { navController.debugPopBackStack() }
-                )
-            }
+
             composable("trainer_profile") {
                 TrainerProfileScreen(
                     viewModel = viewModel,

@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,18 +22,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -49,9 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import android.os.SystemClock
-import android.util.Log
-import java.util.UUID
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -84,6 +73,7 @@ import com.example.overdex.ui.theme.PokedexScreen
 import com.example.overdex.ui.theme.PokedexScreenBorder
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.delay
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -268,7 +258,6 @@ fun ODXFiShell(
     showBattleOverlay: Boolean = true,
     viewModel: PokedexViewModel? = null,
     instrumentState: ObservationSessionState? = null,
-    pipelineStatus: com.example.overdex.data.observation.PipelineStatus? = null,
     isLogoInteractive: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory) -> Unit,
 ) {
@@ -354,13 +343,14 @@ fun ODXFiShell(
 
     val timelineEventCount = battleMemory.timeline.events.size
 
-    val presentationState = remember(currentState, pipelineStatus, battleMemory, currentMatchup, currentDecision, timelineEventCount) {
-        com.example.overdex.presentation.PresentationMapper.map(
-            instrumentState = currentState,
-            pipelineStatus = pipelineStatus,
-            battleMemory = battleMemory,
-            matchup = currentMatchup,
-            decision = currentDecision
+    val presentationState = remember(
+        battleMemory,
+        timelineEventCount
+    ) {
+        com.example.overdex.presentation.PresentationState(
+            timeline = com.example.overdex.presentation.TimelinePresentation(
+                eventCount = battleMemory.timeline.events.size
+            )
         )
     }
 

@@ -66,7 +66,19 @@ enum class ObservationFocus {
     CHARGED_MOVE_B,
     COMPLETE
 }
+//Registration Presentation (Remove)
 
+//□ ObservationPresentation
+//□ ObservationFocus
+//□ ObservationActivity
+//□ ObservationIndicator
+//□ ObservationRequirement
+//□ ObservationEstimate
+
+//Registration Tactical (Remove)
+
+//□ TacticalAction.REGISTER_SPECIMEN
+//□ TacticalAction.SELECT_SPECIES_MANUALLY
 /**
  * Technical tasks performed by the observation pipeline.
  */
