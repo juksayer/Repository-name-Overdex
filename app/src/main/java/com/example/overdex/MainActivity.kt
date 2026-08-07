@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                     val myId = trainerRepository.getIdentity().trainerId.toString()
                     val transport = ChatTransportFactory.create(this@MainActivity, myId, partner.trainerId)
                     chatRepository.setTransport(transport)
-                    Log.i("CHAT_TRANSPORT", "Repository transport updated: ${transport::class.java.simpleName}")
+                    //("CHAT_TRANSPORT", "Repository transport updated: ${transport::class.java.simpleName}")
                 }
             }
         }
