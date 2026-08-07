@@ -173,3 +173,11 @@ Accepted
 
 
 specimens make up teams, teams are organized by leagues, the leagues are entries in the Battle module. 
+
+Authoritative state shall have exactly one owner.
+
+Only the owner may mutate that state.
+
+All other components consume, derive, or present that state.
+
+Whenever possible, derived state shall be computed rather than duplicated

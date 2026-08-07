@@ -5,6 +5,17 @@ import com.example.overdex.battle.timeline.observer.*
 import com.example.overdex.battle.timeline.confidence.*
 import com.example.overdex.battle.timeline.evidence.*
 
+///********************
+// * Constitutional Verification
+// *
+// * Demonstrates the complete chain of custody of a Battle Article
+// * from testimony through cataloging.
+// *
+// * This file exists to verify architectural boundaries rather than
+// * battle logic.
+// ********************
+
+             ToDo change verifyPipeline to verifyCustodyChain
 fun verifyPipeline() {
     // 1. Setup the session
     val session = ObservationSession(sessionId = "BATTLE_001")
