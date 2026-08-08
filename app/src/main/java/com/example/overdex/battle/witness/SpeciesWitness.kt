@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.observation.SpeciesNameRecognizer
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,10 +14,8 @@ import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
- * Production observer responsible for identifying the countdown numbers.
- *
- * This observer monitors the enemy name region of the screen and uses OCR
- * to recognize the Countdown numbers.
+ * Match-scoped Witness responsible for producing testimony regarding
+ * the opponent species phenomenon.
  */
 class SpeciesWitness(
     private val input: ObservationInput,
@@ -30,37 +29,40 @@ class SpeciesWitness(
     private var scope: CoroutineScope? = null
 
     /**
-     * Represents a discrete perception of a countdown element.
+     * Represents a discrete perception of a Species element.
      */
     data class SpeciesTestimony(val value: String, val timestamp: Long)
 
     override fun start(match: Match) {
         if (scope != null) return
-        Log.d("COUNTDOWN", "start()")
+        Log.d("SpeciesWitness", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
 
         newScope.launch {
-            Log.d("COUNTDOWN", "waiting for frames")
+            Log.d("SpeciesWitness", "waiting for frames")
             input.supply { bitmap ->
-                Log.d("COUNTDOWN", "bitmap received")
+                Log.d("SpeciesWitness", "bitmap received")
                 match.incrementFrameCount()
-                Log.d("COUNTDOWN", "Calibration: ${calibration.isCalibrated()}")
+                Log.d("SpeciesWitness", "Calibration: ${calibration.isCalibrated()}")
                 if (calibration.isCalibrated()) {
-                    val cropped = cropCountdown(bitmap)
-                    if (cropped != null) {
-                        val recognitionResult = CountdownRecognizer.recognize(cropped)
+                    val cropped = cropSpecies(bitmap)
+                    if (cropped != null) {val result = SpeciesNameRecognizer.recognize(cropped)
 
-                        val value = recognitionResult.value
-                        if (recognitionResult.confidence >= 1.0f && value != null) {
+                        val value = result.value
+
+                        if (result.confidence >= 1.0f && value != null) {
                             val testimony = SpeciesTestimony(value, System.currentTimeMillis())
-                            Log.d("CountdownObserver", "CountdownWitness(value=$value)")
 
-                            // Publish the witness to the rest of the instrument
+                            Log.d(
+                                "SpeciesWitness",
+                                "SpeciesTestimony(value=$value)"
+                            )
+
                             DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))
                         } else if (value != null) {
-                            Log.d("CountdownObserver", "Normalized OCR string: $value")
+                            Log.d("SpeciesWitness", "Normalized OCR string: $value")
                         }
                     }
                 }
@@ -73,8 +75,8 @@ class SpeciesWitness(
         scope = null
     }
 
-    private fun cropCountdown(bitmap: Bitmap): Bitmap? {
-        val region = calibration.countdownRegion
+    private fun cropSpecies(bitmap: Bitmap): Bitmap? {
+        val region = calibration.enemyNameRegion       //until ontology is defined, or retired.
         val width = bitmap.width
         val height = bitmap.height
 
@@ -84,7 +86,7 @@ class SpeciesWitness(
         val h = (region.height * height).toInt().coerceAtMost(height - top)
 
         if (w < 32 || h < 32) {
-            Log.w("CountdownObserver", "Crop dimensions too small for ML Kit: ${w}x${h}")
+            Log.w("SpeciesWitness", "Crop dimensions too small for ML Kit: ${w}x${h}")
             return null
         }
 

@@ -2,15 +2,15 @@ package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.example.overdex.data.BattleCalibration
 import com.example.overdex.battle.timeline.observer.ObserverId
-import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
+import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
  * Production observer responsible for identifying the countdown numbers.
@@ -48,8 +48,9 @@ class CountdownObserver(
                 match.incrementFrameCount()
                 Log.d("COUNTDOWN", "Calibration: ${calibration.isCalibrated()}")
                 if (calibration.isCalibrated()) {
-                    val cropped = cropCountdown(bitmap)
+                    val cropped = cropSpecies(bitmap)
                     if (cropped != null) {
+
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
 
                         val value = recognitionResult.value
@@ -72,9 +73,9 @@ class CountdownObserver(
         scope?.cancel("Observer stopped")
         scope = null
     }
-
-    private fun cropCountdown(bitmap: Bitmap): Bitmap? {
-        val region = calibration.countdownRegion
+                      //todo retire 'enemy' in ontology
+    private fun cropSpecies(bitmap: Bitmap): Bitmap? {
+        val region = calibration.enemyNameRegion
         val width = bitmap.width
         val height = bitmap.height
 

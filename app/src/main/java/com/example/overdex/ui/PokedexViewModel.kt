@@ -12,11 +12,11 @@ import androidx.paging.map
 import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.CountdownObserver
-import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballService
+import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
-import com.example.overdex.battle.observation.SpeciesObserver
+import com.example.overdex.battle.observation.SpeciesWitness
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
@@ -181,7 +181,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val calibration = CalibrationManager(getApplication()).load()
         
         Log.d("DEPLOY", "2 Registering observers")
-        observationDispatcher.register(SpeciesObserver(input, calibration))
+        observationDispatcher.register(SpeciesWitness(input, calibration))
         observationDispatcher.register(CountdownObserver(input, calibration))
 
         // Start Service
