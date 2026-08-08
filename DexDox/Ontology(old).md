@@ -96,7 +96,7 @@ These terms are intentionally not part of the ontology because they describe imp
 
 Every ontology term must be definable without mentioning implementation details.
 
-ne thing I'd like to propose, though.
+One thing I'd like to propose, though.
 
 I think we've accidentally mixed ontology with catalogs.
 

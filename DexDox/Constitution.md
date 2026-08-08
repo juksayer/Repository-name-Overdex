@@ -118,3 +118,10 @@ Ask these questions before implementing a feature:
 If the answer is "no," reconsider the design.
 
 An Article is the canonical aggregation point for evidence and confidence.
+
+---
+
+## Phenomena
+
+- Phenomena enter the institution. Presentations leave the institution. 
+- Everything else is internal constitutional process.

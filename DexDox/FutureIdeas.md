@@ -316,3 +316,14 @@ It should answer:
 - Why did the battle engine resolve it that way?
 
 The replay should feel less like watching a recording and more like examining evidence.
+-------------------------------
+Current:
+SpeciesNameRegionWitness
+
+Future:
+SpeciesWitness
+                                  revised 8/7/26
+Rationale:
+The current witness observes a specific UI region.
+The constitutional office will emerge once multiple testimonies
+regarding species are gathered by the SpeciesReporter.

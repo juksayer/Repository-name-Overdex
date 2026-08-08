@@ -34,3 +34,33 @@ Design Sketches
 Meeting Notes
 
 Revision Log
+
+----------------------------------
+.md table of contents    (tentativelyimplementing)
+
+DexDox/
+│
+├── Constitution/
+│   ├── Constitution.md
+│   ├── Principles.md
+│   ├── Constitutional Opinions/
+│   ├── Constitutional Knowledge/
+│   └── Constitutional Classification.md
+│
+├── Architecture/
+│   ├── Current/
+│   └── Historical/
+│
+├── Field Offices/
+│
+├── Runtime/
+│
+├── Timeline/
+│
+└── Archives/
+├── PDFs/
+│   ├── 2026-06/
+│   ├── 2026-07/
+│   └── 2026-08/
+│
+└── Milestones/

@@ -374,3 +374,24 @@ Instrument the boundary, then let the evidence determine the next brick.
 
 A feature may only be implemented through the infrastructure that owns that responsibility. If the 
 required infrastructure does not exist, build the infrastructure first. Do not bypass it with feature-specific shortcuts.
+
+updated 8/7/26
+Event
+↓
+Witness
+↓
+Testimony
+↓
+Reporter
+↓
+Article
+↓
+Interpreter
+↓
+Article
+↓
+Publisher
+↓
+Article
+↓
+Catalog

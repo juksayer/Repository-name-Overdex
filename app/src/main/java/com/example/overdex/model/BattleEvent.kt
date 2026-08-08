@@ -37,7 +37,7 @@ enum class BattleActor {
 }
 
 /**
- * A discrete factual occurrence in a battle's history.
+ * A discrete witnessed occurrence in a battle's history.
  * 
  * @property id Unique identifier for the event.
  * @property timestamp Absolute system time in ms.

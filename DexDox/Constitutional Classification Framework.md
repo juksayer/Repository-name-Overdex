@@ -48,13 +48,13 @@ Authority may not.
 
 # Article III — Observation
 
-Witnesses reports reality.
+Reality produces phenomena.
 
-A witness does not assign meaning.
+Witnesses observe phenomena.                    Observation assignments shall be coordinated independently from Witness responsibilities
 
-Its responsibility is to faithfully record events as they occur.
+Witnesses produce testimony.
 
-Witnesses produce events.
+Witnesses do not assign meaning.
 
 Nothing more.
 
@@ -88,9 +88,9 @@ Presentation belongs to Droidball.
 
 Presentation consumes exposed state and communicates it to the trainer.
 
-Presentation never owns domain authority.
-
 Presentation exists solely to faithfully represent the current state of the system.
+
+Presentation never owns domain authority.
 
 ---
 
@@ -162,7 +162,25 @@ The continuity of the Constitution is preserved through reasoning rather than th
 
 ---
 
-# Constitutional Classification
+Article — The Article
+
+The Article is the canonical unit of knowledge exchange.
+
+Articles alone traverse constitutional boundaries.
+
+Offices contribute to an Article.
+
+Offices do not travel with an Article.
+
+The chain of custody belongs to the Article.
+
+Every constitutional contribution shall be attributable through the Article's chain of custody.
+
+---
+
+## Constitutional Classification
+
+##
 
 Every top-level architectural component shall ultimately be classified as one of three constitutional forms.
 
@@ -294,6 +312,21 @@ Constitutional Knowledge
 Precedent
     ↓
 Architecture
+------------------------------------
+             8/6/26 revision
+Event
+    ↓
+Article created
+    ↓
+Witnesses
+    ↓
+Reporters
+    ↓
+Interpreter
+    ↓
+Publisher
+    ↓
+Catalog
 ```
 
 The runtime produces signals.
@@ -339,3 +372,19 @@ Signals and events are the input interface.
 Presentation is the output interface.
 
 Everything in between is internal.
+
+---
+
+Boundary offices are observational.
+
+Input boundary:
+
+consumes Phenomena
+never alters Phenomena
+
+Output boundary:
+
+consumes Articles
+never alters Articles
+
+Everything that mutates institutional knowledge happens between those boundaries
