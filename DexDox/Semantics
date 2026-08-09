@@ -1,0 +1,161 @@
+Witness       TESTIFIES
+Registrar     RECORDS
+Interpreter   TRANSCRIBES
+Confidant     WEIGHS
+Publisher     COMMITS
+Timeline      PRESERVES
+Presentation  COMMUNICATES
+
+
+
+The Sally Port is the Registrar's actual architectural metaphor:
+
+Controlled intake of evidence into an Article's custody.
+
+Yes. **That actually makes "Interpreter" much more precise.**
+
+The court stenographer doesn't decide what happened. They don't weigh the evidence. They don't decide guilt. They **turn the proceedings into an institutional record that can be understood and acted upon by the court.**
+
+So:
+
+```text
+Witness
+    ↓
+Testimony
+    ↓
+Registrar
+    RECORDS
+    ↓
+Article
+    ↓
+Interpreter
+    TRANSCRIBES / TRANSLATES
+    ↓
+Interpretation
+    ↓
+Confidant
+    WEIGHS
+```
+
+But I'd make one subtle distinction:
+
+**The Registrar is the intake clerk.
+The Interpreter is the stenographer.**
+
+The Registrar establishes:
+
+> "This is what Witness X submitted, at this time, concerning this Article."
+
+The Interpreter turns the accumulated record into an institutional account:
+
+> "Here is what the testimony says happened."
+
+And then the Confidant can ask:
+
+> "Given the testimony recorded in this Article, how strongly does that account stand?"
+
+That keeps the Interpreter from accidentally becoming the judge.
+
+### And this makes the Article even more obviously the root
+
+The stenographer isn't carrying the case away from the Article.
+
+They're **working from the Article**.
+
+```text
+                         ARTICLE
+                            │
+                 ┌──────────┼──────────┐
+                 │          │          │
+             testimony   context   provenance
+                 │          │          │
+                 └──────────┼──────────┘
+                            ↓
+                       Interpreter
+                       STENOGRAPHS
+                            ↓
+                     interpretation
+                            ↓
+                       Confidant
+                         WEIGHS
+```
+
+The Interpreter's output is another **branch of the Article**.
+
+It doesn't replace the testimony.
+
+It doesn't edit the testimony.
+
+It doesn't become "the truth."
+
+It creates an institutional translation of what the record says.
+
+And then the Confidant's assessment is yet another branch.
+
+So I think we're getting closer to the upside-down tree:
+
+```text
+                              ARTICLE
+                ┌───────────────┼────────────────┐
+                │               │                │
+           TESTIMONY       INTERPRETATION     ASSESSMENT
+                │               │                │
+             Witness        Interpreter       Confidant
+                              TRANSLATES         WEIGHS
+```
+
+**The Article is the court file.**
+
+The offices don't pass a case between themselves so much as **each contributes its lawful part to the same case file**.
+
+That is a much better fit for everything you've been saying tonight.
+
+😂 **Sally Port confirmed.**
+
+That actually fits the Registrar *extremely* well:
+
+```text
+Phenomenon
+    ↓
+Witness
+    ↓
+Testimony
+    ↓
+[SALLY PORT]
+    ↓
+Article
+```
+
+The Registrar isn't investigating.
+
+It isn't interpreting.
+
+It isn't judging.
+
+It is the **controlled intake point** where testimony enters institutional custody and gets attached to the correct Article with its provenance intact.
+
+And once the testimony crosses the Sally Port:
+
+> **you don't send the Witness back through it to change their testimony.**
+
+The Article can sit there and accumulate additional evidence from other Witnesses.
+
+That's exactly the behavior we just established.
+
+one-word audit:
+
+```text
+Witness       TESTIFIES
+Registrar     RECORDS
+Interpreter   TRANSCRIBES
+Confidant     WEIGHS
+Publisher     COMMITS
+Timeline      PRESERVES
+Presentation  COMMUNICATES
+```
+
+And the **Sally Port** is the Registrar's actual architectural metaphor:
+
+> **Controlled intake of evidence into an Article's custody.**
+
+I would absolutely put "Sally Port" in the semantic notes as the metaphor, even if the production class remains `Registrar` for now.

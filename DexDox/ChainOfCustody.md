@@ -164,3 +164,6 @@ An Article is the constitutional record of a single phenomenon.
 Every Article concerns exactly one phenomenon.
 
 All constitutional contributions attached to an Article shall concern that Article's phenomenon
+
+----------------------------------------------------------------------
+

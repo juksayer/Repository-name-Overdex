@@ -1,0 +1,93 @@
+Yes — **quite familiar**, especially with the architectural role the Pokédex plays.
+
+The Pokédex is not just "the Pokémon list" in Overdex. It is the **Knowledge foundation** that the battle systems consume. The project material explicitly describes the progression as **Learn → Observe → Remember → Assist**, with the Pokédex providing the offline knowledge foundation before observation and battle intelligence.
+
+I understand the major pieces as they currently stand:
+
+* **Species knowledge** — Pokémon, descriptions, stats, typing, evolutions, cries.
+* **Move knowledge** — move database and cross-referencing.
+* **Type knowledge** — effectiveness and relationships.
+* **Search/query** — the Pokédex is becoming an interface for asking questions rather than merely browsing pages.
+* **Specimens / trainer relationship** — the newer terminology is moving away from `OwnedPokemon` / `Collection` toward **Specimen / Binders**. The terminology audit explicitly identifies that transition.
+* **Presentation** — CRT/ODX-FI presentation, detail navigation, cross-linked knowledge, cries, etc.
+* **Battle consumption** — the battle system shouldn't recreate Pokémon knowledge; it should pull from the same knowledge foundation.
+
+And there's an important distinction given what we've just discovered tonight:
+
+### The Pokédex is probably the cleanest example of the Article-as-root idea.
+
+A Pokémon species article can have branches:
+
+```text
+                         ARTICLE
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+          Species         Moves         Types
+             │             │             │
+          evolution     learnset     effectiveness
+             │
+          description
+             │
+            cry
+```
+
+Then Presentation can ask the Article for whatever branch is relevant:
+
+```text
+Article
+   ↓
+"Show me Sneasel"
+   ↓
+Presentation
+   ↓
+Trainer
+```
+
+And the battle side can consume that **same knowledge** rather than becoming another Pokémon database.
+
+That's consistent with the older project principle that one observation should create reusable value for Battle Logs, statistics, Team Review, Team Builder, research, and future features rather than creating parallel stores of facts.
+
+### But I would *not* assume the Pokédex Articles are identical to Battle Articles yet.
+
+That's actually something I think we should investigate.
+
+There may be a distinction between:
+
+**Knowledge Article**
+
+> "Sneasel is a Dark/Ice Pokémon."
+
+and
+
+**Battle Article**
+
+> "Opponent Species A was Sneasel during Match X."
+
+They can use the **same Article-centered architecture** while having radically different provenance.
+
+The first is established/reference knowledge.
+
+The second is an **investigative record assembled from witnesses during a Match**.
+
+And that might be the bridge between the two halves of Overdex we've been missing:
+
+```text
+                 ARTICLE
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+     Knowledge Article   Battle Article
+          │                   │
+      "What is Sneasel?"   "What happened?"
+          │                   │
+          └─────────┬─────────┘
+                    │
+              Presentation
+                    │
+                 Trainer
+```
+
+So yes, I'm familiar with the Pokédex side.
+
+**But I would want to treat its current implementation as evidence rather than assume tonight's new Article model automatically applies to it.** The really interesting next question may be whether the Pokédex was *already* an Article-centered system in practice, even though we weren't calling it that.

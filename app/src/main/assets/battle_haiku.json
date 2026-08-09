@@ -18,6 +18,420 @@
     ]
   },
   {
+    "id": 2,
+    "species": "Ivysaur",
+    "fieldNote": [
+      {
+        "id": "002-001",
+        "title": "Patient Growth",
+        "lines": [
+          "Vines pull battles close.",
+          "Patience blooms before the storm—",
+          "Power takes its time."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "species": "Venusaur",
+    "fieldNote": [
+      {
+        "id": "003-001",
+        "title": "The Bloom of Resolve",
+        "lines": [
+          "Petals fall like rain.",
+          "Frenzy Plant leaves no doubt now.",
+          "Shields bloom far too late."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "species": "Charmander",
+    "fieldNote": [
+      {
+        "id": "004-001",
+        "title": "The Small Flame",
+        "lines": [
+          "Tiny ember burns.",
+          "Tomorrow hides in this flame—",
+          "Legends start this small."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "species": "Charmeleon",
+    "fieldNote": [
+      {
+        "id": "005-001",
+        "title": "Tempered Fire",
+        "lines": [
+          "Fire learns restraint.",
+          "Each battle tempers the heat",
+          "Before wings appear."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "species": "Charizard",
+    "fieldNote": [
+      {
+        "id": "006-001",
+        "title": "The Open Sky",
+        "lines": [
+          "Sky turns orange-red.",
+          "Blast Burn crashes from above.",
+          "Even dragons flinch."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "species": "Squirtle",
+    "fieldNote": [
+      {
+        "id": "007-001",
+        "title": "Quiet Resilience",
+        "lines": [
+          "Little turtle grins.",
+          "Behind a shell waits a tide",
+          "Stronger than it seems."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "species": "Wartortle",
+    "fieldNote": [
+      {
+        "id": "008-001",
+        "title": "The Turning Tide",
+        "lines": [
+          "Waves answer its call.",
+          "Tail draws circles through the surf—",
+          "Calm before the flood."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "species": "Blastoise",
+    "fieldNote": [
+      {
+        "id": "009-001",
+        "title": "Unyielding Current",
+        "lines": [
+          "Cannons find their mark.",
+          "Hydro torrents wear foes down.",
+          "Stone learns how to swim."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "species": "Caterpie",
+    "fieldNote": [
+      {
+        "id": "010-001",
+        "title": "Every Journey Begins Small",
+        "lines": [
+          "Small feet cross the grass.",
+          "No one fears the first footstep—",
+          "Until they should."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "species": "Metapod",
+    "fieldNote": [
+      {
+        "id": "011-001",
+        "title": "The Waiting Season",
+        "lines": [
+          "Silent in the bark.",
+          "Strength is often hidden where",
+          "Nothing seems to move."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "species": "Butterfree",
+    "fieldNote": [
+      {
+        "id": "012-001",
+        "title": "Gentle Victories",
+        "lines": [
+          "Soft wings ride the breeze.",
+          "Sleep steals victory unseen—",
+          "Beauty wins battles."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "species": "Weedle",
+    "fieldNote": [
+      {
+        "id": "013-001",
+        "title": "The Smallest Thorn",
+        "lines": [
+          "One careless footstep,",
+          "Tiny barbs teach giant foes",
+          "To respect the small."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "species": "Kakuna",
+    "fieldNote": [
+      {
+        "id": "014-001",
+        "title": "The Silent Forge",
+        "lines": [
+          "Still as forest stone.",
+          "The patient survive longest—",
+          "Time sharpens the sting."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "species": "Beedrill",
+    "fieldNote": [
+      {
+        "id": "015-001",
+        "title": "The Swarm's Judgment",
+        "lines": [
+          "Golden lances flash.",
+          "One mistake invites the swarm.",
+          "Retreat comes too late."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "species": "Pidgey",
+    "fieldNote": [
+      {
+        "id": "016-001",
+        "title": "First Flight",
+        "lines": [
+          "Morning winds whisper.",
+          "Every master once looked up",
+          "To this little bird."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "species": "Pidgeotto",
+    "fieldNote": [
+      {
+        "id": "017-001",
+        "title": "Eyes Above",
+        "lines": [
+          "Circling above,",
+          "Waiting for the perfect dive—",
+          "Patience hunts the bold."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "species": "Pidgeot",
+    "fieldNote": [
+      {
+        "id": "018-001",
+        "title": "Master of the Wind",
+        "lines": [
+          "Sky belongs to none.",
+          "Yet every feather declares:",
+          "\"This wind answers me.\""
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "species": "Rattata",
+    "fieldNote": [
+      {
+        "id": "019-001",
+        "title": "The Overlooked",
+        "lines": [
+          "Ignored for too long,",
+          "Small teeth steal impossible",
+          "Victories from pride."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "species": "Raticate",
+    "fieldNote": [
+      {
+        "id": "020-001",
+        "title": "Street Wisdom",
+        "lines": [
+          "Street survivor's grin.",
+          "Every scar remembers why",
+          "The weak bite hardest."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "species": "Spearow",
+    "fieldNote": [
+      {
+        "id": "021-001",
+        "title": "The Reckless Wing",
+        "lines": [
+          "Sharp eyes never blink.",
+          "The reckless strike first and fast—",
+          "The wise strike once more."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "species": "Fearow",
+    "fieldNote": [
+      {
+        "id": "022-001",
+        "title": "The Hunter's Cry",
+        "lines": [
+          "Sky splits at its cry.",
+          "Mercy cannot catch its wings;",
+          "Only speed survives."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "species": "Ekans",
+    "fieldNote": [
+      {
+        "id": "023-001",
+        "title": "The Waiting Strike",
+        "lines": [
+          "Silent through the grass.",
+          "Every battle has a point—",
+          "Waits for its moment."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 2
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "species": "Arbok",
+    "fieldNote": [
+      {
+        "id": "024-001",
+        "title": "The Shape of Fear",
+        "lines": [
+          "Patterned eyes deceive.",
+          "Fear wins battles long before",
+          "Fangs ever descend."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
     "id": 25,
     "species": "Pikachu",
     "fieldNote": [
@@ -34,5 +448,1109 @@
         "revision": 1
       }
     ]
-  }
-]
+  },
+  {
+    "id": 26,
+    "species": "Raichu",
+    "fieldNote": [
+      {
+        "id": "026-001",
+        "title": "Mastered Thunder",
+        "lines": [
+          "Thunder walks the earth.",
+          "Power mastered through calm hands",
+          "Needs no boast at all."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "species": "Sandshrew",
+    "fieldNote": [
+      {
+        "id": "027-001",
+        "title": "Beneath the Storm",
+        "lines": [
+          "Claws beneath the dust.",
+          "Storms cannot unearth the one",
+          "Who learned to endure."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "species": "Sandslash",
+    "fieldNote": [
+      {
+        "id": "028-001",
+        "title": "Scars of Honor",
+        "lines": [
+          "Steel claws greet the dawn.",
+          "Every scar upon its hide",
+          "Was earned standing firm."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "species": "Nidoran♀",
+    "fieldNote": [
+      {
+        "id": "029-001",
+        "title": "The Brave Bloom",
+        "lines": [
+          "Small but resolute.",
+          "The fiercest hearts often bloom",
+          "Before strength is seen."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "species": "Nidorina",
+    "fieldNote": [
+      {
+        "id": "030-001",
+        "title": "Quiet Strength",
+        "lines": [
+          "Grace hides sharpened horns.",
+          "Those who mistake calm for weak",
+          "Rarely do twice."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "species": "Nidoqueen",
+    "fieldNote": [
+      {
+        "id": "031-001",
+        "title": "The Guardian Queen",
+        "lines": [
+          "A mountain stands watch.",
+          "Gentle hearts become granite",
+          "When their own are threatened."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "species": "Nidoran♂",
+    "fieldNote": [
+      {
+        "id": "032-001",
+        "title": "The Eager Horn",
+        "lines": [
+          "Eager little horn.",
+          "Courage often runs ahead",
+          "Of wisdom at first."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "species": "Nidorino",
+    "fieldNote": [
+      {
+        "id": "033-001",
+        "title": "The Lowered Horn",
+        "lines": [
+          "One lowered head speaks.",
+          "Some battles are won before",
+          "The first horn collides."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "species": "Nidoking",
+    "fieldNote": [
+      {
+        "id": "034-001",
+        "title": "The Uncrowned King",
+        "lines": [
+          "The earth holds its breath.",
+          "Kings need neither crown nor throne—",
+          "Only room to charge."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "species": "Clefairy",
+    "fieldNote": [
+      {
+        "id": "035-001",
+        "title": "Moonlit Wonder",
+        "lines": [
+          "Moonlight softly falls.",
+          "Joy can hide surprising strength;",
+          "Never laugh too soon."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "species": "Clefable",
+    "fieldNote": [
+      {
+        "id": "036-001",
+        "title": "The Oldest Wish",
+        "lines": [
+          "Stars know her true name.",
+          "The oldest magic whispers",
+          "Where footsteps leave none."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "species": "Vulpix",
+    "fieldNote": [
+      {
+        "id": "037-001",
+        "title": "Nine Dancing Embers",
+        "lines": [
+          "Nine bright tails dancing.",
+          "Every ember tells a tale",
+          "The fire remembers."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "species": "Ninetales",
+    "fieldNote": [
+      {
+        "id": "038-001",
+        "title": "The Patient Flame",
+        "lines": [
+          "Ancient golden eyes.",
+          "A thousand winters listen",
+          "Before flames answer."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "species": "Jigglypuff",
+    "fieldNote": [
+      {
+        "id": "039-001",
+        "title": "The Gentle Song",
+        "lines": [
+          "One sweet lullaby.",
+          "Eyes grow heavy, guards fall low—",
+          "Dreams can win battles."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "species": "Wigglytuff",
+    "fieldNote": [
+      {
+        "id": "040-001",
+        "title": "Impossible Grit",
+        "lines": [
+          "Soft as morning clouds.",
+          "Hidden beneath gentle smiles",
+          "Lives impossible grit."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "species": "Zubat",
+    "fieldNote": [
+      {
+        "id": "041-001",
+        "title": "The Unseen Path",
+        "lines": [
+          "Sight is not enough.",
+          "The unseen echoes reveal",
+          "Paths through darkest caves."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "species": "Golbat",
+    "fieldNote": [
+      {
+        "id": "042-001",
+        "title": "The Night's Hunger",
+        "lines": [
+          "Hungry wings descend.",
+          "The night takes only enough",
+          "To greet another dawn."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "species": "Oddish",
+    "fieldNote": [
+      {
+        "id": "043-001",
+        "title": "Roots in Joy",
+        "lines": [
+          "Morning dew sparkles.",
+          "Quiet roots outlast the storm—",
+          "Joy grows underground."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "species": "Gloom",
+    "fieldNote": [
+      {
+        "id": "044-001",
+        "title": "Toward the Light",
+        "lines": [
+          "Drooping petals hide",
+          "A stubborn will that refuses",
+          "To stop reaching light."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "species": "Vileplume",
+    "fieldNote": [
+      {
+        "id": "045-001",
+        "title": "Beauty's Warning",
+        "lines": [
+          "Flowers bloom with grace.",
+          "Beauty wears a warning sign",
+          "Few survive to read."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "species": "Paras",
+    "fieldNote": [
+      {
+        "id": "046-001",
+        "title": "The Shared Burden",
+        "lines": [
+          "Two lives share one path.",
+          "Not every burden carried",
+          "Is truly your own."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "species": "Parasect",
+    "fieldNote": [
+      {
+        "id": "047-001",
+        "title": "The Cost of Victory",
+        "lines": [
+          "The forest grows still.",
+          "Some victories ask the price",
+          "Of becoming less."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "species": "Venonat",
+    "fieldNote": [
+      {
+        "id": "048-001",
+        "title": "Many Eyes",
+        "lines": [
+          "Many watchful eyes.",
+          "Nothing in the evening woods",
+          "Escapes every gaze."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "species": "Venomoth",
+    "fieldNote": [
+      {
+        "id": "049-001",
+        "title": "Silent Powder",
+        "lines": [
+          "Powder rides moonlight.",
+          "Silent wings rewrite the fight",
+          "Without making noise."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "species": "Diglett",
+    "fieldNote": [
+      {
+        "id": "050-001",
+        "title": "The Earth Remembers",
+        "lines": [
+          "Earth suddenly breaks.",
+          "The ground remembers each step",
+          "Long before you do."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "species": "Dugtrio",
+    "fieldNote": [
+      {
+        "id": "051-001",
+        "title": "One Purpose",
+        "lines": [
+          "Three minds, one purpose.",
+          "No stone can divide the bond",
+          "Forged beneath the earth."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "species": "Meowth",
+    "fieldNote": [
+      {
+        "id": "052-001",
+        "title": "The True Treasure",
+        "lines": [
+          "Coins gleam in moonlight.",
+          "The richest prize any day",
+          "Is one more adventure."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "species": "Persian",
+    "fieldNote": [
+      {
+        "id": "053-001",
+        "title": "Velvet Claws",
+        "lines": [
+          "Silken steps conceal",
+          "Claws sharp enough to remind",
+          "Pride walks on soft paws."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "species": "Psyduck",
+    "fieldNote": [
+      {
+        "id": "054-001",
+        "title": "Hidden Rapids",
+        "lines": [
+          "Thoughts churn like rapids.",
+          "Within every troubled mind",
+          "Sleeps hidden power."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "species": "Golduck",
+    "fieldNote": [
+      {
+        "id": "055-001",
+        "title": "Still Waters",
+        "lines": [
+          "Still water reflects",
+          "Only what deserves to stay—",
+          "The rest drifts away."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "species": "Mankey",
+    "fieldNote": [
+      {
+        "id": "056-001",
+        "title": "Lessons in Bruises",
+        "lines": [
+          "Quick fists, quicker heart.",
+          "Every lesson left unlearned",
+          "Returns with bruises."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "species": "Primeape",
+    "fieldNote": [
+      {
+        "id": "057-001",
+        "title": "The Empty Victory",
+        "lines": [
+          "Fury burns too bright.",
+          "The strongest blow means little",
+          "If no peace remains."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "species": "Growlithe",
+    "fieldNote": [
+      {
+        "id": "058-001",
+        "title": "The Faithful Companion",
+        "lines": [
+          "Faithful at your side.",
+          "Even the longest journey",
+          "Begins with one bark."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "species": "Arcanine",
+    "fieldNote": [
+      {
+        "id": "059-001",
+        "title": "The Faithful Guardian",
+        "lines": [
+          "Legends leave no throne.",
+          "They walk beside those they guard,",
+          "Fire lighting home."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "species": "Poliwag",
+    "fieldNote": [
+      {
+        "id": "060-001",
+        "title": "Toward the Sea",
+        "lines": [
+          "Tiny circles spin.",
+          "Every winding path still leads",
+          "Toward the open sea."
+        ],
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "species": "Poliwhirl",
+    "fieldNote": [
+      {
+        "id": "061-001",
+        "title": "The Bending Current",
+        "lines": [
+          "Currents twist unseen.",
+          "Those who learn to bend with change",
+          "Are never swept away."
+        ],
+        "lesson": "Adaptability.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "species": "Poliwrath",
+    "fieldNote": [
+      {
+        "id": "062-001",
+        "title": "Mad Waters",
+        "lines": [
+          "Calm beneath the waves.",
+          "True strength is not loud enough",
+          "To wake sleeping seas."
+        ],
+        "lesson": "Quiet confidence.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "species": "Abra",
+    "fieldNote": [
+      {
+        "id": "063-001",
+        "title": "The Elusive Dream",
+        "lines": [
+          "Dreams flee at first touch.",
+          "The greatest gifts often ask",
+          "Patience before trust."
+        ],
+        "lesson": "Patience earns opportunity.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "species": "Kadabra",
+    "fieldNote": [
+      {
+        "id": "064-001",
+        "title": "The Sharpened Mind",
+        "lines": [
+          "A sharpened mind cuts",
+          "Deeper than the strongest blade",
+          "Ever hopes to reach."
+        ],
+        "lesson": "Wisdom outlasts force.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "species": "Alakazam",
+    "fieldNote": [
+      {
+        "id": "065-001",
+        "title": "A Moment of Clarity",
+        "lines": [
+          "One quiet moment",
+          "Can solve what a thousand blows",
+          "Never truly could."
+        ],
+        "lesson": "Intelligence conquers conflict.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "species": "Machop",
+    "fieldNote": [
+      {
+        "id": "066-001",
+        "title": "One Stone Today",
+        "lines": [
+          "Lift one stone today.",
+          "Tomorrow you'll lift mountains—",
+          "Strength grows unnoticed."
+        ],
+        "lesson": "Consistency.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "species": "Machoke",
+    "fieldNote": [
+      {
+        "id": "067-001",
+        "title": "One Stone Today",
+        "lines": [
+          "Power earned with sweat",
+          "Needs no witness to prove worth;",
+          "Work remembers all."
+        ],
+        "lesson": "Discipline over recognition.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "species": "Machamp",
+    "fieldNote": [
+      {
+        "id": "068-001",
+        "title": "The Four Hands",
+        "lines": [
+          "Four hands built to serve,",
+          "Four fists prepared for battle—",
+          "Choose which leads the day."
+        ],
+        "lesson": "Strength is a choice.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "species": "Bellsprout",
+    "fieldNote": [
+      {
+        "id": "069-001",
+        "title": "Morning Sun",
+        "lines": [
+          "Toward the morning sun,",
+          "Even fragile stems discover",
+          "Reasons still to climb."
+        ],
+        "lesson": "Hope is persistent.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "species": "Weepinbell",
+    "fieldNote": [
+      {
+        "id": "070-001",
+        "title": "The Waiting Harvest",
+        "lines": [
+          "Open mouths may wait,",
+          "But hunger alone has never",
+          "Brought the harvest home."
+        ],
+        "lesson": "Opportunity favors action.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "species": "Victreebel",
+    "fieldNote": [
+      {
+        "id": "071-001",
+        "title": "Garden Forgotten",
+        "lines": [
+          "Garden Forgotten",
+          "The Sidestepped Path Has Tendrils",
+          "Branches Point In Triumph"
+        ],
+        "lesson": "A surprise is often more dangerous than a plan.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "species": "Tentacool",
+    "fieldNote": [
+      {
+        "id": "072-001",
+        "title": "Beneath Calm Waters",
+        "lines": [
+          "Gentle waves conceal",
+          "Depths no shoreline ever sees.",
+          "Look beneath the calm."
+        ],
+        "lesson": "Never mistake peace for weakness.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "species": "Tentacruel",
+    "fieldNote": [
+      {
+        "id": "073-001",
+        "title": "The Patient Tide",
+        "lines": [
+          "Silent waters close.",
+          "The patient tide claims the shore",
+          "One wave at a time."
+        ],
+        "lesson": "Persistence outlasts force.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "species": "Geodude",
+    "fieldNote": [
+      {
+        "id": "074-001",
+        "title": "The Patient Tide",
+        "lines": [
+          "The smallest stone still",
+          "Belongs to the ancient hill.",
+          "Stand where you belong."
+        ],
+        "lesson": "Humility builds foundations.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "species": "Graveler",
+    "fieldNote": [
+      {
+        "id": "075-001",
+        "title": "The First Stone",
+        "lines": [
+          "The mountain descends;",
+          "Even giants gather speed",
+          "One turn at a time."
+        ],
+        "lesson": "Momentum is earned.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "species": "Golem",
+    "fieldNote": [
+      {
+        "id": "076-001",
+        "title": "The Avalanche",
+        "lines": [
+          "The avalanche knows",
+          "Neither anger nor mercy—",
+          "Only gravity."
+        ],
+        "lesson": "Some consequences cannot be stopped.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "species": "Ponyta",
+    "fieldNote": [
+      {
+        "id": "077-001",
+        "title": "Fire in Morning Dew",
+        "lines": [
+          "Morning dew catches",
+          "Fire no hand can contain.",
+          "Wonder runs on hooves."
+        ],
+        "lesson": "Joy is worth protecting.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "species": "Rapidash",
+    "fieldNote": [
+      {
+        "id": "078-001",
+        "title": "The Inner Flame",
+        "lines": [
+          "Leave only hoofbeats.",
+          "The fastest path through this world",
+          "Is lit from within."
+        ],
+        "lesson": "True speed comes from purpose.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "species": "Slowpoke",
+    "fieldNote": [
+      {
+        "id": "079-001",
+        "title": "Time Enough",
+        "lines": [
+          "The quiet river",
+          "Always reaches waiting seas.",
+          "There is time enough."
+        ],
+        "lesson": "Do not confuse slowness with failure.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "species": "Slowbro",
+    "fieldNote": [
+      {
+        "id": "080-001",
+        "title": "Shared Trust",
+        "lines": [
+          "Trust shared without fear",
+          "Makes two ordinary lives",
+          "Greater than one whole."
+        ],
+        "lesson": "Strength grows through partnership.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "species": "Magnemite",
+    "fieldNote": [
+      {
+        "id": "081-001",
+        "title": "Two Sparks",
+        "lines": [
+          "Two sparks became one.",
+          "Different paths often create",
+          "The brightest ideas."
+        ],
+        "lesson": "Cooperation creates strength.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "species": "Magneton",
+    "fieldNote": [
+      {
+        "id": "082-001",
+        "title": "The Common Song",
+        "lines": [
+          "Three voices align.",
+          "Harmony asks each part to",
+          "Choose the common song."
+        ],
+        "lesson": "Unity requires intention.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 83,
+    "species": "Farfetch'd",
+    "fieldNote": [
+      {
+        "id": "083-001",
+        "title": "The Humble Tool",
+        "lines": [
+          "Weathered stick in wing.",
+          "Mock not another's toolkit;",
+          "It has won before."
+        ],
+        "lesson": "Resourcefulness outlasts perfection.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 84,
+    "species": "Doduo",
+    "fieldNote": [
+      {
+        "id": "084-001",
+        "title": "Moving Together",
+        "lines": [
+          "Two heads face the world.",
+          "Agreement is less important",
+          "Than moving together."
+        ],
+        "lesson": "Progress beats consensus.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 85,
+    "species": "Dodrio",
+    "fieldNote": [
+      {
+        "id": "085-001",
+        "title": "Three Voices",
+        "lines": [
+          "Three voices now sing.",
+          "The journey taught every heart",
+          "When to yield the lead."
+        ],
+        "lesson": "Leadership is shared.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  }]

@@ -89,7 +89,7 @@ fun         DirectoryTree(
                 val isSelected = selectedPath == flattened.path
                 val label = when (val node = flattened.node) {
                     is DirectoryNode -> {
-                        val prefix = if (flattened.isExpanded) "▼ " else "▶ "
+                        val prefix = if (flattened.isExpanded) "- " else "+ "
                         "$prefix${node.name}/"
                     }
                     is ActionNode -> node.name
