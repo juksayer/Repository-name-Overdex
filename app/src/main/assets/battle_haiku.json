@@ -1553,4 +1553,289 @@
         "revision": 1
       }
     ]
-  }]
+  },
+  {
+    "id": 86,
+    "species": "Seel",
+    "fieldNote": [
+      {
+        "id": "086-001",
+        "title": "Gentle Footprints",
+        "lines": [
+          "Snow remembers tracks",
+          "Only until spring returns.",
+          "Leave gentle footprints."
+        ],
+        "lesson": "Kindness lasts longer than victory.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 87,
+    "species": "Dewgong",
+    "fieldNote": [
+      {
+        "id": "087-001",
+        "title": "Winter's Reflection",
+        "lines": [
+          "Winter's breath lingers.",
+          "The coldest waters reveal",
+          "The clearest reflections."
+        ],
+        "lesson": "Clarity comes through stillness.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "species": "Grimer",
+    "fieldNote": [
+      {
+        "id": "088-001",
+        "title": "Small Neglects",
+        "lines": [
+          "Filth gathers slowly.",
+          "Ignore little problems long—",
+          "They become monsters."
+        ],
+        "lesson": "Neglect compounds.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 89,
+    "species": "Muk",
+    "fieldNote": [
+      {
+        "id": "089-001",
+        "title": "The Forgotten Things",
+        "lines": [
+          "Waste none would claim now",
+          "Becomes a kingdom of its",
+          "Own forgotten making."
+        ],
+        "lesson": "We live with what we discard.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "species": "Shellder",
+    "fieldNote": [
+      {
+        "id": "090-001",
+        "title": "The Closed Door",
+        "lines": [
+          "A tightly closed shell",
+          "Cannot welcome ocean tides,",
+          "Nor fear them within."
+        ],
+        "lesson": "Protection has a price.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 91,
+    "species": "Cloyster",
+    "fieldNote": [
+      {
+        "id": "091-001",
+        "title": "The Unbreakable Shell",
+        "lines": [
+          "Armor hides the heart.",
+          "Strength without trust becomes",
+          "A prison of its own."
+        ],
+        "lesson": "Protection without trust becomes isolation.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "species": "Gastly",
+    "fieldNote": [
+      {
+        "id": "092-001",
+        "title": "Between Worlds",
+        "lines": [
+          "Mist between two worlds.",
+          "Some things are best understood",
+          "When never explained."
+        ],
+        "lesson": "Mystery has its own value.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "species": "Haunter",
+    "fieldNote": [
+      {
+        "id": "093-001",
+        "title": "The Whispered Warning",
+        "lines": [
+          "Laughter fills the dark.",
+          "Not every warning arrives",
+          "With words we can hear."
+        ],
+        "lesson": "Listen beyond words.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "species": "Gengar",
+    "fieldNote": [
+      {
+        "id": "094-001",
+        "title": "The Shadow Within",
+        "lines": [
+          "Shadows walk beside.",
+          "What you fear may know your name",
+          "Better than you do."
+        ],
+        "lesson": "Face what follows you.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 95,
+    "species": "Onix",
+    "fieldNote": [
+      {
+        "id": "095-001",
+        "title": "The Longest Road",
+        "lines": [
+          "Stone coils through the earth.",
+          "Every mountain hides a path",
+          "Longer than it seems."
+        ],
+        "lesson": "Endurance reveals the way.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 96,
+    "species": "Drowzee",
+    "fieldNote": [
+      {
+        "id": "096-001",
+        "title": "Borrowed Dreams",
+        "lines": [
+          "Every sleeping mind",
+          "Builds a world no eye can see.",
+          "Guard your inner voice."
+        ],
+        "lesson": "Your thoughts shape the world you awaken to.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 97,
+    "species": "Hypno",
+    "fieldNote": [
+      {
+        "id": "097-001",
+        "title": "The Quiet Watcher",
+        "lines": [
+          "Gentle words may lead",
+          "Where chains and shouting never",
+          "Could hope to arrive."
+        ],
+        "lesson": "Influence outweighs force.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 98,
+    "species": "Krabby",
+    "fieldNote": [
+      {
+        "id": "098-001",
+        "title": "Sideways Progress",
+        "lines": [
+          "The straight road is not",
+          "The only way to arrive.",
+          "Keep moving forward."
+        ],
+        "lesson": "Progress is measured by direction, not appearance.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 99,
+    "species": "Kingler",
+    "fieldNote": [
+      {
+        "id": "099-001",
+        "title": "The Strong Claw",
+        "lines": [
+          "One steady grip holds",
+          "Long after sudden strength fades.",
+          "Resolve wins the day."
+        ],
+        "lesson": "Consistency overcomes intensity.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 100,
+    "species": "Voltorb",
+    "fieldNote": [
+      {
+        "id": "100-001",
+        "title": "Hidden Potential",
+        "lines": [
+          "Stillness can conceal",
+          "The loudest change waiting to",
+          "Rewrite everything."
+        ],
+        "lesson": "Never mistake silence for emptiness.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
