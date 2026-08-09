@@ -1839,3 +1839,858 @@
       }
     ]
   },
+  {
+    "id": 101,
+    "species": "Electrode",
+    "fieldNote": [
+      {
+        "id": "101-001",
+        "title": "The Moment Before",
+        "lines": [
+          "Silence holds its breath.",
+          "The greatest changes arrive",
+          "Without asking first."
+        ],
+        "lesson": "Be prepared before the moment chooses you.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "species": "Exeggcute",
+    "fieldNote": [
+      {
+        "id": "102-001",
+        "title": "Many Beginnings",
+        "lines": [
+          "Not every small seed",
+          "Must grow alone toward the sun.",
+          "Forests start as one."
+        ],
+        "lesson": "Great things often begin together.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "species": "Exeggutor",
+    "fieldNote": [
+      {
+        "id": "103-001",
+        "title": "Branches Remember",
+        "lines": [
+          "Roots buried deeply,",
+          "Branches still reach for new skies—",
+          "Honor both with pride."
+        ],
+        "lesson": "Never outgrow your beginnings.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "species": "Cubone",
+    "fieldNote": [
+      {
+        "id": "104-001",
+        "title": "The Empty Helm",
+        "lines": [
+          "A borrowed face hides",
+          "The tears no stranger can see.",
+          "Grief wears many masks."
+        ],
+        "lesson": "Be gentle. Every battle is unseen.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "species": "Marowak",
+    "fieldNote": [
+      {
+        "id": "105-001",
+        "title": "Standing Again",
+        "lines": [
+          "Bones become weapons",
+          "Only after sorrow learns",
+          "To walk without fear."
+        ],
+        "lesson": "Healing transforms pain into strength.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "species": "Hitmonlee",
+    "fieldNote": [
+      {
+        "id": "106-001",
+        "title": "The Long Reach",
+        "lines": [
+          "One measured strike lands",
+          "Far beyond impatient fists",
+          "Ever hoped to touch."
+        ],
+        "lesson": "Precision extends your reach.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "species": "Hitmonchan",
+    "fieldNote": [
+      {
+        "id": "107-001",
+        "title": "Guard Before Glory",
+        "lines": [
+          "Open hands become",
+          "Closed fists only when they must.",
+          "Wisdom guards first."
+        ],
+        "lesson": "Restraint is part of mastery.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 108,
+    "species": "Lickitung",
+    "fieldNote": [
+      {
+        "id": "108-001",
+        "title": "Curiosity",
+        "lines": [
+          "Taste the unknown world.",
+          "Understanding seldom grows",
+          "From cautious distance."
+        ],
+        "lesson": "Curiosity is its own courage.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 109,
+    "species": "Koffing",
+    "fieldNote": [
+      {
+        "id": "109-001",
+        "title": "The Bitter Breath",
+        "lines": [
+          "Clouds gather slowly.",
+          "Words released cannot return",
+          "To the waiting mouth."
+        ],
+        "lesson": "Choose what you release into the world.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 110,
+    "species": "Weezing",
+    "fieldNote": [
+      {
+        "id": "110-001",
+        "title": "Clearing the Air",
+        "lines": [
+          "Even poisoned skies",
+          "May one day welcome fresh winds.",
+          "Nothing stays forever."
+        ],
+        "lesson": "Renewal begins with the first clean breath.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 111,
+    "species": "Rhyhorn",
+    "fieldNote": [
+      {
+        "id": "111-001",
+        "title": "The Sure Footing",
+        "lines": [
+          "Heavy steps endure.",
+          "The mountain never hurries,",
+          "Yet it reaches clouds."
+        ],
+        "lesson": "Progress favors the steadfast.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 112,
+    "species": "Rhydon",
+    "fieldNote": [
+      {
+        "id": "112-001",
+        "title": "The Living Rampart",
+        "lines": [
+          "Stand where others fall.",
+          "Strength becomes a refuge when",
+          "It shelters the weak."
+        ],
+        "lesson": "Power finds purpose in protection.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 113,
+    "species": "Chansey",
+    "fieldNote": [
+      {
+        "id": "113-001",
+        "title": "The Gentle Hands",
+        "lines": [
+          "Healing leaves no scars.",
+          "The strongest gift one may give",
+          "Is another dawn."
+        ],
+        "lesson": "Compassion changes battles no force can win.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 114,
+    "species": "Tangela",
+    "fieldNote": [
+      {
+        "id": "114-001",
+        "title": "The Untended Garden",
+        "lines": [
+          "Wild vines intertwine.",
+          "What we fail to understand",
+          "Still follows its course."
+        ],
+        "lesson": "Mystery deserves respect, not fear.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 115,
+    "species": "Kangaskhan",
+    "fieldNote": [
+      {
+        "id": "115-001",
+        "title": "The Mother's March",
+        "lines": [
+          "Every careful step",
+          "Carries tomorrow safely",
+          "Beside today's hope."
+        ],
+        "lesson": "Love is the greatest responsibility.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 116,
+    "species": "Horsea",
+    "fieldNote": [
+      {
+        "id": "116-001",
+        "title": "The Quiet Stream",
+        "lines": [
+          "Small rivers become",
+          "Oceans no map could foresee.",
+          "Flow before you rush."
+        ],
+        "lesson": "Humble beginnings carry endless possibility.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 117,
+    "species": "Seadra",
+    "fieldNote": [
+      {
+        "id": "117-001",
+        "title": "The Hidden Current",
+        "lines": [
+          "Beneath calm waters",
+          "Swift currents choose their own path,",
+          "Unseen but certain."
+        ],
+        "lesson": "True ability needs no audience.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 118,
+    "species": "Goldeen",
+    "fieldNote": [
+      {
+        "id": "118-001",
+        "title": "The Silver Leap",
+        "lines": [
+          "Morning waters shine.",
+          "Every leap beyond the stream",
+          "Begins beneath it."
+        ],
+        "lesson": "Confidence grows from preparation.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 119,
+    "species": "Seaking",
+    "fieldNote": [
+      {
+        "id": "119-001",
+        "title": "The Returning River",
+        "lines": [
+          "Each season returns.",
+          "Wisdom knows when to press on,",
+          "And when to go home."
+        ],
+        "lesson": "Success includes knowing where you belong.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 120,
+    "species": "Staryu",
+    "fieldNote": [
+      {
+        "id": "120-001",
+        "title": "The Fallen Star",
+        "lines": [
+          "Ocean holds the sky",
+          "Long after daylight has gone.",
+          "Light finds many homes."
+        ],
+        "lesson": "Your origins never limit your destination.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 121,
+    "species": "Starmie",
+    "fieldNote": [
+      {
+        "id": "121-001",
+        "title": "The Silent Constellation",
+        "lines": [
+          "Stars need not speak loud.",
+          "Those who navigate by them",
+          "Still arrive safely."
+        ],
+        "lesson": "Guidance does not require attention.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 122,
+    "species": "Mr. Mime",
+    "fieldNote": [
+      {
+        "id": "122-001",
+        "title": "The Unseen Wall",
+        "lines": [
+          "Empty air becomes",
+          "A barrier to those who",
+          "Refuse imagination."
+        ],
+        "lesson": "The greatest limits are often invisible.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 123,
+    "species": "Scyther",
+    "fieldNote": [
+      {
+        "id": "123-001",
+        "title": "The Sharpened Wind",
+        "lines": [
+          "Leaves fall silently.",
+          "The blade no one notices",
+          "Cuts the deepest path."
+        ],
+        "lesson": "Mastery speaks through precision.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 124,
+    "species": "Jynx",
+    "fieldNote": [
+      {
+        "id": "124-001",
+        "title": "The Winter's Song",
+        "lines": [
+          "Snow forgets no step.",
+          "Even the coldest season",
+          "Has a voice to share."
+        ],
+        "lesson": "Beauty exists in unfamiliar places.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 125,
+    "species": "Electabuzz",
+    "fieldNote": [
+      {
+        "id": "125-001",
+        "title": "The Summer Storm",
+        "lines": [
+          "Thunder laughs above.",
+          "Power dances with those who",
+          "Welcome every spark."
+        ],
+        "lesson": "Energy grows when shared.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 126,
+    "species": "Magmar",
+    "fieldNote": [
+      {
+        "id": "126-001",
+        "title": "The Patient Ember",
+        "lines": [
+          "Ash remembers fire",
+          "Long after flames leave the wood.",
+          "Guard what still remains."
+        ],
+        "lesson": "Small strengths deserve tending.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 127,
+    "species": "Pinsir",
+    "fieldNote": [
+      {
+        "id": "127-001",
+        "title": "The Locked Antlers",
+        "lines": [
+          "Once the grip is made,",
+          "The forest itself must yield",
+          "Before resolve does."
+        ],
+        "lesson": "Commitment outlasts talent.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 128,
+    "species": "Tauros",
+    "fieldNote": [
+      {
+        "id": "128-001",
+        "title": "The Open Plain",
+        "lines": [
+          "Wind answers no fence.",
+          "Freedom asks for discipline,",
+          "Or it runs astray."
+        ],
+        "lesson": "Strength without direction is only motion.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 129,
+    "species": "Magikarp",
+    "fieldNote": [
+      {
+        "id": "129-001",
+        "title": "The Waterfall",
+        "lines": [
+          "Every mighty wave",
+          "Was once laughed at from the shore.",
+          "Keep swimming upstream."
+        ],
+        "lesson": "Perseverance transforms destiny.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 130,
+    "species": "Gyarados",
+    "fieldNote": [
+      {
+        "id": "130-001",
+        "title": "The Broken Current",
+        "lines": [
+          "Storms remember streams.",
+          "Power born from hardship knows",
+          "Exactly what changed."
+        ],
+        "lesson": "Never forget the struggle that forged you.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 131,
+    "species": "Lapras",
+    "fieldNote": [
+      {
+        "id": "131-001",
+        "title": "The Gentle Crossing",
+        "lines": [
+          "Calm waters carry",
+          "Those who journey with kindness",
+          "Farther than they know."
+        ],
+        "lesson": "The greatest strength often chooses to carry others.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 132,
+    "species": "Ditto",
+    "fieldNote": [
+      {
+        "id": "132-001",
+        "title": "The Borrowed Face",
+        "lines": [
+          "Wear every face well.",
+          "Lose yourself in none of them.",
+          "Return as yourself."
+        ],
+        "lesson": "Adaptability should never cost your identity.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 133,
+    "species": "Eevee",
+    "fieldNote": [
+      {
+        "id": "133-001",
+        "title": "The Open Path",
+        "lines": [
+          "Many roads await.",
+          "No single trail through the woods",
+          "Fits every traveler."
+        ],
+        "lesson": "There is no shame in choosing your own path.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 134,
+    "species": "Vaporeon",
+    "fieldNote": [
+      {
+        "id": "134-001",
+        "title": "The Deep Current",
+        "lines": [
+          "Water shapes the stone",
+          "Not by force, but by returning",
+          "Again and again."
+        ],
+        "lesson": "Persistence quietly changes the impossible.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 135,
+    "species": "Jolteon",
+    "fieldNote": [
+      {
+        "id": "135-001",
+        "title": "The Sudden Spark",
+        "lines": [
+          "Lightning never asks",
+          "If the world is ready first.",
+          "Neither should courage."
+        ],
+        "lesson": "Opportunity favors those willing to leap.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 136,
+    "species": "Flareon",
+    "fieldNote": [
+      {
+        "id": "136-001",
+        "title": "The Hearthfire",
+        "lines": [
+          "The warmest fire burns",
+          "Not to conquer winter's night,",
+          "But welcome friends home."
+        ],
+        "lesson": "Power is greatest when it brings comfort.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 137,
+    "species": "Porygon",
+    "fieldNote": [
+      {
+        "id": "137-001",
+        "title": "The First Machine",
+        "lines": [
+          "Numbers learn to dream.",
+          "Every invention reflects",
+          "The heart of its maker."
+        ],
+        "lesson": "Technology inherits our intentions.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 138,
+    "species": "Omanyte",
+    "fieldNote": [
+      {
+        "id": "138-001",
+        "title": "The Ancient Spiral",
+        "lines": [
+          "Shells remember seas",
+          "Older than the tallest hills.",
+          "Listen to the past."
+        ],
+        "lesson": "Wisdom survives those who discover it.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 139,
+    "species": "Omastar",
+    "fieldNote": [
+      {
+        "id": "139-001",
+        "title": "The Forgotten Ocean",
+        "lines": [
+          "Stone once swam with life.",
+          "Even silence tells the tale",
+          "Of forgotten worlds."
+        ],
+        "lesson": "History speaks to those who stop to listen.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 140,
+    "species": "Kabuto",
+    "fieldNote": [
+      {
+        "id": "140-001",
+        "title": "The Waiting Fossil",
+        "lines": [
+          "Time covered your name,",
+          "But patience outlived the dust",
+          "Until light returned."
+        ],
+        "lesson": "Great stories can wait to be found.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 141,
+    "species": "Kabutops",
+    "fieldNote": [
+      {
+        "id": "141-001",
+        "title": "The Ancient Blade",
+        "lines": [
+          "Old rivers still carve",
+          "The deepest valleys through stone.",
+          "Age sharpens purpose."
+        ],
+        "lesson": "Experience gives precision its edge.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 142,
+    "species": "Aerodactyl",
+    "fieldNote": [
+      {
+        "id": "142-001",
+        "title": "The Sky Before",
+        "lines": [
+          "Before kings took flight,",
+          "The wind already whispered",
+          "Its oldest stories."
+        ],
+        "lesson": "The world is older than our victories.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 143,
+    "species": "Snorlax",
+    "fieldNote": [
+      {
+        "id": "143-001",
+        "title": "The Resting Giant",
+        "lines": [
+          "Even mountains rest.",
+          "The strongest journeys always",
+          "Begin well restored."
+        ],
+        "lesson": "Rest is part of the work.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 144,
+    "species": "Articuno",
+    "fieldNote": [
+      {
+        "id": "144-001",
+        "title": "The First Snow",
+        "lines": [
+          "Winter speaks softly.",
+          "Only those who slow their pace",
+          "Hear the falling sky."
+        ],
+        "lesson": "Stillness reveals what haste conceals.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 145,
+    "species": "Zapdos",
+    "fieldNote": [
+      {
+        "id": "145-001",
+        "title": "The Storm's Voice",
+        "lines": [
+          "Clouds split without fear.",
+          "The boldest hearts often shine",
+          "Brightest in darkness."
+        ],
+        "lesson": "Adversity reveals character.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
