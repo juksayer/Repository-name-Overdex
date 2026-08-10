@@ -1,7 +1,7 @@
 package com.example.overdex.model.observation
 
 import com.example.overdex.model.Confidence
-
+import com.example.overdex.model.evidence.Evidence
 /**
  * Represents a factual record of something detected on the screen during a battle or session.
  * 
@@ -17,6 +17,7 @@ sealed class Observation {
     abstract val observerId: String
     /** The system's certainty about this observation. */
     abstract val confidence: Confidence
+    open val evidence: List<Evidence> = emptyList()
 }
 
 /**
