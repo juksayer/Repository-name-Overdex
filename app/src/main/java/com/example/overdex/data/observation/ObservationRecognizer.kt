@@ -1,12 +1,11 @@
 package com.example.overdex.data.observation
 
-import com.example.overdex.model.observation.CaptureObservation
-import com.example.overdex.model.observation.RecognitionResult
-import com.example.overdex.model.observation.AnchorObservation
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.RecognitionAttemptPayload
 import com.example.overdex.battle.debug.observatory.VisionCapturePayload
+import com.example.overdex.model.observation.CaptureObservation
+import com.example.overdex.model.observation.RecognitionResult
 
 /**
  * Entry point for the recognition pipeline.
@@ -51,6 +50,13 @@ object ObservationRecognizer {
         }
         
         when (observation.regionId) {
+            "YouWin" -> {
+                recordAttempt(
+                    observation.regionId,
+                    stage,
+                    YouWinRecognizer.recognize(observation.crop)
+                )?.let { results.add(it) }
+            }
             "SpeciesName" -> {
                 recordAttempt(observation.regionId, stage, SpeciesNameRecognizer.recognize(observation.crop))?.let { results.add(it) }
             }

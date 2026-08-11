@@ -6,7 +6,8 @@ import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
-import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import kotlinx.coroutines.CoroutineScope
@@ -26,11 +27,10 @@ class YouWinWitness(
 
     private var scope: CoroutineScope? = null
 
-
-    private fun isMatch(result: RecognitionResult<String>): Boolean {
+    private fun isMatch(result: RecognitionResult<*>): Boolean {
         if (result.confidence < 1.0f) return false
 
-        return result.value
+        return (result.value as? String)
             ?.trim()
             ?.uppercase()
             ?.replace(Regex("[^A-Z! ]"), "")
@@ -40,10 +40,10 @@ class YouWinWitness(
     override fun start(match: Match) {
         if (scope != null) return
 
+        Log.d("YouWinWitness", "start()")
+
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
-
-        Log.d("YouWinWitness", "start()")
 
         newScope.launch {
             input.supply { bitmap ->
@@ -79,9 +79,18 @@ class YouWinWitness(
                 }
 
                 if (cropped != null) {
-                    val result = SpeciesNameRecognizer.recognize(cropped)
+                    val recognitionResults = ObservationRecognizer.recognize(
+                        CaptureObservation(
+                            regionId = "YouWin",
+                            crop = cropped
+                        ),
+                        stage = "MATCH_END"
+                    )
 
-                    if (isMatch(result)) {
+                    val result = recognitionResults
+                        .firstOrNull { it.value is String }
+
+                    if (result != null && isMatch(result)) {
                         Log.d(
                             "YouWinWitness",
                             "YOU WIN recognized: ${result.value} confidence=${result.confidence}"
@@ -95,4 +104,5 @@ class YouWinWitness(
     override fun stop() {
         scope?.cancel("Observer stopped")
         scope = null
-    }}
+    }
+}
