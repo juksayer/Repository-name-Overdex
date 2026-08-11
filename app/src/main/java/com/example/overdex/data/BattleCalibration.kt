@@ -23,7 +23,7 @@ data class BattleCalibration(
         x = 0.1944f,
         y = 0.4333f,
         width = 0.5926f,
-        height = 0.0979f
+        height = 0.1333f
     )
 ) {
     fun isCalibrated(): Boolean {

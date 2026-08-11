@@ -50,6 +50,13 @@ object ObservationRecognizer {
         }
         
         when (observation.regionId) {
+            "GoodEffort" -> {
+                recordAttempt(
+                    observation.regionId,
+                    stage,
+                    GoodEffortRecognizer.recognize(observation.crop)
+                )?.let { results.add(it) }
+            }
             "YouWin" -> {
                 recordAttempt(
                     observation.regionId,

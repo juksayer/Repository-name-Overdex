@@ -1,9 +1,13 @@
 package com.example.overdex.battle.witness
 
+import android.graphics.Bitmap
+import android.util.Log
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import kotlinx.coroutines.CoroutineScope
@@ -12,7 +16,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
-
 
 class GoodEffortWitness(
     private val input: ObservationInput,
@@ -24,15 +27,78 @@ class GoodEffortWitness(
 
     private var scope: CoroutineScope? = null
 
+    private fun isMatch(result: RecognitionResult<*>): Boolean {
+        if (result.confidence < 1.0f) return false
+
+        return (result.value as? String)
+            ?.trim()
+            ?.uppercase()
+            ?.replace(Regex("[^A-Z! ]"), "")
+            ?.contains("GOOD EFFORT") == true
+    }
+
     override fun start(match: Match) {
         if (scope != null) return
+
+        Log.d("GoodEffortWitness", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
 
         newScope.launch {
             input.supply { bitmap ->
-                // Good Effort recognition will go here
+                Log.d("GoodEffortWitness", "bitmap received")
+
+                val region = calibration.goodEffortRegion
+
+                val width = bitmap.width
+                val height = bitmap.height
+
+                val left = (region.x * width)
+                    .toInt()
+                    .coerceIn(0, width - 1)
+
+                val top = (region.y * height)
+                    .toInt()
+                    .coerceIn(0, height - 1)
+
+                val w = (region.width * width)
+                    .toInt()
+                    .coerceAtMost(width - left)
+
+                val h = (region.height * height)
+                    .toInt()
+                    .coerceAtMost(height - top)
+
+                if (w < 32 || h < 32) return@supply
+
+                val cropped = try {
+                    Bitmap.createBitmap(bitmap, left, top, w, h)
+                } catch (e: Exception) {
+                    null
+                }
+
+                if (cropped != null) {
+                    val recognitionResults = ObservationRecognizer.recognize(
+                        CaptureObservation(
+                            regionId = "GoodEffort",
+                            crop = cropped
+                        ),
+                        stage = "MATCH_END"
+                    )
+
+                    val result = recognitionResults
+                        .firstOrNull { it.value is String }
+
+                    Log.d("GoodEffortWitness", "recognition results: $recognitionResults")
+
+                    if (result != null && isMatch(result)) {
+                        Log.d(
+                            "GoodEffortWitness",
+                            "GOOD EFFORT recognized: ${result.value} confidence=${result.confidence}"
+                        )
+                    }
+                }
             }
         }
     }
@@ -40,15 +106,5 @@ class GoodEffortWitness(
     override fun stop() {
         scope?.cancel("Observer stopped")
         scope = null
-    }
-
-    private fun isMatch(result: RecognitionResult<String>): Boolean {
-        if (result.confidence < 1.0f) return false
-
-        return result.value
-            ?.trim()
-            ?.uppercase()
-            ?.replace(Regex("[^A-Z! ]"), "")
-            ?.contains("GOOD EFFORT") == true
     }
 }
