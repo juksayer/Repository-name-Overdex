@@ -17,6 +17,7 @@ import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
 import com.example.overdex.battle.observation.SpeciesWitness
+import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
@@ -183,6 +184,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         Log.d("DEPLOY", "2 Registering observers")
         observationDispatcher.register(SpeciesWitness(input, calibration))
         observationDispatcher.register(CountdownObserver(input, calibration))
+        observationDispatcher.register(YouWinWitness(input, calibration))
 
         // Start Service
         DroidballService.start(getApplication(), resultCode, data)
