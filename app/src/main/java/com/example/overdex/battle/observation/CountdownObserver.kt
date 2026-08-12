@@ -68,24 +68,36 @@ class CountdownObserver(
             }
         }
     }
-
     override fun stop() {
         scope?.cancel("Observer stopped")
         scope = null
     }
-                      //todo retire 'enemy' in ontology
     private fun cropSpecies(bitmap: Bitmap): Bitmap? {
-        val region = calibration.enemyNameRegion
+        val region = calibration.countdownRegion
         val width = bitmap.width
         val height = bitmap.height
 
-        val left = (region.x * width).toInt().coerceIn(0, width - 1)
-        val top = (region.y * height).toInt().coerceIn(0, height - 1)
-        val w = (region.width * width).toInt().coerceAtMost(width - left)
-        val h = (region.height * height).toInt().coerceAtMost(height - top)
+        val left = (region.x * width)
+            .toInt()
+            .coerceIn(0, width - 1)
+
+        val top = (region.y * height)
+            .toInt()
+            .coerceIn(0, height - 1)
+
+        val w = (region.width * width)
+            .toInt()
+            .coerceAtMost(width - left)
+
+        val h = (region.height * height)
+            .toInt()
+            .coerceAtMost(height - top)
 
         if (w < 32 || h < 32) {
-            Log.w("CountdownObserver", "Crop dimensions too small for ML Kit: ${w}x${h}")
+            Log.w(
+                "CountdownObserver",
+                "Crop dimensions too small for ML Kit: ${w}x${h}"
+            )
             return null
         }
 

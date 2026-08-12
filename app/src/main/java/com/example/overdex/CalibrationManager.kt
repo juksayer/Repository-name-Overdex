@@ -61,6 +61,11 @@ class CalibrationManager(context: Context) {
             .putFloat(MOVE_W, calibration.moveBannerRegion.width)
             .putFloat(MOVE_H, calibration.moveBannerRegion.height)
 
+            .putFloat("countdown_x", calibration.countdownRegion.x)
+            .putFloat("countdown_y", calibration.countdownRegion.y)
+            .putFloat("countdown_w", calibration.countdownRegion.width)
+            .putFloat("countdown_h", calibration.countdownRegion.height)
+
             .apply()
     }
 
