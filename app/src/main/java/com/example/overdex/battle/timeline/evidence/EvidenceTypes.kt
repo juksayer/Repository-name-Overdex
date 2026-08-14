@@ -8,7 +8,7 @@ package com.example.overdex.battle.timeline.evidence
  */
 data class VisualEvidence(
     override val sourceId: String,
-    val frameUri: String
+    val frameUri: String? = null
 ) : Evidence
 
 /**

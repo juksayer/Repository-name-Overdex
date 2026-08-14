@@ -1,0 +1,4 @@
+- [ ] Research region-definition mechanism and coordinates (Completed)
+- [ ] Implement Announcement Region in `ObservationRegion.kt`
+- [ ] Verify build
+- [ ] Report results and stop
