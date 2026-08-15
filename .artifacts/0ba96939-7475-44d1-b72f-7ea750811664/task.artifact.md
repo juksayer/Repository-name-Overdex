@@ -1,4 +1,12 @@
-- [ ] Research region-definition mechanism and coordinates (Completed)
-- [ ] Implement Announcement Region in `ObservationRegion.kt`
-- [ ] Verify build
-- [ ] Report results and stop
+- [x] Research region-definition mechanism and coordinates
+- [x] Brick 1: Testimony Custody
+- [x] Brick 2: Witness Availability & Testimony Contract
+- [x] Brick 3B: Testimony Source Identity
+- [x] Brick 3: Attack Incoming Collector
+    - [x] Create `AttackIncomingCollector.kt`
+    - [x] Implement lifecycle and state reporting
+    - [x] Implement detection logic (local cropping + ML Kit)
+    - [x] Create `AttackIncomingCollectorTest.kt` (JVM contract tests)
+    - [x] Create `AttackIncomingCollectorAndroidTest.kt` (Android verification)
+    - [x] Run instrumented tests on Moondrop MIAD01
+- [x] Verify build and report results

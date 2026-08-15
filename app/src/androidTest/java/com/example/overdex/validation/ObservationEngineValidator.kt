@@ -1,26 +1,29 @@
 package com.example.overdex.validation
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.CaptureTemplateManager
 import com.example.overdex.data.observation.GuidedObservationPipeline
+import com.example.overdex.model.observation.ChargedMoveObservation
+import com.example.overdex.model.observation.CombatPowerObservation
+import com.example.overdex.model.observation.CountdownObservation
+import com.example.overdex.model.observation.DefaultObservationResolver
+import com.example.overdex.model.observation.EvolutionFamilyObservation
+import com.example.overdex.model.observation.FastMoveObservation
+import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.ObservationObjective
 import com.example.overdex.model.observation.ObservationSession
-import com.example.overdex.model.observation.ObservationInput
-import com.example.overdex.model.observation.DefaultObservationResolver
-import com.example.overdex.model.observation.*
+import com.example.overdex.model.observation.PokemonNameObservation
 import com.example.overdex.model.observation.SessionSource
-import android.graphics.Bitmap
+import com.example.overdex.model.observation.ShadowStatusObservation
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.floatOrNull
-import org.junit.Test
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import java.io.File
+import org.junit.Test
 
 /**
  * Validates the Observation Engine against the defined validation sessions.
@@ -107,6 +110,7 @@ class ObservationEngineValidator {
                 is CombatPowerObservation -> actualResults.cp
                 is ShadowStatusObservation -> actualResults.isShadow
                 is EvolutionFamilyObservation -> actualResults.familySpecies
+                is CountdownObservation -> actualResults.value
                 null -> null
             }
 
