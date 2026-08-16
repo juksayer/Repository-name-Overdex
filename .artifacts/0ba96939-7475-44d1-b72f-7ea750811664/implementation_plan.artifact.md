@@ -1,44 +1,49 @@
-# Implementation Plan - Brick 3: Attack Incoming Collector
+# Implementation Plan - Brick 4B: Establish the Reality Timeline (Revised)
 
-Implement the `AttackIncomingCollector` to gather evidence of the "Attack Incoming!" phenomenon and deliver it to custody.
+Establish the `RealityTimeline` to preserve immutable records concerning Articles. This timeline operates independently of existing interpretive timelines and focuses on the objective history of what was perceived and what was reasoned.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> The Collector will perform **local cropping** using the provided absolute coordinates (X: 0-1080, Y: 710-870) for a 1080x2460 portrait display. No shared region or calibration infrastructure will be modified.
+> A **`RealityArticle`** is a record *concerning* an independent Article. It is not synonymous with the phenomenon itself.
 
 > [!NOTE]
-> The Collector identifies itself as `SourceId("ATTACK_INCOMING_COLLECTOR")`. It uses the neutral `RawTestimony` payload approved in Brick 1.
+> We distinguish between **`perceivedAt`** (when the source says it happened) and **`recordedAt`** (when the record was committed to the timeline).
+
+> [!TIP]
+> Derivations are many-to-one. A single `RealityArticle` can reference multiple preceding articles via **`predecessorIds`**.
 
 ## Proposed Changes
 
-### Battle Layer - Collector
+### Battle Layer - Reality Component
 
-#### [NEW] [AttackIncomingCollector.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/collector/AttackIncomingCollector.kt)
-- **Occupation**: Monitor visual input for the "Attack Incoming!" announcement.
-- **Identity**: `SourceId("ATTACK_INCOMING_COLLECTOR")`.
-- **Dependencies**: `ObservationInput` (for frames), `TestimonyCustody` (for preservation), and a `CoroutineScope`.
-- **Operating State**:
-    - `start()`: Submit `SourceAvailabilityRecord(true)`.
-    - `stop()`: Submit `SourceAvailabilityRecord(false)`.
-- **Collection**:
-    - Use `input.supply { bitmap -> ... }`.
-    - For each frame:
-        - Submit `SourceInputRecord(true)`.
-        - Perform local crop: `Rect(0, 710, 1080, 870)`.
-        - Use ML Kit `TextRecognition` to detect text in the crop.
-        - If "ATTACK INCOMING!" is detected: Submit `TestimonyRecord` with `RawTestimony("ATTACK_INCOMING")`.
-        - If not detected: Produce no testimony. Failure to detect is not testimony of absence.
-- **Neutrality**: No interpretation of Charge Moves, energy, or strategy.
+#### [NEW] [ArticleId.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/ArticleId.kt)
+- `data class ArticleId(val value: String)`: Unique identifier for records in this timeline. Independent of custody sequence numbers.
+
+#### [NEW] [RealityArticle.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityArticle.kt)
+- `data class RealityArticle`:
+    - `id: ArticleId`: The unique identity of this record.
+    - `perceivedAt: Long`: Temporal position provided by the source. For derived articles, this represents the source's authoritative estimate of when the conclusion was true (typically the `perceivedAt` of the latest predecessor).
+    - `recordedAt: Long`: Temporal position when committed to this timeline.
+    - `sourceId: SourceId`: Identifies the producer of **this current record** (the office performing the derivation or collection).
+    - `payload: TestimonyPayload`: The uninterpreted data or reasoning outcome.
+    - `predecessorIds: List<ArticleId> = emptyList()`: Identifies the **informational ancestry** (the specific articles used as input for this record).
+
+#### [NEW] [RealityTimeline.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityTimeline.kt)
+- `interface RealityTimeline`:
+    - `fun append(article: RealityArticle)`
+    - `fun getArticles(): List<RealityArticle>`
+- `class InMemoryRealityTimeline`: Thread-safe, append-only implementation. Completely isolated from existing historical timelines.
 
 ## Verification Plan
 
 ### Automated Tests
-- **[NEW] [AttackIncomingCollectorTest.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/test/java/com/example/overdex/battle/collector/AttackIncomingCollectorTest.kt)**:
-    - Verify that the Collector reports its availability on `start()`/`stop()`.
-    - Verify that it reports input availability when a bitmap is supplied.
-    - Mock `TextRecognition` (or provide a bitmap with the text) to verify that testimony is produced and reaches `TestimonyCustody` with the correct ID and neutral payload.
-    - Confirm that no downstream conclusions are present in the produced testimony.
-
-### Manual Verification
-- None required for this brick.
+- **[NEW] [RealityTimelineTest.kt]**:
+    1.  **Objective Receipt**: Verify that an originating `RealityArticle` preserves `perceivedAt` and `recordedAt` as distinct values.
+    2.  **Immutability**: Verify that once appended, a record cannot be modified.
+    3.  **Provenance**: Verify `sourceId` and `id` remain intact.
+    4.  **Many-to-One Derivation**:
+        - Append Article A and Article B.
+        - Create Article C with `predecessorIds = listOf(A.id, B.id)`.
+        - Verify Article C correctly references its predecessors.
+    5.  **Independence**: Ensure `ArticleId` is generated independently of any external sequence or ID system.

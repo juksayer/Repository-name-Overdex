@@ -9,4 +9,9 @@
     - [x] Create `AttackIncomingCollectorTest.kt` (JVM contract tests)
     - [x] Create `AttackIncomingCollectorAndroidTest.kt` (Android verification)
     - [x] Run instrumented tests on Moondrop MIAD01
+- [x] Brick 4B: Establish the Reality Timeline
+    - [x] Create `ArticleId.kt`
+    - [x] Create `RealityArticle.kt`
+    - [x] Create `RealityTimeline.kt`
+    - [x] Create `RealityTimelineTest.kt` (Verify objective receipt, many-to-one derivation, and immutability)
 - [x] Verify build and report results

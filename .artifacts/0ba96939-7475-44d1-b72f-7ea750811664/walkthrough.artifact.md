@@ -1,45 +1,52 @@
-# Walkthrough - Brick 3: Attack Incoming Collector
+# Walkthrough - Brick 4B: Establish the Reality Timeline
 
-Completed the implementation and verification of the first real Collector in Overdex. The `AttackIncomingCollector` gathering evidence of the "Attack Incoming!" phenomenon and delivers it as neutral testimony to the custody ledger.
+Completed the implementation of the `RealityTimeline`, a foundational constitutional ledger for preserving the objective journey of Articles in Overdex.
 
 ## Changes Made
 
-### Battle Layer - Collector Component
+### Battle Layer - Reality Component
 
-#### [AttackIncomingCollector.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/collector/AttackIncomingCollector.kt)
-- **Occupation**: Monitors visual input for the "Attack Incoming!" announcement.
-- **Identity**: `SourceId("ATTACK_INCOMING_COLLECTOR")`.
-- **Local Evidence Collection**: Performs internal cropping of the incoming `Bitmap` using the canonical Announcement Region (0, 710, 1080, 160).
-- **Phenomenon Detection**: Uses ML Kit `TextRecognition` to identify the announcement string. It is resilient to OCR artifacts (e.g., missing spaces).
-- **Neutral Testimony**: Submits `RawTestimony("ATTACK_INCOMING")` to custody without any strategic inference.
-- **State Reporting**: Correctly signals its online/offline status and input availability to the "Bagman."
+#### [ArticleId.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/ArticleId.kt)
+- Established `ArticleId` as a unique identity representation for records within the Reality Timeline. It is decoupled from external sequence systems (like custody) to allow for independent referencing.
+
+#### [RealityArticle.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityArticle.kt)
+- Created the `RealityArticle` data class to serve as the canonical, immutable record.
+- Features include:
+    - **Dual Timestamps**: `perceivedAt` (source's estimate) and `recordedAt` (timeline entry time).
+    - **Neutral Payload**: Carries uninterpreted data (`TestimonyPayload`).
+    - **Informational Ancestry**: Supports many-to-one derivation via `predecessorIds`.
+    - **Provenance**: Explicitly identifies the producer through `sourceId`.
+
+#### [RealityTimeline.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityTimeline.kt)
+- Defined the `RealityTimeline` interface and its thread-safe `InMemoryRealityTimeline` implementation.
+- The timeline is append-only and completely isolated from existing historical timelines, ensuring a clean slate for the Reality domain.
 
 ## Verification Results
 
 ### Automated Tests
-- **[AttackIncomingCollectorTest.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/test/java/com/example/overdex/battle/collector/AttackIncomingCollectorTest.kt)** (JVM):
-    - Verified the architectural contract (availability, input reporting) using fakes.
-- **[AttackIncomingCollectorAndroidTest.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/androidTest/java/com/example/overdex/battle/collector/AttackIncomingCollectorAndroidTest.kt)** (Android):
-    - **Deployment Testing**: Executed on Moondrop MIAD01.
-    - **Real Visual Path**: Verified that the Collector identifies "ATTACK INCOMING!" from a real `Bitmap` buffer using real ML Kit OCR.
-    - **Architectural Silence**: Confirmed that the Collector remains silent when the text is not present, with silence preserved in the custody log.
+- **[RealityTimelineTest.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/test/java/com/example/overdex/battle/reality/RealityTimelineTest.kt)**:
+    - **Objective Receipt**: Confirmed that `perceivedAt` and `recordedAt` are preserved as distinct values.
+    - **Many-to-One Derivation**: Verified that a record can correctly reference multiple predecessors, preserving the evidence chain.
+    - **Immutability**: Demonstrated that reasoning results (new articles) do not alter their predecessors and that the internal store is protected from external mutation.
+    - **Identity Independence**: Verified that `ArticleId` remains unique and independent of external ordering systems.
 
 ```text
-:app:connectedDebugAndroidTest
-MDPH00124112500414: 2 PASSED
-
 :app:testDebugUnitTest
-32 passed, 0 skipped, 0 failed
+37 passed, 0 skipped, 0 failed
 ```
 
-## Summary of Findings
+## Summary of Answers
 
-- **What the Collector receives**: Full-screen `Bitmap` frames from the `ObservationInput` stream.
-- **How it obtains evidence**: Internal cropping using absolute coordinates (0, 710) to (1080, 870) for a 1080x2460 portrait display.
-- **How it detects the phenomenon**: ML Kit `TextRecognizer` is applied to the local crop.
-- **Resilience**: The detection logic now removes spaces before comparison to handle OCR producing "ATTACKINCOMING!".
-- **Testimony reaches custody**: Verified that `TestimonyRecord` arrives unchanged with custody-assigned sequence numbers.
-- **No downstream interpretation**: Confirmed that the Collector only identifies the *phenomenon* of the announcement, not the move name or strategy.
+1.  **What is a Timeline event?** A `RealityArticle`—an immutable record of a perception or reasoning outcome concerning an Article.
+2.  **How is it uniquely identified?** Via `ArticleId` (independent of custody sequence).
+3.  **What does an originating event say?** "Source S perceived Payload P at time T."
+4.  **How does an Article own its originating submission?** The Article is the subject of the record; the record preserves the originating state.
+5.  **How is time represented?** Separated into `perceivedAt` (reality time) and `recordedAt` (system time).
+6.  **How is provenance preserved?** Through `sourceId` and `id`.
+7.  **How does a later event reference an earlier one?** Via the `predecessorIds` list.
+8.  **Minimum append operation?** `RealityTimeline.append( RealityArticle )`.
+9.  **Where does it live?** It is a Match-scoped component (in-memory implementation for now).
+10. **Proof of no overwrite?** Verified through tests that new derivations are separate records and the timeline is append-only with immutable articles.
 
 > [!NOTE]
-> Fixed an unrelated non-exhaustive `when` expression in `ObservationEngineValidator.kt` to enable the instrumented build.
+> This implementation is completely isolated from the four existing "Timeline" implementations identified in previous research.

@@ -1,5 +1,3 @@
-Absolutely. I took everything we've discovered over Day 45 and rewrote it as a single, coherent constitutional document. I deliberately resisted adding new philosophy beyond what we validated together. The result is shorter, more principled, and establishes the constitutional method without over-explaining it.
-
 ---
 
 # OVERDEX CONSTITUTION
