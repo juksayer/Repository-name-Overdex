@@ -1,5 +1,16 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.reality.ArticleId
+import com.example.overdex.battle.reality.RealityArticle
+import com.example.overdex.battle.reality.RealityTimeline
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import java.util.UUID
+
 /**
  * Represents one live Pokémon GO battle.
  * 
@@ -10,15 +21,37 @@ package com.example.overdex.battle.observation
  * @property matchId A unique identifier for the battle.
  * @property state The current lifecycle phase of the match.
  * @property workspace The mutable storage area where incoming observations are collected.
+ * @property custody The briefcase for preserving accepted testimony.
+ * @property realityTimeline The foundational ledger for preserving the objective history.
  */
 class Match(
     @Suppress("unused") val matchId: String,
     var state: MatchState = MatchState.CREATED,
     val workspace: BattleWorkspace = BattleWorkspace(),
+    val custody: TestimonyCustody,
+    val realityTimeline: RealityTimeline
 ) {
+    private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
     /** The total number of frames processed during this Match. */
     var frameCount: Long = 0
         private set
+
+    init {
+        // Coordinated handoff from accepted testimony to Reality Timeline
+        matchScope.launch {
+            custody.testimonyFlow.collect { testimony ->
+                val article = RealityArticle(
+                    id = ArticleId(UUID.randomUUID().toString()),
+                    perceivedAt = testimony.timestamp,
+                    recordedAt = System.currentTimeMillis(),
+                    sourceId = testimony.sourceId,
+                    payload = testimony.payload
+                )
+                realityTimeline.append(article)
+            }
+        }
+    }
 
     /**
      * Submits a transient observation to the match workspace.
@@ -32,5 +65,12 @@ class Match(
      */
     fun incrementFrameCount() {
         frameCount++
+    }
+
+    /**
+     * Releases resources and cancels active subscriptions.
+     */
+    fun release() {
+        matchScope.cancel("Match released")
     }
 }

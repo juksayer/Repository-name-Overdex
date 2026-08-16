@@ -1,5 +1,8 @@
 package com.example.overdex.battle.custody
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 
@@ -8,6 +11,10 @@ import java.util.concurrent.atomic.AtomicLong
  * operating signals and testimony.
  */
 interface TestimonyCustody {
+    /**
+     * A stream of accepted testimony records.
+     */
+    val testimonyFlow: Flow<TestimonyRecord>
     /**
      * Accepts a source operational availability signal (online/offline).
      */
@@ -53,6 +60,9 @@ interface TestimonyCustody {
 class InMemoryTestimonyCustody : TestimonyCustody {
     private val records = CopyOnWriteArrayList<CustodyRecord>()
     private val sequenceCounter = AtomicLong(0)
+
+    private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(extraBufferCapacity = 64)
+    override val testimonyFlow = _testimonyFlow.asSharedFlow()
 
     override fun submitAvailability(
         sourceId: SourceId,
@@ -100,6 +110,7 @@ class InMemoryTestimonyCustody : TestimonyCustody {
             evidenceReferences = evidenceReferences
         )
         records.add(record)
+        _testimonyFlow.tryEmit(record)
         return record
     }
 

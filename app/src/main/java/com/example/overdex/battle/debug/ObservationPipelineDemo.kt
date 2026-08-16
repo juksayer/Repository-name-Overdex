@@ -1,11 +1,13 @@
 package com.example.overdex.battle.debug
 
 import android.util.Log
+import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.observation.BattleWorkspace
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
 import com.example.overdex.battle.observation.ObservationReconciler
 import com.example.overdex.battle.observation.debug.DebugObserver
+import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.event.TimelineEvent
 
@@ -19,7 +21,11 @@ object ObservationPipelineDemo {
         Log.d(TAG, "Starting Observation Pipeline Demo...")
 
         // 1. Setup Match and Dispatcher
-        val match = Match(matchId = "DEMO_MATCH_001")
+        val match = Match(
+            matchId = "DEMO_MATCH_001",
+            custody = InMemoryTestimonyCustody(),
+            realityTimeline = InMemoryRealityTimeline()
+        )
         val builder = BattleTimelineBuilder()
         val dispatcher = ObservationDispatcher()
 

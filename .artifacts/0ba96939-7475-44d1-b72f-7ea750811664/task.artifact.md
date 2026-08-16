@@ -10,8 +10,9 @@
     - [x] Create `AttackIncomingCollectorAndroidTest.kt` (Android verification)
     - [x] Run instrumented tests on Moondrop MIAD01
 - [x] Brick 4B: Establish the Reality Timeline
-    - [x] Create `ArticleId.kt`
-    - [x] Create `RealityArticle.kt`
-    - [x] Create `RealityTimeline.kt`
-    - [x] Create `RealityTimelineTest.kt` (Verify objective receipt, many-to-one derivation, and immutability)
+- [x] Brick 4: Raw Timeline Submission (Match Handoff)
+    - [x] Update `TestimonyCustody` with `testimonyFlow`
+    - [x] Update `Match` to own Custody and RealityTimeline
+    - [x] Implement Match-level subscription and RealityArticle creation
+    - [x] Create `MatchRealityHandoffTest.kt`
 - [x] Verify build and report results

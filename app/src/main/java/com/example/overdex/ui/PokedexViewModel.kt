@@ -19,6 +19,8 @@ import com.example.overdex.battle.observation.ObservationDispatcher
 import com.example.overdex.battle.observation.SpeciesWitness
 import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.YouWinWitness
+import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
@@ -170,7 +172,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         // Initialize Match
         val matchId = java.util.UUID.randomUUID().toString()
-        val match = Match(matchId)
+        val match = Match(
+            matchId = matchId,
+            custody = InMemoryTestimonyCustody(),
+            realityTimeline = InMemoryRealityTimeline()
+        )
         currentMatch = match
         _frameCount.value = 0
         Log.d("DEPLOY", "1 Match created")

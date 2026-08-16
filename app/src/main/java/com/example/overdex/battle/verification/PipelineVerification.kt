@@ -1,6 +1,8 @@
 package com.example.overdex.battle.verification
 
+import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.observation.*
+import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.timeline.*
 import com.example.overdex.battle.timeline.event.*
 import com.example.overdex.battle.timeline.observer.*
@@ -12,7 +14,11 @@ class PipelineVerification {
 
 fun verifyPipeline() {
     // 1. Setup the match
-    val match = Match(matchId = "MATCH_001")
+    val match = Match(
+        matchId = "MATCH_001",
+        custody = InMemoryTestimonyCustody(),
+        realityTimeline = InMemoryRealityTimeline()
+    )
 
     // 2. Simulate an observation (e.g. from Droidball)
     val observation = Observation(

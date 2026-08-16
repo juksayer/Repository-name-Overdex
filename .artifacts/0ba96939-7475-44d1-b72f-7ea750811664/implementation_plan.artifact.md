@@ -1,49 +1,49 @@
-# Implementation Plan - Brick 4B: Establish the Reality Timeline (Revised)
+# Implementation Plan - Brick 4: Raw Timeline Submission (Match Handoff)
 
-Establish the `RealityTimeline` to preserve immutable records concerning Articles. This timeline operates independently of existing interpretive timelines and focuses on the objective history of what was perceived and what was reasoned.
+Establish the coordinated handoff from accepted testimony in `TestimonyCustody` to the `RealityTimeline`, owned and managed by the `Match`.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> A **`RealityArticle`** is a record *concerning* an independent Article. It is not synonymous with the phenomenon itself.
+> The `Match` is the authoritative coordinator for this handoff. It subscribes to a stream of accepted testimony and publishes originating `RealityArticle` records to the timeline.
 
 > [!NOTE]
-> We distinguish between **`perceivedAt`** (when the source says it happened) and **`recordedAt`** (when the record was committed to the timeline).
-
-> [!TIP]
-> Derivations are many-to-one. A single `RealityArticle` can reference multiple preceding articles via **`predecessorIds`**.
+> `TestimonyCustody` remains independent of the reality domain. It only exposes a neutral `Flow` of accepted testimony records.
 
 ## Proposed Changes
 
-### Battle Layer - Reality Component
+### Battle Layer - Custody Component
 
-#### [NEW] [ArticleId.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/ArticleId.kt)
-- `data class ArticleId(val value: String)`: Unique identifier for records in this timeline. Independent of custody sequence numbers.
+#### [MODIFY] [TestimonyCustody.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/custody/TestimonyCustody.kt)
+- Add `val testimonyFlow: Flow<TestimonyRecord>` to the `TestimonyCustody` interface.
+- Update `InMemoryTestimonyCustody` to include a `MutableSharedFlow<TestimonyRecord>`.
+- In `submitTestimony()`, emit the accepted `TestimonyRecord` to the flow after it is stored and assigned a sequence number.
 
-#### [NEW] [RealityArticle.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityArticle.kt)
-- `data class RealityArticle`:
-    - `id: ArticleId`: The unique identity of this record.
-    - `perceivedAt: Long`: Temporal position provided by the source. For derived articles, this represents the source's authoritative estimate of when the conclusion was true (typically the `perceivedAt` of the latest predecessor).
-    - `recordedAt: Long`: Temporal position when committed to this timeline.
-    - `sourceId: SourceId`: Identifies the producer of **this current record** (the office performing the derivation or collection).
-    - `payload: TestimonyPayload`: The uninterpreted data or reasoning outcome.
-    - `predecessorIds: List<ArticleId> = emptyList()`: Identifies the **informational ancestry** (the specific articles used as input for this record).
+### Battle Layer - Observation Component
 
-#### [NEW] [RealityTimeline.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/reality/RealityTimeline.kt)
-- `interface RealityTimeline`:
-    - `fun append(article: RealityArticle)`
-    - `fun getArticles(): List<RealityArticle>`
-- `class InMemoryRealityTimeline`: Thread-safe, append-only implementation. Completely isolated from existing historical timelines.
+#### [MODIFY] [Match.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/battle/observation/Match.kt)
+- Add `val custody: TestimonyCustody` and `val realityTimeline: RealityTimeline` as properties.
+- Introduce a `CoroutineScope` (e.g., `matchScope`) to manage the lifetime of the testimony subscription.
+- In `init` (or an explicit `start()` method), launch a collection of `custody.testimonyFlow`.
+- For every `TestimonyRecord` received:
+    - Generate a new `ArticleId` (UUID).
+    - Map to `RealityArticle`:
+        - `perceivedAt` = `TestimonyRecord.timestamp`.
+        - `recordedAt` = `System.currentTimeMillis()`.
+        - `sourceId` = `TestimonyRecord.sourceId`.
+        - `payload` = `TestimonyRecord.payload`.
+    - Append to `realityTimeline`.
+- Ensure the scope is canceled when the Match state transitions to finished or via an explicit `release()` method.
 
 ## Verification Plan
 
 ### Automated Tests
-- **[NEW] [RealityTimelineTest.kt]**:
-    1.  **Objective Receipt**: Verify that an originating `RealityArticle` preserves `perceivedAt` and `recordedAt` as distinct values.
-    2.  **Immutability**: Verify that once appended, a record cannot be modified.
-    3.  **Provenance**: Verify `sourceId` and `id` remain intact.
-    4.  **Many-to-One Derivation**:
-        - Append Article A and Article B.
-        - Create Article C with `predecessorIds = listOf(A.id, B.id)`.
-        - Verify Article C correctly references its predecessors.
-    5.  **Independence**: Ensure `ArticleId` is generated independently of any external sequence or ID system.
+- **[NEW] [MatchRealityHandoffTest.kt]**:
+    - Wire a `Match` instance with real `InMemoryTestimonyCustody` and `InMemoryRealityTimeline`.
+    - Submit a `RawTestimony` payload to custody via `submitTestimony()`.
+    - Verify that a `RealityArticle` is automatically appended to the `RealityTimeline`.
+    - Assert that `perceivedAt` matches the original testimony timestamp.
+    - Assert that the `payload` and `sourceId` are preserved exactly.
+    - Verify that `recordedAt` is accurately captured at the moment of handoff.
+    - Demonstrate that multiple independent testimony submissions produce independent articles in the correct order.
+    - Verify that subscription cleanup works when the Match is concluded.
