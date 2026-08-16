@@ -20,7 +20,11 @@ import com.example.overdex.battle.observation.SpeciesWitness
 import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
@@ -208,6 +212,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 when (signal) {
                     is DroidballSignal.Started -> {
                         // Service is up, but no frames yet
+                        val now = System.currentTimeMillis()
+                        match.realityTimeline.append(
+                            RealityArticle(
+                                id = ArticleId(java.util.UUID.randomUUID().toString()),
+                                perceivedAt = now,
+                                recordedAt = now,
+                                sourceId = SourceId("DroidballService"),
+                                payload = RawTestimony("DroidballService started")
+                            )
+                        )
                     }
                     is DroidballSignal.FrameCaptured -> {
                         if (_deploymentState.value == InstrumentDeploymentState.DEPLOYING || _deploymentState.value == InstrumentDeploymentState.READY) {

@@ -157,7 +157,7 @@ The objective is to prevent stale context, unrelated architectural changes, and 
 
 Every conversation should begin with a clean understanding of exactly one task.
 
-I also think we should adopt a permanent rule for Jim prompts going forward:
+I also think we should adopt a permanent rule for prompts going forward:
 
 DO NOT TOUCH (largest section)
 ONLY CHANGE (small section)
