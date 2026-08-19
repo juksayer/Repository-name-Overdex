@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.TestimonyCustody
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
@@ -29,7 +30,8 @@ class Match(
     var state: MatchState = MatchState.CREATED,
     val workspace: BattleWorkspace = BattleWorkspace(),
     val custody: TestimonyCustody,
-    val realityTimeline: RealityTimeline
+    val realityTimeline: RealityTimeline,
+    val battleMemory: BattleMemory = BattleMemory()
 ) {
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 

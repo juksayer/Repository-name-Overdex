@@ -311,7 +311,6 @@ fun ODXFiShell(
     var unlockMessage by remember { mutableStateOf<String?>(null) }
 
     // BattleMemory - Restore local lifecycle
-    val battleMemory = remember { com.example.overdex.BattleMemory() }
     var currentDecision by remember { mutableStateOf<com.example.overdex.model.DecisionAnalysis?>(null) }
 
     val handleInput = { input: String ->

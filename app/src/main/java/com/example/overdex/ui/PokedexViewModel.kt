@@ -85,7 +85,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private var observationDispatcher = ObservationDispatcher()
 
-    private var currentMatch: Match? = null
+    private val _activeMatch = MutableStateFlow<Match?>(null)
+    val activeMatch = _activeMatch.asStateFlow()
 
     val spriteProvider: SpriteProvider = FallbackSpriteProvider(
         primary = LocalSpriteProvider(application.assets),
@@ -181,7 +182,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             custody = InMemoryTestimonyCustody(),
             realityTimeline = InMemoryRealityTimeline()
         )
-        currentMatch = match
+        _activeMatch.value = match
         _frameCount.value = 0
         Log.d("DEPLOY", "1 Match created")
         
@@ -250,7 +251,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballService.stop(getApplication())
         stopDroidBallService()
         observationDispatcher.stopAll()
-        currentMatch = null
+        _activeMatch.value = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }
 
