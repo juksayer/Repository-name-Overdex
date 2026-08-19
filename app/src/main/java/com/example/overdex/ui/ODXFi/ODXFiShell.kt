@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -259,8 +260,11 @@ fun ODXFiShell(
     viewModel: PokedexViewModel? = null,
     instrumentState: ObservationSessionState? = null,
     isLogoInteractive: Boolean = false,
-    content: @Composable (com.example.overdex.BattleMemory) -> Unit,
+    content: @Composable (com.example.overdex.BattleMemory?) -> Unit,
 ) {
+    val activeMatch by viewModel?.activeMatch?.collectAsState() ?: remember { mutableStateOf(null) }
+    val battleMemory = activeMatch?.battleMemory
+
     var showSettings by remember { mutableStateOf(false) }
     var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
@@ -340,7 +344,7 @@ fun ODXFiShell(
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
 
-    val timelineEventCount = battleMemory.timeline.events.size
+    val timelineEventCount = battleMemory?.timeline?.events?.size ?: 0
 
     val presentationState = remember(
         battleMemory,
@@ -348,15 +352,17 @@ fun ODXFiShell(
     ) {
         com.example.overdex.presentation.PresentationState(
             timeline = com.example.overdex.presentation.TimelinePresentation(
-                eventCount = battleMemory.timeline.events.size
+                eventCount = timelineEventCount
             )
         )
     }
 
     LaunchedEffect(
-        battleMemory.enemyTeam.find { it.isActive },
-        battleMemory.playerActivePokemon
+        battleMemory?.enemyTeam?.find { it.isActive },
+        battleMemory?.playerActivePokemon
     ) {
+        if (battleMemory == null) return@LaunchedEffect
+
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
 
         if (viewModel != null && activeEnemy != null) {

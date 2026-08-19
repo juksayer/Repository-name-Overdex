@@ -5,6 +5,7 @@ import com.example.overdex.battle.custody.TestimonyCustody
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
+import com.example.overdex.battle.interpretation.BattleInterpreter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -51,6 +52,11 @@ class Match(
                     payload = testimony.payload
                 )
                 realityTimeline.append(article)
+
+                // Bridge: Reality -> Interpretation -> Memory
+                BattleInterpreter.interpret(article)?.let { event ->
+                    battleMemory.recordEvent(event)
+                }
             }
         }
     }

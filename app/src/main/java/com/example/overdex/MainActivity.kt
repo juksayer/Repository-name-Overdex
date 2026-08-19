@@ -314,7 +314,7 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
-                ) { battleMemory ->
+                ) { _ ->
                     BattleHistoryScreen(
                         viewModel = viewModel,
                         onBattleClick = { id -> 
@@ -339,11 +339,15 @@ fun PokedexApp(
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
                 ) { battleMemory ->
-                    BattleTimelineScreen(
-                        battleMemory = battleMemory,
-                        viewModel = viewModel,
-                        onBack = { navController.debugPopBackStack() }
-                    )
+                    if (battleMemory != null) {
+                        BattleTimelineScreen(
+                            battleMemory = battleMemory,
+                            viewModel = viewModel,
+                            onBack = { navController.debugPopBackStack() }
+                        )
+                    } else {
+                        com.example.overdex.ui.components.TerminalText("No active battle record.")
+                    }
                 }
             }
             composable("module/{title}/{status}/{description}") { backStackEntry: NavBackStackEntry ->
