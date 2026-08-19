@@ -47,6 +47,26 @@ data class BattleMemory(
 
     private fun deriveState(event: BattleEvent) {
         when (event.type) {
+            BattleEventType.POKEMON_IDENTIFIED -> {
+                if (event.actor == BattleActor.ENEMY) {
+                    val species = event.message ?: return
+                    val existingIndex = enemyTeam.indexOfFirst { it.species == species }
+                    if (existingIndex == -1) {
+                        enemyTeam.add(
+                            EnemyPokemonMemory(
+                                species = species,
+                                speciesConfidence = event.confidence,
+                                isActive = enemyTeam.none { it.isActive }
+                            )
+                        )
+                    } else {
+                        val updated = enemyTeam[existingIndex].copy(
+                            speciesConfidence = event.confidence
+                        )
+                        enemyTeam[existingIndex] = updated
+                    }
+                }
+            }
             BattleEventType.SHIELD_USED -> {
                 if (event.actor == BattleActor.PLAYER) {
                     playerShieldsUsed++
