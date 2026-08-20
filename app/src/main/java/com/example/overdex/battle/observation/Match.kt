@@ -2,10 +2,11 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
-import com.example.overdex.battle.interpretation.BattleInterpreter
+import com.example.overdex.data.PokemonRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,8 +33,11 @@ class Match(
     val workspace: BattleWorkspace = BattleWorkspace(),
     val custody: TestimonyCustody,
     val realityTimeline: RealityTimeline,
+    val pokemonRepository: PokemonRepository,
     val battleMemory: BattleMemory = BattleMemory()
 ) {
+    private val interpreter = BattleInterpreter(pokemonRepository)
+
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     /** The total number of frames processed during this Match. */
@@ -41,7 +45,6 @@ class Match(
         private set
 
     init {
-        // Coordinated handoff from accepted testimony to Reality Timeline
         matchScope.launch {
             custody.testimonyFlow.collect { testimony ->
                 val article = RealityArticle(
@@ -53,13 +56,13 @@ class Match(
                 )
                 realityTimeline.append(article)
 
-                // Bridge: Reality -> Interpretation -> Memory
-                BattleInterpreter.interpret(article)?.let { event ->
+                interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
                 }
             }
         }
     }
+
 
     /**
      * Submits a transient observation to the match workspace.

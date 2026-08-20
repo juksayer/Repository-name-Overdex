@@ -1,7 +1,14 @@
 package com.example.overdex
 
-import com.example.overdex.model.*
-import org.junit.Assert.*
+import com.example.overdex.model.BattleActor
+import com.example.overdex.model.BattleEvent
+import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.Confidence
+import com.example.overdex.model.ConfidenceLevel
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BattleMemoryDerivationTest {
@@ -50,7 +57,7 @@ class BattleMemoryDerivationTest {
     }
 
     @Test
-    fun `Second distinct POKEMON_IDENTIFIED is added but not set as active`() {
+    fun `second distinct POKEMON identified is added but not set as active`() {
         val memory = BattleMemory()
         memory.recordEvent(BattleEvent(
             type = BattleEventType.POKEMON_IDENTIFIED,

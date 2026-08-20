@@ -28,6 +28,7 @@ class BattleInterpreterTest {
         assertEquals(BattleEventType.POKEMON_IDENTIFIED, event?.type)
         assertEquals(BattleActor.ENEMY, event?.actor)
         assertEquals("Pikachu", event?.message)
+        assertEquals(25, event?.pokemonId)
         assertEquals(perceivedAt, event?.timestamp)
     }
 
@@ -83,5 +84,7 @@ class BattleInterpreterTest {
 
         assertEquals("Pikachu", event1?.message)
         assertEquals("Raichu", event2?.message)
+        assertEquals(25, event1?.pokemonId)
+        assertEquals(26, event2?.pokemonId)
     }
 }

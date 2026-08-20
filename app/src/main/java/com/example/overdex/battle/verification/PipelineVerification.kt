@@ -1,23 +1,29 @@
 package com.example.overdex.battle.verification
 
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
-import com.example.overdex.battle.observation.*
+import com.example.overdex.battle.observation.BattleWorkspace
+import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.Observation
+import com.example.overdex.battle.observation.ObservationReconciler
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
-import com.example.overdex.battle.timeline.*
-import com.example.overdex.battle.timeline.event.*
-import com.example.overdex.battle.timeline.observer.*
-import com.example.overdex.battle.timeline.confidence.*
-import com.example.overdex.battle.timeline.evidence.*
+import com.example.overdex.battle.timeline.BattleTimelineBuilder
+import com.example.overdex.battle.timeline.confidence.ConfidenceLevel
+import com.example.overdex.battle.timeline.confidence.ConfidenceScore
+import com.example.overdex.battle.timeline.event.TimelineEvent
+import com.example.overdex.battle.timeline.evidence.VisualEvidence
+import com.example.overdex.battle.timeline.observer.ObservationSource
+import com.example.overdex.battle.timeline.observer.ObserverId
+import com.example.overdex.data.PokemonRepository
 
 class PipelineVerification {
 }
-
-fun verifyPipeline() {
+fun verifyPipeline(pokemonRepository: PokemonRepository) {
     // 1. Setup the match
     val match = Match(
         matchId = "MATCH_001",
         custody = InMemoryTestimonyCustody(),
-        realityTimeline = InMemoryRealityTimeline()
+        realityTimeline = InMemoryRealityTimeline(),
+        pokemonRepository = pokemonRepository
     )
 
     // 2. Simulate an observation (e.g. from Droidball)

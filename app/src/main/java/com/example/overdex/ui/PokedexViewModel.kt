@@ -8,29 +8,29 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import androidx.paging.map
 import com.example.overdex.CalibrationManager
+import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.CountdownObserver
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
-import com.example.overdex.battle.observation.SpeciesWitness
 import com.example.overdex.battle.observation.PlayerSpeciesWitness
-import com.example.overdex.battle.witness.GoodEffortWitness
-import com.example.overdex.battle.witness.YouWinWitness
-import com.example.overdex.battle.custody.InMemoryTestimonyCustody
-import com.example.overdex.battle.custody.RawTestimony
-import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.observation.SpeciesWitness
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
+import com.example.overdex.battle.witness.GoodEffortWitness
+import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.PokemonJsonLoader
+import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.PokemonSearchRepository
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.SpriteProvider
@@ -65,7 +65,7 @@ import kotlinx.serialization.json.Json
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
-
+    private val pokemonRepository = PokemonRepository(pokemonDao)
     private val searchRepository = PokemonSearchRepository(pokemonDao)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
@@ -181,7 +181,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val match = Match(
             matchId = matchId,
             custody = InMemoryTestimonyCustody(),
-            realityTimeline = InMemoryRealityTimeline()
+            realityTimeline = InMemoryRealityTimeline(),
+            pokemonRepository = pokemonRepository
         )
         _activeMatch.value = match
         _frameCount.value = 0
@@ -305,12 +306,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 Pager(
                     config = PagingConfig(pageSize = 50, enablePlaceholders = false),
                 ) {
-                    searchRepository.search(query = q, type = t)
+                    pokemonRepository.search(query = q, type = t)
                 }.flow
             }
-            .map { pagingData -> pagingData.map { it.toDomain() } }
+
             .cachedIn(viewModelScope)
     }
+
 
     init {
         viewModelScope.launch {
@@ -561,20 +563,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     suspend fun getPokemonName(id: Int): String {
         return pokemonNameCache[id] ?: run {
-            val name = getPokemonById(id)?.name ?: "Unknown"
+            val name = pokemonRepository.getPokemonById(id)?.name ?: "Unknown"
             pokemonNameCache[id] = name
             name
         }
     }
 
     suspend fun getPokemonById(id: Int): Pokemon? {
-        return pokemonDao.getPokemonById(id)?.toDomain()
+        return pokemonRepository.getPokemonById(id)
     }
 
     suspend fun getPokemonByName(name: String): Pokemon? {
-        return pokemonDao.getPokemonByName(name)?.toDomain()
+        return pokemonRepository.getPokemonByName(name)
     }
-
     /**
      * Resolves the entire evolution family (names) that a given species belongs to.
      */

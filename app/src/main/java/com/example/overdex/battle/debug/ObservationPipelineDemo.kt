@@ -10,6 +10,7 @@ import com.example.overdex.battle.observation.debug.DebugObserver
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.event.TimelineEvent
+import com.example.overdex.data.PokemonRepository
 
 /**
  * Developer-only demonstration of the end-to-end observation pipeline.
@@ -17,14 +18,15 @@ import com.example.overdex.battle.timeline.event.TimelineEvent
 object ObservationPipelineDemo {
     private const val TAG = "OBSERVATION_DEMO"
 
-    fun run() {
+    fun run(pokemonRepository: PokemonRepository) {
         Log.d(TAG, "Starting Observation Pipeline Demo...")
 
         // 1. Setup Match and Dispatcher
         val match = Match(
             matchId = "DEMO_MATCH_001",
             custody = InMemoryTestimonyCustody(),
-            realityTimeline = InMemoryRealityTimeline()
+            realityTimeline = InMemoryRealityTimeline(),
+            pokemonRepository = pokemonRepository
         )
         val builder = BattleTimelineBuilder()
         val dispatcher = ObservationDispatcher()
