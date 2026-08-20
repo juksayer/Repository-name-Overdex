@@ -24,6 +24,12 @@ data class BattleCalibration(
         y = 0.4333f,
         width = 0.5926f,
         height = 0.1333f
+    ),
+    val playerTeamInfoRegion: AnchorRegion = AnchorRegion(
+        x = 0.01852f,
+        y = 0.09146f,
+        width = 0.39352f,
+        height = 0.05081f
     )
 ) {
     fun isCalibrated(): Boolean {

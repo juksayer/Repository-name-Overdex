@@ -17,6 +17,7 @@ import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
 import com.example.overdex.battle.observation.SpeciesWitness
+import com.example.overdex.battle.observation.PlayerSpeciesWitness
 import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
@@ -195,6 +196,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         Log.d("DEPLOY", "2 Registering observers")
         observationDispatcher.register(SpeciesWitness(input, calibration))
+        observationDispatcher.register(PlayerSpeciesWitness(input, calibration))
         observationDispatcher.register(CountdownObserver(input, calibration))
         observationDispatcher.register(YouWinWitness(input, calibration))
         observationDispatcher.register(GoodEffortWitness(input, calibration))
