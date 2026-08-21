@@ -13,15 +13,14 @@ import kotlinx.serialization.json.Json
 
 class PokemonRepository(
     private val pokemonDao: PokemonDao
-) {
+) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
-
-    suspend fun getPokemonById(id: Int): Pokemon? {
+    override suspend fun getPokemonById(id: Int): Pokemon? {
         return pokemonDao.getPokemonById(id)?.toDomain()
     }
 
-    suspend fun getPokemonByName(name: String): Pokemon? {
+    override suspend fun getPokemonByName(name: String): Pokemon? {
         return pokemonDao.getPokemonByName(name)?.toDomain()
     }
 

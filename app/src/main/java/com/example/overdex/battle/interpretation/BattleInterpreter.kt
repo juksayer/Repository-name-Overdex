@@ -2,7 +2,7 @@ package com.example.overdex.battle.interpretation
 
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.reality.RealityArticle
-import com.example.overdex.data.PokemonRepository
+import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEvent
 import com.example.overdex.model.BattleEventType
@@ -17,7 +17,7 @@ import com.example.overdex.model.ConfidenceLevel
  * specific phenomena for transcription.
  */
 class BattleInterpreter(
-    private val pokemonRepository: PokemonRepository
+    private val pokemonKnowledge: PokemonKnowledge
 ) {
 
     /**
@@ -39,7 +39,7 @@ class BattleInterpreter(
         return when {
 
             sourceId == "SPECIES_WITNESS" && payload.data is String -> {
-                val pokemon = pokemonRepository.getPokemonByName(payload.data)
+                val pokemon = pokemonKnowledge.getPokemonByName(payload.data)
 
                 BattleEvent(
                     timestamp = article.perceivedAt,
