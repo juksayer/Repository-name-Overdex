@@ -10,6 +10,7 @@ import com.example.overdex.model.ConfidenceLevel
  */
 data class EnemyPokemonMemory(
     val species: String,
+    val speciesId: Int? = null, //deliberately left speciesId nullable for older paths that don't have a resolved ID yet
     var alive: Boolean = true,
     var estimatedEnergy: Int = 0,
     var timesSeen: Int = 0,
