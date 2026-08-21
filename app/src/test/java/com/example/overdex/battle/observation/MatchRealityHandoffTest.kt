@@ -19,7 +19,8 @@ class MatchRealityHandoffTest {
         val match = Match(
             matchId = "TEST_MATCH",
             custody = custody,
-            realityTimeline = timeline
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
         )
 
         val testimonyPayload = RawTestimony("ATTACK_INCOMING")
@@ -53,7 +54,12 @@ class MatchRealityHandoffTest {
     fun `multiple testimonies produce independent reality articles in order`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
-        val match = Match("M1", custody = custody, realityTimeline = timeline)
+        val match = Match(
+            matchId = "M1",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
 
         custody.submitTestimony(sourceId, RawTestimony("1"), 100L, 1.0f)
         custody.submitTestimony(sourceId, RawTestimony("2"), 110L, 1.0f)

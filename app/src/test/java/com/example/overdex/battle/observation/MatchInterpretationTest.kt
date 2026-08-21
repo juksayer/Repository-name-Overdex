@@ -1,7 +1,9 @@
 package com.example.overdex.battle.observation
 
-import com.example.overdex.battle.custody.*
-import com.example.overdex.battle.reality.*
+import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEventType
 import kotlinx.coroutines.delay
@@ -18,7 +20,8 @@ class MatchInterpretationTest {
         val match = Match(
             matchId = "TEST_MATCH",
             custody = custody,
-            realityTimeline = timeline
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
         )
 
         val speciesName = "Bulbasaur"
@@ -59,7 +62,8 @@ class MatchInterpretationTest {
         val match = Match(
             matchId = "TEST_MATCH",
             custody = custody,
-            realityTimeline = timeline
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
         )
 
         // Submit Unsupported Testimony

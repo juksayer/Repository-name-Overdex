@@ -10,6 +10,7 @@ import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.SessionSource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -62,9 +63,11 @@ class AttackIncomingCollectorTest {
         )
 
         collector.start()
+        delay(50)
         
         // We trigger a "silent" frame that bypasses type checks in the fake input
         input.triggerSilentFrame()
+        delay(50)
 
         val inputRecord = custody.records.find { it is SourceInputRecord } as SourceInputRecord
         assertTrue(inputRecord.available)

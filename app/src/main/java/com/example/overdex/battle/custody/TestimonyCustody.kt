@@ -61,7 +61,7 @@ class InMemoryTestimonyCustody : TestimonyCustody {
     private val records = CopyOnWriteArrayList<CustodyRecord>()
     private val sequenceCounter = AtomicLong(0)
 
-    private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(extraBufferCapacity = 64)
+    private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(replay = 64, extraBufferCapacity = 64)
     override val testimonyFlow = _testimonyFlow.asSharedFlow()
 
     override fun submitAvailability(

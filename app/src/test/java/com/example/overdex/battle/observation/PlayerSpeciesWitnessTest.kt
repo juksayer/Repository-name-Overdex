@@ -8,6 +8,7 @@ import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.model.observation.SessionSource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -32,7 +33,8 @@ class PlayerSpeciesWitnessTest {
         val match = Match(
             matchId = "M1",
             custody = custody,
-            realityTimeline = InMemoryRealityTimeline()
+            realityTimeline = InMemoryRealityTimeline(),
+            pokemonKnowledge = FakePokemonKnowledge()
         )
         val input = FakeInput()
         val calibration = BattleCalibration(
@@ -49,9 +51,11 @@ class PlayerSpeciesWitnessTest {
 
         // Act
         witness.start(match)
+        delay(50)
         
         input.triggerSilentFrame {
         }
+        delay(50)
 
         // Assert
         val records = custody.records
@@ -95,7 +99,7 @@ class PlayerSpeciesWitnessTest {
         val records = CopyOnWriteArrayList<CustodyRecord>()
         private val sequence = AtomicLong(0)
 
-        private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(extraBufferCapacity = 64)
+        private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(replay = 64, extraBufferCapacity = 64)
         override val testimonyFlow: Flow<TestimonyRecord> = _testimonyFlow.asSharedFlow()
 
         override fun submitAvailability(sourceId: SourceId, available: Boolean, timestamp: Long): SourceAvailabilityRecord {

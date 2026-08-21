@@ -13,13 +13,15 @@ class MatchMemoryOwnershipTest {
         val matchA = Match(
             matchId = "MATCH_A",
             custody = InMemoryTestimonyCustody(),
-            realityTimeline = InMemoryRealityTimeline()
+            realityTimeline = InMemoryRealityTimeline(),
+            pokemonKnowledge = FakePokemonKnowledge()
         )
         
         val matchB = Match(
             matchId = "MATCH_B",
             custody = InMemoryTestimonyCustody(),
-            realityTimeline = InMemoryRealityTimeline()
+            realityTimeline = InMemoryRealityTimeline(),
+            pokemonKnowledge = FakePokemonKnowledge()
         )
 
         assertNotNull("Match A should have a BattleMemory", matchA.battleMemory)

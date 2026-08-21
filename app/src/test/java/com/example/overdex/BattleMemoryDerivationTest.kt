@@ -89,4 +89,35 @@ class BattleMemoryDerivationTest {
 
         assertEquals(0, memory.enemyTeam.size)
     }
+
+    @Test
+    fun `POKEMON_IDENTIFIED propagates pokemonId to enemy speciesId`() {
+        val memory = BattleMemory()
+        val event = BattleEvent(
+            type = BattleEventType.POKEMON_IDENTIFIED,
+            actor = BattleActor.ENEMY,
+            pokemonId = 25,
+            message = "Pikachu"
+        )
+
+        memory.recordEvent(event)
+
+        assertEquals(25, memory.enemyTeam[0].speciesId)
+    }
+
+    @Test
+    fun `POKEMON_SWITCHED propagates pokemonId to playerActivePokemonId`() {
+        val memory = BattleMemory()
+        val event = BattleEvent(
+            type = BattleEventType.POKEMON_SWITCHED,
+            actor = BattleActor.PLAYER,
+            pokemonId = 6,
+            message = "Charizard"
+        )
+
+        memory.recordEvent(event)
+
+        assertEquals(6, memory.playerActivePokemonId)
+        assertEquals("Charizard", memory.playerActivePokemon)
+    }
 }
