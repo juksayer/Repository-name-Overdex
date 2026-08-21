@@ -25,6 +25,7 @@ data class BattleMemory(
     var enemyRemainingPokemon: Int? = null,
     val battleHistory: MutableList<BattleEvent> = mutableListOf<BattleEvent>(),
     var playerActivePokemon: String? = null,
+    var playerActivePokemonId: Int? = null,
     val playerTeam: MutableList<String> = mutableStateListOf<String>(),
     var startTime: Long = System.currentTimeMillis(),
     var playerLead: String? = null,
@@ -85,6 +86,7 @@ data class BattleMemory(
             BattleEventType.POKEMON_SWITCHED -> {
                 if (event.actor == BattleActor.PLAYER) {
                     playerActivePokemon = event.message
+                    playerActivePokemonId = event.pokemonId
                 } else if (event.actor == BattleActor.ENEMY) {
                     val species = event.message
                     for (i in enemyTeam.indices) {

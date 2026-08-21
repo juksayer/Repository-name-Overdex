@@ -369,7 +369,9 @@ fun ODXFiShell(
             val enemyData = activeEnemy.speciesId?.let {
                 viewModel.getPokemonById(it)
             } ?: viewModel.getPokemonByName(activeEnemy.species)
-            val playerData = battleMemory.playerActivePokemon?.let {
+            val playerData = battleMemory.playerActivePokemonId?.let {
+                viewModel.getPokemonById(it)
+            } ?: battleMemory.playerActivePokemon?.let {
                 viewModel.getPokemonByName(it)
             }
 
