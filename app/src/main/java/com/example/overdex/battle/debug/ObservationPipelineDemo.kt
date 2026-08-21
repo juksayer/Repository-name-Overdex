@@ -26,7 +26,7 @@ object ObservationPipelineDemo {
             matchId = "DEMO_MATCH_001",
             custody = InMemoryTestimonyCustody(),
             realityTimeline = InMemoryRealityTimeline(),
-            pokemonRepository = pokemonRepository
+            pokemonKnowledge = pokemonRepository
         )
         val builder = BattleTimelineBuilder()
         val dispatcher = ObservationDispatcher()

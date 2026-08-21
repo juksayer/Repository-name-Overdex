@@ -23,7 +23,7 @@ fun verifyPipeline(pokemonRepository: PokemonRepository) {
         matchId = "MATCH_001",
         custody = InMemoryTestimonyCustody(),
         realityTimeline = InMemoryRealityTimeline(),
-        pokemonRepository = pokemonRepository
+        pokemonKnowledge = pokemonRepository
     )
 
     // 2. Simulate an observation (e.g. from Droidball)

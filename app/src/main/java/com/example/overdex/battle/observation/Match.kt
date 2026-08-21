@@ -6,7 +6,7 @@ import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
-import com.example.overdex.data.PokemonRepository
+import com.example.overdex.data.PokemonKnowledge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,10 +33,10 @@ class Match(
     val workspace: BattleWorkspace = BattleWorkspace(),
     val custody: TestimonyCustody,
     val realityTimeline: RealityTimeline,
-    val pokemonRepository: PokemonRepository,
+    val pokemonKnowledge: PokemonKnowledge,
     val battleMemory: BattleMemory = BattleMemory()
 ) {
-    private val interpreter = BattleInterpreter(pokemonRepository)
+    private val interpreter = BattleInterpreter(pokemonKnowledge)
 
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 

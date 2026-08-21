@@ -31,7 +31,6 @@ import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.PokemonJsonLoader
 import com.example.overdex.data.PokemonRepository
-import com.example.overdex.data.PokemonSearchRepository
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.local.PokedexDatabase
@@ -65,8 +64,8 @@ import kotlinx.serialization.json.Json
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
+
     private val pokemonRepository = PokemonRepository(pokemonDao)
-    private val searchRepository = PokemonSearchRepository(pokemonDao)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
     
@@ -182,7 +181,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             matchId = matchId,
             custody = InMemoryTestimonyCustody(),
             realityTimeline = InMemoryRealityTimeline(),
-            pokemonRepository = pokemonRepository
+            pokemonKnowledge = pokemonRepository
         )
         _activeMatch.value = match
         _frameCount.value = 0
@@ -346,23 +345,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             Log.d("SPECIES_TEST", "Species count = ${speciesMap.size}")
             Log.d("SPECIES_TEST", "Charizard = ${speciesMap[6]}")
 
-            val commonFastMoves = listOf(
-                Move("Counter", PokemonType.FIGHTING, 8, 7, isFast = true, 2),
-                Move("Dragon Breath", PokemonType.DRAGON, 4, 3, isFast = true, 1),
-                Move("Mud Shot", PokemonType.GROUND, 3, 9, isFast = true, 2),
-                Move("Vine Whip", PokemonType.GRASS, 5, 8, isFast = true, 2)
-            )
-
-            val commonChargedMoves = listOf(
-                Move("Hydro Cannon", PokemonType.WATER, 80, 40, isFast = false),
-                Move("Frenzy Plant", PokemonType.GRASS, 100, 45, isFast = false),
-                Move("Blast Burn", PokemonType.FIRE, 110, 50, isFast = false),
-                Move("Dragon Claw", PokemonType.DRAGON, 50, 35, isFast = false),
-                Move("Earthquake", PokemonType.GROUND, 120, 65, isFast = false),
-                Move("Body Slam", PokemonType.NORMAL, 60, 35, isFast = false),
-                Move("Sludge Bomb", PokemonType.POISON, 80, 50, isFast = false),
-                Move("Wild Charge", PokemonType.ELECTRIC, 100, 45, isFast = false)
-            )
 
             val pokemonEntities = mutableListOf<PokemonEntity>()
             
