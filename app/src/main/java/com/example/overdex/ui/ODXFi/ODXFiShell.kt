@@ -366,7 +366,9 @@ fun ODXFiShell(
         val activeEnemy = battleMemory.enemyTeam.find { it.isActive }
 
         if (viewModel != null && activeEnemy != null) {
-            val enemyData = viewModel.getPokemonByName(activeEnemy.species)
+            val enemyData = activeEnemy.speciesId?.let {
+                viewModel.getPokemonById(it)
+            } ?: viewModel.getPokemonByName(activeEnemy.species)
             val playerData = battleMemory.playerActivePokemon?.let {
                 viewModel.getPokemonByName(it)
             }
