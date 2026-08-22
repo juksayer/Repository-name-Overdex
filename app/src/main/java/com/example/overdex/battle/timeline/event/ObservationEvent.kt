@@ -16,6 +16,6 @@ import com.example.overdex.battle.timeline.confidence.ConfidenceScore
 data class ObservationEvent(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val evidence: Evidence,
+    override val evidence: Evidence,
     val confidence: ConfidenceScore
 ) : TimelineEvent

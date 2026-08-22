@@ -7,6 +7,7 @@ import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.confidence.ConfidenceLevel
 import com.example.overdex.battle.timeline.confidence.ConfidenceScore
 import com.example.overdex.battle.timeline.event.ObservationEvent
+import com.example.overdex.battle.timeline.event.PokemonSwitched
 import com.example.overdex.battle.timeline.event.TimelineEvent
 import com.example.overdex.battle.timeline.evidence.EvidenceId
 import com.example.overdex.battle.timeline.evidence.VisualEvidence
@@ -75,5 +76,36 @@ class CustodyChainTest {
         val finalEvent = timeline.events[0] as ObservationEvent
         assertEquals("The original EvidenceId must be recoverable at the end of the chain", 
             evidenceId, finalEvent.evidence.id)
+    }
+
+    @Test
+    fun `Evidence identity is preserved when derived into a domain-specific event`() {
+        // 1. Establish Evidence with a unique identity
+        val evidenceId = EvidenceId("FRAME_002")
+        val evidence = VisualEvidence(
+            id = evidenceId,
+            sourceId = "CAMERA_01",
+            frameUri = "uri://frames/002"
+        )
+
+        // 2. Wrap in a transient Observation
+        val observation = Observation(
+            timestamp = 2000L,
+            observerId = ObserverId("OBS_01", ObservationSource.SCREEN_CAPTURE),
+            evidence = listOf(evidence),
+            confidence = ConfidenceScore(1.0f, ConfidenceLevel.OBSERVED)
+        )
+
+        // 3. Reconcile into a domain event (PokemonSwitched) preserving the evidence reference
+        val domainEvent = PokemonSwitched(
+            timestamp = observation.timestamp,
+            observerId = observation.observerId,
+            pokemonId = "Pikachu",
+            evidence = observation.evidence[0] // Preserving the reference
+        )
+
+        // 4. ASSERT: Recover the original EvidenceId from the domain event
+        assertEquals("The domain event must preserve the evidence identity", 
+            evidenceId, domainEvent.evidence?.id)
     }
 }

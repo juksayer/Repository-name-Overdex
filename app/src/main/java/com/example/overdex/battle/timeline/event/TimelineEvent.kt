@@ -1,5 +1,6 @@
 package com.example.overdex.battle.timeline.event
 
+import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.observer.ObserverId
 
 /**
@@ -14,4 +15,6 @@ interface TimelineEvent {
     val timestamp: Long
     /** The identifier of the observer that contributed the primary evidence for this event. */
     val observerId: ObserverId
+    /** The optional evidence reference that supports this reconciled event. */
+    val evidence: Evidence?
 }

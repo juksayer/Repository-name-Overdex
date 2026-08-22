@@ -1,5 +1,6 @@
 package com.example.overdex.battle.timeline.event
 
+import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.observer.ObserverId
 
 /**
@@ -10,7 +11,8 @@ import com.example.overdex.battle.timeline.observer.ObserverId
 data class FastMovePerformed(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val moveId: String
+    val moveId: String,
+    override val evidence: Evidence? = null
 ) : TimelineEvent
 
 /**
@@ -21,7 +23,8 @@ data class FastMovePerformed(
 data class ChargedMoveStarted(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val moveId: String
+    val moveId: String,
+    override val evidence: Evidence? = null
 ) : TimelineEvent
 
 /**
@@ -32,7 +35,8 @@ data class ChargedMoveStarted(
 data class ChargedMoveResolved(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val moveId: String
+    val moveId: String,
+    override val evidence: Evidence? = null
 ) : TimelineEvent
 
 /**
@@ -40,5 +44,6 @@ data class ChargedMoveResolved(
  */
 data class ShieldUsed(
     override val timestamp: Long,
-    override val observerId: ObserverId
+    override val observerId: ObserverId,
+    override val evidence: Evidence? = null
 ) : TimelineEvent

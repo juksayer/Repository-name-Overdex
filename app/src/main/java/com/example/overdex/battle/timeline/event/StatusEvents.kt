@@ -1,5 +1,6 @@
 package com.example.overdex.battle.timeline.event
 
+import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.observer.ObserverId
 
 /**
@@ -10,7 +11,8 @@ import com.example.overdex.battle.timeline.observer.ObserverId
 data class PokemonSwitched(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val pokemonId: String
+    val pokemonId: String,
+    override val evidence: Evidence? = null
 ) : TimelineEvent
 
 /**
@@ -21,5 +23,6 @@ data class PokemonSwitched(
 data class PokemonFainted(
     override val timestamp: Long,
     override val observerId: ObserverId,
-    val pokemonId: String
+    val pokemonId: String,
+    override val evidence: Evidence? = null
 ) : TimelineEvent
