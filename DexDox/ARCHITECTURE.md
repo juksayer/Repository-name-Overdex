@@ -2,380 +2,312 @@
 
 This document describes the high-level architecture of Overdex.
 
-Overdex is built as a layered system.
+Overdex is built from responsibilities with explicit ownership
+boundaries.
 
-Each layer owns exactly one responsibility.
+A layer may consume or transform information produced elsewhere.
+Ownership does not transfer merely because information crosses a
+boundary.
 
-Higher layers build upon lower layers without changing or rewriting their responsibilities.
-
----
+------------------------------------------------------------------------
 
 # Core Architectural Principle
 
-> **Observe first. Remember second. Understand third. Present last.**
+> **Observe first. Remember second. Understand third. Infer fourth.
+> Present last.**
 
-Every layer has a single responsibility.
+The system distinguishes:
 
-Facts flow upward.
+-   Reality and its evidence
+-   Observations of Reality
+-   Reference Knowledge
+-   Current Match Understanding
+-   Intelligence and inference
+-   Presentation
 
-Interpretation never flows downward.
-
----
+------------------------------------------------------------------------
 
 # System Architecture
 
-```text
-                    Presentation Layer
-                           ▲
-                           │
-                   Intelligence Layer
-                           ▲
-                           │
-                 Dynamic Knowledge Layer
-                           ▲
-                           │
-                     Archive Layer
-                           ▲
-                           │
-                     History Layer
-                           ▲
-                           │
-                     Memory Layer
-                           ▲
-                           │
-                  Observation Layer
-                           ▲
-                           │
-                  Pokémon GO Battle
+``` text
+                         Presentation
+                              ▲
+                              │
+                         Intelligence
+                              ▲
+                              │
+                      Match Understanding
+                         ▲           ▲
+                         │           │
+                    Observations   Reference
+                         ▲         Knowledge
+                         │
+                       Reality
 ```
 
-This hierarchy defines the permanent architecture of Overdex.
+History and Archive provide temporal organization and persistence around
+the Match state and its events. They do not become owners of
+interpretation.
 
-Each layer consumes the outputs of the layer beneath it.
-
----
+------------------------------------------------------------------------
 
 # Layer Responsibilities
 
-## Reference Knowledge Layer
+## Reality
 
-Provides static Pokémon information.
+Reality is outside Overdex's ownership.
 
-Reference Knowledge answers: **"What is generally true?"**
+Events occur and produce evidence.
+
+Overdex may receive evidence about those events, but does not rewrite
+the underlying Reality evidence.
+
+------------------------------------------------------------------------
+
+## Reference Knowledge
+
+Provides canonical information available to Overdex independently of the
+current Match.
+
+Reference Knowledge answers:
+
+> "What information does Overdex have about this entity or system?"
 
 Examples include:
 
-- Pokédex
-- Move database
-- Type effectiveness
-- Base stats
+-   Pokédex data
+-   Move database
+-   Type relationships
+-   Base stats
+-   Evolution data
 
-Reference Knowledge exists independently of any battle.
+Reference Knowledge does not establish the live state of a Match.
 
----
+------------------------------------------------------------------------
 
-## Observation Layer
+## Observation
 
-Status: Complete (Git #152–#160)
-
-Purpose:
-
-Observe the current battle.
+Measures events in Reality.
 
 Responsibilities:
 
-- Screen capture
-- OCR
-- Recognition
-- Battle Workspace
+-   Screen capture
+-   OCR
+-   Recognition
+-   Observation provenance
+-   Observation confidence
+-   Active Match workspace
 
-The Observation Layer never performs inference.
+Observation answers:
 
-It answers only:
+> "What did Overdex measure?"
 
-> "What can we confidently observe?"
+It does not infer tactical meaning.
 
----
+------------------------------------------------------------------------
 
-## Memory Layer
+## Memory / Match State
 
-Purpose:
-
-Preserve observations from the current battle.
-
-Memory transforms live observations into persistent battle memory.
-
-Examples:
-
-- Matches
-- Battle Memory
-- Current battle state
-
-Memory represents the present.
-
----
-
-## History Layer
-
-Purpose:
-
-Organize remembered events.
+Preserves the evolving state of the active Match.
 
 Responsibilities include:
 
-- Battle Timeline
-- Battle Events
+-   Match
+-   Battle Memory
+-   Current active Pokémon
+-   Observed moves
+-   Estimated battle state
+-   Other transient Match context
 
-History represents the past.
+Match state represents what Overdex currently believes about the live
+Match. It does not own the underlying Reality evidence or canonical
+Reference Knowledge.
 
----
+------------------------------------------------------------------------
 
-## Archive Layer
+## History
 
-Purpose:
-
-Preserve completed history.
+Organizes events and state through time.
 
 Responsibilities include:
 
-- Archived battles
-- Long-term storage
+-   Battle Timeline
+-   Ordered events
+-   Chronology
+-   Match reconstruction
 
-Archive represents permanence.
+History preserves what happened in Overdex's record. It does not rewrite
+earlier measurements when later understanding changes.
 
----
+------------------------------------------------------------------------
 
-## Dynamic Knowledge Layer
+## Archive
 
-Purpose:
+Preserves completed history and long-term records.
 
-Establish the system's current best understanding of the battle.
+Responsibilities include:
 
-Dynamic Knowledge answers: **"What do we currently believe about this battle?"**
+-   Archived battles
+-   Long-term storage
+-   Retrieval
 
-Dynamic Knowledge is formed by combining Observations with Reference Knowledge.
+Archive preserves records. It does not interpret them.
 
-Examples:
+------------------------------------------------------------------------
 
-- Confirmed opponent species
-- Confirmed move sets
-- Known shield count
+## Match Understanding
 
----
+Match Understanding is Overdex's current best representation of the
+active Match.
 
-## Intelligence Layer
+It is not a collection of facts.
 
-Purpose:
+It is a confidence-bearing state derived from available measurements and
+relevant reference information.
 
-Derive meaning from Dynamic Knowledge.
-
-Possible responsibilities:
-
-- Energy estimation
-- Move counting
-- Shield tracking
-- Matchup evaluation
-- Recommendation engine
-
-Intelligence never edits observations.
-
-It only derives conclusions from trusted information.
-
----
-
-## Presentation Layer
-
-Purpose:
-
-Communicate information to the player.
+It may change as new observations arrive.
 
 Examples:
 
-- Overlay
-- Battle summaries
-- Timeline viewer
-- Team analysis
-- Pokédex interface
+-   Current believed opponent species
+-   Observed move set
+-   Estimated energy
+-   Active Pokémon
+-   Shield state
+-   Confidence in each current understanding
 
-Presentation never creates facts.
+A superseded understanding does not erase the observations that produced
+it.
 
-It displays them.
+------------------------------------------------------------------------
 
----
+## Intelligence
 
-# Observation Data Flow
+Intelligence reasons over:
 
-```
-Pokémon GO
+-   Observations
+-   Match Understanding
+-   Reference Knowledge
+-   Prior inferences
 
-      │
+It produces:
 
-      ▼
+-   Inferences
+-   Predictions
+-   Matchup analysis
+-   Decision Point analysis
+-   Recommendations
 
-Screen Capture
+Intelligence does not rewrite Reality, observations, or historical
+records.
 
-      │
+------------------------------------------------------------------------
 
-      ▼
+## Presentation
 
-Recognition Modules
+Presentation communicates current understanding and intelligence to the
+trainer.
 
-      │
+It may represent:
 
-      ▼
+-   confidence
+-   uncertainty
+-   provenance
+-   recommendations
+-   explanations
 
-Battle Workspace
+Presentation does not decide what the Match means.
 
-      │
-
-      ▼
-
-Memory Layer
-```
-
-The Battle Workspace is the integration point for all recognition modules.
-
-Every recognizer contributes observations independently.
-
-Consumers read from the shared workspace.
-
----
+------------------------------------------------------------------------
 
 # Battle Data Flow
 
-```text
-Observation Layer
-        │
-        ▼
-Memory Layer
-        │
-        ▼
-History Layer
-        │
-        ▼
-Archive Layer
-        │
-        ▼
-Dynamic Knowledge Layer  ◄───  Reference Knowledge Layer
-        │
-        ▼
-Intelligence Layer
-        │
-        ▼
-Presentation Layer
+``` text
+Reality Event + Evidence
+          │
+          ▼
+     Observation
+          │
+          ▼
+   Match Understanding ◄──── Reference Knowledge
+          │
+          ▼
+     Intelligence
+          │
+          ▼
+       Inference
+          │
+          ▼
+    Recommendation
+          │
+          ▼
+     Presentation
 ```
 
-Each stage enriches information without modifying earlier observations.
+History and Archive preserve the relevant records across time.
 
----
+------------------------------------------------------------------------
 
 # Architectural Rules
 
-## Observation Never Infers
+## Observation Does Not Infer
 
-Recognition modules detect visible facts.
+Recognition measures.
 
-They do not estimate.
+It does not predict or recommend.
 
-They do not recommend.
+## Memory Does Not Own Evidence
 
-They do not predict.
+Match state retains the current understanding of the battle.
 
----
+The underlying evidence remains associated with the Reality event and
+its observation provenance.
 
-## Memory Never Reinterprets
+## Reference Knowledge Does Not Become Match Truth
 
-Memory records observations exactly as they were received.
+A reference entry describes what is generally known.
 
-Memory preserves facts.
+It does not prove that the live Match currently satisfies that
+description.
 
----
+## Intelligence Does Not Manufacture Facts
 
-## History Never Changes
+Intelligence produces conclusions with supporting evidence and
+confidence.
 
-Historical events are immutable.
+## Presentation Does Not Create Meaning
 
-Corrections create new events rather than modifying existing ones.
+Presentation communicates what the system currently understands and what
+Intelligence concludes.
 
----
+------------------------------------------------------------------------
 
-## Intelligence Never Rewrites Facts
+# Ownership Invariant
 
-Intelligence explains observations.
+> **Every responsibility has one owner. Information may cross
+> boundaries. Ownership does not.**
 
-It never replaces them.
+The ownership test is:
 
-Confidence belongs to Intelligence—not Observation.
+> "Who owns the truth represented by this information?"
 
----
+If it is a Reality event or its evidence, Reality owns it.
 
-## Presentation Speaks Last
+If it is a measurement of that event, Observation owns it.
 
-The user interface is the final consumer.
+If it is canonical reference information, Reference Knowledge owns it.
 
-Every recommendation should be traceable back to observed evidence.
+If it is current live Match state, Match state owns it.
 
----
+If it is a derived conclusion, Intelligence / Inference owns it.
 
-# Design Philosophy
+------------------------------------------------------------------------
 
-Every architectural layer exists to reduce coupling.
+# Event Processing Boundary
 
-Observation modules should not know about intelligence.
+The current event-oriented path is:
 
-Intelligence should not know how OCR works.
-
-Presentation should not know how recognition is implemented.
-
-Each layer communicates through well-defined data models.
-
-This allows individual subsystems to evolve independently.
-
----
-
-# Architectural Guarantees
-
-Overdex guarantees:
-
-- Observation produces facts.
-- Memory preserves facts.
-- History organizes facts.
-- Archive preserves facts.
-- Intelligence derives meaning.
-- Presentation communicates meaning.
-
-Every layer has one responsibility.
-
-Every responsibility has one owner.
-
----
-
-# Architectural Decisions (ADR)
-
-Significant architectural decisions are recorded in the [Thinking Chair](file:///home/sean/AndroidStudioProjects/Overdex/DexDox/Architecture/ThinkingChair.md). Refer to this document to understand the context, alternatives, and reasoning behind major turning points in the system's evolution.
-
-
----
-
-# Guiding Principle
-
-> **Observe only what appears on the screen. Infer nothing. Preserve everything.**
-
-Everything else in Overdex is built upon that foundation.
-
-# Navigation Ownership Invariant
-
-Navigation operations may only mutate navigation state while the requesting navigation context 
-still owns the request. Stale callbacks, delayed input, duplicated intents, replayed events, or any
-other request that has outlived its ownership must be ignored rather than allowing navigation state
-to become inconsistent.
-
-Instrument the boundary, then let the evidence determine the next brick.
-
-A feature may only be implemented through the infrastructure that owns that responsibility. If the 
-required infrastructure does not exist, build the infrastructure first. Do not bypass it with feature-specific shortcuts.
-
-updated 8/7/26
+``` text
 Event
 ↓
 Witness
@@ -395,3 +327,18 @@ Publisher
 Article
 ↓
 Catalog
+```
+
+The exact implementation may evolve, but the architectural boundary
+remains:
+
+**Reality produces events and evidence. Overdex measures and interprets
+what those events mean to the application without rewriting the
+underlying record.**
+
+------------------------------------------------------------------------
+
+# Guiding Principle
+
+> **Measure Reality. Preserve the measurement. Enrich with reference.
+> Infer from evidence. Present with confidence.**

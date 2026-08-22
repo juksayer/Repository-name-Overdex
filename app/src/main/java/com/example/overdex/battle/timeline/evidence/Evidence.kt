@@ -7,6 +7,8 @@ package com.example.overdex.battle.timeline.evidence
  * a reconciled belief back to its source (e.g., a specific OCR string or audio clip).
  */
 interface Evidence {
+    /** The unique identifier for this specific piece of evidence. */
+    val id: EvidenceId
     /** The identifier for the specific source of this evidence. */
     val sourceId: String
 }

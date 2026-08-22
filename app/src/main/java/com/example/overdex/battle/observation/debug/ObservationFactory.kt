@@ -4,6 +4,7 @@ import com.example.overdex.battle.observation.Observation
 import com.example.overdex.battle.timeline.confidence.*
 import com.example.overdex.battle.timeline.evidence.*
 import com.example.overdex.battle.timeline.observer.*
+import java.util.UUID
 
 /**
  * Convenience helpers for creating observations during development and testing.
@@ -31,7 +32,7 @@ object ObservationFactory {
         return Observation(
             timestamp = timestamp,
             observerId = ObserverId(sourceId, ObservationSource.SCREEN_CAPTURE),
-            evidence = listOf(VisualEvidence(sourceId, frameUri)),
+            evidence = listOf(VisualEvidence(EvidenceId(UUID.randomUUID().toString()), sourceId, frameUri)),
             confidence = ConfidenceScore(0.9f, ConfidenceLevel.OBSERVED)
         )
     }
@@ -44,7 +45,7 @@ object ObservationFactory {
         return Observation(
             timestamp = timestamp,
             observerId = ObserverId(sourceId, ObservationSource.AUDIO_CAPTURE),
-            evidence = listOf(AudioEvidence(sourceId, audioUri)),
+            evidence = listOf(AudioEvidence(EvidenceId(UUID.randomUUID().toString()), sourceId, audioUri)),
             confidence = ConfidenceScore(0.8f, ConfidenceLevel.OBSERVED)
         )
     }
@@ -58,7 +59,7 @@ object ObservationFactory {
         return Observation(
             timestamp = timestamp,
             observerId = ObserverId(sourceId, ObservationSource.SYSTEM),
-            evidence = listOf(StateEvidence(sourceId, key, value)),
+            evidence = listOf(StateEvidence(EvidenceId(UUID.randomUUID().toString()), sourceId, key, value)),
             confidence = ConfidenceScore(1.0f, ConfidenceLevel.CONFIRMED)
         )
     }

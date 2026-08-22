@@ -11,22 +11,24 @@ state before moving to the next.
 
 # Guiding Philosophy
 
-Overdex follows one progression:
+Overdex follows this progression:
 
-**Learn → Observe → Remember → Assist**
+**Learn → Observe → Remember → Understand → Assist**
 
-Knowledge comes first. Observation comes second. Memory preserves what
-happened. Intelligence is built on trusted information---not guesses.
+Reference Knowledge comes first. Observation measures what happens
+during a Match. Memory preserves the evolving Match state and history.
+Intelligence reasons from measurements, reference material, and current
+understanding.
 
 Future users will forgive missing features.
 
-They will not forgive incorrect battle data.
+They will not forgive unjustified confidence in battle data.
 
 ------------------------------------------------------------------------
 
 # Milestone 1 --- Knowledge Foundation ✅
 
-Completed
+Completed:
 
 -   Complete Pokémon GO Pokédex
 -   Search
@@ -40,9 +42,9 @@ Completed
 -   CRT / ODX-FI presentation
 -   Cry playback
 
-Outcome
+Outcome:
 
-A complete offline knowledge base that powers every future system.
+A complete offline Reference Knowledge base that powers future systems.
 
 ------------------------------------------------------------------------
 
@@ -50,7 +52,7 @@ A complete offline knowledge base that powers every future system.
 
 Current Focus
 
-Completed
+Completed:
 
 -   Roster architecture
 -   Specimen Browser
@@ -58,7 +60,7 @@ Completed
 -   Registration workflow
 -   Registration Assistance foundation
 
-Next
+Next:
 
 -   Registration Assistance → Roster integration
 -   Observation-driven specimen creation
@@ -66,15 +68,15 @@ Next
 -   Team management
 -   League organization
 
-Outcome
+Outcome:
 
-The trainer has a permanent record of every trained Pokémon.
+The trainer has a permanent record of their Pokémon.
 
 ------------------------------------------------------------------------
 
 # Milestone 3 --- Observation Engine 🚧
 
-Completed Foundation
+Completed Foundation:
 
 -   ObservationRegion
 -   ObservationRegionState
@@ -82,7 +84,7 @@ Completed Foundation
 -   Guided Observation Pipeline
 -   Observation overlay
 
-Next
+Next:
 
 -   Match support
 -   Species recognition
@@ -91,10 +93,10 @@ Next
 -   Confidence refinement
 -   Automatic calibration improvements
 
-Outcome
+Outcome:
 
-Overdex observes instead of asking the trainer to remember everything
-manually.
+Overdex measures battle events instead of asking the trainer to remember
+everything manually.
 
 ------------------------------------------------------------------------
 
@@ -106,10 +108,9 @@ manually.
 -   Opponent history
 -   Battle archive
 
-Outcome
+Outcome:
 
-Every battle becomes part of a permanent history instead of disappearing
-when the match ends.
+Every battle becomes part of a persistent record.
 
 ------------------------------------------------------------------------
 
@@ -121,10 +122,13 @@ when the match ends.
 -   Matchup evaluation
 -   Recommendations
 -   Confidence reporting
+-   Decision Point analysis
+-   Traceable inference
 
-Outcome
+Outcome:
 
-Overdex assists decision-making using observed evidence.
+Overdex assists decision-making using measured evidence and relevant
+Reference Knowledge.
 
 ------------------------------------------------------------------------
 
@@ -138,7 +142,7 @@ Overdex assists decision-making using observed evidence.
 -   Replay support
 -   Statistics
 
-Outcome
+Outcome:
 
 Overdex becomes a complete competitive companion.
 
@@ -154,7 +158,7 @@ Overdex becomes a complete competitive companion.
 -   Device compatibility
 -   Google Play release
 
-Outcome
+Outcome:
 
 A polished application suitable for everyday use.
 
@@ -165,6 +169,8 @@ A polished application suitable for everyday use.
 Observe.
 
 Remember.
+
+Understand.
 
 Display.
 
@@ -184,6 +190,7 @@ capabilities.
 -   Respect existing architecture.
 -   Definitions are immutable. State is mutable.
 -   Hardware is heavy. Software is light.
+-   Preserve measurements even when current understanding changes.
 
 ------------------------------------------------------------------------
 
@@ -194,7 +201,9 @@ Success is measured by trust.
 Players should always know:
 
 -   where information came from,
--   why a recommendation was made,
+-   what Overdex measured,
+-   why a conclusion was reached,
+-   how confident the system is,
 -   and when Overdex does not know enough to make one.
 
 Trust remains the ultimate feature.

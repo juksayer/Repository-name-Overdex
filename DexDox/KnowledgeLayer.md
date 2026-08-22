@@ -1,135 +1,244 @@
-# Dynamic Knowledge Layer
+# Match Understanding
 
 ## Philosophy
 
-Overdex distinguishes between three core concepts:
+Overdex does not deal in facts about the live Match.
 
-1.  **Reference Knowledge**: "What is generally true?" (e.g., The Pokédex says Mewtwo is Psychic).
-2.  **Observations**: "What was just seen?" (e.g., The screen appears to show a Mewtwo).
-3.  **Dynamic Knowledge**: "What do we currently believe about this battle?" (e.g., The opponent is confirmed to be Mewtwo).
+Reality produces events and evidence. Overdex measures those events through its observation systems, assigns confidence to those measurements, enriches the resulting understanding with Reference Knowledge, and uses Intelligence to draw conclusions.
 
-**Dynamic Knowledge** represents the system's current best understanding of the battle based on available evidence. It is the bridge that connects raw observations to tactical intelligence.
+The core distinction is:
 
----
+1. **Reference Knowledge**: What canonical information is available to Overdex about an entity or system?
+2. **Observations**: What did Overdex measure about an event in Reality?
+3. **Match Understanding**: What does Overdex currently believe about the Match, given its observations, their confidence, and relevant Reference Knowledge?
+4. **Intelligence / Inference**: What can Overdex conclude by reasoning across observations, Reference Knowledge, current Match Understanding, and prior inferences?
 
-## Knowledge Characteristics
+The system must preserve the distinction between what happened in Reality, what Overdex measured, what Overdex currently believes, and what Overdex infers.
 
-### Best Understanding (Not Final Truth)
-Dynamic Knowledge is not "stable" in the sense of being immutable. It represents a belief that evolves as new evidence arrives.
+## Epistemic Ownership
 
-### Mutability & Supersedence
-Dynamic Knowledge is mutable. A new observation with higher confidence can supersede an existing knowledge item. For example, a "fuzzy" species recognition might be updated once the name becomes clearly legible.
+### Reality
 
-### Withdrawal
-Knowledge can be withdrawn if later evidence proves the earlier belief was a false positive.
+Reality is outside Overdex's ownership.
 
-### Coexistence
-Contradictory knowledge items should generally not coexist at the same level of belief. The layer is responsible for resolving conflicts (e.g., through confidence voting or temporal priority) to provide a single "best understanding" to consumers.
+A game event occurs and produces evidence. That evidence belongs to the event that produced it. Overdex does not rewrite or own the underlying evidence.
 
-### Versioning
-Every change to a Dynamic Knowledge item should be recorded as a new state, allowing the system to "rewind" and see what it believed at any point in the battle timeline.
+Reality may also present information that appears factual to a human observer. Overdex does not automatically promote that information to truth.
 
-### Traceability
-Every piece of Dynamic Knowledge **must** retain links to all supporting Observations. This ensures that every recommendation made by Overdex is traceable back to the raw evidence seen on the screen.
+### Observation
 
----
+An Observation is Overdex's measurement of something occurring in Reality.
 
-## Observation → Knowledge Lifecycle
+It answers:
+
+> "What did Overdex measure about this event?"
+
+An Observation should retain enough provenance to identify the event, observer, time, measurement, and confidence.
+
+An Observation is not the underlying evidence itself.
+
+### Reference Knowledge
+
+Reference Knowledge is canonical information available for consultation.
+
+It answers:
+
+> "What information does Overdex have about the thing we are observing?"
+
+Reference Knowledge does not become a claim that the live Match is currently in that state.
+
+### Match Understanding
+
+Match Understanding is Overdex's current best representation of the live Match.
+
+It is mutable because new measurements can change it.
+
+It may contain current believed species identities, observed moves, estimated energy, active Pokémon, shield state, confidence, relationships between observed entities, and other state derived from accumulated evidence.
+
+Match Understanding is not final truth.
+
+A new measurement may increase confidence, decrease confidence, supersede an earlier understanding, reveal a contradiction, or withdraw an earlier conclusion.
+
+The underlying observations remain available so the system can explain how its understanding changed.
+
+### Intelligence
+
+Intelligence reasons over Observations, Reference Knowledge, Match Understanding, and prior inferences.
+
+Intelligence does not manufacture facts.
+
+It produces inferences and conclusions, each with appropriate confidence and supporting provenance.
+
+Examples include estimating enemy energy, identifying likely move availability, predicting a future Match Event, evaluating a Decision Point, and determining whether a shield is likely advisable.
+
+## Observation → Understanding → Intelligence
 
 ```text
-Capture (Screen)
+Reality
    ↓
-Recognition (OCR/ML)
+Event + Evidence
    ↓
-Observation (Factual Record)
+Observation
    ↓
-Dynamic Knowledge (Best Understanding) <--- Enriched by Reference Knowledge
+Match Understanding  ←── Reference Knowledge
    ↓
-Intelligence (Inference/Strategy)
+Intelligence
    ↓
-Recommendation (Player Guidance)
+Inference
+   ↓
+Recommendation / Predicted Match Event
 ```
 
-1.  **Capture**: The raw visual data from Pokémon GO.
-2.  **Recognition**: The act of extracting text or patterns (e.g., "M-e-w-t-w-o").
-3.  **Observation**: A point-in-time factual record ("Observer X saw Mewtwo at Timestamp T").
-4.  **Dynamic Knowledge**: The system reconciles multiple observations (e.g., three separate Mewtwo sightings) and enriches them with Reference Knowledge (e.g., Mewtwo's typing and move pool) to form a belief.
-5.  **Intelligence**: Uses Dynamic Knowledge to perform complex reasoning (e.g., "Since the opponent is Mewtwo and used Psycho Cut, they likely have Psystrike ready").
-6.  **Recommendation**: Communicates the result to the player (e.g., "Shield recommended").
+Reference Knowledge enriches Overdex's understanding. It does not replace observation.
 
----
+## Confidence
 
-## Knowledge Model
+Overdex does not need to declare something a fact in order to make it useful.
 
-A Dynamic Knowledge object typically contains:
+Every measurement and inference should carry an appropriate level of confidence.
 
-| Property | Description |
-| :--- | :--- |
-| `identifier` | A unique ID for the knowledge item (e.g., `enemy_slot_1_species`). |
-| `type` | The category of knowledge (e.g., `SPECIES`, `MOVE`, `ENERGY_STATE`). |
-| `value` | The current believed value (e.g., `"Mewtwo"`). |
-| `confidence` | A score representing how certain the system is (0.0 to 1.0). |
-| `evidence` | A list of references to the `Observation` objects that support this belief. |
-| `lastUpdated` | Timestamp of the most recent supporting observation. |
-| `validity` | State of the knowledge (e.g., `CONFIRMED`, `TENTATIVE`, `WITHDRAWN`). |
-| `provenance` | A summary of where the evidence came from (e.g., "Local OCR + Partner Sync"). |
+These values are not progressively becoming facts. They represent the system's confidence in increasingly derived statements.
 
----
+## Contradiction and Supersedence
 
-## Knowledge Derivation
+Contradictory measurements must not be erased merely because a later measurement has higher confidence.
 
-Dynamic Knowledge is formed by merging evidence from multiple sources:
+For example:
 
-### Single Observation
-A high-confidence observation (e.g., a clear OCR of a move name) can immediately create or update a knowledge item.
+```text
+Observation A
+Opponent appears to be Swampert
+Confidence: 0.83
 
-### Multi-Observation Consensus
-Multiple low-confidence observations that agree (e.g., three different frames showing "Mew..." in the species area) can be aggregated to form a high-confidence knowledge item.
-
-### Reference Enrichment
-When a species is observed, Dynamic Knowledge is enriched with **Reference Knowledge**:
-- **Observation**: "Species is Mewtwo"
-- **Reference**: "Mewtwo's Fast Moves are Psycho Cut and Confusion"
-- **Knowledge**: "Opponent is Mewtwo. Possible fast moves are limited to {Psycho Cut, Confusion}."
-
----
-
-## Consumer Model
-
-The following systems are the primary consumers of Dynamic Knowledge:
-
--   **Battle Memory**: Stores the sequence of beliefs throughout the battle.
--   **Battle Timeline**: Visualizes when specific knowledge was gained or changed.
--   **Recommendations**: Uses current knowledge (e.g., "Opponent is Swampert") to suggest actions (e.g., "Switch to Venusaur").
--   **Team Analysis**: Aggregates knowledge across multiple battles to identify patterns in opponent teams.
--   **AI Assistance**: Provides natural language explanations based on why the system believes what it believes.
-
----
-
-## Relationship Diagram
-
-```mermaid
-graph TD
-    RK[Reference Knowledge Layer] --> |Enriches| DK
-    
-    subgraph "Observation Pipeline"
-        Capt[Screen Capture] --> Rec[Recognition]
-        Rec --> Obs[Observation]
-    end
-    
-    Obs --> |Evidence| DK[Dynamic Knowledge Layer]
-    
-    DK --> |Best Understanding| Intel[Intelligence Layer]
-    Intel --> |Inference| Reco[Recommendation]
-    
-    style DK fill:#f9f,stroke:#333,stroke-width:2px
-    style RK fill:#bbf,stroke:#333
+Observation B
+Opponent appears to be Charizard
+Confidence: 0.97
 ```
 
----
+The current Match Understanding may favor Charizard, but Observation A remains part of the historical record.
 
-## Acceptance Criteria for Implementation
-1.  **Traceability**: Can I click a recommendation and see the Observations that generated it?
-2.  **Evolution**: Does the UI update smoothly when a belief changes (e.g., correcting a species name)?
-3.  **Separation**: Is the Intelligence engine (energy counting) decoupled from the Observation engine (OCR)?
-4.  **Enrichment**: Does identifying a species automatically unlock its move database for the Intelligence layer?
+The system should be able to represent current understanding, previous understanding, supporting observations, confidence changes, and superseded or withdrawn conclusions.
+
+## Provenance and Traceability
+
+A conclusion should be traceable backward through the reasoning that produced it.
+
+```text
+Recommendation
+   ↓
+Inference
+   ↓
+Match Understanding
+   ↓
+Observations
+   ↓
+Reality Event / Evidence
+```
+
+Reference Knowledge should also remain identifiable as reference input to the reasoning.
+
+This allows Overdex to answer:
+
+> "Why did you make this recommendation?"
+
+without pretending that the recommendation was a fact.
+
+## Reference Enrichment
+
+When an Observation identifies an entity, relevant Reference Knowledge can be retrieved.
+
+Example:
+
+```text
+Observation:
+Opponent appears to be Mewtwo
+Confidence: 0.94
+
+Reference Knowledge:
+Mewtwo
+- Psychic type
+- known fast moves
+- known charged moves
+- other canonical reference data
+
+Match Understanding:
+Opponent is currently believed to be Mewtwo
+Confidence: 0.94
+Relevant reference data attached/available
+
+Intelligence:
+Compare observed behavior with Mewtwo's known possibilities
+```
+
+Reference enrichment should be relevant to the observed event. The Match does not need to copy the entire Pokédex into every piece of Match state.
+
+## Ownership Rules
+
+| Information | Owner |
+|---|---|
+| Event and its underlying evidence | Reality |
+| Measurement of an event | Observation |
+| Canonical species/reference data | Reference Knowledge |
+| Current live battle state | Match Understanding / Battle Memory |
+| Reasoning process | Intelligence |
+| Derived conclusion | Inference |
+| Player-facing action guidance | Recommendation |
+
+The ownership test is:
+
+> **Who owns the truth represented by this information?**
+
+If the answer is Reality, Overdex should preserve a reference to it rather than pretending to own it.
+
+If it is a measurement, it belongs to Observation.
+
+If it is canonical reference material, it belongs to Reference Knowledge.
+
+If it describes the current state Overdex believes the Match is in, it belongs to Match Understanding.
+
+If it is a conclusion reached by comparing evidence and knowledge, it belongs to Intelligence / Inference.
+
+## Current Architecture
+
+The current implementation already contains pieces of this model:
+
+```text
+RealityArticle
+    ↓
+BattleInterpreter
+    ↓
+BattleEvent
+    ↓
+BattleMemory
+    ↓
+Reference Knowledge
+    ↓
+MatchupEngine
+    ↓
+DecisionEngine
+```
+
+The architecture should evolve by clarifying these ownership boundaries rather than by introducing layers solely because a diagram contains a box for them.
+
+In particular:
+
+- `PokemonKnowledge` provides Reference Knowledge.
+- `Pokemon` is the canonical Reference Knowledge model.
+- `BattleEvent` represents interpreted battle information.
+- `BattleMemory` retains evolving Match state.
+- `MatchupEngine` reasons about matchup relationships.
+- `DecisionEngine` produces tactical conclusions.
+- Observations and Reality history remain traceable outside the derived state.
+
+## Design Principles
+
+1. **Do not call live Match information a fact merely because the game presented it.**
+2. **Preserve the distinction between Reality, measurement, current understanding, and inference.**
+3. **Confidence belongs with measurements and conclusions.**
+4. **Never erase contradictory evidence merely because a newer conclusion supersedes it.**
+5. **Reference Knowledge enriches understanding; it does not establish live Match truth.**
+6. **Battle Memory owns evolving Match state, not the underlying evidence that produced it.**
+7. **Intelligence reasons across observations, reference material, Match state, and prior inference.**
+8. **Every important conclusion should be traceable to its supporting observations and reference inputs.**
+9. **Do not create architectural layers merely to satisfy a diagram.**
+10. **When ownership is unclear, resolve the ownership question before adding code.**

@@ -68,6 +68,7 @@ class BattleInterpreterTest {
         assertEquals("Pikachu", event?.message)
         assertEquals(25, event?.pokemonId)
         assertEquals(perceivedAt, event?.timestamp)
+        assertEquals(ArticleId("A1"), event?.sourceArticleId)
     }
 
     @Test

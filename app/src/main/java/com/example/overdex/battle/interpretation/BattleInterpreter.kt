@@ -47,7 +47,8 @@ class BattleInterpreter(
                     actor = BattleActor.ENEMY,
                     message = pokemon?.name ?: payload.data,
                     pokemonId = pokemon?.id,
-                    confidence = Confidence(ConfidenceLevel.OBSERVED)
+                    confidence = Confidence(ConfidenceLevel.OBSERVED),
+                    sourceArticleId = article.id
                 )
             }
 

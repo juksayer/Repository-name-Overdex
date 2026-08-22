@@ -1,8 +1,8 @@
 # Ownership Audit
 
-Purpose
+## Purpose
 
-Every concept in Overdex should have exactly one owner.
+Every concept in Overdex should have exactly one primary owner.
 
 Ownership defines responsibility.
 
@@ -10,9 +10,9 @@ Responsibility defines boundaries.
 
 When ownership is unclear, architecture begins to drift.
 
----
+------------------------------------------------------------------------
 
-# Rules
+# Core Rules
 
 Every concept should have one primary owner.
 
@@ -20,361 +20,414 @@ Other layers may consume information.
 
 Other layers may transform information.
 
-Ownership never transfers.
+Ownership does not transfer merely because information crosses a
+boundary.
 
-If multiple layers appear to own the same concept, reconsider the design.
+The ownership test is:
 
----
+> **Who owns the truth represented by this information?**
 
-# Knowledge
+------------------------------------------------------------------------
+
+# Reality
 
 Owns:
 
-- Pokémon species
-- Moves
-- Typing
-- Base statistics
-- Forms
-- Evolution
-- Static game data
-- Evidence
+-   Events
+-   Underlying evidence produced by those events
+
+Reality does not belong to Overdex.
+
+Overdex may preserve references to Reality evidence and measurements of
+it.
+
+------------------------------------------------------------------------
+
+# Reference Knowledge
+
+Owns:
+
+-   Pokémon species data
+-   Moves
+-   Typing
+-   Base statistics
+-   Forms
+-   Evolution
+-   Other canonical static game data
 
 Does not own:
 
-- Current battle
-- Observations
-- Recommendations
-- Trainer history
+-   Current Match state
+-   Observations
+-   Recommendations
+-   Live battle conclusions
 
 Question:
 
-Can this information exist before a battle begins?
+> Can this information exist before the current Match begins?
 
-If yes, Knowledge probably owns it.
+If yes, Reference Knowledge probably owns it.
 
----
+Reference Knowledge provides context. It does not establish live Match
+truth.
+
+------------------------------------------------------------------------
 
 # Observation
 
 Owns:
 
-
-
-- Observation provenance
-- Matches
-- Active Match workspace
+-   Measurements of Reality events
+-   Observation provenance
+-   Observation confidence
+-   Active observation session
+-   Battle Workspace as the active observation integration point
 
 Does not own:
 
-- Battle history
-- Trainer preferences
-- Recommendations
+-   Underlying Reality evidence
+-   Reference Knowledge
+-   Match conclusions
+-   Recommendations
 
 Question:
 
-Was this directly observed?
+> Did Overdex measure this from a Reality event?
 
-If yes, Observation probably owns it.
+If yes, Observation probably owns the measurement.
 
----
+Observation does not assign tactical meaning.
 
-# Memory
+------------------------------------------------------------------------
+
+# Memory / Match State
 
 Owns:
 
-- Current battle state
-- Working memory
-- Temporary calculations
-- Live battle context
+-   Current battle state
+-   Working Match understanding
+-   Temporary battle calculations
+-   Live battle context
 
 Does not own:
 
-- Permanent history
-- Static knowledge
+-   Underlying Reality evidence
+-   Canonical static knowledge
+-   Permanent history
 
 Question:
 
-Would losing power erase this without harming the trainer's long-term record?
+> Is this the current state Overdex believes the Match is in?
 
-If yes, Memory probably owns it.
+If yes, Match State probably owns it.
 
----
+------------------------------------------------------------------------
 
 # History
 
 Owns:
 
-- Battle timelines
-- Ordered events
-- Chronology
-- Match reconstruction
+-   Ordered battle events
+-   Battle timelines
+-   Chronology
+-   Match reconstruction
 
 Does not own:
 
-- Rendering
-- OCR
-- Species database
+-   OCR
+-   Reference Knowledge
+-   Presentation
 
 Question:
 
-Does ordering matter?
+> Does the ordering of events matter to the meaning?
 
-If yes, History probably owns it.
+If yes, History probably owns that ordering.
 
----
+------------------------------------------------------------------------
 
 # Archive
 
 Owns:
 
-- Persistence
-- Storage
-- Retrieval
-- Long-term preservation
+-   Long-term persistence
+-   Storage
+-   Retrieval
+-   Completed battle records
 
 Does not own:
 
-- Interpretation
-- UI
-- Recommendations
+-   Interpretation
+-   UI
+-   Recommendations
 
 Question:
 
-If every ViewModel disappeared, would this still be worth keeping?
+> Is this information worth preserving after the active Match ends?
 
-If yes, Archive probably owns it.
+If yes, Archive probably owns its persistence.
 
----
+------------------------------------------------------------------------
 
 # Intelligence
 
 Owns:
 
-- Recommendations
-- Pattern recognition
-- Matchup analysis
-- Prediction
-- Divination
-- Coaching
-- Explanation
-- Confidence
+-   Inference
+-   Prediction
+-   Matchup analysis
+-   Decision Point analysis
+-   Recommendations
+-   Explanations derived from evidence
+-   Confidence in derived conclusions
 
-Never owns:
+Does not own:
 
-- Facts
-- Evidence
-- History
+-   Reality evidence
+-   Observations
+-   Reference Knowledge
+-   Historical records
 
 Question:
 
-Is this an interpretation?
+> Is this a conclusion reached by reasoning across available
+> information?
 
 If yes, Intelligence probably owns it.
 
----
+------------------------------------------------------------------------
 
 # Presentation
 
 Owns:
 
-- CRT
-- HUD
-- Audio
-- Trainer communication
-- Replay rendering
-- Visual language
+-   CRT
+-   HUD
+-   Audio
+-   Trainer communication
+-   Replay rendering
+-   Visual language
 
-Never owns:
+Does not own:
 
-- Battle state
-- Knowledge
-- Recommendations
+-   Match state
+-   Reference Knowledge
+-   Observations
+-   Recommendations
 
 Presentation communicates.
 
-It never decides.
+It does not decide.
 
----
+------------------------------------------------------------------------
 
-# Cross-Layer Ownership
+# Confidence Ownership
 
-Knowledge
-↓
+Confidence is not a single global property owned by one layer.
 
+The owner is the claim or measurement to which the confidence applies.
+
+Examples:
+
+``` text
 Observation
-↓
+    └── observation confidence
 
-Memory
-↓
+Match Understanding
+    └── confidence in current state
 
-History
-↓
+Inference
+    └── confidence in conclusion
 
-Archive
-↓
+Recommendation
+    └── confidence in recommendation
+```
 
+This prevents Intelligence from becoming the owner of every uncertainty
+in the system.
+
+------------------------------------------------------------------------
+
+# Evidence Ownership
+
+Evidence belongs to Reality and the event that produced it.
+
+Observations point back to that evidence through provenance.
+
+Overdex owns the measurement made from the evidence, not the evidence
+itself.
+
+This distinction must remain intact.
+
+------------------------------------------------------------------------
+
+# Cross-Layer Flow
+
+``` text
+Reality
+   ↓
+Observation
+   ↓
+Match State / Understanding
+   ↑
+Reference Knowledge
+   ↓
 Intelligence
-↓
-
+   ↓
+Inference
+   ↓
 Presentation
+```
 
-Information flows downward.
+History and Archive preserve the relevant records across time.
 
-Ownership does not.
+Ownership does not flow downward or upward.
 
----
+------------------------------------------------------------------------
 
 # Ownership Smells
 
 A class probably has the wrong owner if it:
 
-- Stores knowledge and observations together.
-- Performs OCR while rendering UI.
-- Generates recommendations during persistence.
-- Knows about Android widgets inside the engine.
-- Mutates history while presenting it.
-- Requires another layer to explain its own data.
+-   Stores canonical knowledge and live Match state together.
+-   Claims ownership of Reality evidence.
+-   Performs OCR while rendering UI.
+-   Generates recommendations during persistence.
+-   Knows about Android widgets inside the engine.
+-   Mutates history while presenting it.
+-   Converts uncertain measurements into unqualified facts.
+-   Requires another layer to explain its own data.
 
----
+------------------------------------------------------------------------
 
 # Ownership Questions
 
 When reviewing any class:
 
-What does this class own?
+1.  What does this class own?
+2.  What does it consume?
+3.  What does it produce?
+4.  Could another layer own this more naturally?
+5.  Does it know something it should merely observe?
+6.  Does it remember something it should archive?
+7.  Does it interpret something it should merely present?
+8.  Does it own evidence that actually belongs to Reality?
+9.  Does it turn a measurement into a conclusion without preserving the
+    measurement?
 
-What does it consume?
-
-What does it produce?
-
-Could another layer own this more naturally?
-
-Does this class know something it should merely observe?
-
-Does this class remember something it should archive?
-
-Does this class interpret something it should merely present?
-
----
+------------------------------------------------------------------------
 
 # Litmus Test
 
 Ownership should be explainable in one sentence.
 
-If ownership requires a paragraph...
+If ownership requires a paragraph, ownership is probably wrong.
 
-ownership is probably wrong.
+------------------------------------------------------------------------
 
+# Existing Workspace Rules
 
+The Match workspace represents the observations accumulated during an
+active Match.
 
-OBSERVATION
-owns:
-  Observations
-  Evidence
-  Provenance
-  ObservationSession
-  Battle Workspace
+Session management remains separate from domain state.
 
-REFERENCE KNOWLEDGE
-owns:
-  established game facts used as evidence/context
+Responsibility                                Owner
+  --------------------------------------------- ------------------------------
+Physical input normalization                  Observation / input boundary
+Intent                                        Intent Layer
+Session lifetime                              SessionManager
+Navigation history                            SessionManager
+Active workspace                              SessionManager, derived
+Workspace state                               Individual Workspace
+Selection                                     Individual Workspace
+Domain logic                                  Individual Workspace
+Navigation requests                           Workspace → SessionManager
+Presentation                                  Droidball
+CRT / LCD / Overlay / LED / Sound / Haptics   Droidball
+Rendering                                     Droidball
 
-        Observation + Reference Knowledge
-                     ↓
-INTELLIGENCE
-  weighs available evidence
-  calculates Confidence
-  interprets Confidence
-                     ↓
-PRESENTATION
-  represents Confidence
-  communicates it to trainer
+------------------------------------------------------------------------
 
+# Navigation Context Ownership Invariant
 
-The Match workspace represents the observations and supporting evidence accumulated during an active Match.
-| Responsibility                                      | Owner                      | Why                                                              |
-| --------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
-| Physical input (keyboard, touch, controller, voice) | Observation                | Normalizes platform-specific events into observations.           |
-| Intent                                              | Intent Layer               | Converts observations into device-independent intents.           |
-| Session lifetime                                    | SessionManager             | Owns the current application session.                            |
-| Navigation history                                  | SessionManager             | Owns the workspace stack.                                        |
-| Active workspace                                    | SessionManager (derived)   | Computed as the top of the workspace stack.                      |
-| Workspace state                                     | Individual Workspace       | Each workspace owns its own domain state.                        |
-| Selection                                           | Individual Workspace       | `selectedPokemon`, `selectedRegion`, etc. No universal cursor.   |
-| Domain logic                                        | Individual Workspace       | Acts on intents within its own domain.                           |
-| Navigation requests                                 | Workspace → SessionManager | Workspace requests navigation; SessionManager mutates the stack. |
-| Presentation                                        | Droidball                  | Embodiment of the Presentation layer.                            |
-| CRT/LCD/Overlay/LEDs/Sound/Haptics                  | Droidball                  | Different presentation media, one presenter.                     |
-| Rendering                                           | Droidball                  | Consumes exposed workspace state and presents it.                |
+Only the component that currently owns the active navigation context may
+dispatch navigation intents.
 
+Intents originating from stale contexts must be ignored rather than
+allowing navigation state to become inconsistent.
 
-Then I'd capture the architectural rules we've discovered alongside it:
+------------------------------------------------------------------------
 
-Rule 1
+# Architectural Rules
 
-Observation never assigns meaning.
+### Rule 1
+
+Observation measures.
 
 It reports:
 
-A pressed
-Screen tapped
-Voice command heard
+-   A pressed
+-   Screen tapped
+-   Voice command heard
+-   Visible battle information
 
-Nothing more.
+It does not assign tactical meaning.
 
-Rule 2
+### Rule 2
 
 Intent is device-independent.
 
 Whether it came from:
 
-keyboard
-touchscreen
-controller
-voice
+-   keyboard
+-   touchscreen
+-   controller
+-   voice
 
 the workspace receives the same intent.
 
-Rule 3
+### Rule 3
 
 Modules expose state.
 
 They do not render themselves.
 
-Rule 4
+### Rule 4
 
 Presentation belongs to Droidball.
 
-Everything the trainer experiences is mediated through Droidball.
+Everything the trainer experiences is mediated through the Presentation
+layer.
 
-Rule 5
+### Rule 5
 
 SessionManager owns navigation, not workspaces.
 
 It owns:
 
+``` text
 workspaceStack
+```
 
-and exposes
+and exposes:
 
+``` text
 activeWorkspace
+```
 
 as derived state.
 
-Rule 6
+### Rule 6
 
 Prefer authoritative state over duplicated state.
 
 For example:
 
+``` text
 workspaceStack
 ↓
 activeWorkspace
+```
 
 instead of storing both.
-
-Navigation Context Ownership Invariant
-
-Only the component that currently owns the active navigation context may dispatch navigation 
-intents. Intents originating from stale contexts must be ignored rather than allowing navigation 
-state to become inconsistent.

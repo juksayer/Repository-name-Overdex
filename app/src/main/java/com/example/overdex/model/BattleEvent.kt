@@ -1,5 +1,6 @@
 package com.example.overdex.model
 
+import com.example.overdex.battle.reality.ArticleId
 import java.util.UUID
 
 /**
@@ -56,5 +57,6 @@ data class BattleEvent(
     val pokemonId: Int? = null, // Use Stable IDs (#006) instead of Strings
     val value: Int? = null,
     val message: String? = null,
-    val confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED)
+    val confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED),
+    val sourceArticleId: ArticleId? = null
 )

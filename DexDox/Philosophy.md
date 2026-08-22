@@ -2,157 +2,246 @@
 
 Overdex exists to reduce cognitive load without reducing player agency.
 
-It is not designed to play Pokémon GO.
+It does not play Pokémon GO.
 
-It is designed to help players think more clearly while they play.
+It helps players understand Pokémon GO.
 
----
+------------------------------------------------------------------------
 
-# Knowledge Before Advice
+# The Mission
 
-Advice without understanding is fragile.
+The purpose of Overdex is simple:
 
-Overdex begins with knowledge.
+**Help the player make better decisions with less effort.**
 
-The Pokédex is the foundation because every intelligent recommendation depends upon accurate information.
+Every feature should support that mission.
 
-The application should always know more before attempting to recommend more.
+If it increases complexity without increasing understanding, it does not
+belong.
 
----
+------------------------------------------------------------------------
+
+# The Knowledge Progression
+
+Overdex develops understanding through a progression:
+
+``` text
+Reference
+   ↓
+Observe
+   ↓
+Remember
+   ↓
+Understand
+   ↓
+Infer
+   ↓
+Assist
+```
+
+A higher stage must never erase or replace the responsibility of a lower
+one.
+
+Understanding is earned from measurements and evidence.
+
+------------------------------------------------------------------------
+
+# Measurements Before Conclusions
+
+Overdex does not deal in facts about the live Match.
+
+Pokémon GO may present information as if it were factual. Overdex may
+nevertheless discover that a measurement, interpretation, or assumption
+was wrong.
+
+Therefore:
+
+-   Observation records measurements.
+-   Match state records current understanding.
+-   Reference Knowledge supplies canonical context.
+-   Intelligence derives conclusions.
+-   Presentation communicates confidence.
+
+Every conclusion should be traceable to its supporting measurements and
+reference inputs.
+
+------------------------------------------------------------------------
 
 # Confidence Over Certainty
 
-Not every conclusion deserves complete confidence.
+Confidence is a core currency of Overdex.
 
-When confidence is high, Overdex speaks clearly.
+When confidence is high, Overdex can communicate clearly.
 
-When confidence is reduced, Overdex communicates why.
+When confidence is low, Overdex should communicate uncertainty rather
+than manufacture certainty.
 
-Trust is earned through honesty, not certainty.
+The system should make it possible to understand:
 
----
+-   what was measured
+-   how confidently it was measured
+-   what reference information was used
+-   what was inferred
+-   how confident the inference is
 
-# Observe Before Inferring
+Trust is earned through visible provenance and predictable uncertainty.
 
-Observation creates facts.
-
-Facts support inference.
-
-Inference produces recommendations.
-
-Presentation communicates recommendations.
-
-Every layer depends on the integrity of the layer beneath it.
-
----
+------------------------------------------------------------------------
 
 # The Player Comes First
 
-The player is making the decisions.
+The player makes the decisions.
 
-Overdex is not.
+Overdex provides information and assistance.
 
-The application should reduce cognitive load rather than replace player judgment.
+It should reduce cognitive load without replacing human judgment.
 
 Good software assists.
 
 Great software teaches.
 
----
+Exceptional software helps people improve even after it is closed.
 
-# Learn Once
+------------------------------------------------------------------------
 
+# Learn Before the Battle
 
-Information should become intuition.
+The Pokédex exists for a reason.
 
-If Overdex helps a player make better decisions even when the application is closed, it has succeeded.
+The more the player understands before entering battle, the less
+assistance they will need during battle.
 
-The best feature eventually makes itself unnecessary.
+Reference Knowledge is the foundation from which battle understanding
+and intelligence can draw context.
 
----
+------------------------------------------------------------------------
 
+# Observe During the Battle
 
-# Simplicity Wins
+Observe what changes.
 
-Complexity should exist in the engine.
+Do not repeatedly solve problems that have already been measured.
 
-Simplicity should exist in the interface.
+Measure visible events.
 
-The player should experience clarity regardless of how much work happens beneath the surface.
+Preserve the measurements.
 
----
+Infer meaning later, using accumulated observations, reference material,
+and Match state.
 
+------------------------------------------------------------------------
 
-# The Game Boy Principle
+# Remember After the Battle
 
-The original Game Boy succeeded because it focused attention.
+Battles should leave behind useful history.
 
-Its interface was simple.
+Every battle can teach something.
 
-Its controls were predictable.
+Overdex should remember what players reasonably cannot.
 
-Its purpose was obvious.
+The application becomes stronger because it remembers and reasons from
+evidence, not because it pretends certainty.
 
-Overdex should feel the same way.
+------------------------------------------------------------------------
 
-Every control should have one responsibility.
-
-Every interaction should feel familiar.
-
----
-
-
-# Respect the Player's Attention
+# Respect Attention
 
 Attention is limited.
 
-Every pixel must justify its existence.
+Every pixel should justify its existence.
 
-Every animation must communicate something meaningful.
+Every sound should communicate something.
 
-Silence is often better than noise.
+Every animation should have a purpose.
 
----
+Silence is often the correct interface.
 
+------------------------------------------------------------------------
 
-# Build Something Worth Keeping
+# Simplicity Wins
 
-Technology changes.
+Complexity belongs inside the engine.
 
-Platforms change.
+Clarity belongs at the interface.
 
-Frameworks change.
+The player should never experience the complexity required to produce a
+simple answer.
 
-Good ideas endure.
+------------------------------------------------------------------------
 
-Overdex should be built in a way that future versions can improve without abandoning the principles that created them.
+# The Game Boy Principle
 
-Mirror Pokémon GO's current gameplay, but leave room for future mechanics.
+Simple.
 
-Do not over-engineer for hypothetical features, but reserve enough flexibility that a new gameplay distinction can be added without redesigning the ownership model.
+Focused.
 
-The Pokédex documents Pokémon. My Binders document your relationship with Pokémon.
+Predictable.
 
-Recognizers should recover evidence, not reject imperfect evidence
+Immediate.
 
-Learn before the battle. Observe during the battle. Remember after the battle. Improve before the next one.
+Overdex should feel the same way.
 
+Every screen should have a purpose.
 
-# Evidence
+Every button should have one job.
 
-Describe what exists.
+Every interaction should feel natural.
 
-Do not invent filenames, screenshots, recordings, or artifacts.
+------------------------------------------------------------------------
 
-If evidence was generated, reference its actual filename and location.
+# Respect Existing Architecture
 
-If evidence was not generated, explicitly state that verification is pending.
+Architecture is expensive knowledge.
 
+Assume existing architecture is intentional.
 
-# Invisible Learning
+Improve it only when a task explicitly requires it.
 
-The trainer should become more capable simply by using Overdex.
+When architecture proves inadequate, change it deliberately and preserve
+ownership boundaries.
 
-Concepts introduced during preparation should naturally reappear during observation.
+------------------------------------------------------------------------
 
-The best tutorial is ordinary use
+# Guiding Principles
+
+-   Build first.
+-   Test what already exists.
+-   Show that it happened.
+-   One feature.
+-   One commit.
+-   One test.
+
+Definitions are immutable.
+
+State is mutable.
+
+Recognizers recover measurements and evidence; they do not reject
+imperfect input simply because it is imperfect.
+
+My Binders document your relationship with Pokémon.
+
+The Pokédex documents Pokémon.
+
+------------------------------------------------------------------------
+
+# The Promise
+
+Overdex will never pretend to know something it does not.
+
+When it speaks, the player should know:
+
+-   what was measured,
+-   what reference information was used,
+-   what was inferred,
+-   and how confident the application is.
+
+Trust is not a feature.
+
+Trust is the product.
+
+------------------------------------------------------------------------
+
+# One Sentence
+
+> **Learn before the battle. Observe during the battle. Remember after
+> the battle. Understand the battle. Improve before the next one.**

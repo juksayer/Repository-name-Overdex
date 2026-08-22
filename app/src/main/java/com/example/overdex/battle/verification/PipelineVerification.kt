@@ -10,6 +10,7 @@ import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.confidence.ConfidenceLevel
 import com.example.overdex.battle.timeline.confidence.ConfidenceScore
 import com.example.overdex.battle.timeline.event.TimelineEvent
+import com.example.overdex.battle.timeline.evidence.EvidenceId
 import com.example.overdex.battle.timeline.evidence.VisualEvidence
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -30,7 +31,7 @@ fun verifyPipeline(pokemonRepository: PokemonRepository) {
     val observation = Observation(
         timestamp = System.currentTimeMillis(),
         observerId = ObserverId("DB_01", ObservationSource.DROIDBALL),
-        evidence = listOf(VisualEvidence("FRAME_123", "uri://frame/123")),
+        evidence = listOf(VisualEvidence(EvidenceId("FRAME_123"), "DB_01", "uri://frame/123")),
         confidence = ConfidenceScore(0.95f, ConfidenceLevel.CONFIRMED)
     )
 

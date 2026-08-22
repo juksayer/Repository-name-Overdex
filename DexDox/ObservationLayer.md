@@ -1,225 +1,224 @@
 # Observation Layer
 
-**Status:** Complete (Git #152–#160)
-
----
+**Status:** Complete (Git #152--#160)
 
 ## Purpose
 
-The Observation Layer is the first stage of the Overdex battle intelligence pipeline.
+The Observation Layer measures events occurring in Reality.
 
-Its responsibility is to observe the Pokémon GO battle screen, extract factual information, and package those observations into a structured Match workspace.
+Its responsibility is to observe the Pokémon GO battle screen, extract
+measurements, assign observation confidence, and publish those
+observations into the active Match workspace.
 
-The Observation Layer **does not** make decisions, predict outcomes, or recommend actions.
+It does not decide what those measurements mean for the battle.
 
-It answers only one question:
+It answers:
 
-> "What can we confidently observe right now?"
+> "What did Overdex measure about what is happening right now?"
 
----
+------------------------------------------------------------------------
 
-# Design Philosophy
+## Design Philosophy
 
-The Observation Layer is intentionally passive.
+The Observation Layer is intentionally limited.
 
-It records observations without interpretation.
+It measures. It does not reason.
 
-Higher layers are responsible for understanding meaning.
+The evidence produced by a Reality event remains outside the Observation
+Layer. An Observation records what Overdex measured about that event and
+preserves the provenance and confidence needed to evaluate that
+measurement later.
 
-This separation keeps recognition deterministic and allows inference systems to evolve independently.
+The Observation Layer must not promote a measurement to certainty merely
+because the game presented the information.
 
----
+------------------------------------------------------------------------
 
-# Responsibilities
+## Responsibilities
 
 The Observation Layer is responsible for:
 
-- Capturing battle screenshots
-- Running OCR and recognition
-- Identifying visible battle information
-- Packaging observations
-- Maintaining the active Battle Workspace
+-   Capturing battle screenshots
+-   Running OCR and recognition
+-   Identifying observable battle information
+-   Producing observations
+-   Assigning observation confidence
+-   Maintaining the active Battle Workspace
 
-It is **not** responsible for:
+It is not responsible for:
 
-- Battle recommendations
-- Energy prediction
-- Opponent modeling
-- Battle history
-- Strategy
-- Team analysis
+-   Reference Knowledge
+-   Match interpretation
+-   Energy prediction
+-   Opponent modeling
+-   Battle history
+-   Strategy
+-   Recommendations
+-   Future-event prediction
 
----
+------------------------------------------------------------------------
 
-# Observation Pipeline
+## Observation Pipeline
 
-```text
+``` text
 Pokémon GO
-
-      │
-
-      ▼
-
+    │
+    ▼
+Reality Event + Evidence
+    │
+    ▼
 Screen Capture
-
-      │
-
-      ▼
-
+    │
+    ▼
 Recognition
-
-• Species
-• Fast Move
-• Charged Moves
-• Shadow Bonus
-• CP
-• Future recognizers...
-
-      │
-
-      ▼
-
+    │
+    ▼
+Observation
+    │
+    │ measurement + confidence + provenance
+    ▼
 Battle Workspace
-
-      │
-
-      ▼
-
+    │
+    ▼
 Higher Layers
 ```
 
----
+------------------------------------------------------------------------
 
-# Battle Workspace
+## Battle Workspace
 
-The Battle Workspace represents everything currently known about the active battle.
+The Battle Workspace represents the observations accumulated during the
+active Match.
 
-It acts as a shared source of truth for later systems.
+It is an integration point for independent observers.
 
-Recognizers contribute observations into the workspace rather than communicating directly with one another.
+The workspace does not become the owner of the underlying Reality
+evidence. It provides the active Match context through which
+observations are made available to downstream systems.
 
-This allows recognizers to remain independent and modular.
+------------------------------------------------------------------------
 
----
-
-# Current Recognition Modules
-
-As of Git #160, the Observation Layer includes support for:
-
-- Species recognition
-- Combat Power recognition
-- Fast Move recognition
-- Charged Move A recognition
-- Charged Move B recognition
-- Shadow Bonus recognition
-
-Additional recognizers can be added without changing the overall architecture.
-
----
-
-# Production Observers
+## Production Observers
 
 Recognition is performed by independent observers.
 
-Each observer owns exactly one observable aspect of the battle.
+Each observer owns one observable aspect of the battle.
 
 Examples include:
 
-- SpeciesObserver
-- CombatPowerObserver
-- FastMoveObserver
-- ChargedMoveObserver
-- ShadowStatusObserver
-- HealthObserver
-- ShieldObserver
-
-Observers publish observations into the Battle Workspace.
+-   SpeciesObserver
+-   CombatPowerObserver
+-   FastMoveObserver
+-   ChargedMoveObserver
+-   ShadowStatusObserver
+-   HealthObserver
+-   ShieldObserver
 
 Observers do not communicate directly with one another.
----
 
-# Match Lifecycle
+Each observer contributes measurements through the workspace.
 
-1. Battle begins.
-2. Match workspace is created.
-3. Screen captures are analyzed.
-4. Recognizers publish observations.
-5. Workspace is updated.
-6. Higher layers consume observations.
-7. Battle ends.
-8. Workspace is finalized.
+------------------------------------------------------------------------
 
----
+## Current Recognition Modules
 
-# Architectural Principles
+As of Git #160, the Observation Layer includes support for:
 
-## Single Responsibility
+-   Species recognition
+-   Combat Power recognition
+-   Fast Move recognition
+-   Charged Move A recognition
+-   Charged Move B recognition
+-   Shadow Bonus recognition
 
-Recognizers recognize.
+Additional observers can be added without changing the overall
+architecture.
 
-They do not infer.
+------------------------------------------------------------------------
 
----
+## Observation Confidence
 
-## Immutable Observations
+Confidence belongs to the measurement.
 
-An observation represents something detected from the screen.
+A recognition result may be:
 
-Interpretation belongs elsewhere.
+-   high confidence
+-   uncertain
+-   contradictory with another observation
+-   later superseded
 
----
+A later observation may change the Match's current understanding without
+deleting the earlier observation.
 
-## Independent Modules
+The historical measurement remains available for provenance and
+reconciliation.
 
-Recognition modules should not depend on one another.
+------------------------------------------------------------------------
 
-Each module contributes only the information it owns.
+## Match Lifecycle
 
----
+1.  Battle begins.
+2.  Match workspace is created.
+3.  Screen captures are analyzed.
+4.  Observers produce measurements.
+5.  Observations are published to the workspace.
+6.  Higher layers consume observations.
+7.  Battle ends.
+8.  The workspace is finalized or handed to the appropriate
+    history/archive infrastructure.
 
-## Shared Workspace
+------------------------------------------------------------------------
 
-All recognized information is collected into a single Battle Workspace.
+## Architectural Principles
 
-Consumers read from the workspace instead of communicating directly with recognizers.
+### Observation Does Not Assign Meaning
 
----
+An Observation reports what was measured.
 
-# Relationship to Higher Layers
+It does not decide:
 
-The Observation Layer provides factual inputs for:
+-   what the measurement means tactically
+-   what will happen next
+-   what the opponent intends
+-   whether a recommendation should be made
 
-- Memory Layer
-- History Layer
-- Archive Layer
-- Intelligence Layer
-- Presentation Layer
+### Observations Are Not Reality
 
-Each layer builds on the previous one without modifying observed facts.
+Reality owns the event and its underlying evidence.
 
----
+Overdex owns the measurement it made of that event.
 
-# Future Expansion
+### Observations Are Not Facts
 
-Future recognizers may include:
+A measurement can be wrong.
 
-- HP estimation
-- Switch timer recognition
-- Energy indicators
-- Buff/debuff detection
-- Battle timer
-- Shield count
-- Weather
-- Battle league metadata
+Confidence communicates how strongly Overdex currently trusts the
+measurement.
 
-These additions expand the Observation Layer without changing its responsibilities.
+### Preserve Measurements
 
----
+Contradictory or superseded measurements should remain available so
+later conclusions can be traced back to what Overdex actually saw.
 
-# Guiding Principle
+------------------------------------------------------------------------
 
-> Observe only what appears on the screen.
->
-> Infer nothing.
->
-> Preserve everything.
+## Relationship to Higher Layers
+
+The Observation Layer provides measurements to:
+
+-   Match state / Battle Memory
+-   History
+-   Intelligence
+-   Presentation
+
+Reference Knowledge may be consulted downstream to enrich the
+understanding of an observation.
+
+The Observation Layer itself does not perform that enrichment.
+
+------------------------------------------------------------------------
+
+## Guiding Principle
+
+> **Measure what appears in Reality. Preserve the measurement. Infer
+> nothing.**
