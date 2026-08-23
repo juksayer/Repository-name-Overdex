@@ -59,4 +59,6 @@ data class BattleEvent(
     val message: String? = null,
     val confidence: Confidence = Confidence(ConfidenceLevel.OBSERVED),
     val sourceArticleId: ArticleId? = null
-)
+) : TimelineRecord {
+    override val perceivedAt: Long get() = timestamp
+}

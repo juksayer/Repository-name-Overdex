@@ -55,6 +55,7 @@ class Match(
                     payload = testimony.payload
                 )
                 realityTimeline.append(article)
+                battleMemory.timeline.record(article)
 
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)

@@ -3,6 +3,8 @@ package com.example.overdex.battle.reality
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyPayload
 
+import com.example.overdex.model.TimelineRecord
+
 /**
  * The canonical, immutable historical record of an article's journey through Reality.
  * 
@@ -19,9 +21,9 @@ import com.example.overdex.battle.custody.TestimonyPayload
  */
 data class RealityArticle(
     val id: ArticleId,
-    val perceivedAt: Long,
+    override val perceivedAt: Long,
     val recordedAt: Long,
     val sourceId: SourceId,
     val payload: TestimonyPayload,
     val predecessorIds: List<ArticleId> = emptyList()
-)
+) : TimelineRecord
