@@ -36,7 +36,6 @@ import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.PokemonEntity
 import com.example.overdex.data.observation.DroidballObservationInput
-import com.example.overdex.model.Evolution
 import com.example.overdex.model.EvolutionImport
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
@@ -65,7 +64,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
 
-    private val pokemonRepository = PokemonRepository(pokemonDao)
+    val spriteProvider: SpriteProvider = FallbackSpriteProvider(
+        primary = LocalSpriteProvider(application.assets),
+        secondary = GithubSpriteProvider(),
+    )
+
+    private val pokemonRepository = PokemonRepository(pokemonDao, spriteProvider)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
     
@@ -87,11 +91,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
-
-    val spriteProvider: SpriteProvider = FallbackSpriteProvider(
-        primary = LocalSpriteProvider(application.assets),
-        secondary = GithubSpriteProvider(),
-    )
 
     // Instrument Workspace
     private val instrumentTree = InstrumentTree(
@@ -568,46 +567,5 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         base.prevEvolutions.forEach { family.add(it.name) }
         base.nextEvolutions.forEach { family.add(it.name) }
         return family.toList()
-    }
-
-    private fun PokemonEntity.toDomain(): Pokemon {
-        val types = try { Json.decodeFromString<List<PokemonType>>(typesJson) } catch (e: Exception) { emptyList() }
-        val fastMoves = try { Json.decodeFromString<List<Move>>(fastMovesJson) } catch (e: Exception) { emptyList() }
-        val chargedMoves = try { Json.decodeFromString<List<Move>>(chargedMovesJson) } catch (e: Exception) { emptyList() }
-        val prevEvolutions = try {
-            Json.decodeFromString<List<EvolutionImport>>(prevEvolutionsJson)
-                .map { Evolution(it.num, it.name) }
-        } catch (e: Exception) {
-            emptyList()
-        }
-
-        val nextEvolutions = try {
-            Json.decodeFromString<List<EvolutionImport>>(nextEvolutionsJson)
-                .map { Evolution(it.num, it.name) }
-        } catch (e: Exception) {
-            emptyList()
-        }
-        return Pokemon(
-            id = id,
-            name = name,
-            types = types,
-            region = region,
-            genus = genus,
-            prevEvolutions = prevEvolutions,
-            nextEvolutions = nextEvolutions,
-
-            height = height,
-            weight = weight,
-
-            baseAttack = baseAttack,
-            baseDefense = baseDefense,
-            baseStamina = baseStamina,
-
-            fastMoves = fastMoves,
-            chargedMoves = chargedMoves,
-            spriteUrl = spriteProvider.getSpriteUrl(id = id),
-            cryUrl = cryUrl,
-            description = description
-        )
     }
 }

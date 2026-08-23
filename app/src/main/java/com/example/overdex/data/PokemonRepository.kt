@@ -12,7 +12,8 @@ import com.example.overdex.model.PokemonType
 import kotlinx.serialization.json.Json
 
 class PokemonRepository(
-    private val pokemonDao: PokemonDao
+    private val pokemonDao: PokemonDao,
+    private val spriteProvider: SpriteProvider
 ) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
@@ -111,7 +112,7 @@ class PokemonRepository(
             baseStamina = baseStamina,
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
-            spriteUrl = "",
+            spriteUrl = spriteProvider.getSpriteUrl(id = id),
             cryUrl = cryUrl,
             description = description
         )

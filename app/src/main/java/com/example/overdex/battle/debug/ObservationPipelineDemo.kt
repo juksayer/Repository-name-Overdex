@@ -10,6 +10,7 @@ import com.example.overdex.battle.observation.debug.DebugObserver
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.event.TimelineEvent
+import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.data.PokemonRepository
 
 /**
@@ -49,6 +50,7 @@ object ObservationPipelineDemo {
                     object : TimelineEvent {
                         override val timestamp: Long = obs.timestamp
                         override val observerId = obs.observerId
+                        override val evidence: Evidence? = obs.evidence.firstOrNull()
                     }
                 }
             }

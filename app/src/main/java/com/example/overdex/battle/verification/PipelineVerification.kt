@@ -10,6 +10,7 @@ import com.example.overdex.battle.timeline.BattleTimelineBuilder
 import com.example.overdex.battle.timeline.confidence.ConfidenceLevel
 import com.example.overdex.battle.timeline.confidence.ConfidenceScore
 import com.example.overdex.battle.timeline.event.TimelineEvent
+import com.example.overdex.battle.timeline.evidence.Evidence
 import com.example.overdex.battle.timeline.evidence.EvidenceId
 import com.example.overdex.battle.timeline.evidence.VisualEvidence
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -47,6 +48,7 @@ fun verifyPipeline(pokemonRepository: PokemonRepository) {
                 object : TimelineEvent {
                     override val timestamp = obs.timestamp
                     override val observerId = obs.observerId
+                    override val evidence: Evidence? = obs.evidence.firstOrNull()
                 }
             }
         }

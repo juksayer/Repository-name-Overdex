@@ -134,4 +134,26 @@ class BattleInterpreterTest {
         assertEquals(25, event1?.pokemonId)
         assertEquals(26, event2?.pokemonId)
     }
+
+    @Test
+    fun `BattleEvent sourceArticleId preserves the identity of the RealityArticle`() {
+        // 1. Create a uniquely identified RealityArticle
+        val articleId = ArticleId("UNIQUE-ARTICLE-X")
+        val article = RealityArticle(
+            id = articleId,
+            perceivedAt = 1000L,
+            recordedAt = 2000L,
+            sourceId = SourceId("SPECIES_WITNESS"),
+            payload = RawTestimony("Pikachu")
+        )
+
+        // 2. Interpret it using the production BattleInterpreter
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        // 3. Assert that the resulting BattleEvent.sourceArticleId equals the originating RealityArticle.id
+        assertEquals("The BattleEvent must carry the ArticleId of its source article",
+            articleId, event?.sourceArticleId)
+    }
 }
