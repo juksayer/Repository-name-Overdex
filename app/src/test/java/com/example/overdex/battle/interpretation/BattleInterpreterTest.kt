@@ -72,6 +72,29 @@ class BattleInterpreterTest {
     }
 
     @Test
+    fun `interprets player species witness testimony as player pokemon identified event`() {
+        val perceivedAt = 123456789L
+        val article = RealityArticle(
+            id = ArticleId("PA1"),
+            perceivedAt = perceivedAt,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("PLAYER_SPECIES_WITNESS"),
+            payload = RawTestimony("Raichu")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertEquals(BattleEventType.POKEMON_IDENTIFIED, event?.type)
+        assertEquals(BattleActor.PLAYER, event?.actor)
+        assertEquals("Raichu", event?.message)
+        assertEquals(26, event?.pokemonId)
+        assertEquals(perceivedAt, event?.timestamp)
+        assertEquals(ArticleId("PA1"), event?.sourceArticleId)
+    }
+
+    @Test
     fun `returns null for unrelated source`() {
         val article = RealityArticle(
             id = ArticleId("A2"),

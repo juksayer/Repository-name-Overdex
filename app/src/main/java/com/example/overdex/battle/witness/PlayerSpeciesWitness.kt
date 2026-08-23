@@ -63,6 +63,12 @@ class PlayerSpeciesWitness(
         newScope.launch {
             Log.d("PlayerSpeciesWitness", "waiting for frames")
             input.supply { bitmap ->
+                @Suppress("SENSELESS_COMPARISON")
+                if (bitmap == null) {
+                    Log.e("PlayerSpeciesWitness", "Received null bitmap")
+                    return@supply
+                }
+                
                 Log.d("PlayerSpeciesWitness", "bitmap received")
                 match.incrementFrameCount()
                 

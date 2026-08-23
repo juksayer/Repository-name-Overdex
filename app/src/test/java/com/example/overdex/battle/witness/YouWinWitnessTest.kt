@@ -1,8 +1,12 @@
-package com.example.overdex.battle.observation
+package com.example.overdex.battle.witness
 
 import android.graphics.Bitmap
 import com.example.overdex.battle.custody.*
+import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.FakePokemonKnowledge
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
+import com.example.overdex.battle.timeline.observer.ObserverId
+import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
@@ -18,16 +22,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.milliseconds
 
-class SpeciesWitnessTest {
+class YouWinWitnessTest {
 
-    private val testObserverId = com.example.overdex.battle.timeline.observer.ObserverId(
-        "TEST_SPECIES", 
-        com.example.overdex.battle.timeline.observer.ObservationSource.SCREEN_CAPTURE
+    private val testObserverId = ObserverId(
+        "TEST_YOU_WIN", 
+        ObservationSource.SCREEN_CAPTURE
     )
 
     @Test
-    fun `successful recognition results in custody submission`() = runBlocking {
+    fun `successful YOU WIN recognition results in custody submission`() = runBlocking {
         // Arrange
         val custody = FakeCustody()
         val match = Match(
@@ -38,29 +43,29 @@ class SpeciesWitnessTest {
         )
         val input = FakeInput()
         val calibration = BattleCalibration(
-            enemyNameRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f)
+            youWinRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f)
         )
         
-        val witness = SpeciesWitness(
+        // Mock recognition result for "YOU WIN"
+        val mockResult = RecognitionResult("YOU WIN!", 1.0f, "MockRecognizer")
+        
+        val witness = YouWinWitness(
             input = input,
             calibration = calibration,
             observerId = testObserverId,
-            recognize = { RecognitionResult("Pikachu", 1.0f, "Mock") },
-            crop = { _, _ -> null } 
+            recognize = { _, _ -> listOf(mockResult) },
+            crop = { _, _ -> null } // Return null to simulate JVM stub behavior
         )
 
         // Act
         witness.start(match)
-        delay(50)
+        delay(100.milliseconds)
         
-        // Use the same trick as AttackIncomingCollectorTest to trigger a frame with null bitmap in JVM
-        input.triggerSilentFrame {
-            // Assert inside the callback scope to ensure it ran
-        }
-        delay(50)
+        input.triggerFrame()
+        delay(100.milliseconds)
 
         // Assert
-        val records = custody.records
+        val records = custody.getRecords()
         
         // 1. Availability Signal
         assertTrue("Start availability record missing", records.any { it is SourceAvailabilityRecord && it.available })
@@ -70,10 +75,12 @@ class SpeciesWitnessTest {
 
         // 3. Neutral Testimony
         val testimony = records.filterIsInstance<TestimonyRecord>()
-        assertEquals("Testimony record missing", 1, testimony.size)
-        assertEquals(SourceId("TEST_SPECIES"), testimony[0].sourceId)
-        assertEquals(RawTestimony("Pikachu"), testimony[0].payload)
+        assertEquals("Should submit exactly one testimony", 1, testimony.size)
+        assertEquals(SourceId("TEST_YOU_WIN"), testimony[0].sourceId)
+        assertEquals(RawTestimony("YOU WIN!"), testimony[0].payload)
         assertEquals(1.0f, testimony[0].confidence)
+        
+        match.release()
     }
 
     // --- Fakes ---
@@ -86,20 +93,21 @@ class SpeciesWitnessTest {
             callback = onVisualData
         }
 
-        suspend fun triggerSilentFrame(block: () -> Unit) {
+        suspend fun triggerFrame() {
+            // Supply a null bitmap. In JVM tests, any non-null Bitmap call will fail.
+            // Our test-aware YouWinWitness handles null by calling recognize(null, ...).
             try {
                 @Suppress("UNCHECKED_CAST")
-                val raw = callback as? (suspend (Any?) -> Unit)
+                val raw = callback as? (suspend (Bitmap?) -> Unit)
                 raw?.invoke(null)
-                block()
             } catch (e: Throwable) {
-                // Ignore JVM class cast issues if they occur
+                // Ignore JVM cast issues
             }
         }
     }
 
     private class FakeCustody : TestimonyCustody {
-        val records = CopyOnWriteArrayList<CustodyRecord>()
+        private val records = CopyOnWriteArrayList<CustodyRecord>()
         private val sequence = AtomicLong(0)
 
         private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(replay = 64, extraBufferCapacity = 64)

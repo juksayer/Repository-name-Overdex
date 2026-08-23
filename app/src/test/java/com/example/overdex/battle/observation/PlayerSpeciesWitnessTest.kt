@@ -87,7 +87,7 @@ class PlayerSpeciesWitnessTest {
         suspend fun triggerSilentFrame(block: () -> Unit) {
             try {
                 @Suppress("UNCHECKED_CAST")
-                val raw = callback as? (suspend (Bitmap?) -> Unit)
+                val raw = callback as? (suspend (Any?) -> Unit)
                 raw?.invoke(null)
                 block()
             } catch (e: Throwable) {
