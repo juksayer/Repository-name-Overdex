@@ -7,6 +7,7 @@ import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.BattleResult
 import com.example.overdex.model.Pokemon
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -156,6 +157,68 @@ class BattleInterpreterTest {
         assertEquals("Raichu", event2?.message)
         assertEquals(25, event1?.pokemonId)
         assertEquals(26, event2?.pokemonId)
+    }
+
+    @Test
+    fun `interprets you win witness testimony as battle ended win event`() {
+        val perceivedAt = 999L
+        val articleId = ArticleId("WIN_ARTICLE")
+        val article = RealityArticle(
+            id = articleId,
+            perceivedAt = perceivedAt,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("YOU_WIN_WITNESS"),
+            payload = RawTestimony("YOU WIN!")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertEquals(BattleEventType.BATTLE_ENDED, event?.type)
+        assertEquals(BattleResult.WIN, event?.result)
+        assertEquals(perceivedAt, event?.timestamp)
+        assertEquals(articleId, event?.sourceArticleId)
+    }
+
+    @Test
+    fun `interprets good effort witness testimony as battle ended loss event`() {
+        val perceivedAt = 888L
+        val articleId = ArticleId("LOSS_ARTICLE")
+        val article = RealityArticle(
+            id = articleId,
+            perceivedAt = perceivedAt,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("GOOD_EFFORT_WITNESS"),
+            payload = RawTestimony("GOOD EFFORT!")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertEquals(BattleEventType.BATTLE_ENDED, event?.type)
+        assertEquals(BattleResult.LOSS, event?.result)
+        assertEquals(perceivedAt, event?.timestamp)
+        assertEquals(articleId, event?.sourceArticleId)
+    }
+
+    @Test
+    fun `BattleEvent result defaults to null for non-outcome events`() {
+        val article = RealityArticle(
+            id = ArticleId("P1"),
+            perceivedAt = 100L,
+            recordedAt = 200L,
+            sourceId = SourceId("SPECIES_WITNESS"),
+            payload = RawTestimony("Pikachu")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertEquals(BattleEventType.POKEMON_IDENTIFIED, event?.type)
+        assertNull("Result must be null for non-terminal events", event?.result)
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEvent
 import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.BattleResult
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 
@@ -62,6 +63,24 @@ class BattleInterpreter(
                     message = pokemon?.name ?: payload.data,
                     pokemonId = pokemon?.id,
                     confidence = Confidence(ConfidenceLevel.OBSERVED),
+                    sourceArticleId = article.id
+                )
+            }
+
+            sourceId == "YOU_WIN_WITNESS" -> {
+                BattleEvent(
+                    timestamp = article.perceivedAt,
+                    type = BattleEventType.BATTLE_ENDED,
+                    result = BattleResult.WIN,
+                    sourceArticleId = article.id
+                )
+            }
+
+            sourceId == "GOOD_EFFORT_WITNESS" -> {
+                BattleEvent(
+                    timestamp = article.perceivedAt,
+                    type = BattleEventType.BATTLE_ENDED,
+                    result = BattleResult.LOSS,
                     sourceArticleId = article.id
                 )
             }

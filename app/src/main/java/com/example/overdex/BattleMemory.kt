@@ -137,6 +137,10 @@ data class BattleMemory(
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
+        val explicitResult = timeline.events.lastOrNull { 
+            it.type == BattleEventType.BATTLE_ENDED && it.result != null 
+        }?.result
+
         return BattleLog(
             startTime = startTime,
             endTime = endTime,
@@ -148,7 +152,7 @@ data class BattleMemory(
             enemyLead = enemyLead,
             playerShieldsUsed = playerShieldsUsed,
             enemyShieldsUsed = enemyShieldsUsed,
-            result = if (enemyTeam.isNotEmpty() && enemyTeam.all { !it.alive }) {
+            result = explicitResult ?: if (enemyTeam.isNotEmpty() && enemyTeam.all { !it.alive }) {
                 BattleResult.WIN
             } else {
                 BattleResult.UNKNOWN
