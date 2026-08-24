@@ -3,7 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.Pokemon
 
-class FakePokemonKnowledge : PokemonKnowledge {
+open class FakePokemonKnowledge : PokemonKnowledge {
     override suspend fun getPokemonByName(name: String): Pokemon? =
         when (name) {
             "Bulbasaur" -> Pokemon(id = 1, name = "Bulbasaur", types = emptyList(), region = "Kanto", fastMoves = emptyList(), chargedMoves = emptyList())
@@ -19,4 +19,6 @@ class FakePokemonKnowledge : PokemonKnowledge {
             6 -> getPokemonByName("Charizard")
             else -> null
         }
+
+    override suspend fun getAllSpeciesNames(): Set<String> = setOf("BULBASAUR", "PIKACHU", "CHARIZARD")
 }

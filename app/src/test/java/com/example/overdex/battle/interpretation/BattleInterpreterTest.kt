@@ -46,6 +46,8 @@ class BattleInterpreterTest {
                 26 -> getPokemonByName("Raichu")
                 else -> null
             }
+
+        override suspend fun getAllSpeciesNames(): Set<String> = setOf("PIKACHU", "RAICHU")
     }
 
     private val interpreter = BattleInterpreter(pokemonKnowledge)

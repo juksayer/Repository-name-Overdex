@@ -38,6 +38,9 @@ interface PokemonDao {
     @Query("SELECT * FROM pokemon WHERE name = :name LIMIT 1")
     suspend fun getPokemonByName(name: String): PokemonEntity?
 
+    @Query("SELECT name FROM pokemon")
+    suspend fun getAllPokemonNames(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(pokemon: List<PokemonEntity>)
 

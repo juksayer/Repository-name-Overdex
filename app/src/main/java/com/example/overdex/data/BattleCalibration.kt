@@ -11,7 +11,12 @@ data class BattleCalibration(
     val enemyNameRegion: AnchorRegion = AnchorRegion(),
     val hpBarRegion: AnchorRegion = AnchorRegion(),
     val teamIconsRegion: AnchorRegion = AnchorRegion(),
-    val moveBannerRegion: AnchorRegion = AnchorRegion(),
+    val moveBannerRegion: AnchorRegion = AnchorRegion(
+        x = 0.000926f,
+        y = 0.288618f,
+        width = 0.999074f,
+        height = 0.065041f
+    ),
     val countdownRegion: AnchorRegion = AnchorRegion(),
     val youWinRegion: AnchorRegion = AnchorRegion(
         x = 0.1389f,

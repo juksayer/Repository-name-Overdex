@@ -52,6 +52,7 @@ class PokemonRepositoryTest {
         }
 
         override suspend fun getPokemonByName(name: String): PokemonEntity? = TODO()
+        override suspend fun getAllPokemonNames(): List<String> = TODO()
         override suspend fun insertAll(pokemon: List<PokemonEntity>) = TODO()
         override suspend fun clearAll() = TODO()
     }

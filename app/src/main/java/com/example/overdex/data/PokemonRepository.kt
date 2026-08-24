@@ -25,6 +25,10 @@ class PokemonRepository(
         return pokemonDao.getPokemonByName(name)?.toDomain()
     }
 
+    override suspend fun getAllSpeciesNames(): Set<String> {
+        return pokemonDao.getAllPokemonNames().map { it.uppercase() }.toSet()
+    }
+
     fun search(
         query: String,
         type: PokemonType?
