@@ -26,6 +26,7 @@ import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.data.FallbackSpriteProvider
+import com.example.overdex.data.FieldNoteRepository
 import com.example.overdex.data.GameMasterLoader
 import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
@@ -36,27 +37,16 @@ import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.PokemonEntity
 import com.example.overdex.data.observation.DroidballObservationInput
-import com.example.overdex.model.EvolutionImport
-import com.example.overdex.model.Move
-import com.example.overdex.model.Pokemon
-import com.example.overdex.model.PokemonType
-import com.example.overdex.model.SearchRequest
+import com.example.overdex.model.*
 import com.example.overdex.model.navigation.ActionNode
 import com.example.overdex.model.navigation.DirectoryNode
 import com.example.overdex.model.navigation.InstrumentCommand
 import com.example.overdex.model.navigation.InstrumentTree
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -72,6 +62,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val pokemonRepository = PokemonRepository(pokemonDao, spriteProvider)
     private val pokemonLoader = PokemonJsonLoader(application)
     private val gameMasterLoader = GameMasterLoader(application)
+    private val fieldNoteRepository = FieldNoteRepository(application)
     
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -91,6 +82,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
+
+    fun getFieldNotes(pokemonId: Int) = flow {
+        emit(fieldNoteRepository.getFieldNotesForPokemon(pokemonId))
+    }.flowOn(Dispatchers.IO)
 
     // Instrument Workspace
     private val instrumentTree = InstrumentTree(

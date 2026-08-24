@@ -2,7 +2,6 @@ package com.example.overdex.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,10 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +47,7 @@ sealed interface PokemonDetailNavItem {
     data class Weakness(val type: PokemonType) : PokemonDetailNavItem
     data class Resistance(val type: PokemonType) : PokemonDetailNavItem
     data class Move(val move: com.example.overdex.model.Move) : PokemonDetailNavItem
+    data class FieldNoteItem(val note: com.example.overdex.model.FieldNote) : PokemonDetailNavItem
 }
 
 @Composable
@@ -69,7 +68,9 @@ fun PokemonDetailScreen(
     onLaunchObservatory: () -> Unit = {},
     viewModel: PokedexViewModel,
 ) {
-    val navItems = remember(pokemon) {
+    val fieldNotes by remember(pokemon.id) { viewModel.getFieldNotes(pokemon.id) }.collectAsState(initial = emptyList())
+
+    val navItems = remember(pokemon, fieldNotes) {
         val header = listOf(
             PokemonDetailNavItem.Back,
             PokemonDetailNavItem.Audio,
@@ -95,6 +96,8 @@ fun PokemonDetailScreen(
             
             pokemon.fastMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
             pokemon.chargedMoves.forEach { add(PokemonDetailNavItem.Move(it)) }
+
+            fieldNotes.forEach { add(PokemonDetailNavItem.FieldNoteItem(it)) }
         }
         
         header + body
@@ -114,6 +117,7 @@ fun PokemonDetailScreen(
                 is PokemonDetailNavItem.Weakness -> onTypeClick(item.type)
                 is PokemonDetailNavItem.Resistance -> onTypeClick(item.type)
                 is PokemonDetailNavItem.Move -> onMoveClick(item.move.name)
+                is PokemonDetailNavItem.FieldNoteItem -> { /* No action for now */ }
             }
         }
     )
@@ -441,6 +445,103 @@ fun PokemonDetailScreen(
                     move = move,
                     modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
                     selected = isSelected
+                )
+            }
+
+            if (fieldNotes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                fieldNotes.forEach { note ->
+                    val item = PokemonDetailNavItem.FieldNoteItem(note)
+                    val isSelected = navItems[nav.selectedIndex] == item
+                    FieldNoteSection(
+                        note = note,
+                        modifier = Modifier
+                            .bringIntoViewRequester(requesters[item]!!)
+                            .padding(vertical = 8.dp),
+                        isSelected = isSelected
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FieldNoteSection(
+    note: com.example.overdex.model.FieldNote,
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) TerminalGreen else TerminalDimGreen.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp)
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) TerminalGreen.copy(alpha = 0.05f) else Color.Transparent,
+            contentColor = TerminalGreen
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "FIELD NOTE",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TerminalPurple,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = note.title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TerminalGreen,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            note.lines.forEach { line ->
+                Text(
+                    text = line,
+                    fontSize = 16.sp,
+                    fontStyle = FontStyle.Italic,
+                    color = TerminalGreen,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+            }
+
+            if (note.lesson != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "LESSON LEARNED",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TerminalDimGreen
+                )
+                Text(
+                    text = note.lesson,
+                    fontSize = 14.sp,
+                    color = TerminalDimGreen,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            if (note.author != null) {
+                Text(
+                    text = "— ${note.author}",
+                    fontSize = 12.sp,
+                    color = TerminalDimGreen.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 8.dp)
                 )
             }
         }

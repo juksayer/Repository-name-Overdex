@@ -2694,3 +2694,289 @@
       }
     ]
   },
+  {
+    "id": 146,
+    "species": "Moltres",
+    "fieldNote": [
+      {
+        "id": "146-001",
+        "title": "The Eternal Flame",
+        "lines": [
+          "Fire remembers dawn.",
+          "Every ending leaves behind",
+          "A spark for tomorrow."
+        ],
+        "lesson": "Renewal begins where endings leave possibility.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 147,
+    "species": "Dratini",
+    "fieldNote": [
+      {
+        "id": "147-001",
+        "title": "The Smallest Dragon",
+        "lines": [
+          "Tiny scales catch light.",
+          "Great strength does not announce",
+          "The day it arrives."
+        ],
+        "lesson": "Potential rarely announces itself.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 148,
+    "species": "Dragonair",
+    "fieldNote": [
+      {
+        "id": "148-001",
+        "title": "The Quiet Transformation",
+        "lines": [
+          "Moonlight follows growth.",
+          "Some changes happen so softly",
+          "We miss becoming."
+        ],
+        "lesson": "Transformation is often gradual enough to overlook.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 149,
+    "species": "Dragonite",
+    "fieldNote": [
+      {
+        "id": "149-001",
+        "title": "The Gentle Giant",
+        "lines": [
+          "Strength learns to smile.",
+          "The greatest wings are measured",
+          "By what they protect."
+        ],
+        "lesson": "Great strength carries great responsibility.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 150,
+    "species": "Mewtwo",
+    "fieldNote": [
+      {
+        "id": "150-001",
+        "title": "The Created Mind",
+        "lines": [
+          "Born from human hands.",
+          "A mind asks what it should be",
+          "After being made."
+        ],
+        "lesson": "Identity is discovered, not assigned.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 151,
+    "species": "Mew",
+    "fieldNote": [
+      {
+        "id": "151-001",
+        "title": "The First Wonder",
+        "lines": [
+          "Small feet leave no trail.",
+          "Still, the whole world follows them",
+          "Into the unknown."
+        ],
+        "lesson": "Wonder is the first step every discovery shares.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 152,
+    "species": "Chikorita",
+    "fieldNote": [
+      {
+        "id": "152-001",
+        "title": "The Morning Dew",
+        "lines": [
+          "Leaves greet dawn with thanks.",
+          "Even the smallest kindness",
+          "Welcomes brighter days."
+        ],
+        "lesson": "Gratitude helps every journey take root.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 153,
+    "species": "Bayleef",
+    "fieldNote": [
+      {
+        "id": "153-001",
+        "title": "The Patient Shade",
+        "lines": [
+          "Young trees offer shade",
+          "Long before they know how much",
+          "Someone needs the rest."
+        ],
+        "lesson": "You may help others before you realize your own strength.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 154,
+    "species": "Meganium",
+    "fieldNote": [
+      {
+        "id": "154-001",
+        "title": "The Quiet Meadow",
+        "lines": [
+          "Flowers bloom softly.",
+          "Whole battles are forgotten",
+          "Where peace chooses root."
+        ],
+        "lesson": "Lasting victories are often peaceful ones.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 155,
+    "species": "Cyndaquil",
+    "fieldNote": [
+      {
+        "id": "155-001",
+        "title": "The Shy Flame",
+        "lines": [
+          "Hidden embers wait.",
+          "Not every fire arrives",
+          "With thunder and smoke."
+        ],
+        "lesson": "Quiet beginnings can hold remarkable potential.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 156,
+    "species": "Quilava",
+    "fieldNote": [
+      {
+        "id": "156-001",
+        "title": "The Running Fire",
+        "lines": [
+          "Flames race through the dusk,",
+          "Never asking who believes—",
+          "Only where to burn."
+        ],
+        "lesson": "Confidence grows through action.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 157,
+    "species": "Typhlosion",
+    "fieldNote": [
+      {
+        "id": "157-001",
+        "title": "The Mountain Fire",
+        "lines": [
+          "Volcanoes sleep long.",
+          "No one mistakes them for weak",
+          "When morning arrives."
+        ],
+        "lesson": "Calm strength commands respect.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 158,
+    "species": "Totodile",
+    "fieldNote": [
+      {
+        "id": "158-001",
+        "title": "The Crooked Smile",
+        "lines": [
+          "Big teeth, bigger grin.",
+          "Joy makes even heavy work",
+          "Feel lighter to bear."
+        ],
+        "lesson": "Enthusiasm is its own kind of strength.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 159,
+    "species": "Croconaw",
+    "fieldNote": [
+      {
+        "id": "159-001",
+        "title": "The River's Bite",
+        "lines": [
+          "Fast rivers polish",
+          "Every stone they cannot move",
+          "Until both are changed."
+        ],
+        "lesson": "Persistence transforms everyone involved.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  },
+  {
+    "id": 160,
+    "species": "Feraligatr",
+    "fieldNote": [
+      {
+        "id": "160-001",
+        "title": "The Deep Water",
+        "lines": [
+          "Still rivers conceal",
+          "The oldest hunter of all—",
+          "Patience feeds first."
+        ],
+        "lesson": "Self-control makes strength truly formidable.",
+        "author": "Sean Wimber",
+        "verified": true,
+        "revision": 1
+      }
+    ]
+  }
+]
