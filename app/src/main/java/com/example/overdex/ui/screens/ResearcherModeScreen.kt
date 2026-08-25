@@ -6,7 +6,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import com.example.overdex.ui.theme.TerminalDimGreen
-import com.example.overdex.ui.components.TerminalMenuOption
 import com.example.overdex.ui.components.AttributeToggle
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -29,6 +28,7 @@ enum class ResearcherFocus {
     PROBE,
     OBSERVATORY,
     MATCH_SIGHT,
+    MATCH_CALIBRATION,
     DEBUG_OVERLAY,
     OCR_BOXES,
     EXPERIMENTAL,
@@ -40,13 +40,14 @@ fun ResearcherModeOverlay(
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
     onLaunchMatchSight: () -> Unit = {},
+    onLaunchMatchCalibration: () -> Unit = {},
     onClose: () -> Unit,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onLeft: (() -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
+    onB: (() -> Unit) -> Unit = {},
 ) {
     val focusManager = rememberHandheldFocusManager(ResearcherFocus.SCANLINES)
     
@@ -59,6 +60,7 @@ fun ResearcherModeOverlay(
             ResearcherFocus.PROBE,
             ResearcherFocus.OBSERVATORY,
             ResearcherFocus.MATCH_SIGHT,
+            ResearcherFocus.MATCH_CALIBRATION,
             ResearcherFocus.DEBUG_OVERLAY,
             ResearcherFocus.OCR_BOXES,
             ResearcherFocus.EXPERIMENTAL,
@@ -78,6 +80,7 @@ fun ResearcherModeOverlay(
                 ResearcherFocus.PROBE -> onLaunchProbe()
                 ResearcherFocus.OBSERVATORY -> onLaunchObservatory()
                 ResearcherFocus.MATCH_SIGHT -> onLaunchMatchSight()
+                ResearcherFocus.MATCH_CALIBRATION -> onLaunchMatchCalibration()
                 ResearcherFocus.CLOSE -> onClose()
                 else -> {}
             }
@@ -158,6 +161,19 @@ fun ResearcherModeOverlay(
                 contentAlignment = Alignment.Center
             ) {
                 Text("LAUNCH MATCH SIGHT", color = if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen else TerminalDimGreen)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+                    .border(1.dp, if (focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION) TerminalGreen else Color.Transparent)
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("LAUNCH MATCH CALIBRATION", color = if (focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION) TerminalGreen else TerminalDimGreen)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

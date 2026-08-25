@@ -1,0 +1,4 @@
+- [x] Refactor `MatchCalibrationScreen.kt` to remove nested shell and add registration pattern
+- [x] Refactor `MainActivity.kt` to delegate shell inputs and LCD to `MatchCalibrationScreen`
+- [ ] Verify calibration controls and LCD updates in the app
+- [x] Final cleanup and walkthrough

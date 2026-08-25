@@ -18,4 +18,5 @@ sealed interface InstrumentCommand {
     data object OpenSignalObservatory : InstrumentCommand
     data object OpenBattlePreview : InstrumentCommand
     data object OpenMatchSight : InstrumentCommand
+    data object OpenMatchCalibration : InstrumentCommand
 }

@@ -67,6 +67,7 @@ import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
 import com.example.overdex.ui.screens.ChatScreen
 import com.example.overdex.ui.screens.EditSpecimenScreen
+import com.example.overdex.ui.screens.MatchCalibrationScreen
 import com.example.overdex.ui.screens.MainMenuPhase
 import com.example.overdex.ui.screens.MainMenuScreen
 import com.example.overdex.ui.screens.MatchSightScreen
@@ -237,6 +238,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
                 InstrumentCommand.OpenSignalObservatory -> navController.navigate("signal_observatory")
                 InstrumentCommand.OpenMatchSight -> navController.navigate("match_sight")
+                InstrumentCommand.OpenMatchCalibration -> navController.navigate("match_calibration")
                 InstrumentCommand.OpenBattlePreview -> navController.navigate("battle_preview")
             }
         }
@@ -276,6 +278,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     isLogoInteractive = true
                 ) { _ ->
                     MainMenuScreen(
@@ -311,6 +314,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
@@ -335,6 +339,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
@@ -398,6 +403,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount
                 ) { _ ->
@@ -567,6 +573,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
@@ -653,6 +660,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
@@ -671,6 +679,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
@@ -689,12 +698,70 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
                 ) {
                     MatchSightScreen(
                         onBack = { navController.debugPopBackStack() }
+                    )
+                }
+            }
+            composable("match_calibration") {
+                DisposableEffect(Unit) {
+                    viewModel.setObservationSessionState(ObservationSessionState.CALIBRATING)
+                    onDispose {
+                        viewModel.setObservationSessionState(ObservationSessionState.IDLE)
+                    }
+                }
+
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+                var lcdLine1 by remember { mutableStateOf<String?>(null) }
+                var lcdLine2 by remember { mutableStateOf<String?>(null) }
+
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onLeft = { leftHandler?.invoke() },
+                    onRight = { rightHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onSelect = { selectHandler?.invoke() },
+                    onStart = { startHandler?.invoke() },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("signal_observatory") },
+                    onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onB = { navController.debugPopBackStack() },
+                    lcdLine1 = lcdLine1,
+                    lcdLine2 = lcdLine2
+                ) {
+                    MatchCalibrationScreen(
+                        calibrationManager = calibrationManager,
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onLeft = { leftHandler = it },
+                        onRight = { rightHandler = it },
+                        onA = { aHandler = it },
+                        onSelect = { selectHandler = it },
+                        onStart = { startHandler = it },
+                        onLcdUpdate = { l1, l2 ->
+                            lcdLine1 = l1
+                            lcdLine2 = l2
+                        }
                     )
                 }
             }
@@ -707,6 +774,7 @@ fun PokedexApp(
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }

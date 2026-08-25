@@ -110,13 +110,18 @@ class CalibrationManager(context: Context) {
         val moveWidth = prefs.getFloat(MOVE_W, 0f)
         val moveRegion = if (moveWidth > 0f) {
             AnchorRegion(
-                x = prefs.getFloat(MOVE_X, 0.10f),
-                y = prefs.getFloat(MOVE_Y, 0.15f),
+                x = prefs.getFloat(MOVE_X, 0.000926f),
+                y = prefs.getFloat(MOVE_Y, 0.288618f),
                 width = moveWidth,
-                height = prefs.getFloat(MOVE_H, 0.10f)
+                height = prefs.getFloat(MOVE_H, 0.065041f)
             )
         } else {
-            AnchorRegion(x = 0.10f, y = 0.15f, width = 0.80f, height = 0.10f)
+            AnchorRegion(
+                x = 0.000926f,
+                y = 0.288618f,
+                width = 0.999074f,
+                height = 0.065041f
+            )
         }
 
         val countdownWidth = prefs.getFloat("countdown_w", 0f)
