@@ -245,6 +245,7 @@ fun ODXFiShell(
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
+    onSelectLong: () -> Unit = {},
     onStart: () -> Unit = {},
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
@@ -256,6 +257,8 @@ fun ODXFiShell(
     lcdLine2: String? = null,
     keyboardController: TerminalKeyboardController? = null,
     onKeyActivated: ((String) -> Unit)? = null,
+    onLcdDrag: ((Offset) -> Unit)? = null,
+    onLcdTap: (() -> Unit)? = null,
 
     showBattleOverlay: Boolean = true,
     viewModel: PokedexViewModel? = null,
@@ -629,6 +632,8 @@ fun ODXFiShell(
                 lcdLine2 = lcdLine2,
                 keyboardController = keyboardController,
                 onKeyActivated = onKeyActivated,
+                onDrag = onLcdDrag,
+                onTap = onLcdTap,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
@@ -669,7 +674,7 @@ fun ODXFiShell(
                         }
                     }
                 })
-                InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() })
+                InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() }, onLongClick = onSelectLong)
                 InstrumentButton(label = "START", onClick = {
                     handleInput("START")
                     if (keyboardController?.isVisible != true && serviceMode) showSettings = true

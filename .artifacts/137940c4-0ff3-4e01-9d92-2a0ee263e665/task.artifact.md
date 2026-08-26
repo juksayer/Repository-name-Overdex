@@ -1,4 +1,8 @@
-- [x] Refactor `MatchCalibrationScreen.kt` to remove nested shell and add registration pattern
-- [x] Refactor `MainActivity.kt` to delegate shell inputs and LCD to `MatchCalibrationScreen`
-- [ ] Verify calibration controls and LCD updates in the app
+- [x] Refactor `InstrumentLCD` in `PokedexComponents.kt` to support touch events
+- [x] Update `ODXFiShell` to propagate touch events from LCD to content
+- [x] Update `MatchCalibrationScreen.kt` to use LCD touch for trackpad manipulation
+- [x] Verify D-pad and LCD touch interaction in Match Calibration
+- [x] Add `onSelectLong` support to `ODXFiShell.kt`
+- [x] Update `MainActivity.kt` to bridge long-press event
+- [x] Implement image discovery and cycling in `MatchCalibrationScreen.kt`
 - [x] Final cleanup and walkthrough

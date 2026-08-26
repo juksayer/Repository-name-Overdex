@@ -1,31 +1,40 @@
-# Walkthrough - Match Calibration Shell Integration
+# Walkthrough - Match Calibration Shell Integration (LCD-Driven)
 
-I have corrected the presentation hierarchy of the Match Calibration workspace by removing the nested `ODXFiShell` from `MatchCalibrationScreen` and delegating physical control and LCD management to the shell provided by `MainActivity`.
+I have implemented a touch-sensitive "Trackpad Mode" for the Match Calibration workspace. This implementation respects the concept that the CRT is protected by a **GlassShield** and should not accept direct operator input.
 
 ## Changes Made
 
-### UI Architecture Refinement
+### Interaction Model Refinement
+
+#### [PokedexComponents.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/PokedexComponents.kt)
+- **LCD Touch Support**: Added `onDrag` and `onTap` callbacks to the `InstrumentLCD` component.
+- **Gesture Detection**: Implemented `detectDragGestures` and `detectTapGestures` on the LCD surface to capture operator intent without touching the CRT.
+
+#### [ODXFiShell.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/ODXFi/ODXFiShell.kt)
+- **Input Pipeline**: Updated the shell to propagate touch events from the physical LCD area down to the active application workspace.
+- **Long-Press Support**: Added `onSelectLong` to the **SELECT** button on the physical shell.
 
 #### [MatchCalibrationScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MatchCalibrationScreen.kt)
-- **Removed Nested Shell**: The component no longer renders its own `ODXFiShell`.
-- **Input Delegation**: Added registration lambdas for all physical controls (`onUp`, `onDown`, `onLeft`, `onRight`, `onA`, `onSelect`, `onStart`).
-- **LCD Integration**: Added an `onLcdUpdate` callback to drive the shell's instrumentation display from within the screen logic.
-- **State Preservation**: All calibration mechanics, including region cycling and coordinate transformation, remain owned by the screen component.
+- **Trackpad Mapping**: Bound LCD drag deltas to the internal `move` and `resize` functions.
+- **Cycle-via-Tap**: Tapping the LCD now cycles through active calibration regions, complementing the [A] button.
+- **Reference Image Cycling**: Implemented dynamic asset discovery in `assets/battle_samples/`. Long-pressing the **[SELECT]** button now cycles through all available reference images.
+- **Discrete vs. Fluid Input**: Preserved the physical D-pad for pixel-perfect adjustments while adding the LCD trackpad for fluid coordinate movement.
 
 #### [MainActivity.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/MainActivity.kt)
-- **Shell Ownership**: The shell provided in the `match_calibration` route now correctly captures physical inputs and passes them to the screen via the new registration pattern.
-- **LCD Management**: The route now maintains state for `lcdLine1` and `lcdLine2`, which are updated by the screen and displayed on the outer shell.
-- **Lifecycle Management**: Added a `DisposableEffect` to update the instrument's deployment state to `CALIBRATING` when entering the screen.
+- **Control Orchestration**: Updated the `match_calibration` route to bridge the shell's touch events and long-press actions to the calibration screen's input handlers.
 
 ## Verification Results
 
-### Integration Verification
-- **Single Shell Pattern**: Verified that the component follows the exact ownership pattern used by the system calibration module.
-- **Control Dispatch**: The D-pad and action buttons are correctly mapped to the internal calibration functions (move, resize, cycle region, toggle mode).
-- **LCD Feedback**: The shell's LCD now correctly reflects the active calibration target and mode.
+### Interaction Verification
+- **GlassShield Invariant**: Verified that touch events on the CRT area are still consumed and ignored, preserving the physical barrier concept.
+- **Trackpad Responsiveness**: Dragging on the LCD provides smooth, relative movement of the selected region on the CRT.
+- **Input Concurrency**: Verified that D-pad, physical buttons, and LCD touch can be used simultaneously for calibration.
+- **Asset Discovery**: Verified that all images in the `battle_samples` directory are accessible via the new cycling control.
 
 > [!NOTE]
-> The visual presentation of the Match screenshot and overlays remains unchanged, ensuring full compatibility with existing calibration data.
+> The LCD now serves as the primary touch-interface for all protected-CRT workspaces, establishing a consistent interaction pattern for the ODX-Fi.
 
+render_diffs(file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/components/PokedexComponents.kt)
+render_diffs(file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/ODXFi/ODXFiShell.kt)
 render_diffs(file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MatchCalibrationScreen.kt)
 render_diffs(file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/MainActivity.kt)

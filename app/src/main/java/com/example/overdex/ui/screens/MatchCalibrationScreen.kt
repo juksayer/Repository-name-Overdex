@@ -14,6 +14,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
 import com.example.overdex.CalibrationManager
@@ -23,6 +24,15 @@ import com.example.overdex.ui.components.CalibrationRegion
 import com.example.overdex.ui.components.TerminalText
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
+import androidx.compose.ui.platform.LocalContext
+
+@Preview(showBackground = true, widthDp = 400, heightDp = 600)
+@Composable
+fun MatchCalibrationPreview() {
+    MatchCalibrationScreen(
+        calibrationManager = CalibrationManager(LocalContext.current)
+    )
+}
 
 @Composable
 fun MatchCalibrationScreen(
@@ -33,13 +43,22 @@ fun MatchCalibrationScreen(
     onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onSelect: (() -> Unit) -> Unit = {},
+    onSelectLong: (() -> Unit) -> Unit = {},
     onStart: (() -> Unit) -> Unit = {},
+    onLcdDrag: ((Offset) -> Unit) -> Unit = {},
+    onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
 ) {
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
     var selectedRegion by remember { mutableStateOf(CalibrationRegion.ENEMY_NAME) }
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
+
+    val context = LocalContext.current
+    val samples = remember {
+        context.assets.list("battle_samples")?.toList() ?: listOf("celluloid-shot0001.jpg")
+    }
+    var currentImageIndex by remember { mutableIntStateOf(0) }
 
     val matchRegions = remember {
         listOf(
@@ -102,7 +121,20 @@ fun MatchCalibrationScreen(
         onSelect {
             mode = if (mode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
         }
+        onSelectLong {
+            currentImageIndex = (currentImageIndex + 1) % samples.size
+        }
         onStart { /* No-op as per Work Order */ }
+        onLcdDrag { delta ->
+            // Use normalized deltas based on typical CRT dimensions
+            val dx = delta.x / 1000f 
+            val dy = delta.y / 1000f
+            if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
+        }
+        onLcdTap {
+            val currentIndex = matchRegions.indexOf(selectedRegion)
+            selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
+        }
     }
 
     // LCD Update
@@ -117,7 +149,7 @@ fun MatchCalibrationScreen(
     ) {
         // Reference Image
         AsyncImage(
-            model = "file:///android_asset/battle_samples/celluloid-shot0001.jpg",
+            model = "file:///android_asset/battle_samples/${samples[currentImageIndex]}",
             contentDescription = "Calibration Background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillBounds

@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -722,10 +723,14 @@ fun PokedexApp(
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var selectLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
                 var lcdLine1 by remember { mutableStateOf<String?>(null) }
                 var lcdLine2 by remember { mutableStateOf<String?>(null) }
+
+                var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
+                var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
                 ODXFiShell(
                     showBattleOverlay = false,
@@ -738,7 +743,10 @@ fun PokedexApp(
                     onRight = { rightHandler?.invoke() },
                     onA = { aHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
+                    onSelectLong = { selectLongHandler?.invoke() },
                     onStart = { startHandler?.invoke() },
+                    onLcdDrag = { lcdDragHandler?.invoke(it) },
+                    onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
@@ -757,7 +765,10 @@ fun PokedexApp(
                         onRight = { rightHandler = it },
                         onA = { aHandler = it },
                         onSelect = { selectHandler = it },
+                        onSelectLong = { selectLongHandler = it },
                         onStart = { startHandler = it },
+                        onLcdDrag = { lcdDragHandler = it },
+                        onLcdTap = { lcdTapHandler = it },
                         onLcdUpdate = { l1, l2 ->
                             lcdLine1 = l1
                             lcdLine2 = l2

@@ -1,47 +1,39 @@
-# Implementation Plan - Match Calibration Shell Integration
+# Implementation Plan - Match Calibration Image Cycling
 
-Correct the presentation hierarchy of the `MatchCalibrationScreen` by removing its internal `ODXFiShell` and delegating shell control to the outer instance in `MainActivity`. This follows the established pattern used by `/system/calibration`.
+Add support for cycling through reference images in the Match Calibration workspace via a long-press on the **[SELECT]** button. Reference images will be dynamically discovered from the `assets/battle_samples/` directory.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> `MatchCalibrationScreen` will no longer own its own `ODXFiShell`. It will instead provide its behavior to the shell provided by the navigation route in `MainActivity`.
+> This change introduces a new hardware control mapping: **Long-pressing [SELECT]** will now cycle the background reference image. This allows for immediate verification of calibration across different battle scenarios.
 
 ## Proposed Changes
 
-### UI Layer
+### UI Components
+
+#### [MODIFY] [ODXFiShell.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/ODXFi/ODXFiShell.kt)
+- Add `onSelectLong: () -> Unit` parameter to `ODXFiShell`.
+- Update the `InstrumentButton` for **SELECT** to use the `onLongClick` parameter, binding it to `onSelectLong`.
 
 #### [MODIFY] [MatchCalibrationScreen.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/ui/screens/MatchCalibrationScreen.kt)
-- **Remove** the internal `ODXFiShell` wrapper.
-- **Add** registration parameters for physical controls, matching the pattern in `CalibrationScreen.kt`:
-    - `onUp`, `onDown`, `onLeft`, `onRight`, `onA`, `onSelect`, `onStart` as `(() -> Unit) -> Unit`.
-- **Add** `onLcdUpdate: (String?, String?) -> Unit` to delegate LCD text updates to the outer shell.
-- **Input Handling**: Use `SideEffect` to register internal handlers with the provided registration lambdas.
-- **LCD Integration**: Trigger `onLcdUpdate` whenever the `selectedRegion` or `mode` changes.
-- **CRT Content**: Ensure the `Box` containing the reference image, aperture overlays, and workspace status information fills the available content area.
-- **Preserve Mechanics**: Keep all existing calibration logic, `CalibrationManager` integration, and input-to-coordinate mapping.
+- **Asset Discovery**: Use `LocalContext.current.assets.list("battle_samples")` within a `remember` block to dynamically load the list of available images.
+- **State Management**:
+    - Add `currentImageIndex` state.
+    - Add `onSelectLong: (() -> Unit) -> Unit` registration parameter.
+- **Cycling Logic**: Implement a function to increment the `currentImageIndex` (with wrap-around) when `onSelectLong` is triggered.
+- **Image Rendering**: Update `AsyncImage` to use the path from the discovered asset list based on `currentImageIndex`.
 
 #### [MODIFY] [MainActivity.kt](file:///home/sean/AndroidStudioProjects/Overdex/app/src/main/java/com/example/overdex/MainActivity.kt)
-- **Refactor** the `match_calibration` composable route:
-    - Create `remember`ed state for LCD lines (`lcdLine1`, `lcdLine2`).
-    - Create `remember`ed state for input handlers (up, down, left, right, a, select, start).
-    - Pass these handlers and LCD lines into the `ODXFiShell`.
-    - Pass the registration lambdas and `onLcdUpdate` into `MatchCalibrationScreen`.
-    - Handle `onB` directly at the shell level to perform the `navController.popBackStack()`.
+- Update the `match_calibration` route to bridge `onSelectLong` from the `ODXFiShell` to the `MatchCalibrationScreen`.
 
 ## Verification Plan
 
 ### Automated Tests
-- N/A (UI layout change).
+- N/A (UI interaction and asset loading).
 
 ### Manual Verification
-1. Navigate to **Researcher Mode** (UP, UP, DOWN, DOWN, LEFT, RIGHT, LEFT, RIGHT, B, A in settings).
-2. Launch **Match Calibration**.
-3. **Verify**: Only one `ODXFiShell` is visible.
-4. **Verify**: Controls work as expected:
-    - D-pad moves/resizes apertures.
-    - [A] cycles regions.
-    - [SELECT] toggles POSITION/SIZE.
-    - [B] exits.
-5. **Verify**: LCD display reflects the current region and mode.
-6. **Verify**: Aperture overlays are visible on top of `celluloid-shot0001.jpg`.
+1. Navigate to **Match Calibration**.
+2. **Verify Long-Press**: Press and hold the physical **[SELECT]** button on the shell.
+3. **Verify Cycling**: The background image should change to the next available sample in `assets/battle_samples/`.
+4. **Verify Dynamic Discovery**: If more images are added to the directory (requiring a rebuild), verify they are included in the cycle.
+5. **Verify Mode Sync**: Tapping **[SELECT]** should still correctly toggle between POSITION and SIZE modes.

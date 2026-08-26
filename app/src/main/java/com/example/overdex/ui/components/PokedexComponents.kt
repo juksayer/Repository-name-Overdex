@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -161,6 +162,8 @@ fun InstrumentLCD(
     lcdLine2: String? = null,
     keyboardController: TerminalKeyboardController? = null,
     onKeyActivated: ((String) -> Unit)? = null,
+    onDrag: ((Offset) -> Unit)? = null,
+    onTap: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -171,6 +174,20 @@ fun InstrumentLCD(
         modifier = modifier
             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
             .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+            .then(
+                if (onDrag != null || onTap != null) {
+                    Modifier.pointerInput(Unit) {
+                        detectDragGestures(
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                onDrag?.invoke(dragAmount)
+                            }
+                        )
+                    }.pointerInput(Unit) {
+                        detectTapGestures { onTap?.invoke() }
+                    }
+                } else Modifier
+            )
             .padding(8.dp)
     ) {
         // LCD Surface
