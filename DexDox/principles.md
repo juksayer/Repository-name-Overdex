@@ -518,3 +518,14 @@ Retiring a term does not invalidate existing implementations. It prevents future
 ## Vocabulary Retirement Policy
 
 Retired terms shall not be reused for newly created source files, packages, architectural layers, or runtime concepts. If a retired term appears appropriate for a new component, a new vocabulary brick shall be created before introducing it. **Retired terms shall not be reactivated.**
+You don't need the most well-rounded team. You need your most well-rounded team.
+
+Overdex preserves what it measures so that future Overdex can understand what present Overdex cannot.
+
+And alongside it:
+
+User data remains the user's. Overdex is its custodian.
+
+Reality remains Reality's. Overdex does not claim ownership of what Pokémon GO shows us.
+
+Measurements made by Overdex, and knowledge produced from those measurements, belong to Overdex.

@@ -34,7 +34,6 @@ The Event itself remains immutable.
 
 Witness
 
-The Witness receives the active Article.
 
 A Witness provides testimony regarding a single phenomenon.
 

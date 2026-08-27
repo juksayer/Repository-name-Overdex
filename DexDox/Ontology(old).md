@@ -11,7 +11,7 @@ An Event is an objective change in the state of one or more Articles.
 
 ## Relationship
 
-A Relationship describes an association between two or more Articles. Relationships may be static or may change over time through Events.
+A Relationship describes an association between two or more Articles, or two or more testimonies about an Article. Relationships may be static or may change over time through Events.
 
 ## Observer
 
