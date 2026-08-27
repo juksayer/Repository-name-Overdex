@@ -330,6 +330,9 @@ fun PokedexApp(
                 }
             }
             composable("battle_log") {
+                var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
+                var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
                 ODXFiShell(
                     showBattleOverlay = false,
                     viewModel = viewModel,
@@ -337,6 +340,8 @@ fun PokedexApp(
                     onFilterSettingsChange = { filterSettings = it },
                     onStart = { viewModel.startObservation() },
                     onSelect = { /* Reserved */ },
+                    onLcdDrag = { lcdDragHandler?.invoke(it) },
+                    onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
@@ -349,7 +354,9 @@ fun PokedexApp(
                         BattleTimelineScreen(
                             battleMemory = battleMemory,
                             viewModel = viewModel,
-                            onBack = { navController.debugPopBackStack() }
+                            onBack = { navController.debugPopBackStack() },
+                            onLcdDrag = { lcdDragHandler = it },
+                            onLcdTap = { lcdTapHandler = it }
                         )
                     } else {
                         com.example.overdex.ui.components.TerminalText("No active battle record.")
@@ -480,24 +487,58 @@ fun PokedexApp(
                 )
             }
             composable("list") {
-                PokedexListScreen(
+                val keyboardController = rememberTerminalKeyboardController()
+
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var keyActivatedHandler by remember { mutableStateOf<((String) -> Unit)?>(null) }
+
+                ODXFiShell(
+                    showBattleOverlay = false,
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { newSettings -> filterSettings = newSettings },
-                    onStart = { /* Reserved */ },
-                    onSelect = { /* Reserved */ },
-                    onBack = { navController.debugPopBackStack() },
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onLeft = { leftHandler?.invoke() },
+                    onRight = { rightHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { bHandler?.invoke() },
+                    onStart = { startHandler?.invoke() },
+                    onKeyActivated = { keyActivatedHandler?.invoke(it) },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
-                    onPokemonClick = { id ->
-                        viewModel.viewModelScope.launch {
-                            viewModel.getPokemonById(id)?.let {
-                                mediaManager.warmUp(it.cryUrl)
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    keyboardController = keyboardController
+                ) { _ ->
+                    PokedexListScreen(
+                        viewModel = viewModel,
+                        onBack = { navController.debugPopBackStack() },
+                        onPokemonClick = { id ->
+                            viewModel.viewModelScope.launch {
+                                viewModel.getPokemonById(id)?.let {
+                                    mediaManager.warmUp(it.cryUrl)
+                                }
                             }
-                        }
-                        navController.navigate("detail/$id")
-                    }
-                )
+                            navController.navigate("detail/$id")
+                        },
+                        keyboardController = keyboardController,
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onLeft = { leftHandler = it },
+                        onRight = { rightHandler = it },
+                        onA = { aHandler = it },
+                        onB = { bHandler = it },
+                        onStart = { startHandler = it },
+                        onKeyActivated = { keyActivatedHandler = it }
+                    )
+                }
             }
             composable(
                 route = "detail/{id}",

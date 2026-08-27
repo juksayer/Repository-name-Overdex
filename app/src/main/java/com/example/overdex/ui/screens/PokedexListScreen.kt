@@ -32,20 +32,22 @@ import com.example.overdex.ui.theme.*
 @Composable
 fun PokedexListScreen(
     viewModel: PokedexViewModel,
-    filterSettings: FilterSettings,
-    onFilterSettingsChange: (FilterSettings) -> Unit,
-    onSelect: () -> Unit,
-    onStart: () -> Unit,
     onBack: () -> Unit,
-    onLaunchProbe: () -> Unit = {},
-    onLaunchObservatory: () -> Unit = {},
-    onPokemonClick: (Int) -> Unit
+    onPokemonClick: (Int) -> Unit,
+    keyboardController: TerminalKeyboardController,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {},
+    onStart: (() -> Unit) -> Unit = {},
+    onKeyActivated: ((String) -> Unit) -> Unit = {}
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchRequest by viewModel.searchRequest.collectAsState()
     val listState = rememberLazyListState()
-    val keyboardController = rememberTerminalKeyboardController()
 
     val nav = rememberHandheldNavigationController(
         itemCount = { pokemonItems.itemCount + 1 }, // +1 for SearchBar
@@ -88,97 +90,88 @@ fun PokedexListScreen(
         }
     }
 
-    ODXFiShell(
-        onUp = {
+    SideEffect {
+        onUp {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
             } else {
                 nav.moveUp()
             }
-        },
-        onDown = {
+        }
+        onDown {
             if (keyboardController.isVisible) {
                 keyboardController.handleDown()
             } else {
                 nav.moveDown()
             }
-        },
-        onLeft = {
+        }
+        onLeft {
             if (keyboardController.isVisible) keyboardController.handleLeft()
-        },
-        onRight = {
+        }
+        onRight {
             if (keyboardController.isVisible) keyboardController.handleRight()
-        },
-        onA = {
+        }
+        onA {
             if (keyboardController.isVisible) {
                 keyboardController.handleA(searchQuery) { handleActivatedKey(it) }
             } else {
                 nav.activate()
             }
-        },
-        onB = {
+        }
+        onB {
             if (!keyboardController.handleB()) {
                 onBack()
             }
-        },
-        onSelect = {
-            /* No change in this brick */
-        },
-        onStart = {
+        }
+        onStart {
             if (!keyboardController.handleStart()) {
                 viewModel.startObservation()
             }
-        },
-        onKeyActivated = { key ->
+        }
+        onKeyActivated { key ->
             if (keyboardController.isVisible) {
                 handleActivatedKey(key)
             }
-        },
-        filterSettings = filterSettings,
-        onFilterSettingsChange = onFilterSettingsChange,
-        onLaunchProbe = onLaunchProbe,
-        onLaunchObservatory = onLaunchObservatory,
-        viewModel = viewModel,
-        keyboardController = keyboardController
-    ) { _ ->
-        Column(modifier = Modifier.fillMaxSize()) {
-            TerminalPathIndicator(path = "/specimens/search/")
-            
-            SearchBar(
-                query = searchQuery, 
-                selected = nav.selectedIndex == 0
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TerminalPathIndicator(path = "/specimens/search/")
+        
+        SearchBar(
+            query = searchQuery, 
+            selected = nav.selectedIndex == 0
+        )
+        
+        searchRequest.activeFilters.forEach { filter ->
+            AssistChip(
+                onClick = {
+                    viewModel.removeFilter(filter)
+                },
+                label = {
+                    Text(filter.label)
+                }
             )
-            
-            searchRequest.activeFilters.forEach { filter ->
-                AssistChip(
-                    onClick = {
-                        viewModel.removeFilter(filter)
-                    },
-                    label = {
-                        Text(filter.label)
-                    }
-                )
-            }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    count = pokemonItems.itemCount,
-                    key = pokemonItems.itemKey { it.id },
-                    contentType = pokemonItems.itemContentType { "pokemon" }
-                ) { index ->
-                    // Offset by 1 for the SearchBar
-                    pokemonItems[index]?.let { pokemon ->
-                        PokemonListItem(
-                            pokemon = pokemon,
-                            selected = nav.selectedIndex == (index + 1)
-                        )
-                    }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(
+                count = pokemonItems.itemCount,
+                key = pokemonItems.itemKey { it.id },
+                contentType = pokemonItems.itemContentType { "pokemon" }
+            ) { index ->
+                // Offset by 1 for the SearchBar
+                pokemonItems[index]?.let { pokemon ->
+                    PokemonListItem(
+                        pokemon = pokemon,
+                        selected = nav.selectedIndex == (index + 1)
+                    )
                 }
             }
         }
