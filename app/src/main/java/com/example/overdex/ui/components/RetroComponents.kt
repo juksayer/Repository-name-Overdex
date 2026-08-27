@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -43,30 +44,12 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun         DirectoryTree(
+fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
     selectedPath: String,
     onNodeSelected: (FlattenedNode) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val listState = rememberLazyListState()
-    
-    // Sync selection with scroll position
-    LaunchedEffect(selectedPath) {
-        val selectedIndex = visibleNodes.indexOfFirst { it.path == selectedPath }
-        if (selectedIndex != -1) {
-            val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
-            val isSelectedVisible = visibleItemsInfo.any { it.index == selectedIndex }
-            
-            if (!isSelectedVisible) {
-                // If not visible, snap to it. 
-                // Using animateScrollToItem might be too slow for D-pad, 
-                // but let's try it for smoothness first.
-                listState.animateScrollToItem(selectedIndex)
-            }
-        }
-    }
-
     // "Ownership of Time" - sequential reveal count
     var revealCount by remember(visibleNodes.size) { mutableIntStateOf(0) }
     
@@ -95,10 +78,19 @@ fun         DirectoryTree(
                     is ActionNode -> node.name
                 }
 
+                val requester = remember { BringIntoViewRequester() }
+                LaunchedEffect(isSelected) {
+                    if (isSelected) {
+                        requester.bringIntoView()
+                    }
+                }
+
                 TerminalMenuOption(
                     label = label,
                     selected = isSelected,
-                    modifier = Modifier.padding(start = (flattened.depth * 16).dp),
+                    modifier = Modifier
+                        .padding(start = (flattened.depth * 16).dp)
+                        .bringIntoViewRequester(requester),
                     onClick = { onNodeSelected(flattened) }
                 )
             }

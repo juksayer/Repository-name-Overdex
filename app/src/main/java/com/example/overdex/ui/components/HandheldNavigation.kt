@@ -1,5 +1,6 @@
 package com.example.overdex.ui.components
 
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -175,6 +176,7 @@ fun rememberHandheldNavigationController(
 
 /**
  * Synchronizes a LazyListState with a HandheldNavigationController.
+ * Ensures the selected item is minimally revealed within the CRT viewport.
  */
 @Composable
 fun HandheldListSync(
@@ -188,17 +190,34 @@ fun HandheldListSync(
         val layoutInfo = listState.layoutInfo
         val visibleItems = layoutInfo.visibleItemsInfo
 
-        if (visibleItems.isEmpty() || totalItems == 0) return@LaunchedEffect
+        if (totalItems == 0) return@LaunchedEffect
 
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
+        val itemInfo = visibleItems.find { it.index == listIndex }
+        if (itemInfo != null) {
+            val viewportStart = layoutInfo.viewportStartOffset
+            val viewportEnd = layoutInfo.viewportEndOffset
+            val itemStart = itemInfo.offset
+            val itemEnd = itemInfo.offset + itemInfo.size
 
-        if (listIndex < firstVisible || listIndex > lastVisible) {
-            listState.animateScrollToItem(listIndex)
-        } else if (listIndex <= firstVisible && listIndex > 0) {
-            listState.animateScrollToItem(listIndex - 1)
-        } else if (listIndex >= lastVisible && listIndex < totalItems - 1) {
-            listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+            if (itemStart < viewportStart) {
+                // Item is above viewport or partially cut off at top
+                listState.animateScrollToItem(listIndex)
+            } else if (itemEnd > viewportEnd) {
+                // Item is below viewport or partially cut off at bottom
+                listState.animateScrollBy((itemEnd - viewportEnd).toFloat())
+            }
+        } else {
+            // Item is completely off-screen (big jump)
+            val firstVisible = visibleItems.firstOrNull()?.index ?: 0
+            if (listIndex < firstVisible) {
+                // Off-screen above
+                listState.animateScrollToItem(listIndex)
+            } else {
+                // Off-screen below
+                // Fallback to top-alignment for big downward jumps 
+                // until the target is composed and refined in a subsequent pass.
+                listState.animateScrollToItem(listIndex)
+            }
         }
     }
 }
