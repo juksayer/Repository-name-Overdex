@@ -1,6 +1,9 @@
 package com.example.overdex.ui.screens
 
 import com.example.overdex.ui.components.rememberHandheldFocusManager
+import com.example.overdex.ui.components.HandheldFocusSync
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -72,6 +75,16 @@ fun ResearcherModeOverlay(
         focusManager.updateItems(visibleItems)
     }
 
+    val bringIntoViewRequesters = remember {
+        visibleItems.associateWith { BringIntoViewRequester() }
+    }
+
+    HandheldFocusSync(
+        selectedIndex = visibleItems.indexOf(focusManager.currentItem),
+        items = visibleItems,
+        requesters = bringIntoViewRequesters
+    )
+
     SideEffect {
         onUp { focusManager.moveUp() }
         onDown { focusManager.moveDown() }
@@ -95,6 +108,7 @@ fun ResearcherModeOverlay(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -108,7 +122,9 @@ fun ResearcherModeOverlay(
                 Text(
                     text = if (closeSelected) "[ CLOSE ]" else "  CLOSE  ",
                     color = if (closeSelected) TerminalGreen else TerminalDimGreen,
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.CLOSE]!!)
                 )
             }
 
@@ -117,10 +133,26 @@ fun ResearcherModeOverlay(
             Text("ADVANCED SUBSYSTEMS", color = TerminalPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            FocusablePlaceholderSetting("CRT Scanline Intensity", focusManager.currentItem == ResearcherFocus.SCANLINES)
-            FocusablePlaceholderSetting("CRT Curvature", focusManager.currentItem == ResearcherFocus.CURVATURE)
-            FocusablePlaceholderSetting("Screen Bloom", focusManager.currentItem == ResearcherFocus.BLOOM)
-            FocusablePlaceholderSetting("Phosphor Color", focusManager.currentItem == ResearcherFocus.PHOSPHOR)
+            FocusablePlaceholderSetting(
+                label = "CRT Scanline Intensity", 
+                selected = focusManager.currentItem == ResearcherFocus.SCANLINES,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.SCANLINES]!!)
+            )
+            FocusablePlaceholderSetting(
+                label = "CRT Curvature", 
+                selected = focusManager.currentItem == ResearcherFocus.CURVATURE,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.CURVATURE]!!)
+            )
+            FocusablePlaceholderSetting(
+                label = "Screen Bloom", 
+                selected = focusManager.currentItem == ResearcherFocus.BLOOM,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.BLOOM]!!)
+            )
+            FocusablePlaceholderSetting(
+                label = "Phosphor Color", 
+                selected = focusManager.currentItem == ResearcherFocus.PHOSPHOR,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.PHOSPHOR]!!)
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
             Text("SIGNAL OBSERVATORY", color = TerminalPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -131,6 +163,7 @@ fun ResearcherModeOverlay(
                     .fillMaxWidth()
                     .background(if (focusManager.currentItem == ResearcherFocus.PROBE) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
                     .border(1.dp, if (focusManager.currentItem == ResearcherFocus.PROBE) TerminalGreen else Color.Transparent)
+                    .bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.PROBE]!!)
                     .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -144,6 +177,7 @@ fun ResearcherModeOverlay(
                     .fillMaxWidth()
                     .background(if (focusManager.currentItem == ResearcherFocus.OBSERVATORY) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
                     .border(1.dp, if (focusManager.currentItem == ResearcherFocus.OBSERVATORY) TerminalGreen else Color.Transparent)
+                    .bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.OBSERVATORY]!!)
                     .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -157,6 +191,7 @@ fun ResearcherModeOverlay(
                     .fillMaxWidth()
                     .background(if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
                     .border(1.dp, if (focusManager.currentItem == ResearcherFocus.MATCH_SIGHT) TerminalGreen else Color.Transparent)
+                    .bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.MATCH_SIGHT]!!)
                     .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -170,6 +205,7 @@ fun ResearcherModeOverlay(
                     .fillMaxWidth()
                     .background(if (focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
                     .border(1.dp, if (focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION) TerminalGreen else Color.Transparent)
+                    .bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.MATCH_CALIBRATION]!!)
                     .padding(12.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -180,17 +216,33 @@ fun ResearcherModeOverlay(
             Text("DEBUG TOOLS", color = TerminalPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            FocusablePlaceholderToggle("Debug Overlay", focusManager.currentItem == ResearcherFocus.DEBUG_OVERLAY)
-            FocusablePlaceholderToggle("OCR Bounding Boxes", focusManager.currentItem == ResearcherFocus.OCR_BOXES)
-            FocusablePlaceholderToggle("Experimental Features", focusManager.currentItem == ResearcherFocus.EXPERIMENTAL)
+            FocusablePlaceholderToggle(
+                label = "Debug Overlay", 
+                selected = focusManager.currentItem == ResearcherFocus.DEBUG_OVERLAY,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.DEBUG_OVERLAY]!!)
+            )
+            FocusablePlaceholderToggle(
+                label = "OCR Bounding Boxes", 
+                selected = focusManager.currentItem == ResearcherFocus.OCR_BOXES,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.OCR_BOXES]!!)
+            )
+            FocusablePlaceholderToggle(
+                label = "Experimental Features", 
+                selected = focusManager.currentItem == ResearcherFocus.EXPERIMENTAL,
+                modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ResearcherFocus.EXPERIMENTAL]!!)
+            )
         }
     }
 }
 
 @Composable
-private fun FocusablePlaceholderSetting(label: String, selected: Boolean) {
+private fun FocusablePlaceholderSetting(
+    label: String, 
+    selected: Boolean,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .background(if (selected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
@@ -216,9 +268,13 @@ private fun FocusablePlaceholderSetting(label: String, selected: Boolean) {
 }
 
 @Composable
-private fun FocusablePlaceholderToggle(label: String, selected: Boolean) {
+private fun FocusablePlaceholderToggle(
+    label: String, 
+    selected: Boolean,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .background(if (selected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
