@@ -158,6 +158,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _hasBootedInSession.value = true
     }
 
+    fun toggleObservation() {
+        val current = _deploymentState.value
+        if (current == InstrumentDeploymentState.IDLE) {
+            startObservation()
+        } else if (current == InstrumentDeploymentState.OBSERVING || 
+                   current == InstrumentDeploymentState.DEPLOYING ||
+                   current == InstrumentDeploymentState.READY) {
+            stopObservation()
+        }
+    }
+
     fun startObservation() {
         if (_deploymentState.value != InstrumentDeploymentState.IDLE) return
         _deploymentState.value = InstrumentDeploymentState.REQUESTING_PERMISSIONS
@@ -311,25 +322,24 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         viewModelScope.launch {
-            Log.d("STARTUP", "1: ViewModel init [BUILD JULY30_A]")
+            Log.d("STARTUP", "1: ViewModel init [BUILD AUG27_B]")
 
-            val gameMasterText = gameMasterLoader.loadRawJson()
-            println("GameMaster length = ${gameMasterText.length}")
+            val currentCount = pokemonDao.getCount()
+            Log.d("STARTUP", "Current Pokemon count in DB: $currentCount")
 
-            Log.d("STARTUP", "2: GameMaster loaded")
+            if (currentCount < 1025) {
+                Log.d("STARTUP", "2: Database incomplete. Starting populateFullPokedex")
+                populateFullPokedex()
+            } else {
+                Log.d("STARTUP", "2: Database already populated. Skipping import.")
+            }
 
-
-            Log.d("STARTUP", "3: Starting populateFullPokedex")
-
-            populateFullPokedex()
-
-            Log.d("STARTUP", "4: Finished populateFullPokedex")
+            Log.d("STARTUP", "3: Initialization complete")
         }
     }
 
     suspend fun populateFullPokedex() {
         try {
-            pokemonDao.clearAll()
             val imported = pokemonLoader.loadPokemon()
             val importedMap = imported.pokemon.associateBy { it.id }
             val speciesLoader = SpeciesJsonLoader(getApplication())

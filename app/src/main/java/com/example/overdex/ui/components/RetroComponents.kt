@@ -50,15 +50,6 @@ fun DirectoryTree(
     onNodeSelected: (FlattenedNode) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // "Ownership of Time" - sequential reveal count
-    var revealCount by remember(visibleNodes.size) { mutableIntStateOf(0) }
-    
-    LaunchedEffect(visibleNodes.size) {
-        for (i in 1..visibleNodes.size) {
-            revealCount = i
-            delay(30L.milliseconds) // Slightly faster for tree expansion
-        }
-    }
     val scrollState = rememberScrollState()
 
     Column(
@@ -67,33 +58,33 @@ fun DirectoryTree(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        visibleNodes.forEachIndexed { index, flattened ->
-            if (index < revealCount) {
-                val isSelected = selectedPath == flattened.path
-                val label = when (val node = flattened.node) {
-                    is DirectoryNode -> {
-                        val prefix = if (flattened.isExpanded) "- " else "+ "
-                        "$prefix${node.name}/"
-                    }
-                    is ActionNode -> node.name
+        visibleNodes.forEach { flattened ->
+            val isSelected = selectedPath == flattened.path
+            val label = when (val node = flattened.node) {
+                is DirectoryNode -> {
+                    val prefix = if (flattened.isExpanded) "- " else "+ "
+                    "$prefix${node.name}/"
                 }
-
-                val requester = remember { BringIntoViewRequester() }
-                LaunchedEffect(isSelected) {
-                    if (isSelected) {
-                        requester.bringIntoView()
-                    }
-                }
-
-                TerminalMenuOption(
-                    label = label,
-                    selected = isSelected,
-                    modifier = Modifier
-                        .padding(start = (flattened.depth * 16).dp)
-                        .bringIntoViewRequester(requester),
-                    onClick = { onNodeSelected(flattened) }
-                )
+                is ActionNode -> node.name
             }
+
+            val requester = remember { BringIntoViewRequester() }
+            
+            // Behavioral trigger: Bring into view when selection status or the tree structure changes
+            LaunchedEffect(isSelected, visibleNodes) {
+                if (isSelected) {
+                    requester.bringIntoView()
+                }
+            }
+
+            TerminalMenuOption(
+                label = label,
+                selected = isSelected,
+                modifier = Modifier
+                    .padding(start = (flattened.depth * 16).dp)
+                    .bringIntoViewRequester(requester),
+                onClick = { onNodeSelected(flattened) }
+            )
         }
     }
 }

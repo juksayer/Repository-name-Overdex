@@ -274,7 +274,7 @@ fun PokedexApp(
                     onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
                     onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
                     onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
-                    onStart = { if (phase == MainMenuPhase.READY) viewModel.startObservation() },
+                    onStart = { if (phase == MainMenuPhase.READY) viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
@@ -310,7 +310,7 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onStart = { viewModel.startObservation() },
+                    onStart = { viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },
@@ -330,6 +330,10 @@ fun PokedexApp(
                 }
             }
             composable("battle_log") {
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
                 var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
@@ -338,8 +342,12 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onStart = { viewModel.startObservation() },
+                    onStart = { viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { if (bHandler != null) bHandler?.invoke() else navController.debugPopBackStack() },
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
@@ -348,13 +356,16 @@ fun PokedexApp(
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
-                    onB = { navController.debugPopBackStack() }
                 ) { battleMemory ->
                     if (battleMemory != null) {
                         BattleTimelineScreen(
                             battleMemory = battleMemory,
                             viewModel = viewModel,
                             onBack = { navController.debugPopBackStack() },
+                            onUp = { upHandler = it },
+                            onDown = { downHandler = it },
+                            onA = { aHandler = it },
+                            onB = { bHandler = it },
                             onLcdDrag = { lcdDragHandler = it },
                             onLcdTap = { lcdTapHandler = it }
                         )
@@ -406,7 +417,7 @@ fun PokedexApp(
                     onRight = { rightHandler?.invoke() },
                     onA = { aHandler?.invoke() },
                     onB = { navController.debugPopBackStack() },
-                    onStart = { viewModel.startObservation() },
+                    onStart = { viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("signal_observatory") },

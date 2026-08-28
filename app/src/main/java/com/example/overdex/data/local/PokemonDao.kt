@@ -41,6 +41,9 @@ interface PokemonDao {
     @Query("SELECT name FROM pokemon")
     suspend fun getAllPokemonNames(): List<String>
 
+    @Query("SELECT COUNT(*) FROM pokemon")
+    suspend fun getCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(pokemon: List<PokemonEntity>)
 

@@ -675,11 +675,19 @@ fun ODXFiShell(
                     }
                 })
                 InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() }, onLongClick = onSelectLong)
-                InstrumentButton(label = "START", onClick = {
-                    handleInput("START")
-                    if (keyboardController?.isVisible != true && serviceMode) showSettings = true
-                    onStart()
-                })
+                InstrumentButton(
+                    label = when (deploymentState) {
+                        InstrumentDeploymentState.OBSERVING, 
+                        InstrumentDeploymentState.DEPLOYING,
+                        InstrumentDeploymentState.READY -> "STOP"
+                        else -> "START"
+                    }, 
+                    onClick = {
+                        handleInput("START")
+                        if (keyboardController?.isVisible != true && serviceMode) showSettings = true
+                        onStart()
+                    }
+                )
             }
         }
     }

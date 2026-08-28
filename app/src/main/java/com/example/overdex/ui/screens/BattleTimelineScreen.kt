@@ -25,6 +25,10 @@ fun BattleTimelineScreen(
     battleMemory: BattleMemory,
     viewModel: PokedexViewModel,
     onBack: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {}
 ) {
@@ -46,6 +50,10 @@ fun BattleTimelineScreen(
     val dragThreshold = 40f // Pixels of LCD drag to move one item
 
     SideEffect {
+        onUp { nav.moveUp() }
+        onDown { nav.moveDown() }
+        onA { /* No action currently defined for timeline events */ }
+        onB { onBack() }
         onLcdDrag { delta ->
             dragAccumulator += delta.y
             if (dragAccumulator > dragThreshold) {

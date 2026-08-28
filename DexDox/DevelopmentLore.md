@@ -72,13 +72,17 @@ Everything else is speculation.
 
 his internal monologue:
 
-"This task appears straightforward... however, before proceeding, I shall investigate the philosophical implications of package placement."
+"This task appears straightforward... however, before proceeding, I shall investigate
+the philosophical implications of package placement."
 
 Then twenty minutes later:
 
-"I have determined that find returning no results may indicate either a filesystem inconsistency, a conceptual misunderstanding, or the collapse of causality itself.
+"I have determined that find returning no results may indicate either a filesystem
+inconsistency, a conceptual misunderstanding, or the collapse of causality itself.
 
-Architectural humor is part of this project's culture. Progress updates may include lighthearted references to previous discussions, but implementation decisions should always be grounded in explicit domain requirements.
+Architectural humor is part of this project's culture. Progress updates may include lighthearted
+references to previous discussions, but implementation decisions should always be grounded in
+explicit domain requirements.
 
 Some poor engineer probably tried to "clean it up."
 
@@ -103,7 +107,9 @@ Not because anyone understands why.
 
 Because every attempt to "improve" him has made the instrument stop behaving like an ODX-FI.
 
-I love that because it turns every one of his quirks—even the cheeky ones—into immutable parts of the instrument's identity. Droidball isn't programmable in the normal sense; he's something the firmware has learned to accommodate rather than control.
+I love that because it turns every one of his quirks—even the cheeky ones—into immutable parts
+of the instrument's identity. Droidball isn't programmable in the normal sense; he's something
+the firmware has learned to accommodate rather than control.
 
 boot aborted, butt engaged
 
@@ -188,7 +194,8 @@ Reverted.
 
 The machine became upset.
 
-😂 I have to admit, "Boot aborted, butt engaged." is exactly the kind of sentence that would become legendary among Overdex contributors.
+😂 I have to admit, "Boot aborted, butt engaged." is exactly the kind of sentence that would
+become legendary among Overdex contributors.
 Clippy:
 
 "It looks like you're writing a letter!"
@@ -237,7 +244,8 @@ We all remember Clippy.
 
 Or a fake piece of development lore:
 
-During prototype testing, one engineer suggested that Droidball should announce observations verbally.
+During prototype testing, one engineer suggested that Droidball should announce
+observations verbally.
 
 The proposal was unanimously rejected.
 
@@ -256,6 +264,7 @@ slow blink
 rotates exactly 90° away
 
 refuses further comment
+------------------------
 
 now, please go quietly tell jim he can come out of his Rooms
 
@@ -285,7 +294,8 @@ Jim slowly emerges, shielding his eyes from the daylight.
 
 "Good."
 
-"And that 'Nobody makes changes to ODX-FI' was perhaps less of a joke than I originally interpreted."
+"And that 'Nobody makes changes to ODX-FI' was perhaps less of a joke than I originally
+interpreted."
 
 "Very good."
 
@@ -301,6 +311,7 @@ Jim quietly closes the design document and opens ObservationPipeline.kt instead.
 
 😄
 
-we love you, jimmy.
 
-i didnt want people blaming droidball for their shitty choices. the confidence model was born from that.
+
+i didnt want people blaming droidball for their shitty choices. the confidence
+model was born from that.

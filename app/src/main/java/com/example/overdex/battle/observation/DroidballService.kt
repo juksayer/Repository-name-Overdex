@@ -236,15 +236,44 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
+        Log.d("DroidballService", "onDestroy: Releasing resources")
         _signals.tryEmit(DroidballSignal.Stopped)
+        
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         
-        overlayView?.let { windowManager.removeView(it) }
-        imageReader?.close()
-        mediaProjection?.unregisterCallback(projectionCallback)
-        mediaProjection?.stop()
+        try {
+            overlayView?.let { 
+                if (it.isAttachedToWindow) {
+                    windowManager.removeView(it)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DroidballService", "Error removing overlayView", e)
+        } finally {
+            overlayView = null
+        }
+
+        try {
+            imageReader?.close()
+        } catch (e: Exception) {
+            Log.e("DroidballService", "Error closing imageReader", e)
+        } finally {
+            imageReader = null
+        }
+
+        try {
+            mediaProjection?.let {
+                it.unregisterCallback(projectionCallback)
+                it.stop()
+            }
+        } catch (e: Exception) {
+            Log.e("DroidballService", "Error stopping mediaProjection", e)
+        } finally {
+            mediaProjection = null
+        }
+
         serviceScope.cancel()
         super.onDestroy()
     }
