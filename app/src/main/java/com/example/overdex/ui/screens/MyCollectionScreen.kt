@@ -134,6 +134,7 @@ fun MyCollectionScreen(
 
 
         Column(modifier = Modifier.fillMaxSize()) {
+                TerminalPathIndicator(path = "/BATTLE/Roster")
                 TerminalHeader(text = "my collection")
 
                 SearchBar(

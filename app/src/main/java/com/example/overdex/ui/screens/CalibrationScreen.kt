@@ -105,7 +105,7 @@ fun CalibrationScreen(
     fun decreaseHeight() = updateActiveRegion { it.copy(height = it.height - 10f) }
 
     TerminalScreen {
-        TerminalPathIndicator(path = "/observation/calibration")
+        TerminalPathIndicator(path = "/OBSERVE")
 
         Column(
             modifier = Modifier

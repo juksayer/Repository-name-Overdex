@@ -291,13 +291,11 @@ fun PokedexApp(
                         onPhaseChange = { phase = it },
                         onNodeSelected = { node ->
                             when (node.path) {
-                                "/trainer/chat" -> navController.navigate("private_chat")
-                                "/trainer/profile" -> navController.navigate("trainer_profile")
-                                "/trainer/collection" -> navController.navigate("specimens/collection")
-                                "/observation/search" -> navController.navigate("list")
-                                "/observation/history" -> navController.navigate("battle_history")
-                                "/observation/logs" -> navController.navigate("battle_log")
-                                "/system/calibration" -> navController.navigate("calibration")
+                                "/OVERDEX" -> navController.navigate("list")
+                                "/BATTLE/Roster" -> navController.navigate("specimens/collection")
+                                "/BATTLE/History" -> navController.navigate("battle_history")
+                                "/OBSERVE" -> navController.navigate("calibration")
+                                "/TRAINER/Profile" -> navController.navigate("trainer_profile")
                             }
                         }
                     )

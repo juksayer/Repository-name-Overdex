@@ -91,30 +91,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     // Instrument Workspace
     private val instrumentTree = InstrumentTree(
         listOf(
-            DirectoryNode("specimens", listOf(
-                ActionNode("search", InstrumentCommand.OpenSearch),
-                ActionNode("collection", InstrumentCommand.OpenCollection),
-                ActionNode("register", InstrumentCommand.AddSpecimen)
+            ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
+            DirectoryNode("BATTLE", listOf(
+                ActionNode("Roster", InstrumentCommand.OpenCollection),
+                ActionNode("History", InstrumentCommand.OpenBattleHistory)
             )),
-            DirectoryNode("battle", listOf(
-                ActionNode("sight", InstrumentCommand.OpenMatchSight),
-                ActionNode("preview", InstrumentCommand.OpenBattlePreview),
-                ActionNode("history", InstrumentCommand.OpenBattleHistory),
-                ActionNode("logs", InstrumentCommand.OpenBattleLogs)
-            )),
-            DirectoryNode("observation", listOf(
-                ActionNode("capture", InstrumentCommand.OpenCapture),
-                ActionNode("calibration", InstrumentCommand.OpenCalibration)
-            )),
-            DirectoryNode("trainer", listOf(
-                ActionNode("profile", InstrumentCommand.OpenProfile),
-                ActionNode("timeline", InstrumentCommand.OpenTimeline),
-                ActionNode("chat", InstrumentCommand.OpenChat)
-            )),
-            DirectoryNode("tools", listOf(
-
-                ActionNode("probe", InstrumentCommand.OpenAccessibilityProbe),
-                ActionNode("observatory", InstrumentCommand.OpenSignalObservatory)
+            ActionNode("OBSERVE", InstrumentCommand.OpenCalibration),
+            DirectoryNode("TRAINER", listOf(
+                ActionNode("Profile", InstrumentCommand.OpenProfile)
             ))
         )
     )

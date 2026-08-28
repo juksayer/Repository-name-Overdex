@@ -136,7 +136,7 @@ fun PokedexListScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TerminalPathIndicator(path = "/specimens/search/")
+        TerminalPathIndicator(path = "/OVERDEX")
         
         SearchBar(
             query = searchQuery, 
