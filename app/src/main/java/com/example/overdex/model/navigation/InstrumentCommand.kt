@@ -19,4 +19,6 @@ sealed interface InstrumentCommand {
     data object OpenBattlePreview : InstrumentCommand
     data object OpenMatchSight : InstrumentCommand
     data object OpenMatchCalibration : InstrumentCommand
+    data object OpenTournament : InstrumentCommand
+    data object OpenFilterSettings : InstrumentCommand
 }

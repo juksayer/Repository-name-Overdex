@@ -241,6 +241,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenMatchSight -> navController.navigate("match_sight")
                 InstrumentCommand.OpenMatchCalibration -> navController.navigate("match_calibration")
                 InstrumentCommand.OpenBattlePreview -> navController.navigate("battle_preview")
+                else -> {}
             }
         }
     }
