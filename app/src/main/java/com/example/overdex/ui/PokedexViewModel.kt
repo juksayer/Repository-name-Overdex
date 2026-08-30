@@ -24,6 +24,7 @@ import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.witness.AnnouncementWitness
+import com.example.overdex.battle.witness.AttackIncomingWitness
 import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.data.FallbackSpriteProvider
@@ -191,6 +192,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(YouWinWitness(input, calibration))
         observationDispatcher.register(GoodEffortWitness(input, calibration))
         observationDispatcher.register(AnnouncementWitness(input, calibration))
+        observationDispatcher.register(AttackIncomingWitness(input, calibration))
 
         // Start Service
         DroidballService.start(getApplication(), resultCode, data)
