@@ -325,7 +325,8 @@ fun ODXFiShell(
         val nextSequence = currentSequence + input
         if (konamiCode.take(nextSequence.size) == nextSequence) {
             currentSequence = nextSequence
-            if (currentSequence.size == konamiCode.size) {
+            // Konami Code access disabled: trigger condition permanently false
+            if (false && currentSequence.size == konamiCode.size) {
                 researcherManager.setUnlocked(true)
                 isResearcherUnlocked = true
                 showSettings = true
