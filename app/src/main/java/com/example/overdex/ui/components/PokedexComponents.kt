@@ -693,7 +693,7 @@ fun FilterSettingsOverlay(
                     label = "Curvature", 
                     value = settings.crtCurvature, 
                     min = 0f, 
-                    max = 0.5f, 
+                    max = 1.0f,
                     selected = focusManager.currentItem == FilterFocus.CURVATURE
                 ) { onSettingsChange(settings.copy(crtCurvature = it)) }
                 
@@ -701,7 +701,7 @@ fun FilterSettingsOverlay(
                     label = "Noise", 
                     value = settings.noiseIntensity, 
                     min = 0f, 
-                    max = 0.5f, 
+                    max = 1.0f,
                     selected = focusManager.currentItem == FilterFocus.NOISE
                 ) { onSettingsChange(settings.copy(noiseIntensity = it)) }
             } else {

@@ -2,6 +2,8 @@ package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
@@ -41,11 +43,18 @@ class CountdownObserver(
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
 
+        val sourceId = SourceId(observerId.id)
+        match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
+
         newScope.launch {
             Log.d("COUNTDOWN", "waiting for frames")
             input.supply { bitmap ->
                 Log.d("COUNTDOWN", "bitmap received")
                 match.incrementFrameCount()
+
+                val timestamp = System.currentTimeMillis()
+                match.custody.submitInputAvailability(sourceId, true, timestamp)
+
                 Log.d("COUNTDOWN", "Calibration: ${calibration.isCalibrated()}")
                 if (calibration.isCalibrated()) {
                     val cropped = cropSpecies(bitmap)
@@ -55,10 +64,18 @@ class CountdownObserver(
 
                         val value = recognitionResult.value
                         if (recognitionResult.confidence >= 1.0f && value != null) {
-                            val witness = CountdownWitness(value, System.currentTimeMillis())
+                            val witness = CountdownWitness(value, timestamp)
                             Log.d("CountdownObserver", "CountdownWitness(value=$value)")
-                            
-                            // Publish the witness to the rest of the instrument
+
+                            // 1. Reality Handoff (Neutral Testimony)
+                            match.custody.submitTestimony(
+                                sourceId = sourceId,
+                                payload = RawTestimony(value),
+                                timestamp = witness.timestamp,
+                                confidence = recognitionResult.confidence
+                            )
+
+                            // 2. Presentation Signal (Existing behavior)
                             DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))
                         } else if (value != null) {
                             Log.d("CountdownObserver", "Normalized OCR string: $value")
