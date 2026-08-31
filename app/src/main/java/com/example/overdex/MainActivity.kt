@@ -82,7 +82,7 @@ import com.example.overdex.ui.screens.QrScannerScreen
 import com.example.overdex.ui.screens.SharedTimelineScreen
 import com.example.overdex.ui.screens.SpecimenDetailScreen
 import com.example.overdex.ui.screens.TrainerProfileScreen
-import com.example.overdex.ui.screens.observatory.SignalObservatoryScreen
+import com.example.overdex.ui.screens.observatory.TimelineViewerScreen
 import com.example.overdex.ui.theme.OverdexTheme
 import kotlinx.coroutines.launch
 
@@ -736,7 +736,7 @@ fun PokedexApp(
                     frameCount = frameCount,
                     onB = { navController.debugPopBackStack() }
                 ) {
-                    SignalObservatoryScreen(
+                    TimelineViewerScreen(
                         onBack = { navController.debugPopBackStack() }
                     )
                 }
