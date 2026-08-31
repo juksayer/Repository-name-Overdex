@@ -39,6 +39,41 @@ enum class ResearcherFocus {
 }
 
 @Composable
+fun ResearcherModeScreen(
+    onLaunchProbe: () -> Unit = {},
+    onLaunchObservatory: () -> Unit = {},
+    onLaunchMatchSight: () -> Unit = {},
+    onLaunchMatchCalibration: () -> Unit = {},
+    onBack: () -> Unit = {},
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {},
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = TerminalBlack,
+        contentColor = TerminalGreen
+    ) {
+        ResearcherModeOverlay(
+            onLaunchProbe = onLaunchProbe,
+            onLaunchObservatory = onLaunchObservatory,
+            onLaunchMatchSight = onLaunchMatchSight,
+            onLaunchMatchCalibration = onLaunchMatchCalibration,
+            onClose = onBack,
+            onUp = onUp,
+            onDown = onDown,
+            onLeft = onLeft,
+            onRight = onRight,
+            onA = onA,
+            onB = onB
+        )
+    }
+}
+
+@Composable
 fun ResearcherModeOverlay(
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
