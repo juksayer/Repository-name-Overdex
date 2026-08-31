@@ -97,7 +97,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ActionNode("Roster", InstrumentCommand.OpenCollection),
                 ActionNode("History", InstrumentCommand.OpenBattleHistory)
             )),
-            ActionNode("OBSERVE", InstrumentCommand.OpenCalibration),
+            DirectoryNode("INTUEOR", listOf(
+                ActionNode("Calibration", InstrumentCommand.OpenCalibration),
+                ActionNode("Signal Observatory", InstrumentCommand.OpenSignalObservatory)
+            )),
             DirectoryNode("TRAINER", listOf(
                 ActionNode("Profile", InstrumentCommand.OpenProfile)
             ))
