@@ -79,7 +79,7 @@ import com.example.overdex.ui.screens.PokedexListScreen
 import com.example.overdex.ui.screens.PokemonDetailScreen
 import com.example.overdex.ui.screens.QrIdentityScreen
 import com.example.overdex.ui.screens.QrScannerScreen
-import com.example.overdex.ui.screens.ResearcherModeScreen
+import com.example.overdex.ui.screens.SignalObservatoryScreen
 import com.example.overdex.ui.screens.SharedTimelineScreen
 import com.example.overdex.ui.screens.SpecimenDetailScreen
 import com.example.overdex.ui.screens.TrainerProfileScreen
@@ -749,7 +749,7 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount
                 ) {
-                    ResearcherModeScreen(
+                    SignalObservatoryScreen(
                         onLaunchProbe = { navController.navigate("accessibility_probe") },
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchSight = { navController.navigate("match_sight") },

@@ -630,7 +630,7 @@ fun FilterSettingsOverlay(
         onRight {
             if (settings.isEnabled) {
                 when (focusManager.currentItem) {
-                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity + 0.05f).coerceIn(0f, 1f)))
+                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity + 0.05f).coerceIn(0f, 0.5f)))
                     FilterFocus.CURVATURE -> onSettingsChange(settings.copy(crtCurvature = (settings.crtCurvature + 0.05f).coerceIn(0f, 0.5f)))
                     FilterFocus.NOISE -> onSettingsChange(settings.copy(noiseIntensity = (settings.noiseIntensity + 0.05f).coerceIn(0f, 0.5f)))
                     else -> {}
