@@ -79,8 +79,8 @@ enum class OverlayState {
 }
 
 data class FilterSettings(
-    val scanlineIntensity: Float = 0.2f,
-    val scanlineSpeed: Float = 0.0f,
+    val scanlineIntensity: Float = 1.0f,
+    val scanlineSpeed: Float = 0.1f,
     val crtCurvature: Float = 0.1f,
     val noiseIntensity: Float = 0.05f,
     val isEnabled: Boolean = true
