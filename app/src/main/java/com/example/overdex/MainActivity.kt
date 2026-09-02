@@ -750,6 +750,8 @@ fun PokedexApp(
                     frameCount = frameCount
                 ) {
                     SignalObservatoryScreen(
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { filterSettings = it },
                         onLaunchProbe = { navController.navigate("accessibility_probe") },
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchSight = { navController.navigate("match_sight") },

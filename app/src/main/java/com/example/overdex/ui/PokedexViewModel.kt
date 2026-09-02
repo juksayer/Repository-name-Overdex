@@ -95,15 +95,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
             DirectoryNode("BATTLE", listOf(
                 ActionNode("Roster", InstrumentCommand.OpenCollection),
+                DirectoryNode("Match", listOf(
+                    ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs)
+                )),
                 ActionNode("History", InstrumentCommand.OpenBattleHistory)
             )),
             DirectoryNode("INTUEOR", listOf(
                 ActionNode("Calibration", InstrumentCommand.OpenCalibration),
                 ActionNode("Signal Observatory", InstrumentCommand.OpenSignalObservatory)
             )),
-            DirectoryNode("TRAINER", listOf(
-                ActionNode("Profile", InstrumentCommand.OpenProfile)
-            ))
+            ActionNode("PROFILE", InstrumentCommand.OpenProfile)
         )
     )
 
