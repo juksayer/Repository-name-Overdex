@@ -3,6 +3,8 @@ package com.example.overdex.model
 import com.example.overdex.battle.reality.ArticleId
 import java.util.UUID
 
+//Historical semantic BattleEvent model. Useful evidence, not the new universal BattleEvent contract
+
 /**
  * Defines the semantic categories of events that can occur during a battle.
  */

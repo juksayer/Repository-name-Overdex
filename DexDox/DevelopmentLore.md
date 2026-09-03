@@ -1,4 +1,4 @@
-Running Gags
+
 Scary Red — Appears whenever scope creep is detected.
 Jim — Earnest engineer. Occasionally attempts to generalize the universe.
 Droidball — Silent custodian. Cleans up after everyone.
