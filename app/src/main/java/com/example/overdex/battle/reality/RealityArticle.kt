@@ -25,5 +25,8 @@ data class RealityArticle(
     val recordedAt: Long,
     val sourceId: SourceId,
     val payload: TestimonyPayload,
-    val predecessorIds: List<ArticleId> = emptyList()
+    val predecessorIds: List<ArticleId> = emptyList(),
+    val confidence: Float? = null,
+    val sequenceNumber: Long? = null,
+    val evidenceReferences: List<String>? = null
 ) : TimelineRecord

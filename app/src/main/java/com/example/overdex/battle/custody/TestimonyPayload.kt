@@ -13,3 +13,8 @@ interface TestimonyPayload
  * A simple, neutral implementation of [TestimonyPayload] used for generic data.
  */
 data class RawTestimony(val data: Any) : TestimonyPayload
+
+/**
+ * Testimony representing the "Attack Incoming!" phenomenon.
+ */
+data object AttackIncoming : TestimonyPayload

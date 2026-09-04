@@ -2,7 +2,7 @@ package com.example.overdex.battle.witness
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
@@ -110,7 +110,7 @@ class AttackIncomingWitness(
                             // We submit the measured confidence from the recognition engine unchanged.
                             match.custody.submitTestimony(
                                 sourceId = sourceId,
-                                payload = RawTestimony(originalText),
+                                payload = AttackIncoming,
                                 timestamp = receiptTimestamp,
                                 confidence = matchResult.confidence
                             )
