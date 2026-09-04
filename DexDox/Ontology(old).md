@@ -1,21 +1,48 @@
+Ontology
+The ontology answers:
+What kinds of things can exist in Overdex's model of the world?
+
+Article, Event, Observation, Evidence, Relationship, etc.
+These establish the grammar of the system.
+
+
+Article Catalog
+The Article catalog answers:
+What kinds of subjects does Overdex currently know how to talk about?
+
+
+Article
+├── Battle
+├── Pokémon
+├── Trainer
+├── Move
+├── Type
+├── Item
+└── Team
+
+
+
+
 # Core Ontology (Things That Exist)
 
 The Overdex Ontology defines the concepts that exist within the Overdex universe of discourse. It intentionally does not attempt to model concepts outside that domain.
 
 ## Article
 
-An Article is the canonical subject of knowledge. It provides the stable identity to which evidence, confidence, knowledge, relationships, and history are attached over time.
+An Article is the stable subject to which measurements are attributed and evidence accumulates over time. Every addition preserves its provenance and chain of custody.
+
 ## Event
 
 An Event is an objective change in the state of one or more Articles.
 
 ## Relationship
 
-A Relationship describes an association between two or more Articles, or two or more testimonies about an Article. Relationships may be static or may change over time through Events.
+A Relationship is an association between two or more Articles. Events may establish, modify, or 
+terminate a Relationship over time.
 
-## Observer
+## Crop
 
-An Observer is an entity capable of perceiving changes in the state of Articles and producing Observations.
+A Crop is a bounded region through which changes in Reality become available for measurement. Its geometry is established before the Match and remains identifiable throughout the Match.
 
 ## Observation
 

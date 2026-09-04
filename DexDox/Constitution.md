@@ -39,35 +39,28 @@ One test.
 Working code is not a problem to solve.
 
 ---
-
 ## Architecture
 
 Each layer owns one responsibility.
 
-Knowledge knows.
+Reference Knowledge provides what Overdex knew before the encounter.
 
----!← TERMINOLOGY AUDIT:
-"Knowledge" may predate the formal distinction between Reference Knowledge
-and Dynamic Knowledge. Do not change yet. Revisit after Architecture,
-Ownership, and KnowledgeLayer have been reconciled.
-→
+Crop defines the sensory boundary from which measurements are taken.
 
-Observation observes.
-ObservationDispatcher owns observer lifecycles, not observation logic
+Timeline preserves measurements before interpretation.
 
-Memory remembers.
+Memory maintains current operational state.
 
-History organizes.
+Intelligence interprets preserved evidence.
 
-Archive preserves.
+Presentation communicates current understanding.
 
-Intelligence understands.
+An Article is the subject about which Overdex gathers measurements,
+evidence, reasoning, and knowledge.
 
-Presentation communicates.
+Overdex never takes custody of an Article.
 
-Article is the root.
-
-Everything in Overdex is about an Article.
+Architectural responsibilities shall remain distinguishable across boundaries.
 
 ---
 
@@ -89,21 +82,38 @@ START launches Droidball.
 
 ---
 
+
 ## Trust
 
 Never pretend certainty.
 
-Confidence is earned.
+Confidence belongs to interpretation.
 
-Evidence beats assumptions.
+Evidence precedes conclusions.
 
-When uncertain, say so.
+When uncertain, preserve the uncertainty.
+
+Never discard a measurement because its significance is not yet understood.
 
 Trust is the product.
 
-Modules communicate through Articles.
-
 ---
+
+## Articles
+
+Article is the root subject of knowledge.
+
+Everything Overdex measures, infers, remembers, or communicates
+is attributable to an Article or to a phenomenon concerning an Article.
+
+Reality owns the Article.
+
+Overdex owns the measurements, records, reasoning, and knowledge it produces
+concerning that Article.
+
+The Article itself never enters Overdex custody.
+
+--- 
 
 ## Litmus Test
 
@@ -122,6 +132,47 @@ An Article is the canonical aggregation point for evidence and confidence.
 ---
 
 ## Phenomena
+Reality remains outside the institution. Measurements enter custody. Presentations leave.
 
-- Phenomena enter the institution. Presentations leave the institution. 
-- Everything else is internal constitutional process.
+FOUNDATIONS
+mostly survives, terminology audit required
+
+DEVELOPMENT
+survives
+
+ARCHITECTURE
+principles survive, vocabulary substantially stale
+
+INTERFACE
+survives unless UI decisions have changed
+
+TRUST
+principles survive, "Trust observed data" must change
+
+ARTICLE
+old dossier semantics must be replaced
+
+PHENOMENA
+border model needs correction
+
+
+FOUNDATIONS
+mostly survives, terminology audit required
+
+DEVELOPMENT
+survives
+
+ARCHITECTURE
+principles survive, vocabulary substantially stale
+
+INTERFACE
+survives unless UI decisions have changed
+
+TRUST
+principles survive, "Trust observed data" must change
+
+ARTICLE
+old dossier semantics must be replaced
+
+PHENOMENA
+border model needs correction

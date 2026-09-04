@@ -8,7 +8,7 @@ Simplify — Remove temporary diagnostics while leaving the invariant.
 
 That isn't just a debugging checklist; it's a development methodology. It complements principles like "Build first; Test what exists; Show that it happened" by describing how architectural faults should be resolved.
 
-Finally, I think you've landed on an important distinction:
+
 
 Guards are implementation techniques.
 Invariants are architectural truths.

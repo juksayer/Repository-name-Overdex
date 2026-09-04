@@ -1,16 +1,20 @@
----
-
 # OVERDEX CONSTITUTION
 
 ## Preamble
 
-Overdex is a field instrument for acquiring, organizing, reasoning about, and presenting knowledge.
+Overdex is a field instrument for acquiring, preserving, reasoning about,
+and presenting knowledge.
 
 Its architecture exists to preserve the integrity of that process.
 
-Architectural decisions are not justified by implementation, seniority, naming, or personal preference. They are justified through evidence, constitutional reasoning, and established precedent.
+Architectural decisions are not justified by implementation, seniority,
+naming, or personal preference. They are justified through evidence,
+constitutional reasoning, and established precedent.
 
-The Constitution defines the enduring principles of the project. Constitutional Opinions explain their application. Constitutional Knowledge accumulates through those opinions and guides the continued evolution of the architecture.
+The Constitution defines the enduring principles of the project.
+Constitutional Opinions explain their application.
+Constitutional Knowledge accumulates through those opinions and guides
+the continued evolution of the architecture.
 
 ---
 
@@ -18,11 +22,25 @@ The Constitution defines the enduring principles of the project. Constitutional 
 
 Overdex is governed by an evidence-first philosophy.
 
-Neither the runtime nor the architecture begins with conclusions. Both begin with witnesses. Witnesses are organized into knowledge, refined through reasoning, and only then become the basis for action.
+Reality remains outside the institution.
 
-Architectural authority is earned through constitutional evidence, reasoning, and precedent—not through implementation, seniority, naming, or preference.
+Overdex does not begin with conclusions.
+It begins with measurements.
 
-As the project evolves, Constitutional Knowledge forms precedent, and precedent guides future architectural decisions. In this way, the architecture learns from experience while remaining accountable to evidence.
+Measurements are preserved before interpretation.
+
+Reasoning may derive interpretations, confidence, knowledge, conclusions,
+and decisions from preserved evidence.
+
+Derived information shall remain distinguishable from the measurements
+from which it arose.
+
+Architectural authority is earned through constitutional evidence,
+reasoning, and precedent, not through implementation, seniority,
+naming, or preference.
+
+As the project evolves, Constitutional Knowledge forms precedent,
+and precedent guides future architectural decisions.
 
 ---
 
@@ -32,9 +50,9 @@ Every responsibility shall have one authoritative owner.
 
 Ownership grants:
 
-* authority
-* mutation rights
-* accountability
+- authority
+- mutation rights
+- accountability
 
 Ownership is exclusive.
 
@@ -44,39 +62,65 @@ Authority may not.
 
 ---
 
-# Article III — Observation
+# Article III — The Epistemic Boundary
 
 Reality produces phenomena.
 
-Witnesses observe phenomena.                    Observation assignments shall be coordinated independently from Witness responsibilities
+An Article is the external subject about which Overdex may gather
+measurements, evidence, reasoning, and knowledge.
 
-Witnesses produce testimony.
+The Article itself never enters Overdex custody.
 
-Witnesses do not assign meaning.
+A Crop is a bounded region of incoming signal from which Overdex takes
+measurements.
+
+Measurements enter institutional custody.
+
+A Crop does not interpret.
+
+A Crop does not assign confidence.
+
+A Crop does not determine meaning.
 
 Nothing more.
 
 ---
 
-# Article IV — Knowledge
+# Article IV — Preservation and Knowledge
 
-Knowledge organizes events witnessed into coherent knowledge.
+Every measurement shall enter the Timeline before interpretation.
 
-Knowledge represents what is currently justified by available evidence.
+The Timeline is the first institutional custodian of information produced
+by Overdex.
 
-Knowledge may evolve as new events are witnesses.
+The Timeline preserves measurements, provenance, chronology, reasoning,
+confidence changes, derived knowledge, and relevant state changes.
+
+Nothing preserved by the Timeline shall be overwritten by later
+understanding.
+
+Knowledge represents what Overdex is presently justified in believing
+from available evidence.
+
+Knowledge may evolve.
+
+The historical record shall not.
 
 ---
 
 # Article V — Intelligence
 
-Intelligence reasons from Knowledge.
+Intelligence reasons from preserved evidence and available knowledge.
 
-It produces recommendations, conclusions, and decisions.
+It may produce interpretations, confidence, recommendations, conclusions,
+and decisions.
 
-Intelligence never alters events witnessed.
+Intelligence never alters preserved measurements.
 
 Reasoning shall always remain distinguishable from evidence.
+
+Derived conclusions shall remain traceable to the evidence from which
+they were produced.
 
 ---
 
@@ -84,11 +128,14 @@ Reasoning shall always remain distinguishable from evidence.
 
 Presentation belongs to Droidball.
 
-Presentation consumes exposed state and communicates it to the trainer.
+Presentation consumes exposed internal state and communicates it to the trainer.
 
-Presentation exists solely to faithfully represent the current state of the system.
+Presentation exists solely to faithfully represent the current state
+of the system.
 
 Presentation never owns domain authority.
+
+Presentation never alters the institutional record.
 
 ---
 
@@ -96,11 +143,12 @@ Presentation never owns domain authority.
 
 Intent is independent of input device.
 
-Observation records physical events.
+Physical input is not behavioral meaning.
 
 Intent assigns behavioral meaning.
 
-Whether produced by keyboard, touchscreen, controller, voice, or future interfaces, equivalent user actions shall produce equivalent intents.
+Whether produced by keyboard, touchscreen, controller, voice, or future
+interfaces, equivalent user actions shall produce equivalent intents.
 
 ---
 
@@ -122,29 +170,33 @@ Every component exists to own authority.
 
 A component shall justify its existence by demonstrating one or more of:
 
-* authoritative state
-* exclusive mutation rights
-* coordination responsibility
-* ownership of an external resource or lifecycle
+- authoritative state
+- exclusive mutation rights
+- coordination responsibility
+- ownership of an external resource or lifecycle
 
-Components that cannot demonstrate unique authority should be considered for consolidation.
+Components that cannot demonstrate unique authority should be considered
+for consolidation.
 
 ---
 
 # Article X — Managers
 
-A class named *Manager* possesses no constitutional standing by virtue of its name.
+A class named *Manager* possesses no constitutional standing by virtue
+of its name.
 
-Managers are presumed implementation details until they demonstrate unique architectural authority.
+Managers are presumed implementation details until they demonstrate
+unique architectural authority.
 
 A Manager survives constitutional review only if it owns:
 
-* authoritative state
-* exclusive mutation rights
-* coordination responsibility
-* an external resource or lifecycle
+- authoritative state
+- exclusive mutation rights
+- coordination responsibility
+- an external resource or lifecycle
 
-Otherwise, responsibility belongs to the component that already owns that authority.
+Otherwise, responsibility belongs to the component that already owns
+that authority.
 
 ---
 
@@ -152,68 +204,57 @@ Otherwise, responsibility belongs to the component that already owns that author
 
 Constitutional Opinions establish precedent.
 
-Precedent should be followed unless new evidence demonstrates that the previous reasoning no longer reflects the architecture.
+Precedent should be followed unless new evidence demonstrates that the
+previous reasoning no longer reflects the architecture.
 
-When precedent is overturned, the new opinion shall explicitly identify the superseded opinion and explain why its reasoning no longer applies.
+When precedent is overturned, the new opinion shall explicitly identify
+the superseded opinion and explain why its reasoning no longer applies.
 
-The continuity of the Constitution is preserved through reasoning rather than through immutable decisions.
-
----
-
-Article — The Article
-
-The Article is the canonical unit of knowledge exchange.
-
-Articles alone traverse constitutional boundaries.
-
-Offices contribute to an Article.
-
-Offices do not travel with an Article.
-
-The chain of custody belongs to the Article.
-
-Every constitutional contribution shall be attributable through the Article's chain of custody.
+The continuity of the Constitution is preserved through reasoning rather
+than through immutable decisions.
 
 ---
 
-## Constitutional Classification
+# Article XII — The Article and Custody
 
-##
+An Article is the stable external subject to which Overdex attributes
+measurements, evidence, reasoning, relationships, and knowledge.
 
-Every top-level architectural component shall ultimately be classified as one of three constitutional forms.
+Reality owns the Article.
 
-## 🏛 Foundational
+Overdex never takes custody of the Article itself.
+
+Overdex owns the measurements, records, reasoning, confidence, and
+knowledge it produces concerning that Article.
+
+The chain of custody belongs to those records.
+
+Every constitutional contribution shall preserve provenance sufficient
+to identify what it concerns and from what earlier records it was derived.
+
+No constitutional boundary may erase prior custody.
+
+---
+
+# Constitutional Classification
+
+Every top-level architectural component shall ultimately be classified
+as one of three constitutional forms.
+
+## Foundational
 
 Defines an architectural boundary.
 
 Removing it would require redrawing the architecture itself.
 
-Examples may include:
-
-* Application
-* Observation
-* Intent
-* Workspaces
-* Knowledge
-* Droidball
-
----
-
-## ✅ Independent
+## Independent
 
 Owns unique architectural authority.
 
-Removing it would leave a responsibility without an owner while leaving the overall architecture intact.
+Removing it would leave a responsibility without an owner while leaving
+the overall architecture intact.
 
-Examples may include:
-
-* BattleMemory
-* MediaManager
-* CalibrationManager
-
----
-
-## 🌿 Derived
+## Derived
 
 Exists to realize another component's authority.
 
@@ -233,12 +274,12 @@ It does not render conclusions prematurely.
 
 ## Evidence
 
-* Authority
-* Boundary
-* Ownership
-* Mutation
-* Public Language
-* Removal Test
+- Authority
+- Boundary
+- Ownership
+- Mutation
+- Public Language
+- Removal Test
 
 ## Constitutional Opinion
 
@@ -258,11 +299,11 @@ The constitutional principle established for future decisions.
 
 ### Classification
 
-🏛 Foundational
+Foundational
 
-✅ Independent
+Independent
 
-🌿 Derived
+Derived
 
 ---
 
@@ -272,74 +313,36 @@ The Constitution governs not only the software, but the evolution of the softwar
 
 The runtime follows an evidence-first process:
 
-```
 Reality
-    ↓
-Events Witnessed
-    ↓
-Knowledge
-    ↓
-Intelligence
-    ↓
+↓
+Crop
+↓
+Measurement
+↓
+Timeline
+↓
+Reasoning
+↓
+Interpretation / Knowledge / Confidence
+↓
+Timeline
+↓
 Presentation
-```
 
 Architectural governance follows the same epistemology:
 
-```
 Component
-    ↓
+↓
 Evidence
-    ↓
+↓
 Constitutional Opinion
-    ↓
+↓
 Constitutional Knowledge
-    ↓
+↓
 Classification
-```
 
-Project evolution likewise proceeds through observation and accumulated knowledge:
-
-```
-Event Witnessed
-    ↓
-Event Reasoning
-    ↓
-Constitutional Knowledge
-    ↓
-Precedent
-    ↓
-Architecture
-------------------------------------
-             8/6/26 revision
-Event
-    ↓
-Article created
-    ↓
-Witnesses
-    ↓
-Reporters
-    ↓
-Interpreter
-    ↓
-Publisher
-    ↓
-Catalog
-```
-
-The runtime produces signals.
-
-Signals produce Events to be Witnessed.
-
-Those Witnessed Events become Constitutional Knowledge.
-
-Constitutional Knowledge establishes precedent.
-
-Precedent shapes future architecture.
-
-Future architecture changes the runtime.
-
-The project therefore evolves through the same evidence-first philosophy that governs its execution.
+Project evolution likewise proceeds through preserved evidence,
+reasoning, and accumulated precedent.
 
 ---
 
@@ -353,36 +356,24 @@ Components earn their place through evidence.
 
 Authority is earned through reasoning.
 
-Knowledge accumulates through justified opinions.
+Knowledge accumulates through justified interpretation.
 
 Architecture evolves through precedent.
 
 The project does not begin by deciding what is true.
 
-It begins by witnessing, then knowing, then reasoning, and finally acting.
+It begins by preserving what it encounters, then reasoning about what
+that evidence may mean.
 
-The same principle governs both the software and the way the software itself evolves.
-
----
-
-Signals and events are the input interface.
-
-Presentation is the output interface.
-
-Everything in between is internal.
+The same principle governs both the software and the way the software
+itself evolves.
 
 ---
 
-Boundary offices are observational.
+Reality remains outside the institution.
 
-Input boundary:
+Measurements enter institutional custody.
 
-consumes Phenomena
-never alters Phenomena
+Presentation leaves the institution.
 
-Output boundary:
-
-consumes Articles
-never alters Articles
-
-Everything that mutates institutional knowledge happens between those boundaries
+Everything that mutates institutional knowledge happens between those boundaries.

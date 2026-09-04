@@ -1,152 +1,379 @@
-# Terms of Ownership
+# OVERDEX CONSTITUTION
 
-## Purpose
+## Preamble
 
-Architectural terminology is exclusive.
+Overdex is a field instrument for acquiring, preserving, reasoning about,
+and presenting knowledge.
 
-Once a primary term has been adopted by a module or architectural layer,
-that term becomes part of that module's vocabulary and shall not be reused
-by unrelated modules.
+Its architecture exists to preserve the integrity of that process.
 
-This document defines those ownership boundaries.
+Architectural decisions are not justified by implementation, seniority,
+naming, or personal preference. They are justified through evidence,
+constitutional reasoning, and established precedent.
 
----
-
-## Status Definitions
-
-### Reserved
-A **Reserved** term is exclusive to a single module or architectural layer. It represents a primary concept within that module's ontology and shall not be reused by unrelated modules.
-
-### Retired
-A **Retired** term is forbidden for all future use. It has been removed from the project's active vocabulary because it has become ambiguous, overloaded, or no longer reflects the architectural direction. Retired terms shall not be reactivated.
+The Constitution defines the enduring principles of the project.
+Constitutional Opinions explain their application.
+Constitutional Knowledge accumulates through those opinions and guides
+the continued evolution of the architecture.
 
 ---
 
-## Match
+# Article I — Epistemic Foundation
 
-Status
-Reserved
+Overdex is governed by an evidence-first philosophy.
 
-Owner
-Battle
+Reality remains outside the institution.
 
-Definition
-One live Pokémon GO battle.
+Overdex does not begin with conclusions.
+It begins with measurements.
 
-Notes
-The Match is the primary runtime object of the Battle module.
-Future tournament structures are composed of Matches.
+Measurements are preserved before interpretation.
 
-Examples
-BattleMatch
-MatchTimeline
-MatchWorkspace
+Reasoning may derive interpretations, confidence, knowledge, conclusions,
+and decisions from preserved evidence.
 
----
+Derived information shall remain distinguishable from the measurements
+from which it arose.
 
-## Observation
+Architectural authority is earned through constitutional evidence,
+reasoning, and precedent, not through implementation, seniority,
+naming, or preference.
 
-Status
-Retired
-
-Historical
-Yes
-
-Reason
-Originally intended to describe directly perceived battle facts. The term accumulated multiple unrelated meanings (Battle runtime, OCR, UI, Overlays, etc.) until it no longer communicated architectural ownership.
-
-Policy
-Observation is Retired. It shall not appear in the names of:
-- packages
-- source files
-- classes
-- interfaces
-- composables
-- architectural layers
-- primary runtime concepts
-
-Existing usages are retained as **historical artifacts** until individually retired through dedicated vocabulary bricks. Retired terms shall not be reactivated.
+As the project evolves, Constitutional Knowledge forms precedent,
+and precedent guides future architectural decisions.
 
 ---
 
-## Timeline
+# Article II — Ownership
 
-Status
-Reserved
+Every responsibility shall have one authoritative owner.
 
-Owner
-Battle
+Ownership grants:
 
-Definition
-Chronological history of a Match.
+- authority
+- mutation rights
+- accountability
 
----
+Ownership is exclusive.
 
-## Calibration
+Information may be shared.
 
-Status
-Reserved
-
-Owner
-Instrument
-
-Definition
-Alignment of observation regions with the capture source.
+Authority may not.
 
 ---
 
-## Session
+# Article III — The Epistemic Boundary
 
-Status
-Retired
+Reality produces phenomena.
 
-Previous Owner
-Multiple modules
+An Article is the external subject about which Overdex may gather
+measurements, evidence, reasoning, and knowledge.
 
-Reason
-Originally intended to describe an active interaction. Over time the term accumulated unrelated meanings across battle, registration, UI, and application state until it no longer conveyed architectural ownership.
+The Article itself never enters Overdex custody.
 
-The term is retired. Future modules shall adopt vocabulary specific to their own domain rather than reuse Session.
+A Crop is a bounded region of incoming signal from which Overdex takes
+measurements.
 
----
+Measurements enter institutional custody.
 
-## Workspace
+A Crop does not interpret.
 
-Status
-Retired
+A Crop does not assign confidence.
 
-Reason
-Originally described several unrelated editable areas. The term became too generic to communicate ownership.
+A Crop does not determine meaning.
 
-Replacement
-Determined by the owning module.
+Nothing more.
 
 ---
 
-## Fact
+# Article IV — Preservation and Knowledge
 
-Status
-Retired
+Every measurement shall enter the Timeline before interpretation.
 
-Reason
-The term implies absolute certainty. Overdex intentionally models confidence and evidence rather than claiming infallible truth.
+The Timeline is the first institutional custodian of information produced
+by Overdex.
 
-Replacement
-Evidence, Observation, Witness, Signal, Knowledge, Confidence.
+The Timeline preserves measurements, provenance, chronology, reasoning,
+confidence changes, derived knowledge, and relevant state changes.
 
----
+Nothing preserved by the Timeline shall be overwritten by later
+understanding.
 
-## Signal
+Knowledge represents what Overdex is presently justified in believing
+from available evidence.
 
-Status
-Reserved
+Knowledge may evolve.
 
-Owner
-Instrument
-
-Definition
-A technical perception or state change broadcast by the instrument's sensing layer.
+The historical record shall not.
 
 ---
 
-## Pending
+# Article V — Intelligence
+
+Intelligence reasons from preserved evidence and available knowledge.
+
+It may produce interpretations, confidence, recommendations, conclusions,
+and decisions.
+
+Intelligence never alters preserved measurements.
+
+Reasoning shall always remain distinguishable from evidence.
+
+Derived conclusions shall remain traceable to the evidence from which
+they were produced.
+
+---
+
+# Article VI — Presentation
+
+Presentation belongs to Droidball.
+
+Presentation consumes exposed internal state and communicates it to the trainer.
+
+Presentation exists solely to faithfully represent the current state
+of the system.
+
+Presentation never owns domain authority.
+
+Presentation never alters the institutional record.
+
+---
+
+# Article VII — Intent
+
+Intent is independent of input device.
+
+Physical input is not behavioral meaning.
+
+Intent assigns behavioral meaning.
+
+Whether produced by keyboard, touchscreen, controller, voice, or future
+interfaces, equivalent user actions shall produce equivalent intents.
+
+---
+
+# Article VIII — State
+
+Authoritative state shall have exactly one owner.
+
+Only the owner may mutate that state.
+
+All other components consume, derive, or present that state.
+
+Whenever possible, derived state shall be computed rather than duplicated.
+
+---
+
+# Article IX — Components
+
+Every component exists to own authority.
+
+A component shall justify its existence by demonstrating one or more of:
+
+- authoritative state
+- exclusive mutation rights
+- coordination responsibility
+- ownership of an external resource or lifecycle
+
+Components that cannot demonstrate unique authority should be considered
+for consolidation.
+
+---
+
+# Article X — Managers
+
+A class named *Manager* possesses no constitutional standing by virtue
+of its name.
+
+Managers are presumed implementation details until they demonstrate
+unique architectural authority.
+
+A Manager survives constitutional review only if it owns:
+
+- authoritative state
+- exclusive mutation rights
+- coordination responsibility
+- an external resource or lifecycle
+
+Otherwise, responsibility belongs to the component that already owns
+that authority.
+
+---
+
+# Article XI — Constitutional Precedent
+
+Constitutional Opinions establish precedent.
+
+Precedent should be followed unless new evidence demonstrates that the
+previous reasoning no longer reflects the architecture.
+
+When precedent is overturned, the new opinion shall explicitly identify
+the superseded opinion and explain why its reasoning no longer applies.
+
+The continuity of the Constitution is preserved through reasoning rather
+than through immutable decisions.
+
+---
+
+# Article XII — The Article and Custody
+
+An Article is the stable external subject to which Overdex attributes
+measurements, evidence, reasoning, relationships, and knowledge.
+
+Reality owns the Article.
+
+Overdex never takes custody of the Article itself.
+
+Overdex owns the measurements, records, reasoning, confidence, and
+knowledge it produces concerning that Article.
+
+The chain of custody belongs to those records.
+
+Every constitutional contribution shall preserve provenance sufficient
+to identify what it concerns and from what earlier records it was derived.
+
+No constitutional boundary may erase prior custody.
+
+---
+
+# Constitutional Classification
+
+Every top-level architectural component shall ultimately be classified
+as one of three constitutional forms.
+
+## Foundational
+
+Defines an architectural boundary.
+
+Removing it would require redrawing the architecture itself.
+
+## Independent
+
+Owns unique architectural authority.
+
+Removing it would leave a responsibility without an owner while leaving
+the overall architecture intact.
+
+## Derived
+
+Exists to realize another component's authority.
+
+Its justification is inherited rather than intrinsic.
+
+Replacing or restructuring it does not alter the constitutional architecture.
+
+---
+
+# Constitutional Review Process
+
+Every proposed top-level component shall undergo constitutional review.
+
+The review gathers evidence.
+
+It does not render conclusions prematurely.
+
+## Evidence
+
+- Authority
+- Boundary
+- Ownership
+- Mutation
+- Public Language
+- Removal Test
+
+## Constitutional Opinion
+
+The evidence shall produce a Constitutional Opinion consisting of:
+
+### Holding
+
+The constitutional determination regarding the component's role.
+
+### Reasoning
+
+The evidence supporting that determination.
+
+### Precedent
+
+The constitutional principle established for future decisions.
+
+### Classification
+
+Foundational
+
+Independent
+
+Derived
+
+---
+
+# Constitutional Method
+
+The Constitution governs not only the software, but the evolution of the software.
+
+The runtime follows an evidence-first process:
+
+Reality
+    ↓
+Crop
+    ↓
+Measurement
+    ↓
+Timeline
+    ↓
+Reasoning
+    ↓
+Interpretation / Knowledge / Confidence
+    ↓
+Timeline
+    ↓
+Presentation
+
+Architectural governance follows the same epistemology:
+
+Component
+    ↓
+Evidence
+    ↓
+Constitutional Opinion
+    ↓
+Constitutional Knowledge
+    ↓
+Classification
+
+Project evolution likewise proceeds through preserved evidence,
+reasoning, and accumulated precedent.
+
+---
+
+# Closing Principle
+
+The architecture of Overdex is not defined by its classes.
+
+It is defined by constitutional boundaries.
+
+Components earn their place through evidence.
+
+Authority is earned through reasoning.
+
+Knowledge accumulates through justified interpretation.
+
+Architecture evolves through precedent.
+
+The project does not begin by deciding what is true.
+
+It begins by preserving what it encounters, then reasoning about what
+that evidence may mean.
+
+The same principle governs both the software and the way the software
+itself evolves.
+
+---
+
+Reality remains outside the institution.
+
+Measurements enter institutional custody.
+
+Presentation leaves the institution.
+
+Everything that mutates institutional knowledge happens between those boundaries.
