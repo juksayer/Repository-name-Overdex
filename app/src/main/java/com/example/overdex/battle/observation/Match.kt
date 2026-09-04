@@ -52,7 +52,10 @@ class Match(
                     perceivedAt = testimony.timestamp,
                     recordedAt = System.currentTimeMillis(),
                     sourceId = testimony.sourceId,
-                    payload = testimony.payload
+                    payload = testimony.payload,
+                    confidence = testimony.confidence,
+                    sequenceNumber = testimony.sequenceNumber,
+                    evidenceReferences = testimony.evidenceReferences
                 )
                 realityTimeline.append(article)
                 battleMemory.timeline.record(article)
