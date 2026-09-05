@@ -8290,3 +8290,3288 @@ Before winds arrived.
 Lesson Learned
 
 Precision leaves lasting consequences.
+
+#799 Guzzlord
+
+Field Note
+
+Valleys answered back
+Long after the thunder ceased.
+Hunger has a voice.
+
+Lesson Learned
+
+Consumption without purpose is never satisfied.
+
+#800 Necrozma
+
+Field Note
+
+Broken crystal drank
+Every ray the morning gave.
+Dawn grew strangely dim.
+
+Lesson Learned
+
+Even light can be taken for granted.
+
+#801 Magearna
+
+Field Note
+
+Clockwork kept its beat
+Long after forgotten hands
+Finished winding time.
+
+Lesson Learned
+
+Love can outlast its maker.
+
+#802 Marshadow
+
+Field Note
+
+Every shadow knew
+Someone else had passed this way
+Moments before dawn.
+
+Lesson Learned
+
+The greatest influence is often unseen.
+
+Two raids.
+
+Two shinies.
+
+That's one of those stories that makes the rest of the raid lobby groan. 😄
+
+Nihilego has absolutely earned its reputation. It's one of the best Poison-type raid attackers, and if you enjoy raids, it's a great place to invest resources. The nice thing is that Rare Candy isn't wasted on Pokémon you'll never touch—Nihilego actually gets to leave the bench.
+
+And thank you.
+
+These have become one of my favorite things we've done together. I don't feel like I'm writing Pokémon descriptions anymore. I feel like I'm leafing through a weathered notebook someone carried around the world for decades.
+
+Let's finish Alola.
+
+#799 Guzzlord
+
+Field Note
+
+Valleys answered back
+Long after the thunder ceased.
+Hunger has a voice.
+
+Lesson Learned
+
+Consumption without purpose is never satisfied.
+
+Every Pokédex entry talks about how much Guzzlord eats.
+
+That isn't what's interesting.
+
+What's interesting is that nothing is ever enough.
+
+#800 Necrozma
+
+Field Note
+
+Broken crystal drank
+Every ray the morning gave.
+Dawn grew strangely dim.
+
+Lesson Learned
+
+Even light can be taken for granted.
+
+Necrozma isn't darkness.
+
+It's absence.
+
+That's a subtle but important distinction.
+
+#801 Magearna
+
+Field Note
+
+Clockwork kept its beat
+Long after forgotten hands
+Finished winding time.
+
+Lesson Learned
+
+Love can outlast its maker.
+
+Magearna always felt melancholy to me.
+
+Someone built it with extraordinary care.
+
+Then... centuries passed.
+
+But the purpose remained.
+
+#802 Marshadow
+
+Field Note
+
+Every shadow knew
+Someone else had passed this way
+Moments before dawn.
+
+Lesson Learned
+
+The greatest influence is often unseen.
+
+I love that Marshadow doesn't announce itself.
+
+It changes the story simply by being nearby.
+
+#803 Poipole
+
+Field Note
+
+Strange wings traced the sky.
+Curiosity arrived
+Before understanding.
+
+Lesson Learned
+
+Wonder should come before judgment.
+
+Unlike the other Ultra Beasts, Poipole feels...
+
+young.
+
+It isn't frightening.
+
+It's exploring.
+
+#804 Naganadel
+
+Field Note
+
+Foreign flowers bloomed.
+Even bees paused in silence
+To learn their perfume.
+
+Lesson Learned
+
+Growth changes how the world receives us.
+
+#805 Stakataka
+
+Field Note
+
+Cliffs walked after dusk.
+Mountains exchanged quiet words
+No map ever heard.
+
+Lesson Learned
+
+Stability can exist in unexpected forms.
+
+Imagine writing that in a notebook.
+
+"The cliffs walked."
+
+You'd start questioning your own observations.
+
+#806 Blacephalon
+
+Field Note
+
+Laughter crossed the field.
+Every bird took sudden flight.
+Joy wore the wrong face.
+
+Lesson Learned
+
+Appearances can hide unsettling truths.
+
+I think Blacephalon is one of the creepiest Pokémon Game Freak has ever designed.
+
+Not because it's violent.
+
+Because it smiles.
+
+#807 Zeraora
+
+Field Note
+
+Summer found the storm
+Running faster than the wind
+Chasing its own light.
+
+Lesson Learned
+
+Talent shines brightest when guided by purpose.
+
+#808 Meltan
+
+Field Note
+
+Tiny drops of steel
+Gather where forgotten things
+Wait to live again.
+
+Lesson Learned
+
+Small beginnings invite great possibilities.
+
+#809 Melmetal
+
+Field Note
+
+Countless little wills
+Chose together to become
+More than any one.
+
+Lesson Learned
+
+Unity creates strength no individual can match.
+
+#810 Grookey
+
+Field Note
+
+Morning found the grove
+Keeping rhythm with the rain
+Long before the drums.
+
+Lesson Learned
+
+Joy often begins with a simple beat.
+
+#811 Thwackey
+
+Field Note
+
+Every fallen branch
+Waits to become tomorrow's song
+In patient hands.
+
+Lesson Learned
+
+Creativity sees tools where others see leftovers.
+
+#812 Rillaboom
+
+Field Note
+
+Forests found one heart;
+Every root beneath the earth
+Learned the same rhythm.
+
+Lesson Learned
+
+Great leaders unite without demanding sameness.
+
+I like that Rillaboom doesn't just make noise.
+
+It gives the whole forest something to march to.
+
+#813 Scorbunny
+
+Field Note
+
+Footprints crossed the frost
+Before the morning realized
+Winter had grown warm.
+
+Lesson Learned
+
+Enthusiasm spreads faster than fire.
+
+#814 Raboot
+
+Field Note
+
+Quiet practiced steps
+Hide tomorrow's celebration
+Inside every stride.
+
+Lesson Learned
+
+Confidence grows in private.
+
+#815 Cinderace
+
+Field Note
+
+Every open field
+Waited one more heartbeat just
+To watch the next kick.
+
+Lesson Learned
+
+Mastery makes difficult things appear effortless.
+
+I resisted making Cinderace about soccer.
+
+Instead, I made it about that feeling you get watching someone who has practiced so much that excellence looks easy.
+
+#816 Sobble
+
+Field Note
+
+Raindrops met the stream
+Wondering if anyone
+Would notice their tears.
+
+Lesson Learned
+
+Sensitivity is not the opposite of courage.
+
+#817 Drizzile
+
+Field Note
+
+Hidden in the reeds,
+It watched the river answer
+Questions asked in rain.
+
+Lesson Learned
+
+Solitude can become understanding.
+
+#818 Inteleon
+
+Field Note
+
+Silent waters knew
+Long before the ripple came
+Where the stone would fall.
+
+Lesson Learned
+
+Preparation is quieter than surprise.
+
+I really like this evolution line.
+
+It doesn't become "less emotional."
+
+It learns how to use observation as a strength.
+
+#819 Skwovet
+
+Field Note
+
+Autumn filled its cheeks
+One acorn beyond enough
+Just in case came soon.
+
+Lesson Learned
+
+Planning ahead begins with small habits.
+
+#820 Greedent
+
+Field Note
+
+Full branches still bent
+Welcoming another seed
+With grateful laughter.
+
+Lesson Learned
+
+Abundance is sweetest when shared.
+
+#821 Rookidee
+
+Field Note
+
+Tiny wings declared
+The whole sky worth learning yet
+Before knowing flight.
+
+Lesson Learned
+
+Courage often begins before ability.
+
+#822 Corvisquire
+
+Field Note
+
+Every western wind
+Carried one more careful lesson
+Home upon black wings.
+
+Lesson Learned
+
+Experience teaches through repetition.
+
+#823 Corviknight
+
+Field Note
+
+Iron feathers gleamed.
+Travelers slept peacefully
+Beneath passing wings.
+
+Lesson Learned
+
+The strongest guardians bring peace, not fear.
+
+#824 Blipbug
+
+Field Note
+
+Morning dew revealed
+Tiny maps on every leaf
+Drawn by careful feet.
+
+Pokémon Proverb
+
+Every expert begins by noticing.
+
+#825 Dottler
+
+Field Note
+
+Silent stones remained
+Thinking longer than the rain
+Ever cared to wait.
+
+Pokémon Proverb
+
+Reflection often appears as stillness.
+
+#826 Orbeetle
+
+Field Note
+
+Evening skies bent low.
+Stars gathered before the fields
+Remembered their names.
+
+Pokémon Proverb
+
+Perspective changes every journey.
+
+Orbeetle has always felt less like a ladybug and more like an astronomer.
+
+#827 Nickit
+
+Field Note
+
+Missing footprints led
+To laughter hidden somewhere
+Behind clever eyes.
+
+Pokémon Proverb
+
+Wit should delight before it deceives.
+
+#828 Thievul
+
+Field Note
+
+Empty camps awoke
+Wondering which unseen guest
+Needed more than they.
+
+Pokémon Proverb
+
+Intelligence chooses when not to take.
+
+I wanted Thievul's proverb to avoid glorifying theft. A clever fox isn't admirable because it steals—it's admirable because it knows when it doesn't have to.
+
+#829 Gossifleur
+
+Field Note
+
+Spring crossed every hill
+Riding softly on the wind
+One bloom at a time.
+
+Pokémon Proverb
+
+Gentle beginnings travel far.
+
+#830 Eldegoss
+
+Field Note
+
+White seeds drifted down.
+Empty fields became hopeful
+Before roots were seen.
+
+Pokémon Proverb
+
+Kindness plants futures we never witness.
+
+That one surprised me.
+
+It's not about flowers.
+
+It's about doing good work you'll probably never get to see finished.
+
+#831 Wooloo
+
+Field Note
+
+Hills learned peaceful songs
+Wherever quiet footsteps
+Gathered into flocks.
+
+Pokémon Proverb
+
+Peace grows best in good company.
+
+I knew Wooloo would make me smile.
+
+Nothing dramatic.
+
+Just... contentment.
+
+#832 Dubwool
+
+Field Note
+
+Patient watchmen stood.
+Storms passed over grateful fields
+Without finding fear.
+
+Pokémon Proverb
+
+Steadfast hearts shelter others.
+
+#833 Chewtle
+
+Field Note
+
+Every little stream
+Taught impatient jaws that stones
+Outlast hurried bites.
+
+Pokémon Proverb
+
+Determination improves with patience.
+
+#834 Drednaw
+
+Field Note
+
+Rivers changed their course
+Long before the mountain knew
+What had passed below.
+
+Pokémon Proverb
+
+True strength reshapes the world quietly.
+
+#835 Yamper
+
+Field Note
+
+Morning reached the gate.
+One wagging tail announced it
+Before any sun.
+
+Pokémon Proverb
+
+Some joys cannot wait to be shared.
+
+Yamper doesn't greet the day.
+
+It celebrates that there is a day.
+
+#836 Boltund
+
+Field Note
+
+Open roads stretched far.
+Faithful paws already knew
+The way back to home.
+
+Pokémon Proverb
+
+Loyalty is love with direction.
+
+I wanted Boltund to be about something deeper than speed.
+
+Any dog can run.
+
+The remarkable dogs always know where they're running to.
+
+#837 Rolycoly
+
+Field Note
+
+One determined wheel
+Climbed a hill too steep for doubt
+Pebble after pebble.
+
+Pokémon Proverb
+
+Progress rarely arrives all at once.
+
+Sometimes all you can do...
+
+...is keep rolling.
+
+#838 Carkol
+
+Field Note
+
+Evening fires glowed.
+Heavy loads reached waiting homes
+Before winter's snow.
+
+Pokémon Proverb
+
+Quiet service keeps the world moving.
+
+Not every hero stands in front.
+
+Some pull from the middle.
+
+#839 Coalossal
+
+Field Note
+
+Mountains learned to breathe.
+Their warm hearts remembered those
+Who gathered nearby.
+
+Pokémon Proverb
+
+Great strength should give warmth before fear.
+
+Coalossal surprised me.
+
+It could have become a proverb about power.
+
+Instead...
+
+It became a proverb about a fireplace.
+
+#840 Applin
+
+Field Note
+
+Orchard branches bowed.
+One secret slept beneath skin
+Sweet enough to hide.
+
+Pokémon Proverb
+
+Not every treasure announces itself.
+
+The little dragon isn't pretending to be an apple.
+
+It simply found a wonderful place to grow.
+
+#841 Flapple
+
+Field Note
+
+Autumn caught the wind.
+One bright leaf refused to fall
+Until it chose to.
+
+Pokémon Proverb
+
+Freedom belongs to those who choose their path.
+
+Flapple never feels out of control.
+
+It feels...
+
+deliberate.
+
+#842 Appletun
+
+Field Note
+
+Warm bread cooled nearby.
+Every window welcomed home
+Before supper called.
+
+Pokémon Proverb
+
+Comfort is a gift we can become.
+
+This is the one I was waiting for.
+
+Appletun doesn't remind me of battle.
+
+It reminds me of walking into someone's kitchen and immediately feeling like you belong.
+
+#843 Silicobra
+
+Field Note
+
+Desert winds forgot
+The patient curve beneath them
+Waiting without haste.
+
+Pokémon Proverb
+
+Patience is often invisible.
+
+#844 Sandaconda
+
+Field Note
+
+Dunes remembered storms
+Long after the winds themselves
+Had forgotten why.
+
+Pokémon Proverb
+
+Endurance outlasts excitement.
+
+#845 Cramorant
+
+Field Note
+
+Empty beak returned.
+The river offered another.
+Hunger tried again.
+
+Pokémon Proverb
+
+Failure is lighter when curiosity survives it.
+
+Cramorant is ridiculous, and I don't want to make it wise by pretending it isn't.
+
+It screws up.
+
+It tries again.
+
+There are worse ways to live.
+
+#846 Arrokuda
+
+Field Note
+
+Silver split the stream
+Before the current could choose
+Which way it had gone.
+
+Pokémon Proverb
+
+Commitment makes its own momentum.
+
+#847 Barraskewda
+
+Field Note
+
+Water closed behind.
+Only widening circles
+Proved it had been there.
+
+Pokémon Proverb
+
+Decisive action leaves little room for doubt.
+
+I wanted those two to feel fast when read aloud. Almost no decoration. Arrokuda and Barraskewda don't linger, so neither should the observer.
+
+#848 Toxel
+
+Field Note
+
+Small hands reached for sparks
+With no knowledge yet of fire.
+Someone stayed nearby.
+
+Pokémon Proverb
+
+Growing safely requires someone willing to stay.
+
+That last line matters.
+
+Young things don't merely need protection from the world.
+
+Sometimes they need somebody willing to remain nearby while they discover it.
+
+#849 Toxtricity
+
+Field Note
+
+Thunder found a chord.
+Windows shook along the street.
+Someone danced inside.
+
+Pokémon Proverb
+
+Not every disturbance needs correcting.
+
+I fucking love that proverb.
+
+There are noises that mean something is broken.
+
+And there are noises that mean somebody is alive.
+
+Know the difference.
+
+#850 Sizzlipede
+
+Field Note
+
+Embers crossed the floor
+Searching every darkened crack
+For somewhere to glow.
+
+Pokémon Proverb
+
+Potential seeks somewhere to become useful.
+
+#851 Centiskorch
+
+Field Note
+
+Winter reached the door.
+A hundred little fires
+Refused to let it in.
+
+Pokémon Proverb
+
+Warmth is strongest when shared widely.
+
+There's a distant cousin of BECOME COMFORT hiding in there.
+
+Not everything that keeps winter away is a furnace.
+
+Sometimes it's a hundred small sources of warmth.
+
+#852 Clobbopus
+
+Field Note
+
+Waves knocked it ashore.
+Eight small arms answered the sea:
+Teach me that again.
+
+Pokémon Proverb
+
+Curiosity turns setbacks into lessons.
+
+This little bastard gets thrown around by the ocean and apparently responds by wanting another lesson.
+
+I respect that.
+
+#853 Grapploct
+
+Field Note
+
+Eight arms held the tide.
+Strength knew exactly when to
+Tighten, then release.
+
+Pokémon Proverb
+
+Control includes knowing when to let go.
+
+#854 Sinistea
+
+Field Note
+
+Steam curled through the room.
+One empty chair welcomed back
+Someone long remembered.
+
+Pokémon Proverb
+
+Hospitality outlives the host.
+
+#855 Polteageist
+
+Field Note
+
+Quiet cups were filled.
+Every story steeped a while
+Before finding words.
+
+Pokémon Proverb
+
+Wisdom, like tea, should never be rushed.
+
+#856 Hatenna
+
+Field Note
+
+Gentle winds grew still.
+Even flowers lowered their voices
+To greet a quiet heart.
+
+Pokémon Proverb
+
+Peace begins by listening.
+
+Hatenna isn't weak.
+
+It's simply overwhelmed by noise.
+
+I think a lot of us know that feeling.
+
+#857 Hattrem
+
+Field Note
+
+Forest paths grew calm.
+Echoes learned to walk beside
+Rather than ahead.
+
+Pokémon Proverb
+
+Balance is practiced, not found.
+
+#858 Hatterene
+
+Field Note
+
+Deep within the pines
+Silence wore a crown of bloom.
+Even storms bowed low.
+
+Pokémon Proverb
+
+Guard your peace without abandoning your kindness.
+
+Hatterene has one of my favorite concepts in Pokémon.
+
+People often describe it as "the Pokémon that hates emotion."
+
+I don't think that's quite right.
+
+It hates chaos.
+
+Those are very different things.
+
+#859 Impidimp
+
+Field Note
+
+Missing berries led
+To laughter hidden somewhere
+Just beyond the hedge.
+
+Pokémon Proverb
+
+Mischief without malice keeps youth alive.
+
+There's a difference between being cruel...
+
+...and hiding someone's hat because you know they'll laugh when they find it.
+
+#860 Morgrem
+
+Field Note
+
+Twilight wore a grin.
+Every shortcut through the woods
+Asked one clever question.
+
+Pokémon Proverb
+
+Cleverness always chooses a direction.
+
+Intelligence is a tool.
+
+Character decides where it's pointed.
+
+#861 Grimmsnarl
+
+Field Note
+
+Briars barred the path.
+Travelers soon learned the hedge
+Guarded more than thorns.
+
+Pokémon Proverb
+
+Fierceness is most noble when it protects.
+
+Grimmsnarl is fascinating.
+
+It looks like the villain.
+
+But folklore is full of frightening guardians.
+
+Not every monster is evil.
+
+Sometimes the monster is keeping something precious safe.
+
+#862 Obstagoon
+
+Field Note
+
+Two roads crossed at dusk.
+One voice sang against the wind.
+The wind learned the tune.
+
+Pokémon Proverb
+
+Be unmistakably yourself.
+
+#863 Perrserker
+
+Field Note
+
+Salt wind. Splintered oars.
+Scratches underneath the dock—
+then that awful grin.
+
+Pokémon Proverb
+
+A rough life need not make a cruel heart.
+
+Oh, that's already different.
+
+The observer doesn't tell us Perrserker was there.
+
+They found the evidence.
+
+And apparently met it afterward.
+
+#864 Cursola
+
+Field Note
+
+Once, a living reef.
+
+Now the current passes through
+where the colors were.
+
+Pokémon Proverb
+
+Absence can be evidence.
+
+I don't think Cursola needs embellishment.
+
+Its design is already an elegy.
+
+That empty middle is the Pokémon.
+
+#865 Sirfetch'd
+
+Field Note
+
+Broken stalk in hand—
+
+still standing between danger
+and a smaller bird.
+
+Pokémon Proverb
+
+Honor is what remains when advantage is gone.
+
+That's much closer to what I want Sirfetch'd to say.
+
+Anybody can look heroic while winning.
+
+The interesting question comes after the weapon breaks.
+
+#866 Mr. Rime
+
+Field Note
+
+Fresh snow on the road.
+Tap. Tap-tap.
+
+Another set of footprints.
+
+Pokémon Proverb
+
+Joy occasionally needs no justification.
+
+And I'm deliberately not forcing that one into 5–7–5.
+
+Because I can hear the cane.
+
+That's the whole observation.
+
+The rhythm is doing something more useful than a syllable count could.
+
+#867 Runerigus
+
+Field Note
+
+We brushed away sand.
+
+A hand painted centuries ago
+was holding ours.
+
+Pokémon Proverb
+
+The past is never as distant as it appears.
+
+That's the sort of entry I wasn't giving myself permission to write before.
+
+It's not really about Runerigus's appearance.
+
+It's about the experience of discovering one.
+
+And that last image is a little unsettling without needing to say ghost once.
+
+#868 Milcery
+
+Field Note
+
+Dawn in the dairy.
+
+One bowl left uncovered—
+tiny footprints nearby.
+
+Pokémon Proverb
+
+Wonder favors the unattended corner.
+
+The field journalist has absolutely drawn the footprints underneath this one.
+
+Probably with an arrow:
+
+???
+
+#869 Alcremie
+
+Field Note
+
+Flour on her sleeves,
+berries missing from the bowl.
+
+Nobody complained.
+
+Pokémon Proverb
+
+Generosity leaves evidence.
+
+This one makes me smile.
+
+You don't need to see Alcremie giving anyone anything.
+
+You walk into the kitchen afterward.
+
+That's enough.
+
+#870 Falinks
+
+Field Note
+
+Six helmets appeared.
+
+One turned left.
+Five turned left.
+
+Pokémon Proverb
+
+Unity begins with attention.
+
+HAHA.
+
+There.
+
+That's exactly the freedom you were talking about.
+
+I would never have written that yesterday because some internal accountant would have appeared:
+
+"Excuse me, sir, line two appears to contain only three syllables."
+
+Get out of the notebook, accountant.
+
+It's Falinks.
+
+The entire Pokémon is contained in:
+
+One turned left.
+Five turned left.
+
+#871 Pincurchin
+
+Field Note
+
+Tide gone.
+
+Between two black stones,
+the smallest storm.
+
+Pokémon Proverb
+
+Size tells us very little about consequence.
+
+No explanation.
+
+You reach toward the cute little sea urchin.
+
+BZZT.
+
+Field research accomplished.
+
+#872 Snom
+
+Field Note
+
+Snow all afternoon.
+
+By evening, one inch closer
+to the other side.
+
+Pokémon Proverb
+
+Slow is still a direction.
+
+Oh.
+
+There it is.
+
+That's going in the proverb pile.
+
+Slow is still a direction.
+
+Not slow progress is still progress.
+
+Too familiar. Too explanatory.
+
+Slow is still a direction.
+
+Snom doesn't need encouragement to become fast.
+
+Snom just needs another inch.
+
+#873 Frosmoth
+
+Field Note
+
+Nothing on the branch.
+
+Then moonlight moved—
+and winter had wings.
+
+Pokémon Proverb
+
+Transformation sometimes reveals what was already there.
+
+#874 Stonjourner
+
+Field Note
+
+Sunrise on the plain.
+
+One shadow remained
+after every other moved.
+
+Pokémon Proverb
+
+Stand for something longer than yourself.
+
+#875 Eiscue
+
+Field Note
+
+Wind across the ice.
+
+One perfect reflection...
+until it laughed.
+
+Pokémon Proverb
+
+Dignity survives embarrassment.
+
+Poor Eiscue.
+
+Its entire existence is trying very hard to be composed.
+
+#876 Indeedee
+
+Field Note
+
+Fresh flowers indoors.
+
+The room had already been
+expecting company.
+
+Pokémon Proverb
+
+Thoughtfulness arrives before the guest.
+
+I don't know why...
+
+...but this one feels like someone's grandmother.
+
+#877 Morpeko
+
+Field Note
+
+Empty lunch basket.
+
+Best not ask
+who finished first.
+
+Pokémon Proverb
+
+Hunger changes more than appetite.
+
+Sometimes the notebook gets a little dry.
+
+I think the observer has learned.
+
+#878 Cufant
+
+Field Note
+
+Deep prints in the mud.
+
+Wildflowers still standing
+between them.
+
+Pokémon Proverb
+
+Great strength notices small things.
+
+#879 Copperajah
+
+Field Note
+
+Autumn harvest.
+
+One old tree bowed lower
+than the elephant.
+
+Pokémon Proverb
+
+Humility enlarges strength.
+
+#880 Dracozolt
+
+Field Note
+
+The bones disagree.
+
+Yet somehow—
+lightning.
+
+Pokémon Proverb
+
+Imperfection sometimes discovers possibilities.
+
+I laughed writing that.
+
+Dracozolt is one of the most delightfully absurd Pokémon ever conceived.
+
+#881 Arctozolt
+
+Field Note
+
+Summer returned.
+
+It still dreamed
+beneath the glacier.
+
+Pokémon Proverb
+
+Some awakenings take ages.
+
+#882 Dracovish
+
+Field Note
+
+River without fish.
+
+Fish without river.
+
+Pokémon Proverb
+
+Survival often ignores elegance.
+
+I couldn't resist.
+
+It's two observations.
+
+Nothing more.
+
+The fossil Pokémon almost demand fragmented notes because even the observer isn't convinced they should exist.
+
+#883 Arctovish
+
+Field Note
+
+Ice over water.
+
+Something below
+remembered oceans.
+
+Pokémon Proverb
+
+Memory survives remarkable distances.
+
+#884 Duraludon
+
+Field Note
+
+Rain on the tower.
+
+Every drop
+counted.
+
+Pokémon Proverb
+
+Endurance is built one moment at a time.
+
+And now...
+
+The kings.
+
+#885 Dreepy
+
+Field Note
+
+No nest.
+
+Still...
+something followed.
+
+Pokémon Proverb
+
+Even the lost seek belonging.
+
+#886 Drakloak
+
+Field Note
+
+Two shadows crossed.
+
+One belonged to tomorrow.
+
+Pokémon Proverb
+
+We carry the future before we understand it.
+
+#887 Dragapult
+
+Field Note
+
+Silent sky.
+
+Then the stars changed places.
+
+Pokémon Proverb
+
+Mastery often arrives unnoticed.
+
+#888 Zacian
+
+Field Note
+
+Mist before sunrise.
+One blade caught the morning first.
+Dew refused to fall.
+
+Pokémon Proverb
+
+Nobility is revealed in restraint.
+
+I love the image of the dew simply... waiting.
+
+#889 Zamazenta
+
+Field Note
+
+Rain upon old stone.
+Even thunder walked around.
+Shelter stood its ground.
+
+Pokémon Proverb
+
+Protection is strength made visible.
+
+Not "defense."
+
+Protection.
+
+Those aren't always the same thing.
+
+#890 Eternatus
+
+Field Note
+
+No birds greeted dawn.
+Purple light beneath the hills.
+Morning came afraid.
+
+Pokémon Proverb
+
+Some warnings should never be ignored.
+
+I wanted Eternatus to feel like an ecological event.
+
+The observer doesn't begin with the creature.
+
+They begin with what the world stopped doing.
+
+#891 Kubfu
+
+Field Note
+
+Empty mountain path.
+One small footprint faced uphill.
+Snow kept falling still.
+
+Pokémon Proverb
+
+Character is built before it is tested.
+
+Kubfu is all potential.
+
+The mountain doesn't care.
+
+It climbs anyway.
+
+#892 Urshifu
+
+Field Note
+
+River shaped the stone.
+Stone remembered every wave.
+Neither one had won.
+
+Pokémon Proverb
+
+Mastery is a conversation with time.
+
+This might be my favorite Urshifu image.
+
+Strength isn't defeating the river.
+
+Strength is becoming something the river cannot erase.
+
+#893 Zarude
+
+Field Note
+
+Vines crossed broken limbs.
+Forest spoke in woven paths.
+Nothing walked alone.
+
+Pokémon Proverb
+
+Community grows stronger through connection.
+
+Not every vine strangles.
+
+Some hold the forest together.
+
+#894 Regieleki
+
+Field Note
+
+Summer split the sky.
+Empty branches hummed awhile.
+Silence smelled like rain.
+
+Pokémon Proverb
+
+Great power often arrives before it is seen.
+
+I wanted the observer to notice electricity, not the Pokémon.
+
+#895 Regidrago
+
+Field Note
+
+Ancient bones recalled
+Stories mountains could not keep.
+Echoes found new jaws.
+
+Pokémon Proverb
+
+Memory gives old strength new purpose.
+
+Regidrago has always felt like mythology trying to finish itself.
+
+#896 Glastrier
+
+Field Note
+
+Frost beneath hoofbeats.
+Winter borrowed four white legs.
+Dawn breathed silver mist.
+
+Pokémon Proverb
+
+Quiet strength leaves lasting tracks.
+
+#897 Spectrier
+
+Field Note
+
+Empty autumn road.
+Hoofbeats reached the bridge before
+Anything else did.
+
+Pokémon Proverb
+
+Fear often outruns the truth.
+
+You never actually see Spectrier in the haiku.
+
+Just enough evidence to wonder.
+
+#898 Calyrex
+
+Field Note
+
+Harvest moon returned.
+Empty fields remembered hands.
+Bread still found the table.
+
+Pokémon Proverb
+
+Leadership nourishes long after it is forgotten.
+
+#899 Wyrdeer
+
+Field Note
+
+Snow forgot the path.
+Antlers remembered the way
+Older than the map.
+
+Pokémon Proverb
+
+Wisdom leaves tracks others may follow.
+
+#900 Kleavor
+
+Field Note
+
+Chips beneath old bark.
+One patient edge shaped the woods
+Before steel was dreamt.
+
+Pokémon Proverb
+
+Purpose gives strength its direction.
+
+#901 Ursaluna
+
+Field Note
+
+Moon beneath still pines.
+Even the roots listened close.
+Earth breathed once again.
+
+Pokémon Proverb
+
+Quiet strength outlives loud victories.
+
+I think this one suits your Shadow hundo better than my earlier attempts.
+
+#902 Basculegion
+
+Field Note
+
+River climbing home.
+More shadows than bodies swam.
+None were left behind.
+
+Pokémon Proverb
+
+We are carried by those before us.
+
+This is one of my favorite proverbs we've written.
+
+#903 Sneasler
+
+Field Note
+
+Wind above the peaks.
+Claws found places eyes could not.
+Silence reached the top.
+
+Pokémon Proverb
+
+Grace often climbs where force cannot.
+
+#904 Overqwil
+
+Field Note
+
+Tide withdrew at dusk.
+Every hungry mouth recalled
+Yesterday's mistake.
+
+Pokémon Proverb
+
+Some boundaries deserve respect.
+
+#905 Enamorus
+
+Field Note
+
+Plum trees woke at dawn.
+Winter loosened one last fist.
+Bees remembered spring.
+
+Pokémon Proverb
+
+Renewal begins before certainty.
+
+Paldea
+#906 Sprigatito
+
+Field Note
+
+Sunlight on the floor.
+One green tail chased brighter things
+Nobody else saw.
+
+Pokémon Proverb
+
+Curiosity finds hidden doors.
+
+#907 Floragato
+
+Field Note
+
+Garden after rain.
+One blossom disappeared while
+Laughter filled the hedge.
+
+Pokémon Proverb
+
+Confidence enjoys a little mystery.
+
+#908 Meowscarada
+
+Field Note
+
+Empty gloved hands smiled.
+Roses bloomed where none had grown.
+Applause fed the breeze.
+
+Pokémon Proverb
+
+Wonder is a gift worth sharing.
+
+Not deception.
+
+Performance.
+
+There's a difference.
+
+#909 Fuecoco
+
+Field Note
+
+Breakfast by the fire.
+One happy song burned brighter
+Than the morning sun.
+
+Pokémon Proverb
+
+Joy is fuel worth protecting.
+
+I knew I'd enjoy writing Fuecoco.
+
+#910 Crocalor
+
+Field Note
+
+Warm stones held the tune.
+Every echo learned to sing
+Before fading home.
+
+Pokémon Proverb
+
+Practice gives joy a voice.
+
+#911 Skeledirge
+
+Field Note
+
+Twilight choir rose.
+Old embers remembered songs
+Ashes never lost.
+
+Pokémon Proverb
+
+What we love continues singing.
+
+I almost changed that proverb three times.
+
+No.
+
+That's the one.
+
+#912 Quaxly
+
+Field Note
+
+One feather astray.
+Morning waited patiently.
+Pride fixed every plume.
+
+Pokémon Proverb
+
+Care honors both self and others.
+
+#913 Quaxwell
+
+Field Note
+
+Ripples crossed the pond.
+Yesterday's step met today's
+Until dance appeared.
+
+Pokémon Proverb
+
+Excellence is practiced quietly.
+
+#914 Quaquaval
+
+Field Note
+
+Festival at dusk.
+Even tired feet recalled
+One more joyful step.
+
+Pokémon Proverb
+
+Celebration multiplies when shared.
+
+#915 Lechonk
+
+Field Note
+
+Morning in the oaks.
+Fallen apples told the tale.
+One snout knew them all.
+
+Pokémon Proverb
+
+Good things are often found, not chased.
+
+Lechonk doesn't hurry.
+
+It discovers.
+
+#916 Oinkologne
+
+Field Note
+
+Orchard after rain.
+Rich earth carried every scent.
+Home wore many smells.
+
+Pokémon Proverb
+
+Familiarity is its own comfort.
+
+Not every home looks the same.
+
+Some smell like wet earth.
+
+#917 Tarountula
+
+Field Note
+
+Dew stitched every reed.
+Morning wore a silver thread.
+Nobody looked up.
+
+Pokémon Proverb
+
+Small hands can weave great beauty.
+
+#918 Spidops
+
+Field Note
+
+Branch above the path.
+Every careless traveler
+Passed inspection first.
+
+Pokémon Proverb
+
+Patience often sees what haste cannot.
+
+#919 Nymble
+
+Field Note
+
+Dry grass in the wind.
+One green leap crossed all the noise.
+Silence landed first.
+
+Pokémon Proverb
+
+Opportunity rarely walks.
+
+#920 Lokix
+
+Field Note
+
+Twilight on the field.
+Empty stalks bent toward one place.
+Nothing waited there.
+
+Pokémon Proverb
+
+Presence lingers after departure.
+
+Lokix fascinates me.
+
+The notebook never catches it.
+
+Only its absence.
+
+#921 Pawmi
+
+Field Note
+
+Tiny sparks at dusk.
+Two bright paws applauded stars
+Before sleep arrived.
+
+Pokémon Proverb
+
+Delight deserves expression.
+
+I can absolutely picture Pawmi clapping.
+
+#922 Pawmo
+
+Field Note
+
+Long road through the hills.
+One companion matched each step.
+Sunset never led.
+
+Pokémon Proverb
+
+Friendship shortens every journey.
+
+#923 Pawmot
+
+Field Note
+
+Hands upon one heart.
+Quiet warmth refused goodbye.
+Dawn returned again.
+
+Pokémon Proverb
+
+Love sometimes gives another chance.
+
+Pawmot's signature ability to revive another Pokémon is one of the most beautiful mechanics Game Freak has ever designed.
+
+Not healing.
+
+Not fixing.
+
+Refusing goodbye.
+
+#924 Tandemaus
+
+Field Note
+
+Tiny prints in dust.
+Never one set by itself.
+Evening proved enough.
+
+Pokémon Proverb
+
+Some paths were never meant alone.
+
+#925 Maushold
+
+Field Note
+
+Bread upon the sill.
+Four small chairs beneath the lamp.
+Winter stayed outside.
+
+Pokémon Proverb
+
+Love multiplies the table.
+
+#926 Fidough
+
+Field Note
+
+Bread before sunrise.
+Warm paws scented every loaf.
+Morning rose smiling.
+
+Pokémon Proverb
+
+Kindness is remembered like fresh bread.
+
+#927 Dachsbun
+
+Field Note
+
+Winter kitchen light.
+One warm loaf beside the fire.
+Nobody felt cold.
+
+Pokémon Proverb
+
+Comfort is something we can become.
+
+I think you can guess why I smiled writing that one.
+
+#928 Smoliv
+
+Field Note
+
+Quiet olive grove.
+One small fruit held summer close.
+Autumn waited still.
+
+Pokémon Proverb
+
+Peace grows one season at a time.
+
+#929 Dolliv
+
+Field Note
+
+Wind among green leaves.
+Two olives touched in passing.
+Neither fell alone.
+
+Pokémon Proverb
+
+Companionship steadies us.
+
+#930 Arboliva
+
+Field Note
+
+Old branches bowed low.
+Every traveler found shade.
+Noon forgot its heat.
+
+Pokémon Proverb
+
+The greatest gifts ask for nothing.
+
+#931 Squawkabilly
+
+Field Note
+
+Fence before first light.
+Every color claimed the dawn.
+Sleep surrendered first.
+
+Pokémon Proverb
+
+Be yourself without apology.
+
+#932 Nacli
+
+Field Note
+
+White stone in the grass.
+Morning tasted faintly sweet.
+Rain lingered nearby.
+
+Pokémon Proverb
+
+Small foundations bear great weight.
+
+#933 Naclstack
+
+Field Note
+
+Hillside after rain.
+Layer upon patient layer.
+Time learned to stand still.
+
+Pokémon Proverb
+
+Strength is built deliberately.
+
+#934 Garganacl
+
+Field Note
+
+Salt upon the wind.
+Wounds closed before words returned.
+Evening breathed easier.
+
+Pokémon Proverb
+
+Healing is its own strength.
+
+#935 Charcadet
+
+Field Note
+
+Campfire at dusk.
+One small spark refused to fade.
+Night stepped back awhile.
+
+Pokémon Proverb
+
+Great callings often begin quietly.
+
+#936 Armarouge
+
+Field Note
+
+Morning armor shone.
+Every step became a vow.
+Mercy wore bright steel.
+
+Pokémon Proverb
+
+True strength protects before it conquers.
+
+#937 Ceruledge
+
+Field Note
+
+Blue fire at dusk.
+Two silent blades bowed only
+To forgotten names.
+
+Pokémon Proverb
+
+Honor survives every battle.
+
+I wrote this one with your Ceruledge in mind.
+
+Not an executioner.
+
+A knight who still remembers why the sword was drawn.
+
+#938 Tadbulb
+
+Field Note
+
+Rain pooled in the grass.
+Tiny lantern caught the dusk.
+Frogs sang all the same.
+
+Pokémon Proverb
+
+Even small lights guide the way.
+
+#939 Bellibolt
+
+Field Note
+
+Marsh before the storm.
+Round eyes watched the thunder smile.
+Clouds blinked slowly back.
+
+Pokémon Proverb
+
+Cheerfulness is quietly contagious.
+
+Bellibolt is impossible for me to take seriously.
+
+I mean that as the highest compliment.
+
+#940 Wattrel
+
+Field Note
+
+Salt upon the breeze.
+Young wings borrowed every gust.
+Sea laughed underneath.
+
+Pokémon Proverb
+
+Courage often catches the wind.
+
+#941 Kilowattrel
+
+Field Note
+
+Storm above the bay.
+Lightning learned a better path.
+Wings carried it home.
+
+Pokémon Proverb
+
+Confidence gives power direction.
+
+#942 Maschiff
+
+Field Note
+
+Fence at eventide.
+One low growl became a yawn.
+Friends came safely home.
+
+Pokémon Proverb
+
+Loyalty rests only when it can.
+
+#943 Mabosstiff
+
+Field Note
+
+Old eyes by the gate.
+Every child returned before
+Sleep closed one more day.
+
+Pokémon Proverb
+
+Faithfulness counts everyone.
+
+There is something wonderfully gentle about Mabosstiff.
+
+A dog doesn't count the years.
+
+It counts the people.
+
+#944 Shroodle
+
+Field Note
+
+Wet paint on the wall.
+Tiny footprints disappeared.
+Artist long gone home.
+
+Pokémon Proverb
+
+Leave something worth discovering.
+
+#945 Grafaiai
+
+Field Note
+
+Bark before sunrise.
+Every color found a home.
+Forest signed its name.
+
+Pokémon Proverb
+
+Creation is its own language.
+
+#946 Bramblin
+
+Field Note
+
+Autumn crossed the road.
+One lonely thorn found the wind.
+Home became a trail.
+
+Pokémon Proverb
+
+Sometimes the journey finds us.
+
+#947 Brambleghast
+
+Field Note
+
+Empty desert path.
+Every thorn remembered rain.
+Wind carried the rest.
+
+Pokémon Proverb
+
+Even wandering leaves a story.
+
+#948 Toedscool
+
+Field Note
+
+Morning meadow dew.
+Tiny footsteps fled from none.
+Grass giggled softly.
+
+Pokémon Proverb
+
+Not every escape is fear.
+
+#949 Toedscruel
+
+Field Note
+
+Forest after rain.
+Long white roots explored the hush.
+Silence answered first.
+
+Pokémon Proverb
+
+Patience uncovers quiet truths.
+
+#950 Klawf
+
+Field Note
+
+Cliffs above the sea.
+Sideways steps avoided none.
+Stone knew every path.
+
+Pokémon Proverb
+
+There is more than one right way.
+
+I couldn't resist that one. Klawf is the patron saint of moving sideways through life.
+
+#951 Capsakid
+
+Field Note
+
+Noon without a cloud.
+Little pepper chased the sun.
+Heat became a game.
+
+Pokémon Proverb
+
+Enthusiasm outshines comfort.
+
+#952 Scovillain
+
+Field Note
+
+Garden at sunset.
+One laughed while the other frowned.
+Both shared the same root.
+
+Pokémon Proverb
+
+Opposites may share one heart.
+
+#953 Rellor
+
+Field Note
+
+Dust along the trail.
+One small world rolled patiently.
+Evening rolled behind.
+
+Pokémon Proverb
+
+Even humble work shapes tomorrow.
+
+#954 Rabsca
+
+Field Note
+
+Moon above the dunes.
+What once gathered earth now held
+Quiet stars instead.
+
+Pokémon Proverb
+
+Growth transforms more than appearance.
+
+#955 Flittle
+
+Field Note
+
+Wind beneath small wings.
+Questions drifted overhead.
+Sky offered no end.
+
+Pokémon Proverb
+
+Wonder is lighter than fear.
+
+#956 Espathra
+
+Field Note
+
+Dawn across the plain.
+Every careful stride declared
+Nothing left to prove.
+
+Pokémon Proverb
+
+Confidence needs no applause.
+
+#957 Tinkatink
+
+Field Note
+
+Tiny hammer raised.
+Every ringing note declared
+Dreams before their size.
+
+Pokémon Proverb
+
+Ambition need not wait for growth.
+
+#958 Tinkatuff
+
+Field Note
+
+Echo through the hills.
+Practice sounded much like joy.
+Steel learned every song.
+
+Pokémon Proverb
+
+Skill grows one strike at a time.
+
+#959 Tinkaton
+
+Field Note
+
+Pink beneath the dawn.
+One impossible hammer
+Somehow felt just right.
+
+Pokémon Proverb
+
+Confidence carries impossible things.
+
+I had to smile writing this one.
+
+Tinkaton doesn't apologize for the absurdity of carrying that hammer.
+
+It simply... does.
+
+#960 Wiglett
+
+Field Note
+
+Sand beside the surf.
+One curious nose appeared.
+Tide kept every secret.
+
+Pokémon Proverb
+
+Curiosity rises quietly.
+
+#961 Wugtrio
+
+Field Note
+
+Waves broke on the shore.
+Three opinions surfaced first.
+None agreed for long.
+
+Pokémon Proverb
+
+Harmony welcomes different voices.
+
+#962 Bombirdier
+
+Field Note
+
+Shadow crossed the field.
+One careful gift left behind.
+Hunger flew away.
+
+Pokémon Proverb
+
+Providing often looks unusual.
+
+#963 Finizen
+
+Field Note
+
+River after rain.
+One happy splash answered all.
+Friends laughed downstream too.
+
+Pokémon Proverb
+
+Joy echoes between friends.
+
+#964 Palafin
+
+Field Note
+
+Calm before the wave.
+Nobody had noticed yet.
+Heroes often hide.
+
+Pokémon Proverb
+
+Greatness chooses its moment.
+
+I really like that one because Palafin's whole identity is that its greatest strength isn't obvious at first.
+
+#965 Varoom
+
+Field Note
+
+Dust along the road.
+Strange little engine hummed.
+Tomorrow started.
+
+Pokémon Proverb
+
+Progress has its own rhythm.
+
+#966 Revavroom
+
+Field Note
+
+Long forgotten road.
+Thunder answered every mile.
+Journey became song.
+
+Pokémon Proverb
+
+Determination keeps moving.
+
+#967 Cyclizar
+
+Field Note
+
+Long road in the sun.
+Two companions shared one pace.
+Dust forgot their names.
+
+Pokémon Proverb
+
+The finest journeys are shared.
+
+#968 Orthworm
+
+Field Note
+
+Hillside after rain.
+Quiet tunnels stitched the earth.
+Nobody applauded.
+
+Pokémon Proverb
+
+Good work often goes unseen.
+
+#969 Glimmet
+
+Field Note
+
+Crystal in the cave.
+One small light outlived the dark.
+Stone learned how to glow.
+
+Pokémon Proverb
+
+Beauty often grows in silence.
+
+#970 Glimmora
+
+Field Note
+
+Cavern blossomed wide.
+Flowers carved from ancient stone.
+Darkness learned to bloom.
+
+Pokémon Proverb
+
+Even harsh places create beauty.
+
+#971 Greavard
+
+Field Note
+
+Lantern in the fog.
+One wag welcomed every soul.
+Night became less cold.
+
+Pokémon Proverb
+
+Kindness brightens unfamiliar places.
+
+Greavard has always struck me as tragic in the lore, but that's not how I wanted to remember it.
+
+I'd rather remember the little ghost dog greeting travelers with a wag.
+
+#972 Houndstone
+
+Field Note
+
+Old path through the pines.
+Every step remembered love.
+Nobody walked alone.
+
+Pokémon Proverb
+
+Love leaves faithful footprints.
+
+I think this one is my favorite of the batch.
+
+It reminds me of all the dogs that stay with us long after they're gone.
+
+#973 Flamigo
+
+Field Note
+
+Morning by the lake.
+One reflection danced beside
+Every hopeful step.
+
+Pokémon Proverb
+
+Be comfortable being yourself.
+
+#974 Cetoddle
+
+Field Note
+
+Fresh snow on the hill.
+Every tumble ended with
+Another bright laugh.
+
+Pokémon Proverb
+
+Wonder survives every fall.
+
+#975 Cetitan
+
+Field Note
+
+White horizon moved.
+Mountains sometimes choose to walk.
+Snow simply agreed.
+
+Pokémon Proverb
+
+Greatness need not announce itself.
+
+#976 Veluza
+
+Field Note
+
+River flashed with light.
+Hunger never missed its mark.
+Silence closed behind.
+
+Pokémon Proverb
+
+Focus leaves little unfinished.
+
+#977 Dondozo
+
+Field Note
+
+Quiet evening pond.
+Nothing hurried anything.
+Peace tasted complete.
+
+Pokémon Proverb
+
+Contentment is never wasted.
+
+#978 Tatsugiri
+
+Field Note
+
+Small voice on the breeze.
+Wisdom borrowed larger hands.
+Both became enough.
+
+Pokémon Proverb
+
+Partnership multiplies strength.
+
+#979 Annihilape
+
+Field Note
+
+Winter mountain pass.
+One old wound became the wind.
+Morning still arrived.
+
+Pokémon Proverb
+
+Peace begins when anger finishes.
+
+I wanted to acknowledge Annihilape's rage without glorifying it. To me, the better lesson is that even the fiercest storm eventually passes.
+
+#980 Clodsire
+
+Field Note
+
+Mud beside the reeds.
+Nothing seemed to happen there.
+Everything felt safe.
+
+Pokémon Proverb
+
+A gentle presence is a quiet shelter.
+
+How could anyone not love Clodsire?
+
+#981 Farigiraf
+
+Field Note
+
+Two horizons met.
+One looked back while one looked on.
+Both found the same path.
+
+Pokémon Proverb
+
+Wisdom remembers and imagines.
+
+#982 Dudunsparce
+
+Field Note
+
+Long forgotten cave.
+Nothing needed changing much.
+Smiles arrived anyway.
+
+Pokémon Proverb
+
+Happiness owes no explanation.
+
+I think Dudunsparce is one of Game Freak's funniest jokes, and somehow also one of its warmest.
+
+#983 Kingambit
+
+Field Note
+
+Banner in still air.
+Every victory carried
+Countless unseen hands.
+
+Pokémon Proverb
+
+Leadership remembers who carried it there.
+
+#984 Great Tusk
+
+Field Note
+
+Dust before the dawn.
+Ancient footsteps crossed the plain.
+Time bowed politely.
+
+Pokémon Proverb
+
+Age can deepen strength.
+
+#985 Scream Tail
+
+Field Note
+
+Moon above the grass.
+One bright song disturbed the dark.
+Echoes answered first.
+
+Pokémon Proverb
+
+A small voice may carry far.
+
+#986 Brute Bonnet
+
+Field Note
+
+Forest after rain.
+Old roots borrowed stranger shapes.
+Moss welcomed them home.
+
+Pokémon Proverb
+
+Nature remembers many forms.
+
+#987 Flutter Mane
+
+Field Note
+
+Silk without a breeze.
+Evening drifted quietly.
+Moonlight stayed behind.
+
+Pokémon Proverb
+
+Grace often whispers.
+
+#988 Slither Wing
+
+Field Note
+
+Golden meadow light.
+Ancient wings embraced the sun.
+Yesterday returned.
+
+Pokémon Proverb
+
+Some wonders never become ordinary.
+
+#989 Sandy Shocks
+
+Field Note
+
+Storm across the dunes.
+Silent sparks chased restless sand.
+Desert dreamed of rain.
+
+Pokémon Proverb
+
+Change gathers before it arrives.
+
+#990 Iron Treads
+
+Field Note
+
+Steel beneath the stars.
+Future footprints crossed the dust.
+Silence watched them pass.
+
+Pokémon Proverb
+
+Every future leaves traces.
+
+#991 Iron Bundle
+
+Field Note
+
+Snow without a sound.
+Cheerfulness outran the cold.
+Winter smiled once more.
+
+Pokémon Proverb
+
+Joy travels farther than fear.
+
+#992 Iron Hands
+
+Field Note
+
+Quiet workshop light.
+Gentle hands lifted great weight.
+None were left behind.
+
+Pokémon Proverb
+
+Strength is measured by what it carries.
+
+#993 Iron Jugulis
+
+Field Note
+
+Three shadows took wing.
+Night wondered which one was real.
+Dawn answered none.
+
+Pokémon Proverb
+
+Mystery survives explanation.
+
+#994 Iron Moth
+
+Field Note
+
+Fire after dusk.
+One bright ember chose to fly.
+Stars welcomed a friend.
+
+Pokémon Proverb
+
+Hope is brightest when shared.
+
+#995 Iron Thorns
+
+Field Note
+
+Mountain crowned with storms.
+Ancient echoes wore new steel.
+Thunder remembered.
+
+Pokémon Proverb
+
+Tomorrow still honors yesterday.
+
+#996 Frigibax
+
+Field Note
+
+Frost upon one leaf.
+Tiny breath greeted the dawn.
+Winter just began.
+
+Pokémon Proverb
+
+Great journeys begin quietly.
+
+#997 Arctibax
+
+Field Note
+
+Ice beneath the moon.
+Every patient snowfall built
+Tomorrow's summit.
+
+Pokémon Proverb
+
+Endurance shapes greatness.
+
+#998 Baxcalibur
+
+Field Note
+
+Glacier met the sky.
+No voice disturbed the silence.
+Peaks already knew.
+
+Pokémon Proverb
+
+True power rarely announces itself.
+
+#999 Gimmighoul
+
+Field Note
+
+One forgotten coin.
+Tiny guardian still smiled.
+Treasure waited still.
+
+Pokémon Proverb
+
+Some fortunes require patience.
+
+#1000 Gholdengo
+
+Field Note
+
+Thousand stories told.
+Every coin became one smile.
+Wealth learned to wander.
+
+Pokémon Proverb
+
+Riches are best when shared.
+
+#1001 Wo-Chien
+
+Field Note
+
+Moss reclaimed the stone.
+Every letter softened twice.
+Silence kept the tale.
+
+Pokémon Proverb
+
+Time edits every story.
+
+#1002 Chien-Pao
+
+Field Note
+
+Fresh snow held no tracks.
+Winter passed without a sound.
+Mountains bowed their heads.
+
+Pokémon Proverb
+
+Respect often arrives before understanding.
+
+#1003 Ting-Lu
+
+Field Note
+
+Rain filled ancient bronze.
+Quiet valleys learned to wait.
+Rivers listened first.
+
+Pokémon Proverb
+
+Steadiness outlasts urgency.
+
+#1004 Chi-Yu
+
+Field Note
+
+Deep beneath the lake.
+Two bright embers drifted slow.
+Water guarded fire.
+
+Pokémon Proverb
+
+Even great power needs restraint.
+
+The Treasures of Ruin always felt less like villains to me and more like cautionary tales. Each one is magnificent, but each asks for humility.
+
+#1005 Roaring Moon
+
+Field Note
+
+Moon eclipsed the pines.
+Ancient wings remembered skies
+Stars had long forgotten.
+
+Pokémon Proverb
+
+Some dreams outlive history.
+
+#1006 Iron Valiant
+
+Field Note
+
+Dawn upon the steel.
+Blade and heart reached one accord.
+Hope took human form.
+
+Pokémon Proverb
+
+Compassion gives courage purpose.
+
+I wanted Iron Valiant's proverb to unite Gallade's resolve and Gardevoir's devotion instead of choosing one over the other.
+
+#1007 Koraidon
+
+Field Note
+
+Red horizon burned.
+Every sunrise chose to run.
+Earth welcomed each stride.
+
+Pokémon Proverb
+
+Life moves boldly forward.
+
+#1008 Miraidon
+
+Field Note
+
+Blue horizon hummed.
+Tomorrow crossed open skies.
+Wonder found a path.
+
+Pokémon Proverb
+
+The future belongs to the curious.
+
+#1009 Walking Wake
+
+Field Note
+
+River met the mist.
+Ancient thunder drank the dawn.
+Herons watched in awe.
+
+Pokémon Proverb
+
+Some legends never stopped walking.
+
+#1010 Iron Leaves
+
+Field Note
+
+Forest after rain.
+Steel reflected every leaf.
+Neither seemed misplaced.
+
+Pokémon Proverb
+
+Harmony welcomes both old and new.
+
+#1011 Dipplin
+
+Field Note
+
+Orchard after rain.
+Two sweet hearts shared one small home.
+Autumn tasted bright.
+
+Pokémon Proverb
+
+Good things are sweeter together.
+
+#1012 Poltchageist
+
+Field Note
+
+Matcha in the bowl.
+Steam remembered patient hands.
+Peace steeped quietly.
+
+Pokémon Proverb
+
+Care is the unseen ingredient.
+
+I couldn't improve it.
+
+Sometimes a proverb arrives exactly where it belongs.
+
+#1013 Sinistcha
+
+Field Note
+
+Guests around the fire.
+Warm tea lingered after words.
+Evening stayed awhile.
+
+Pokémon Proverb
+
+Hospitality is remembered long after the meal.
+
+#1014 Okidogi
+
+Field Note
+
+Old road through the hills.
+Great strength paused beside the weak.
+Both walked onward still.
+
+Pokémon Proverb
+
+Strength is proven by restraint.
+
+#1015 Munkidori
+
+Field Note
+
+Quiet cedar grove.
+Clever plans filled every branch.
+Wisdom chose kindness.
+
+Pokémon Proverb
+
+Intelligence shines brightest with humility.
+
+#1016 Fezandipiti
+
+Field Note
+
+Morning feather gleamed.
+Every color caught the sun.
+Pride needed no words.
+
+Pokémon Proverb
+
+Beauty speaks softly.
+
+#1017 Ogerpon
+
+Field Note
+
+Mask beneath the leaves.
+One true smile waited within.
+Friends recognized both.
+
+Pokémon Proverb
+
+Love sees beyond appearances.
+
+#1018 Archaludon
+
+Field Note
+
+River crossed itself.
+Steel became tomorrow's bridge.
+Travelers smiled home.
+
+Pokémon Proverb
+
+The strongest things connect others.
+
+#1019 Hydrapple
+
+Field Note
+
+Orchard laughed aloud.
+Every voice shared one old tree.
+Harvest welcomed all.
+
+Pokémon Proverb
+
+Abundance grows from shared roots.
+
+#1020 Gouging Fire
+
+Field Note
+
+Sunset crowned the cliffs.
+Ancient embers kissed the sky.
+Evening breathed deeply.
+
+Pokémon Proverb
+
+Passion must illuminate, not consume.
+
+#1021 Raging Bolt
+
+Field Note
+
+Storm beyond the plains.
+Lightning wandered without haste.
+Thunder found its home.
+
+Pokémon Proverb
+
+Power guided is power multiplied.
+
+#1022 Iron Boulder
+
+Field Note
+
+Granite met the wind.
+Every step reshaped the trail.
+None complained at all.
+
+Pokémon Proverb
+
+Resolve changes the landscape.
+
+#1023 Iron Crown
+
+Field Note
+
+Morning over steel.
+Quiet purpose wore no crown.
+Honor shone enough.
+
+Pokémon Proverb
+
+Character outlasts titles.
+
+#1024 Terapagos
+
+Field Note
+
+Stars beneath its shell.
+Every journey carried home.
+Sky fit inside one.
+
+Pokémon Proverb
+
+Home is what we carry.
+
+#1025 Pecharunt
+
+Field Note
+
+Last fruit on the bough.
+Sweetness hid a bitter seed.
+Choice ripened slowly.
+
+Pokémon Proverb
+
+Not every gift should be accepted.
+
+#1026 — Droidball
+
+Field Note
+
+Quiet by the dock.
+One small light awaited dawn.
+The notebook closed first.
+---------
+
+Field Note
+
+Quiet LED glowed.
+Tiny wheels knew where to wait.
+Friend before machine.
+
+Pokémon Proverb
+The best tools become companions.
+----------
+
+-Field Note
+
+Pages closed at dusk.
+One small light remained awake.
+Tomorrow was near.
+
+Pokémon Proverb
+
+Curiosity never travels alone.
+-----------
+
+Field Note
+
+Last page of the book.
+One little light watched the stars.
+Field notes continued.
+
+Pokémon Proverb
+
+Every ending teaches the next beginning.
