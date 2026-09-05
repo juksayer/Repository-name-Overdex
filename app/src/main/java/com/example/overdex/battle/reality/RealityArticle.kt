@@ -3,6 +3,7 @@ package com.example.overdex.battle.reality
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyPayload
 
+import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.TimelineRecord
 
 /**
@@ -18,6 +19,10 @@ import com.example.overdex.model.TimelineRecord
  * @property sourceId Identifies the producer of this specific record.
  * @property payload The uninterpreted data or reasoning outcome.
  * @property predecessorIds Identifies the specific articles used as input for this record.
+ * @property confidence Measurement certainty from 0.0 to 1.0, if applicable.
+ * @property sequenceNumber Custody sequence number, if originating from testimony.
+ * @property evidenceReferences References to raw evidence, if applicable.
+ * @property matchId The identity of the Match to which this article belongs.
  */
 data class RealityArticle(
     val id: ArticleId,
@@ -28,5 +33,6 @@ data class RealityArticle(
     val predecessorIds: List<ArticleId> = emptyList(),
     val confidence: Float? = null,
     val sequenceNumber: Long? = null,
-    val evidenceReferences: List<String>? = null
+    val evidenceReferences: List<String>? = null,
+    val matchId: MatchId? = null
 ) : TimelineRecord
