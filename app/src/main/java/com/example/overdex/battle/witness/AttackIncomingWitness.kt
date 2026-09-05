@@ -114,6 +114,8 @@ class AttackIncomingWitness(
                                 timestamp = receiptTimestamp,
                                 confidence = matchResult.confidence
                             )
+
+                            Log.d("ATTACK_SLICE", "Witness submitted AttackIncoming: sourceId=${sourceId.id}, confidence=${matchResult.confidence}")
                         }
                     }
                 }

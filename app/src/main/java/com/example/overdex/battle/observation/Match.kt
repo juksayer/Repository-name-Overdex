@@ -1,7 +1,9 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.BattleMemory
+import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.TestimonyCustody
+import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
@@ -47,6 +49,10 @@ class Match(
     init {
         matchScope.launch {
             custody.testimonyFlow.collect { testimony ->
+                if (testimony.payload is AttackIncoming) {
+                    Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
+                }
+
                 val article = RealityArticle(
                     id = ArticleId(UUID.randomUUID().toString()),
                     perceivedAt = testimony.timestamp,
@@ -57,7 +63,17 @@ class Match(
                     sequenceNumber = testimony.sequenceNumber,
                     evidenceReferences = testimony.evidenceReferences
                 )
+
+                if (testimony.payload is AttackIncoming) {
+                    Log.d("ATTACK_SLICE", "Match created RealityArticle: articleId=${article.id.value}, type=${article.payload::class.simpleName}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
+                }
+
                 realityTimeline.append(article)
+
+                if (testimony.payload is AttackIncoming) {
+                    Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
+                }
+
                 battleMemory.timeline.record(article)
 
                 interpreter.interpret(article)?.let { event ->
