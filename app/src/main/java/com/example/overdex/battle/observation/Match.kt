@@ -2,6 +2,7 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.TestimonyCustody
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
@@ -52,6 +53,10 @@ class Match(
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
+                if (testimony.payload is PokemonIdentified) {
+                    val p = testimony.payload as PokemonIdentified
+                    Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
+                }
 
                 val article = RealityArticle(
                     id = ArticleId(UUID.randomUUID().toString()),
@@ -67,11 +72,18 @@ class Match(
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "Match created RealityArticle: articleId=${article.id.value}, type=${article.payload::class.simpleName}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
                 }
+                if (testimony.payload is PokemonIdentified) {
+                    val p = article.payload as PokemonIdentified
+                    Log.d("SPECIES_SLICE", "Match created RealityArticle: articleId=${article.id.value}, type=${p::class.simpleName}, species=${p.species}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
+                }
 
                 realityTimeline.append(article)
 
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
+                }
+                if (testimony.payload is PokemonIdentified) {
+                    Log.d("SPECIES_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
                 }
 
                 battleMemory.timeline.record(article)

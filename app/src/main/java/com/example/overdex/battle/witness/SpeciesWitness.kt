@@ -2,7 +2,7 @@ package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
@@ -87,10 +87,12 @@ class SpeciesWitness(
                             // 1. Reality Handoff (Neutral Testimony)
                             match.custody.submitTestimony(
                                 sourceId = sourceId,
-                                payload = RawTestimony(value),
+                                payload = PokemonIdentified(value),
                                 timestamp = timestamp,
                                 confidence = result.confidence
                             )
+
+                            Log.d("SPECIES_SLICE", "SpeciesWitness submission: species=$value, sourceId=${sourceId.id}, confidence=${result.confidence}")
 
                             // 2. Presentation Signal (Existing behavior)
                             DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))

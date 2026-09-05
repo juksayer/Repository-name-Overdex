@@ -18,3 +18,10 @@ data class RawTestimony(val data: Any) : TestimonyPayload
  * Testimony representing the "Attack Incoming!" phenomenon.
  */
 data object AttackIncoming : TestimonyPayload
+
+/**
+ * Testimony representing an identified Pokémon species.
+ * 
+ * @property species The name of the Pokémon as recognized by the Witness.
+ */
+data class PokemonIdentified(val species: String) : TestimonyPayload
