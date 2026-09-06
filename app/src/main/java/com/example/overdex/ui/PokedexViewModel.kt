@@ -84,6 +84,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
+    private val _latestMatchArchiveSource =
+        MutableStateFlow<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
+    val latestMatchArchiveSource = _latestMatchArchiveSource.asStateFlow()
 
     fun getFieldNotes(pokemonId: Int) = flow {
         emit(fieldNoteRepository.getFieldNotesForPokemon(pokemonId))
@@ -179,6 +182,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonKnowledge = pokemonRepository
         )
         _activeMatch.value = match
+        _latestMatchArchiveSource.value =
+            com.example.overdex.battle.archive.MatchArchiveSource(
+                matchId = com.example.overdex.battle.observation.MatchId(match.matchId),
+                realityTimeline = match.realityTimeline
+            )
         _frameCount.value = 0
         Log.d("DEPLOY", "1 Match created")
         
