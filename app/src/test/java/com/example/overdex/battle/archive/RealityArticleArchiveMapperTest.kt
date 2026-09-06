@@ -116,6 +116,75 @@ class RealityArticleArchiveMapperTest {
         }
     }
 
+    @Test
+    fun `archive JSON round trips without changing records`() {
+        val archive = MatchArchive(
+            matchId = "match-a",
+            articles = listOf(
+                ArchivedRealityArticle(
+                    articleId = "article-1",
+                    matchId = "match-a",
+                    perceivedAt = 100L,
+                    recordedAt = 110L,
+                    sourceId = "SPECIES_WITNESS",
+                    payload = ArchivedPokemonIdentified("Vaporeon"),
+                    predecessorIds = listOf("predecessor-1"),
+                    confidence = 0.85f,
+                    sequenceNumber = 17L,
+                    evidenceReferences = listOf("frame-17")
+                )
+            )
+        )
+
+        val restored = MatchArchiveSerializer.deserialize(
+            MatchArchiveSerializer.serialize(archive)
+        )
+
+        assertEquals(archive, restored)
+    }
+
+    @Test
+    fun `archive JSON uses kind as payload discriminator`() {
+        val archive = MatchArchive(
+            matchId = "match-a",
+            articles = listOf(
+                archivedArticle(payload = ArchivedAttackIncoming)
+            )
+        )
+
+        val json = MatchArchiveSerializer.serialize(archive)
+
+        assertTrue(json.contains("\"kind\": \"attack_incoming\""))
+    }
+
+    @Test
+    fun `serializer rejects unsupported schema version`() {
+        val archive = MatchArchive(
+            schemaVersion = 2,
+            matchId = "match-a",
+            articles = emptyList()
+        )
+
+        assertIllegalArgument("Unsupported schema version") {
+            MatchArchiveSerializer.serialize(archive)
+        }
+    }
+
+    @Test
+    fun `deserializer rejects unsupported schema version`() {
+        val futureSchemaJson = """
+            {
+              "schemaVersion": 2,
+              "matchId": "match-a",
+              "articles": []
+            }
+        """.trimIndent()
+
+        assertIllegalArgument("Unsupported schema version") {
+            MatchArchiveSerializer.deserialize(futureSchemaJson)
+        }
+    }
+
     private fun article(
         id: String,
         payload: TestimonyPayload,
@@ -135,6 +204,21 @@ class RealityArticleArchiveMapperTest {
         sequenceNumber = sequenceNumber,
         evidenceReferences = evidenceReferences,
         matchId = matchId
+    )
+
+    private fun archivedArticle(
+        payload: ArchivedTestimonyPayload
+    ) = ArchivedRealityArticle(
+        articleId = "article-1",
+        matchId = "match-a",
+        perceivedAt = 100L,
+        recordedAt = 110L,
+        sourceId = "SPECIES_WITNESS",
+        payload = payload,
+        predecessorIds = emptyList(),
+        confidence = null,
+        sequenceNumber = null,
+        evidenceReferences = null
     )
 
     private fun assertIllegalArgument(
