@@ -79,11 +79,6 @@ fun ChatScreen(
     val listState = rememberLazyListState()
 
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(5000)
-                onBack()
-    }
-
     // Handheld Interaction State
     var interactionMode by remember { mutableStateOf(ChatInteractionMode.Navigation) }
     val keyboardController = rememberTerminalKeyboardController()
