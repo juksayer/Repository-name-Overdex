@@ -39,7 +39,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Capture diagnostics data class for the temporary debug HUD.
+ */
+data class CaptureDiagnostics(
+    val state: String = "NOT OBSERVED",
+    val width: Int? = null,
+    val height: Int? = null,
+    val publicationNanoTime: Long? = null
+)
 
 /**
  * The technical infrastructure layer for the ODX-FI.
@@ -60,6 +72,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
         private val _frames = MutableSharedFlow<Bitmap>(extraBufferCapacity = 1)
         val frames = _frames.asSharedFlow()
+
+        private val _captureDiagnostics = MutableStateFlow(CaptureDiagnostics(state = "NOT OBSERVED"))
+        val captureDiagnostics = _captureDiagnostics.asStateFlow()
 
         fun start(context: Context, resultCode: Int, data: Intent) {
             val intent = Intent(context, DroidballService::class.java).apply {
@@ -96,12 +111,18 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
             Log.d("DroidballService", "MediaProjection stopped by system")
+            markStopped()
             stopSelf()
         }
 
         override fun onCapturedContentResize(width: Int, height: Int) {
             Log.d("ODX_CAPTURE_GEOMETRY", "onCapturedContentResize: captured-content dimensions: ${width}x${height}")
         }
+    }
+
+    private fun markStopped() {
+        val current = _captureDiagnostics.value
+        _captureDiagnostics.value = current.copy(state = "STOPPED")
     }
     
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -137,6 +158,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             }
             setupMediaProjection(resultCode, data)
             setupOverlay()
+            _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
             _signals.tryEmit(DroidballSignal.Started)
         } else {
             stopSelf()
@@ -213,6 +235,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
                     _frames.tryEmit(bitmap)
                     _signals.tryEmit(DroidballSignal.FrameCaptured)
+                    _captureDiagnostics.value = CaptureDiagnostics(
+                        state = "OBSERVING",
+                        width = bitmap.width,
+                        height = bitmap.height,
+                        publicationNanoTime = System.nanoTime()
+                    )
                 } catch (e: Exception) {
                     Log.e("DroidballService", "Error processing captured frame", e)
                 } finally {
@@ -242,8 +270,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 100
-            y = 100
+            // Temporary placement for 1080x2400 display [Left: 645, Top: 350, Right: 1060, Bottom: 550]
+            x = 645
+            y = 350
         }
 
         overlayView = ComposeView(this).apply {
@@ -285,6 +314,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     override fun onDestroy() {
         Log.d("DroidballService", "onDestroy: Releasing resources")
+        markStopped()
         _signals.tryEmit(DroidballSignal.Stopped)
         
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)

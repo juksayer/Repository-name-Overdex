@@ -94,8 +94,7 @@ class SpeciesWitness(
 
                             Log.d("SPECIES_SLICE", "SpeciesWitness submission: species=$value, sourceId=${sourceId.id}, confidence=${result.confidence}")
 
-                            // 2. Presentation Signal (Existing behavior)
-                            DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))
+
                         } else if (value != null) {
                             Log.d("SpeciesWitness", "Normalized OCR string: $value")
                         }

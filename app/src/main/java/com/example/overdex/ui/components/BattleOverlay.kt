@@ -1,101 +1,150 @@
 package com.example.overdex.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.battle.observation.DroidballSignal
+import androidx.compose.ui.platform.LocalDensity
 import com.example.overdex.battle.observation.DroidballService
-import com.example.overdex.model.observation.InstrumentDeploymentState
-import com.example.overdex.ui.theme.TerminalGreen
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.delay
 
 /**
- * The floating field presentation of the Battle Observation Session.
- * 
- * This overlay mimics the Instrument LCD and provides real-time feedback
- * while the trainer is in the field (e.g., in Pokémon GO).
+ * Temporary capture-debug HUD displaying observation diagnostics.
  */
 @Composable
 fun BattleOverlay() {
-    // In a real implementation, this would observe the Coordinator's state.
-    // For Git #197, we observe the service signals directly to prove the flow.
-    var frameCount by remember { mutableLongStateOf(0) }
-    var status by remember { mutableStateOf("DEPLOYING") }
-    var countdownValue by remember { mutableStateOf<String?>(null) }
+    val diagnostics by DroidballService.captureDiagnostics.collectAsState()
 
+    var tick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) {
-        DroidballService.signals.collect { signal ->
-            when (signal) {
-                is DroidballSignal.FrameCaptured -> {
-                    frameCount++
-                    status = "OBSERVING"
-                }
-                is DroidballSignal.Started -> status = "READY"
-                is DroidballSignal.Stopped -> status = "RETURNING"
-                is DroidballSignal.CountdownWitnessed -> {
-                    countdownValue = signal.value
-                }
-                else -> {}
-            }
+        while (true) {
+            delay(100)
+            tick++
         }
     }
 
+    val widthDp = with(LocalDensity.current) { 415.toDp() }
+    val heightDp = with(LocalDensity.current) { 200.toDp() }
+
+    // Pokémon GO badge inspired palette: pale translucent background, dark teal text
+    val backgroundColor = Color(0xFFE0F2F1).copy(alpha = 0.88f)
+    val borderColor = Color(0xFF004D40).copy(alpha = 0.4f)
+    val textColor = Color(0xFF004D40)
+    val accentColor = Color(0xFF00695C)
+    val alertColor = Color(0xFFB71C1C)
+
+    val shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+
     Box(
         modifier = Modifier
-            .size(120.dp, 80.dp)
-            .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFF121510), RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .size(widthDp, heightDp)
+            .background(backgroundColor, shape)
+            .drawBehind {
+                val strokeWidth = 1.dp.toPx()
+                val radius = 10.dp.toPx()
+                val w = size.width
+                val h = size.height
+
+                // Draw border on bottom, left, and right, omitting the top edge (0,0 to w,0)
+                val path = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(0f, h - radius)
+                    arcTo(
+                        rect = Rect(0f, h - 2 * radius, 2 * radius, h),
+                        startAngleDegrees = 180f,
+                        sweepAngleDegrees = -90f,
+                        forceMoveTo = false
+                    )
+                    lineTo(w - radius, h)
+                    arcTo(
+                        rect = Rect(w - 2 * radius, h - 2 * radius, w, h),
+                        startAngleDegrees = 90f,
+                        sweepAngleDegrees = -90f,
+                        forceMoveTo = false
+                    )
+                    lineTo(w, 0f)
+                }
+                drawPath(
+                    path = path,
+                    color = borderColor,
+                    style = Stroke(width = strokeWidth)
+                )
+            }
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
         ) {
-            if (countdownValue != null) {
-                Text(
-                    text = countdownValue!!,
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
-            } else {
-                Text(
-                    text = status,
-                    color = TerminalGreen,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
+            // Field 1: Capture state
+            val stateText = "STATE: ${diagnostics.state}"
+            Text(
+                text = stateText,
+                color = when (diagnostics.state) {
+                    "OBSERVING" -> accentColor
+                    "READY" -> Color(0xFFE65100)
+                    "STOPPED" -> alertColor
+                    else -> Color.DarkGray
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "FRAMES: $frameCount",
-                    color = TerminalGreen.copy(alpha = 0.7f),
-                    fontSize = 10.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
+            // Field 2: Frame age (calculated with tick dependency and monotonic clock)
+            val ageText = remember(tick, diagnostics.publicationNanoTime, diagnostics.state) {
+                val pubTime = diagnostics.publicationNanoTime
+                if (pubTime == null) {
+                    "AGE: Not observed"
+                } else {
+                    val currentNano = System.nanoTime()
+                    val rawDiff = (currentNano - pubTime) / 1_000_000
+                    val diffMs = if (rawDiff < 0) 0L else rawDiff
+                    if (diagnostics.state == "STOPPED") {
+                        "AGE: ${diffMs}ms (STALE)"
+                    } else {
+                        "AGE: ${diffMs}ms"
+                    }
+                }
             }
+            Text(
+                text = ageText,
+                color = if (diagnostics.state == "STOPPED") alertColor else textColor,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace
+            )
 
-            if (status == "OBSERVING" && countdownValue == null) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .size(4.dp)
-                        .background(Color.Red, RoundedCornerShape(2.dp))
-                )
+            // Field 3: Frame dimensions
+            val dimText = remember(diagnostics.width, diagnostics.height, diagnostics.state) {
+                if (diagnostics.width != null && diagnostics.height != null) {
+                    if (diagnostics.state == "STOPPED") {
+                        "DIM: ${diagnostics.width}x${diagnostics.height} (STALE)"
+                    } else {
+                        "DIM: ${diagnostics.width}x${diagnostics.height}"
+                    }
+                } else {
+                    "DIM: Not observed"
+                }
             }
+            Text(
+                text = dimText,
+                color = textColor.copy(alpha = 0.85f),
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace
+            )
         }
     }
 }
