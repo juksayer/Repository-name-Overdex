@@ -42,16 +42,31 @@ object ObservationRecorder {
 
     private fun captureMetadata(context: Context): MatchMetadata {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val display = wm.defaultDisplay
+        
+        val (width, height) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val maxBounds = wm.maximumWindowMetrics.bounds
+            maxBounds.width() to maxBounds.height()
+        } else {
+            val realMetrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealMetrics(realMetrics)
+            realMetrics.widthPixels to realMetrics.heightPixels
+        }
+
+        val screenRes = "${width}x${height}"
+        android.util.Log.d("ODX_CAPTURE_GEOMETRY", "ObservationRecorder: metadata screenResolution: $screenRes")
+
         val metrics = DisplayMetrics()
-        display.getMetrics(metrics)
+        @Suppress("DEPRECATION")
+        wm.defaultDisplay.getMetrics(metrics)
+        android.util.Log.d("ODX_CAPTURE_GEOMETRY", "ObservationRecorder: display.getMetrics (for density): ${metrics.widthPixels}x${metrics.heightPixels}")
 
         return MatchMetadata(
             deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
             androidVersion = Build.VERSION.SDK_INT,
-            screenResolution = "${metrics.widthPixels}x${metrics.heightPixels}",
+            screenResolution = screenRes,
             displayDensity = metrics.density,
-            refreshRate = try { display.refreshRate } catch (_: Exception) { null },
+            refreshRate = try { wm.defaultDisplay.refreshRate } catch (_: Exception) { null },
             orientation = context.resources.configuration.orientation,
             startTimeMillis = this.startTime
         )

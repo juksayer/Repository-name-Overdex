@@ -131,6 +131,12 @@ An Article is the canonical aggregation point for evidence and confidence.
 
 ---
 
+## Confidence Threshold
+Confidence expresses uncertainty. Thresholds determine how confidence-bearing information may be used or presented; crossing a threshold does not convert it into truth.
+
+
+---
+
 ## Phenomena
 Reality remains outside the institution. Measurements enter custody. Presentations leave.
 

@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -104,6 +106,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var chatRepository: ChatRepository
     private var selectedRegion = CalibrationRegion.NONE
 
+    // In-memory storage for the opened archive
+    private var openedArchive = mutableStateOf<com.example.overdex.battle.archive.MatchArchive?>(null)
+    private var archiveLoadInProgress = mutableStateOf(false)
+
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -112,6 +118,37 @@ class MainActivity : ComponentActivity() {
             viewModel.deployInstrument(result.resultCode, result.data!!)
         } else {
             viewModel.stopObservation()
+        }
+    }
+
+    private val archiveOpenLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) {
+            archiveLoadInProgress.value = false
+            return@registerForActivityResult
+        }
+
+        lifecycleScope.launch {
+            try {
+                val archive = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val inputStream = contentResolver.openInputStream(uri)
+                        ?: throw java.io.IOException("Unable to open the selected file.")
+                    com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream)
+                }
+                openedArchive.value = archive
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                Log.e("ARCHIVE_OPEN", "Failed to read match archive", e)
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    "Failed to open archive: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                archiveLoadInProgress.value = false
+            }
         }
     }
 
@@ -167,6 +204,26 @@ class MainActivity : ComponentActivity() {
                         partnerIdentity = partnerIdentity,
                         timelineEvents = timelineEvents,
                         chatMessages = chatMessages,
+                        openedArchive = openedArchive,
+                        archiveLoadInProgress = archiveLoadInProgress,
+                        onOpenArchive = {
+                            if (!archiveLoadInProgress.value) {
+                                archiveLoadInProgress.value = true
+                                try {
+                                    archiveOpenLauncher.launch(
+                                        arrayOf("application/zip", "application/octet-stream", "*/*")
+                                    )
+                                } catch (e: Exception) {
+                                    archiveLoadInProgress.value = false
+                                    Log.e("ARCHIVE_OPEN", "Failed to launch file picker", e)
+                                    android.widget.Toast.makeText(
+                                        this@MainActivity,
+                                        "Unable to open file picker.",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        },
                         onStartObservation = { 
                             if (!Settings.canDrawOverlays(this@MainActivity)) {
                                 val intent = Intent(
@@ -205,6 +262,9 @@ fun PokedexApp(
     partnerIdentity: PartnerIdentity?,
     timelineEvents: List<SharedEvent>,
     chatMessages: List<ChatMessage>,
+    openedArchive: MutableState<com.example.overdex.battle.archive.MatchArchive?>,
+    archiveLoadInProgress: MutableState<Boolean>,
+    onOpenArchive: () -> Unit = {},
     onStartObservation: () -> Unit = {},
 
 ){
@@ -216,6 +276,14 @@ fun PokedexApp(
     val treeState by viewModel.treeState.collectAsState()
     val deploymentState by viewModel.deploymentState.collectAsState()
     val frameCount by viewModel.frameCount.collectAsState()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(openedArchive.value) {
+        if (openedArchive.value != null) {
+            navController.navigate("match_archive_viewer")
+        }
+    }
 
     LaunchedEffect(deploymentState) {
         if (deploymentState == InstrumentDeploymentState.REQUESTING_PERMISSIONS) {
@@ -770,6 +838,7 @@ fun PokedexApp(
             composable("timeline_viewer") {
                 val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
                 val archiveExportSelected = remember { mutableStateOf(false) }
+                val archiveOpenSelected = remember { mutableStateOf(false) }
                 val pendingArchiveSource = remember {
                     mutableStateOf<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
                 }
@@ -868,13 +937,31 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     onUp = {
-                        archiveExportSelected.value = archiveSourceState.value != null
+                        if (!archiveOpenSelected.value && !archiveExportSelected.value) {
+                            if (archiveSourceState.value != null) {
+                                archiveExportSelected.value = true
+                            } else {
+                                archiveOpenSelected.value = true
+                            }
+                        } else if (archiveExportSelected.value) {
+                            archiveExportSelected.value = false
+                            archiveOpenSelected.value = true
+                        }
                     },
                     onDown = {
-                        archiveExportSelected.value = false
+                        if (archiveOpenSelected.value) {
+                            archiveOpenSelected.value = false
+                            if (archiveSourceState.value != null) {
+                                archiveExportSelected.value = true
+                            }
+                        } else if (archiveExportSelected.value) {
+                            archiveExportSelected.value = false
+                        }
                     },
                     onA = {
-                        if (archiveExportSelected.value && archiveSourceState.value != null) {
+                        if (archiveOpenSelected.value) {
+                            onOpenArchive()
+                        } else if (archiveExportSelected.value && archiveSourceState.value != null) {
                             requestArchiveExport()
                         } else {
                             navController.debugPopBackStack()
@@ -887,8 +974,53 @@ fun PokedexApp(
                         exportMatchId = archiveSourceState.value?.matchId?.value,
                         exportSelected = archiveExportSelected.value &&
                                 archiveSourceState.value != null,
-                        onExportMatch = requestArchiveExport
+                        onExportMatch = requestArchiveExport,
+                        onOpenMatch = onOpenArchive,
+                        openSelected = archiveOpenSelected.value
                     )
+                }
+            }
+            composable("match_archive_viewer") {
+                val archive = openedArchive.value
+                if (archive != null) {
+                    var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+                    ODXFiShell(
+                        showBattleOverlay = false,
+                        viewModel = viewModel,
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { filterSettings = it },
+                        onUp = { upHandler?.invoke() },
+                        onDown = { downHandler?.invoke() },
+                        onA = { aHandler?.invoke() },
+                        onB = { bHandler?.invoke() },
+                        onLaunchProbe = { navController.navigate("accessibility_probe") },
+                        onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                        onLaunchMatchSight = { navController.navigate("match_sight") },
+                        onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                        deploymentState = deploymentState,
+                        frameCount = frameCount,
+                    ) {
+                        com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
+                            archive = archive,
+                            onBack = {
+                                openedArchive.value = null
+                                navController.debugPopBackStack()
+                            },
+                            onUp = { upHandler = it },
+                            onDown = { downHandler = it },
+                            onA = { aHandler = it },
+                            onB = { bHandler = it }
+                        )
+                    }
+                } else {
+                    LaunchedEffect(Unit) {
+                        android.widget.Toast.makeText(context, "Archive data lost.", android.widget.Toast.LENGTH_SHORT).show()
+                        navController.debugPopBackStack()
+                    }
                 }
             }
             composable("match_sight") {

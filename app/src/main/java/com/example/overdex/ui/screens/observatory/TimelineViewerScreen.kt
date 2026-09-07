@@ -16,7 +16,9 @@ fun TimelineViewerScreen(
     onBack: () -> Unit,
     exportMatchId: String? = null,
     onExportMatch: () -> Unit = {},
-    exportSelected: Boolean = false
+    exportSelected: Boolean = false,
+    onOpenMatch: () -> Unit = {},
+    openSelected: Boolean = false
 ) {
     val lastRecording = remember { ObservationRecorder.getLastRecording() }
     var selectedEvent by remember { mutableStateOf<RecordedEvent?>(null) }
@@ -26,8 +28,13 @@ fun TimelineViewerScreen(
         TerminalPathIndicator(path = "/signal_observatory/timeline_viewer/")
 
         if (lastRecording == null) {
-            EmptyRecordingState()
-            Spacer(modifier = Modifier.weight(1f))
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                EmptyRecordingState()
+            }
         } else {
             val filteredEvents = remember(lastRecording, activeFilters) {
                 lastRecording.events.filter { activeFilters.contains(it.sourceType) }
@@ -66,6 +73,15 @@ fun TimelineViewerScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+        
+        TerminalButton(
+            text = "OPEN MATCH ARCHIVE",
+            onClick = onOpenMatch,
+            selected = openSelected
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+
         if (exportMatchId != null) {
             TerminalButton(
                 text = "EXPORT LATEST MATCH SNAPSHOT",
@@ -74,6 +90,8 @@ fun TimelineViewerScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-        TerminalButton(text = "BACK", onClick = onBack, selected = !exportSelected)
+        
+        val backSelected = !openSelected && !exportSelected
+        TerminalButton(text = "BACK", onClick = onBack, selected = backSelected)
     }
 }

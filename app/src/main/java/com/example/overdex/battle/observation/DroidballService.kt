@@ -91,11 +91,16 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
+    private var firstFrameLogged = false
 
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
             Log.d("DroidballService", "MediaProjection stopped by system")
             stopSelf()
+        }
+
+        override fun onCapturedContentResize(width: Int, height: Int) {
+            Log.d("ODX_CAPTURE_GEOMETRY", "onCapturedContentResize: captured-content dimensions: ${width}x${height}")
         }
     }
     
@@ -141,35 +146,78 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun setupMediaProjection(resultCode: Int, data: Intent) {
+        firstFrameLogged = false
         val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, data)
         mediaProjection?.registerCallback(projectionCallback, null)
         
-        val metrics = resources.displayMetrics
-        val width = metrics.widthPixels
-        val height = metrics.heightPixels
-        val density = metrics.densityDpi
+        val (width, height) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val maxBounds = windowManager.maximumWindowMetrics.bounds
+            maxBounds.width() to maxBounds.height()
+        } else {
+            val realMetrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(realMetrics)
+            realMetrics.widthPixels to realMetrics.heightPixels
+        }
+        val density = resources.displayMetrics.densityDpi
+
+        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: resources.displayMetrics: ${resources.displayMetrics.widthPixels}x${resources.displayMetrics.heightPixels}")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val currentBounds = windowManager.currentWindowMetrics.bounds
+            Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: currentWindowMetrics.bounds: ${currentBounds.width()}x${currentBounds.height()}")
+            Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: maximumWindowMetrics.bounds: ${width}x${height}")
+        } else {
+            Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: display.getRealMetrics: ${width}x${height}")
+        }
+        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: Requested ImageReader/VirtualDisplay: ${width}x${height}")
 
         imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2).apply {
             setOnImageAvailableListener({ reader ->
                 val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-                
-                // Convert Image to Bitmap and emit
-                // Optimization: In a real implementation, we'd reuse buffers.
-                // For Git #197 milestone, we just prove the flow.
-                val planes = image.planes
-                val buffer = planes[0].buffer
-                val pixelStride = planes[0].pixelStride
-                val rowStride = planes[0].rowStride
-                val rowPadding = rowStride - pixelStride * width
-                
-                val bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888)
-                bitmap.copyPixelsFromBuffer(buffer)
-                
-                _frames.tryEmit(bitmap)
-                _signals.tryEmit(DroidballSignal.FrameCaptured)
-                
-                image.close()
+                try {
+                    val planes = image.planes
+                    val buffer = planes[0].buffer
+                    val pixelStride = planes[0].pixelStride
+                    val rowStride = planes[0].rowStride
+                    val imgWidth = image.width
+                    val imgHeight = image.height
+                    val rowPadding = rowStride - (imgWidth * pixelStride)
+                    
+                    if (!firstFrameLogged) {
+                        Log.d("ODX_CAPTURE_GEOMETRY", "First Frame acquired:")
+                        Log.d("ODX_CAPTURE_GEOMETRY", "├── Image: ${imgWidth}x${imgHeight} | CropRect: ${image.cropRect}")
+                        Log.d("ODX_CAPTURE_GEOMETRY", "├── Buffer: pixelStride=$pixelStride, rowStride=$rowStride")
+                        Log.d("ODX_CAPTURE_GEOMETRY", "└── Calculated rowPadding=$rowPadding")
+                    }
+
+                    val bitmap = if (rowPadding > 0) {
+                        val paddedWidth = imgWidth + rowPadding / pixelStride
+                        val paddedBitmap = Bitmap.createBitmap(paddedWidth, imgHeight, Bitmap.Config.ARGB_8888)
+                        try {
+                            paddedBitmap.copyPixelsFromBuffer(buffer)
+                            Bitmap.createBitmap(paddedBitmap, 0, 0, imgWidth, imgHeight)
+                        } finally {
+                            paddedBitmap.recycle()
+                        }
+                    } else {
+                        val cleanBitmap = Bitmap.createBitmap(imgWidth, imgHeight, Bitmap.Config.ARGB_8888)
+                        cleanBitmap.copyPixelsFromBuffer(buffer)
+                        cleanBitmap
+                    }
+                    
+                    if (!firstFrameLogged) {
+                        Log.d("ODX_CAPTURE_GEOMETRY", "└── Final Published Bitmap: ${bitmap.width}x${bitmap.height}")
+                        firstFrameLogged = true
+                    }
+
+                    _frames.tryEmit(bitmap)
+                    _signals.tryEmit(DroidballSignal.FrameCaptured)
+                } catch (e: Exception) {
+                    Log.e("DroidballService", "Error processing captured frame", e)
+                } finally {
+                    image.close()
+                }
             }, null)
         }
 
