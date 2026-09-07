@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -767,6 +768,94 @@ fun PokedexApp(
                 }
             }
             composable("timeline_viewer") {
+                val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
+                val archiveExportSelected = remember { mutableStateOf(false) }
+                val pendingArchiveSource = remember {
+                    mutableStateOf<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
+                }
+                val archiveSaveInProgress = remember { mutableStateOf(false) }
+                val archiveSaveScope = rememberCoroutineScope()
+                val archiveSaveContext = androidx.compose.ui.platform.LocalContext.current
+
+                val archiveSaveLauncher =
+                    androidx.activity.compose.rememberLauncherForActivityResult(
+                        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument(
+                            "application/zip"
+                        )
+                    ) { destination ->
+                        val source = pendingArchiveSource.value
+                        pendingArchiveSource.value = null
+
+                        if (destination == null || source == null) {
+                            archiveSaveInProgress.value = false
+                        } else {
+                            archiveSaveScope.launch {
+                                try {
+                                    val manifest = kotlinx.coroutines.withContext(
+                                        kotlinx.coroutines.Dispatchers.IO
+                                    ) {
+                                        val output = archiveSaveContext.contentResolver
+                                            .openOutputStream(destination, "w")
+                                            ?: throw java.io.IOException("Unable to open the selected file.")
+
+                                        output.use {
+                                            com.example.overdex.battle.archive.MatchArchiveExporter.export(
+                                                realityTimeline = source.realityTimeline,
+                                                matchId = source.matchId,
+                                                output = it
+                                            )
+                                        }
+                                    }
+
+                                    android.widget.Toast.makeText(
+                                        archiveSaveContext,
+                                        "Saved Match snapshot: ${manifest.articleCount} articles",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    android.util.Log.e("MATCH_EXPORT", "Archive save failed", error)
+                                    android.widget.Toast.makeText(
+                                        archiveSaveContext,
+                                        "Save failed. The destination may contain an incomplete file.",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                } finally {
+                                    archiveSaveInProgress.value = false
+                                }
+                            }
+                        }
+                    }
+
+
+                val requestArchiveExport: () -> Unit = {
+                    val source = archiveSourceState.value
+                    if (source != null && !archiveSaveInProgress.value) {
+                        pendingArchiveSource.value = source
+                        archiveSaveInProgress.value = true
+
+                        try {
+                            archiveSaveLauncher.launch(
+                                "match_${source.matchId.value}.odxmatch"
+                            )
+                        } catch (error: Exception) {
+                            pendingArchiveSource.value = null
+                            archiveSaveInProgress.value = false
+                            android.util.Log.e(
+                                "MATCH_EXPORT",
+                                "Unable to open save dialog",
+                                error
+                            )
+                            android.widget.Toast.makeText(
+                                archiveSaveContext,
+                                "Unable to open save dialog.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+
                 ODXFiShell(
                     showBattleOverlay = false,
                     viewModel = viewModel,
@@ -778,10 +867,27 @@ fun PokedexApp(
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
+                    onUp = {
+                        archiveExportSelected.value = archiveSourceState.value != null
+                    },
+                    onDown = {
+                        archiveExportSelected.value = false
+                    },
+                    onA = {
+                        if (archiveExportSelected.value && archiveSourceState.value != null) {
+                            requestArchiveExport()
+                        } else {
+                            navController.debugPopBackStack()
+                        }
+                    },
                     onB = { navController.debugPopBackStack() }
                 ) {
                     TimelineViewerScreen(
-                        onBack = { navController.debugPopBackStack() }
+                        onBack = { navController.debugPopBackStack() },
+                        exportMatchId = archiveSourceState.value?.matchId?.value,
+                        exportSelected = archiveExportSelected.value &&
+                                archiveSourceState.value != null,
+                        onExportMatch = requestArchiveExport
                     )
                 }
             }
