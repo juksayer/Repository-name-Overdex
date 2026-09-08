@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.graphics.Bitmap
 import com.example.overdex.battle.custody.*
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
+import com.example.overdex.battle.witness.SpeciesWitness
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
@@ -27,7 +28,7 @@ class SpeciesWitnessTest {
     )
 
     @Test
-    fun `successful recognition results in custody submission`() = runBlocking {
+    fun `successful opponent species recognition results in custody submission`() = runBlocking {
         // Arrange
         val custody = FakeCustody()
         val match = Match(
@@ -41,19 +42,19 @@ class SpeciesWitnessTest {
             enemyNameRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f)
         )
         
+        val mockResult = RecognitionResult("Pikachu", null, "SpeciesNameRecognizer")
         val witness = SpeciesWitness(
             input = input,
             calibration = calibration,
             observerId = testObserverId,
-            recognize = { RecognitionResult("Pikachu", 1.0f, "Mock") },
-            crop = { _, _ -> null } 
+            recognize = { _, _ -> listOf(mockResult) },
+            crop = { _, _ -> null }
         )
 
         // Act
         witness.start(match)
         delay(50)
         
-        // Use the same trick as AttackIncomingCollectorTest to trigger a frame with null bitmap in JVM
         input.triggerSilentFrame {
             // Assert inside the callback scope to ensure it ran
         }
@@ -73,7 +74,7 @@ class SpeciesWitnessTest {
         assertEquals("Testimony record missing", 1, testimony.size)
         assertEquals(SourceId("TEST_SPECIES"), testimony[0].sourceId)
         assertEquals(RawTestimony("Pikachu"), testimony[0].payload)
-        assertEquals(1.0f, testimony[0].confidence)
+        assertEquals(null, testimony[0].confidence)
     }
 
     // --- Fakes ---
