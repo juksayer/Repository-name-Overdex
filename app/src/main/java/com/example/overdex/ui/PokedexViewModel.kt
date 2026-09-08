@@ -18,13 +18,14 @@ import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
-import com.example.overdex.battle.observation.PlayerSpeciesWitness
+
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.witness.AnnouncementWitness
 import com.example.overdex.battle.witness.AttackIncomingWitness
 import com.example.overdex.battle.witness.GoodEffortWitness
+import com.example.overdex.battle.witness.PlayerSpeciesWitness
 import com.example.overdex.battle.witness.SpeciesWitness
 import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.data.FallbackSpriteProvider

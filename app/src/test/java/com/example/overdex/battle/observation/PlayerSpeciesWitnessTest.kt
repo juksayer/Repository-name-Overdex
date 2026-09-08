@@ -41,11 +41,12 @@ class PlayerSpeciesWitnessTest {
             playerTeamInfoRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f)
         )
         
+        val mockResult = RecognitionResult("Charizard", null, "SpeciesNameRecognizer")
         val witness = PlayerSpeciesWitness(
             input = input,
             calibration = calibration,
             observerId = testObserverId,
-            recognize = { RecognitionResult("Charizard", 1.0f, "Mock") },
+            recognize = { _, _ -> listOf(mockResult) },
             crop = { _, _ -> null } 
         )
 
@@ -71,7 +72,7 @@ class PlayerSpeciesWitnessTest {
         assertEquals("Testimony record missing", 1, testimony.size)
         assertEquals(SourceId("TEST_PLAYER_SPECIES"), testimony[0].sourceId)
         assertEquals(RawTestimony("Charizard"), testimony[0].payload)
-        assertEquals(1.0f, testimony[0].confidence)
+        assertEquals(null, testimony[0].confidence)
     }
 
     // --- Fakes (Replicated from SpeciesWitnessTest for isolation) ---

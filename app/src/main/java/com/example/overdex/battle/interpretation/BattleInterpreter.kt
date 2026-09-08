@@ -54,14 +54,14 @@ class BattleInterpreter(
             }
 
             sourceId == "PLAYER_SPECIES_WITNESS" && payload.data is String -> {
-                val pokemon = pokemonKnowledge.getPokemonByName(payload.data)
+                val pokemon = pokemonKnowledge.getPokemonByName(payload.data) ?: return@interpret null
 
                 BattleEvent(
                     timestamp = article.perceivedAt,
                     type = BattleEventType.POKEMON_IDENTIFIED,
                     actor = BattleActor.PLAYER,
-                    message = pokemon?.name ?: payload.data,
-                    pokemonId = pokemon?.id,
+                    message = pokemon.name,
+                    pokemonId = pokemon.id,
                     confidence = Confidence(ConfidenceLevel.OBSERVED),
                     sourceArticleId = article.id
                 )

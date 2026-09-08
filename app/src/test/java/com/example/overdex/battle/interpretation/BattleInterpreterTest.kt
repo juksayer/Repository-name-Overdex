@@ -98,6 +98,23 @@ class BattleInterpreterTest {
     }
 
     @Test
+    fun `ignores unrecognized player species text for player species witness testimony`() {
+        val article = RealityArticle(
+            id = ArticleId("UNKNOWN_PLAYER_SPECIES"),
+            perceivedAt = 500L,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("PLAYER_SPECIES_WITNESS"),
+            payload = RawTestimony("NotAPokemon")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertNull("Unrecognized player species text must not derive a BattleEvent", event)
+    }
+
+    @Test
     fun `returns null for unrelated source`() {
         val article = RealityArticle(
             id = ArticleId("A2"),

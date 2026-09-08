@@ -1,12 +1,15 @@
-package com.example.overdex.battle.observation
+package com.example.overdex.battle.witness
 
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.observation.Match
+import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
-import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.ObservationRecognizer
+import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +20,7 @@ import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
- * Match-scoped Witness responsible for producing testimony regarding
+ * Match-scoped Witness responsible for producing raw testimony regarding
  * the player's active species phenomenon.
  */
 class PlayerSpeciesWitness(
@@ -26,23 +29,29 @@ class PlayerSpeciesWitness(
     override val observerId: ObserverId =
         ObserverId("PLAYER_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE),
     override val name: String = "Player Species Witness",
-    private val recognize: suspend (Bitmap) -> RecognitionResult<String> = SpeciesNameRecognizer::recognize,
-    private val crop: (Bitmap, com.example.overdex.model.AnchorRegion) -> Bitmap? = { bitmap, region ->
-        val width = bitmap.width
-        val height = bitmap.height
+    private val recognize: suspend (Bitmap?, String) -> List<RecognitionResult<*>> = { cropped, regionId ->
+        if (cropped == null) emptyList()
+        else ObservationRecognizer.recognize(CaptureObservation(regionId, cropped), stage = "SPECIES")
+    },
+    private val crop: (Bitmap?, com.example.overdex.model.AnchorRegion) -> Bitmap? = { bitmap, region ->
+        if (bitmap == null) null
+        else {
+            val width = bitmap.width
+            val height = bitmap.height
 
-        val left = (region.x * width).toInt().coerceIn(0, width - 1)
-        val top = (region.y * height).toInt().coerceIn(0, height - 1)
-        val w = (region.width * width).toInt().coerceAtMost(width - left)
-        val h = (region.height * height).toInt().coerceAtMost(height - top)
+            val left = (region.x * width).toInt().coerceIn(0, width - 1)
+            val top = (region.y * height).toInt().coerceIn(0, height - 1)
+            val w = (region.width * width).toInt().coerceAtMost(width - left)
+            val h = (region.height * height).toInt().coerceAtMost(height - top)
 
-        if (w < 32 || h < 32) {
-            null
-        } else {
-            try {
-                Bitmap.createBitmap(bitmap, left, top, w, h)
-            } catch (e: Exception) {
+            if (w < 32 || h < 32) {
                 null
+            } else {
+                try {
+                    Bitmap.createBitmap(bitmap, left, top, w, h)
+                } catch (e: Exception) {
+                    null
+                }
             }
         }
     }
@@ -63,37 +72,35 @@ class PlayerSpeciesWitness(
         newScope.launch {
             Log.d("PlayerSpeciesWitness", "waiting for frames")
             input.supply { bitmap ->
-                @Suppress("SENSELESS_COMPARISON")
-                if (bitmap == null) {
-                    Log.e("PlayerSpeciesWitness", "Received null bitmap")
-                    return@supply
-                }
-                
-                Log.d("PlayerSpeciesWitness", "bitmap received")
-                match.incrementFrameCount()
+                Log.d("PlayerSpeciesWitness", "player bitmap received")
                 
                 val timestamp = System.currentTimeMillis()
                 match.custody.submitInputAvailability(sourceId, true, timestamp)
 
                 if (calibration.isCalibrated()) {
                     val cropped = crop(bitmap, calibration.playerTeamInfoRegion)
-                    if (cropped != null) {
-                        val result = recognize(cropped)
-                        val value = result.value
+                    val recognitionResults = if (cropped != null) {
+                        recognize(cropped, "SpeciesName")
+                    } else if (bitmap == null) {
+                        recognize(null, "SpeciesName")
+                    } else {
+                        emptyList()
+                    }
 
-                        if (result.confidence != null && result.confidence >= 1.0f && value != null) {
-                            Log.d("PlayerSpeciesWitness", "Player Species recognized: $value")
+                    val result = recognitionResults
+                        .firstOrNull { it.recognizer == "SpeciesNameRecognizer" && it.value is String }
 
-                            // Reality Handoff (Neutral Testimony)
-                            match.custody.submitTestimony(
-                                sourceId = sourceId,
-                                payload = RawTestimony(value),
-                                timestamp = timestamp,
-                                confidence = result.confidence
-                            )
-                        } else if (value != null) {
-                            Log.d("PlayerSpeciesWitness", "Normalized OCR string: $value")
-                        }
+                    if (result != null) {
+                        val playerSpeciesText = result.value as String
+                        Log.d("PlayerSpeciesWitness", "Player Species OCR text submitted: \"$playerSpeciesText\" confidence=${result.confidence}")
+
+                        // Reality Handoff (Neutral Testimony)
+                        match.custody.submitTestimony(
+                            sourceId = sourceId,
+                            payload = RawTestimony(playerSpeciesText),
+                            timestamp = timestamp,
+                            confidence = result.confidence
+                        )
                     }
                 }
             }
