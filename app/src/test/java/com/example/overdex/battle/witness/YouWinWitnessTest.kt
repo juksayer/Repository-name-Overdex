@@ -47,7 +47,7 @@ class YouWinWitnessTest {
         )
         
         // Mock recognition result for "YOU WIN"
-        val mockResult = RecognitionResult("YOU WIN!", 1.0f, "MockRecognizer")
+        val mockResult = RecognitionResult("YOU WIN!", null, "YouWinRecognizer")
         
         val witness = YouWinWitness(
             input = input,
@@ -78,7 +78,7 @@ class YouWinWitnessTest {
         assertEquals("Should submit exactly one testimony", 1, testimony.size)
         assertEquals(SourceId("TEST_YOU_WIN"), testimony[0].sourceId)
         assertEquals(RawTestimony("YOU WIN!"), testimony[0].payload)
-        assertEquals(1.0f, testimony[0].confidence)
+        assertEquals(null, testimony[0].confidence)
         
         match.release()
     }

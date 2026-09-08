@@ -86,4 +86,43 @@ class MatchInterpretationTest {
 
         match.release()
     }
+
+    @Test
+    fun `you win witness testimony with you wvin variant creates derived reality article`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "TEST_MATCH",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+
+        custody.submitTestimony(
+            sourceId = SourceId("YOU_WIN_WITNESS"),
+            payload = RawTestimony("YOU WVIN!"),
+            timestamp = 1500L,
+            confidence = null
+        )
+
+        delay(150)
+
+        val articles = timeline.getArticles()
+        assertEquals(2, articles.size)
+
+        // First article: original witness article
+        val witnessArticle = articles[0]
+        assertEquals(SourceId("YOU_WIN_WITNESS"), witnessArticle.sourceId)
+        assertEquals("YOU WVIN!", (witnessArticle.payload as RawTestimony).data)
+        assertEquals(null, witnessArticle.confidence)
+        assertEquals(emptyList<com.example.overdex.battle.reality.ArticleId>(), witnessArticle.predecessorIds)
+
+        // Second article: derived interpreter article
+        val derivedArticle = articles[1]
+        assertEquals(SourceId("BATTLE_INTERPRETER"), derivedArticle.sourceId)
+        assertEquals(listOf(witnessArticle.id), derivedArticle.predecessorIds)
+        assertEquals("WIN", (derivedArticle.payload as RawTestimony).data)
+
+        match.release()
+    }
 }

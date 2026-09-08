@@ -165,22 +165,41 @@ class BattleInterpreterTest {
     fun `interprets you win witness testimony as battle ended win event`() {
         val perceivedAt = 999L
         val articleId = ArticleId("WIN_ARTICLE")
+        for (phrase in listOf("YOU WIN!", "YOU WIN", "YOU WVIN!", "YOU WVIN")) {
+            val article = RealityArticle(
+                id = articleId,
+                perceivedAt = perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("YOU_WIN_WITNESS"),
+                payload = RawTestimony(phrase)
+            )
+
+            val event = runBlocking {
+                interpreter.interpret(article)
+            }
+
+            assertEquals(BattleEventType.BATTLE_ENDED, event?.type)
+            assertEquals(BattleResult.WIN, event?.result)
+            assertEquals(perceivedAt, event?.timestamp)
+            assertEquals(articleId, event?.sourceArticleId)
+        }
+    }
+
+    @Test
+    fun `ignores arbitrary non matching text for you win witness testimony`() {
         val article = RealityArticle(
-            id = articleId,
-            perceivedAt = perceivedAt,
+            id = ArticleId("WIN_ARTICLE"),
+            perceivedAt = 999L,
             recordedAt = System.currentTimeMillis(),
             sourceId = SourceId("YOU_WIN_WITNESS"),
-            payload = RawTestimony("YOU WIN!")
+            payload = RawTestimony("YOU WIN SOMETHING")
         )
 
         val event = runBlocking {
             interpreter.interpret(article)
         }
 
-        assertEquals(BattleEventType.BATTLE_ENDED, event?.type)
-        assertEquals(BattleResult.WIN, event?.result)
-        assertEquals(perceivedAt, event?.timestamp)
-        assertEquals(articleId, event?.sourceArticleId)
+        assertNull(event)
     }
 
     @Test

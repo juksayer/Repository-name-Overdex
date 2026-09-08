@@ -69,7 +69,7 @@ class BattleInterpreter(
 
             sourceId == "YOU_WIN_WITNESS" -> {
                 val payloadText = (payload.data as? String)?.trim()?.uppercase() ?: ""
-                if (payloadText.contains("YOU WIN")) {
+                if (payloadText in setOf("YOU WIN!", "YOU WIN", "YOU WVIN!", "YOU WVIN")) {
                     BattleEvent(
                         timestamp = article.perceivedAt,
                         type = BattleEventType.BATTLE_ENDED,

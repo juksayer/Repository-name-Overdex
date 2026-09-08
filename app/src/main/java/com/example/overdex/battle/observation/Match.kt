@@ -3,6 +3,8 @@ package com.example.overdex.battle.observation
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.PokemonIdentified
+import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyCustody
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
@@ -10,6 +12,8 @@ import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
 import com.example.overdex.data.PokemonKnowledge
+import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.BattleResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -91,6 +95,19 @@ class Match(
 
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
+                    if (event.type == BattleEventType.BATTLE_ENDED && event.result == BattleResult.WIN) {
+                        val derivedArticle = RealityArticle(
+                            id = ArticleId(UUID.randomUUID().toString()),
+                            perceivedAt = article.perceivedAt,
+                            recordedAt = System.currentTimeMillis(),
+                            sourceId = SourceId("BATTLE_INTERPRETER"),
+                            payload = RawTestimony("WIN"),
+                            predecessorIds = listOf(article.id),
+                            matchId = MatchId(matchId)
+                        )
+                        realityTimeline.append(derivedArticle)
+                        battleMemory.timeline.record(derivedArticle)
+                    }
                 }
             }
         }
