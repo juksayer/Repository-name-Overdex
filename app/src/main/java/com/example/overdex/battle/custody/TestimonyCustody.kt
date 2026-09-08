@@ -44,7 +44,7 @@ interface TestimonyCustody {
         sourceId: SourceId,
         payload: TestimonyPayload,
         timestamp: Long,
-        confidence: Float,
+        confidence: Float? = null,
         evidenceReferences: List<String> = emptyList()
     ): TestimonyRecord
 
@@ -98,7 +98,7 @@ class InMemoryTestimonyCustody : TestimonyCustody {
         sourceId: SourceId,
         payload: TestimonyPayload,
         timestamp: Long,
-        confidence: Float,
+        confidence: Float?,
         evidenceReferences: List<String>
     ): TestimonyRecord {
         val record = TestimonyRecord(

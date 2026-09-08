@@ -10,7 +10,7 @@ package com.example.overdex.battle.custody
  * @property timestamp The temporal position (e.g., system time) provided by the source.
  * @property sourceId The unique identifier of the testimony source.
  * @property payload The neutral testimony data.
- * @property confidence The source's certainty score (0.0 to 1.0).
+ * @property confidence The source's certainty score (0.0 to 1.0), or null if unknown/unavailable.
  * @property evidenceReferences References to the raw evidence supporting this testimony.
  */
 data class TestimonyRecord(
@@ -18,6 +18,6 @@ data class TestimonyRecord(
     override val timestamp: Long,
     override val sourceId: SourceId,
     val payload: TestimonyPayload,
-    val confidence: Float,
+    val confidence: Float?,
     val evidenceReferences: List<String> = emptyList()
 ) : CustodyRecord

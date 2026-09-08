@@ -182,7 +182,12 @@ private fun RecognitionAttemptDetails(payload: RecognitionAttemptPayload) {
     
     if (payload.success) {
         TerminalText(text = "VALUE: ${payload.resultValue}", color = Color.White)
-        TerminalText(text = "CONFIDENCE: ${String.format(Locale.ROOT, "%.2f", payload.confidence)}", color = statusColor)
+        val confidenceText = if (payload.confidence != null) {
+            String.format(Locale.ROOT, "%.2f", payload.confidence)
+        } else {
+            "Unknown"
+        }
+        TerminalText(text = "CONFIDENCE: $confidenceText", color = statusColor)
     }
 }
 

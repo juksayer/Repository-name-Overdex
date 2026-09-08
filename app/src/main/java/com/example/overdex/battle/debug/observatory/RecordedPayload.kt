@@ -59,7 +59,7 @@ data class RecognitionAttemptPayload(
     val recognizerName: String,
     val success: Boolean,
     val resultValue: String? = null,
-    val confidence: Float = 0f,
+    val confidence: Float? = null,
     val observationStage: String
 ) : RecordedPayload
 

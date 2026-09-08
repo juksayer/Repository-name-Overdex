@@ -125,7 +125,7 @@ class GoodEffortWitnessTest {
             return r
         }
 
-        override fun submitTestimony(sourceId: SourceId, payload: TestimonyPayload, timestamp: Long, confidence: Float, evidenceReferences: List<String>): TestimonyRecord {
+        override fun submitTestimony(sourceId: SourceId, payload: TestimonyPayload, timestamp: Long, confidence: Float?, evidenceReferences: List<String>): TestimonyRecord {
             val r = TestimonyRecord(sequence.getAndIncrement(), timestamp, sourceId, payload, confidence, evidenceReferences)
             records.add(r)
             _testimonyFlow.tryEmit(r)

@@ -78,7 +78,7 @@ class AnnouncementWitness(
                     // Support for JVM unit tests where Bitmap class exists but methods are stubs
                     val timestamp = System.currentTimeMillis()
                     val result = recognize(null, vocabulary)
-                    if (result.confidence > 0f && result.value != null) {
+                    if (result.confidence != null && result.confidence > 0f && result.value != null) {
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = RawTestimony(result.value),
@@ -101,7 +101,7 @@ class AnnouncementWitness(
                     null
                 }
 
-                if (result != null && result.confidence > 0f && result.value != null) {
+                if (result != null && result.confidence != null && result.confidence > 0f && result.value != null) {
                     Log.d("AnnouncementWitness", "Announcement recognized: ${result.value} (conf=${result.confidence})")
 
                     // Reality Handoff (Neutral Testimony)

@@ -81,7 +81,7 @@ class SpeciesWitness(
                         val result = recognize(cropped)
                         val value = result.value
 
-                        if (result.confidence >= 1.0f && value != null) {
+                        if (result.confidence != null && result.confidence >= 1.0f && value != null) {
                             Log.d("SpeciesWitness", "Species recognized: $value")
 
                             // 1. Reality Handoff (Neutral Testimony)

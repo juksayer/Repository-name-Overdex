@@ -56,7 +56,7 @@ class GoodEffortWitness(
     private var scope: CoroutineScope? = null
 
     private fun isMatch(result: RecognitionResult<*>): Boolean {
-        if (result.confidence < 1.0f) return false
+        if (result.confidence == null || result.confidence < 1.0f) return false
 
         return (result.value as? String)
             ?.trim()

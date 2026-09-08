@@ -23,7 +23,8 @@ class BattleObservationPipeline(
      */
     fun onObservationReceived(observation: Observation) {
         // Validation could occur here (e.g. ignoring low confidence observations)
-        if (observation.confidence.score < 0.3f) return
+        val score = observation.confidence.score
+        if (score == null || score < 0.3f) return
         
         // Forward to updater
         BattleMemoryUpdater.processObservation(observation, memory)

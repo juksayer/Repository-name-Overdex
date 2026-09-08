@@ -1,6 +1,5 @@
 package com.example.overdex.data.observation
 
-
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
@@ -20,24 +19,24 @@ object YouWinRecognizer {
         return try {
             val result = recognizer.process(image).await()
 
-            val text = result.text
-                .trim()
-                .uppercase()
+            val rawText = result.text
+            val rawTextEscaped = rawText.replace("\n", "\\n")
+            val match = rawText.trim().uppercase().contains("YOU WIN")
 
-            val match = text.contains("YOU WIN")
+            Log.d("YOU_WIN_PROBE", "Bitmap: ${bitmap.width}x${bitmap.height} | OCR Text: \"$rawTextEscaped\" | Match: $match")
 
             RecognitionResult(
-                value = if (match) "YOU WIN!" else null,
-                confidence = if (match) 1.0f else 0.0f,
+                value = rawText,
+                confidence = null,
                 recognizer = "YouWinRecognizer"
             )
         } catch (e: Exception) {
             Log.e("YOU_WIN_RECOGNIZER", "Recognition failed", e)
 
             RecognitionResult(
-                null,
-                0.0f,
-                "YouWinRecognizer"
+                value = null,
+                confidence = null,
+                recognizer = "YouWinRecognizer"
             )
         }
     }

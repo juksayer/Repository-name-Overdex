@@ -63,7 +63,7 @@ class CountdownObserver(
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
 
                         val value = recognitionResult.value
-                        if (recognitionResult.confidence >= 1.0f && value != null) {
+                        if (recognitionResult.confidence != null && recognitionResult.confidence >= 1.0f && value != null) {
                             val witness = CountdownWitness(value, timestamp)
                             Log.d("CountdownObserver", "CountdownWitness(value=$value)")
 

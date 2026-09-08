@@ -46,17 +46,19 @@ class SpeciesObserver(
                         val recognitionResult = SpeciesNameRecognizer.recognize(cropped)
                         
                         // We only submit if we have a confident recognition
-                        if (recognitionResult.confidence >= 0.8f) {
-                            val observation = RecognitionObservationMapper.map(
-                                regionId = "SpeciesName",
-                                result = recognitionResult,
-                                source = ObservationSource.OCR
-                            )
-                            
-                        if (observation != null) {
-                            // TODO: Fix domain mismatch between model.observation and battle.observation
-                            android.util.Log.d("SpeciesObserver", "Observed: $observation")
-                        }
+                        recognitionResult.confidence?.let {
+                            if (it >= 0.8f) {
+                                val observation = RecognitionObservationMapper.map(
+                                    regionId = "SpeciesName",
+                                    result = recognitionResult,
+                                    source = ObservationSource.OCR
+                                )
+
+                                if (observation != null) {
+                                    // TODO: Fix domain mismatch between model.observation and battle.observation
+                                    android.util.Log.d("SpeciesObserver", "Observed: $observation")
+                                }
+                            }
                         }
                     }
                 }

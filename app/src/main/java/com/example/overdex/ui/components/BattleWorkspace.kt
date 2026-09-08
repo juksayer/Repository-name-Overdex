@@ -62,7 +62,8 @@ private fun WorkspaceObservationRow(obs: Observation) {
     Column(modifier = Modifier.padding(start = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TerminalText(text = obs.observerId, color = TerminalDimGreen, fontSize = 9.sp)
-            TerminalText(text = "CONF: ${(obs.confidence.score * 100).toInt()}%", color = TerminalDimGreen, fontSize = 9.sp)
+            val confText = obs.confidence.score?.let { "${(it * 100).toInt()}%" } ?: "Unknown"
+            TerminalText(text = "CONF: $confText", color = TerminalDimGreen, fontSize = 9.sp)
         }
         TerminalText(
             text = displayValue,

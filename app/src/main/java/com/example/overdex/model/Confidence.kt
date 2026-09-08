@@ -14,9 +14,9 @@ enum class ConfidenceLevel {
  * Represents the system's certainty regarding a specific piece of data.
  * 
  * @property level The semantic classification of the confidence.
- * @property score The numerical certainty from 0.0 (none) to 1.0 (absolute).
+ * @property score The numerical certainty from 0.0 (none) to 1.0 (absolute), or null if unknown.
  */
 data class Confidence(
     val level: ConfidenceLevel,
-    val score: Float = if (level == ConfidenceLevel.OBSERVED) 1.0f else 0.5f
+    val score: Float? = null
 )
