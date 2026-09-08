@@ -206,6 +206,23 @@ class BattleInterpreterTest {
     }
 
     @Test
+    fun `ignores non matching good effort witness testimony`() {
+        val article = RealityArticle(
+            id = ArticleId("LOSS_ARTICLE"),
+            perceivedAt = 888L,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("GOOD_EFFORT_WITNESS"),
+            payload = RawTestimony("Some other text")
+        )
+
+        val event = runBlocking {
+            interpreter.interpret(article)
+        }
+
+        assertEquals(null, event)
+    }
+
+    @Test
     fun `BattleEvent result defaults to null for non-outcome events`() {
         val article = RealityArticle(
             id = ArticleId("P1"),

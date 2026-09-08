@@ -82,12 +82,17 @@ class BattleInterpreter(
             }
 
             sourceId == "GOOD_EFFORT_WITNESS" -> {
-                BattleEvent(
-                    timestamp = article.perceivedAt,
-                    type = BattleEventType.BATTLE_ENDED,
-                    result = BattleResult.LOSS,
-                    sourceArticleId = article.id
-                )
+                val payloadText = (payload.data as? String)?.trim()?.uppercase() ?: ""
+                if (payloadText.contains("GOOD EFFORT")) {
+                    BattleEvent(
+                        timestamp = article.perceivedAt,
+                        type = BattleEventType.BATTLE_ENDED,
+                        result = BattleResult.LOSS,
+                        sourceArticleId = article.id
+                    )
+                } else {
+                    null
+                }
             }
 
             else -> null

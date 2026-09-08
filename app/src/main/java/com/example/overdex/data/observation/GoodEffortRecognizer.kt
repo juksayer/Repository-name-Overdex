@@ -18,27 +18,22 @@ object GoodEffortRecognizer {
 
         return try {
             val result = recognizer.process(image).await()
-            Log.d("GOOD_EFFORT_RECOGNIZER", "OCR text: ${result.text}")
-
-            val text = result.text
-                .trim()
-                .uppercase()
-                .replace(Regex("\\s+"), " ")
-
-            val match = text.contains("GOOD EFFORT")
+            val rawText = result.text
+            val rawTextEscaped = rawText.replace("\n", "\\n")
+            Log.d("GOOD_EFFORT_RECOGNIZER", "Bitmap: ${bitmap.width}x${bitmap.height} | OCR Text: \"$rawTextEscaped\"")
 
             RecognitionResult(
-                value = if (match) "GOOD EFFORT!" else null,
-                confidence = if (match) 1.0f else 0.0f,
+                value = rawText,
+                confidence = null,
                 recognizer = "GoodEffortRecognizer"
             )
         } catch (e: Exception) {
             Log.e("GOOD_EFFORT_RECOGNIZER", "Recognition failed", e)
 
             RecognitionResult(
-                null,
-                0.0f,
-                "GoodEffortRecognizer"
+                value = null,
+                confidence = null,
+                recognizer = "GoodEffortRecognizer"
             )
         }
     }

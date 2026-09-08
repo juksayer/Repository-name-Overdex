@@ -47,7 +47,7 @@ class GoodEffortWitnessTest {
         )
         
         // Mock recognition result for "GOOD EFFORT"
-        val mockResult = RecognitionResult("GOOD EFFORT!", 1.0f, "MockRecognizer")
+        val mockResult = RecognitionResult("GOOD EFFORT!", null, "GoodEffortRecognizer")
         
         val witness = GoodEffortWitness(
             input = input,
@@ -78,7 +78,7 @@ class GoodEffortWitnessTest {
         assertEquals("Should submit exactly one testimony", 1, testimony.size)
         assertEquals(SourceId("TEST_GOOD_EFFORT"), testimony[0].sourceId)
         assertEquals(RawTestimony("GOOD EFFORT!"), testimony[0].payload)
-        assertEquals(1.0f, testimony[0].confidence)
+        assertEquals(null, testimony[0].confidence)
         
         match.release()
     }

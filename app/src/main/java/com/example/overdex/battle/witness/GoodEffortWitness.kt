@@ -55,16 +55,6 @@ class GoodEffortWitness(
 
     private var scope: CoroutineScope? = null
 
-    private fun isMatch(result: RecognitionResult<*>): Boolean {
-        if (result.confidence == null || result.confidence < 1.0f) return false
-
-        return (result.value as? String)
-            ?.trim()
-            ?.uppercase()
-            ?.replace(Regex("[^A-Z! ]"), "")
-            ?.contains("GOOD EFFORT") == true
-    }
-
     override fun start(match: Match) {
         if (scope != null) return
 
@@ -95,12 +85,12 @@ class GoodEffortWitness(
                 }
 
                 val result = recognitionResults
-                    .firstOrNull { it.value is String }
+                    .firstOrNull { it.recognizer == "GoodEffortRecognizer" && it.value is String }
 
-                if (result != null && isMatch(result)) {
+                if (result != null) {
                     Log.d(
                         "GoodEffortWitness",
-                        "GOOD EFFORT recognized: ${result.value} confidence=${result.confidence}"
+                        "GoodEffort OCR text submitted: \"${result.value}\" confidence=${result.confidence}"
                     )
 
                     // Reality Handoff (Neutral Testimony)
