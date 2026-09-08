@@ -4,6 +4,7 @@ import com.example.overdex.battle.debug.observatory.EvidenceSourceType
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.RecognitionAttemptPayload
 import com.example.overdex.battle.debug.observatory.VisionCapturePayload
+import com.example.overdex.battle.observation.AnnouncementRecognizer
 import com.example.overdex.model.observation.CaptureObservation
 import com.example.overdex.model.observation.RecognitionResult
 
@@ -64,6 +65,13 @@ object ObservationRecognizer {
                     YouWinRecognizer.recognize(observation.crop)
                 )?.let { results.add(it) }
             }
+            "Announcement" -> {
+                recordAttempt(
+                    observation.regionId,
+                    stage,
+                    AnnouncementRecognizer.recognize(observation.crop)
+                )?.let { results.add(it) }
+            }
             "SpeciesName" -> {
                 recordAttempt(observation.regionId, stage, SpeciesNameRecognizer.recognize(observation.crop))?.let { results.add(it) }
             }
@@ -83,11 +91,11 @@ object ObservationRecognizer {
             }
         }
         
-        return results.filter { it.recognizer == "YouWinRecognizer" || it.recognizer == "GoodEffortRecognizer" || (it.confidence != null && it.confidence > 0) }
+        return results.filter { it.recognizer == "YouWinRecognizer" || it.recognizer == "GoodEffortRecognizer" || it.recognizer == "AnnouncementRecognizer" || (it.confidence != null && it.confidence > 0) }
     }
 
     private fun recordAttempt(regionId: String, stage: String, result: RecognitionResult<*>): RecognitionResult<*>? {
-        val success = ((regionId == "YouWin" || regionId == "GoodEffort") && result.value != null) || (result.confidence != null && result.confidence > 0)
+        val success = ((regionId == "YouWin" || regionId == "GoodEffort" || regionId == "Announcement") && result.value != null) || (result.confidence != null && result.confidence > 0)
         
         ObservationRecorder.record(
             EvidenceSourceType.VISION,
