@@ -905,9 +905,10 @@ fun PokedexApp(
                         archiveSaveInProgress.value = true
 
                         try {
-                            archiveSaveLauncher.launch(
-                                "match_${source.matchId.value}.odxmatch"
-                            )
+                            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", java.util.Locale.ROOT)
+                            val fileName = "${dateFormat.format(java.util.Date())}.odxmatch.zip"
+
+                            archiveSaveLauncher.launch(fileName)
                         } catch (error: Exception) {
                             pendingArchiveSource.value = null
                             archiveSaveInProgress.value = false

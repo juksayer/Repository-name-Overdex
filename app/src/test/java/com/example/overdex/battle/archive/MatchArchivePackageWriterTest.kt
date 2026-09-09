@@ -71,4 +71,22 @@ class MatchArchivePackageWriterTest {
             file.delete()
         }
     }
+
+    @Test
+    fun `generateExportFilename formats with timestamp and appends numeric suffix on collision`() {
+        val tempDir = Files.createTempDirectory("export-test-").toFile()
+        try {
+            val date = java.util.Date(1725833651000L) // Fixed timestamp for test
+            val name1 = MatchArchiveExporter.generateExportFilename(tempDir, date)
+            org.junit.Assert.assertTrue(name1.endsWith(".odxmatch.zip"))
+
+            // Create file with name1 to simulate collision
+            java.io.File(tempDir, name1).createNewFile()
+
+            val name2 = MatchArchiveExporter.generateExportFilename(tempDir, date)
+            assertEquals("${name1.removeSuffix(".odxmatch.zip")}_1.odxmatch.zip", name2)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
 }
