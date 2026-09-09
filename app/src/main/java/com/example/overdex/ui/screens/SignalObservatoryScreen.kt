@@ -91,51 +91,68 @@ fun SignalObservatoryScreen(
         requesters = bringIntoViewRequesters
     )
 
-    SideEffect {
+    val currentFilterSettings by rememberUpdatedState(filterSettings)
+    val currentOnFilterSettingsChange by rememberUpdatedState(onFilterSettingsChange)
+    val currentOnLaunchProbe by rememberUpdatedState(onLaunchProbe)
+    val currentOnLaunchObservatory by rememberUpdatedState(onLaunchObservatory)
+    val currentOnLaunchMatchSight by rememberUpdatedState(onLaunchMatchSight)
+    val currentOnLaunchMatchCalibration by rememberUpdatedState(onLaunchMatchCalibration)
+    val currentOnBack by rememberUpdatedState(onBack)
+
+    DisposableEffect(Unit) {
         onUp { focusManager.moveUp() }
         onDown { focusManager.moveDown() }
         onLeft {
             when (focusManager.currentItem) {
-                SignalObservatoryFocus.SCANLINES -> onFilterSettingsChange(
-                    filterSettings.copy(scanlineIntensity = (filterSettings.scanlineIntensity - 0.05f).coerceIn(0f, 1f))
+                SignalObservatoryFocus.SCANLINES -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(scanlineIntensity = (currentFilterSettings.scanlineIntensity - 0.05f).coerceIn(0f, 1f))
                 )
-                SignalObservatoryFocus.CURVATURE -> onFilterSettingsChange(
-                    filterSettings.copy(crtCurvature = (filterSettings.crtCurvature - 0.05f).coerceIn(0f, 0.5f))
+                SignalObservatoryFocus.CURVATURE -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(crtCurvature = (currentFilterSettings.crtCurvature - 0.05f).coerceIn(0f, 0.5f))
                 )
-                SignalObservatoryFocus.NOISE -> onFilterSettingsChange(
-                    filterSettings.copy(noiseIntensity = (filterSettings.noiseIntensity - 0.05f).coerceIn(0f, 0.5f))
+                SignalObservatoryFocus.NOISE -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(noiseIntensity = (currentFilterSettings.noiseIntensity - 0.05f).coerceIn(0f, 0.5f))
                 )
                 else -> {}
             }
         }
         onRight {
             when (focusManager.currentItem) {
-                SignalObservatoryFocus.SCANLINES -> onFilterSettingsChange(
-                    filterSettings.copy(scanlineIntensity = (filterSettings.scanlineIntensity + 0.05f).coerceIn(0f, 1f))
+                SignalObservatoryFocus.SCANLINES -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(scanlineIntensity = (currentFilterSettings.scanlineIntensity + 0.05f).coerceIn(0f, 1f))
                 )
-                SignalObservatoryFocus.CURVATURE -> onFilterSettingsChange(
-                    filterSettings.copy(crtCurvature = (filterSettings.crtCurvature + 0.05f).coerceIn(0f, 0.5f))
+                SignalObservatoryFocus.CURVATURE -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(crtCurvature = (currentFilterSettings.crtCurvature + 0.05f).coerceIn(0f, 0.5f))
                 )
-                SignalObservatoryFocus.NOISE -> onFilterSettingsChange(
-                    filterSettings.copy(noiseIntensity = (filterSettings.noiseIntensity + 0.05f).coerceIn(0f, 0.5f))
+                SignalObservatoryFocus.NOISE -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(noiseIntensity = (currentFilterSettings.noiseIntensity + 0.05f).coerceIn(0f, 0.5f))
                 )
                 else -> {}
             }
         }
         onA {
             when (focusManager.currentItem) {
-                SignalObservatoryFocus.PROBE -> onLaunchProbe()
-                SignalObservatoryFocus.OBSERVATORY -> onLaunchObservatory()
-                SignalObservatoryFocus.MATCH_SIGHT -> onLaunchMatchSight()
-                SignalObservatoryFocus.MATCH_CALIBRATION -> onLaunchMatchCalibration()
-                SignalObservatoryFocus.FILTERS_ENABLED -> onFilterSettingsChange(
-                    filterSettings.copy(isEnabled = !filterSettings.isEnabled)
+                SignalObservatoryFocus.PROBE -> currentOnLaunchProbe()
+                SignalObservatoryFocus.OBSERVATORY -> currentOnLaunchObservatory()
+                SignalObservatoryFocus.MATCH_SIGHT -> currentOnLaunchMatchSight()
+                SignalObservatoryFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
+                SignalObservatoryFocus.FILTERS_ENABLED -> currentOnFilterSettingsChange(
+                    currentFilterSettings.copy(isEnabled = !currentFilterSettings.isEnabled)
                 )
-                SignalObservatoryFocus.CLOSE -> onBack()
+                SignalObservatoryFocus.CLOSE -> currentOnBack()
                 else -> {}
             }
         }
-        onB { onBack() }
+        onB { currentOnBack() }
+        
+        onDispose {
+            onUp {}
+            onDown {}
+            onLeft {}
+            onRight {}
+            onA {}
+            onB {}
+        }
     }
 
     Surface(
@@ -147,11 +164,11 @@ fun SignalObservatoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState())
         ) {
+            // Fixed Header & LAUNCH section outside scrolling content area
             Text("SIGNAL OBSERVATORY", fontWeight = FontWeight.Bold, color = TerminalPurple, fontSize = 22.sp)
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text("LAUNCH", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -160,21 +177,21 @@ fun SignalObservatoryScreen(
                 selected = focusManager.currentItem == SignalObservatoryFocus.PROBE,
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.PROBE]!!
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             LauncherBox(
                 label = "Timeline Viewer",
                 selected = focusManager.currentItem == SignalObservatoryFocus.OBSERVATORY,
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.OBSERVATORY]!!
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             LauncherBox(
                 label = "Match Sight",
                 selected = focusManager.currentItem == SignalObservatoryFocus.MATCH_SIGHT,
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.MATCH_SIGHT]!!
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             LauncherBox(
                 label = "Match Calibration",
@@ -182,68 +199,77 @@ fun SignalObservatoryScreen(
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.MATCH_CALIBRATION]!!
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("DISPLAY", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.FILTERS_ENABLED]!!)) {
-                SettingToggle(
-                    label = "FILTERS ENABLED",
-                    value = filterSettings.isEnabled,
-                    selected = focusManager.currentItem == SignalObservatoryFocus.FILTERS_ENABLED,
-                    onValueChange = { onFilterSettingsChange(filterSettings.copy(isEnabled = it)) }
-                )
-            }
-
-            Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.SCANLINES]!!)) {
-                SettingSlider(
-                    label = "SCANLINE INTENSITY",
-                    value = filterSettings.scanlineIntensity,
-                    min = 0f,
-                    max = 1f,
-                    selected = focusManager.currentItem == SignalObservatoryFocus.SCANLINES,
-                    onValueChange = { onFilterSettingsChange(filterSettings.copy(scanlineIntensity = it)) }
-                )
-            }
-
-            Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.CURVATURE]!!)) {
-                SettingSlider(
-                    label = "CRT CURVATURE",
-                    value = filterSettings.crtCurvature,
-                    min = 0f,
-                    max = 0.5f,
-                    selected = focusManager.currentItem == SignalObservatoryFocus.CURVATURE,
-                    onValueChange = { onFilterSettingsChange(filterSettings.copy(crtCurvature = it)) }
-                )
-            }
-
-            Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.NOISE]!!)) {
-                SettingSlider(
-                    label = "NOISE INTENSITY",
-                    value = filterSettings.noiseIntensity,
-                    min = 0f,
-                    max = 0.5f,
-                    selected = focusManager.currentItem == SignalObservatoryFocus.NOISE,
-                    onValueChange = { onFilterSettingsChange(filterSettings.copy(noiseIntensity = it)) }
-                )
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            val closeSelected = focusManager.currentItem == SignalObservatoryFocus.CLOSE
-            Box(
+            // Scrolling content area for DISPLAY and CLOSE
+            Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .background(if (closeSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
-                    .border(1.dp, if (closeSelected) TerminalGreen else Color.Transparent)
-                    .bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.CLOSE]!!)
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = if (closeSelected) "[ CLOSE ]" else "  CLOSE  ",
-                    color = if (closeSelected) TerminalGreen else TerminalDimGreen
-                )
+                Text("DISPLAY", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.FILTERS_ENABLED]!!)) {
+                    SettingToggle(
+                        label = "FILTERS",
+                        value = filterSettings.isEnabled,
+                        selected = focusManager.currentItem == SignalObservatoryFocus.FILTERS_ENABLED,
+                        onValueChange = { onFilterSettingsChange(filterSettings.copy(isEnabled = it)) }
+                    )
+                }
+
+                Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.SCANLINES]!!)) {
+                    SettingSlider(
+                        label = "SCANLINE INTENSITY",
+                        value = filterSettings.scanlineIntensity,
+                        min = 0f,
+                        max = 1f,
+                        selected = focusManager.currentItem == SignalObservatoryFocus.SCANLINES,
+                        onValueChange = { onFilterSettingsChange(filterSettings.copy(scanlineIntensity = it)) }
+                    )
+                }
+
+                Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.CURVATURE]!!)) {
+                    SettingSlider(
+                        label = "CRT CURVATURE",
+                        value = filterSettings.crtCurvature,
+                        min = 0f,
+                        max = 0.5f,
+                        selected = focusManager.currentItem == SignalObservatoryFocus.CURVATURE,
+                        onValueChange = { onFilterSettingsChange(filterSettings.copy(crtCurvature = it)) }
+                    )
+                }
+
+                Box(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.NOISE]!!)) {
+                    SettingSlider(
+                        label = "NOISE INTENSITY",
+                        value = filterSettings.noiseIntensity,
+                        min = 0f,
+                        max = 0.5f,
+                        selected = focusManager.currentItem == SignalObservatoryFocus.NOISE,
+                        onValueChange = { onFilterSettingsChange(filterSettings.copy(noiseIntensity = it)) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val closeSelected = focusManager.currentItem == SignalObservatoryFocus.CLOSE
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (closeSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+                        .border(1.dp, if (closeSelected) TerminalGreen else Color.Transparent)
+                        .bringIntoViewRequester(bringIntoViewRequesters[SignalObservatoryFocus.CLOSE]!!)
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (closeSelected) "[ CLOSE ]" else "  CLOSE  ",
+                        color = if (closeSelected) TerminalGreen else TerminalDimGreen
+                    )
+                }
             }
         }
     }
@@ -289,20 +315,33 @@ fun ResearcherModeOverlay(
         requesters = bringIntoViewRequesters
     )
 
-    SideEffect {
+    val currentOnLaunchProbe by rememberUpdatedState(onLaunchProbe)
+    val currentOnLaunchObservatory by rememberUpdatedState(onLaunchObservatory)
+    val currentOnLaunchMatchSight by rememberUpdatedState(onLaunchMatchSight)
+    val currentOnLaunchMatchCalibration by rememberUpdatedState(onLaunchMatchCalibration)
+    val currentOnClose by rememberUpdatedState(onClose)
+
+    DisposableEffect(Unit) {
         onUp { focusManager.moveUp() }
         onDown { focusManager.moveDown() }
         onA {
             when (focusManager.currentItem) {
-                ResearcherFocus.PROBE -> onLaunchProbe()
-                ResearcherFocus.OBSERVATORY -> onLaunchObservatory()
-                ResearcherFocus.MATCH_SIGHT -> onLaunchMatchSight()
-                ResearcherFocus.MATCH_CALIBRATION -> onLaunchMatchCalibration()
-                ResearcherFocus.CLOSE -> onClose()
+                ResearcherFocus.PROBE -> currentOnLaunchProbe()
+                ResearcherFocus.OBSERVATORY -> currentOnLaunchObservatory()
+                ResearcherFocus.MATCH_SIGHT -> currentOnLaunchMatchSight()
+                ResearcherFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
+                ResearcherFocus.CLOSE -> currentOnClose()
                 else -> {}
             }
         }
-        onB { onClose() }
+        onB { currentOnClose() }
+
+        onDispose {
+            onUp {}
+            onDown {}
+            onA {}
+            onB {}
+        }
     }
 
     Surface(

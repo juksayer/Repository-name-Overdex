@@ -40,6 +40,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.overdex.battle.archive.ArchiveDirectoryManager
 import com.example.overdex.data.ChatRepository
 import com.example.overdex.data.ChatTransportFactory
 import com.example.overdex.data.PartnerRepository
@@ -49,6 +50,9 @@ import com.example.overdex.data.SharedPreferencesTimelineRepository
 import com.example.overdex.data.SharedTimelineRepository
 import com.example.overdex.data.TrainerRepository
 import com.example.overdex.media.MediaManager
+import com.example.overdex.ui.screens.observatory.MatchArchiveDirectoryScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.example.overdex.model.ChatMessage
 import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.model.Pokemon
@@ -104,7 +108,69 @@ class MainActivity : ComponentActivity() {
     private lateinit var partnerRepository: PartnerRepository
     private lateinit var timelineRepository: SharedTimelineRepository
     private lateinit var chatRepository: ChatRepository
+    private lateinit var archiveDirectoryManager: ArchiveDirectoryManager
+    private var pendingFolderAction: String? = null
+    private var pendingExportSource: com.example.overdex.battle.archive.MatchArchiveSource? = null
+    val navigateToDirectoryRequested = mutableStateOf(false)
     private var selectedRegion = CalibrationRegion.NONE
+
+    private val archiveFolderPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                val docFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, uri)
+                if (docFile != null && docFile.exists() && docFile.canRead() && docFile.canWrite()) {
+                    archiveDirectoryManager.saveFolderUri(uri)
+                    val action = pendingFolderAction
+                    pendingFolderAction = null
+                    if (action == "open") {
+                        navigateToDirectoryRequested.value = true
+                    } else if (action == "export") {
+                        val source = pendingExportSource
+                        pendingExportSource = null
+                        if (source != null) {
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                try {
+                                    archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline)
+                                    withContext(Dispatchers.Main) {
+                                        android.widget.Toast.makeText(
+                                            this@MainActivity,
+                                            "Saved Match snapshot directly to Archive Directory",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MATCH_EXPORT", "Export failed", e)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        "Selected folder is not accessible or writable.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("FOLDER_PICKER", "Failed to persist folder permission", e)
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    "Folder selection failed: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        } else {
+            // Cancelled: keep existing configured archive folder! Do not clear saved archive URI.
+            pendingFolderAction = null
+            pendingExportSource = null
+        }
+    }
 
     // In-memory storage for the opened archive
     private var openedArchive = mutableStateOf<com.example.overdex.battle.archive.MatchArchive?>(null)
@@ -159,6 +225,7 @@ class MainActivity : ComponentActivity() {
         timelineRepository = SharedPreferencesTimelineRepository(this)
         partnerRepository = SharedPreferencesPartnerRepository(this)
         chatRepository = SharedPreferencesChatRepository(this)
+        archiveDirectoryManager = ArchiveDirectoryManager(this)
 
         lifecycleScope.launch {
             partnerRepository.partner.collect { partner ->
@@ -206,6 +273,13 @@ class MainActivity : ComponentActivity() {
                         chatMessages = chatMessages,
                         openedArchive = openedArchive,
                         archiveLoadInProgress = archiveLoadInProgress,
+                        archiveDirectoryManager = archiveDirectoryManager,
+                        navigateToDirectoryRequested = navigateToDirectoryRequested,
+                        onLaunchFolderPicker = { action, source ->
+                            pendingFolderAction = action
+                            pendingExportSource = source
+                            archiveFolderPickerLauncher.launch(null)
+                        },
                         onOpenArchive = {
                             if (!archiveLoadInProgress.value) {
                                 archiveLoadInProgress.value = true
@@ -264,6 +338,9 @@ fun PokedexApp(
     chatMessages: List<ChatMessage>,
     openedArchive: MutableState<com.example.overdex.battle.archive.MatchArchive?>,
     archiveLoadInProgress: MutableState<Boolean>,
+    archiveDirectoryManager: ArchiveDirectoryManager,
+    navigateToDirectoryRequested: MutableState<Boolean>,
+    onLaunchFolderPicker: (String, com.example.overdex.battle.archive.MatchArchiveSource?) -> Unit = { _, _ -> },
     onOpenArchive: () -> Unit = {},
     onStartObservation: () -> Unit = {},
 
@@ -278,6 +355,13 @@ fun PokedexApp(
     val frameCount by viewModel.frameCount.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(navigateToDirectoryRequested.value) {
+        if (navigateToDirectoryRequested.value) {
+            navigateToDirectoryRequested.value = false
+            navController.navigate("match_archive_directory")
+        }
+    }
 
     LaunchedEffect(openedArchive.value) {
         if (openedArchive.value != null) {
@@ -774,21 +858,33 @@ fun PokedexApp(
                 )
             }
             composable("accessibility_probe") {
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
                 ODXFiShell(
                     showBattleOverlay = false,
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    onB = { navController.debugPopBackStack() }
+                    frameCount = frameCount
                 ) {
                     AccessibilityProbeScreen(
-                        onBack = { navController.debugPopBackStack() }
+                        onBack = { navController.debugPopBackStack() },
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onA = { aHandler = it },
+                        onB = { bHandler = it }
                     )
                 }
             }
@@ -839,89 +935,44 @@ fun PokedexApp(
                 val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
                 val archiveExportSelected = remember { mutableStateOf(false) }
                 val archiveOpenSelected = remember { mutableStateOf(false) }
-                val pendingArchiveSource = remember {
-                    mutableStateOf<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
-                }
-                val archiveSaveInProgress = remember { mutableStateOf(false) }
-                val archiveSaveScope = rememberCoroutineScope()
-                val archiveSaveContext = androidx.compose.ui.platform.LocalContext.current
-
-                val archiveSaveLauncher =
-                    androidx.activity.compose.rememberLauncherForActivityResult(
-                        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument(
-                            "application/zip"
-                        )
-                    ) { destination ->
-                        val source = pendingArchiveSource.value
-                        pendingArchiveSource.value = null
-
-                        if (destination == null || source == null) {
-                            archiveSaveInProgress.value = false
-                        } else {
-                            archiveSaveScope.launch {
-                                try {
-                                    val manifest = kotlinx.coroutines.withContext(
-                                        kotlinx.coroutines.Dispatchers.IO
-                                    ) {
-                                        val output = archiveSaveContext.contentResolver
-                                            .openOutputStream(destination, "w")
-                                            ?: throw java.io.IOException("Unable to open the selected file.")
-
-                                        output.use {
-                                            com.example.overdex.battle.archive.MatchArchiveExporter.export(
-                                                realityTimeline = source.realityTimeline,
-                                                matchId = source.matchId,
-                                                output = it
-                                            )
-                                        }
-                                    }
-
-                                    android.widget.Toast.makeText(
-                                        archiveSaveContext,
-                                        "Saved Match snapshot: ${manifest.articleCount} articles",
-                                        android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                                    throw cancelled
-                                } catch (error: Exception) {
-                                    android.util.Log.e("MATCH_EXPORT", "Archive save failed", error)
-                                    android.widget.Toast.makeText(
-                                        archiveSaveContext,
-                                        "Save failed. The destination may contain an incomplete file.",
-                                        android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                } finally {
-                                    archiveSaveInProgress.value = false
-                                }
-                            }
-                        }
-                    }
-
+                val scope = rememberCoroutineScope()
+                val context = androidx.compose.ui.platform.LocalContext.current
 
                 val requestArchiveExport: () -> Unit = {
                     val source = archiveSourceState.value
-                    if (source != null && !archiveSaveInProgress.value) {
-                        pendingArchiveSource.value = source
-                        archiveSaveInProgress.value = true
-
-                        try {
-                            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", java.util.Locale.ROOT)
-                            val fileName = "${dateFormat.format(java.util.Date())}.odxmatch.zip"
-
-                            archiveSaveLauncher.launch(fileName)
-                        } catch (error: Exception) {
-                            pendingArchiveSource.value = null
-                            archiveSaveInProgress.value = false
-                            android.util.Log.e(
-                                "MATCH_EXPORT",
-                                "Unable to open save dialog",
-                                error
-                            )
-                            android.widget.Toast.makeText(
-                                archiveSaveContext,
-                                "Unable to open save dialog.",
-                                android.widget.Toast.LENGTH_LONG
-                            ).show()
+                    if (source != null) {
+                        if (archiveDirectoryManager.isFolderAvailable()) {
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    val uri = archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline)
+                                    withContext(Dispatchers.Main) {
+                                        if (uri != null) {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                "Saved Match snapshot directly to Archive Directory",
+                                                android.widget.Toast.LENGTH_LONG
+                                            ).show()
+                                        } else {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                "Export failed: Archive folder not writable.",
+                                                android.widget.Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MATCH_EXPORT", "Archive save failed", e)
+                                    withContext(Dispatchers.Main) {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Save failed: ${e.message}",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            }
+                        } else {
+                            onLaunchFolderPicker("export", source)
                         }
                     }
                 }
@@ -961,7 +1012,11 @@ fun PokedexApp(
                     },
                     onA = {
                         if (archiveOpenSelected.value) {
-                            onOpenArchive()
+                            if (archiveDirectoryManager.isFolderAvailable()) {
+                                navController.navigate("match_archive_directory")
+                            } else {
+                                onLaunchFolderPicker("open", null)
+                            }
                         } else if (archiveExportSelected.value && archiveSourceState.value != null) {
                             requestArchiveExport()
                         } else {
@@ -976,8 +1031,70 @@ fun PokedexApp(
                         exportSelected = archiveExportSelected.value &&
                                 archiveSourceState.value != null,
                         onExportMatch = requestArchiveExport,
-                        onOpenMatch = onOpenArchive,
+                        onOpenMatch = {
+                            if (archiveDirectoryManager.isFolderAvailable()) {
+                                navController.navigate("match_archive_directory")
+                            } else {
+                                onLaunchFolderPicker("open", null)
+                            }
+                        },
                         openSelected = archiveOpenSelected.value
+                    )
+                }
+            }
+            composable("match_archive_directory") {
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                val scope = rememberCoroutineScope()
+                val context = androidx.compose.ui.platform.LocalContext.current
+
+                ODXFiShell(
+                    showBattleOverlay = false,
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                    onLaunchMatchSight = { navController.navigate("match_sight") },
+                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
+                ) { _ ->
+                    MatchArchiveDirectoryScreen(
+                        archiveDirectoryManager = archiveDirectoryManager,
+                        onBack = { navController.popBackStack() },
+                        onOpenArchive = { uri ->
+                            scope.launch {
+                                try {
+                                    val archive = withContext(Dispatchers.IO) {
+                                        val inputStream = context.contentResolver.openInputStream(uri)
+                                            ?: throw java.io.IOException("Unable to open the selected archive.")
+                                        com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream)
+                                    }
+                                    openedArchive.value = archive
+                                } catch (e: Exception) {
+                                    Log.e("ARCHIVE_OPEN", "Failed to open archive", e)
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Failed to open archive: ${e.message}",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        },
+                        onRequestFolderConfigure = {
+                            onLaunchFolderPicker("open", null)
+                        },
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onA = { aHandler = it },
+                        onB = { bHandler = it }
                     )
                 }
             }

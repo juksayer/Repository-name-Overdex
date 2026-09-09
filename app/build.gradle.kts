@@ -58,6 +58,7 @@ android {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.documentfile)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
@@ -85,6 +86,9 @@ dependencies {
     // Media3
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
+    
+    // DocumentFile
+    implementation("androidx.documentfile:documentfile:1.0.0")
     
     // ML Kit
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")

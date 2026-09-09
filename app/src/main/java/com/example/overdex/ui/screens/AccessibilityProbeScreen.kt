@@ -3,11 +3,16 @@ package com.example.overdex.ui.screens
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,11 +25,26 @@ import com.example.overdex.battle.debug.accessibility.*
 import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
+
+sealed class AccessibilityProbeFocus {
+    object ToggleRecording : AccessibilityProbeFocus()
+    object ClearLog : AccessibilityProbeFocus()
+    object ExportData : AccessibilityProbeFocus()
+    data class Event(val sequenceNumber: Long) : AccessibilityProbeFocus()
+    object EnableService : AccessibilityProbeFocus()
+    object Back : AccessibilityProbeFocus()
+}
 
 @Composable
 fun AccessibilityProbeScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUp: (() -> Unit) -> Unit = {},
+    onDown: (() -> Unit) -> Unit = {},
+    onA: (() -> Unit) -> Unit = {},
+    onB: (() -> Unit) -> Unit = {},
 ) {
     val context = LocalContext.current
     var isRecording by remember { mutableStateOf(AccessibilityProbeManager.isActive()) }
@@ -32,16 +52,127 @@ fun AccessibilityProbeScreen(
     var summary by remember { mutableStateOf(AccessibilityProbeManager.getSummary()) }
     var selectedEvent by remember { mutableStateOf<AccessibilityProbeEvent?>(null) }
 
+    val focusManager = rememberHandheldFocusManager<AccessibilityProbeFocus>(AccessibilityProbeFocus.ToggleRecording)
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    val visibleEvents = remember(events.size) { events.asReversed() }
+
+    val focusableItems = remember(isRecording, visibleEvents) {
+        buildList {
+            add(AccessibilityProbeFocus.ToggleRecording)
+            add(AccessibilityProbeFocus.ClearLog)
+            add(AccessibilityProbeFocus.ExportData)
+            visibleEvents.forEach { add(AccessibilityProbeFocus.Event(it.sequenceNumber)) }
+            add(AccessibilityProbeFocus.EnableService)
+            add(AccessibilityProbeFocus.Back)
+        }
+    }
+
+    LaunchedEffect(focusableItems) {
+        focusManager.updateItems(focusableItems)
+    }
+
+    // Event detail scroll state
+    val detailScrollState = rememberScrollState()
+
+    // Recording and data refresh
     LaunchedEffect(isRecording) {
         if (isRecording) {
             while (isRecording) {
-                events.clear()
-                events.addAll(AccessibilityProbeManager.getEvents().filterIsInstance<AccessibilityProbeEvent>())
+                val newEvents = AccessibilityProbeManager.getEvents().filterIsInstance<AccessibilityProbeEvent>()
+                if (newEvents.size != events.size) {
+                    events.clear()
+                    events.addAll(newEvents)
+                }
                 summary = AccessibilityProbeManager.getSummary()
-                kotlinx.coroutines.delay(500)
+                delay(500)
             }
         }
     }
+
+    // Stable handler registration
+    val currentIsRecording by rememberUpdatedState(isRecording)
+    val currentSelectedEvent by rememberUpdatedState(selectedEvent)
+    val currentFocus by rememberUpdatedState(focusManager.currentItem)
+    val currentVisibleEvents by rememberUpdatedState(visibleEvents)
+
+    DisposableEffect(Unit) {
+        onUp {
+            if (currentSelectedEvent != null) {
+                scope.launch { detailScrollState.scrollBy(-100f) }
+            } else {
+                focusManager.moveUp()
+            }
+        }
+        onDown {
+            if (currentSelectedEvent != null) {
+                scope.launch { detailScrollState.scrollBy(100f) }
+            } else {
+                focusManager.moveDown()
+            }
+        }
+        onA {
+            if (currentSelectedEvent != null) {
+                // Already inspecting
+            } else {
+                when (val focus = currentFocus) {
+                    AccessibilityProbeFocus.ToggleRecording -> {
+                        if (currentIsRecording) {
+                            AccessibilityProbeManager.stopRecording()
+                        } else {
+                            AccessibilityProbeManager.captureMetadata(context)
+                            AccessibilityProbeManager.startRecording()
+                        }
+                        isRecording = AccessibilityProbeManager.isActive()
+                    }
+                    AccessibilityProbeFocus.ClearLog -> {
+                        AccessibilityProbeManager.clear()
+                        events.clear()
+                        summary = AccessibilityProbeManager.getSummary()
+                    }
+                    AccessibilityProbeFocus.ExportData -> {
+                        AccessibilityProbeManager.exportAsJson(context)
+                    }
+                    is AccessibilityProbeFocus.Event -> {
+                        selectedEvent = currentVisibleEvents.find { it.sequenceNumber == focus.sequenceNumber }
+                        scope.launch { detailScrollState.scrollTo(0) }
+                    }
+                    AccessibilityProbeFocus.EnableService -> {
+                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                    AccessibilityProbeFocus.Back -> onBack()
+                    null -> {}
+                }
+            }
+        }
+        onB {
+            if (currentSelectedEvent != null) {
+                selectedEvent = null
+            } else {
+                onBack()
+            }
+        }
+        onDispose {
+            onUp {}
+            onDown {}
+            onA {}
+            onB {}
+        }
+    }
+
+    // Sync list scrolling with focus
+    val timelineStartIndex = 3 // Index of first event in focusableItems
+    HandheldListSync(
+        listState = listState,
+        selectedIndex = focusableItems.indexOf(focusManager.currentItem),
+        listIndexMapping = { focusIndex ->
+            if (focusIndex >= timelineStartIndex && focusIndex < timelineStartIndex + visibleEvents.size) {
+                focusIndex - timelineStartIndex
+            } else null
+        },
+        totalItems = visibleEvents.size
+    )
 
     TerminalScreen {
         TerminalPathIndicator(path = "/signal_observatory/accessibility_probe/")
@@ -49,17 +180,19 @@ fun AccessibilityProbeScreen(
         if (selectedEvent != null) {
             EventInspectionView(
                 event = selectedEvent!!,
+                scrollState = detailScrollState,
                 onBack = { selectedEvent = null }
             )
         } else {
             ProbeMainView(
                 isRecording = isRecording,
                 summary = summary,
-                events = events,
+                events = visibleEvents,
+                focusManager = focusManager,
+                listState = listState,
                 onToggleRecording = {
-                    if (isRecording) {
-                        AccessibilityProbeManager.stopRecording()
-                    } else {
+                    if (isRecording) AccessibilityProbeManager.stopRecording()
+                    else {
                         AccessibilityProbeManager.captureMetadata(context)
                         AccessibilityProbeManager.startRecording()
                     }
@@ -70,9 +203,7 @@ fun AccessibilityProbeScreen(
                     events.clear()
                     summary = AccessibilityProbeManager.getSummary()
                 },
-                onExport = {
-                    AccessibilityProbeManager.exportAsJson(context)
-                },
+                onExport = { AccessibilityProbeManager.exportAsJson(context) },
                 onEventClick = { selectedEvent = it },
                 onBack = onBack,
                 onEnableService = {
@@ -88,6 +219,8 @@ private fun ProbeMainView(
     isRecording: Boolean,
     summary: ObservatorySummary,
     events: List<AccessibilityProbeEvent>,
+    focusManager: HandheldFocusManager<AccessibilityProbeFocus>,
+    listState: LazyListState,
     onToggleRecording: () -> Unit,
     onClear: () -> Unit,
     onExport: () -> Unit,
@@ -97,58 +230,80 @@ private fun ProbeMainView(
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Summary Card
-        TerminalSection(title = "OBSERVATORY SUMMARY") {
+        TerminalSection(title = "SUMMARY") {
             summary.metadata?.let { meta ->
-                TerminalText(text = "device: ${meta.deviceModel}", color = TerminalDimGreen, fontSize = 12.sp)
-                TerminalText(text = "display: ${meta.screenResolution} (${meta.displayDensity}x)", color = TerminalDimGreen, fontSize = 12.sp)
+                TerminalText(text = "${meta.deviceModel} | ${meta.screenResolution}", color = TerminalDimGreen, fontSize = 10.sp)
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat("EVENTS", summary.totalEvents.toString())
-                SummaryStat("TEXT", summary.nodesWithText.toString())
+                SummaryStat("EVT", summary.totalEvents.toString())
+                SummaryStat("TXT", summary.nodesWithText.toString())
                 SummaryStat("DESC", summary.nodesWithContentDescription.toString())
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Controls
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             TerminalButton(
                 text = if (isRecording) "STOP RECORDING" else "START RECORDING",
                 onClick = onToggleRecording,
-                selected = isRecording,
+                selected = focusManager.currentItem == AccessibilityProbeFocus.ToggleRecording,
                 modifier = Modifier.weight(1f)
             )
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TerminalButton(text = "CLEAR LOG", onClick = onClear, modifier = Modifier.weight(1f))
-            TerminalButton(text = "EXPORT DATA", onClick = onExport, modifier = Modifier.weight(1f))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TerminalButton(
+                text = "CLEAR LOG", 
+                onClick = onClear, 
+                selected = focusManager.currentItem == AccessibilityProbeFocus.ClearLog,
+                modifier = Modifier.weight(1f)
+            )
+            TerminalButton(
+                text = "EXPORT DATA", 
+                onClick = onExport, 
+                selected = focusManager.currentItem == AccessibilityProbeFocus.ExportData,
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Timeline
         TerminalHeader("TIMELINE")
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .weight(1f)
                 .background(Color.Black.copy(alpha = 0.3f))
-                .padding(4.dp)
+                .padding(2.dp)
         ) {
-            items(events.asReversed()) { event ->
-                ProbeEventRow(event, onClick = { onEventClick(event) })
+            itemsIndexed(events) { _, event ->
+                val isSelected = focusManager.currentItem is AccessibilityProbeFocus.Event && 
+                    (focusManager.currentItem as AccessibilityProbeFocus.Event).sequenceNumber == event.sequenceNumber
+                ProbeEventRow(event, isSelected = isSelected, onClick = { onEventClick(event) })
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TerminalButton(text = "ENABLE SERVICE", onClick = onEnableService, modifier = Modifier.weight(1f))
-            TerminalButton(text = "BACK", onClick = onBack, modifier = Modifier.weight(1f))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TerminalButton(
+                text = "SERVICE", 
+                onClick = onEnableService, 
+                selected = focusManager.currentItem == AccessibilityProbeFocus.EnableService,
+                modifier = Modifier.weight(1f)
+            )
+            TerminalButton(
+                text = "BACK", 
+                onClick = onBack, 
+                selected = focusManager.currentItem == AccessibilityProbeFocus.Back,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
@@ -156,47 +311,55 @@ private fun ProbeMainView(
 @Composable
 private fun SummaryStat(label: String, value: String) {
     Column {
-        TerminalText(text = label, color = TerminalDimGreen, fontSize = 10.sp)
-        TerminalText(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        TerminalText(text = label, color = TerminalDimGreen, fontSize = 9.sp)
+        TerminalText(text = value, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun ProbeEventRow(
     event: AccessibilityProbeEvent,
+    isSelected: Boolean,
     onClick: () -> Unit
 ) {
     val relativeSeconds = event.relativeTimestamp / 1000.0
-    val timeStr = String.format(Locale.ROOT, "+%.3fs", relativeSeconds)
+    val timeStr = String.format(Locale.ROOT, "%.3fs", relativeSeconds)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(if (isSelected) TerminalGreen.copy(alpha = 0.15f) else Color.Transparent)
+            .border(1.dp, if (isSelected) TerminalGreen else Color.Transparent, RoundedCornerShape(2.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TerminalText(
-                text = "#${String.format(Locale.ROOT, "%05d", event.sequenceNumber)}",
-                color = TerminalPurple,
-                fontSize = 12.sp,
-                modifier = Modifier.width(60.dp)
+                text = "#${String.format(Locale.ROOT, "%04d", event.sequenceNumber % 10000)}",
+                color = if (isSelected) TerminalGreen else TerminalPurple,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
             )
             TerminalText(
                 text = timeStr,
                 color = TerminalDimGreen,
-                fontSize = 12.sp,
-                modifier = Modifier.width(64.dp)
+                fontSize = 11.sp
             )
-            TerminalText(text = event.eventType.substringAfter("TYPE_"), fontSize = 12.sp, modifier = Modifier.weight(1f))
         }
+        
+        TerminalText(
+            text = event.eventType.substringAfter("TYPE_"), 
+            fontSize = 11.sp, 
+            color = if (isSelected) Color.White else TerminalGreen,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
+
         if (event.text.isNotEmpty() || !event.contentDescription.isNullOrBlank()) {
-            val preview = (event.text + listOfNotNull(event.contentDescription)).joinToString(" | ").take(40)
+            val preview = (event.text + listOfNotNull(event.contentDescription)).joinToString(" | ").take(80)
             TerminalText(
-                text = "  > $preview",
+                text = "> $preview",
                 color = TerminalDimGreen,
-                fontSize = 10.sp,
-                modifier = Modifier.padding(start = 124.dp)
+                fontSize = 10.sp
             )
         }
     }
@@ -205,6 +368,7 @@ private fun ProbeEventRow(
 @Composable
 private fun EventInspectionView(
     event: AccessibilityProbeEvent,
+    scrollState: androidx.compose.foundation.ScrollState,
     onBack: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -216,7 +380,7 @@ private fun EventInspectionView(
         Spacer(modifier = Modifier.height(16.dp))
         
         TerminalHeader("NODE TREE")
-        Box(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState)) {
             event.nodeTree?.let { NodeTreeDump(it) } ?: TerminalText(text = "[ NO TREE CAPTURED ]", color = Color.Gray)
         }
 
@@ -227,22 +391,26 @@ private fun EventInspectionView(
 
 @Composable
 private fun NodeTreeDump(node: AccessibilityProbeNode, depth: Int = 0) {
-    Column(modifier = Modifier.padding(start = (depth * 8).dp)) {
-        val label = node.className?.substringAfterLast(".") ?: "Node"
-        val text = node.text?.let { " \"$it\"" } ?: ""
-        val desc = node.contentDescription?.let { " desc:($it)" } ?: ""
-        val id = node.viewId?.let { " id:($it)" } ?: ""
-        
-        val color = if (text.isNotEmpty() || desc.isNotEmpty()) TerminalGreen else TerminalDimGreen
-        
-        TerminalText(
-            text = "${if (depth > 0) "|-" else ""}$label$text$desc$id",
-            fontSize = 12.sp,
-            color = color
-        )
-        
-        node.children.forEach { child ->
-            NodeTreeDump(child, depth + 1)
-        }
+    val maxVisualDepth = 10
+    val visualDepth = minOf(depth, maxVisualDepth)
+    val indent = (visualDepth * 6).dp
+    
+    val label = node.className?.substringAfterLast(".") ?: "Node"
+    val text = node.text?.let { " \"$it\"" } ?: ""
+    val desc = node.contentDescription?.let { " desc:($it)" } ?: ""
+    val id = node.viewId?.let { " id:($it)" } ?: ""
+    
+    val color = if (text.isNotEmpty() || desc.isNotEmpty()) TerminalGreen else TerminalDimGreen
+    val depthLabel = if (depth > maxVisualDepth) "($depth) " else ""
+
+    TerminalText(
+        text = "${if (depth > 0) "|-" else ""}$depthLabel$label$text$desc$id",
+        fontSize = 11.sp,
+        color = color,
+        modifier = Modifier.padding(start = indent)
+    )
+    
+    node.children.forEach { child ->
+        NodeTreeDump(child, depth + 1)
     }
 }
