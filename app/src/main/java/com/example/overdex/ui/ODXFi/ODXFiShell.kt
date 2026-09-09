@@ -255,6 +255,9 @@ fun ODXFiShell(
     frameCount: Long = 0,
     lcdLine1: String? = null,
     lcdLine2: String? = null,
+    lcdLines: List<String> = emptyList(),
+    title: String? = null,
+    breadcrumb: String? = null,
     keyboardController: TerminalKeyboardController? = null,
     onKeyActivated: ((String) -> Unit)? = null,
     onLcdDrag: ((Offset) -> Unit)? = null,
@@ -460,12 +463,26 @@ fun ODXFiShell(
                 .weight(1.3f) // Increase dominance of CRT
                 .background(Color.DarkGray, RoundedCornerShape(4.dp))
                 .padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
-                .padding(top = crtPadding)
                 .glassShield() // The Glass Shield enforcement point
         ) {
+            if (crtPadding > 0.dp) {
+                Text(
+                    text = "oDX-Fi",
+                    color = Color.Black.copy(alpha = 0.4f), // Etched look on gray bezel
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(top = crtPadding)
                     .clip(RoundedCornerShape(2.dp))
                     .background(PokedexScreen)
                     .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
@@ -631,6 +648,7 @@ fun ODXFiShell(
                 frameCount = frameCount,
                 lcdLine1 = lcdLine1,
                 lcdLine2 = lcdLine2,
+                lcdLines = lcdLines,
                 keyboardController = keyboardController,
                 onKeyActivated = onKeyActivated,
                 onDrag = onLcdDrag,

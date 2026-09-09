@@ -862,12 +862,19 @@ fun PokedexApp(
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                
+                var probeTitle by remember { mutableStateOf("PROBE") }
+                var probeBreadcrumb by remember { mutableStateOf("/signal_observatory/accessibility_probe/") }
+                var probeLcdLines by remember { mutableStateOf(emptyList<String>()) }
 
                 ODXFiShell(
                     showBattleOverlay = false,
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
+                    title = probeTitle,
+                    breadcrumb = probeBreadcrumb,
+                    lcdLines = probeLcdLines,
                     onUp = { upHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
                     onA = { aHandler?.invoke() },
@@ -884,7 +891,13 @@ fun PokedexApp(
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },
                         onA = { aHandler = it },
-                        onB = { bHandler = it }
+                        onB = { bHandler = it },
+                        deploymentState = deploymentState,
+                        onUpdateInfo = { title, breadcrumb, lines ->
+                            probeTitle = title
+                            probeBreadcrumb = breadcrumb
+                            probeLcdLines = lines
+                        }
                     )
                 }
             }

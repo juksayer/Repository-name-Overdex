@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.debug.accessibility.*
 import com.example.overdex.battle.debug.observatory.AccessibilityProbeNode
+import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.delay
@@ -45,6 +46,8 @@ fun AccessibilityProbeScreen(
     onDown: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
+    deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
+    onUpdateInfo: (String, String, List<String>) -> Unit = { _, _, _ -> }
 ) {
     val context = LocalContext.current
     var isRecording by remember { mutableStateOf(AccessibilityProbeManager.isActive()) }
@@ -57,6 +60,40 @@ fun AccessibilityProbeScreen(
     val scope = rememberCoroutineScope()
 
     val visibleEvents = remember(events.size) { events.asReversed() }
+
+    val currentTitle = if (selectedEvent != null) "INSPECT" else "PROBE"
+    val currentBreadcrumb = "/signal_observatory/accessibility_probe/"
+    
+    val currentLcdLines = remember(isRecording, summary, selectedEvent, focusManager.currentItem, deploymentState) {
+        val pathSegments = currentBreadcrumb.removePrefix("/").split("/").filter { it.isNotEmpty() }
+        buildList {
+            if (pathSegments.isEmpty()) {
+                add("/")
+            } else {
+                add("/${pathSegments[0]}/")
+                for (i in 1 until pathSegments.size) {
+                    add("${pathSegments[i]}/")
+                }
+            }
+            add("SYS: $deploymentState")
+            add("PRB: ${if (isRecording) "RECORDING" else "IDLE"}")
+            add("EVT: ${summary.totalEvents}  TXT: ${summary.nodesWithText}")
+            add("DSC: ${summary.nodesWithContentDescription}")
+            if (selectedEvent != null) {
+                add("SEL # : ${selectedEvent!!.sequenceNumber}")
+            } else if (focusManager.currentItem is AccessibilityProbeFocus.Event) {
+                val focus = focusManager.currentItem as AccessibilityProbeFocus.Event
+                add("FOC # : ${focus.sequenceNumber}")
+            } else {
+                add("")
+            }
+            add("U/D: MOVE  A: ACT  B: BACK")
+        }
+    }
+
+    LaunchedEffect(currentTitle, currentBreadcrumb, currentLcdLines) {
+        onUpdateInfo(currentTitle, currentBreadcrumb, currentLcdLines)
+    }
 
     val focusableItems = remember(isRecording, visibleEvents) {
         buildList {
@@ -175,8 +212,6 @@ fun AccessibilityProbeScreen(
     )
 
     TerminalScreen {
-        TerminalPathIndicator(path = "/signal_observatory/accessibility_probe/")
-
         if (selectedEvent != null) {
             EventInspectionView(
                 event = selectedEvent!!,
@@ -186,7 +221,6 @@ fun AccessibilityProbeScreen(
         } else {
             ProbeMainView(
                 isRecording = isRecording,
-                summary = summary,
                 events = visibleEvents,
                 focusManager = focusManager,
                 listState = listState,
@@ -217,7 +251,6 @@ fun AccessibilityProbeScreen(
 @Composable
 private fun ProbeMainView(
     isRecording: Boolean,
-    summary: ObservatorySummary,
     events: List<AccessibilityProbeEvent>,
     focusManager: HandheldFocusManager<AccessibilityProbeFocus>,
     listState: LazyListState,
@@ -229,21 +262,6 @@ private fun ProbeMainView(
     onEnableService: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // Summary Card
-        TerminalSection(title = "SUMMARY") {
-            summary.metadata?.let { meta ->
-                TerminalText(text = "${meta.deviceModel} | ${meta.screenResolution}", color = TerminalDimGreen, fontSize = 10.sp)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat("EVT", summary.totalEvents.toString())
-                SummaryStat("TXT", summary.nodesWithText.toString())
-                SummaryStat("DESC", summary.nodesWithContentDescription.toString())
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         // Controls
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             TerminalButton(
@@ -309,14 +327,6 @@ private fun ProbeMainView(
 }
 
 @Composable
-private fun SummaryStat(label: String, value: String) {
-    Column {
-        TerminalText(text = label, color = TerminalDimGreen, fontSize = 9.sp)
-        TerminalText(text = value, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
 private fun ProbeEventRow(
     event: AccessibilityProbeEvent,
     isSelected: Boolean,
@@ -372,12 +382,11 @@ private fun EventInspectionView(
     onBack: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TerminalHeader("EVENT INSPECTION")
         TerminalText(text = "SEQUENCE: #${event.sequenceNumber}", color = TerminalPurple)
         TerminalText(text = "TYPE: ${event.eventType}")
         TerminalText(text = "PACKAGE: ${event.packageName}", color = TerminalDimGreen)
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         
         TerminalHeader("NODE TREE")
         Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState)) {

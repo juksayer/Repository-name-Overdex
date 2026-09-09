@@ -160,6 +160,7 @@ fun InstrumentLCD(
     frameCount: Long = 0,
     lcdLine1: String? = null,
     lcdLine2: String? = null,
+    lcdLines: List<String> = emptyList(),
     keyboardController: TerminalKeyboardController? = null,
     onKeyActivated: ((String) -> Unit)? = null,
     onDrag: ((Offset) -> Unit)? = null,
@@ -207,6 +208,23 @@ fun InstrumentLCD(
                     onKeyActivated = onKeyActivated,
                     modifier = Modifier.fillMaxSize()
                 )
+            } else if (lcdLines.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    lcdLines.forEachIndexed { index, line ->
+                        Text(
+                            text = line,
+                            color = if (index == 0) TerminalGreen else TerminalGreen.copy(alpha = 0.8f),
+                            fontSize = 10.sp,
+                            fontWeight = if (index == 0) FontWeight.Bold else FontWeight.Normal,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 12.sp
+                        )
+                    }
+                }
             } else if (lcdLine1 != null || lcdLine2 != null) {
                 lcdLine1?.let {
                     Text(
