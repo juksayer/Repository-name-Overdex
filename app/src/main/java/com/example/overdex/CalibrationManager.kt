@@ -71,6 +71,16 @@ class CalibrationManager(context: Context) {
             .putFloat("you_win_w", calibration.youWinRegion.width)
             .putFloat("you_win_h", calibration.youWinRegion.height)
 
+            .putFloat("good_effort_x", calibration.goodEffortRegion.x)
+            .putFloat("good_effort_y", calibration.goodEffortRegion.y)
+            .putFloat("good_effort_w", calibration.goodEffortRegion.width)
+            .putFloat("good_effort_h", calibration.goodEffortRegion.height)
+
+            .putFloat("opponent_shield_x", calibration.opponentShieldsRegion.x)
+            .putFloat("opponent_shield_y", calibration.opponentShieldsRegion.y)
+            .putFloat("opponent_shield_w", calibration.opponentShieldsRegion.width)
+            .putFloat("opponent_shield_h", calibration.opponentShieldsRegion.height)
+
             .apply()
     }
 
@@ -158,6 +168,40 @@ class CalibrationManager(context: Context) {
             )
         }
 
+        val goodEffortWidth = prefs.getFloat("good_effort_w", 0f)
+        val goodEffortRegion = if (goodEffortWidth > 0f && goodEffortWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("good_effort_x", 0.1944f).coerceIn(0f, 1f),
+                y = prefs.getFloat("good_effort_y", 0.4333f).coerceIn(0f, 1f),
+                width = goodEffortWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("good_effort_h", 0.1333f).coerceIn(0f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 0.1944f,
+                y = 0.4333f,
+                width = 0.5926f,
+                height = 0.1333f
+            )
+        }
+
+        val opponentShieldWidth = prefs.getFloat("opponent_shield_w", 0f)
+        val opponentShieldsRegion = if (opponentShieldWidth > 0f && opponentShieldWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_shield_x", 0.7037f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_shield_y", 0.1208f).coerceIn(0f, 1f),
+                width = opponentShieldWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_shield_h", 0.0167f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 0.7037f,
+                y = 0.1208f,
+                width = 0.0787f,
+                height = 0.0167f
+            )
+        }
+
         Log.d(
             "CALIBRATION",
             "Countdown: x=${countdownRegion.x}, y=${countdownRegion.y}, w=${countdownRegion.width}, h=${countdownRegion.height}"
@@ -168,7 +212,9 @@ class CalibrationManager(context: Context) {
             teamIconsRegion = teamRegion,
             moveBannerRegion = moveRegion,
             countdownRegion = countdownRegion,
-            youWinRegion = youWinRegion
+            youWinRegion = youWinRegion,
+            goodEffortRegion = goodEffortRegion,
+            opponentShieldsRegion = opponentShieldsRegion
         )
     }
 }

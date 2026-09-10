@@ -70,7 +70,9 @@ fun CalibrationScreen(
         CalibrationRegion.TEAM_ICONS,
         CalibrationRegion.MOVE_BANNER,
         CalibrationRegion.COUNTDOWN,
-        CalibrationRegion.YOU_WIN
+        CalibrationRegion.YOU_WIN,
+        CalibrationRegion.GOOD_EFFORT,
+        CalibrationRegion.OPPONENT_SHIELDS
     )
     var regionIndex by remember { mutableIntStateOf(0) }
 
@@ -82,6 +84,8 @@ fun CalibrationScreen(
         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
+        CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
+        CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
     }
 
     fun updateActiveRegion(transform: (AnchorRegion) -> AnchorRegion) {
@@ -94,6 +98,8 @@ fun CalibrationScreen(
             CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
             CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
+            CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
+            CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
         }
     }
 
@@ -220,6 +226,8 @@ fun CalibrationScreen(
                         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
                         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
                         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
+                        CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
+                        CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
                     }
 
                 }

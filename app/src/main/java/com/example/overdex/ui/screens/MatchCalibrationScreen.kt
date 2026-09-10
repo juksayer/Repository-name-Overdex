@@ -67,7 +67,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.HP_BAR,
             CalibrationRegion.TEAM_ICONS,
             CalibrationRegion.COUNTDOWN,
-            CalibrationRegion.YOU_WIN
+            CalibrationRegion.YOU_WIN,
+            CalibrationRegion.GOOD_EFFORT,
+            CalibrationRegion.OPPONENT_SHIELDS
         )
     }
 
@@ -78,6 +80,8 @@ fun MatchCalibrationScreen(
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
+        CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
+        CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
         else -> calibration.enemyNameRegion
     }
 
@@ -89,6 +93,8 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
             CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
+            CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
+            CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
             else -> calibration
         }
         calibrationManager.save(calibration)
@@ -175,6 +181,8 @@ fun MatchCalibrationScreen(
                     CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
                     CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
                     CalibrationRegion.YOU_WIN -> calibration.youWinRegion
+                    CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
+                    CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
                     else -> null
                 }
 

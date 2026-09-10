@@ -7,5 +7,7 @@ enum class CalibrationRegion {
     TEAM_ICONS,
     MOVE_BANNER,
     COUNTDOWN,
-    YOU_WIN
+    YOU_WIN,
+    GOOD_EFFORT,
+    OPPONENT_SHIELDS
 }
