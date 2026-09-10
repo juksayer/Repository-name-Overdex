@@ -69,10 +69,10 @@ fun CalibrationScreen(
         CalibrationRegion.HP_BAR,
         CalibrationRegion.TEAM_ICONS,
         CalibrationRegion.MOVE_BANNER,
-        CalibrationRegion.COUNTDOWN
-
+        CalibrationRegion.COUNTDOWN,
+        CalibrationRegion.YOU_WIN
     )
-    var regionIndex by remember { mutableStateOf(0) }
+    var regionIndex by remember { mutableIntStateOf(0) }
 
     val activeRegion = when (selectedRegion) {
         CalibrationRegion.NONE -> calibration.enemyNameRegion
@@ -81,6 +81,7 @@ fun CalibrationScreen(
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+        CalibrationRegion.YOU_WIN -> calibration.youWinRegion
     }
 
     fun updateActiveRegion(transform: (AnchorRegion) -> AnchorRegion) {
@@ -92,6 +93,7 @@ fun CalibrationScreen(
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
             CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
             CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
+            CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
         }
     }
 
@@ -217,6 +219,7 @@ fun CalibrationScreen(
                         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
                         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
                         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+                        CalibrationRegion.YOU_WIN -> calibration.youWinRegion
                     }
 
                 }

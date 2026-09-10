@@ -66,6 +66,11 @@ class CalibrationManager(context: Context) {
             .putFloat("countdown_w", calibration.countdownRegion.width)
             .putFloat("countdown_h", calibration.countdownRegion.height)
 
+            .putFloat("you_win_x", calibration.youWinRegion.x)
+            .putFloat("you_win_y", calibration.youWinRegion.y)
+            .putFloat("you_win_w", calibration.youWinRegion.width)
+            .putFloat("you_win_h", calibration.youWinRegion.height)
+
             .apply()
     }
 
@@ -125,28 +130,45 @@ class CalibrationManager(context: Context) {
         }
 
         val countdownWidth = prefs.getFloat("countdown_w", 0f)
-        val countdownRegion = if (countdownWidth > 0f) {
+        val countdownRegion = if (countdownWidth > 0f && countdownWidth <= 1.0f) {
             AnchorRegion(
-                x = prefs.getFloat("countdown_x", 0.25f),
-                y = prefs.getFloat("countdown_y", 0.25f),
-                width = countdownWidth,
-                height = prefs.getFloat("countdown_h", 0.30f)
+                x = prefs.getFloat("countdown_x", 0.25f).coerceIn(0f, 1f),
+                y = prefs.getFloat("countdown_y", 0.25f).coerceIn(0f, 1f),
+                width = countdownWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("countdown_h", 0.30f).coerceIn(0.01f, 1f)
             )
         } else {
             AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
         }
 
+        val youWinWidth = prefs.getFloat("you_win_w", 0f)
+        val youWinRegion = if (youWinWidth > 0f && youWinWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("you_win_x", 0.1389f).coerceIn(0f, 1f),
+                y = prefs.getFloat("you_win_y", 0.4750f).coerceIn(0f, 1f),
+                width = youWinWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("you_win_h", 0.0563f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 0.1389f,
+                y = 0.4750f,
+                width = 0.7037f,
+                height = 0.0563f
+            )
+        }
+
         Log.d(
             "CALIBRATION",
             "Countdown: x=${countdownRegion.x}, y=${countdownRegion.y}, w=${countdownRegion.width}, h=${countdownRegion.height}"
-
         )
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
             hpBarRegion = hpRegion,
             teamIconsRegion = teamRegion,
             moveBannerRegion = moveRegion,
-            countdownRegion = countdownRegion
+            countdownRegion = countdownRegion,
+            youWinRegion = youWinRegion
         )
     }
 }

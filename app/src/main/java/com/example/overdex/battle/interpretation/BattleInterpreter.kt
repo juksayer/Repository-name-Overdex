@@ -28,9 +28,6 @@ class BattleInterpreter(
     /**
      * Interprets a raw RealityArticle from ATTACK_INCOMING_WITNESS and produces a derived RealityArticle
      * with payload [AttackIncoming] if the text matches the attack warning pattern.
-     * 
-     * Preserves ATTACK_INCOMING_WITNESS provenance on the source article, identifies BATTLE_INTERPRETER
-     * as the source of the derived article, assigns a new article ID, and links source ancestry via predecessorIds.
      */
     fun interpretAttackIncoming(article: RealityArticle): RealityArticle? {
         if (article.sourceId.id != "ATTACK_INCOMING_WITNESS") return null
@@ -45,6 +42,34 @@ class BattleInterpreter(
                 recordedAt = System.currentTimeMillis(),
                 sourceId = SourceId("BATTLE_INTERPRETER"),
                 payload = AttackIncoming,
+                predecessorIds = listOf(article.id),
+                matchId = article.matchId,
+                confidence = null
+            )
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Interprets a raw RealityArticle from COUNTDOWN_OBSERVER and produces a derived RealityArticle
+     * if the text matches a valid countdown target.
+     */
+    fun interpretCountdown(article: RealityArticle): RealityArticle? {
+        if (article.sourceId.id != "COUNTDOWN_OBSERVER") return null
+        val payload = article.payload as? RawTestimony ?: return null
+        val rawText = (payload.data as? String) ?: return null
+
+        val normalized = rawText.uppercase().trim().replace(" ", "")
+        val targets = setOf("VS", "GETREADY", "3", "2", "1", "GO")
+
+        return if (normalized in targets) {
+            RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = article.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("BATTLE_INTERPRETER"),
+                payload = RawTestimony(normalized),
                 predecessorIds = listOf(article.id),
                 matchId = article.matchId,
                 confidence = null

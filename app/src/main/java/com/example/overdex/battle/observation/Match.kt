@@ -99,6 +99,16 @@ class Match(
                     Log.d("ATTACK_SLICE", "Derived AttackIncoming article appended: articleId=${derivedArticle.id.value}, predecessor=${derivedArticle.predecessorIds.firstOrNull()?.value}")
                 }
 
+                interpreter.interpretCountdown(article)?.let { derivedArticle ->
+                    realityTimeline.append(derivedArticle)
+                    battleMemory.timeline.record(derivedArticle)
+                    val countdownValue = (derivedArticle.payload as? RawTestimony)?.data as? String
+                    if (countdownValue != null) {
+                        DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(countdownValue))
+                        Log.d("COUNTDOWN_SLICE", "Derived Countdown article appended: articleId=${derivedArticle.id.value}, value=$countdownValue")
+                    }
+                }
+
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
                     if (event.type == BattleEventType.BATTLE_ENDED && event.result == BattleResult.WIN) {

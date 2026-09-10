@@ -15,10 +15,8 @@ import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
- * Production observer responsible for identifying the countdown numbers.
- *
- * This observer monitors the enemy name region of the screen and uses OCR
- * to recognize the Countdown numbers.
+ * Production observer responsible for observing raw OCR text in the countdown region
+ * and submitting raw testimony to the canonical Timeline.
  */
 class CountdownObserver(
     private val input: ObservationInput,
@@ -30,11 +28,6 @@ class CountdownObserver(
 ) : Observer {
 
     private var scope: CoroutineScope? = null
-
-    /**
-     * Represents a discrete perception of a countdown element.
-     */
-    data class CountdownWitness(val value: String, val timestamp: Long)
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -59,36 +52,31 @@ class CountdownObserver(
                 if (calibration.isCalibrated()) {
                     val cropped = cropSpecies(bitmap)
                     if (cropped != null) {
-
                         val recognitionResult = CountdownRecognizer.recognize(cropped)
-
                         val value = recognitionResult.value
-                        if (recognitionResult.confidence != null && recognitionResult.confidence >= 1.0f && value != null) {
-                            val witness = CountdownWitness(value, timestamp)
-                            Log.d("CountdownObserver", "CountdownWitness(value=$value)")
 
-                            // 1. Reality Handoff (Neutral Testimony)
+                        if (value != null) {
+                            Log.d("CountdownObserver", "OCR text observed: \"$value\" (conf=null)")
+
+                            // Submit every successful OCR reading as RawTestimony
                             match.custody.submitTestimony(
                                 sourceId = sourceId,
                                 payload = RawTestimony(value),
-                                timestamp = witness.timestamp,
+                                timestamp = timestamp,
                                 confidence = recognitionResult.confidence
                             )
-
-                            // 2. Presentation Signal (Existing behavior)
-                            DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(value))
-                        } else if (value != null) {
-                            Log.d("CountdownObserver", "Normalized OCR string: $value")
                         }
                     }
                 }
             }
         }
     }
+
     override fun stop() {
         scope?.cancel("Observer stopped")
         scope = null
     }
+
     private fun cropSpecies(bitmap: Bitmap): Bitmap? {
         val region = calibration.countdownRegion
         val width = bitmap.width
@@ -125,4 +113,3 @@ class CountdownObserver(
         }
     }
 }
-

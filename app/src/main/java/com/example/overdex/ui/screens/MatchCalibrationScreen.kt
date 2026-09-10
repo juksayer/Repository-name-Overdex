@@ -65,7 +65,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.ENEMY_NAME,
             CalibrationRegion.MOVE_BANNER,
             CalibrationRegion.HP_BAR,
-            CalibrationRegion.TEAM_ICONS
+            CalibrationRegion.TEAM_ICONS,
+            CalibrationRegion.COUNTDOWN,
+            CalibrationRegion.YOU_WIN
         )
     }
 
@@ -74,6 +76,8 @@ fun MatchCalibrationScreen(
         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
         CalibrationRegion.HP_BAR -> calibration.hpBarRegion
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
+        CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+        CalibrationRegion.YOU_WIN -> calibration.youWinRegion
         else -> calibration.enemyNameRegion
     }
 
@@ -83,6 +87,8 @@ fun MatchCalibrationScreen(
             CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
             CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
+            CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
+            CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
             else -> calibration
         }
         calibrationManager.save(calibration)
@@ -91,19 +97,23 @@ fun MatchCalibrationScreen(
     val step = 0.005f // Small increment for normalized coordinates
 
     fun move(dx: Float, dy: Float) {
+        val maxX = (1f - activeRegion.width).coerceAtLeast(0f)
+        val maxY = (1f - activeRegion.height).coerceAtLeast(0f)
         updateCalibration(
             activeRegion.copy(
-                x = (activeRegion.x + dx).coerceIn(0f, 1f - activeRegion.width),
-                y = (activeRegion.y + dy).coerceIn(0f, 1f - activeRegion.height)
+                x = (activeRegion.x + dx).coerceIn(0f, maxX),
+                y = (activeRegion.y + dy).coerceIn(0f, maxY)
             )
         )
     }
 
     fun resize(dw: Float, dh: Float) {
+        val maxWidth = (1f - activeRegion.x).coerceAtLeast(0.01f)
+        val maxHeight = (1f - activeRegion.y).coerceAtLeast(0.01f)
         updateCalibration(
             activeRegion.copy(
-                width = (activeRegion.width + dw).coerceIn(0.01f, 1f - activeRegion.x),
-                height = (activeRegion.height + dh).coerceIn(0.01f, 1f - activeRegion.y)
+                width = (activeRegion.width + dw).coerceIn(0.01f, maxWidth),
+                height = (activeRegion.height + dh).coerceIn(0.01f, maxHeight)
             )
         )
     }
@@ -163,6 +173,8 @@ fun MatchCalibrationScreen(
                     CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
                     CalibrationRegion.HP_BAR -> calibration.hpBarRegion
                     CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
+                    CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+                    CalibrationRegion.YOU_WIN -> calibration.youWinRegion
                     else -> null
                 }
 
