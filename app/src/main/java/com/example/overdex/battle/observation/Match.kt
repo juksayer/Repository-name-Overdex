@@ -93,6 +93,12 @@ class Match(
 
                 battleMemory.timeline.record(article)
 
+                interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
+                    realityTimeline.append(derivedArticle)
+                    battleMemory.timeline.record(derivedArticle)
+                    Log.d("ATTACK_SLICE", "Derived AttackIncoming article appended: articleId=${derivedArticle.id.value}, predecessor=${derivedArticle.predecessorIds.firstOrNull()?.value}")
+                }
+
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
                     if (event.type == BattleEventType.BATTLE_ENDED && event.result == BattleResult.WIN) {

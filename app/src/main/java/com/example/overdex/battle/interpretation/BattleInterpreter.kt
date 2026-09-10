@@ -1,6 +1,9 @@
 package com.example.overdex.battle.interpretation
 
+import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.BattleActor
@@ -9,10 +12,11 @@ import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.BattleResult
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
+import java.util.UUID
 
 /**
  * The "Stenographer": Responsible for transcribing neutral [RealityArticle]
- * records into semantic [BattleEvent]s.
+ * records into semantic [BattleEvent]s and interpreting raw testimony into derived articles.
  *
  * The Interpreter uses provenance (SourceId) and payload type to recognize
  * specific phenomena for transcription.
@@ -20,6 +24,35 @@ import com.example.overdex.model.ConfidenceLevel
 class BattleInterpreter(
     private val pokemonKnowledge: PokemonKnowledge
 ) {
+
+    /**
+     * Interprets a raw RealityArticle from ATTACK_INCOMING_WITNESS and produces a derived RealityArticle
+     * with payload [AttackIncoming] if the text matches the attack warning pattern.
+     * 
+     * Preserves ATTACK_INCOMING_WITNESS provenance on the source article, identifies BATTLE_INTERPRETER
+     * as the source of the derived article, assigns a new article ID, and links source ancestry via predecessorIds.
+     */
+    fun interpretAttackIncoming(article: RealityArticle): RealityArticle? {
+        if (article.sourceId.id != "ATTACK_INCOMING_WITNESS") return null
+        val payload = article.payload as? RawTestimony ?: return null
+        val rawText = (payload.data as? String) ?: return null
+        
+        val normalized = rawText.uppercase().trim().replace(" ", "")
+        return if (normalized.contains("ATTACKINCOMING")) {
+            RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = article.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("BATTLE_INTERPRETER"),
+                payload = AttackIncoming,
+                predecessorIds = listOf(article.id),
+                matchId = article.matchId,
+                confidence = null
+            )
+        } else {
+            null
+        }
+    }
 
     /**
      * Interprets testimony recorded in the Reality Timeline into
