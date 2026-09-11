@@ -248,9 +248,15 @@ Selecting the "Launch Droidball" action represents deploying the observation ins
 
 The transition is continuous:
 1. Droidball undocks from the ODX-FI.
-2. Pokémon GO launches (permissions handled by system).
-3. Droidball enters the field from off-screen.
-4. He takes his position on the edge of the display.
+2. Droidball Rolls off-screen from the left
+3. Pokémon GO launches (permissions handled by system).
+4. Droidball enters the from the of screen.
+5. He overshoots 3-10%.
+6. He snaps to his position on the edge of the display.
+7. User taps on Droidball at the Team Select Screen.
+8. Droidball performs calibration scan at Team Select Screen. 
+9. After a successful calibration, Droidball changes color to indicate battle-readiness
+10. When Countdown is Observed, Droidball expands to present the Battle HUD/overlay.
 
 The user should feel that Droidball traveled with them rather than being replaced.
 

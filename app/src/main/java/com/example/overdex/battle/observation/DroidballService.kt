@@ -34,10 +34,13 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.overdex.R
 import com.example.overdex.ui.components.BattleOverlay
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -70,7 +73,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 1)
         val signals = _signals.asSharedFlow()
 
-        private val _frames = MutableSharedFlow<Bitmap>(extraBufferCapacity = 1)
+        private val _frames = MutableSharedFlow<Bitmap>(
+            replay = 0,
+            extraBufferCapacity = 4,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
         val frames = _frames.asSharedFlow()
 
         private val _captureDiagnostics = MutableStateFlow(CaptureDiagnostics(state = "NOT OBSERVED"))
@@ -107,6 +114,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
     private var firstFrameLogged = false
+
+    private var publicationAttempts = 0L
+    private var successEmitCount = 0L
+    private var rejectedEmitCount = 0L
+    private var deliveryLoggingJob: kotlinx.coroutines.Job? = null
 
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
@@ -169,6 +181,18 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     private fun setupMediaProjection(resultCode: Int, data: Intent) {
         firstFrameLogged = false
+        publicationAttempts = 0L
+        successEmitCount = 0L
+        rejectedEmitCount = 0L
+        deliveryLoggingJob?.cancel()
+        deliveryLoggingJob = serviceScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(5000L)
+                val subs = _frames.subscriptionCount.value
+                Log.d("FRAME_DELIVERY", "Cumulative Summary [5s]: attempts=$publicationAttempts, emitSucceeded=$successEmitCount, rejected=$rejectedEmitCount, subscribers=$subs")
+            }
+        }
+
         val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, data)
         mediaProjection?.registerCallback(projectionCallback, null)
@@ -233,7 +257,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         firstFrameLogged = true
                     }
 
-                    _frames.tryEmit(bitmap)
+                    publicationAttempts++
+                    val emitSucceeded = _frames.tryEmit(bitmap)
+                    if (emitSucceeded) {
+                        successEmitCount++
+                    } else {
+                        rejectedEmitCount++
+                    }
                     _signals.tryEmit(DroidballSignal.FrameCaptured)
                     _captureDiagnostics.value = CaptureDiagnostics(
                         state = "OBSERVING",
@@ -351,6 +381,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         } finally {
             mediaProjection = null
         }
+
+        deliveryLoggingJob?.cancel()
+        val subs = _frames.subscriptionCount.value
+        Log.d("FRAME_DELIVERY", "Final Summary [Stop]: attempts=$publicationAttempts, emitSucceeded=$successEmitCount, rejected=$rejectedEmitCount, subscribers=$subs")
 
         serviceScope.cancel()
         super.onDestroy()
