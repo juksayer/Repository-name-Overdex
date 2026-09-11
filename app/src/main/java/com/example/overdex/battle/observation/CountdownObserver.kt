@@ -9,11 +9,9 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.sample
+import kotlin.time.Duration.Companion.milliseconds
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
@@ -32,12 +30,15 @@ class CountdownObserver(
     private var scope: CoroutineScope? = null
     private var receiptSequence = 0L
     private var previousReceiptNanoTime = 0L
+    private var burstJob: Job? = null
+    private var burstTriggered = false
 
     override fun start(match: Match) {
         if (scope != null) return
         Log.d("COUNTDOWN", "start()")
         receiptSequence = 0L
         previousReceiptNanoTime = 0L
+        burstTriggered = false
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -147,6 +148,12 @@ class CountdownObserver(
                                         confidence = recognitionResult.confidence
                                     )
                                 }
+
+                                if (BuildConfig.DEBUG && !burstTriggered && 
+                                    value?.contains("VS", ignoreCase = true) == true) {
+                                    burstTriggered = true
+                                    triggerDiagnosticBurst(currentSessionId, bitmap)
+                                }
                             }
                         }
                     }
@@ -154,13 +161,67 @@ class CountdownObserver(
             } finally {
                 // Ensure session shutdown regardless of how collection ends
                 if (BuildConfig.DEBUG && currentSessionId.isNotEmpty()) {
+                    burstJob?.cancel()
                     CountdownSampleRecorder.stopSession(currentSessionId)
                 }
             }
         }
     }
 
+    @OptIn(FlowPreview::class)
+    private fun triggerDiagnosticBurst(sessionId: String, triggerBitmap: Bitmap) {
+        val observerScope = scope ?: return
+        
+        val sourceWidth = triggerBitmap.width
+        val sourceHeight = triggerBitmap.height
+        val region = calibration.countdownRegion
+        val left = (region.x * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
+        val top = (region.y * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
+        val w = (region.width * sourceWidth).toInt().coerceAtMost(sourceWidth - left)
+        val h = (region.height * sourceHeight).toInt().coerceAtMost(sourceHeight - top)
+        val triggerCropRect = Rect(left, top, left + w, top + h)
+
+        burstJob = observerScope.launch {
+            Log.d("COUNTDOWN_BURST", "Burst triggered for $sessionId")
+            val triggerTime = System.currentTimeMillis()
+            
+            CountdownBurstRecorder.startBurst(
+                sessionId = sessionId,
+                triggerTimestamp = triggerTime,
+                cropRect = triggerCropRect,
+                sourceWidth = sourceWidth,
+                sourceHeight = sourceHeight
+            )
+
+            var frameIndex = 1
+            try {
+                // Subscribing independently to the frame stream
+                DroidballService.frames
+                    .sample(100.milliseconds)
+                    .collect { bitmap ->
+                        // Reuse geometry from trigger for consistency in the burst
+                        CountdownBurstRecorder.record(
+                            sessionId = sessionId,
+                            index = frameIndex++,
+                            sourceBitmap = bitmap,
+                            cropRect = triggerCropRect,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        
+                        if (frameIndex > 70) {
+                            this@launch.cancel("Burst limit reached")
+                        }
+                    }
+            } finally {
+                withContext(NonCancellable) {
+                    CountdownBurstRecorder.finishBurst(sessionId)
+                }
+            }
+        }
+    }
+
     override fun stop() {
+        burstJob?.cancel()
         scope?.cancel("Observer stopped")
         scope = null
     }

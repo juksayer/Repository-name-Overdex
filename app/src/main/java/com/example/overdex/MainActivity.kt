@@ -41,6 +41,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
+import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
 import com.example.overdex.data.ChatRepository
@@ -224,6 +225,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CountdownSampleRecorder.initialize(this)
         CountdownGlyphMatcher.initialize(this)
+        CountdownBurstRecorder.initialize(this)
         calibrationManager = CalibrationManager(this)
         trainerRepository = TrainerRepository(this)
         timelineRepository = SharedPreferencesTimelineRepository(this)
