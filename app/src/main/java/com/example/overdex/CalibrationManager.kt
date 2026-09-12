@@ -15,7 +15,6 @@ class CalibrationManager(context: Context) {
         context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
 
     private companion object {
-
         const val ENEMY_X = "enemy_x"
         const val ENEMY_Y = "enemy_y"
         const val ENEMY_W = "enemy_w"
@@ -38,9 +37,7 @@ class CalibrationManager(context: Context) {
     }
 
     fun save(calibration: BattleCalibration) {
-
         prefs.edit()
-
             .putFloat(ENEMY_X, calibration.enemyNameRegion.x)
             .putFloat(ENEMY_Y, calibration.enemyNameRegion.y)
             .putFloat(ENEMY_W, calibration.enemyNameRegion.width)
@@ -81,11 +78,65 @@ class CalibrationManager(context: Context) {
             .putFloat("opponent_shield_w", calibration.opponentShieldsRegion.width)
             .putFloat("opponent_shield_h", calibration.opponentShieldsRegion.height)
 
+            .putFloat("player_team_info_x", calibration.playerTeamInfoRegion.x)
+            .putFloat("player_team_info_y", calibration.playerTeamInfoRegion.y)
+            .putFloat("player_team_info_w", calibration.playerTeamInfoRegion.width)
+            .putFloat("player_team_info_h", calibration.playerTeamInfoRegion.height)
+
+            .putFloat("announcement_x", calibration.announcementRegion.x)
+            .putFloat("announcement_y", calibration.announcementRegion.y)
+            .putFloat("announcement_w", calibration.announcementRegion.width)
+            .putFloat("announcement_h", calibration.announcementRegion.height)
+
+            .putFloat("opponent_team_info_x", calibration.opponentTeamInfoRegion.x)
+            .putFloat("opponent_team_info_y", calibration.opponentTeamInfoRegion.y)
+            .putFloat("opponent_team_info_w", calibration.opponentTeamInfoRegion.width)
+            .putFloat("opponent_team_info_h", calibration.opponentTeamInfoRegion.height)
+
+            .putFloat("trainer_active_type_x", calibration.trainerActiveTypeRegion.x)
+            .putFloat("trainer_active_type_y", calibration.trainerActiveTypeRegion.y)
+            .putFloat("trainer_active_type_w", calibration.trainerActiveTypeRegion.width)
+            .putFloat("trainer_active_type_h", calibration.trainerActiveTypeRegion.height)
+
+            .putFloat("opponent_active_type_x", calibration.opponentActiveTypeRegion.x)
+            .putFloat("opponent_active_type_y", calibration.opponentActiveTypeRegion.y)
+            .putFloat("opponent_active_type_w", calibration.opponentActiveTypeRegion.width)
+            .putFloat("opponent_active_type_h", calibration.opponentActiveTypeRegion.height)
+
+            .putFloat("trainer_hp_x", calibration.trainerHpRegion.x)
+            .putFloat("trainer_hp_y", calibration.trainerHpRegion.y)
+            .putFloat("trainer_hp_w", calibration.trainerHpRegion.width)
+            .putFloat("trainer_hp_h", calibration.trainerHpRegion.height)
+
+            .putFloat("opponent_hp_x", calibration.opponentHpRegion.x)
+            .putFloat("opponent_hp_y", calibration.opponentHpRegion.y)
+            .putFloat("opponent_hp_w", calibration.opponentHpRegion.width)
+            .putFloat("opponent_hp_h", calibration.opponentHpRegion.height)
+
+            .putFloat("charge_move_execution_x", calibration.chargeMoveExecutionRegion.x)
+            .putFloat("charge_move_execution_y", calibration.chargeMoveExecutionRegion.y)
+            .putFloat("charge_move_execution_w", calibration.chargeMoveExecutionRegion.width)
+            .putFloat("charge_move_execution_h", calibration.chargeMoveExecutionRegion.height)
+
+            .putFloat("trainer_charge_move_controls_x", calibration.trainerChargeMoveControlsRegion.x)
+            .putFloat("trainer_charge_move_controls_y", calibration.trainerChargeMoveControlsRegion.y)
+            .putFloat("trainer_charge_move_controls_w", calibration.trainerChargeMoveControlsRegion.width)
+            .putFloat("trainer_charge_move_controls_h", calibration.trainerChargeMoveControlsRegion.height)
+
+            .putFloat("trainer_inactive_pokemon_x", calibration.trainerInactivePokemonRegion.x)
+            .putFloat("trainer_inactive_pokemon_y", calibration.trainerInactivePokemonRegion.y)
+            .putFloat("trainer_inactive_pokemon_w", calibration.trainerInactivePokemonRegion.width)
+            .putFloat("trainer_inactive_pokemon_h", calibration.trainerInactivePokemonRegion.height)
+
+            .putFloat("match_outcome_x", calibration.matchOutcomeRegion.x)
+            .putFloat("match_outcome_y", calibration.matchOutcomeRegion.y)
+            .putFloat("match_outcome_w", calibration.matchOutcomeRegion.width)
+            .putFloat("match_outcome_h", calibration.matchOutcomeRegion.height)
+
             .apply()
     }
 
     fun load(): BattleCalibration {
-
         val enemyWidth = prefs.getFloat(ENEMY_W, 0f)
         val enemyRegion = if (enemyWidth > 0f) {
             AnchorRegion(
@@ -174,7 +225,7 @@ class CalibrationManager(context: Context) {
                 x = prefs.getFloat("good_effort_x", 0.1944f).coerceIn(0f, 1f),
                 y = prefs.getFloat("good_effort_y", 0.4333f).coerceIn(0f, 1f),
                 width = goodEffortWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("good_effort_h", 0.1333f).coerceIn(0f, 1f)
+                height = prefs.getFloat("good_effort_h", 0.1333f).coerceIn(0.01f, 1f)
             )
         } else {
             AnchorRegion(
@@ -202,10 +253,193 @@ class CalibrationManager(context: Context) {
             )
         }
 
-        Log.d(
-            "CALIBRATION",
-            "Countdown: x=${countdownRegion.x}, y=${countdownRegion.y}, w=${countdownRegion.width}, h=${countdownRegion.height}"
-        )
+        val playerTeamInfoWidth = prefs.getFloat("player_team_info_w", 0f)
+        val playerTeamInfoRegion = if (playerTeamInfoWidth > 0f && playerTeamInfoWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("player_team_info_x", 20f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("player_team_info_y", 225f / 2400f).coerceIn(0f, 1f),
+                width = playerTeamInfoWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("player_team_info_h", (350f - 225f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 20f / 1080f,
+                y = 225f / 2400f,
+                width = (445f - 20f) / 1080f,
+                height = (350f - 225f) / 2400f
+            )
+        }
+
+        val announcementWidth = prefs.getFloat("announcement_w", 0f)
+        val announcementRegion = if (announcementWidth > 0f && announcementWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("announcement_x", 0f).coerceIn(0f, 1f),
+                y = prefs.getFloat("announcement_y", 710f / 2400f).coerceIn(0f, 1f),
+                width = announcementWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("announcement_h", (870f - 710f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 0f / 1080f,
+                y = 710f / 2400f,
+                width = 1080f / 1080f,
+                height = (870f - 710f) / 2400f
+            )
+        }
+
+        val opponentTeamInfoWidth = prefs.getFloat("opponent_team_info_w", 0f)
+        val opponentTeamInfoRegion = if (opponentTeamInfoWidth > 0f && opponentTeamInfoWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_team_info_x", 645f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_team_info_y", 225f / 2400f).coerceIn(0f, 1f),
+                width = opponentTeamInfoWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_team_info_h", (350f - 225f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 645f / 1080f,
+                y = 225f / 2400f,
+                width = (1060f - 645f) / 1080f,
+                height = (350f - 225f) / 2400f
+            )
+        }
+
+        val trainerActiveTypeWidth = prefs.getFloat("trainer_active_type_w", 0f)
+        val trainerActiveTypeRegion = if (trainerActiveTypeWidth > 0f && trainerActiveTypeWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("trainer_active_type_x", 20f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("trainer_active_type_y", 165f / 2400f).coerceIn(0f, 1f),
+                width = trainerActiveTypeWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("trainer_active_type_h", (213f - 165f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 20f / 1080f,
+                y = 165f / 2400f,
+                width = (125f - 20f) / 1080f,
+                height = (213f - 165f) / 2400f
+            )
+        }
+
+        val opponentActiveTypeWidth = prefs.getFloat("opponent_active_type_w", 0f)
+        val opponentActiveTypeRegion = if (opponentActiveTypeWidth > 0f && opponentActiveTypeWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_active_type_x", 640f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_active_type_y", 165f / 2400f).coerceIn(0f, 1f),
+                width = opponentActiveTypeWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_active_type_h", (213f - 165f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 640f / 1080f,
+                y = 165f / 2400f,
+                width = (1060f - 640f) / 1080f,
+                height = (213f - 165f) / 2400f
+            )
+        }
+
+        val trainerHpWidth = prefs.getFloat("trainer_hp_w", 0f)
+        val trainerHpRegion = if (trainerHpWidth > 0f && trainerHpWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("trainer_hp_x", 25f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("trainer_hp_y", 350f / 2400f).coerceIn(0f, 1f),
+                width = trainerHpWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("trainer_hp_h", (1940f - 350f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 25f / 1080f,
+                y = 350f / 2400f,
+                width = (539f - 25f) / 1080f,
+                height = (1940f - 350f) / 2400f
+            )
+        }
+
+        val opponentHpWidth = prefs.getFloat("opponent_hp_w", 0f)
+        val opponentHpRegion = if (opponentHpWidth > 0f && opponentHpWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_hp_x", 540f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_hp_y", 350f / 2400f).coerceIn(0f, 1f),
+                width = opponentHpWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_hp_h", (1940f - 350f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 540f / 1080f,
+                y = 350f / 2400f,
+                width = (1055f - 540f) / 1080f,
+                height = (1940f - 350f) / 2400f
+            )
+        }
+
+        val chargeMoveExecutionWidth = prefs.getFloat("charge_move_execution_w", 0f)
+        val chargeMoveExecutionRegion = if (chargeMoveExecutionWidth > 0f && chargeMoveExecutionWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("charge_move_execution_x", 5f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("charge_move_execution_y", 500f / 2400f).coerceIn(0f, 1f),
+                width = chargeMoveExecutionWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("charge_move_execution_h", (1940f - 500f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 5f / 1080f,
+                y = 500f / 2400f,
+                width = (1075f - 5f) / 1080f,
+                height = (1940f - 500f) / 2400f
+            )
+        }
+
+        val trainerChargeMoveControlsWidth = prefs.getFloat("trainer_charge_move_controls_w", 0f)
+        val trainerChargeMoveControlsRegion = if (trainerChargeMoveControlsWidth > 0f && trainerChargeMoveControlsWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("trainer_charge_move_controls_x", 100f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("trainer_charge_move_controls_y", 1940f / 2400f).coerceIn(0f, 1f),
+                width = trainerChargeMoveControlsWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("trainer_charge_move_controls_h", (2245f - 1940f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 100f / 1080f,
+                y = 1940f / 2400f,
+                width = (980f - 100f) / 1080f,
+                height = (2245f - 1940f) / 2400f
+            )
+        }
+
+        val trainerInactivePokemonWidth = prefs.getFloat("trainer_inactive_pokemon_w", 0f)
+        val trainerInactivePokemonRegion = if (trainerInactivePokemonWidth > 0f && trainerInactivePokemonWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("trainer_inactive_pokemon_x", 890f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("trainer_inactive_pokemon_y", 1370f / 2400f).coerceIn(0f, 1f),
+                width = trainerInactivePokemonWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("trainer_inactive_pokemon_h", (1750f - 1370f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 890f / 1080f,
+                y = 1370f / 2400f,
+                width = (1050f - 890f) / 1080f,
+                height = (1750f - 1370f) / 2400f
+            )
+        }
+
+        val matchOutcomeWidth = prefs.getFloat("match_outcome_w", 0f)
+        val matchOutcomeRegion = if (matchOutcomeWidth > 0f && matchOutcomeWidth <= 1.0f) {
+            AnchorRegion(
+                x = prefs.getFloat("match_outcome_x", 0.2f).coerceIn(0f, 1f),
+                y = prefs.getFloat("match_outcome_y", 0.4f).coerceIn(0f, 1f),
+                width = matchOutcomeWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("match_outcome_h", 0.2f).coerceIn(0.01f, 1f)
+            )
+        } else {
+            AnchorRegion(
+                x = 0.2f,
+                y = 0.4f,
+                width = 0.6f,
+                height = 0.2f
+            )
+        }
+
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
             hpBarRegion = hpRegion,
@@ -214,7 +448,18 @@ class CalibrationManager(context: Context) {
             countdownRegion = countdownRegion,
             youWinRegion = youWinRegion,
             goodEffortRegion = goodEffortRegion,
-            opponentShieldsRegion = opponentShieldsRegion
+            opponentShieldsRegion = opponentShieldsRegion,
+            playerTeamInfoRegion = playerTeamInfoRegion,
+            announcementRegion = announcementRegion,
+            opponentTeamInfoRegion = opponentTeamInfoRegion,
+            trainerActiveTypeRegion = trainerActiveTypeRegion,
+            opponentActiveTypeRegion = opponentActiveTypeRegion,
+            trainerHpRegion = trainerHpRegion,
+            opponentHpRegion = opponentHpRegion,
+            chargeMoveExecutionRegion = chargeMoveExecutionRegion,
+            trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
+            trainerInactivePokemonRegion = trainerInactivePokemonRegion,
+            matchOutcomeRegion = matchOutcomeRegion
         )
     }
 }

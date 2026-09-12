@@ -86,6 +86,7 @@ fun CalibrationScreen(
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
         CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
         CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
+        else -> calibration.enemyNameRegion
     }
 
     fun updateActiveRegion(transform: (AnchorRegion) -> AnchorRegion) {
@@ -100,6 +101,7 @@ fun CalibrationScreen(
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
             CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
             CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
+            else -> calibration
         }
     }
 
@@ -228,6 +230,7 @@ fun CalibrationScreen(
                         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
                         CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
                         CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
+                        else -> calibration.enemyNameRegion
                     }
 
                 }

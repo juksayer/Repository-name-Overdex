@@ -63,38 +63,96 @@ fun MatchCalibrationScreen(
     val matchRegions = remember {
         listOf(
             CalibrationRegion.ENEMY_NAME,
-            CalibrationRegion.MOVE_BANNER,
             CalibrationRegion.HP_BAR,
             CalibrationRegion.TEAM_ICONS,
-            CalibrationRegion.COUNTDOWN,
+            CalibrationRegion.MOVE_BANNER,
+            CalibrationRegion.OPPONENT_SHIELDS,
             CalibrationRegion.YOU_WIN,
             CalibrationRegion.GOOD_EFFORT,
-            CalibrationRegion.OPPONENT_SHIELDS
+            CalibrationRegion.COUNTDOWN,
+            CalibrationRegion.ANNOUNCEMENT,
+            CalibrationRegion.TRAINER_TEAM_INFO,
+            CalibrationRegion.OPPONENT_TEAM_INFO,
+            CalibrationRegion.TRAINER_ACTIVE_TYPE,
+            CalibrationRegion.OPPONENT_ACTIVE_TYPE,
+            CalibrationRegion.TRAINER_HP,
+            CalibrationRegion.OPPONENT_HP,
+            CalibrationRegion.CHARGE_MOVE_EXECUTION,
+            CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
+            CalibrationRegion.TRAINER_INACTIVE_POKEMON,
+            CalibrationRegion.MATCH_OUTCOME
         )
+    }
+
+    fun getReadableName(region: CalibrationRegion): String {
+        return when (region) {
+            CalibrationRegion.ENEMY_NAME -> "Enemy Name"
+            CalibrationRegion.HP_BAR -> "HP Bar"
+            CalibrationRegion.TEAM_ICONS -> "Team Icons"
+            CalibrationRegion.MOVE_BANNER -> "Move Banner"
+            CalibrationRegion.OPPONENT_SHIELDS -> "Opponent Shields"
+            CalibrationRegion.YOU_WIN -> "You Win"
+            CalibrationRegion.GOOD_EFFORT -> "Good Effort"
+            CalibrationRegion.COUNTDOWN -> "Countdown"
+            CalibrationRegion.ANNOUNCEMENT -> "Announcement"
+            CalibrationRegion.TRAINER_TEAM_INFO -> "Trainer Team Info"
+            CalibrationRegion.OPPONENT_TEAM_INFO -> "Opponent Team Info"
+            CalibrationRegion.TRAINER_ACTIVE_TYPE -> "Trainer Active Type"
+            CalibrationRegion.OPPONENT_ACTIVE_TYPE -> "Opponent Active Type"
+            CalibrationRegion.TRAINER_HP -> "Trainer HP"
+            CalibrationRegion.OPPONENT_HP -> "Opponent HP"
+            CalibrationRegion.CHARGE_MOVE_EXECUTION -> "Charge-Move Execution"
+            CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
+            CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Trainer Inactive Pokémon"
+            CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
+            else -> region.name
+        }
     }
 
     val activeRegion = when (selectedRegion) {
         CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
-        CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
         CalibrationRegion.HP_BAR -> calibration.hpBarRegion
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
-        CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+        CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
+        CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
         CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
-        CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
+        CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+        CalibrationRegion.ANNOUNCEMENT -> calibration.announcementRegion
+        CalibrationRegion.TRAINER_TEAM_INFO -> calibration.playerTeamInfoRegion
+        CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.opponentTeamInfoRegion
+        CalibrationRegion.TRAINER_ACTIVE_TYPE -> calibration.trainerActiveTypeRegion
+        CalibrationRegion.OPPONENT_ACTIVE_TYPE -> calibration.opponentActiveTypeRegion
+        CalibrationRegion.TRAINER_HP -> calibration.trainerHpRegion
+        CalibrationRegion.OPPONENT_HP -> calibration.opponentHpRegion
+        CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
+        CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
+        CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
+        CalibrationRegion.MATCH_OUTCOME -> calibration.matchOutcomeRegion
         else -> calibration.enemyNameRegion
     }
 
     fun updateCalibration(updated: AnchorRegion) {
         calibration = when (selectedRegion) {
             CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = updated)
-            CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
             CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
-            CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
+            CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
+            CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
             CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
-            CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
+            CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
+            CalibrationRegion.ANNOUNCEMENT -> calibration.copy(announcementRegion = updated)
+            CalibrationRegion.TRAINER_TEAM_INFO -> calibration.copy(playerTeamInfoRegion = updated)
+            CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.copy(opponentTeamInfoRegion = updated)
+            CalibrationRegion.TRAINER_ACTIVE_TYPE -> calibration.copy(trainerActiveTypeRegion = updated)
+            CalibrationRegion.OPPONENT_ACTIVE_TYPE -> calibration.copy(opponentActiveTypeRegion = updated)
+            CalibrationRegion.TRAINER_HP -> calibration.copy(trainerHpRegion = updated)
+            CalibrationRegion.OPPONENT_HP -> calibration.copy(opponentHpRegion = updated)
+            CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.copy(chargeMoveExecutionRegion = updated)
+            CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.copy(trainerChargeMoveControlsRegion = updated)
+            CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.copy(trainerInactivePokemonRegion = updated)
+            CalibrationRegion.MATCH_OUTCOME -> calibration.copy(matchOutcomeRegion = updated)
             else -> calibration
         }
         calibrationManager.save(calibration)
@@ -142,7 +200,6 @@ fun MatchCalibrationScreen(
         }
         onStart { /* No-op as per Work Order */ }
         onLcdDrag { delta ->
-            // Use normalized deltas based on typical CRT dimensions
             val dx = delta.x / 1000f 
             val dy = delta.y / 1000f
             if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
@@ -155,7 +212,8 @@ fun MatchCalibrationScreen(
 
     // LCD Update
     LaunchedEffect(selectedRegion, mode) {
-        onLcdUpdate("REGION: ${selectedRegion.name}", "MODE: ${mode.name}")
+        val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
+        onLcdUpdate("${getReadableName(selectedRegion)} ($indexText)", "MODE: ${mode.name}")
     }
 
     Box(
@@ -171,34 +229,17 @@ fun MatchCalibrationScreen(
             contentScale = ContentScale.FillBounds
         )
 
-        // Region Overlays
+        // Selected Region Overlay (Draw ONLY the selected region's rectangle)
         Canvas(modifier = Modifier.fillMaxSize()) {
-            matchRegions.forEach { regionType ->
-                val region = when (regionType) {
-                    CalibrationRegion.ENEMY_NAME -> calibration.enemyNameRegion
-                    CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
-                    CalibrationRegion.HP_BAR -> calibration.hpBarRegion
-                    CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
-                    CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
-                    CalibrationRegion.YOU_WIN -> calibration.youWinRegion
-                    CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
-                    CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
-                    else -> null
-                }
+            val color = TerminalPurple
+            val stroke = 3.dp.toPx()
 
-                region?.let {
-                    val isSelected = regionType == selectedRegion
-                    val color = if (isSelected) TerminalPurple else TerminalGreen
-                    val stroke = if (isSelected) 3.dp.toPx() else 1.dp.toPx()
-
-                    drawRect(
-                        color = color,
-                        topLeft = Offset(it.x * size.width, it.y * size.height),
-                        size = Size(it.width * size.width, it.height * size.height),
-                        style = Stroke(width = stroke)
-                    )
-                }
-            }
+            drawRect(
+                color = color,
+                topLeft = Offset(activeRegion.x * size.width, activeRegion.y * size.height),
+                size = Size(activeRegion.width * size.width, activeRegion.height * size.height),
+                style = Stroke(width = stroke)
+            )
         }
         
         // HUD feedback in CRT
@@ -209,9 +250,13 @@ fun MatchCalibrationScreen(
                 .background(Color.Black.copy(alpha = 0.5f))
                 .padding(4.dp)
         ) {
+            val indexNum = matchRegions.indexOf(selectedRegion) + 1
             TerminalText("CALIBRATION WORKSPACE", color = TerminalPurple, fontSize = 10.sp)
-            TerminalText("TARGET: ${selectedRegion.name}", fontSize = 10.sp)
+            TerminalText("TARGET: ${getReadableName(selectedRegion)} ($indexNum/${matchRegions.size})", fontSize = 10.sp)
             TerminalText("MODE: ${mode.name}", fontSize = 10.sp)
+            if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
+                TerminalText("STATUS: Needs calibration", color = Color.Yellow, fontSize = 9.sp)
+            }
         }
     }
 }
