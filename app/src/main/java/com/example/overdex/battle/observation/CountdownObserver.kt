@@ -174,12 +174,24 @@ class CountdownObserver(
         
         val sourceWidth = triggerBitmap.width
         val sourceHeight = triggerBitmap.height
+        
+        // Countdown region
         val region = calibration.countdownRegion
         val left = (region.x * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
         val top = (region.y * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
         val w = (region.width * sourceWidth).toInt().coerceAtMost(sourceWidth - left)
         val h = (region.height * sourceHeight).toInt().coerceAtMost(sourceHeight - top)
         val triggerCropRect = Rect(left, top, left + w, top + h)
+
+        // Trainer Inactive Pokémon region
+        val inactiveRegion = calibration.trainerInactivePokemonRegion
+        val inLeft = (inactiveRegion.x * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
+        val inTop = (inactiveRegion.y * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
+        val inW = (inactiveRegion.width * sourceWidth).toInt().coerceAtMost(sourceWidth - inLeft)
+        val inH = (inactiveRegion.height * sourceHeight).toInt().coerceAtMost(sourceHeight - inTop)
+        val trainerInactiveCropRect = Rect(inLeft, inTop, inLeft + inW, inTop + inH)
+
+        Log.d("COUNTDOWN_BURST", "Trainer Inactive Pokémon crop rect: $trainerInactiveCropRect")
 
         burstJob = observerScope.launch {
             Log.d("COUNTDOWN_BURST", "Burst triggered for $sessionId")
@@ -189,6 +201,7 @@ class CountdownObserver(
                 sessionId = sessionId,
                 triggerTimestamp = triggerTime,
                 cropRect = triggerCropRect,
+                trainerInactiveCropRect = trainerInactiveCropRect,
                 sourceWidth = sourceWidth,
                 sourceHeight = sourceHeight
             )
@@ -205,6 +218,7 @@ class CountdownObserver(
                             index = frameIndex++,
                             sourceBitmap = bitmap,
                             cropRect = triggerCropRect,
+                            trainerInactiveCropRect = trainerInactiveCropRect,
                             timestamp = System.currentTimeMillis()
                         )
                         

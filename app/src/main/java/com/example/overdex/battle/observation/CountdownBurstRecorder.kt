@@ -13,7 +13,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Debug-only recorder for high-rate countdown capture bursts.
@@ -34,6 +33,7 @@ object CountdownBurstRecorder {
         val sessionId: String,
         val triggerTimestamp: Long,
         val cropRect: RectData,
+        val trainerInactivePokemonCropRect: RectData,
         val sourceDimensions: Dimensions,
         val frames: List<BurstFrameRecord>
     )
@@ -52,15 +52,18 @@ object CountdownBurstRecorder {
 
     private class BurstTask(
         val index: Int,
-        val bitmap: Bitmap,
+        val countdownBitmap: Bitmap,
+        val trainerInactiveBitmap: Bitmap,
         val timestamp: Long
     )
 
     private class BurstSessionState(
         val sessionId: String,
         val sessionDir: File,
+        val trainerInactiveDir: File,
         val triggerTimestamp: Long,
         val cropRect: Rect,
+        val trainerInactiveCropRect: Rect,
         val sourceWidth: Int,
         val sourceHeight: Int,
         val channel: Channel<BurstTask>,
@@ -80,6 +83,7 @@ object CountdownBurstRecorder {
         sessionId: String,
         triggerTimestamp: Long,
         cropRect: Rect,
+        trainerInactiveCropRect: Rect,
         sourceWidth: Int,
         sourceHeight: Int
     ) {
@@ -90,48 +94,88 @@ object CountdownBurstRecorder {
         val sessionDir = File(diagnosticsDir, "session_$sessionId")
         if (!sessionDir.exists()) sessionDir.mkdirs()
 
+        val trainerInactiveDir = File(sessionDir, "trainer_inactive")
+        if (!trainerInactiveDir.exists()) trainerInactiveDir.mkdirs()
+
         val channel = Channel<BurstTask>(QUEUE_CAPACITY)
         val savedFrames = mutableListOf<BurstFrameRecord>()
         
         val writerJob = scope.launch {
             for (task in channel) {
-                saveBurstFrame(sessionDir, task, savedFrames)
+                saveBurstFrame(sessionDir, trainerInactiveDir, task, savedFrames)
             }
         }
 
         sessionStates[sessionId] = BurstSessionState(
-            sessionId, sessionDir, triggerTimestamp, cropRect, 
+            sessionId, sessionDir, trainerInactiveDir, triggerTimestamp, cropRect, trainerInactiveCropRect,
             sourceWidth, sourceHeight, channel, writerJob, savedFrames
         )
         
-        Log.d(TAG, "Started burst session for $sessionId")
+        Log.d(TAG, "Started burst session for $sessionId with trainer inactive region: $trainerInactiveCropRect")
     }
 
     /**
      * Attempts to record a single frame in the burst.
      * Performs the crop itself to ensure single-copy ownership.
      */
-    fun record(sessionId: String, index: Int, sourceBitmap: Bitmap, cropRect: Rect, timestamp: Long) {
+    fun record(
+        sessionId: String,
+        index: Int,
+        sourceBitmap: Bitmap,
+        cropRect: Rect,
+        trainerInactiveCropRect: Rect,
+        timestamp: Long
+    ) {
         if (!BuildConfig.DEBUG) return
         val state = sessionStates[sessionId] ?: return
 
+        val sourceWidth = sourceBitmap.width
+        val sourceHeight = sourceBitmap.height
+
+        // Validate both rectangles against source dimensions
+        if (!isValidRect(cropRect, sourceWidth, sourceHeight)) {
+            Log.w(TAG, "Skipping frame $index in session $sessionId: invalid countdown cropRect $cropRect for source ${sourceWidth}x${sourceHeight}")
+            return
+        }
+        if (!isValidRect(trainerInactiveCropRect, sourceWidth, sourceHeight)) {
+            Log.w(TAG, "Skipping frame $index in session $sessionId: invalid trainerInactiveCropRect $trainerInactiveCropRect for source ${sourceWidth}x${sourceHeight}")
+            return
+        }
+
+        var countdownCropped: Bitmap? = null
+        var trainerInactiveCropped: Bitmap? = null
+
         try {
-            val cropped = Bitmap.createBitmap(
+            countdownCropped = Bitmap.createBitmap(
                 sourceBitmap, 
                 cropRect.left, cropRect.top, 
                 cropRect.width(), cropRect.height()
             )
+            trainerInactiveCropped = Bitmap.createBitmap(
+                sourceBitmap,
+                trainerInactiveCropRect.left, trainerInactiveCropRect.top,
+                trainerInactiveCropRect.width(), trainerInactiveCropRect.height()
+            )
             
-            val task = BurstTask(index, cropped, timestamp)
+            val task = BurstTask(index, countdownCropped, trainerInactiveCropped, timestamp)
             val result = state.channel.trySend(task)
             
             if (result.isFailure) {
                 Log.w(TAG, "Burst queue full for $sessionId. Dropping frame $index")
-                cropped.recycle()
+                countdownCropped.recycle()
+                trainerInactiveCropped.recycle()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to crop or queue burst frame $index", e)
+            countdownCropped?.recycle()
+            trainerInactiveCropped?.recycle()
         }
+    }
+
+    private fun isValidRect(rect: Rect, sourceWidth: Int, sourceHeight: Int): Boolean {
+        return rect.left >= 0 && rect.top >= 0 &&
+                rect.right <= sourceWidth && rect.bottom <= sourceHeight &&
+                rect.width() > 0 && rect.height() > 0
     }
 
     /**
@@ -144,7 +188,6 @@ object CountdownBurstRecorder {
 
         Log.d(TAG, "Finishing burst for $sessionId...")
         
-        // Ensure this happens even if the calling coroutine is cancelled
         withContext(NonCancellable) {
             state.channel.close()
             state.writerJob.join() // Wait for flush
@@ -155,23 +198,40 @@ object CountdownBurstRecorder {
         Log.d(TAG, "Burst session $sessionId finalized.")
     }
 
-    private fun saveBurstFrame(sessionDir: File, task: BurstTask, savedFrames: MutableList<BurstFrameRecord>) {
+    private fun saveBurstFrame(
+        sessionDir: File,
+        trainerInactiveDir: File,
+        task: BurstTask,
+        savedFrames: MutableList<BurstFrameRecord>
+    ) {
         try {
             val fileName = String.format(Locale.ROOT, "burst_%03d.png", task.index)
-            val file = File(sessionDir, fileName)
-            FileOutputStream(file).use { out ->
-                if (task.bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)) {
-                    synchronized(savedFrames) {
-                        savedFrames.add(BurstFrameRecord(task.index, task.timestamp))
-                    }
-                } else {
-                    Log.e(TAG, "Failed to compress burst frame ${task.index}")
+            val countdownFile = File(sessionDir, fileName)
+            val trainerInactiveFile = File(trainerInactiveDir, fileName)
+
+            var success = false
+            FileOutputStream(countdownFile).use { out ->
+                success = task.countdownBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+
+            if (success) {
+                FileOutputStream(trainerInactiveFile).use { out ->
+                    success = task.trainerInactiveBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                 }
+            }
+
+            if (success) {
+                synchronized(savedFrames) {
+                    savedFrames.add(BurstFrameRecord(task.index, task.timestamp))
+                }
+            } else {
+                Log.e(TAG, "Failed to compress burst frame ${task.index}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error saving burst frame ${task.index}", e)
         } finally {
-            task.bitmap.recycle()
+            task.countdownBitmap.recycle()
+            task.trainerInactiveBitmap.recycle()
         }
     }
 
@@ -183,6 +243,10 @@ object CountdownBurstRecorder {
                 cropRect = RectData(
                     state.cropRect.left, state.cropRect.top, 
                     state.cropRect.right, state.cropRect.bottom
+                ),
+                trainerInactivePokemonCropRect = RectData(
+                    state.trainerInactiveCropRect.left, state.trainerInactiveCropRect.top,
+                    state.trainerInactiveCropRect.right, state.trainerInactiveCropRect.bottom
                 ),
                 sourceDimensions = Dimensions(state.sourceWidth, state.sourceHeight),
                 frames = state.savedFrames.toList()
