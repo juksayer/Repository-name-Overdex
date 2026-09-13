@@ -6,6 +6,7 @@ import android.util.Log
 import com.example.overdex.BuildConfig
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
@@ -157,7 +158,7 @@ class CountdownObserver(
                                 if (BuildConfig.DEBUG && !burstTriggered && 
                                     value?.contains("VS", ignoreCase = true) == true) {
                                     burstTriggered = true
-                                    triggerDiagnosticBurst(currentSessionId, bitmap)
+                                    triggerDiagnosticBurst(currentSessionId, bitmap, match)
                                 }
                             }
                         }
@@ -174,7 +175,7 @@ class CountdownObserver(
     }
 
     @OptIn(FlowPreview::class)
-    private fun triggerDiagnosticBurst(sessionId: String, triggerBitmap: Bitmap) {
+    private fun triggerDiagnosticBurst(sessionId: String, triggerBitmap: Bitmap, match: Match) {
         val observerScope = scope ?: return
         
         val sourceWidth = triggerBitmap.width
@@ -255,13 +256,35 @@ class CountdownObserver(
                             )
                         }
 
-                        if (BuildConfig.DEBUG) {
+                        val clearanceResult = if (BuildConfig.DEBUG) {
                             TrainerInactivePokemonTimerOverlayProbe.inspectAndLog(
                                 sessionId = sessionId,
                                 frameIndex = frameIndex,
                                 sourceBitmap = bitmap,
                                 cropRect = trainerInactiveCropRect
                             )
+                        } else null
+
+                        if (BuildConfig.DEBUG && clearanceResult != null) {
+                            match.custody.submitTestimony(
+                                sourceId = SourceId("TRAINER_INACTIVE_TIMER_OVERLAY"),
+                                payload = SupportingMatchStart(
+                                    frameIndex = clearanceResult.frameIndex,
+                                    upperColorfulPixelFraction = clearanceResult.upperColorfulPixelFraction,
+                                    lowerColorfulPixelFraction = clearanceResult.lowerColorfulPixelFraction
+                                ),
+                                timestamp = System.currentTimeMillis()
+                            )
+
+                            val matchStartLog = String.format(
+                                Locale.ROOT,
+                                "session=%s | frame=%d | payload=SupportingMatchStart | basis=TRAINER_INACTIVE_TIMER_OVERLAY_CLEARANCE | upperColorfulPixelFraction=%.3f | lowerColorfulPixelFraction=%.3f",
+                                sessionId,
+                                clearanceResult.frameIndex,
+                                clearanceResult.upperColorfulPixelFraction,
+                                clearanceResult.lowerColorfulPixelFraction
+                            )
+                            Log.d("MATCH_START_SUPPORT", matchStartLog)
                         }
 
                         // Reuse geometry from trigger for consistency in the burst

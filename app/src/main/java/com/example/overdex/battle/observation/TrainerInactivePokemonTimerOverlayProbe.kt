@@ -8,6 +8,12 @@ import com.example.overdex.BuildConfig
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
+data class TimerOverlayClearanceResult(
+    val frameIndex: Int,
+    val upperColorfulPixelFraction: Float,
+    val lowerColorfulPixelFraction: Float
+)
+
 /**
  * Debug-only diagnostic probe for the two inactive Pokémon box timer overlays.
  * Evaluates upper and lower slots independently for chroma and colorful pixel fraction
@@ -30,8 +36,8 @@ object TrainerInactivePokemonTimerOverlayProbe {
         frameIndex: Int,
         sourceBitmap: Bitmap,
         cropRect: Rect
-    ) {
-        if (!BuildConfig.DEBUG) return
+    ): TimerOverlayClearanceResult? {
+        if (!BuildConfig.DEBUG) return null
 
         val sourceWidth = sourceBitmap.width
         val sourceHeight = sourceBitmap.height
@@ -45,10 +51,11 @@ object TrainerInactivePokemonTimerOverlayProbe {
                 TAG,
                 "session=$sessionId | frame=$frameIndex | WARNING: Invalid crop rectangle $cropRect for source dimensions ${sourceWidth}x${sourceHeight}"
             )
-            return
+            return null
         }
 
         var sourceCrop: Bitmap? = null
+        var clearanceResult: TimerOverlayClearanceResult? = null
         try {
             sourceCrop = Bitmap.createBitmap(
                 sourceBitmap,
@@ -72,7 +79,7 @@ object TrainerInactivePokemonTimerOverlayProbe {
                     TAG,
                     "session=$sessionId | frame=$frameIndex | WARNING: Invalid slot dimensions width=$width, upperHeight=$upperHeight, lowerHeight=$lowerHeight"
                 )
-                return
+                return null
             }
 
             // Extract pixels for upper slot
@@ -110,8 +117,13 @@ object TrainerInactivePokemonTimerOverlayProbe {
                             state.armed = true
                         }
                     } else {
-                        if (upperStats.colorfulPixelFraction <= 0.55f && lowerStats.colorfulPixelFraction <= 0.05f) {
+                        if (upperStats.colorfulPixelFraction <= 0.55f && lowerStats.colorfulPixelFraction <= 0.30f) {
                             state.candidateEmitted = true
+                            clearanceResult = TimerOverlayClearanceResult(
+                                frameIndex = frameIndex,
+                                upperColorfulPixelFraction = upperStats.colorfulPixelFraction,
+                                lowerColorfulPixelFraction = lowerStats.colorfulPixelFraction
+                            )
                             val candidateMsg = String.format(
                                 Locale.ROOT,
                                 "session=%s | frame=%d | candidateTimerOverlayClearance=true | upperColorfulPixelFraction=%.3f | lowerColorfulPixelFraction=%.3f",
@@ -135,6 +147,8 @@ object TrainerInactivePokemonTimerOverlayProbe {
         } finally {
             sourceCrop?.recycle()
         }
+
+        return clearanceResult
     }
 
     private data class SlotStats(

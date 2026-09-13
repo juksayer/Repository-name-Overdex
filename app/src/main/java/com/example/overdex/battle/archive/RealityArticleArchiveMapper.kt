@@ -3,6 +3,7 @@ package com.example.overdex.battle.archive
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.reality.RealityArticle
 
@@ -24,6 +25,12 @@ object RealityArticleArchiveMapper {
             }
             is AttackIncoming -> ArchivedAttackIncoming
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)
+            is SupportingMatchStart -> ArchivedSupportingMatchStart(
+                frameIndex = p.frameIndex,
+                upperColorfulPixelFraction = p.upperColorfulPixelFraction,
+                lowerColorfulPixelFraction = p.lowerColorfulPixelFraction,
+                basis = p.basis
+            )
             else -> throw IllegalArgumentException("Unsupported TestimonyPayload type: ${p::class.java.name}")
         }
 

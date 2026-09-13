@@ -192,6 +192,7 @@ private fun ArchiveArticleRow(
             is ArchivedRawInt -> p.value.toString()
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
+            is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
         }
 
         TerminalText(text = payloadText, color = Color.White, fontSize = 12.sp)
@@ -243,6 +244,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
+                is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             }
             DetailField(label = "PAYLOAD CONTENT", value = payloadText)
             

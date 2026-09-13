@@ -25,3 +25,13 @@ data object AttackIncoming : TestimonyPayload
  * @property species The name of the Pokémon as recognized by the Witness.
  */
 data class PokemonIdentified(val species: String) : TestimonyPayload
+
+/**
+ * Testimony supporting Match Start derived from trainer inactive timer overlay clearance.
+ */
+data class SupportingMatchStart(
+    val frameIndex: Int,
+    val upperColorfulPixelFraction: Float,
+    val lowerColorfulPixelFraction: Float,
+    val basis: String = "TRAINER_INACTIVE_TIMER_OVERLAY_CLEARANCE"
+) : TestimonyPayload

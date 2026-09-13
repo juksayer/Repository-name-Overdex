@@ -30,3 +30,12 @@ data object ArchivedAttackIncoming : ArchivedTestimonyPayload
 data class ArchivedPokemonIdentified(
     val species: String
 ) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("supporting_match_start")
+data class ArchivedSupportingMatchStart(
+    val frameIndex: Int,
+    val upperColorfulPixelFraction: Float,
+    val lowerColorfulPixelFraction: Float,
+    val basis: String
+) : ArchivedTestimonyPayload
