@@ -193,6 +193,7 @@ private fun ArchiveArticleRow(
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
+            is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
         }
 
         TerminalText(text = payloadText, color = Color.White, fontSize = 12.sp)
@@ -245,6 +246,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
+                is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             }
             DetailField(label = "PAYLOAD CONTENT", value = payloadText)
             

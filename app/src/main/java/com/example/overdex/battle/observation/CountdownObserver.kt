@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
 import com.example.overdex.BuildConfig
+import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SupportingMatchStart
@@ -158,7 +159,7 @@ class CountdownObserver(
                                 if (BuildConfig.DEBUG && !burstTriggered && 
                                     value?.contains("VS", ignoreCase = true) == true) {
                                     burstTriggered = true
-                                    triggerDiagnosticBurst(currentSessionId, bitmap, match)
+                                    triggerDiagnosticBurst(currentSessionId, bitmap, match, sourceId)
                                 }
                             }
                         }
@@ -175,7 +176,7 @@ class CountdownObserver(
     }
 
     @OptIn(FlowPreview::class)
-    private fun triggerDiagnosticBurst(sessionId: String, triggerBitmap: Bitmap, match: Match) {
+    private fun triggerDiagnosticBurst(sessionId: String, triggerBitmap: Bitmap, match: Match, sourceId: SourceId) {
         val observerScope = scope ?: return
         
         val sourceWidth = triggerBitmap.width
@@ -198,6 +199,8 @@ class CountdownObserver(
         val trainerInactiveCropRect = Rect(inLeft, inTop, inLeft + inW, inTop + inH)
 
         Log.d("COUNTDOWN_BURST", "Trainer Inactive Pokémon crop rect: $trainerInactiveCropRect")
+
+        val witnessedGlyphs = mutableSetOf<String>()
 
         burstJob = observerScope.launch {
             Log.d("COUNTDOWN_BURST", "Burst triggered for $sessionId")
@@ -238,7 +241,30 @@ class CountdownObserver(
                                     triggerCropRect.height()
                                 )
                                 val matchResult = CountdownGlyphMatcher.match(tempCrop)
-                                val candidateStr = matchResult.candidate ?: "null"
+                                val candidate = matchResult.candidate
+                                if (candidate != null && witnessedGlyphs.add(candidate)) {
+                                    match.custody.submitTestimony(
+                                        sourceId = sourceId,
+                                        payload = CountdownGlyphWitnessed(
+                                            glyph = candidate,
+                                            similarity = matchResult.similarity,
+                                            frameIndex = frameIndex
+                                        ),
+                                        timestamp = System.currentTimeMillis()
+                                    )
+
+                                    val witnessLog = String.format(
+                                        Locale.ROOT,
+                                        "session=%s | frame=%d | glyph=%s | similarity=%.3f | payload=CountdownGlyphWitnessed",
+                                        sessionId,
+                                        frameIndex,
+                                        candidate,
+                                        matchResult.similarity
+                                    )
+                                    Log.d("COUNTDOWN_GLYPH_WITNESS", witnessLog)
+                                }
+
+                                val candidateStr = candidate ?: "null"
                                 val similarityStr = String.format(Locale.ROOT, "%.3f", matchResult.similarity)
                                 Log.d(
                                     COUNTDOWN_GLYPH_BURST_TAG,

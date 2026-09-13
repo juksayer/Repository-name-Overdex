@@ -35,3 +35,15 @@ data class SupportingMatchStart(
     val lowerColorfulPixelFraction: Float,
     val basis: String = "TRAINER_INACTIVE_TIMER_OVERLAY_CLEARANCE"
 ) : TestimonyPayload
+
+/**
+ * Testimony that the countdown template matcher accepted a glyph in the countdown crop.
+ *
+ * This preserves the matcher output. It does not itself assert a match lifecycle state.
+ */
+data class CountdownGlyphWitnessed(
+    val glyph: String,
+    val similarity: Float,
+    val frameIndex: Int,
+    val basis: String = "COUNTDOWN_GLYPH_TEMPLATE_MATCH"
+) : TestimonyPayload

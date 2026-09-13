@@ -1,6 +1,7 @@
 package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SupportingMatchStart
@@ -29,6 +30,12 @@ object RealityArticleArchiveMapper {
                 frameIndex = p.frameIndex,
                 upperColorfulPixelFraction = p.upperColorfulPixelFraction,
                 lowerColorfulPixelFraction = p.lowerColorfulPixelFraction,
+                basis = p.basis
+            )
+            is CountdownGlyphWitnessed -> ArchivedCountdownGlyphWitnessed(
+                glyph = p.glyph,
+                similarity = p.similarity,
+                frameIndex = p.frameIndex,
                 basis = p.basis
             )
             else -> throw IllegalArgumentException("Unsupported TestimonyPayload type: ${p::class.java.name}")

@@ -39,3 +39,12 @@ data class ArchivedSupportingMatchStart(
     val lowerColorfulPixelFraction: Float,
     val basis: String
 ) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("countdown_glyph_witnessed")
+data class ArchivedCountdownGlyphWitnessed(
+    val glyph: String,
+    val similarity: Float,
+    val frameIndex: Int,
+    val basis: String
+) : ArchivedTestimonyPayload
