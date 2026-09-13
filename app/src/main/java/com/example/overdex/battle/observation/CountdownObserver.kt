@@ -256,7 +256,7 @@ class CountdownObserver(
                         }
 
                         if (BuildConfig.DEBUG) {
-                            TrainerInactivePokemonVisibilityProbe.inspectAndLog(
+                            TrainerInactivePokemonTimerOverlayProbe.inspectAndLog(
                                 sessionId = sessionId,
                                 frameIndex = frameIndex,
                                 sourceBitmap = bitmap,
