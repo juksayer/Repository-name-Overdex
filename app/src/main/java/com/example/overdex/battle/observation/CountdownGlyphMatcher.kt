@@ -15,6 +15,7 @@ import java.util.*
  */
 object CountdownGlyphMatcher {
     private const val TAG = "COUNTDOWN_GLYPH"
+    private const val COMPONENTS_TAG = "COUNTDOWN_GLYPH_COMPONENTS"
     private const val MATCH_THRESHOLD = 0.65f
     private const val NORMALIZED_SIZE = 128
     private const val BRIGHT_THRESHOLD = 220
@@ -143,13 +144,19 @@ object CountdownGlyphMatcher {
             }
         }
 
-        if (components.isEmpty()) return null
+        if (components.isEmpty()) {
+            if (BuildConfig.DEBUG) {
+                Log.d(COMPONENTS_TAG, "source=${width}x${height} | componentCount=0 | largest=none | second=none | selection=none | selected=none")
+            }
+            return null
+        }
 
         // Sort by size descending
         components.sortByDescending { it.pixels.size }
         
         val targetPixels = mutableListOf<Int>()
         val finalBounds = Rect()
+        val selection: String
 
         if (components.size >= 2) {
             val c1 = components[0]
@@ -179,6 +186,7 @@ object CountdownGlyphMatcher {
                               gapRatio < 0.5f
             
             if (isGoCandidate) {
+                selection = "go-pair"
                 targetPixels.addAll(c1.pixels)
                 targetPixels.addAll(c2.pixels)
                 finalBounds.set(
@@ -188,12 +196,25 @@ object CountdownGlyphMatcher {
                     Math.max(c1.bounds.bottom, c2.bounds.bottom)
                 )
             } else {
+                selection = "single"
                 targetPixels.addAll(c1.pixels)
                 finalBounds.set(c1.bounds)
             }
         } else {
+            selection = "single"
             targetPixels.addAll(components[0].pixels)
             finalBounds.set(components[0].bounds)
+        }
+
+        if (BuildConfig.DEBUG) {
+            val largestStr = "${components[0].pixels.size}@${components[0].bounds.left},${components[0].bounds.top},${components[0].bounds.right},${components[0].bounds.bottom}"
+            val secondStr = if (components.size >= 2) {
+                "${components[1].pixels.size}@${components[1].bounds.left},${components[1].bounds.top},${components[1].bounds.right},${components[1].bounds.bottom}"
+            } else {
+                "none"
+            }
+            val selectedStr = "${finalBounds.left},${finalBounds.top},${finalBounds.right},${finalBounds.bottom}"
+            Log.d(COMPONENTS_TAG, "source=${width}x${height} | componentCount=${components.size} | largest=$largestStr | second=$secondStr | selection=$selection | selected=$selectedStr")
         }
 
         return createNormalizedSilhouette(targetPixels, finalBounds, width)

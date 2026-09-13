@@ -11,6 +11,7 @@ import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.sample
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
@@ -26,6 +27,10 @@ class CountdownObserver(
 
     override val name: String = "Countdown Observer"
 ) : Observer {
+
+    private companion object {
+        private const val COUNTDOWN_GLYPH_BURST_TAG = "COUNTDOWN_GLYPH_BURST"
+    }
 
     private var scope: CoroutineScope? = null
     private var receiptSequence = 0L
@@ -212,6 +217,53 @@ class CountdownObserver(
                 DroidballService.frames
                     .sample(100.milliseconds)
                     .collect { bitmap ->
+                        val srcW = bitmap.width
+                        val srcH = bitmap.height
+                        val isCropValid = triggerCropRect.left >= 0 &&
+                                          triggerCropRect.top >= 0 &&
+                                          triggerCropRect.right <= srcW &&
+                                          triggerCropRect.bottom <= srcH &&
+                                          triggerCropRect.width() > 0 &&
+                                          triggerCropRect.height() > 0
+
+                        if (isCropValid) {
+                            var tempCrop: Bitmap? = null
+                            try {
+                                tempCrop = Bitmap.createBitmap(
+                                    bitmap,
+                                    triggerCropRect.left,
+                                    triggerCropRect.top,
+                                    triggerCropRect.width(),
+                                    triggerCropRect.height()
+                                )
+                                val matchResult = CountdownGlyphMatcher.match(tempCrop)
+                                val candidateStr = matchResult.candidate ?: "null"
+                                val similarityStr = String.format(Locale.ROOT, "%.3f", matchResult.similarity)
+                                Log.d(
+                                    COUNTDOWN_GLYPH_BURST_TAG,
+                                    "session=$sessionId | frame=$frameIndex | crop=${tempCrop.width}x${tempCrop.height} | candidate=$candidateStr | similarity=$similarityStr"
+                                )
+                            } catch (e: Exception) {
+                                Log.e(COUNTDOWN_GLYPH_BURST_TAG, "Error matching glyph in burst for session $sessionId frame $frameIndex", e)
+                            } finally {
+                                tempCrop?.recycle()
+                            }
+                        } else {
+                            Log.w(
+                                COUNTDOWN_GLYPH_BURST_TAG,
+                                "session=$sessionId | frame=$frameIndex | invalidCountdownCrop=${triggerCropRect.left},${triggerCropRect.top},${triggerCropRect.right},${triggerCropRect.bottom} | source=${srcW}x${srcH}"
+                            )
+                        }
+
+                        if (BuildConfig.DEBUG) {
+                            TrainerInactivePokemonVisibilityProbe.inspectAndLog(
+                                sessionId = sessionId,
+                                frameIndex = frameIndex,
+                                sourceBitmap = bitmap,
+                                cropRect = trainerInactiveCropRect
+                            )
+                        }
+
                         // Reuse geometry from trigger for consistency in the burst
                         CountdownBurstRecorder.record(
                             sessionId = sessionId,
