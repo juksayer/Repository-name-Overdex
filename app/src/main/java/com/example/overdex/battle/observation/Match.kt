@@ -7,7 +7,9 @@ import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.custody.WitnessOperating
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.reality.ArticleId
@@ -67,6 +69,24 @@ class Match(
         private set
 
     init {
+        matchScope.launch {
+            custody.custodyRecordFlow.collect { record ->
+                val availability = record as? SourceAvailabilityRecord ?: return@collect
+                val article = RealityArticle(
+                    id = ArticleId(UUID.randomUUID().toString()),
+                    perceivedAt = availability.timestamp,
+                    recordedAt = System.currentTimeMillis(),
+                    sourceId = availability.sourceId,
+                    payload = WitnessOperating(availability.available),
+                    sequenceNumber = availability.sequenceNumber,
+                    matchId = MatchId(matchId),
+                    monotonicTimeNanos = availability.monotonicTimeNanos
+                )
+                realityTimeline.append(article)
+                _articles.tryEmit(article)
+                battleMemory.timeline.record(article)
+            }
+        }
         matchScope.launch {
             var matchStartRecorded = false
             custody.testimonyFlow.collect { testimony ->

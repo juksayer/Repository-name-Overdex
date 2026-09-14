@@ -3,6 +3,7 @@ package com.example.overdex.battle.custody
 import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.battle.artifact.CropArtifactReference
 import com.example.overdex.model.BattleResult
+import com.example.overdex.model.PokemonType
 
 /**
  * A domain-neutral container for what a Witness experiences.
@@ -57,6 +58,54 @@ data class CountdownGlyphWitnessed(
 data class CropCaptured(
     val artifact: CropArtifactReference,
     val cropProvenance: BattleCropProvenance
+) : TestimonyPayload
+
+/**
+ * An immutable report that a named witness began or ceased operating.
+ *
+ * The article source identifies the witness. This is coverage evidence, not
+ * evidence that the witness observed any particular battle phenomenon.
+ */
+data class WitnessOperating(
+    val operating: Boolean
+) : TestimonyPayload
+
+/** The side whose active Pokémon type icons were witnessed. */
+enum class ActivePokemonSide { PLAYER, OPPONENT }
+
+/**
+ * One active-type-icon witness result from one preserved Pokémon GO crop.
+ *
+ * This identifies the visible type-icon classification only. It neither
+ * identifies the Pokémon nor replaces the cited crop artifact.
+ */
+data class ActivePokemonTypesWitnessed(
+    val side: ActivePokemonSide,
+    val types: List<PokemonType>,
+    val similarity: Float,
+    val basis: String = "POKEMON_GO_TYPE_ICON_REFERENCE_MATCH"
+) : TestimonyPayload {
+    init {
+        require(types.size in 1..2) { "An active Pokémon has one or two visible types." }
+        require(types.distinct().size == types.size) { "Visible active types must be distinct." }
+        require(similarity in 0f..1f) { "Similarity must be normalized." }
+    }
+}
+
+/** The visible fill fraction of one player-inactive Pokémon HP bar. */
+data class PlayerInactiveHpBarMeasured(
+    val slot: Int,
+    val filledFraction: Float
+) : TestimonyPayload
+
+/** Reproducible visual measurement of one inactive species-sprite area. */
+data class PlayerInactiveSpeciesSpriteFingerprintMeasured(
+    val slot: Int,
+    val fingerprint: String,
+    val sampleLeft: Int,
+    val sampleTop: Int,
+    val sampleRight: Int,
+    val sampleBottom: Int
 ) : TestimonyPayload
 
 /** A derived match boundary whose predecessor is the accepted GO glyph article. */

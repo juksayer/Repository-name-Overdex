@@ -8,6 +8,10 @@ import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SupportingMatchStart
+import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
+import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprintMeasured
+import com.example.overdex.battle.custody.WitnessOperating
+import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.reality.RealityArticle
 
@@ -60,6 +64,25 @@ object RealityArticleArchiveMapper {
                 cropTop = p.cropProvenance.bounds.top,
                 cropRight = p.cropProvenance.bounds.right,
                 cropBottom = p.cropProvenance.bounds.bottom
+            )
+            is WitnessOperating -> ArchivedWitnessOperating(p.operating)
+            is ActivePokemonTypesWitnessed -> ArchivedActivePokemonTypesWitnessed(
+                side = p.side.name,
+                types = p.types.map { it.name },
+                similarity = p.similarity,
+                basis = p.basis
+            )
+            is PlayerInactiveHpBarMeasured -> ArchivedPlayerInactiveHpBarMeasured(
+                slot = p.slot,
+                filledFraction = p.filledFraction
+            )
+            is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
+                slot = p.slot,
+                fingerprint = p.fingerprint,
+                sampleLeft = p.sampleLeft,
+                sampleTop = p.sampleTop,
+                sampleRight = p.sampleRight,
+                sampleBottom = p.sampleBottom
             )
             is MatchStarted -> ArchivedMatchStarted
             is MatchEnded -> ArchivedMatchEnded(p.result.name)

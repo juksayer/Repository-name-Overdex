@@ -3,6 +3,8 @@ package com.example.overdex.battle.custody
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
 import com.example.overdex.battle.time.ExternalClock
@@ -17,6 +19,13 @@ interface TestimonyCustody {
      * A stream of accepted testimony records.
      */
     val testimonyFlow: Flow<TestimonyRecord>
+
+    /**
+     * Every immutable custody record, including witness operating transitions.
+     * Implementations that only provide testimony retain their historic behavior.
+     */
+    val custodyRecordFlow: Flow<CustodyRecord>
+        get() = testimonyFlow.map { it as CustodyRecord }
     /**
      * Accepts a source operational availability signal (online/offline).
      */
@@ -77,6 +86,8 @@ class InMemoryTestimonyCustody(
 
     private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(replay = 64, extraBufferCapacity = 64)
     override val testimonyFlow = _testimonyFlow.asSharedFlow()
+    private val _custodyRecordFlow = MutableSharedFlow<CustodyRecord>(replay = 64, extraBufferCapacity = 128)
+    override val custodyRecordFlow = _custodyRecordFlow.asSharedFlow()
 
     override fun submitAvailability(
         sourceId: SourceId,
@@ -91,6 +102,7 @@ class InMemoryTestimonyCustody(
             monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
         records.add(record)
+        _custodyRecordFlow.tryEmit(record)
         return record
     }
 
@@ -107,6 +119,7 @@ class InMemoryTestimonyCustody(
             monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
         records.add(record)
+        _custodyRecordFlow.tryEmit(record)
         return record
     }
 
@@ -127,6 +140,7 @@ class InMemoryTestimonyCustody(
             monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
         records.add(record)
+        _custodyRecordFlow.tryEmit(record)
         _testimonyFlow.tryEmit(record)
         return record
     }
@@ -149,6 +163,7 @@ class InMemoryTestimonyCustody(
             monotonicTimeNanos = monotonicTimeNanos
         )
         records.add(record)
+        _custodyRecordFlow.tryEmit(record)
         _testimonyFlow.tryEmit(record)
         return record
     }

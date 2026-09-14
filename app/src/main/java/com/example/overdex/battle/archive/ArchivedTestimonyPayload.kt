@@ -73,6 +73,39 @@ data class ArchivedCropCaptured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("witness_operating")
+data class ArchivedWitnessOperating(
+    val operating: Boolean
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("active_pokemon_types_witnessed")
+data class ArchivedActivePokemonTypesWitnessed(
+    val side: String,
+    val types: List<String>,
+    val similarity: Float,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_inactive_hp_bar_measured")
+data class ArchivedPlayerInactiveHpBarMeasured(
+    val slot: Int,
+    val filledFraction: Float
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_inactive_species_sprite_fingerprint_measured")
+data class ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
+    val slot: Int,
+    val fingerprint: String,
+    val sampleLeft: Int,
+    val sampleTop: Int,
+    val sampleRight: Int,
+    val sampleBottom: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("match_started")
 data object ArchivedMatchStarted : ArchivedTestimonyPayload
 

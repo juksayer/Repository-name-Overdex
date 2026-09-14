@@ -50,7 +50,7 @@ fun MatchCalibrationScreen(
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
 ) {
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
-    var selectedRegion by remember { mutableStateOf(CalibrationRegion.ENEMY_NAME) }
+    var selectedRegion by remember { mutableStateOf(CalibrationRegion.COUNTDOWN) }
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
 
@@ -62,13 +62,6 @@ fun MatchCalibrationScreen(
 
     val matchRegions = remember {
         listOf(
-            CalibrationRegion.ENEMY_NAME,
-            CalibrationRegion.HP_BAR,
-            CalibrationRegion.TEAM_ICONS,
-            CalibrationRegion.MOVE_BANNER,
-            CalibrationRegion.OPPONENT_SHIELDS,
-            CalibrationRegion.YOU_WIN,
-            CalibrationRegion.GOOD_EFFORT,
             CalibrationRegion.COUNTDOWN,
             CalibrationRegion.ANNOUNCEMENT,
             CalibrationRegion.TRAINER_TEAM_INFO,

@@ -1,6 +1,7 @@
 package com.example.overdex.battle.observation
 
 import android.util.Log
+import com.example.overdex.battle.custody.SourceId
 
 /**
  * Coordinator responsible for managing the lifecycle of multiple [Observer] instances.
@@ -11,6 +12,7 @@ import android.util.Log
  */
 class ObservationDispatcher {
     private val observers = mutableListOf<Observer>()
+    private var activeMatch: Match? = null
 
     /**
      * Registers an observer to participate in battle observation.
@@ -31,9 +33,15 @@ class ObservationDispatcher {
      */
     fun startAll(match: Match) {
         Log.d("DEPLOY", "4 startAll()")
+        activeMatch = match
         observers.forEach {
             Log.d("DEPLOY", "Starting ${it.javaClass.simpleName}")
             it.start(match)
+            match.custody.submitAvailability(
+                sourceId = SourceId(it.observerId.id),
+                available = true,
+                timestamp = System.currentTimeMillis()
+            )
         }
     }
 
@@ -41,6 +49,15 @@ class ObservationDispatcher {
      * Stops all registered observers.
      */
     fun stopAll() {
-        observers.forEach { it.stop() }
+        val match = activeMatch
+        observers.forEach {
+            it.stop()
+            match?.custody?.submitAvailability(
+                sourceId = SourceId(it.observerId.id),
+                available = false,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+        activeMatch = null
     }
 }

@@ -6,7 +6,11 @@ import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyPayload
+import com.example.overdex.battle.custody.WitnessOperating
+import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.observation.MatchId
+import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import org.junit.Assert.assertEquals
@@ -65,6 +69,32 @@ class RealityArticleArchiveMapperTest {
         assertEquals(ArchivedPokemonIdentified("Sneasel"), species.payload)
         assertEquals(ArchivedRawInt(25), rawInt.payload)
         assertEquals(ArchivedMatchStarted, matchStarted.payload)
+    }
+
+    @Test
+    fun `maps witness operating coverage without treating it as an observation`() {
+        val article = article(id = "coverage", payload = WitnessOperating(operating = true))
+
+        assertEquals(ArchivedWitnessOperating(operating = true), RealityArticleArchiveMapper.map(article).payload)
+    }
+
+    @Test
+    fun `maps active type icon testimony with its original side and measurement`() {
+        val payload = ActivePokemonTypesWitnessed(
+            side = ActivePokemonSide.OPPONENT,
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            similarity = 0.91f
+        )
+
+        assertEquals(
+            ArchivedActivePokemonTypesWitnessed(
+                side = "OPPONENT",
+                types = listOf("DARK", "ICE"),
+                similarity = 0.91f,
+                basis = "POKEMON_GO_TYPE_ICON_REFERENCE_MATCH"
+            ),
+            RealityArticleArchiveMapper.map(article(id = "types", payload = payload)).payload
+        )
     }
 
     @Test

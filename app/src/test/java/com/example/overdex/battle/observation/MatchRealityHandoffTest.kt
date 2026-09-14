@@ -75,4 +75,25 @@ class MatchRealityHandoffTest {
         
         match.release()
     }
+
+    @Test
+    fun `witness operating transition is appended to reality timeline`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "M2",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+
+        custody.submitAvailability(sourceId, available = true, timestamp = 321L)
+        delay(100)
+
+        val article = timeline.getArticles().single()
+        assertEquals(WitnessOperating(operating = true), article.payload)
+        assertEquals(sourceId, article.sourceId)
+        assertEquals(321L, article.perceivedAt)
+        match.release()
+    }
 }
