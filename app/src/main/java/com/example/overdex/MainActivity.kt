@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
                 val archive = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     val inputStream = contentResolver.openInputStream(uri)
                         ?: throw java.io.IOException("Unable to open the selected file.")
-                    com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream)
+                    com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream, filesDir)
                 }
                 openedArchive.value = archive
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -1094,7 +1094,7 @@ fun PokedexApp(
                                     val archive = withContext(Dispatchers.IO) {
                                         val inputStream = context.contentResolver.openInputStream(uri)
                                             ?: throw java.io.IOException("Unable to open the selected archive.")
-                                        com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream)
+                                        com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream, context.filesDir)
                                     }
                                     openedArchive.value = archive
                                 } catch (e: Exception) {

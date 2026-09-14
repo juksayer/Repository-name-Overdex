@@ -1,9 +1,13 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.CountdownGlyphWitnessed
+import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
+import com.example.overdex.battle.time.ClockReading
 import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEventType
 import kotlinx.coroutines.delay
@@ -12,6 +16,43 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchInterpretationTest {
+
+    @Test
+    fun `GO glyph creates one match start while timer support remains independent`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "TEST_MATCH",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+        val session = DroidballSession(match)
+        assertEquals(MatchState.CREATED, match.state)
+        assertEquals(false, match.clock.hasStarted)
+
+        custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("2", 0.8f, 1), 1000L)
+        custody.submitTestimony(SourceId("TRAINER_INACTIVE_TIMER_OVERLAY"), SupportingMatchStart(2, 0.1f, 0.2f), 1100L)
+        custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("GO", 0.9f, 3), 1200L)
+        custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("GO", 0.95f, 4), 1300L)
+        delay(150)
+
+        val articles = timeline.getArticles()
+        val starts = articles.filter { it.payload is MatchStarted }
+        assertEquals(1, starts.size)
+        val goArticle = articles.first { (it.payload as? CountdownGlyphWitnessed)?.glyph == "GO" }
+        assertEquals(listOf(goArticle.id), starts.single().predecessorIds)
+        assertEquals(goArticle.perceivedAt, starts.single().perceivedAt)
+        assertEquals(goArticle.monotonicTimeNanos, starts.single().monotonicTimeNanos)
+        assertEquals(MatchState.CREATED, match.state)
+        assertEquals(DroidballSessionPhase.BATTLE_ACTIVE, session.phase.value)
+        assertEquals(goArticle.monotonicTimeNanos, match.clock.baselineReading?.monotonicTimeNanos)
+        assertEquals(50L, match.clock.elapsedNanosAt(ClockReading(1250L, goArticle.monotonicTimeNanos!! + 50L)))
+        assertEquals(2, articles.count { it.payload is CountdownGlyphWitnessed && (it.payload as CountdownGlyphWitnessed).glyph == "GO" })
+        assertEquals(1, articles.count { it.payload is SupportingMatchStart })
+        session.end()
+        match.release()
+    }
 
     @Test
     fun `species testimony is interpreted and recorded in battle memory`() = runBlocking {

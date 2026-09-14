@@ -103,7 +103,8 @@ class ArchiveDirectoryManager(private val context: Context) {
             MatchArchiveExporter.export(
                 realityTimeline = realityTimeline,
                 matchId = matchId,
-                output = it
+                output = it,
+                artifactRepositoryRoot = context.filesDir
             )
         }
 

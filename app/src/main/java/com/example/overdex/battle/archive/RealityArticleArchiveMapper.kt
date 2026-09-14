@@ -2,6 +2,8 @@ package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
+import com.example.overdex.battle.custody.CropCaptured
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SupportingMatchStart
@@ -36,8 +38,29 @@ object RealityArticleArchiveMapper {
                 glyph = p.glyph,
                 similarity = p.similarity,
                 frameIndex = p.frameIndex,
+                cropName = p.cropProvenance?.cropName,
+                sourceWidth = p.cropProvenance?.sourceWidth,
+                sourceHeight = p.cropProvenance?.sourceHeight,
+                cropLeft = p.cropProvenance?.bounds?.left,
+                cropTop = p.cropProvenance?.bounds?.top,
+                cropRight = p.cropProvenance?.bounds?.right,
+                cropBottom = p.cropProvenance?.bounds?.bottom,
                 basis = p.basis
             )
+            is CropCaptured -> ArchivedCropCaptured(
+                artifactPath = p.artifact.relativePath,
+                sha256 = p.artifact.sha256,
+                byteCount = p.artifact.byteCount,
+                mediaType = p.artifact.mediaType,
+                cropName = p.cropProvenance.cropName,
+                sourceWidth = p.cropProvenance.sourceWidth,
+                sourceHeight = p.cropProvenance.sourceHeight,
+                cropLeft = p.cropProvenance.bounds.left,
+                cropTop = p.cropProvenance.bounds.top,
+                cropRight = p.cropProvenance.bounds.right,
+                cropBottom = p.cropProvenance.bounds.bottom
+            )
+            is MatchStarted -> ArchivedMatchStarted
             else -> throw IllegalArgumentException("Unsupported TestimonyPayload type: ${p::class.java.name}")
         }
 
@@ -51,7 +74,8 @@ object RealityArticleArchiveMapper {
             predecessorIds = article.predecessorIds.map { it.value },
             confidence = article.confidence,
             sequenceNumber = article.sequenceNumber,
-            evidenceReferences = article.evidenceReferences
+            evidenceReferences = article.evidenceReferences,
+            monotonicTimeNanos = article.monotonicTimeNanos
         )
     }
 

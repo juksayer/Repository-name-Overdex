@@ -3,11 +3,25 @@ package com.example.overdex.battle.custody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.example.overdex.battle.time.ClockReading
+import com.example.overdex.battle.time.ExternalClock
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class TestimonyCustodyTest {
+
+    @Test
+    fun `custody preserves the external clock monotonic reading`() {
+        val custody = InMemoryTestimonyCustody(object : ExternalClock {
+            override fun read() = ClockReading(wallTimeMillis = 9_000L, monotonicTimeNanos = 7_000_000L)
+        })
+
+        val record = custody.submitTestimony(sourceA, RawTestimony("GO"), 1_000L, 1f)
+
+        assertEquals(1_000L, record.timestamp)
+        assertEquals(7_000_000L, record.monotonicTimeNanos)
+    }
 
     private val sourceA = SourceId("S_A")
     private val sourceB = SourceId("S_B")

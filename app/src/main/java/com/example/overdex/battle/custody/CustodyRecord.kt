@@ -10,5 +10,6 @@ package com.example.overdex.battle.custody
 interface CustodyRecord {
     val sequenceNumber: Long
     val timestamp: Long
+    val monotonicTimeNanos: Long
     val sourceId: SourceId
 }

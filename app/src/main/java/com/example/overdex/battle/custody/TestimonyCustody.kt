@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
+import com.example.overdex.battle.time.ExternalClock
+import com.example.overdex.battle.time.SystemExternalClock
 
 /**
  * The "Bagman": Responsible for the safe, immutable preservation of testimony source 
@@ -48,6 +50,16 @@ interface TestimonyCustody {
         evidenceReferences: List<String> = emptyList()
     ): TestimonyRecord
 
+    /** Preserves a source-captured monotonic reading alongside testimony. */
+    fun submitTestimony(
+        sourceId: SourceId,
+        payload: TestimonyPayload,
+        timestamp: Long,
+        confidence: Float?,
+        evidenceReferences: List<String>,
+        monotonicTimeNanos: Long
+    ): TestimonyRecord = submitTestimony(sourceId, payload, timestamp, confidence, evidenceReferences)
+
     /**
      * Retrieves all preserved records in the order they were received.
      */
@@ -57,7 +69,9 @@ interface TestimonyCustody {
 /**
  * A thread-safe, in-memory implementation of [TestimonyCustody].
  */
-class InMemoryTestimonyCustody : TestimonyCustody {
+class InMemoryTestimonyCustody(
+    private val clock: ExternalClock = SystemExternalClock
+) : TestimonyCustody {
     private val records = CopyOnWriteArrayList<CustodyRecord>()
     private val sequenceCounter = AtomicLong(0)
 
@@ -73,7 +87,8 @@ class InMemoryTestimonyCustody : TestimonyCustody {
             sequenceNumber = sequenceCounter.getAndIncrement(),
             timestamp = timestamp,
             sourceId = sourceId,
-            available = available
+            available = available,
+            monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
         records.add(record)
         return record
@@ -88,7 +103,8 @@ class InMemoryTestimonyCustody : TestimonyCustody {
             sequenceNumber = sequenceCounter.getAndIncrement(),
             timestamp = timestamp,
             sourceId = sourceId,
-            available = available
+            available = available,
+            monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
         records.add(record)
         return record
@@ -107,7 +123,30 @@ class InMemoryTestimonyCustody : TestimonyCustody {
             sourceId = sourceId,
             payload = payload,
             confidence = confidence,
-            evidenceReferences = evidenceReferences
+            evidenceReferences = evidenceReferences,
+            monotonicTimeNanos = clock.read().monotonicTimeNanos
+        )
+        records.add(record)
+        _testimonyFlow.tryEmit(record)
+        return record
+    }
+
+    override fun submitTestimony(
+        sourceId: SourceId,
+        payload: TestimonyPayload,
+        timestamp: Long,
+        confidence: Float?,
+        evidenceReferences: List<String>,
+        monotonicTimeNanos: Long
+    ): TestimonyRecord {
+        val record = TestimonyRecord(
+            sequenceNumber = sequenceCounter.getAndIncrement(),
+            timestamp = timestamp,
+            sourceId = sourceId,
+            payload = payload,
+            confidence = confidence,
+            evidenceReferences = evidenceReferences,
+            monotonicTimeNanos = monotonicTimeNanos
         )
         records.add(record)
         _testimonyFlow.tryEmit(record)

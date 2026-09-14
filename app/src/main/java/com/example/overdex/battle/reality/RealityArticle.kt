@@ -16,6 +16,7 @@ import com.example.overdex.model.TimelineRecord
  * @property perceivedAt Temporal position provided by the source. For derivations, 
  *           this represents the best estimate of when the conclusion was true.
  * @property recordedAt Temporal position when the record was accepted by the timeline.
+ * @property monotonicTimeNanos Shared monotonic time for correlation with other evidence.
  * @property sourceId Identifies the producer of this specific record.
  * @property payload The uninterpreted data or reasoning outcome.
  * @property predecessorIds Identifies the specific articles used as input for this record.
@@ -34,5 +35,6 @@ data class RealityArticle(
     val confidence: Float? = null,
     val sequenceNumber: Long? = null,
     val evidenceReferences: List<String>? = null,
-    val matchId: MatchId? = null
+    val matchId: MatchId? = null,
+    val monotonicTimeNanos: Long? = null
 ) : TimelineRecord

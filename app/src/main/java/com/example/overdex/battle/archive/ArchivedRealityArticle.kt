@@ -16,5 +16,6 @@ data class ArchivedRealityArticle(
     val predecessorIds: List<String>,
     val confidence: Float?,
     val sequenceNumber: Long?,
-    val evidenceReferences: List<String>?
+    val evidenceReferences: List<String>?,
+    val monotonicTimeNanos: Long? = null
 )

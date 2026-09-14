@@ -2,6 +2,7 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -19,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 
 /**
@@ -45,6 +48,13 @@ class Match(
 ) {
     private val interpreter = BattleInterpreter(pokemonKnowledge)
 
+    /** Owned by this match and baselined by the enclosing Droidball session at GO. */
+    val clock = MatchClock()
+
+    private val _matchStarted = MutableSharedFlow<RealityArticle>(replay = 1, extraBufferCapacity = 1)
+    /** The derived GO boundary for the owning Droidball session to act upon. */
+    val matchStarted = _matchStarted.asSharedFlow()
+
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     /** The total number of frames processed during this Match. */
@@ -53,6 +63,7 @@ class Match(
 
     init {
         matchScope.launch {
+            var matchStartRecorded = false
             custody.testimonyFlow.collect { testimony ->
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
@@ -71,7 +82,8 @@ class Match(
                     confidence = testimony.confidence,
                     sequenceNumber = testimony.sequenceNumber,
                     evidenceReferences = testimony.evidenceReferences,
-                    matchId = MatchId(matchId)
+                    matchId = MatchId(matchId),
+                    monotonicTimeNanos = testimony.monotonicTimeNanos
                 )
 
                 if (testimony.payload is AttackIncoming) {
@@ -93,20 +105,25 @@ class Match(
 
                 battleMemory.timeline.record(article)
 
+                if (!matchStartRecorded) {
+                    interpreter.interpretMatchStart(article)?.let { derivedArticle ->
+                        realityTimeline.append(derivedArticle)
+                        battleMemory.timeline.record(derivedArticle)
+                        matchStartRecorded = true
+                        _matchStarted.tryEmit(derivedArticle)
+                        Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
+                    }
+                }
+
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
                     battleMemory.timeline.record(derivedArticle)
                     Log.d("ATTACK_SLICE", "Derived AttackIncoming article appended: articleId=${derivedArticle.id.value}, predecessor=${derivedArticle.predecessorIds.firstOrNull()?.value}")
                 }
 
-                interpreter.interpretCountdown(article)?.let { derivedArticle ->
-                    realityTimeline.append(derivedArticle)
-                    battleMemory.timeline.record(derivedArticle)
-                    val countdownValue = (derivedArticle.payload as? RawTestimony)?.data as? String
-                    if (countdownValue != null) {
-                        DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(countdownValue))
-                        Log.d("COUNTDOWN_SLICE", "Derived Countdown article appended: articleId=${derivedArticle.id.value}, value=$countdownValue")
-                    }
+                (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
+                    DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
+                    Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
                 }
 
                 interpreter.interpret(article)?.let { event ->
@@ -119,7 +136,8 @@ class Match(
                             sourceId = SourceId("BATTLE_INTERPRETER"),
                             payload = RawTestimony("WIN"),
                             predecessorIds = listOf(article.id),
-                            matchId = MatchId(matchId)
+                            matchId = MatchId(matchId),
+                            monotonicTimeNanos = article.monotonicTimeNanos
                         )
                         realityTimeline.append(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)

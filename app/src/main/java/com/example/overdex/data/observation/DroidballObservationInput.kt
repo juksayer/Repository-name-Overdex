@@ -2,6 +2,7 @@ package com.example.overdex.data.observation
 
 import android.graphics.Bitmap
 import com.example.overdex.model.observation.ObservationInput
+import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.model.observation.SessionSource
 
 import com.example.overdex.battle.observation.DroidballService
@@ -18,8 +19,12 @@ class DroidballObservationInput : ObservationInput {
      * Supplies frames from the live Droidball capture stream.
      */
     override suspend fun supply(onVisualData: suspend (Bitmap) -> Unit) {
-        DroidballService.frames.collect { bitmap ->
-            onVisualData(bitmap)
+        DroidballService.frames.collect { frame ->
+            onVisualData(frame.bitmap)
         }
+    }
+
+    override suspend fun supplyFrames(onFrame: suspend (CapturedVisualFrame) -> Unit) {
+        DroidballService.frames.collect(onFrame)
     }
 }

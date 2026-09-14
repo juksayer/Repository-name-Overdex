@@ -16,6 +16,7 @@ import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.CountdownObserver
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
+import com.example.overdex.battle.observation.DroidballSession
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
 
@@ -28,6 +29,11 @@ import com.example.overdex.battle.witness.GoodEffortWitness
 import com.example.overdex.battle.witness.PlayerSpeciesWitness
 import com.example.overdex.battle.witness.SpeciesWitness
 import com.example.overdex.battle.witness.YouWinWitness
+import com.example.overdex.battle.observation.CropCaptureWitness
+import com.example.overdex.battle.observation.BattleWitnessContracts
+import com.example.overdex.battle.artifact.FileCropArtifactStore
+import com.example.overdex.battle.timeline.observer.ObserverId
+import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.data.FallbackSpriteProvider
 import com.example.overdex.data.FieldNoteRepository
 import com.example.overdex.data.GameMasterLoader
@@ -85,6 +91,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
+    private val _droidballSession = MutableStateFlow<DroidballSession?>(null)
+    val droidballSession = _droidballSession.asStateFlow()
     private val _latestMatchArchiveSource =
         MutableStateFlow<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
     val latestMatchArchiveSource = _latestMatchArchiveSource.asStateFlow()
@@ -182,7 +190,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             realityTimeline = InMemoryRealityTimeline(),
             pokemonKnowledge = pokemonRepository
         )
+        val session = DroidballSession(match)
         _activeMatch.value = match
+        _droidballSession.value = session
         _latestMatchArchiveSource.value =
             com.example.overdex.battle.archive.MatchArchiveSource(
                 matchId = com.example.overdex.battle.observation.MatchId(match.matchId),
@@ -201,6 +211,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         Log.d("DEPLOY", "2 Registering observers")
         observationDispatcher.register(SpeciesWitness(input, calibration))
         observationDispatcher.register(PlayerSpeciesWitness(input, calibration))
+        observationDispatcher.register(
+            CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = BattleWitnessContracts.countdownCropCapture,
+                artifactStore = FileCropArtifactStore(getApplication<Application>().filesDir),
+                observerId = ObserverId(BattleWitnessContracts.countdownCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "Countdown Crop Capture Witness"
+            )
+        )
         observationDispatcher.register(CountdownObserver(input, calibration))
         observationDispatcher.register(YouWinWitness(input, calibration))
         observationDispatcher.register(GoodEffortWitness(input, calibration))
@@ -247,7 +267,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         stopObservation()
                     }
                     is DroidballSignal.CountdownWitnessed -> {
-                        // Git #275: Publication only. No presentation or intelligence yet.
+                        session.armCountdown()
                     }
                 }
             }
@@ -259,6 +279,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballService.stop(getApplication())
         stopDroidBallService()
         observationDispatcher.stopAll()
+        _droidballSession.value?.end()
+        _droidballSession.value = null
         _activeMatch.value = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }
@@ -276,6 +298,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun setObservationSessionState(state: ObservationSessionState) {
         val oldState = _observationSessionState.value
         _observationSessionState.value = state
+        if (state == ObservationSessionState.CALIBRATING) {
+            _droidballSession.value?.beginCalibration()
+        }
         
         // Lifecycle management for ObservationRecorder
         if (state == ObservationSessionState.SERVICE_ACTIVE && oldState != ObservationSessionState.SERVICE_ACTIVE) {

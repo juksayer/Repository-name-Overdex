@@ -46,5 +46,32 @@ data class ArchivedCountdownGlyphWitnessed(
     val glyph: String,
     val similarity: Float,
     val frameIndex: Int,
+    val cropName: String? = null,
+    val sourceWidth: Int? = null,
+    val sourceHeight: Int? = null,
+    val cropLeft: Int? = null,
+    val cropTop: Int? = null,
+    val cropRight: Int? = null,
+    val cropBottom: Int? = null,
     val basis: String
 ) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("crop_captured")
+data class ArchivedCropCaptured(
+    val artifactPath: String,
+    val sha256: String,
+    val byteCount: Long,
+    val mediaType: String,
+    val cropName: String,
+    val sourceWidth: Int,
+    val sourceHeight: Int,
+    val cropLeft: Int,
+    val cropTop: Int,
+    val cropRight: Int,
+    val cropBottom: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("match_started")
+data object ArchivedMatchStarted : ArchivedTestimonyPayload

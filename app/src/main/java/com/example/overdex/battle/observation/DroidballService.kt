@@ -33,6 +33,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.overdex.R
+import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
@@ -73,7 +74,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 1)
         val signals = _signals.asSharedFlow()
 
-        private val _frames = MutableSharedFlow<Bitmap>(
+        private val _frames = MutableSharedFlow<CapturedVisualFrame>(
             replay = 0,
             extraBufferCapacity = 4,
             onBufferOverflow = BufferOverflow.DROP_OLDEST
@@ -257,8 +258,15 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         firstFrameLogged = true
                     }
 
+                    val capturedAtWallTimeMillis = System.currentTimeMillis()
+                    val capturedAtMonotonicTimeNanos = System.nanoTime()
+                    val frame = CapturedVisualFrame(
+                        bitmap = bitmap,
+                        capturedAtWallTimeMillis = capturedAtWallTimeMillis,
+                        capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos
+                    )
                     publicationAttempts++
-                    val emitSucceeded = _frames.tryEmit(bitmap)
+                    val emitSucceeded = _frames.tryEmit(frame)
                     if (emitSucceeded) {
                         successEmitCount++
                     } else {
@@ -269,7 +277,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         state = "OBSERVING",
                         width = bitmap.width,
                         height = bitmap.height,
-                        publicationNanoTime = System.nanoTime()
+                        publicationNanoTime = capturedAtMonotonicTimeNanos
                     )
                 } catch (e: Exception) {
                     Log.e("DroidballService", "Error processing captured frame", e)

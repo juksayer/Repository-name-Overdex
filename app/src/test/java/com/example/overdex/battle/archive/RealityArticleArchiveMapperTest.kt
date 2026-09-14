@@ -1,6 +1,7 @@
 package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -26,7 +27,8 @@ class RealityArticleArchiveMapperTest {
             predecessorIds = listOf(ArticleId("predecessor-1")),
             confidence = 0.85f,
             sequenceNumber = 17L,
-            evidenceReferences = listOf("frame-17")
+            evidenceReferences = listOf("frame-17"),
+            monotonicTimeNanos = 3_000_000L
         )
 
         val archived = RealityArticleArchiveMapper.map(article)
@@ -41,6 +43,7 @@ class RealityArticleArchiveMapperTest {
         assertEquals(0.85f, archived.confidence)
         assertEquals(17L, archived.sequenceNumber)
         assertEquals(listOf("frame-17"), archived.evidenceReferences)
+        assertEquals(3_000_000L, archived.monotonicTimeNanos)
     }
 
     @Test
@@ -54,10 +57,14 @@ class RealityArticleArchiveMapperTest {
         val rawInt = RealityArticleArchiveMapper.map(
             article(id = "raw-int", payload = RawTestimony(25))
         )
+        val matchStarted = RealityArticleArchiveMapper.map(
+            article(id = "match-started", payload = MatchStarted)
+        )
 
         assertEquals(ArchivedAttackIncoming, attack.payload)
         assertEquals(ArchivedPokemonIdentified("Sneasel"), species.payload)
         assertEquals(ArchivedRawInt(25), rawInt.payload)
+        assertEquals(ArchivedMatchStarted, matchStarted.payload)
     }
 
     @Test
@@ -192,7 +199,8 @@ class RealityArticleArchiveMapperTest {
         predecessorIds: List<ArticleId> = emptyList(),
         confidence: Float? = null,
         sequenceNumber: Long? = null,
-        evidenceReferences: List<String>? = null
+        evidenceReferences: List<String>? = null,
+        monotonicTimeNanos: Long? = null
     ) = RealityArticle(
         id = ArticleId(id),
         perceivedAt = 100L,
@@ -203,7 +211,8 @@ class RealityArticleArchiveMapperTest {
         confidence = confidence,
         sequenceNumber = sequenceNumber,
         evidenceReferences = evidenceReferences,
-        matchId = matchId
+        matchId = matchId,
+        monotonicTimeNanos = monotonicTimeNanos
     )
 
     private fun archivedArticle(

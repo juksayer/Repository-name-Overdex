@@ -1,5 +1,8 @@
 package com.example.overdex.battle.custody
 
+import com.example.overdex.battle.observation.BattleCropProvenance
+import com.example.overdex.battle.artifact.CropArtifactReference
+
 /**
  * A domain-neutral container for what a Witness experiences.
  * 
@@ -45,5 +48,15 @@ data class CountdownGlyphWitnessed(
     val glyph: String,
     val similarity: Float,
     val frameIndex: Int,
+    val cropProvenance: BattleCropProvenance? = null,
     val basis: String = "COUNTDOWN_GLYPH_TEMPLATE_MATCH"
 ) : TestimonyPayload
+
+/** A durably written crop artifact, before any recognizer interprets it. */
+data class CropCaptured(
+    val artifact: CropArtifactReference,
+    val cropProvenance: BattleCropProvenance
+) : TestimonyPayload
+
+/** A derived match boundary whose predecessor is the accepted GO glyph article. */
+data object MatchStarted : TestimonyPayload

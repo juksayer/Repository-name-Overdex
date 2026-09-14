@@ -56,7 +56,7 @@ class MatchArchivePackageWriterTest {
                     Json.decodeFromString<MatchArchiveManifest>(manifestText)
 
                 assertEquals(returnedManifest, storedManifest)
-                assertEquals(1, storedManifest.archiveFormatVersion)
+                assertEquals(2, storedManifest.archiveFormatVersion)
                 assertEquals("overdex-match-archive", storedManifest.archiveType)
                 assertEquals("match-a", storedManifest.matchId)
                 assertEquals("timeline.json", storedManifest.timelineEntry)

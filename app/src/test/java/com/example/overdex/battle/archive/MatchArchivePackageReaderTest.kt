@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import java.nio.file.Files
+import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -61,6 +63,40 @@ class MatchArchivePackageReaderTest {
         assertTrue(input.wasClosed)
     }
 
+    @Test
+    fun `packages verifies and restores referenced crop artifacts`() {
+        val bytes = byteArrayOf(9, 8, 7, 6)
+        val hash = sha256(bytes)
+        val path = "artifacts/crops/sha256/$hash.png"
+        val archive = MatchArchive(
+            matchId = "match-a",
+            articles = listOf(
+                ArchivedRealityArticle(
+                    articleId = "crop-1", matchId = "match-a", perceivedAt = 1L, recordedAt = 1L,
+                    sourceId = "COUNTDOWN_CROP_CAPTURE",
+                    payload = ArchivedCropCaptured(path, hash, bytes.size.toLong(), "image/png", "CountdownGlyphCrop", 1080, 2400, 1, 2, 3, 4),
+                    predecessorIds = emptyList(), confidence = null, sequenceNumber = 1L, evidenceReferences = emptyList()
+                )
+            )
+        )
+        val sourceRoot = Files.createTempDirectory("crop-source-").toFile()
+        val restoredRoot = Files.createTempDirectory("crop-restored-").toFile()
+        try {
+            val source = java.io.File(sourceRoot, path)
+            source.parentFile!!.mkdirs()
+            source.writeBytes(bytes)
+            val output = ByteArrayOutputStream()
+            MatchArchivePackageWriter.write(archive, output, sourceRoot)
+
+            assertEquals(archive, MatchArchivePackageReader.read(ByteArrayInputStream(output.toByteArray()), restoredRoot))
+            assertTrue(java.io.File(restoredRoot, path).isFile)
+            assertEquals(hash, sha256(java.io.File(restoredRoot, path).readBytes()))
+        } finally {
+            sourceRoot.deleteRecursively()
+            restoredRoot.deleteRecursively()
+        }
+    }
+
     private fun sampleArchive() = MatchArchive(
         matchId = "match-a",
         articles = listOf(
@@ -100,6 +136,9 @@ class MatchArchivePackageReaderTest {
         }
         return output.toByteArray()
     }
+
+    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+        .digest(bytes).joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
     private class TrackingInput(bytes: ByteArray) : ByteArrayInputStream(bytes) {
         var wasClosed = false

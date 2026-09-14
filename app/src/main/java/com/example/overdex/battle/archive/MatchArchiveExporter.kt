@@ -20,7 +20,8 @@ object MatchArchiveExporter {
     fun export(
         realityTimeline: RealityTimeline,
         matchId: MatchId,
-        output: OutputStream
+        output: OutputStream,
+        artifactRepositoryRoot: File? = null
     ): MatchArchiveManifest {
         val snapshot = realityTimeline.getArticles()
         val matchArticles = snapshot.filter { it.matchId == matchId }
@@ -30,7 +31,7 @@ object MatchArchiveExporter {
             articles = matchArticles
         )
 
-        return MatchArchivePackageWriter.write(archive, output)
+        return MatchArchivePackageWriter.write(archive, output, artifactRepositoryRoot)
     }
 
     /**

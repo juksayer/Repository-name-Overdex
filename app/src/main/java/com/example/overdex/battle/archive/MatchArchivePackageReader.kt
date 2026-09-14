@@ -5,10 +5,13 @@ import com.example.overdex.battle.archive.MatchArchivePackageWriter.TIMELINE_ENT
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.zip.ZipInputStream
+import java.security.MessageDigest
+import com.example.overdex.battle.artifact.FileCropArtifactStore
 
 /**
  * Reader for decoding and validating `.odxmatch` ZIP archives.
@@ -34,11 +37,12 @@ object MatchArchivePackageReader {
      * @throws IllegalArgumentException if the archive is malformed, missing required entries,
      *         violates integrity constraints, or exceeds size limits.
      */
-    fun read(input: InputStream): MatchArchive {
+    fun read(input: InputStream, artifactRepositoryRoot: File? = null): MatchArchive {
         var manifest: MatchArchiveManifest? = null
         var archive: MatchArchive? = null
 
         var totalBytesRead = 0L
+        val artifactBytes = linkedMapOf<String, ByteArray>()
 
         input.use { rawInput ->
             ZipInputStream(rawInput).use { zis ->
@@ -59,26 +63,19 @@ object MatchArchivePackageReader {
                         content.write(buffer, 0, read)
                     }
 
-                    val jsonString = try {
-                        val decoder = StandardCharsets.UTF_8.newDecoder()
-                            .onMalformedInput(CodingErrorAction.REPORT)
-                            .onUnmappableCharacter(CodingErrorAction.REPORT)
-                        decoder.decode(ByteBuffer.wrap(content.toByteArray())).toString()
-                    } catch (e: Exception) {
-                        throw IllegalArgumentException("Malformed UTF-8 in entry: ${entry.name}", e)
-                    }
-
                     when (entry.name) {
                         MANIFEST_ENTRY_NAME -> {
                             if (manifest != null) throw IllegalArgumentException("Duplicate manifest entry.")
-                            manifest = decodeManifest(jsonString)
+                            manifest = decodeManifest(decodeUtf8(content.toByteArray(), entry.name))
                         }
                         TIMELINE_ENTRY_NAME -> {
                             if (archive != null) throw IllegalArgumentException("Duplicate timeline entry.")
-                            archive = MatchArchiveSerializer.deserialize(jsonString)
+                            archive = MatchArchiveSerializer.deserialize(decodeUtf8(content.toByteArray(), entry.name))
                         }
                         else -> {
-                            throw IllegalArgumentException("Unexpected entry in archive: ${entry.name}")
+                            if (artifactBytes.put(entry.name, content.toByteArray()) != null) {
+                                throw IllegalArgumentException("Duplicate archive entry: ${entry.name}")
+                            }
                         }
                     }
 
@@ -94,6 +91,15 @@ object MatchArchivePackageReader {
 
         // 2. Integrity Checks
         validateIntegrity(finalManifest, finalArchive)
+        validateArtifacts(finalManifest, finalArchive, artifactBytes)
+        if (artifactRepositoryRoot != null) {
+            val store = FileCropArtifactStore(artifactRepositoryRoot)
+            artifactBytes.forEach { (path, bytes) ->
+                val reference = store.preserveEncodedPng(bytes)
+                    ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
+                if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
+            }
+        }
 
         return finalArchive
     }
@@ -101,7 +107,7 @@ object MatchArchivePackageReader {
     private fun decodeManifest(jsonString: String): MatchArchiveManifest {
         val manifest = manifestJson.decodeFromString<MatchArchiveManifest>(jsonString)
         
-        if (manifest.archiveFormatVersion != 1) {
+        if (manifest.archiveFormatVersion !in 1..2) {
             throw IllegalArgumentException("Unsupported archive format version: ${manifest.archiveFormatVersion}")
         }
         if (manifest.archiveType != "overdex-match-archive") {
@@ -113,6 +119,42 @@ object MatchArchivePackageReader {
         
         return manifest
     }
+
+    private fun decodeUtf8(bytes: ByteArray, entryName: String): String = try {
+        val decoder = StandardCharsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        decoder.decode(ByteBuffer.wrap(bytes)).toString()
+    } catch (e: Exception) {
+        throw IllegalArgumentException("Malformed UTF-8 in entry: $entryName", e)
+    }
+
+    private fun validateArtifacts(
+        manifest: MatchArchiveManifest,
+        archive: MatchArchive,
+        artifactBytes: Map<String, ByteArray>
+    ) {
+        val referenced = archive.articles.mapNotNull { (it.payload as? ArchivedCropCaptured)?.let { crop ->
+            ArchivedArtifactEntry(crop.artifactPath, crop.sha256, crop.byteCount, crop.mediaType)
+        } }.sortedBy { it.relativePath }
+        val declared = manifest.artifacts.sortedBy { it.relativePath }
+        if (referenced != declared) throw IllegalArgumentException("Crop artifact manifest does not match Timeline references.")
+        if (artifactBytes.keys != declared.map { it.relativePath }.toSet()) {
+            throw IllegalArgumentException("Archive crop artifact entries do not match the manifest.")
+        }
+        declared.forEach { artifact ->
+            require(artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png") {
+                "Invalid crop artifact reference: ${artifact.relativePath}"
+            }
+            val bytes = artifactBytes.getValue(artifact.relativePath)
+            if (bytes.size.toLong() != artifact.byteCount || sha256(bytes) != artifact.sha256) {
+                throw IllegalArgumentException("Crop artifact hash verification failed: ${artifact.relativePath}")
+            }
+        }
+    }
+
+    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+        .digest(bytes).joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
     private fun validateIntegrity(manifest: MatchArchiveManifest, archive: MatchArchive) {
         if (manifest.matchId != archive.matchId) {

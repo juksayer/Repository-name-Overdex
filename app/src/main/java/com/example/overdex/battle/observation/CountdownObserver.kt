@@ -1,11 +1,9 @@
 package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
-import android.graphics.Rect
 import android.util.Log
 import com.example.overdex.BuildConfig
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
-import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -25,7 +23,7 @@ class CountdownObserver(
     private val input: ObservationInput,
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
-        ObserverId("COUNTDOWN_OBSERVER", ObserverSource.SCREEN_CAPTURE),
+        ObserverId(BattleWitnessContracts.countdownGlyph.witnessId, ObserverSource.SCREEN_CAPTURE),
 
     override val name: String = "Countdown Observer"
 ) : Observer {
@@ -63,12 +61,13 @@ class CountdownObserver(
             var attemptsInSession = 0
 
             try {
-                input.supply { bitmap ->
+                input.supplyFrames { frame ->
+                    val bitmap = frame.bitmap
                     Log.d("COUNTDOWN", "bitmap received")
                     match.incrementFrameCount()
 
-                    val timestamp = System.currentTimeMillis()
-                    val receiptNano = System.nanoTime()
+                    val timestamp = frame.capturedAtWallTimeMillis
+                    val receiptNano = frame.capturedAtMonotonicTimeNanos
                     receiptSequence++
                     val intervalMs = if (previousReceiptNanoTime == 0L) 0L else (receiptNano - previousReceiptNanoTime) / 1_000_000L
                     previousReceiptNanoTime = receiptNano
@@ -79,36 +78,14 @@ class CountdownObserver(
                     if (!calibration.isCalibrated()) {
                         Log.d("COUNTDOWN_TIMING", "seq=$receiptSequence | intervalMs=$intervalMs | Attempt prevented: not calibrated")
                     } else {
-                        val region = calibration.countdownRegion
-                        val sourceWidth = bitmap.width
-                        val sourceHeight = bitmap.height
+                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, bitmap)
 
-                        val left = (region.x * sourceWidth)
-                            .toInt()
-                            .coerceIn(0, sourceWidth - 1)
-
-                        val top = (region.y * sourceHeight)
-                            .toInt()
-                            .coerceIn(0, sourceHeight - 1)
-
-                        val w = (region.width * sourceWidth)
-                            .toInt()
-                            .coerceAtMost(sourceWidth - left)
-
-                        val h = (region.height * sourceHeight)
-                            .toInt()
-                            .coerceAtMost(sourceHeight - top)
-
-                        if (w < 32 || h < 32) {
-                            Log.w("CountdownObserver", "Crop dimensions too small for ML Kit: ${w}x${h}")
+                        if (resolvedCountdown == null) {
+                            Log.w("CountdownObserver", "Countdown glyph crop is unavailable or smaller than 32px")
                         } else {
-                            val cropped = try {
-                                Bitmap.createBitmap(bitmap, left, top, w, h)
-                            } catch (_: Exception) {
-                                null
-                            }
-
-                            if (cropped != null) {
+                            val cropped = resolvedCountdown.bitmap
+                            val cropProvenance = resolvedCountdown.provenance
+                            try {
                                 val startTime = System.nanoTime()
                                 val recognitionResult = CountdownRecognizer.recognize(cropped)
                                 val durationMs = (System.nanoTime() - startTime) / 1_000_000L
@@ -135,9 +112,9 @@ class CountdownObserver(
                                         sequence = receiptSequence,
                                         bitmap = cropped,
                                         receiptTimestamp = timestamp,
-                                        cropRect = Rect(left, top, left + w, top + h),
-                                        sourceWidth = sourceWidth,
-                                        sourceHeight = sourceHeight,
+                                        cropRect = cropProvenance.bounds.asRect(),
+                                        sourceWidth = cropProvenance.sourceWidth,
+                                        sourceHeight = cropProvenance.sourceHeight,
                                         durationMs = durationMs,
                                         outcome = outcome,
                                         rawValue = value
@@ -147,20 +124,13 @@ class CountdownObserver(
                                 val escapedText = escapeForLog(value)
                                 Log.d("COUNTDOWN_TIMING", "seq=$receiptSequence | intervalMs=$intervalMs | crop=${cropped.width}x${cropped.height} | durationMs=$durationMs | outcome=$outcome | text=\"$escapedText\"")
 
-                                if (value != null) {
-                                    match.custody.submitTestimony(
-                                        sourceId = sourceId,
-                                        payload = RawTestimony(value),
-                                        timestamp = timestamp,
-                                        confidence = recognitionResult.confidence
-                                    )
-                                }
-
                                 if (BuildConfig.DEBUG && !burstTriggered && 
                                     value?.contains("VS", ignoreCase = true) == true) {
                                     burstTriggered = true
                                     triggerDiagnosticBurst(currentSessionId, bitmap, match, sourceId)
                                 }
+                            } finally {
+                                cropped.recycle()
                             }
                         }
                     }
@@ -181,22 +151,12 @@ class CountdownObserver(
         
         val sourceWidth = triggerBitmap.width
         val sourceHeight = triggerBitmap.height
-        
-        // Countdown region
-        val region = calibration.countdownRegion
-        val left = (region.x * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
-        val top = (region.y * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
-        val w = (region.width * sourceWidth).toInt().coerceAtMost(sourceWidth - left)
-        val h = (region.height * sourceHeight).toInt().coerceAtMost(sourceHeight - top)
-        val triggerCropRect = Rect(left, top, left + w, top + h)
-
-        // Trainer Inactive Pokémon region
-        val inactiveRegion = calibration.trainerInactivePokemonRegion
-        val inLeft = (inactiveRegion.x * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
-        val inTop = (inactiveRegion.y * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
-        val inW = (inactiveRegion.width * sourceWidth).toInt().coerceAtMost(sourceWidth - inLeft)
-        val inH = (inactiveRegion.height * sourceHeight).toInt().coerceAtMost(sourceHeight - inTop)
-        val trainerInactiveCropRect = Rect(inLeft, inTop, inLeft + inW, inTop + inH)
+        val triggerCropRect = BattleCropContracts.countdownGlyph.resolveRect(
+            calibration, sourceWidth, sourceHeight
+        ) ?: return
+        val trainerInactiveCropRect = BattleCropContracts.trainerInactiveTimerOverlayClearance.resolveRect(
+            calibration, sourceWidth, sourceHeight
+        ) ?: return
 
         Log.d("COUNTDOWN_BURST", "Trainer Inactive Pokémon crop rect: $trainerInactiveCropRect")
 
@@ -220,26 +180,13 @@ class CountdownObserver(
                 // Subscribing independently to the frame stream
                 DroidballService.frames
                     .sample(100.milliseconds)
-                    .collect { bitmap ->
-                        val srcW = bitmap.width
-                        val srcH = bitmap.height
-                        val isCropValid = triggerCropRect.left >= 0 &&
-                                          triggerCropRect.top >= 0 &&
-                                          triggerCropRect.right <= srcW &&
-                                          triggerCropRect.bottom <= srcH &&
-                                          triggerCropRect.width() > 0 &&
-                                          triggerCropRect.height() > 0
+                    .collect { frame ->
+                        val bitmap = frame.bitmap
+                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, bitmap)
 
-                        if (isCropValid) {
-                            var tempCrop: Bitmap? = null
+                        if (resolvedCountdown != null) {
+                            val tempCrop = resolvedCountdown.bitmap
                             try {
-                                tempCrop = Bitmap.createBitmap(
-                                    bitmap,
-                                    triggerCropRect.left,
-                                    triggerCropRect.top,
-                                    triggerCropRect.width(),
-                                    triggerCropRect.height()
-                                )
                                 val matchResult = CountdownGlyphMatcher.match(tempCrop)
                                 val candidate = matchResult.candidate
                                 if (candidate != null && witnessedGlyphs.add(candidate)) {
@@ -248,9 +195,13 @@ class CountdownObserver(
                                         payload = CountdownGlyphWitnessed(
                                             glyph = candidate,
                                             similarity = matchResult.similarity,
-                                            frameIndex = frameIndex
+                                            frameIndex = frameIndex,
+                                            cropProvenance = resolvedCountdown.provenance
                                         ),
-                                        timestamp = System.currentTimeMillis()
+                                        timestamp = frame.capturedAtWallTimeMillis,
+                                        confidence = null,
+                                        evidenceReferences = emptyList(),
+                                        monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                                     )
 
                                     val witnessLog = String.format(
@@ -273,33 +224,39 @@ class CountdownObserver(
                             } catch (e: Exception) {
                                 Log.e(COUNTDOWN_GLYPH_BURST_TAG, "Error matching glyph in burst for session $sessionId frame $frameIndex", e)
                             } finally {
-                                tempCrop?.recycle()
+                                tempCrop.recycle()
                             }
                         } else {
                             Log.w(
                                 COUNTDOWN_GLYPH_BURST_TAG,
-                                "session=$sessionId | frame=$frameIndex | invalidCountdownCrop=${triggerCropRect.left},${triggerCropRect.top},${triggerCropRect.right},${triggerCropRect.bottom} | source=${srcW}x${srcH}"
+                                "session=$sessionId | frame=$frameIndex | unavailableCountdownGlyphCrop | source=${bitmap.width}x${bitmap.height}"
                             )
                         }
 
-                        val clearanceResult = if (BuildConfig.DEBUG) {
+                        val resolvedTrainerInactive = BattleCropContracts.trainerInactiveTimerOverlayClearance
+                            .resolveRect(calibration, bitmap.width, bitmap.height)
+
+                        val clearanceResult = if (BuildConfig.DEBUG && resolvedTrainerInactive != null) {
                             TrainerInactivePokemonTimerOverlayProbe.inspectAndLog(
                                 sessionId = sessionId,
                                 frameIndex = frameIndex,
                                 sourceBitmap = bitmap,
-                                cropRect = trainerInactiveCropRect
+                                cropRect = resolvedTrainerInactive
                             )
                         } else null
 
                         if (BuildConfig.DEBUG && clearanceResult != null) {
                             match.custody.submitTestimony(
-                                sourceId = SourceId("TRAINER_INACTIVE_TIMER_OVERLAY"),
+                                sourceId = SourceId(BattleWitnessContracts.trainerInactiveTimerOverlayClearance.witnessId),
                                 payload = SupportingMatchStart(
                                     frameIndex = clearanceResult.frameIndex,
                                     upperColorfulPixelFraction = clearanceResult.upperColorfulPixelFraction,
                                     lowerColorfulPixelFraction = clearanceResult.lowerColorfulPixelFraction
                                 ),
-                                timestamp = System.currentTimeMillis()
+                                timestamp = frame.capturedAtWallTimeMillis,
+                                confidence = null,
+                                evidenceReferences = emptyList(),
+                                monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                             )
 
                             val matchStartLog = String.format(
@@ -313,15 +270,19 @@ class CountdownObserver(
                             Log.d("MATCH_START_SUPPORT", matchStartLog)
                         }
 
-                        // Reuse geometry from trigger for consistency in the burst
-                        CountdownBurstRecorder.record(
-                            sessionId = sessionId,
-                            index = frameIndex++,
-                            sourceBitmap = bitmap,
-                            cropRect = triggerCropRect,
-                            trainerInactiveCropRect = trainerInactiveCropRect,
-                            timestamp = System.currentTimeMillis()
-                        )
+                        val countdownRect = BattleCropContracts.countdownGlyph
+                            .resolveRect(calibration, bitmap.width, bitmap.height)
+                        if (countdownRect != null && resolvedTrainerInactive != null) {
+                            CountdownBurstRecorder.record(
+                                sessionId = sessionId,
+                                index = frameIndex,
+                                sourceBitmap = bitmap,
+                                cropRect = countdownRect,
+                                trainerInactiveCropRect = resolvedTrainerInactive,
+                                timestamp = frame.capturedAtWallTimeMillis
+                            )
+                        }
+                        frameIndex++
                         
                         if (frameIndex > 70) {
                             this@launch.cancel("Burst limit reached")

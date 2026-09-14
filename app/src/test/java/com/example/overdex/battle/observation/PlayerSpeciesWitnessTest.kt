@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.graphics.Bitmap
 import com.example.overdex.battle.custody.*
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
+import com.example.overdex.battle.witness.PlayerSpeciesWitness
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
@@ -38,6 +39,7 @@ class PlayerSpeciesWitnessTest {
         )
         val input = FakeInput()
         val calibration = BattleCalibration(
+            enemyNameRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f),
             playerTeamInfoRegion = AnchorRegion(0.1f, 0.1f, 0.5f, 0.1f)
         )
         

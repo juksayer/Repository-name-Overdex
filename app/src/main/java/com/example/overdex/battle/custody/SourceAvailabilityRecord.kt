@@ -7,5 +7,6 @@ data class SourceAvailabilityRecord(
     override val sequenceNumber: Long,
     override val timestamp: Long,
     override val sourceId: SourceId,
-    val available: Boolean
+    val available: Boolean,
+    override val monotonicTimeNanos: Long = System.nanoTime()
 ) : CustodyRecord

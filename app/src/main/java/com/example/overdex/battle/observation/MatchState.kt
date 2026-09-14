@@ -3,13 +3,13 @@ package com.example.overdex.battle.observation
 /**
  * Represents the lifecycle stages of a Match.
  * 
- * These states describe the technical Match process (e.g., active vs paused),
- * rather than the state of the Pokémon GO battle itself.
+ * These states describe the actual Pokémon GO battle, rather than the
+ * surrounding Droidball deployment session.
  */
 enum class MatchState {
-    /** The match has been created but has not yet started collecting evidence. */
+    /** Droidball may be armed and observing, but GO has not started a battle. */
     CREATED,
-    /** Observers are actively monitoring and submitting evidence to the match. */
+    /** GO has been accepted and the battle clock is running. */
     ACTIVE,
     /** Match observation is temporarily suspended. */
     PAUSED,

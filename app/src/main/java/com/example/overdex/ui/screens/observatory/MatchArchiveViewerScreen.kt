@@ -194,6 +194,8 @@ private fun ArchiveArticleRow(
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
+            is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
+            is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
         }
 
         TerminalText(text = payloadText, color = Color.White, fontSize = 12.sp)
@@ -210,6 +212,13 @@ private fun ArchiveArticleRow(
                 color = Color.Gray,
                 fontSize = 8.sp,
                 modifier = Modifier.weight(1f)
+            )
+        }
+        article.monotonicTimeNanos?.let { monotonicTimeNanos ->
+            TerminalText(
+                text = "M: ${monotonicTimeNanos}ns",
+                color = Color.Gray,
+                fontSize = 8.sp
             )
         }
     }
@@ -247,6 +256,8 @@ private fun ArticleDetailsOverlay(
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
+                is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"
+                is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
             }
             DetailField(label = "PAYLOAD CONTENT", value = payloadText)
             
@@ -254,6 +265,7 @@ private fun ArticleDetailsOverlay(
             
             DetailField(label = "PERCEIVED TIME", value = fullTimeFormatter.format(Instant.ofEpochMilli(article.perceivedAt)))
             DetailField(label = "RECORDED TIME", value = fullTimeFormatter.format(Instant.ofEpochMilli(article.recordedAt)))
+            DetailField(label = "MONOTONIC TIME", value = article.monotonicTimeNanos?.let { "${it} ns" } ?: "Not recorded")
 
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider(color = TerminalGreen.copy(alpha = 0.3f))

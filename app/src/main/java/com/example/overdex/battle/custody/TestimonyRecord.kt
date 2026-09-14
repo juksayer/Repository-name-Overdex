@@ -8,6 +8,7 @@ package com.example.overdex.battle.custody
  * 
  * @property sequenceNumber A monotonic counter assigned by Custody upon receipt.
  * @property timestamp The temporal position (e.g., system time) provided by the source.
+ * @property monotonicTimeNanos The shared monotonic time of the observation.
  * @property sourceId The unique identifier of the testimony source.
  * @property payload The neutral testimony data.
  * @property confidence The source's certainty score (0.0 to 1.0), or null if unknown/unavailable.
@@ -19,5 +20,6 @@ data class TestimonyRecord(
     override val sourceId: SourceId,
     val payload: TestimonyPayload,
     val confidence: Float?,
-    val evidenceReferences: List<String> = emptyList()
+    val evidenceReferences: List<String> = emptyList(),
+    override val monotonicTimeNanos: Long = System.nanoTime()
 ) : CustodyRecord

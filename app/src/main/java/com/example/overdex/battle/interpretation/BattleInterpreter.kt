@@ -1,8 +1,11 @@
 package com.example.overdex.battle.interpretation
 
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.CountdownGlyphWitnessed
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.observation.BattleWitnessContracts
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
@@ -25,6 +28,24 @@ class BattleInterpreter(
     private val pokemonKnowledge: PokemonKnowledge
 ) {
 
+    /** Derives the match boundary from typed GO testimony, leaving the witness intact. */
+    fun interpretMatchStart(article: RealityArticle): RealityArticle? {
+        if (article.sourceId.id != BattleWitnessContracts.countdownGlyph.witnessId) return null
+        val glyph = article.payload as? CountdownGlyphWitnessed ?: return null
+        if (glyph.glyph != "GO") return null
+
+        return RealityArticle(
+            id = ArticleId(UUID.randomUUID().toString()),
+            perceivedAt = article.perceivedAt,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("BATTLE_INTERPRETER"),
+            payload = MatchStarted,
+            predecessorIds = listOf(article.id),
+            matchId = article.matchId,
+            monotonicTimeNanos = article.monotonicTimeNanos
+        )
+    }
+
     /**
      * Interprets a raw RealityArticle from ATTACK_INCOMING_WITNESS and produces a derived RealityArticle
      * with payload [AttackIncoming] if the text matches the attack warning pattern.
@@ -44,35 +65,8 @@ class BattleInterpreter(
                 payload = AttackIncoming,
                 predecessorIds = listOf(article.id),
                 matchId = article.matchId,
-                confidence = null
-            )
-        } else {
-            null
-        }
-    }
-
-    /**
-     * Interprets a raw RealityArticle from COUNTDOWN_OBSERVER and produces a derived RealityArticle
-     * if the text matches a valid countdown target.
-     */
-    fun interpretCountdown(article: RealityArticle): RealityArticle? {
-        if (article.sourceId.id != "COUNTDOWN_OBSERVER") return null
-        val payload = article.payload as? RawTestimony ?: return null
-        val rawText = (payload.data as? String) ?: return null
-
-        val normalized = rawText.uppercase().trim().replace(" ", "")
-        val targets = setOf("VS", "GETREADY", "3", "2", "1", "GO")
-
-        return if (normalized in targets) {
-            RealityArticle(
-                id = ArticleId(UUID.randomUUID().toString()),
-                perceivedAt = article.perceivedAt,
-                recordedAt = System.currentTimeMillis(),
-                sourceId = SourceId("BATTLE_INTERPRETER"),
-                payload = RawTestimony(normalized),
-                predecessorIds = listOf(article.id),
-                matchId = article.matchId,
-                confidence = null
+                confidence = null,
+                monotonicTimeNanos = article.monotonicTimeNanos
             )
         } else {
             null
