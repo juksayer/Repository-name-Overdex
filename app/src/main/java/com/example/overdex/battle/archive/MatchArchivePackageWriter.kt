@@ -35,9 +35,17 @@ object MatchArchivePackageWriter {
     ): MatchArchiveManifest {
         // 1. Serialize the supplied archive with MatchArchiveSerializer before opening the ZIP stream.
         val timelineJson = MatchArchiveSerializer.serialize(archive)
-        val artifacts = archive.articles.mapNotNull { (it.payload as? ArchivedCropCaptured)?.let { crop ->
-            ArchivedArtifactEntry(crop.artifactPath, crop.sha256, crop.byteCount, crop.mediaType)
-        } }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
+        val artifacts = archive.articles.mapNotNull { article ->
+            when (val payload = article.payload) {
+                is ArchivedCropCaptured -> ArchivedArtifactEntry(
+                    payload.artifactPath, payload.sha256, payload.byteCount, payload.mediaType
+                )
+                is ArchivedAudioCaptured -> ArchivedArtifactEntry(
+                    payload.artifactPath, payload.sha256, payload.byteCount, payload.mediaType
+                )
+                else -> null
+            }
+        }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         val artifactBytes = artifacts.associateWith { artifact ->
             val root = artifactRepositoryRoot
                 ?: throw IllegalArgumentException("Crop artifacts require an artifact repository root.")
@@ -80,10 +88,12 @@ object MatchArchivePackageWriter {
     }
 
     private fun requireValidArtifactPath(artifact: ArchivedArtifactEntry) {
-        require(artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png") {
-            "Invalid crop artifact reference: ${artifact.relativePath}"
-        }
-        require(artifact.sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid crop artifact hash." }
+        val isCrop = artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png" &&
+            artifact.mediaType == "image/png"
+        val isAudio = artifact.relativePath == "artifacts/audio/sha256/${artifact.sha256}.wav" &&
+            artifact.mediaType == "audio/wav"
+        require(isCrop || isAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
+        require(artifact.sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid artifact hash." }
     }
 
     private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")

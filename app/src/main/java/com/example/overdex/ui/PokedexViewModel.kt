@@ -1,6 +1,8 @@
 package com.example.overdex.ui
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,6 +44,9 @@ import com.example.overdex.battle.observation.PersistedActivePokemonTypeWitness
 import com.example.overdex.data.observation.YouWinRecognizer
 import com.example.overdex.data.observation.GoodEffortRecognizer
 import com.example.overdex.battle.artifact.FileCropArtifactStore
+import com.example.overdex.battle.artifact.FileAudioArtifactStore
+import com.example.overdex.battle.audio.AudioCaptureWitness
+import com.example.overdex.battle.audio.PersistedBattleCryCandidateWitness
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.data.FallbackSpriteProvider
@@ -232,9 +237,26 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val calibrationManager = CalibrationManager(getApplication())
         val calibration = calibrationManager.load()
         val cropArtifactStore = FileCropArtifactStore(getApplication<Application>().filesDir)
+        val audioArtifactStore = FileAudioArtifactStore(getApplication<Application>().filesDir)
         PokemonGoTypeIconMatcher.initialize(getApplication())
         
         Log.d("DEPLOY", "2 Registering observers")
+        if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            observationDispatcher.register(
+                AudioCaptureWitness(
+                    artifactStore = audioArtifactStore,
+                    observerId = ObserverId("BATTLE_CRY_AUDIO_CAPTURE", ObserverSource.AUDIO_CAPTURE)
+                )
+            )
+            observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
+        } else {
+            // Coverage is itself evidence: no cry could have been heard without the microphone.
+            match.custody.submitAvailability(
+                sourceId = SourceId("BATTLE_CRY_AUDIO_CAPTURE"),
+                available = false,
+                timestamp = System.currentTimeMillis()
+            )
+        }
         listOf(
             BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture Witness",
             BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness",

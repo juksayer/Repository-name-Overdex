@@ -3,6 +3,8 @@ package com.example.overdex.battle.archive
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
+import com.example.overdex.battle.custody.AudioCaptured
+import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
@@ -70,6 +72,19 @@ object RealityArticleArchiveMapper {
                 cropTop = p.cropProvenance.bounds.top,
                 cropRight = p.cropProvenance.bounds.right,
                 cropBottom = p.cropProvenance.bounds.bottom
+            )
+            is AudioCaptured -> ArchivedAudioCaptured(
+                artifactPath = p.artifact.relativePath,
+                sha256 = p.artifact.sha256,
+                byteCount = p.artifact.byteCount,
+                mediaType = p.artifact.mediaType,
+                sampleRateHz = p.sampleRateHz,
+                channelCount = p.channelCount,
+                durationNanos = p.durationNanos,
+                cueKind = p.cueKind
+            )
+            is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
+                p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )
             is WitnessOperating -> ArchivedWitnessOperating(p.operating)
             is ActivePokemonTypesWitnessed -> ArchivedActivePokemonTypesWitnessed(

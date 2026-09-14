@@ -11,7 +11,10 @@ import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
+import android.media.AudioFormat
+import android.media.AudioRecord
 import android.media.ImageReader
+import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
@@ -33,6 +36,10 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.overdex.R
+import com.example.overdex.battle.audio.AudioCaptureCue
+import com.example.overdex.battle.audio.CueCenteredPcmCollector
+import com.example.overdex.battle.audio.BattleCryCueKind
+import com.example.overdex.model.observation.CapturedAudioFrame
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import kotlinx.coroutines.channels.BufferOverflow
@@ -42,6 +49,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -82,6 +90,18 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         )
         val frames = _frames.asSharedFlow()
 
+        private val _audioFrames = MutableSharedFlow<CapturedAudioFrame>(
+            replay = 0,
+            extraBufferCapacity = 2,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+        /** Raw microphone snippets, published independently from captured visual frames. */
+        val audioFrames = _audioFrames.asSharedFlow()
+
+        private val _microphoneCaptureAvailable = MutableStateFlow<Boolean?>(null)
+        /** Null until a deployment attempts microphone startup; false means it ceased operating. */
+        val microphoneCaptureAvailable = _microphoneCaptureAvailable.asStateFlow()
+
         private val _captureDiagnostics = MutableStateFlow(CaptureDiagnostics(state = "NOT OBSERVED"))
         val captureDiagnostics = _captureDiagnostics.asStateFlow()
 
@@ -111,6 +131,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             activeService?.snapOverlayToNearestEdge()
         }
 
+        /** Requests a short microphone artifact around an already-accepted visual article. */
+        fun requestCueCenteredAudio(articleId: String, cueKind: BattleCryCueKind) {
+            activeService?.requestCueCenteredAudio(AudioCaptureCue(articleId, cueKind))
+        }
+
         /**
          * The single publication API for instrument signals.
          */
@@ -126,6 +151,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
+    private var audioRecord: AudioRecord? = null
+    private var audioCaptureJob: kotlinx.coroutines.Job? = null
+    private val audioCollectorLock = Any()
+    // 500 ms pre-roll and 700 ms post-roll at 16 kHz mono PCM-16.
+    private val cueCenteredAudio = CueCenteredPcmCollector(preRollBytes = 16_000, postRollBytes = 22_400)
     private var firstFrameLogged = false
 
     private var publicationAttempts = 0L
@@ -173,17 +203,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val data = intent?.getParcelableExtra<Intent>("data")
 
         if (resultCode == Activity.RESULT_OK && data != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    createNotification(),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-                )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val serviceTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                    if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                    } else {
+                        0
+                    }
+                startForeground(NOTIFICATION_ID, createNotification(), serviceTypes)
             } else {
                 startForeground(NOTIFICATION_ID, createNotification())
             }
             setupMediaProjection(resultCode, data)
             setupOverlay()
+            startMicrophoneCapture()
             _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
             _signals.tryEmit(DroidballSignal.Started)
         } else {
@@ -307,6 +340,89 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             imageReader?.surface,
             null, null
         )
+    }
+
+    private fun requestCueCenteredAudio(cue: AudioCaptureCue) {
+        synchronized(audioCollectorLock) { cueCenteredAudio.cue(cue) }
+    }
+
+    /**
+     * Captures ordinary ambient microphone input. This is intentionally independent of audio
+     * playback capture: it works even when another app opts out of internal playback capture.
+     * A small in-memory pre-roll is retained; only accepted visual cues produce a durable frame.
+     */
+    private fun startMicrophoneCapture() {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.i("DroidballService", "Microphone permission unavailable; cry audio witness remains offline.")
+            _microphoneCaptureAvailable.value = false
+            return
+        }
+        val sampleRateHz = 16_000
+        val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        val encoding = AudioFormat.ENCODING_PCM_16BIT
+        val minimumBuffer = AudioRecord.getMinBufferSize(sampleRateHz, channelConfig, encoding)
+        if (minimumBuffer <= 0) {
+            Log.w("DroidballService", "No supported microphone capture buffer.")
+            _microphoneCaptureAvailable.value = false
+            return
+        }
+        val bufferSize = maxOf(minimumBuffer, sampleRateHz / 2 * 2)
+        val record = try {
+            AudioRecord(MediaRecorder.AudioSource.MIC, sampleRateHz, channelConfig, encoding, bufferSize)
+        } catch (error: Exception) {
+            Log.e("DroidballService", "Unable to create microphone capture", error)
+            _microphoneCaptureAvailable.value = false
+            return
+        }
+        if (record.state != AudioRecord.STATE_INITIALIZED) {
+            record.release()
+            Log.w("DroidballService", "Microphone capture did not initialize.")
+            _microphoneCaptureAvailable.value = false
+            return
+        }
+        audioRecord = record
+        _microphoneCaptureAvailable.value = true
+        audioCaptureJob = serviceScope.launch(Dispatchers.IO) {
+            // 100 ms buffers let visual cues produce precise clips without persisting a battle-long stream.
+            val readBuffer = ByteArray(maxOf(minimumBuffer, sampleRateHz / 10 * 2))
+            try {
+                record.startRecording()
+                while (kotlinx.coroutines.currentCoroutineContext().isActive) {
+                    val count = record.read(readBuffer, 0, readBuffer.size)
+                    if (count <= 0) {
+                        Log.w("DroidballService", "Microphone read failed: $count")
+                        break
+                    }
+                    val completed = synchronized(audioCollectorLock) {
+                        cueCenteredAudio.ingest(readBuffer.copyOf(count))
+                    }
+                    completed.forEach { capture ->
+                        val completedAtNanos = System.nanoTime()
+                        val durationNanos = capture.pcm16le.size.toLong() * 1_000_000_000L / (sampleRateHz * 2L)
+                        _audioFrames.tryEmit(
+                            CapturedAudioFrame(
+                                pcm16le = capture.pcm16le,
+                                sampleRateHz = sampleRateHz,
+                                channelCount = 1,
+                                capturedAtWallTimeMillis = System.currentTimeMillis() - durationNanos / 1_000_000L,
+                                capturedAtMonotonicTimeNanos = completedAtNanos - durationNanos,
+                                cueArticleId = capture.cue.articleId,
+                                cueKind = capture.cue.kind
+                            )
+                        )
+                    }
+                }
+            } catch (error: Exception) {
+                Log.e("DroidballService", "Microphone capture failed", error)
+            } finally {
+                try { record.stop() } catch (_: Exception) { }
+                record.release()
+                if (audioRecord === record) {
+                    audioRecord = null
+                    _microphoneCaptureAvailable.value = false
+                }
+            }
+        }
     }
 
     private fun setupOverlay() {
@@ -434,6 +550,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         } finally {
             mediaProjection = null
         }
+
+        audioCaptureJob?.cancel()
+        audioCaptureJob = null
+        try { audioRecord?.stop() } catch (_: Exception) { }
+        try { audioRecord?.release() } catch (_: Exception) { }
+        audioRecord = null
 
         deliveryLoggingJob?.cancel()
         val subs = _frames.subscriptionCount.value

@@ -1,9 +1,12 @@
 package com.example.overdex
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -116,6 +119,20 @@ class MainActivity : ComponentActivity() {
     private var pendingExportSource: com.example.overdex.battle.archive.MatchArchiveSource? = null
     val navigateToDirectoryRequested = mutableStateOf(false)
     private var selectedRegion = CalibrationRegion.NONE
+
+    /**
+     * The initial capability pass is deliberately optional. Declining a sensor leaves the
+     * instrument usable and only disables the witnesses that require that sensor.
+     */
+    private val initialCapabilitiesLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        getSharedPreferences(CAPABILITY_PREFERENCES, MODE_PRIVATE)
+            .edit()
+            .putInt(INITIAL_CAPABILITY_PASS_VERSION, CAPABILITY_PASS_VERSION)
+            .apply()
+        Log.i("OVERDEX_CAPABILITIES", "Initial capability pass: $grants")
+    }
 
     private val archiveFolderPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -336,11 +353,48 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        requestInitialOptionalCapabilities()
+    }
+
+    /**
+     * Requests each declared runtime sensor once, at initial startup. Screen sharing and overlay
+     * placement remain just-in-time grants because Android presents those controls only when the
+     * user actually starts that operation.
+     */
+    private fun requestInitialOptionalCapabilities() {
+        val preferences = getSharedPreferences(CAPABILITY_PREFERENCES, MODE_PRIVATE)
+        if (preferences.getInt(INITIAL_CAPABILITY_PASS_VERSION, 0) >= CAPABILITY_PASS_VERSION) return
+
+        val permissions = buildList {
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                add(Manifest.permission.CAMERA)
+            }
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                add(Manifest.permission.RECORD_AUDIO)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        if (permissions.isEmpty()) {
+            preferences.edit().putInt(INITIAL_CAPABILITY_PASS_VERSION, CAPABILITY_PASS_VERSION).apply()
+        } else {
+            initialCapabilitiesLauncher.launch(permissions.toTypedArray())
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mediaManager.release()
+    }
+
+    private companion object {
+        const val CAPABILITY_PREFERENCES = "overdex_capabilities"
+        const val INITIAL_CAPABILITY_PASS_VERSION = "initial_capability_pass_version"
+        const val CAPABILITY_PASS_VERSION = 2
     }
 }
 

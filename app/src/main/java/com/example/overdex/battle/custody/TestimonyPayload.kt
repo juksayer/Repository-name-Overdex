@@ -2,6 +2,7 @@ package com.example.overdex.battle.custody
 
 import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.battle.artifact.CropArtifactReference
+import com.example.overdex.battle.artifact.AudioArtifactReference
 import com.example.overdex.model.BattleResult
 import com.example.overdex.model.PokemonType
 
@@ -69,6 +70,21 @@ data class CropCaptured(
     val cropProvenance: BattleCropProvenance
 ) : TestimonyPayload
 
+/** A durably preserved microphone snippet, before cry recognition or interpretation. */
+data class AudioCaptured(
+    val artifact: AudioArtifactReference,
+    val sampleRateHz: Int,
+    val channelCount: Int,
+    val durationNanos: Long,
+    val cueKind: String
+) : TestimonyPayload {
+    init {
+        require(sampleRateHz > 0)
+        require(channelCount > 0)
+        require(durationNanos > 0)
+    }
+}
+
 /**
  * An immutable report that a named witness began or ceased operating.
  *
@@ -125,3 +141,10 @@ data object MatchStarted : TestimonyPayload
 
 /** Derived immutable boundary from accepted win or loss testimony. */
 data class MatchEnded(val result: BattleResult) : TestimonyPayload
+
+/** Ranked acoustic reference candidates from one preserved, visually-cued audio artifact. */
+data class BattleCryCandidatesMeasured(
+    val cueKind: String,
+    val candidates: List<BattleCryCandidateMeasurement>
+) : TestimonyPayload
+data class BattleCryCandidateMeasurement(val speciesId: Int, val referenceSha256: String, val similarity: Float)

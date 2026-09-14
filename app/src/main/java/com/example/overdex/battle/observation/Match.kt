@@ -149,10 +149,14 @@ class Match(
 
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
                     DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
+                    if (glyph.glyph in setOf("3", "2", "1", "GO")) {
+                        DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.valueOf("COUNTDOWN_${glyph.glyph}"))
+                    }
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
                 }
                 if (article.payload is VsScreenWitnessed) {
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
+                    DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.VS_SCREEN)
                 }
 
                 interpreter.interpret(article)?.let { event ->

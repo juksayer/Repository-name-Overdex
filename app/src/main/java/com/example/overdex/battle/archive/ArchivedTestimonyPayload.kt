@@ -81,6 +81,19 @@ data class ArchivedCropCaptured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("audio_captured")
+data class ArchivedAudioCaptured(
+    val artifactPath: String,
+    val sha256: String,
+    val byteCount: Long,
+    val mediaType: String,
+    val sampleRateHz: Int,
+    val channelCount: Int,
+    val durationNanos: Long,
+    val cueKind: String
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("witness_operating")
 data class ArchivedWitnessOperating(
     val operating: Boolean
@@ -123,3 +136,10 @@ data object ArchivedMatchStarted : ArchivedTestimonyPayload
 @Serializable
 @SerialName("match_ended")
 data class ArchivedMatchEnded(val result: String) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("battle_cry_candidates_measured")
+data class ArchivedBattleCryCandidatesMeasured(
+    val cueKind: String,
+    val candidates: List<ArchivedBattleCryCandidateMeasurement>
+) : ArchivedTestimonyPayload
+@Serializable data class ArchivedBattleCryCandidateMeasurement(val speciesId: Int, val referenceSha256: String, val similarity: Float)
