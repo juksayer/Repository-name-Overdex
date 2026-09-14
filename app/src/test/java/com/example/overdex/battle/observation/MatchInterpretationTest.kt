@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -162,7 +163,7 @@ class MatchInterpretationTest {
         val derivedArticle = articles[1]
         assertEquals(SourceId("BATTLE_INTERPRETER"), derivedArticle.sourceId)
         assertEquals(listOf(witnessArticle.id), derivedArticle.predecessorIds)
-        assertEquals("WIN", (derivedArticle.payload as RawTestimony).data)
+        assertEquals(MatchEnded(com.example.overdex.model.BattleResult.WIN), derivedArticle.payload)
 
         match.release()
     }

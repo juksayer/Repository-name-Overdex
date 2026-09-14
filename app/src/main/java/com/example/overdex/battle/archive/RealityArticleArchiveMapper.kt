@@ -4,6 +4,7 @@ import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SupportingMatchStart
@@ -61,6 +62,7 @@ object RealityArticleArchiveMapper {
                 cropBottom = p.cropProvenance.bounds.bottom
             )
             is MatchStarted -> ArchivedMatchStarted
+            is MatchEnded -> ArchivedMatchEnded(p.result.name)
             else -> throw IllegalArgumentException("Unsupported TestimonyPayload type: ${p::class.java.name}")
         }
 

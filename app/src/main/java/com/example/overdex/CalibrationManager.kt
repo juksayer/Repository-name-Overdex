@@ -15,6 +15,7 @@ class CalibrationManager(context: Context) {
         context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
 
     private companion object {
+        const val MATCH_OUTCOME_CALIBRATED = "match_outcome_calibrated"
         const val ENEMY_X = "enemy_x"
         const val ENEMY_Y = "enemy_y"
         const val ENEMY_W = "enemy_w"
@@ -34,6 +35,13 @@ class CalibrationManager(context: Context) {
         const val MOVE_Y = "move_y"
         const val MOVE_W = "move_w"
         const val MOVE_H = "move_h"
+    }
+
+    /** True only after the user has explicitly adjusted the Match Outcome region. */
+    fun hasMatchOutcomeCalibration(): Boolean = prefs.getBoolean(MATCH_OUTCOME_CALIBRATED, false)
+
+    fun recordMatchOutcomeCalibration() {
+        prefs.edit().putBoolean(MATCH_OUTCOME_CALIBRATED, true).apply()
     }
 
     fun save(calibration: BattleCalibration) {

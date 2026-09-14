@@ -2,6 +2,7 @@ package com.example.overdex.battle.custody
 
 import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.battle.artifact.CropArtifactReference
+import com.example.overdex.model.BattleResult
 
 /**
  * A domain-neutral container for what a Witness experiences.
@@ -60,3 +61,6 @@ data class CropCaptured(
 
 /** A derived match boundary whose predecessor is the accepted GO glyph article. */
 data object MatchStarted : TestimonyPayload
+
+/** Derived immutable boundary from accepted win or loss testimony. */
+data class MatchEnded(val result: BattleResult) : TestimonyPayload

@@ -156,6 +156,9 @@ fun MatchCalibrationScreen(
             else -> calibration
         }
         calibrationManager.save(calibration)
+        if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
+            calibrationManager.recordMatchOutcomeCalibration()
+        }
     }
 
     val step = 0.005f // Small increment for normalized coordinates

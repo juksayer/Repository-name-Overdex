@@ -75,3 +75,7 @@ data class ArchivedCropCaptured(
 @Serializable
 @SerialName("match_started")
 data object ArchivedMatchStarted : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("match_ended")
+data class ArchivedMatchEnded(val result: String) : ArchivedTestimonyPayload

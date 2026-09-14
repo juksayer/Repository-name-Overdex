@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
+import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -55,6 +56,10 @@ class Match(
     /** The derived GO boundary for the owning Droidball session to act upon. */
     val matchStarted = _matchStarted.asSharedFlow()
 
+    private val _articles = MutableSharedFlow<RealityArticle>(replay = 64, extraBufferCapacity = 64)
+    /** Accepted Timeline articles for downstream recognizers; the Timeline remains authoritative. */
+    val articles = _articles.asSharedFlow()
+
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     /** The total number of frames processed during this Match. */
@@ -95,6 +100,7 @@ class Match(
                 }
 
                 realityTimeline.append(article)
+                _articles.tryEmit(article)
 
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
@@ -128,18 +134,19 @@ class Match(
 
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
-                    if (event.type == BattleEventType.BATTLE_ENDED && event.result == BattleResult.WIN) {
+                    if (event.type == BattleEventType.BATTLE_ENDED && event.result != null) {
                         val derivedArticle = RealityArticle(
                             id = ArticleId(UUID.randomUUID().toString()),
                             perceivedAt = article.perceivedAt,
                             recordedAt = System.currentTimeMillis(),
                             sourceId = SourceId("BATTLE_INTERPRETER"),
-                            payload = RawTestimony("WIN"),
+                            payload = MatchEnded(event.result),
                             predecessorIds = listOf(article.id),
                             matchId = MatchId(matchId),
                             monotonicTimeNanos = article.monotonicTimeNanos
                         )
                         realityTimeline.append(derivedArticle)
+                        _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
                 }

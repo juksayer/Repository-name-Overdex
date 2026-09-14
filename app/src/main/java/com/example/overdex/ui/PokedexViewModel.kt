@@ -13,7 +13,7 @@ import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
-import com.example.overdex.battle.observation.CountdownObserver
+import com.example.overdex.battle.observation.PersistedCountdownGlyphWitness
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballSession
@@ -23,14 +23,15 @@ import com.example.overdex.battle.observation.ObservationDispatcher
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.battle.reality.RealityArticle
-import com.example.overdex.battle.witness.AnnouncementWitness
-import com.example.overdex.battle.witness.AttackIncomingWitness
-import com.example.overdex.battle.witness.GoodEffortWitness
-import com.example.overdex.battle.witness.PlayerSpeciesWitness
-import com.example.overdex.battle.witness.SpeciesWitness
-import com.example.overdex.battle.witness.YouWinWitness
 import com.example.overdex.battle.observation.CropCaptureWitness
 import com.example.overdex.battle.observation.BattleWitnessContracts
+import com.example.overdex.battle.observation.FirstLiveCombatRouter
+import com.example.overdex.battle.observation.PersistedSpeciesWitness
+import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
+import com.example.overdex.battle.observation.PersistedAnnouncementWitness
+import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
+import com.example.overdex.data.observation.YouWinRecognizer
+import com.example.overdex.data.observation.GoodEffortRecognizer
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
@@ -206,26 +207,111 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         // Load calibration and register production observers
         val input = DroidballObservationInput()
-        val calibration = CalibrationManager(getApplication()).load()
+        val calibrationManager = CalibrationManager(getApplication())
+        val calibration = calibrationManager.load()
+        val cropArtifactStore = FileCropArtifactStore(getApplication<Application>().filesDir)
         
         Log.d("DEPLOY", "2 Registering observers")
-        observationDispatcher.register(SpeciesWitness(input, calibration))
-        observationDispatcher.register(PlayerSpeciesWitness(input, calibration))
+        listOf(
+            BattleWitnessContracts.playerActiveSpeciesTextCapture to "Player Active Species Text Capture Witness",
+            BattleWitnessContracts.opponentActiveSpeciesTextCapture to "Opponent Active Species Text Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(
+                CropCaptureWitness(
+                    input = input,
+                    calibration = calibration,
+                    contract = contract,
+                    artifactStore = cropArtifactStore,
+                    isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                    observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
+                    name = name
+                )
+            )
+        }
+        observationDispatcher.register(PersistedSpeciesWitness.player(cropArtifactStore))
+        observationDispatcher.register(PersistedSpeciesWitness.opponent(cropArtifactStore))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
                 calibration = calibration,
                 contract = BattleWitnessContracts.countdownCropCapture,
-                artifactStore = FileCropArtifactStore(getApplication<Application>().filesDir),
+                artifactStore = cropArtifactStore,
+                isEnabled = { session.firstLiveCombatArticle.value == null && session.phase.value != com.example.overdex.battle.observation.DroidballSessionPhase.ENDED },
                 observerId = ObserverId(BattleWitnessContracts.countdownCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Countdown Crop Capture Witness"
             )
         )
-        observationDispatcher.register(CountdownObserver(input, calibration))
-        observationDispatcher.register(YouWinWitness(input, calibration))
-        observationDispatcher.register(GoodEffortWitness(input, calibration))
-        observationDispatcher.register(AnnouncementWitness(input, calibration))
-        observationDispatcher.register(AttackIncomingWitness(input, calibration))
+        observationDispatcher.register(PersistedCountdownGlyphWitness(cropArtifactStore))
+        observationDispatcher.register(
+            CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = BattleWitnessContracts.opponentHpEvidenceCapture,
+                artifactStore = cropArtifactStore,
+                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE && session.firstLiveCombatArticle.value == null },
+                observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "Opponent HP Evidence Capture Witness"
+            )
+        )
+        observationDispatcher.register(FirstLiveCombatRouter(session))
+        observationDispatcher.register(
+            CropCaptureWitness(input, calibration, BattleWitnessContracts.announcementCropCapture, cropArtifactStore,
+                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "Announcement Crop Capture Witness")
+        )
+        observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
+        listOf(
+            BattleWitnessContracts.playerInactiveSpeciesSpriteCapture to "Player Inactive Species Sprite Capture Witness",
+            BattleWitnessContracts.playerInactiveHpBarCapture to "Player Inactive HP Bar Capture Witness",
+            BattleWitnessContracts.switchLockoutTimerCapture to "Switch Lockout Timer Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(
+                CropCaptureWitness(
+                    input = input,
+                    calibration = calibration,
+                    contract = contract,
+                    artifactStore = cropArtifactStore,
+                    isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                    observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
+                    name = name
+                )
+            )
+        }
+        observationDispatcher.register(
+            CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = BattleWitnessContracts.matchOutcomeCropCapture,
+                artifactStore = cropArtifactStore,
+                isEnabled = {
+                    session.firstLiveCombatArticle.value != null &&
+                        calibrationManager.hasMatchOutcomeCalibration() &&
+                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+                },
+                observerId = ObserverId(BattleWitnessContracts.matchOutcomeCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "Match Outcome Crop Capture Witness"
+            )
+        )
+        observationDispatcher.register(
+            PersistedOutcomeTextWitness(
+                artifactStore = cropArtifactStore,
+                recognize = { YouWinRecognizer.recognize(it).value },
+                accepts = { text -> text.trim().uppercase() in setOf("YOU WIN!", "YOU WIN", "YOU WVIN!", "YOU WVIN") },
+                observerId = ObserverId("YOU_WIN_WITNESS", ObserverSource.SCREEN_CAPTURE),
+                name = "You Win Witness"
+            )
+        )
+        observationDispatcher.register(
+            PersistedOutcomeTextWitness(
+                artifactStore = cropArtifactStore,
+                recognize = { GoodEffortRecognizer.recognize(it).value },
+                accepts = { text -> text.trim().uppercase().contains("GOOD EFFORT") },
+                observerId = ObserverId("GOOD_EFFORT_WITNESS", ObserverSource.SCREEN_CAPTURE),
+                name = "Good Effort Witness"
+            )
+        )
 
         // Start Service
         DroidballService.start(getApplication(), resultCode, data)

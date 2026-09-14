@@ -196,6 +196,7 @@ private fun ArchiveArticleRow(
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
             is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
+            is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"
         }
 
         TerminalText(text = payloadText, color = Color.White, fontSize = 12.sp)
@@ -258,6 +259,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"
                 is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
+                is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"
             }
             DetailField(label = "PAYLOAD CONTENT", value = payloadText)
             
