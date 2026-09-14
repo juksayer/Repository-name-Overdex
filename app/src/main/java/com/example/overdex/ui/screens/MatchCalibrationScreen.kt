@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +54,7 @@ fun MatchCalibrationScreen(
     var selectedRegion by remember { mutableStateOf(CalibrationRegion.COUNTDOWN) }
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
+    var showLcdTouchHint by rememberSaveable { mutableStateOf(true) }
 
     val context = LocalContext.current
     val samples = remember {
@@ -196,6 +198,7 @@ fun MatchCalibrationScreen(
         }
         onStart { /* No-op as per Work Order */ }
         onLcdDrag { delta ->
+            showLcdTouchHint = false
             val dx = delta.x / 1000f 
             val dy = delta.y / 1000f
             if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
@@ -207,9 +210,12 @@ fun MatchCalibrationScreen(
     }
 
     // LCD Update
-    LaunchedEffect(selectedRegion, mode) {
+    LaunchedEffect(selectedRegion, mode, showLcdTouchHint) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
-        onLcdUpdate("${getReadableName(selectedRegion)} ($indexText)", "MODE: ${mode.name}")
+        onLcdUpdate(
+            "${getReadableName(selectedRegion)} ($indexText)",
+            if (showLcdTouchHint) "TOUCH LCD: DRAG BOX" else "MODE: ${mode.name}"
+        )
     }
 
     Box(
