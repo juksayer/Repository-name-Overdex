@@ -26,6 +26,9 @@ import com.example.overdex.ui.components.TerminalText
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.overdex.data.ScreenshotDirectoryManager
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -43,9 +46,9 @@ fun MatchCalibrationScreen(
     onLeft: (() -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
+    onALong: (() -> Unit) -> Unit = {},
     onSelect: (() -> Unit) -> Unit = {},
     onSelectLong: (() -> Unit) -> Unit = {},
-    onStart: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
@@ -57,10 +60,34 @@ fun MatchCalibrationScreen(
     var showLcdTouchHint by rememberSaveable { mutableStateOf(true) }
 
     val context = LocalContext.current
-    val samples = remember {
+    val screenshotDirectory = remember(context) { ScreenshotDirectoryManager(context) }
+    var userSamples by remember { mutableStateOf(screenshotDirectory.imageUris()) }
+    val bundledSamples = remember {
         context.assets.list("battle_samples")?.toList() ?: listOf("celluloid-shot0001.jpg")
     }
+    val samples: List<Any> = if (userSamples.isNotEmpty()) userSamples else bundledSamples
+    val screenshotSourceName = remember(userSamples) { screenshotDirectory.displayName() }
     var currentImageIndex by remember { mutableIntStateOf(0) }
+    val screenshotFolderPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                screenshotDirectory.saveFolder(uri)
+                userSamples = screenshotDirectory.imageUris()
+                currentImageIndex = 0
+            }
+        }
+    }
+
+    LaunchedEffect(samples.size) {
+        currentImageIndex = currentImageIndex.coerceIn(0, (samples.size - 1).coerceAtLeast(0))
+    }
 
     val matchRegions = remember {
         listOf(
@@ -190,13 +217,15 @@ fun MatchCalibrationScreen(
             val currentIndex = matchRegions.indexOf(selectedRegion)
             selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
         }
+        onALong {
+            screenshotFolderPicker.launch(screenshotDirectory.folderUri())
+        }
         onSelect {
             mode = if (mode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
         }
         onSelectLong {
             currentImageIndex = (currentImageIndex + 1) % samples.size
         }
-        onStart { /* No-op as per Work Order */ }
         onLcdDrag { delta ->
             showLcdTouchHint = false
             val dx = delta.x / 1000f 
@@ -210,11 +239,11 @@ fun MatchCalibrationScreen(
     }
 
     // LCD Update
-    LaunchedEffect(selectedRegion, mode, showLcdTouchHint) {
+    LaunchedEffect(selectedRegion, mode, showLcdTouchHint, screenshotSourceName) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
         onLcdUpdate(
             "${getReadableName(selectedRegion)} ($indexText)",
-            if (showLcdTouchHint) "TOUCH LCD: DRAG BOX" else "MODE: ${mode.name}"
+            if (showLcdTouchHint) "SELECT: NEXT | HOLD A: FOLDER" else "MODE: ${mode.name} | SRC: $screenshotSourceName"
         )
     }
 
@@ -225,7 +254,9 @@ fun MatchCalibrationScreen(
     ) {
         // Reference Image
         AsyncImage(
-            model = "file:///android_asset/battle_samples/${samples[currentImageIndex]}",
+            model = samples.getOrNull(currentImageIndex)?.let { sample ->
+                if (sample is String) "file:///android_asset/battle_samples/$sample" else sample
+            },
             contentDescription = "Calibration Background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.FillBounds

@@ -10,13 +10,16 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
+import com.example.overdex.battle.custody.MatchRecordStarted
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.PersistedCountdownGlyphWitness
+import com.example.overdex.battle.observation.PersistedVsScreenWitness
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballSession
+import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
 
@@ -29,6 +32,7 @@ import com.example.overdex.battle.observation.FirstLiveCombatRouter
 import com.example.overdex.battle.observation.PersistedSpeciesWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
+import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveSpeciesSpriteWitness
@@ -110,6 +114,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     // Instrument Workspace
     private val instrumentTree = InstrumentTree(
         listOf(
+            ActionNode("Launch Droidball", InstrumentCommand.LaunchDroidball),
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
             DirectoryNode("BATTLE", listOf(
                 ActionNode("Roster", InstrumentCommand.OpenCollection),
@@ -197,8 +202,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonKnowledge = pokemonRepository
         )
         val session = DroidballSession(match)
+        DroidballOverlayPresentation.showSessionPhase(session.phase.value)
+        viewModelScope.launch {
+            session.phase.collect(DroidballOverlayPresentation::showSessionPhase)
+        }
         _activeMatch.value = match
         _droidballSession.value = session
+        match.custody.submitTestimony(
+            sourceId = SourceId("DROIDBALL_SESSION"),
+            payload = MatchRecordStarted,
+            timestamp = System.currentTimeMillis(),
+            confidence = null,
+            evidenceReferences = emptyList(),
+            monotonicTimeNanos = System.nanoTime()
+        )
         _latestMatchArchiveSource.value =
             com.example.overdex.battle.archive.MatchArchiveSource(
                 matchId = com.example.overdex.battle.observation.MatchId(match.matchId),
@@ -252,6 +269,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
         )
         observationDispatcher.register(PersistedCountdownGlyphWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -295,6 +313,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedAnnouncementPhraseWitness.getReady(cropArtifactStore))
+        observationDispatcher.register(PersistedAnnouncementPhraseWitness.chargeMoveUsed(cropArtifactStore))
         listOf(
             BattleWitnessContracts.playerInactiveSpeciesSpriteCapture to "Player Inactive Species Sprite Capture Witness",
             BattleWitnessContracts.playerInactiveHpBarCapture to "Player Inactive HP Bar Capture Witness",
@@ -393,6 +413,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     is DroidballSignal.CountdownWitnessed -> {
                         session.armCountdown()
                     }
+                    is DroidballSignal.VsScreenWitnessed -> {
+                        session.armCountdown()
+                    }
                 }
             }
         }
@@ -405,6 +428,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.stopAll()
         _droidballSession.value?.end()
         _droidballSession.value = null
+        DroidballOverlayPresentation.reset()
         _activeMatch.value = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }

@@ -1,7 +1,11 @@
 package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.MatchRecordStarted
+import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -52,6 +56,12 @@ class RealityArticleArchiveMapperTest {
 
     @Test
     fun `maps supported testimony payloads without reclassifying them`() {
+        val recordStarted = RealityArticleArchiveMapper.map(
+            article(id = "record-started", payload = MatchRecordStarted)
+        )
+        val vsScreen = RealityArticleArchiveMapper.map(
+            article(id = "vs-screen", payload = VsScreenWitnessed)
+        )
         val attack = RealityArticleArchiveMapper.map(
             article(id = "attack", payload = AttackIncoming)
         )
@@ -65,6 +75,8 @@ class RealityArticleArchiveMapperTest {
             article(id = "match-started", payload = MatchStarted)
         )
 
+        assertEquals(ArchivedMatchRecordStarted, recordStarted.payload)
+        assertEquals(ArchivedVsScreenWitnessed, vsScreen.payload)
         assertEquals(ArchivedAttackIncoming, attack.payload)
         assertEquals(ArchivedPokemonIdentified("Sneasel"), species.payload)
         assertEquals(ArchivedRawInt(25), rawInt.payload)
@@ -76,6 +88,18 @@ class RealityArticleArchiveMapperTest {
         val article = article(id = "coverage", payload = WitnessOperating(operating = true))
 
         assertEquals(ArchivedWitnessOperating(operating = true), RealityArticleArchiveMapper.map(article).payload)
+    }
+
+    @Test
+    fun `maps typed announcement testimony without replacing its crop evidence`() {
+        assertEquals(
+            ArchivedGetReadyWitnessed,
+            RealityArticleArchiveMapper.map(article(id = "get-ready", payload = GetReadyWitnessed)).payload
+        )
+        assertEquals(
+            ArchivedChargeMoveUsedAnnounced,
+            RealityArticleArchiveMapper.map(article(id = "charge-used", payload = ChargeMoveUsedAnnounced)).payload
+        )
     }
 
     @Test

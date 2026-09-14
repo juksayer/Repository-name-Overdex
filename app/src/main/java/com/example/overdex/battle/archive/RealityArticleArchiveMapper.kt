@@ -7,11 +7,15 @@ import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.MatchRecordStarted
+import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
 import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprintMeasured
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.GetReadyWitnessed
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.reality.RealityArticle
 
@@ -31,6 +35,8 @@ object RealityArticleArchiveMapper {
                     else -> throw IllegalArgumentException("Unsupported RawTestimony data type: ${data::class.java.name}")
                 }
             }
+            is MatchRecordStarted -> ArchivedMatchRecordStarted
+            is VsScreenWitnessed -> ArchivedVsScreenWitnessed
             is AttackIncoming -> ArchivedAttackIncoming
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
@@ -72,6 +78,8 @@ object RealityArticleArchiveMapper {
                 similarity = p.similarity,
                 basis = p.basis
             )
+            is GetReadyWitnessed -> ArchivedGetReadyWitnessed
+            is ChargeMoveUsedAnnounced -> ArchivedChargeMoveUsedAnnounced
             is PlayerInactiveHpBarMeasured -> ArchivedPlayerInactiveHpBarMeasured(
                 slot = p.slot,
                 filledFraction = p.filledFraction

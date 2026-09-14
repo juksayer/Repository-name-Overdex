@@ -22,6 +22,14 @@ data class ArchivedRawInt(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("match_record_started")
+data object ArchivedMatchRecordStarted : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("vs_screen_witnessed")
+data object ArchivedVsScreenWitnessed : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("attack_incoming")
 data object ArchivedAttackIncoming : ArchivedTestimonyPayload
 
@@ -86,6 +94,9 @@ data class ArchivedActivePokemonTypesWitnessed(
     val similarity: Float,
     val basis: String
 ) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("get_ready_witnessed") data object ArchivedGetReadyWitnessed : ArchivedTestimonyPayload
+@Serializable @SerialName("charge_move_used_announced") data object ArchivedChargeMoveUsedAnnounced : ArchivedTestimonyPayload
 
 @Serializable
 @SerialName("player_inactive_hp_bar_measured")

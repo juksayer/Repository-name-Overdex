@@ -20,6 +20,15 @@ interface TestimonyPayload
 data class RawTestimony(val data: Any) : TestimonyPayload
 
 /**
+ * Droidball began preserving the record for a possible battle. This precedes
+ * GO, which independently establishes the live battle and its match clock.
+ */
+data object MatchRecordStarted : TestimonyPayload
+
+/** The central VS screen was seen in the preserved pre-battle crop. */
+data object VsScreenWitnessed : TestimonyPayload
+
+/**
  * Testimony representing the "Attack Incoming!" phenomenon.
  */
 data object AttackIncoming : TestimonyPayload
@@ -91,6 +100,9 @@ data class ActivePokemonTypesWitnessed(
         require(similarity in 0f..1f) { "Similarity must be normalized." }
     }
 }
+
+data object GetReadyWitnessed : TestimonyPayload
+data object ChargeMoveUsedAnnounced : TestimonyPayload
 
 /** The visible fill fraction of one player-inactive Pokémon HP bar. */
 data class PlayerInactiveHpBarMeasured(

@@ -185,9 +185,24 @@ class MainActivity : ComponentActivity() {
         val viewModel = ViewModelProvider(this)[PokedexViewModel::class.java]
         if (result.resultCode == RESULT_OK && result.data != null) {
             viewModel.deployInstrument(result.resultCode, result.data!!)
+            launchPokemonGo()
         } else {
             viewModel.stopObservation()
         }
+    }
+
+    /** The field handoff following a successful Droidball deployment. */
+    private fun launchPokemonGo() {
+        val launchIntent = packageManager.getLaunchIntentForPackage("com.nianticlabs.pokemongo")
+        if (launchIntent == null) {
+            android.widget.Toast.makeText(
+                this,
+                "Pokémon GO is not installed.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     private val archiveOpenLauncher = registerForActivityResult(
@@ -383,6 +398,7 @@ fun PokedexApp(
     LaunchedEffect(Unit) {
         viewModel.pendingCommand.collect { command ->
             when (command) {
+                InstrumentCommand.LaunchDroidball -> viewModel.startObservation()
                 InstrumentCommand.OpenSearch -> navController.navigate("list")
                 InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection")
                 InstrumentCommand.AddSpecimen -> navController.navigate("add_pokemon_wizard")
@@ -1192,10 +1208,9 @@ fun PokedexApp(
                 var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-
                 var lcdLine1 by remember { mutableStateOf<String?>(null) }
                 var lcdLine2 by remember { mutableStateOf<String?>(null) }
 
@@ -1212,9 +1227,10 @@ fun PokedexApp(
                     onLeft = { leftHandler?.invoke() },
                     onRight = { rightHandler?.invoke() },
                     onA = { aHandler?.invoke() },
+                    onALong = { aLongHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
                     onSelectLong = { selectLongHandler?.invoke() },
-                    onStart = { startHandler?.invoke() },
+                    onStart = { viewModel.toggleObservation() },
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
@@ -1234,9 +1250,9 @@ fun PokedexApp(
                         onLeft = { leftHandler = it },
                         onRight = { rightHandler = it },
                         onA = { aHandler = it },
+                        onALong = { aLongHandler = it },
                         onSelect = { selectHandler = it },
                         onSelectLong = { selectLongHandler = it },
-                        onStart = { startHandler = it },
                         onLcdDrag = { lcdDragHandler = it },
                         onLcdTap = { lcdTapHandler = it },
                         onLcdUpdate = { l1, l2 ->

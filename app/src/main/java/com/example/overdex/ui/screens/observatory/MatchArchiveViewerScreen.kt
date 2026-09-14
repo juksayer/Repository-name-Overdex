@@ -190,6 +190,8 @@ private fun ArchiveArticleRow(
         val payloadText = when (val p = article.payload) {
             is ArchivedRawText -> p.value
             is ArchivedRawInt -> p.value.toString()
+            is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
+            is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
@@ -197,6 +199,8 @@ private fun ArchiveArticleRow(
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
             is ArchivedWitnessOperating -> "WITNESS ${if (p.operating) "OPERATING" else "STOPPED"}"
             is ArchivedActivePokemonTypesWitnessed -> "ACTIVE TYPES [side=${p.side}, types=${p.types.joinToString()}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}]"
+            is ArchivedGetReadyWitnessed -> "GET READY"
+            is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
             is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
             is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}]"
             is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
@@ -257,6 +261,8 @@ private fun ArticleDetailsOverlay(
             val payloadText = when (val p = article.payload) {
                 is ArchivedRawText -> p.value
                 is ArchivedRawInt -> p.value.toString()
+                is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
+                is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
@@ -264,6 +270,8 @@ private fun ArticleDetailsOverlay(
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"
                 is ArchivedWitnessOperating -> "WITNESS ${if (p.operating) "OPERATING" else "STOPPED"}"
                 is ArchivedActivePokemonTypesWitnessed -> "ACTIVE TYPES [side=${p.side}, types=${p.types.joinToString()}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, basis=${p.basis}]"
+                is ArchivedGetReadyWitnessed -> "GET READY"
+                is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
                 is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
                 is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}, bounds=${p.sampleLeft},${p.sampleTop},${p.sampleRight},${p.sampleBottom}]"
                 is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"

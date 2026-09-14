@@ -70,6 +70,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     companion object {
         private const val NOTIFICATION_ID = 197
         private const val CHANNEL_ID = "droidball_observation"
+        @Volatile private var activeService: DroidballService? = null
         
         private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 1)
         val signals = _signals.asSharedFlow()
@@ -100,6 +101,16 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             context.stopService(Intent(context, DroidballService::class.java))
         }
 
+        /** Moves the visible field control without changing its observation state. */
+        fun moveOverlayBy(deltaX: Float, deltaY: Float) {
+            activeService?.moveOverlayBy(deltaX, deltaY)
+        }
+
+        /** Settles the field control against the nearer display edge. */
+        fun snapOverlayToNearestEdge() {
+            activeService?.snapOverlayToNearestEdge()
+        }
+
         /**
          * The single publication API for instrument signals.
          */
@@ -111,6 +122,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     private lateinit var windowManager: WindowManager
     private var overlayView: ComposeView? = null
+    private var overlayParams: WindowManager.LayoutParams? = null
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
@@ -152,6 +164,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        activeService = this
         createNotificationChannel()
     }
 
@@ -308,14 +321,22 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            // Temporary placement for 1080x2400 display [Left: 645, Top: 350, Right: 1060, Bottom: 550]
-            x = 645
+            val displayWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                windowManager.maximumWindowMetrics.bounds.width()
+            } else {
+                resources.displayMetrics.widthPixels
+            }
+            x = (displayWidth - 60).coerceAtLeast(0)
             y = 350
         }
+        overlayParams = params
 
         overlayView = ComposeView(this).apply {
             setContent {
-                BattleOverlay()
+                BattleOverlay(
+                    onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
+                    onDragFinished = ::snapOverlayToNearestEdge
+                )
             }
         }
         
@@ -327,6 +348,29 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         windowManager.addView(overlayView, params)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
+
+    private fun moveOverlayBy(deltaX: Float, deltaY: Float) {
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        params.x += deltaX.toInt()
+        params.y += deltaY.toInt()
+        windowManager.updateViewLayout(view, params)
+    }
+
+    private fun snapOverlayToNearestEdge() {
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val bounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.maximumWindowMetrics.bounds
+        } else {
+            android.graphics.Rect(0, 0, resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
+        }
+        val viewWidth = view.width.coerceAtLeast(1)
+        val viewHeight = view.height.coerceAtLeast(1)
+        params.x = if (params.x + viewWidth / 2 < bounds.width() / 2) 0 else (bounds.width() - viewWidth).coerceAtLeast(0)
+        params.y = params.y.coerceIn(0, (bounds.height() - viewHeight).coerceAtLeast(0))
+        windowManager.updateViewLayout(view, params)
     }
 
     private fun createNotificationChannel() {
@@ -351,6 +395,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
+        if (activeService === this) activeService = null
         Log.d("DroidballService", "onDestroy: Releasing resources")
         markStopped()
         _signals.tryEmit(DroidballSignal.Stopped)
@@ -407,4 +452,5 @@ sealed class DroidballSignal {
     object FrameCaptured : DroidballSignal()
     data class Error(val message: String) : DroidballSignal()
     data class CountdownWitnessed(val value: String) : DroidballSignal()
+    data object VsScreenWitnessed : DroidballSignal()
 }

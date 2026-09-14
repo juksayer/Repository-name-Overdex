@@ -4,6 +4,8 @@ package com.example.overdex.model.navigation
  * Represents a command that can be executed by the instrument terminal.
  */
 sealed interface InstrumentCommand {
+    /** Deploy Droidball and begin the pre-battle assistance session. */
+    data object LaunchDroidball : InstrumentCommand
     data object OpenSearch : InstrumentCommand
     data object OpenCollection : InstrumentCommand
     data object AddSpecimen : InstrumentCommand

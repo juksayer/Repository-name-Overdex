@@ -10,6 +10,7 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
 import com.example.overdex.battle.custody.WitnessOperating
+import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.reality.ArticleId
@@ -28,11 +29,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 
 /**
- * Represents one live Pokémon GO battle.
+ * Represents the record surrounding one possible Pokémon GO battle.
  * 
- * The Match manages the lifecycle of observations and owns a [BattleWorkspace]
- * where evidence is collected. Once the match is complete, its observations are
- * typically reconciled into the Battle Timeline.
+ * The record begins when Droidball deploys, so it can preserve VS, cries, and
+ * countdown evidence. An accepted GO separately establishes live battle timing.
  * 
  * @property matchId A unique identifier for the battle.
  * @property state The current lifecycle phase of the match.
@@ -150,6 +150,9 @@ class Match(
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
                     DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
+                }
+                if (article.payload is VsScreenWitnessed) {
+                    DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
                 }
 
                 interpreter.interpret(article)?.let { event ->

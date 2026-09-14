@@ -1,150 +1,179 @@
 package com.example.overdex.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalDensity
+import com.example.overdex.R
+import com.example.overdex.battle.observation.CaptureDiagnostics
+import com.example.overdex.battle.observation.DroidballOverlayMode
+import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.DroidballService
-import kotlinx.coroutines.delay
 
 /**
- * Temporary capture-debug HUD displaying observation diagnostics.
+ * Droidball's field body. Before battle it is a movable control; opening it
+ * exposes the instrument panel between its two physical halves. Live battle
+ * state opens that panel automatically because it now has decision-time work.
  */
 @Composable
-fun BattleOverlay() {
+fun BattleOverlay(
+    onDrag: (Float, Float) -> Unit = { _, _ -> },
+    onDragFinished: () -> Unit = {}
+) {
+    val mode by DroidballOverlayPresentation.mode.collectAsState()
+    val expanded by DroidballOverlayPresentation.expanded.collectAsState()
     val diagnostics by DroidballService.captureDiagnostics.collectAsState()
+    var arrived by remember { mutableStateOf(false) }
+    val arrivalOffset by animateDpAsState(
+        targetValue = if (arrived) 0.dp else 58.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "droidball field arrival"
+    )
+    LaunchedEffect(Unit) { arrived = true }
 
-    var tick by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(100)
-            tick++
+    val panelIsVisible = expanded || mode == DroidballOverlayMode.BATTLE_LIVE
+    val mayMove = mode != DroidballOverlayMode.BATTLE_LIVE && mode != DroidballOverlayMode.RESULT
+    val interactionModifier = if (mayMove) {
+        Modifier.pointerInput(Unit) {
+            detectDragGestures(
+                onDragEnd = onDragFinished,
+                onDrag = { change, amount ->
+                    change.consume()
+                    onDrag(amount.x, amount.y)
+                }
+            )
+        }
+    } else Modifier
+
+    Column(
+        modifier = interactionModifier
+            .offset(x = arrivalOffset)
+            .clickable { DroidballOverlayPresentation.toggleExpanded() },
+        horizontalAlignment = Alignment.End
+    ) {
+        if (panelIsVisible) {
+            DroidballHalf(top = true, displaced = true)
+            OverlayPanel(mode, diagnostics)
+            DroidballHalf(top = false, displaced = true)
+        } else {
+            Image(
+                painter = painterResource(R.drawable.droidball),
+                contentDescription = "Droidball. Tap to open assistance.",
+                modifier = Modifier.size(48.dp)
+            )
         }
     }
+}
 
-    val widthDp = with(LocalDensity.current) { 415.toDp() }
-    val heightDp = with(LocalDensity.current) { 200.toDp() }
-
-    // Pokémon GO badge inspired palette: pale translucent background, dark teal text
-    val backgroundColor = Color(0xFFE0F2F1).copy(alpha = 0.88f)
-    val borderColor = Color(0xFF004D40).copy(alpha = 0.4f)
-    val textColor = Color(0xFF004D40)
-    val accentColor = Color(0xFF00695C)
-    val alertColor = Color(0xFFB71C1C)
-
-    val shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
-
+@Composable
+private fun DroidballHalf(top: Boolean, displaced: Boolean) {
     Box(
         modifier = Modifier
-            .size(widthDp, heightDp)
-            .background(backgroundColor, shape)
-            .drawBehind {
-                val strokeWidth = 1.dp.toPx()
-                val radius = 10.dp.toPx()
-                val w = size.width
-                val h = size.height
-
-                // Draw border on bottom, left, and right, omitting the top edge (0,0 to w,0)
-                val path = Path().apply {
-                    moveTo(0f, 0f)
-                    lineTo(0f, h - radius)
-                    arcTo(
-                        rect = Rect(0f, h - 2 * radius, 2 * radius, h),
-                        startAngleDegrees = 180f,
-                        sweepAngleDegrees = -90f,
-                        forceMoveTo = false
-                    )
-                    lineTo(w - radius, h)
-                    arcTo(
-                        rect = Rect(w - 2 * radius, h - 2 * radius, w, h),
-                        startAngleDegrees = 90f,
-                        sweepAngleDegrees = -90f,
-                        forceMoveTo = false
-                    )
-                    lineTo(w, 0f)
-                }
-                drawPath(
-                    path = path,
-                    color = borderColor,
-                    style = Stroke(width = strokeWidth)
-                )
-            }
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .width(48.dp)
+            .height(24.dp)
+            .clipToBounds(),
+        contentAlignment = if (top) Alignment.BottomCenter else Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
-        ) {
-            // Field 1: Capture state
-            val stateText = "STATE: ${diagnostics.state}"
-            Text(
-                text = stateText,
-                color = when (diagnostics.state) {
-                    "OBSERVING" -> accentColor
-                    "READY" -> Color(0xFFE65100)
-                    "STOPPED" -> alertColor
-                    else -> Color.DarkGray
-                },
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
+        Image(
+            painter = painterResource(R.drawable.droidball),
+            contentDescription = null,
+            modifier = Modifier
+                .size(48.dp)
+                .offset(y = when {
+                    top && displaced -> (-5).dp
+                    !top && displaced -> (-19).dp
+                    top -> 0.dp
+                    else -> (-24).dp
+                })
+        )
+    }
+}
 
-            // Field 2: Frame age (calculated with tick dependency and monotonic clock)
-            val ageText = remember(tick, diagnostics.publicationNanoTime, diagnostics.state) {
-                val pubTime = diagnostics.publicationNanoTime
-                if (pubTime == null) {
-                    "AGE: Not observed"
-                } else {
-                    val currentNano = System.nanoTime()
-                    val rawDiff = (currentNano - pubTime) / 1_000_000
-                    val diffMs = if (rawDiff < 0) 0L else rawDiff
-                    if (diagnostics.state == "STOPPED") {
-                        "AGE: ${diffMs}ms (STALE)"
-                    } else {
-                        "AGE: ${diffMs}ms"
-                    }
-                }
-            }
-            Text(
-                text = ageText,
-                color = if (diagnostics.state == "STOPPED") alertColor else textColor,
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace
-            )
+@Composable
+private fun OverlayPanel(mode: DroidballOverlayMode, diagnostics: CaptureDiagnostics) {
+    val lines = when (mode) {
+        DroidballOverlayMode.PRE_BATTLE -> listOf(
+            "ASSISTANCE ARMED",
+            "Start a battle and choose a team.",
+            "GO begins battle-live routing.",
+            "Pre-battle evidence is recording."
+        )
+        DroidballOverlayMode.CALIBRATING -> listOf(
+            "CALIBRATION ACTIVE",
+            "Adjust crop boxes in Overdex.",
+            "GO begins battle-live routing."
+        )
+        DroidballOverlayMode.COUNTDOWN -> listOf(
+            "COUNTDOWN OBSERVED",
+            "GO establishes the live battle boundary.",
+            "Countdown evidence is recording."
+        )
+        DroidballOverlayMode.BATTLE_LIVE -> listOf(
+            "BATTLE LIVE",
+            captureLine(diagnostics),
+            "Observed evidence is on the Timeline.",
+            "Gaps remain visible; none are invented."
+        )
+        DroidballOverlayMode.RESULT -> listOf(
+            "RESULT OBSERVED",
+            "Outcome evidence is preserved.",
+            "Return to Overdex or begin another battle."
+        )
+    }
 
-            // Field 3: Frame dimensions
-            val dimText = remember(diagnostics.width, diagnostics.height, diagnostics.state) {
-                if (diagnostics.width != null && diagnostics.height != null) {
-                    if (diagnostics.state == "STOPPED") {
-                        "DIM: ${diagnostics.width}x${diagnostics.height} (STALE)"
-                    } else {
-                        "DIM: ${diagnostics.width}x${diagnostics.height}"
-                    }
-                } else {
-                    "DIM: Not observed"
-                }
-            }
+    val background = when (mode) {
+        DroidballOverlayMode.BATTLE_LIVE -> Color(0xFF052E2B).copy(alpha = 0.92f)
+        DroidballOverlayMode.RESULT -> Color(0xFF1B263B).copy(alpha = 0.92f)
+        else -> Color(0xFF10231F).copy(alpha = 0.92f)
+    }
+    Column(
+        modifier = Modifier
+            .width(270.dp)
+            .background(background, RoundedCornerShape(7.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = "DROIDBALL / ${lines.first()}",
+            color = Color(0xFF8DF7D4),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+        lines.drop(1).forEach { line ->
             Text(
-                text = dimText,
-                color = textColor.copy(alpha = 0.85f),
-                fontSize = 11.sp,
+                text = line,
+                color = Color.White.copy(alpha = 0.92f),
+                fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
             )
         }
     }
+}
+
+private fun captureLine(diagnostics: CaptureDiagnostics): String {
+    val dimensions = diagnostics.width?.let { width ->
+        diagnostics.height?.let { height -> "${width}x${height}" }
+    } ?: "awaiting frame"
+    return "Capture: ${diagnostics.state.lowercase()} ($dimensions)"
 }

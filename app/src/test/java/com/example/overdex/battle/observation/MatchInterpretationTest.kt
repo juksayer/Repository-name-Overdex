@@ -30,7 +30,6 @@ class MatchInterpretationTest {
         )
         val session = DroidballSession(match)
         assertEquals(MatchState.CREATED, match.state)
-        assertEquals(false, match.clock.hasStarted)
 
         custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("2", 0.8f, 1), 1000L)
         custody.submitTestimony(SourceId("TRAINER_INACTIVE_TIMER_OVERLAY"), SupportingMatchStart(2, 0.1f, 0.2f), 1100L)
@@ -47,8 +46,13 @@ class MatchInterpretationTest {
         assertEquals(goArticle.monotonicTimeNanos, starts.single().monotonicTimeNanos)
         assertEquals(MatchState.CREATED, match.state)
         assertEquals(DroidballSessionPhase.BATTLE_ACTIVE, session.phase.value)
-        assertEquals(goArticle.monotonicTimeNanos, match.clock.baselineReading?.monotonicTimeNanos)
-        assertEquals(50L, match.clock.elapsedNanosAt(ClockReading(1250L, goArticle.monotonicTimeNanos!! + 50L)))
+        assertEquals(
+            50L,
+            match.clock.elapsedNanosBetween(
+                ClockReading(goArticle.perceivedAt, goArticle.monotonicTimeNanos!!),
+                ClockReading(1250L, goArticle.monotonicTimeNanos!! + 50L)
+            )
+        )
         assertEquals(2, articles.count { it.payload is CountdownGlyphWitnessed && (it.payload as CountdownGlyphWitnessed).glyph == "GO" })
         assertEquals(1, articles.count { it.payload is SupportingMatchStart })
         session.end()
