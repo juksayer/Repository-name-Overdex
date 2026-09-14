@@ -21,6 +21,10 @@ import com.example.overdex.battle.observation.PersistedVsScreenWitness
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballSession
+import com.example.overdex.battle.observation.DroidballMatchLedger
+import com.example.overdex.battle.observation.NextMatchVsWatcher
+import com.example.overdex.battle.custody.CropCaptured
+import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
@@ -103,6 +107,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     val frameCount = _frameCount.asStateFlow()
 
     private var observationDispatcher = ObservationDispatcher()
+    private var droidballSignalJob: kotlinx.coroutines.Job? = null
+    private var nextMatchVsWatcher: NextMatchVsWatcher? = null
+    private val fieldMatchLedger = DroidballMatchLedger()
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
@@ -196,6 +203,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun deployInstrument(resultCode: Int, data: android.content.Intent) {
+        startFreshMatch(resultCode, data, startCaptureService = true)
+    }
+
+    private fun startFreshMatch(resultCode: Int, data: android.content.Intent, startCaptureService: Boolean): Match {
         _deploymentState.value = InstrumentDeploymentState.DEPLOYING
         
         // Initialize Match
@@ -210,6 +221,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
             session.phase.collect(DroidballOverlayPresentation::showSessionPhase)
+        }
+        viewModelScope.launch {
+            match.articles.collect { article ->
+                if (article.payload is MatchEnded) {
+                    fieldMatchLedger.complete(com.example.overdex.battle.archive.MatchArchiveSource(
+                        com.example.overdex.battle.observation.MatchId(match.matchId), match.realityTimeline
+                    ))
+                }
+            }
         }
         _activeMatch.value = match
         _droidballSession.value = session
@@ -229,7 +249,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _frameCount.value = 0
         Log.d("DEPLOY", "1 Match created")
         
-        // Re-initialize dispatcher to ensure observers are registered exactly once per deployment
+        // Re-initialize dispatcher so each immutable Match owns its witnesses.
+        observationDispatcher.stopAll()
         observationDispatcher = ObservationDispatcher()
         
         // Load calibration and register production observers
@@ -239,6 +260,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val cropArtifactStore = FileCropArtifactStore(getApplication<Application>().filesDir)
         val audioArtifactStore = FileAudioArtifactStore(getApplication<Application>().filesDir)
         PokemonGoTypeIconMatcher.initialize(getApplication())
+        if (startCaptureService) {
+            nextMatchVsWatcher?.stop()
+            nextMatchVsWatcher = NextMatchVsWatcher(
+                calibration = calibration,
+                awaitingNextMatch = { _droidballSession.value?.phase?.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
+                onVs = { crop, frame ->
+                    val nextMatch = startFreshMatch(resultCode, data, startCaptureService = false)
+                    val artifact = cropArtifactStore.preservePng(crop.bitmap)
+                    crop.bitmap.recycle()
+                    if (artifact != null) nextMatch.custody.submitTestimony(
+                        SourceId(BattleWitnessContracts.countdownCropCapture.witnessId), CropCaptured(artifact, crop.provenance),
+                        frame.capturedAtWallTimeMillis, null, emptyList(), frame.capturedAtMonotonicTimeNanos
+                    )
+                }
+            ).also { it.start() }
+        }
         
         Log.d("DEPLOY", "2 Registering observers")
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -310,7 +347,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.opponentHpEvidenceCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE && session.firstLiveCombatArticle.value == null },
+                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Opponent HP Evidence Capture Witness"
             )
@@ -393,16 +430,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
         )
 
-        // Start Service
-        DroidballService.start(getApplication(), resultCode, data)
-        startDroidBallService()
+        // The first Match starts capture; later field-session Matches reuse it.
+        if (startCaptureService) {
+            DroidballService.start(getApplication(), resultCode, data)
+            startDroidBallService()
+        }
 
         // Start Observation lifecycle
         Log.d("DEPLOY", "3 Starting observers")
         observationDispatcher.startAll(match)
         
         // Listen for signals
-        viewModelScope.launch {
+        droidballSignalJob?.cancel()
+        droidballSignalJob = viewModelScope.launch {
             DroidballService.signals.collect { signal ->
                 when (signal) {
                     is DroidballSignal.Started -> {
@@ -438,13 +478,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     is DroidballSignal.VsScreenWitnessed -> {
                         session.armCountdown()
                     }
+                    is DroidballSignal.BeginNextMatch -> {
+                        if (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT) {
+                            session.end()
+                            match.release()
+                            startFreshMatch(resultCode, data, startCaptureService = false)
+                        }
+                    }
                 }
             }
         }
+        return match
     }
 
     fun stopObservation() {
         _deploymentState.value = InstrumentDeploymentState.RETURNING
+        nextMatchVsWatcher?.stop()
+        nextMatchVsWatcher = null
         DroidballService.stop(getApplication())
         stopDroidBallService()
         observationDispatcher.stopAll()

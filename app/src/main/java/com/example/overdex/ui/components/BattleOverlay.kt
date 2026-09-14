@@ -137,7 +137,7 @@ private fun OverlayPanel(mode: DroidballOverlayMode, diagnostics: CaptureDiagnos
         DroidballOverlayMode.RESULT -> listOf(
             "RESULT OBSERVED",
             "Outcome evidence is preserved.",
-            "Return to Overdex or begin another battle."
+            "Tap here to arm the next match."
         )
     }
 
@@ -163,6 +163,7 @@ private fun OverlayPanel(mode: DroidballOverlayMode, diagnostics: CaptureDiagnos
         lines.drop(1).forEach { line ->
             Text(
                 text = line,
+                modifier = if (mode == DroidballOverlayMode.RESULT && line.contains("Tap here")) Modifier.clickable { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch) } else Modifier,
                 color = Color.White.copy(alpha = 0.92f),
                 fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace

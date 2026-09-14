@@ -575,4 +575,5 @@ sealed class DroidballSignal {
     data class Error(val message: String) : DroidballSignal()
     data class CountdownWitnessed(val value: String) : DroidballSignal()
     data object VsScreenWitnessed : DroidballSignal()
+    data object BeginNextMatch : DroidballSignal()
 }
