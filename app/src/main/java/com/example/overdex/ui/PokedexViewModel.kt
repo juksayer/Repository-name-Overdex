@@ -276,6 +276,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
+        listOf(
+            BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
+            BattleWitnessContracts.playerTeamStatusCapture to "Player Team Status Capture Witness",
+            BattleWitnessContracts.opponentTeamStatusCapture to "Opponent Team Status Capture Witness",
+            BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture Witness",
+            BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
+                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name = name))
+        }
         observationDispatcher.register(
             CropCaptureWitness(input, calibration, BattleWitnessContracts.announcementCropCapture, cropArtifactStore,
                 isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
@@ -287,7 +298,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             BattleWitnessContracts.playerInactiveSpeciesSpriteCapture to "Player Inactive Species Sprite Capture Witness",
             BattleWitnessContracts.playerInactiveHpBarCapture to "Player Inactive HP Bar Capture Witness",
-            BattleWitnessContracts.inactiveMatchStartTimerCapture to "Inactive Match Start Timer Capture Witness"
+            BattleWitnessContracts.inactiveMatchStartTimerCapture to "Inactive Match Start Timer Capture Witness",
+            BattleWitnessContracts.switchLockoutTimerCapture to "Switch Lockout Timer Capture Witness"
         ).forEach { (contract, name) ->
             observationDispatcher.register(
                 CropCaptureWitness(
