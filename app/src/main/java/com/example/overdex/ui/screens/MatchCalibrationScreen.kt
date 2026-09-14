@@ -238,21 +238,5 @@ fun MatchCalibrationScreen(
             )
         }
         
-        // HUD feedback in CRT
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .padding(4.dp)
-        ) {
-            val indexNum = matchRegions.indexOf(selectedRegion) + 1
-            TerminalText("CALIBRATION WORKSPACE", color = TerminalPurple, fontSize = 10.sp)
-            TerminalText("TARGET: ${getReadableName(selectedRegion)} ($indexNum/${matchRegions.size})", fontSize = 10.sp)
-            TerminalText("MODE: ${mode.name}", fontSize = 10.sp)
-            if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
-                TerminalText("STATUS: Needs calibration", color = Color.Yellow, fontSize = 9.sp)
-            }
-        }
     }
 }

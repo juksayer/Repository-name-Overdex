@@ -57,15 +57,17 @@ data class BattleCalibration(
     ),
     val trainerActiveTypeRegion: AnchorRegion = AnchorRegion(
         x = 20f / 1080f,
-        y = 165f / 2400f,
-        width = (125f - 20f) / 1080f,
-        height = (213f - 165f) / 2400f
+        y = 145f / 2400f,
+        width = (135f - 20f) / 1080f,
+        height = (205f - 145f) / 2400f
     ),
     val opponentActiveTypeRegion: AnchorRegion = AnchorRegion(
-        x = 640f / 1080f,
-        y = 165f / 2400f,
-        width = (1060f - 640f) / 1080f,
-        height = (213f - 165f) / 2400f
+        x = 800f / 1080f,
+        // Opponent badges sit above their name/status card; 165–213 clipped
+        // their upper glyphs in replayed battle captures.
+        y = 135f / 2400f,
+        width = (970f - 800f) / 1080f,
+        height = (205f - 135f) / 2400f
     ),
     val trainerHpRegion: AnchorRegion = AnchorRegion(
         x = 25f / 1080f,
