@@ -18,6 +18,7 @@ import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
 import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprintMeasured
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.observation.MatchId
@@ -43,6 +44,11 @@ object RealityArticleArchiveMapper {
             is VsScreenWitnessed -> ArchivedVsScreenWitnessed
             is AttackIncoming -> ArchivedAttackIncoming
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)
+            is ActivePokemonSpeciesWitnessed -> ArchivedActivePokemonSpeciesWitnessed(
+                side = p.side.name,
+                speciesName = p.speciesName,
+                speciesId = p.speciesId
+            )
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
                 frameIndex = p.frameIndex,
                 upperColorfulPixelFraction = p.upperColorfulPixelFraction,

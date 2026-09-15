@@ -98,6 +98,13 @@ data class WitnessOperating(
 /** The side whose active Pokémon type icons were witnessed. */
 enum class ActivePokemonSide { PLAYER, OPPONENT }
 
+/** A side-attributed active species result, derived from one preserved species crop. */
+data class ActivePokemonSpeciesWitnessed(
+    val side: ActivePokemonSide,
+    val speciesName: String,
+    val speciesId: Int? = null
+) : TestimonyPayload
+
 /**
  * One active-type-icon witness result from one preserved Pokémon GO crop.
  *

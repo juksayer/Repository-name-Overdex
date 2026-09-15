@@ -8,6 +8,8 @@ import com.example.overdex.battle.reality.RealityTimeline
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.FileOutputStream
+import java.io.File
 
 class ArchiveDirectoryManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("overdex_archive_directory_prefs", Context.MODE_PRIVATE)
@@ -66,7 +68,7 @@ class ArchiveDirectoryManager(private val context: Context) {
         }
 
         return docFile.listFiles()
-            .filter { it.isFile && (it.name?.lowercase()?.endsWith(".odxmatch.zip") == true) }
+            .filter { it.isFile && it.length() > 0L && (it.name?.lowercase()?.endsWith(".odxmatch.zip") == true) }
             .map { file ->
                 ArchiveEntry(
                     name = file.name ?: "unknown.odxmatch.zip",
@@ -96,18 +98,27 @@ class ArchiveDirectoryManager(private val context: Context) {
             counter++
         }
 
-        val newFile = parentDoc.createFile("application/zip", fileName) ?: return null
-        val outputStream = context.contentResolver.openOutputStream(newFile.uri, "w") ?: return null
-
-        outputStream.use {
-            MatchArchiveExporter.export(
-                realityTimeline = realityTimeline,
-                matchId = matchId,
-                output = it,
-                artifactRepositoryRoot = context.filesDir
-            )
+        // Build privately first. A failed package must never appear as an empty,
+        // selectable archive in the user-selected folder.
+        val temporary = File.createTempFile("overdex-match-", ".odxmatch.zip", context.cacheDir)
+        try {
+            FileOutputStream(temporary).use {
+                MatchArchiveExporter.export(realityTimeline, matchId, it, context.filesDir)
+            }
+            require(temporary.length() > 0L) { "Archive package was empty." }
+            val newFile = parentDoc.createFile("application/zip", fileName)
+                ?: throw java.io.IOException("Unable to create archive in selected folder.")
+            try {
+                context.contentResolver.openOutputStream(newFile.uri, "w")
+                    ?.use { output -> temporary.inputStream().use { input -> input.copyTo(output) } }
+                    ?: throw java.io.IOException("Unable to write archive in selected folder.")
+                return newFile.uri
+            } catch (error: Exception) {
+                newFile.delete()
+                throw error
+            }
+        } finally {
+            temporary.delete()
         }
-
-        return newFile.uri
     }
 }

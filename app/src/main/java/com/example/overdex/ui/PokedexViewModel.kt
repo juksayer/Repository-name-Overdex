@@ -47,6 +47,9 @@ import com.example.overdex.battle.observation.PersistedPlayerInactiveSpeciesSpri
 import com.example.overdex.battle.observation.PersistedTrainerInactiveTimerOverlayClearanceWitness
 import com.example.overdex.battle.observation.PokemonGoTypeIconMatcher
 import com.example.overdex.battle.observation.PersistedActivePokemonTypeWitness
+import com.example.overdex.battle.observation.TeamSelectCalibration
+import com.example.overdex.battle.observation.TeamSelectCropContracts
+import com.example.overdex.battle.observation.TeamSelectCropCaptureWitness
 import com.example.overdex.data.observation.YouWinRecognizer
 import com.example.overdex.data.observation.GoodEffortRecognizer
 import com.example.overdex.battle.artifact.FileCropArtifactStore
@@ -285,6 +288,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         
         Log.d("DEPLOY", "2 Registering observers")
+        val teamSelectCalibration = TeamSelectCalibration.measured1080x2400
+        listOf(
+            TeamSelectCropContracts.leagueText to "Team Select League Text Capture Witness",
+            TeamSelectCropContracts.playerRosterSlot1 to "Team Select Player Roster Slot 1 Capture Witness",
+            TeamSelectCropContracts.playerRosterSlot2 to "Team Select Player Roster Slot 2 Capture Witness",
+            TeamSelectCropContracts.playerRosterSlot3 to "Team Select Player Roster Slot 3 Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(TeamSelectCropCaptureWitness(
+                input = input,
+                calibration = teamSelectCalibration,
+                contract = contract,
+                artifactStore = cropArtifactStore,
+                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED },
+                observerId = ObserverId("${contract.cropName}_CAPTURE", ObserverSource.SCREEN_CAPTURE),
+                name = name
+            ))
+        }
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             observationDispatcher.register(
                 AudioCaptureWitness(

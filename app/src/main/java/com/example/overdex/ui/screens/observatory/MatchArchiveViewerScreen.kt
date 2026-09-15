@@ -13,12 +13,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.archive.*
+import com.example.overdex.battle.replay.ReplayExcerptStore
 import com.example.overdex.ui.components.TerminalHeader
 import com.example.overdex.ui.components.TerminalPathIndicator
 import com.example.overdex.ui.components.TerminalScreen
@@ -43,14 +45,23 @@ fun MatchArchiveViewerScreen(
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
     var showDetails by remember { mutableStateOf(false) }
+    var showReplay by remember { mutableStateOf(false) }
+    var excerptStart by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
+    var excerptStatus by remember { mutableStateOf<String?>(null) }
     
     val listState = rememberLazyListState()
     val detailScrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
     val selectedArticle = archive.articles.getOrNull(selectedIndex)
+
+    if (showReplay) {
+        MatchReplayScreen(archive = archive, onBack = { showReplay = false })
+        return
+    }
 
     BackHandler {
         if (showDetails) {
@@ -79,9 +90,8 @@ fun MatchArchiveViewerScreen(
             }
         }
         onA {
-            if (!showDetails && selectedArticle != null) {
-                showDetails = true
-                scope.launch { detailScrollState.scrollTo(0) }
+            if (!showDetails) {
+                showReplay = true
             }
         }
         onB {
@@ -109,6 +119,35 @@ fun MatchArchiveViewerScreen(
                 color = TerminalDimGreen,
                 fontSize = 10.sp
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                androidx.compose.material3.TextButton(
+                    enabled = selectedArticle?.monotonicTimeNanos != null,
+                    onClick = {
+                        excerptStart = selectedArticle
+                        excerptStatus = "START MARKED: #${selectedIndex + 1}"
+                    }
+                ) { TerminalText(text = "[ MARK START ]", color = TerminalGreen, fontSize = 10.sp) }
+                androidx.compose.material3.TextButton(
+                    enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null,
+                    onClick = {
+                        val start = excerptStart ?: return@TextButton
+                        val end = selectedArticle ?: return@TextButton
+                        excerptStatus = runCatching {
+                            val excerpt = ReplayExcerptStore(context.filesDir).save(archive, start, end)
+                            excerptStart = null
+                            "EXCERPT SAVED: ${excerpt.excerptId.take(8)}"
+                        }.getOrElse { "EXCERPT NOT SAVED: ${it.message}" }
+                    }
+                ) { TerminalText(text = "[ MARK END + SAVE ]", color = TerminalGreen, fontSize = 10.sp) }
+            }
+            androidx.compose.material3.TextButton(onClick = { showReplay = true }) {
+                TerminalText(text = "[ OPEN REPLAY ]", color = TerminalGreen, fontSize = 10.sp)
+            }
+            excerptStatus?.let { TerminalText(text = it, color = TerminalDimGreen, fontSize = 9.sp) }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -142,7 +181,7 @@ fun MatchArchiveViewerScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             TerminalText(
-                text = if (showDetails) "[B] CLOSE DETAILS" else "[B] RETURN TO VIEWER",
+                text = if (showDetails) "[B] CLOSE DETAILS" else "[A] OPEN REPLAY  [B] RETURN TO VIEWER",
                 color = TerminalDimGreen,
                 fontSize = 10.sp
             )
@@ -194,6 +233,7 @@ private fun ArchiveArticleRow(
             is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
+            is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
@@ -269,6 +309,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
+                is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"

@@ -21,7 +21,9 @@ import com.example.overdex.battle.artifact.FileCropArtifactStore
  */
 object MatchArchivePackageReader {
 
-    private const val MAX_TOTAL_BYTES = 16 * 1024 * 1024 // 16 MiB
+    // Complete matches now preserve raw crops and cue-centered audio, so 16 MiB
+    // is no longer a viable archive ceiling.
+    private const val MAX_TOTAL_BYTES = 256 * 1024 * 1024 // 256 MiB
 
     private val manifestJson = Json {
         ignoreUnknownKeys = true
@@ -95,9 +97,15 @@ object MatchArchivePackageReader {
         if (artifactRepositoryRoot != null) {
             val store = FileCropArtifactStore(artifactRepositoryRoot)
             artifactBytes.forEach { (path, bytes) ->
-                val reference = store.preserveEncodedPng(bytes)
-                    ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
-                if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
+                if (path.startsWith("artifacts/crops/")) {
+                    val reference = store.preserveEncodedPng(bytes)
+                        ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
+                    if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
+                } else {
+                    val output = File(artifactRepositoryRoot, path)
+                    output.parentFile?.mkdirs()
+                    if (!output.exists()) output.writeBytes(bytes)
+                }
             }
         }
 
@@ -134,18 +142,22 @@ object MatchArchivePackageReader {
         archive: MatchArchive,
         artifactBytes: Map<String, ByteArray>
     ) {
-        val referenced = archive.articles.mapNotNull { (it.payload as? ArchivedCropCaptured)?.let { crop ->
-            ArchivedArtifactEntry(crop.artifactPath, crop.sha256, crop.byteCount, crop.mediaType)
-        } }.sortedBy { it.relativePath }
+        val referenced = archive.articles.mapNotNull { article ->
+            when (val payload = article.payload) {
+                is ArchivedCropCaptured -> ArchivedArtifactEntry(payload.artifactPath, payload.sha256, payload.byteCount, payload.mediaType)
+                is ArchivedAudioCaptured -> ArchivedArtifactEntry(payload.artifactPath, payload.sha256, payload.byteCount, payload.mediaType)
+                else -> null
+            }
+        }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         val declared = manifest.artifacts.sortedBy { it.relativePath }
         if (referenced != declared) throw IllegalArgumentException("Crop artifact manifest does not match Timeline references.")
         if (artifactBytes.keys != declared.map { it.relativePath }.toSet()) {
             throw IllegalArgumentException("Archive crop artifact entries do not match the manifest.")
         }
         declared.forEach { artifact ->
-            require(artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png") {
-                "Invalid crop artifact reference: ${artifact.relativePath}"
-            }
+            val validCrop = artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png" && artifact.mediaType == "image/png"
+            val validAudio = artifact.relativePath == "artifacts/audio/sha256/${artifact.sha256}.wav" && artifact.mediaType == "audio/wav"
+            require(validCrop || validAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
             val bytes = artifactBytes.getValue(artifact.relativePath)
             if (bytes.size.toLong() != artifact.byteCount || sha256(bytes) != artifact.sha256) {
                 throw IllegalArgumentException("Crop artifact hash verification failed: ${artifact.relativePath}")

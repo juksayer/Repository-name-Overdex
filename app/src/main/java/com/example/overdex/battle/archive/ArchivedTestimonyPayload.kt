@@ -40,6 +40,14 @@ data class ArchivedPokemonIdentified(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("active_pokemon_species_witnessed")
+data class ArchivedActivePokemonSpeciesWitnessed(
+    val side: String,
+    val speciesName: String,
+    val speciesId: Int? = null
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("supporting_match_start")
 data class ArchivedSupportingMatchStart(
     val frameIndex: Int,
