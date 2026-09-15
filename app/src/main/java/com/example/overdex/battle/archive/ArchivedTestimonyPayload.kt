@@ -143,3 +143,6 @@ data class ArchivedBattleCryCandidatesMeasured(
     val candidates: List<ArchivedBattleCryCandidateMeasurement>
 ) : ArchivedTestimonyPayload
 @Serializable data class ArchivedBattleCryCandidateMeasurement(val speciesId: Int, val referenceSha256: String, val similarity: Float)
+
+@Serializable @SerialName("visual_capture_gap") data class ArchivedVisualCaptureGapObserved(val durationNanos: Long) : ArchivedTestimonyPayload
+@Serializable @SerialName("out_of_battle_menu") data object ArchivedOutOfBattleMenuWitnessed : ArchivedTestimonyPayload

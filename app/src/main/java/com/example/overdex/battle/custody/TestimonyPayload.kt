@@ -148,3 +148,7 @@ data class BattleCryCandidatesMeasured(
     val candidates: List<BattleCryCandidateMeasurement>
 ) : TestimonyPayload
 data class BattleCryCandidateMeasurement(val speciesId: Int, val referenceSha256: String, val similarity: Float)
+
+/** A measured interval in which Droidball received no visual frame. */
+data class VisualCaptureGapObserved(val durationNanos: Long) : TestimonyPayload
+data object OutOfBattleMenuWitnessed : TestimonyPayload

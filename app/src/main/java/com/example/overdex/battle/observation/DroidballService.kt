@@ -157,6 +157,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     // 500 ms pre-roll and 700 ms post-roll at 16 kHz mono PCM-16.
     private val cueCenteredAudio = CueCenteredPcmCollector(preRollBytes = 16_000, postRollBytes = 22_400)
     private var firstFrameLogged = false
+    private var lastPublishedFrameNanos: Long? = null
 
     private var publicationAttempts = 0L
     private var successEmitCount = 0L
@@ -306,6 +307,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
                     val capturedAtWallTimeMillis = System.currentTimeMillis()
                     val capturedAtMonotonicTimeNanos = System.nanoTime()
+                    lastPublishedFrameNanos?.let { previous ->
+                        val gap = capturedAtMonotonicTimeNanos - previous
+                        if (gap > 750_000_000L) _signals.tryEmit(DroidballSignal.VisualCaptureGap(gap))
+                    }
+                    lastPublishedFrameNanos = capturedAtMonotonicTimeNanos
                     val frame = CapturedVisualFrame(
                         bitmap = bitmap,
                         capturedAtWallTimeMillis = capturedAtWallTimeMillis,
@@ -576,4 +582,5 @@ sealed class DroidballSignal {
     data class CountdownWitnessed(val value: String) : DroidballSignal()
     data object VsScreenWitnessed : DroidballSignal()
     data object BeginNextMatch : DroidballSignal()
+    data class VisualCaptureGap(val durationNanos: Long) : DroidballSignal()
 }

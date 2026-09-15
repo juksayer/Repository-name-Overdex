@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.AudioCaptured
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
+import com.example.overdex.battle.custody.VisualCaptureGapObserved
+import com.example.overdex.battle.custody.OutOfBattleMenuWitnessed
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
@@ -86,6 +88,8 @@ object RealityArticleArchiveMapper {
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )
+            is OutOfBattleMenuWitnessed -> ArchivedOutOfBattleMenuWitnessed
+            is VisualCaptureGapObserved -> ArchivedVisualCaptureGapObserved(p.durationNanos)
             is WitnessOperating -> ArchivedWitnessOperating(p.operating)
             is ActivePokemonTypesWitnessed -> ArchivedActivePokemonTypesWitnessed(
                 side = p.side.name,

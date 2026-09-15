@@ -98,6 +98,11 @@ data class BattleCalibration(
         width = (1050f - 890f) / 1080f,
         height = (1750f - 1370f) / 2400f
     ),
+    val battlePartyTabsRegion: AnchorRegion = AnchorRegion(x = 0f, y = 100f / 2400f, width = 1f, height = 150f / 2400f),
+    val outOfBattleMenuRegion: AnchorRegion = AnchorRegion(
+        x = 645f / 1080f, y = 350f / 2400f,
+        width = (1060f - 645f) / 1080f, height = (550f - 350f) / 2400f
+    ),
     val matchOutcomeRegion: AnchorRegion = AnchorRegion(
         x = 0.2f,
         y = 0.4f,

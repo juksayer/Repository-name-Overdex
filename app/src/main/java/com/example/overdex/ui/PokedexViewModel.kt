@@ -18,6 +18,7 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.observation.PersistedCountdownGlyphWitness
 import com.example.overdex.battle.observation.PersistedVsScreenWitness
+import com.example.overdex.battle.observation.PersistedOutOfBattleMenuWitness
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballSession
@@ -25,6 +26,7 @@ import com.example.overdex.battle.observation.DroidballMatchLedger
 import com.example.overdex.battle.observation.NextMatchVsWatcher
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.VisualCaptureGapObserved
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.ObservationDispatcher
@@ -264,7 +266,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             nextMatchVsWatcher?.stop()
             nextMatchVsWatcher = NextMatchVsWatcher(
                 calibration = calibration,
-                awaitingNextMatch = { _droidballSession.value?.phase?.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
+                awaitingNextMatch = {
+                    val session = _droidballSession.value ?: return@NextMatchVsWatcher false
+                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT ||
+                        (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED &&
+                            session.hasCompletedMatch)
+                },
                 onVs = { crop, frame ->
                     val nextMatch = startFreshMatch(resultCode, data, startCaptureService = false)
                     val artifact = cropArtifactStore.preservePng(crop.bitmap)
@@ -396,6 +403,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedPlayerInactiveHpBarWitness.lower(cropArtifactStore))
         observationDispatcher.register(PersistedPlayerInactiveSpeciesSpriteWitness.upper(cropArtifactStore))
         observationDispatcher.register(PersistedPlayerInactiveSpeciesSpriteWitness.lower(cropArtifactStore))
+        observationDispatcher.register(PersistedOutOfBattleMenuWitness(cropArtifactStore))
+        observationDispatcher.register(CropCaptureWitness(input, calibration, BattleWitnessContracts.battlePartyTabsCapture, cropArtifactStore,
+            isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
+            observerId = ObserverId(BattleWitnessContracts.battlePartyTabsCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Battle Party Tabs Capture Witness"))
+        observationDispatcher.register(CropCaptureWitness(input, calibration, BattleWitnessContracts.outOfBattleMenuCapture, cropArtifactStore,
+            isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
+            observerId = ObserverId(BattleWitnessContracts.outOfBattleMenuCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Out Of Battle Menu Capture Witness"))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -471,6 +485,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     is DroidballSignal.Error -> {
                         Log.e("DROIDBALL_SERVICE", "Error: ${signal.message}")
                         stopObservation()
+                    }
+                    is DroidballSignal.VisualCaptureGap -> {
+                        match.custody.submitTestimony(SourceId("VISUAL_CAPTURE_CLOCK"), VisualCaptureGapObserved(signal.durationNanos), System.currentTimeMillis(), null, emptyList(), System.nanoTime())
                     }
                     is DroidballSignal.CountdownWitnessed -> {
                         session.armCountdown()
