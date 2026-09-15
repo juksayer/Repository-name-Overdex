@@ -59,7 +59,14 @@ fun MatchArchiveViewerScreen(
     val selectedArticle = archive.articles.getOrNull(selectedIndex)
 
     if (showReplay) {
-        MatchReplayScreen(archive = archive, onBack = { showReplay = false })
+        MatchReplayScreen(
+            archive = archive,
+            onBack = { showReplay = false },
+            onUp = onUp,
+            onDown = onDown,
+            onA = onA,
+            onB = onB
+        )
         return
     }
 
