@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -69,7 +70,7 @@ fun BattleOverlay(
         modifier = interactionModifier
             .offset(x = arrivalOffset)
             .clickable { DroidballOverlayPresentation.toggleExpanded() },
-        horizontalAlignment = Alignment.End
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (panelIsVisible) {
             DroidballHalf(top = true, displaced = true)
@@ -114,59 +115,35 @@ private fun OverlayPanel(mode: DroidballOverlayMode, diagnostics: CaptureDiagnos
     val lines = when (mode) {
         DroidballOverlayMode.PRE_BATTLE -> listOf(
             "ASSISTANCE ARMED",
-            "Start a battle and choose a team.",
-            "GO begins battle-live routing.",
-            "Pre-battle evidence is recording."
+            "Open a Pokémon GO battle.",
+            "Choose your team on Pokémon GO's Team Select screen.",
+            "Droidball observes the transition; GO begins live routing."
         )
-        DroidballOverlayMode.CALIBRATING -> listOf(
-            "CALIBRATION ACTIVE",
-            "Adjust crop boxes in Overdex.",
-            "GO begins battle-live routing."
-        )
-        DroidballOverlayMode.COUNTDOWN -> listOf(
-            "COUNTDOWN OBSERVED",
-            "GO establishes the live battle boundary.",
-            "Countdown evidence is recording."
-        )
-        DroidballOverlayMode.BATTLE_LIVE -> listOf(
-            "BATTLE LIVE",
-            captureLine(diagnostics),
-            "Observed evidence is on the Timeline.",
-            "Gaps remain visible; none are invented."
-        )
-        DroidballOverlayMode.RESULT -> listOf(
-            "RESULT OBSERVED",
-            "Outcome evidence is preserved.",
-            "Tap here to arm the next match."
-        )
+        DroidballOverlayMode.CALIBRATING -> listOf("CALIBRATION ACTIVE", "Adjust crop boxes in Overdex.", "GO begins live routing.")
+        DroidballOverlayMode.COUNTDOWN -> listOf("COUNTDOWN OBSERVED", "GO establishes the live battle boundary.", "Countdown evidence is recording.", "Tap Droidball to collapse it when you need the screen.")
+        DroidballOverlayMode.BATTLE_LIVE -> listOf("BATTLE LIVE", captureLine(diagnostics), "Observed evidence is on the Timeline.", "Gaps remain visible; none are invented.")
+        DroidballOverlayMode.RESULT -> listOf("RESULT OBSERVED", "Outcome evidence is preserved.", "Tap here to arm the next match.")
     }
-
-    val background = when (mode) {
-        DroidballOverlayMode.BATTLE_LIVE -> Color(0xFF052E2B).copy(alpha = 0.92f)
-        DroidballOverlayMode.RESULT -> Color(0xFF1B263B).copy(alpha = 0.92f)
-        else -> Color(0xFF10231F).copy(alpha = 0.92f)
+    val lcdGlow = when (mode) {
+        DroidballOverlayMode.BATTLE_LIVE -> Color(0xFF65F5D0)
+        DroidballOverlayMode.RESULT -> Color(0xFF8AAED1)
+        else -> Color(0xFF9BE8D4)
     }
     Column(
         modifier = Modifier
-            .width(270.dp)
-            .background(background, RoundedCornerShape(7.dp))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .width(258.dp)
+            .background(Color(0xE80B2522), RoundedCornerShape(5.dp))
+            .border(1.dp, lcdGlow.copy(alpha = 0.65f), RoundedCornerShape(5.dp))
+            .padding(7.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Text(
-            text = "DROIDBALL / ${lines.first()}",
-            color = Color(0xFF8DF7D4),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
-        )
+        Text("ODX-FI  //  ${lines.first()}", color = lcdGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+        Box(Modifier.fillMaxWidth().height(1.dp).background(lcdGlow.copy(alpha = 0.35f)))
         lines.drop(1).forEach { line ->
             Text(
                 text = line,
                 modifier = if (mode == DroidballOverlayMode.RESULT && line.contains("Tap here")) Modifier.clickable { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch) } else Modifier,
-                color = Color.White.copy(alpha = 0.92f),
-                fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace
+                color = Color(0xFFD7FFF4).copy(alpha = 0.92f), fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
         }
     }

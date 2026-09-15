@@ -37,10 +37,8 @@ class ObservationDispatcher {
         observers.forEach {
             Log.d("DEPLOY", "Starting ${it.javaClass.simpleName}")
             it.start(match)
-            match.custody.submitAvailability(
-                sourceId = SourceId(it.observerId.id),
-                available = true,
-                timestamp = System.currentTimeMillis()
+            if (!it.managesAvailability) match.custody.submitAvailability(
+                sourceId = SourceId(it.observerId.id), available = true, timestamp = System.currentTimeMillis()
             )
         }
     }
@@ -52,10 +50,8 @@ class ObservationDispatcher {
         val match = activeMatch
         observers.forEach {
             it.stop()
-            match?.custody?.submitAvailability(
-                sourceId = SourceId(it.observerId.id),
-                available = false,
-                timestamp = System.currentTimeMillis()
+            if (!it.managesAvailability) match?.custody?.submitAvailability(
+                sourceId = SourceId(it.observerId.id), available = false, timestamp = System.currentTimeMillis()
             )
         }
         activeMatch = null

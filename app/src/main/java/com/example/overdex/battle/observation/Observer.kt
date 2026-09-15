@@ -19,6 +19,9 @@ interface Observer {
      */
     val name: String
 
+    /** True when this observer publishes its own phase-aware availability transitions. */
+    val managesAvailability: Boolean get() = false
+
     /**
      * Starts the observer and directs its output to the given match.
      */
