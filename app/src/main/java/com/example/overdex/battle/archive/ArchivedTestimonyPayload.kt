@@ -47,6 +47,9 @@ data class ArchivedActivePokemonSpeciesWitnessed(
     val speciesId: Int? = null
 ) : ArchivedTestimonyPayload
 
+@Serializable @SerialName("team_select_party") data object ArchivedTeamSelectPartyWitnessed : ArchivedTestimonyPayload
+@Serializable @SerialName("player_team_roster_slot") data class ArchivedPlayerTeamRosterSlotWitnessed(val slot: Int, val speciesName: String, val speciesId: Int? = null) : ArchivedTestimonyPayload
+
 @Serializable
 @SerialName("supporting_match_start")
 data class ArchivedSupportingMatchStart(

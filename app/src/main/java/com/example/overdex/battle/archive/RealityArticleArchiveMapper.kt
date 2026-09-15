@@ -19,6 +19,8 @@ import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprint
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.TeamSelectPartyWitnessed
+import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.observation.MatchId
@@ -49,6 +51,8 @@ object RealityArticleArchiveMapper {
                 speciesName = p.speciesName,
                 speciesId = p.speciesId
             )
+            is TeamSelectPartyWitnessed -> ArchivedTeamSelectPartyWitnessed
+            is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
                 frameIndex = p.frameIndex,
                 upperColorfulPixelFraction = p.upperColorfulPixelFraction,

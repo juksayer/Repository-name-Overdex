@@ -50,6 +50,8 @@ import com.example.overdex.battle.observation.PersistedActivePokemonTypeWitness
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCropContracts
 import com.example.overdex.battle.observation.TeamSelectCropCaptureWitness
+import com.example.overdex.battle.observation.PersistedTeamSelectPartyWitness
+import com.example.overdex.battle.observation.PersistedPlayerTeamRosterSlotWitness
 import com.example.overdex.data.observation.YouWinRecognizer
 import com.example.overdex.data.observation.GoodEffortRecognizer
 import com.example.overdex.battle.artifact.FileCropArtifactStore
@@ -223,6 +225,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonKnowledge = pokemonRepository
         )
         val session = DroidballSession(match)
+        // A battle HUD is evidence before GO and remains evidence afterward. GO
+        // changes the match boundary; it must not decide whether visible battle
+        // information is preserved.
+        val battleEvidenceLive: () -> Boolean = {
+            session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
+                session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+        }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
             session.phase.collect(DroidballOverlayPresentation::showSessionPhase)
@@ -305,6 +314,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = name
             ))
         }
+        observationDispatcher.register(PersistedTeamSelectPartyWitness(cropArtifactStore))
+        listOf(
+            1 to TeamSelectCropContracts.playerRosterSlot1.cropName,
+            2 to TeamSelectCropContracts.playerRosterSlot2.cropName,
+            3 to TeamSelectCropContracts.playerRosterSlot3.cropName
+        ).forEach { (slot, cropName) ->
+            observationDispatcher.register(PersistedPlayerTeamRosterSlotWitness(cropArtifactStore, slot, cropName))
+        }
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             observationDispatcher.register(
                 AudioCaptureWitness(
@@ -333,7 +350,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     calibration = calibration,
                     contract = contract,
                     artifactStore = cropArtifactStore,
-                    isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                    isEnabled = battleEvidenceLive,
                     observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                     name = name
                 )
@@ -374,7 +391,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.opponentHpEvidenceCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                isEnabled = battleEvidenceLive,
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Opponent HP Evidence Capture Witness"
             )
@@ -388,12 +405,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture Witness"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
-                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                isEnabled = battleEvidenceLive,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name = name))
         }
         observationDispatcher.register(
             CropCaptureWitness(input, calibration, BattleWitnessContracts.announcementCropCapture, cropArtifactStore,
-                isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                isEnabled = battleEvidenceLive,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Announcement Crop Capture Witness")
         )
@@ -413,7 +430,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     calibration = calibration,
                     contract = contract,
                     artifactStore = cropArtifactStore,
-                    isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE },
+                    isEnabled = battleEvidenceLive,
                     observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                     name = name
                 )
@@ -437,9 +454,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.matchOutcomeCropCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = {
-                    session.firstLiveCombatArticle.value != null &&
-                        calibrationManager.hasMatchOutcomeCalibration() &&
-                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+                    calibrationManager.hasMatchOutcomeCalibration() && battleEvidenceLive()
                 },
                 observerId = ObserverId(BattleWitnessContracts.matchOutcomeCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Match Outcome Crop Capture Witness"

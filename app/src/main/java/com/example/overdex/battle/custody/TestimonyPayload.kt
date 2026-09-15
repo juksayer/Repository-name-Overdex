@@ -105,6 +105,18 @@ data class ActivePokemonSpeciesWitnessed(
     val speciesId: Int? = null
 ) : TestimonyPayload
 
+/** The pre-GO Pokémon GO Team Select surface was accepted from preserved league text. */
+data object TeamSelectPartyWitnessed : TestimonyPayload
+
+/** One Player-selected Team Select card, preserving its left-to-right roster slot. */
+data class PlayerTeamRosterSlotWitnessed(
+    val slot: Int,
+    val speciesName: String,
+    val speciesId: Int? = null
+) : TestimonyPayload {
+    init { require(slot in 1..3) }
+}
+
 /**
  * One active-type-icon witness result from one preserved Pokémon GO crop.
  *

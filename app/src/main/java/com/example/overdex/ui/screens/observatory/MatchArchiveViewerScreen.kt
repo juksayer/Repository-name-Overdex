@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,7 +44,9 @@ fun MatchArchiveViewerScreen(
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
+    onB: (() -> Unit) -> Unit = {},
+    onLcdDrag: ((Offset) -> Unit) -> Unit = {},
+    onLcdTap: (() -> Unit) -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -65,7 +68,9 @@ fun MatchArchiveViewerScreen(
             onUp = onUp,
             onDown = onDown,
             onA = onA,
-            onB = onB
+            onB = onB,
+            onLcdDrag = onLcdDrag,
+            onLcdTap = onLcdTap
         )
         return
     }
@@ -80,6 +85,8 @@ fun MatchArchiveViewerScreen(
 
     // Handle physical controls
     SideEffect {
+        onLcdDrag { }
+        onLcdTap { }
         onUp {
             if (showDetails) {
                 scope.launch { detailScrollState.scrollBy(-100f) }
@@ -241,6 +248,8 @@ private fun ArchiveArticleRow(
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
             is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
+            is ArchivedTeamSelectPartyWitnessed -> "TEAM SELECT PARTY WITNESSED"
+            is ArchivedPlayerTeamRosterSlotWitnessed -> "PLAYER ROSTER [slot=${p.slot}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
@@ -317,6 +326,8 @@ private fun ArticleDetailsOverlay(
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
                 is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
+                is ArchivedTeamSelectPartyWitnessed -> "TEAM SELECT PARTY WITNESSED"
+                is ArchivedPlayerTeamRosterSlotWitnessed -> "PLAYER ROSTER [slot=${p.slot}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"

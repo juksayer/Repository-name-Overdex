@@ -1194,6 +1194,8 @@ fun PokedexApp(
                     var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
+                    var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
                     ODXFiShell(
                         showBattleOverlay = false,
@@ -1204,6 +1206,8 @@ fun PokedexApp(
                         onDown = { downHandler?.invoke() },
                         onA = { aHandler?.invoke() },
                         onB = { bHandler?.invoke() },
+                        onLcdDrag = { lcdDragHandler?.invoke(it) },
+                        onLcdTap = { lcdTapHandler?.invoke() },
                         onLaunchProbe = { navController.navigate("accessibility_probe") },
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchSight = { navController.navigate("match_sight") },
@@ -1220,7 +1224,9 @@ fun PokedexApp(
                             onUp = { upHandler = it },
                             onDown = { downHandler = it },
                             onA = { aHandler = it },
-                            onB = { bHandler = it }
+                            onB = { bHandler = it },
+                            onLcdDrag = { lcdDragHandler = it },
+                            onLcdTap = { lcdTapHandler = it }
                         )
                     }
                 } else {
