@@ -581,6 +581,8 @@ sealed class DroidballSignal {
     data class Error(val message: String) : DroidballSignal()
     data class CountdownWitnessed(val value: String) : DroidballSignal()
     data object VsScreenWitnessed : DroidballSignal()
+    /** A battle-entry announcement such as "GO, Pokémon!" was preserved. */
+    data object BattleHudWitnessed : DroidballSignal()
     data object BeginNextMatch : DroidballSignal()
     data class VisualCaptureGap(val durationNanos: Long) : DroidballSignal()
 }

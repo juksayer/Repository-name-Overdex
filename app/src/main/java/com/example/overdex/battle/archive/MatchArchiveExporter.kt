@@ -21,14 +21,17 @@ object MatchArchiveExporter {
         realityTimeline: RealityTimeline,
         matchId: MatchId,
         output: OutputStream,
-        artifactRepositoryRoot: File? = null
+        artifactRepositoryRoot: File? = null,
+        mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
     ): MatchArchiveManifest {
         val snapshot = realityTimeline.getArticles()
         val matchArticles = snapshot.filter { it.matchId == matchId }
+        val archivedArticles = matchArticles.map(RealityArticleArchiveMapper::map)
+        val selectedArticles = MatchArchiveArticleSelector.select(archivedArticles, mode)
 
-        val archive = RealityArticleArchiveMapper.createArchive(
-            matchId = matchId,
-            articles = matchArticles
+        val archive = MatchArchive(
+            matchId = matchId.value,
+            articles = selectedArticles
         )
 
         return MatchArchivePackageWriter.write(archive, output, artifactRepositoryRoot)

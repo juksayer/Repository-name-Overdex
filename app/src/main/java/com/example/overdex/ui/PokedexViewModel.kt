@@ -40,6 +40,7 @@ import com.example.overdex.battle.observation.FirstLiveCombatRouter
 import com.example.overdex.battle.observation.PersistedSpeciesWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
+import com.example.overdex.battle.observation.PersistedPlayerEntrySpeciesWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
@@ -225,12 +226,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             pokemonKnowledge = pokemonRepository
         )
         val session = DroidballSession(match)
+        DroidballOverlayPresentation.clearOpponentSpecies()
         // A battle HUD is evidence before GO and remains evidence afterward. GO
         // changes the match boundary; it must not decide whether visible battle
         // information is preserved.
         val battleEvidenceLive: () -> Boolean = {
             session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
                 session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+        }
+        // The announcement carries entry species names before 3/2/1. The heavier
+        // HUD witnesses still wait for the countdown boundary.
+        val announcementEvidenceLive: () -> Boolean = {
+            session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED || battleEvidenceLive()
         }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
@@ -340,21 +347,21 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         listOf(
             BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture Witness",
-            BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness",
+            BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(CropCaptureWitness(
+                input, calibration, contract, cropArtifactStore, battleEvidenceLive,
+                ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name
+            ))
+        }
+        listOf(
             BattleWitnessContracts.playerActiveSpeciesTextCapture to "Player Active Species Text Capture Witness",
             BattleWitnessContracts.opponentActiveSpeciesTextCapture to "Opponent Active Species Text Capture Witness"
         ).forEach { (contract, name) ->
-            observationDispatcher.register(
-                CropCaptureWitness(
-                    input = input,
-                    calibration = calibration,
-                    contract = contract,
-                    artifactStore = cropArtifactStore,
-                    isEnabled = battleEvidenceLive,
-                    observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
-                    name = name
-                )
-            )
+            observationDispatcher.register(CropCaptureWitness(
+                input, calibration, contract, cropArtifactStore, battleEvidenceLive,
+                ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name
+            ))
         }
         observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore))
         observationDispatcher.register(PersistedActivePokemonTypeWitness.opponent(cropArtifactStore))
@@ -410,11 +417,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         observationDispatcher.register(
             CropCaptureWitness(input, calibration, BattleWitnessContracts.announcementCropCapture, cropArtifactStore,
-                isEnabled = battleEvidenceLive,
+                isEnabled = announcementEvidenceLive,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Announcement Crop Capture Witness")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedPlayerEntrySpeciesWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.getReady(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.chargeMoveUsed(cropArtifactStore))
@@ -528,6 +536,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         session.armCountdown()
                     }
                     is DroidballSignal.VsScreenWitnessed -> {
+                        DroidballOverlayPresentation.showBattleHud()
+                        session.armCountdown()
+                    }
+                    is DroidballSignal.BattleHudWitnessed -> {
                         session.armCountdown()
                     }
                     is DroidballSignal.BeginNextMatch -> {

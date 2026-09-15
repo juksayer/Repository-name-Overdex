@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +27,7 @@ import com.example.overdex.R
 import com.example.overdex.battle.observation.CaptureDiagnostics
 import com.example.overdex.battle.observation.DroidballOverlayMode
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
+import com.example.overdex.battle.observation.OpponentMovePossibilities
 import com.example.overdex.battle.observation.DroidballService
 
 /**
@@ -41,6 +43,8 @@ fun BattleOverlay(
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
     val diagnostics by DroidballService.captureDiagnostics.collectAsState()
+    val opponentSpecies by DroidballOverlayPresentation.opponentSpecies.collectAsState()
+    val opponentMoves by DroidballOverlayPresentation.activeOpponentMovePossibilities.collectAsState()
     var arrived by remember { mutableStateOf(false) }
     val arrivalOffset by animateDpAsState(
         targetValue = if (arrived) 0.dp else 58.dp,
@@ -52,8 +56,8 @@ fun BattleOverlay(
     )
     LaunchedEffect(Unit) { arrived = true }
 
-    val panelIsVisible = expanded || mode == DroidballOverlayMode.BATTLE_LIVE
-    val mayMove = mode != DroidballOverlayMode.BATTLE_LIVE && mode != DroidballOverlayMode.RESULT
+    val panelIsVisible = expanded || mode == DroidballOverlayMode.BATTLE_HUD
+    val mayMove = mode != DroidballOverlayMode.BATTLE_HUD && mode != DroidballOverlayMode.RESULT
     val interactionModifier = if (mayMove) {
         Modifier.pointerInput(Unit) {
             detectDragGestures(
@@ -74,7 +78,7 @@ fun BattleOverlay(
     ) {
         if (panelIsVisible) {
             DroidballHalf(top = true, displaced = true)
-            OverlayPanel(mode, diagnostics)
+            OverlayPanel(mode, diagnostics, opponentSpecies, opponentMoves)
             DroidballHalf(top = false, displaced = true)
         } else {
             Image(
@@ -111,41 +115,79 @@ private fun DroidballHalf(top: Boolean, displaced: Boolean) {
 }
 
 @Composable
-private fun OverlayPanel(mode: DroidballOverlayMode, diagnostics: CaptureDiagnostics) {
-    val lines = when (mode) {
-        DroidballOverlayMode.PRE_BATTLE -> listOf(
-            "ASSISTANCE ARMED",
-            "Open a Pokémon GO battle.",
-            "Choose your team on Pokémon GO's Team Select screen.",
-            "Droidball observes the transition; GO begins live routing."
-        )
-        DroidballOverlayMode.CALIBRATING -> listOf("CALIBRATION ACTIVE", "Adjust crop boxes in Overdex.", "GO begins live routing.")
-        DroidballOverlayMode.COUNTDOWN -> listOf("COUNTDOWN OBSERVED", "GO establishes the live battle boundary.", "Countdown evidence is recording.", "Tap Droidball to collapse it when you need the screen.")
-        DroidballOverlayMode.BATTLE_LIVE -> listOf("BATTLE LIVE", captureLine(diagnostics), "Observed evidence is on the Timeline.", "Gaps remain visible; none are invented.")
-        DroidballOverlayMode.RESULT -> listOf("RESULT OBSERVED", "Outcome evidence is preserved.", "Tap here to arm the next match.")
+private fun OverlayPanel(
+    mode: DroidballOverlayMode,
+    diagnostics: CaptureDiagnostics,
+    opponentSpecies: List<String>,
+    opponentMoves: OpponentMovePossibilities?
+) {
+    val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
+    val heading = when (mode) {
+        DroidballOverlayMode.PRE_BATTLE -> "ASSISTANCE ARMED"
+        DroidballOverlayMode.CALIBRATING -> "CALIBRATION"
+        DroidballOverlayMode.RESULT -> "RESULT OBSERVED"
+        else -> "BATTLE HUD"
     }
-    val lcdGlow = when (mode) {
-        DroidballOverlayMode.BATTLE_LIVE -> Color(0xFF65F5D0)
-        DroidballOverlayMode.RESULT -> Color(0xFF8AAED1)
-        else -> Color(0xFF9BE8D4)
-    }
+    // Pokémon GO's Team Info panels measure 415 source pixels wide on the
+    // calibrated 1080px capture. Resolve that physical width at runtime rather
+    // than using an arbitrary dp panel size.
+    val teamInfoWidth = with(LocalDensity.current) { 415.toDp() }
+    val background = if (isBattleHud) Color(0xE8E0F2F1) else Color(0xE810231F)
+    val foreground = if (isBattleHud) Color(0xFF004D40) else Color(0xFFD7FFF4)
+    val muted = if (isBattleHud) Color(0xFF397D77) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
+
     Column(
         modifier = Modifier
-            .width(258.dp)
-            .background(Color(0xE80B2522), RoundedCornerShape(5.dp))
-            .border(1.dp, lcdGlow.copy(alpha = 0.65f), RoundedCornerShape(5.dp))
-            .padding(7.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+            .width(teamInfoWidth)
+            .background(background, RoundedCornerShape(8.dp))
+            .border(1.dp, foreground.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Text("ODX-FI  //  ${lines.first()}", color = lcdGlow, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-        Box(Modifier.fillMaxWidth().height(1.dp).background(lcdGlow.copy(alpha = 0.35f)))
-        lines.drop(1).forEach { line ->
+        Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+        if (isBattleHud) {
+            Text("OPPONENT TEAM", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                repeat(3) { index -> EmptySpeciesCell(opponentSpecies.getOrNull(index)) }
+            }
+            if (opponentMoves == null) {
+                Text("Awaiting species evidence", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+            } else {
+                Text("POSSIBLE FAST: ${opponentMoves.fastMoves.joinToString(" / ").ifBlank { "UNAVAILABLE" }}", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+                Text("POSSIBLE CHARGED: ${opponentMoves.chargedMoves.joinToString(" / ").ifBlank { "UNAVAILABLE" }}", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+            }
+        } else {
+            val message = when (mode) {
+                DroidballOverlayMode.PRE_BATTLE -> "Start a Pokémon GO battle. VS opens the HUD."
+                DroidballOverlayMode.CALIBRATING -> "Adjust crop boxes in Overdex."
+                DroidballOverlayMode.RESULT -> "Outcome evidence is preserved. Tap to arm the next match."
+                else -> captureLine(diagnostics)
+            }
             Text(
-                text = line,
-                modifier = if (mode == DroidballOverlayMode.RESULT && line.contains("Tap here")) Modifier.clickable { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch) } else Modifier,
-                color = Color(0xFFD7FFF4).copy(alpha = 0.92f), fontSize = 9.sp, fontFamily = FontFamily.Monospace
+                text = message,
+                modifier = if (mode == DroidballOverlayMode.RESULT) Modifier.clickable {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch)
+                } else Modifier,
+                color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
         }
+    }
+}
+
+@Composable
+private fun RowScope.EmptySpeciesCell(speciesName: String?) {
+    Box(
+        modifier = Modifier.weight(1f).height(34.dp)
+            .background(Color(0x18005E5B), RoundedCornerShape(7.dp))
+            .border(1.dp, Color(0x55005E5B), RoundedCornerShape(7.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            speciesName ?: "?",
+            color = Color(0xFF397D77),
+            fontSize = if (speciesName == null) 14.sp else 7.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

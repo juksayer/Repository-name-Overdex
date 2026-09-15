@@ -35,7 +35,7 @@ interface PokemonDao {
     @Query("SELECT * FROM pokemon WHERE id = :id LIMIT 1")
     suspend fun getPokemonById(id: Int): PokemonEntity?
 
-    @Query("SELECT * FROM pokemon WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM pokemon WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun getPokemonByName(name: String): PokemonEntity?
 
     @Query("SELECT name FROM pokemon")

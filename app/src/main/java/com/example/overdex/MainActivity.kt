@@ -44,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
+import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
@@ -117,6 +118,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var archiveDirectoryManager: ArchiveDirectoryManager
     private var pendingFolderAction: String? = null
     private var pendingExportSource: com.example.overdex.battle.archive.MatchArchiveSource? = null
+    private var pendingExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
     val navigateToDirectoryRequested = mutableStateOf(false)
     private var selectedRegion = CalibrationRegion.NONE
 
@@ -156,7 +158,7 @@ class MainActivity : ComponentActivity() {
                         if (source != null) {
                             lifecycleScope.launch(Dispatchers.IO) {
                                 try {
-                                    archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline)
+                                    archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline, pendingExportMode)
                                     withContext(Dispatchers.Main) {
                                         android.widget.Toast.makeText(
                                             this@MainActivity,
@@ -313,9 +315,10 @@ class MainActivity : ComponentActivity() {
                         archiveLoadInProgress = archiveLoadInProgress,
                         archiveDirectoryManager = archiveDirectoryManager,
                         navigateToDirectoryRequested = navigateToDirectoryRequested,
-                        onLaunchFolderPicker = { action, source ->
+                        onLaunchFolderPicker = { action, source, mode ->
                             pendingFolderAction = action
                             pendingExportSource = source
+                            pendingExportMode = mode
                             archiveFolderPickerLauncher.launch(null)
                         },
                         onOpenArchive = {
@@ -415,7 +418,7 @@ fun PokedexApp(
     archiveLoadInProgress: MutableState<Boolean>,
     archiveDirectoryManager: ArchiveDirectoryManager,
     navigateToDirectoryRequested: MutableState<Boolean>,
-    onLaunchFolderPicker: (String, com.example.overdex.battle.archive.MatchArchiveSource?) -> Unit = { _, _ -> },
+    onLaunchFolderPicker: (String, com.example.overdex.battle.archive.MatchArchiveSource?, MatchArchiveExportMode) -> Unit = { _, _, _ -> },
     onOpenArchive: () -> Unit = {},
     onStartObservation: () -> Unit = {},
 
@@ -1024,6 +1027,7 @@ fun PokedexApp(
                 val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
                 val archiveExportSelected = remember { mutableStateOf(false) }
                 val archiveOpenSelected = remember { mutableStateOf(false) }
+                val archiveExportMode = remember { mutableStateOf(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) }
                 val scope = rememberCoroutineScope()
                 val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -1033,7 +1037,7 @@ fun PokedexApp(
                         if (archiveDirectoryManager.isFolderAvailable()) {
                             scope.launch(Dispatchers.IO) {
                                 try {
-                                    val uri = archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline)
+                                    val uri = archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline, archiveExportMode.value)
                                     withContext(Dispatchers.Main) {
                                         if (uri != null) {
                                             android.widget.Toast.makeText(
@@ -1061,7 +1065,7 @@ fun PokedexApp(
                                 }
                             }
                         } else {
-                            onLaunchFolderPicker("export", source)
+                            onLaunchFolderPicker("export", source, archiveExportMode.value)
                         }
                     }
                 }
@@ -1099,12 +1103,22 @@ fun PokedexApp(
                             archiveExportSelected.value = false
                         }
                     },
+                    onLeft = {
+                        if (archiveExportSelected.value) {
+                            archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+                        }
+                    },
+                    onRight = {
+                        if (archiveExportSelected.value) {
+                            archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
+                        }
+                    },
                     onA = {
                         if (archiveOpenSelected.value) {
                             if (archiveDirectoryManager.isFolderAvailable()) {
                                 navController.navigate("match_archive_directory")
                             } else {
-                                onLaunchFolderPicker("open", null)
+                                onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                             }
                         } else if (archiveExportSelected.value && archiveSourceState.value != null) {
                             requestArchiveExport()
@@ -1119,12 +1133,13 @@ fun PokedexApp(
                         exportMatchId = archiveSourceState.value?.matchId?.value,
                         exportSelected = archiveExportSelected.value &&
                                 archiveSourceState.value != null,
+                        exportMode = archiveExportMode.value,
                         onExportMatch = requestArchiveExport,
                         onOpenMatch = {
                             if (archiveDirectoryManager.isFolderAvailable()) {
                                 navController.navigate("match_archive_directory")
                             } else {
-                                onLaunchFolderPicker("open", null)
+                                onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                             }
                         },
                         openSelected = archiveOpenSelected.value
@@ -1178,7 +1193,7 @@ fun PokedexApp(
                             }
                         },
                         onRequestFolderConfigure = {
-                            onLaunchFolderPicker("open", null)
+                            onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                         },
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },

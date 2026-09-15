@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.RecordedEvent
@@ -17,6 +18,7 @@ fun TimelineViewerScreen(
     exportMatchId: String? = null,
     onExportMatch: () -> Unit = {},
     exportSelected: Boolean = false,
+    exportMode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
     onOpenMatch: () -> Unit = {},
     openSelected: Boolean = false
 ) {
@@ -84,10 +86,19 @@ fun TimelineViewerScreen(
 
         if (exportMatchId != null) {
             TerminalButton(
-                text = "EXPORT LATEST MATCH SNAPSHOT",
+                text = when (exportMode) {
+                    MatchArchiveExportMode.COMPACT_CITED_EVIDENCE -> "SAVE COMPACT MATCH ARCHIVE"
+                    MatchArchiveExportMode.FULL_FORENSIC -> "SAVE FULL FORENSIC ARCHIVE"
+                },
                 onClick = onExportMatch,
                 selected = exportSelected
             )
+            if (exportSelected) {
+                androidx.compose.material3.Text(
+                    text = "LEFT: compact evidence   RIGHT: all raw crops",
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
         

@@ -2,6 +2,8 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
@@ -121,6 +123,16 @@ class Match(
 
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
+                (article.payload as? ActivePokemonSpeciesWitnessed)
+                    ?.takeIf { it.side == ActivePokemonSide.OPPONENT }
+                    ?.let { witnessed ->
+                        val species = pokemonKnowledge.getPokemonByName(witnessed.speciesName)
+                        DroidballOverlayPresentation.recordOpponentSpecies(
+                            speciesName = witnessed.speciesName,
+                            possibleFastMoves = species?.fastMoves?.map { it.name }.orEmpty(),
+                            possibleChargedMoves = species?.chargedMoves?.map { it.name }.orEmpty()
+                        )
+                    }
 
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
@@ -157,6 +169,12 @@ class Match(
                 if (article.payload is VsScreenWitnessed) {
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
                     DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.VS_SCREEN)
+                }
+                val announcement = (article.payload as? RawTestimony)?.data as? String
+                if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
+                    announcement?.trim()?.uppercase()?.startsWith("GO,") == true
+                ) {
+                    DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
                 }
 
                 interpreter.interpret(article)?.let { event ->
