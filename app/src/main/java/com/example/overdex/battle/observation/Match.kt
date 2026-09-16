@@ -123,16 +123,18 @@ class Match(
 
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
-                (article.payload as? ActivePokemonSpeciesWitnessed)
-                    ?.takeIf { it.side == ActivePokemonSide.OPPONENT }
-                    ?.let { witnessed ->
-                        val species = pokemonKnowledge.getPokemonByName(witnessed.speciesName)
+                (article.payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
+                    val species = pokemonKnowledge.getPokemonByName(witnessed.speciesName)
+                    if (witnessed.side == ActivePokemonSide.PLAYER) {
+                        DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
+                    } else {
                         DroidballOverlayPresentation.recordOpponentSpecies(
                             speciesName = witnessed.speciesName,
-                            possibleFastMoves = species?.fastMoves?.map { it.name }.orEmpty(),
-                            possibleChargedMoves = species?.chargedMoves?.map { it.name }.orEmpty()
+                            possibleFastMoves = species?.fastMoves?.map { it.name to it.type }.orEmpty(),
+                            possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty()
                         )
                     }
+                }
 
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")

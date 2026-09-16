@@ -28,6 +28,7 @@ import com.example.overdex.battle.observation.CaptureDiagnostics
 import com.example.overdex.battle.observation.DroidballOverlayMode
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.OpponentMovePossibilities
+import com.example.overdex.battle.observation.OverlayMovePossibility
 import com.example.overdex.battle.observation.DroidballService
 
 /**
@@ -153,8 +154,8 @@ private fun OverlayPanel(
             if (opponentMoves == null) {
                 Text("Awaiting species evidence", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
             } else {
-                Text("POSSIBLE FAST: ${opponentMoves.fastMoves.joinToString(" / ").ifBlank { "UNAVAILABLE" }}", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
-                Text("POSSIBLE CHARGED: ${opponentMoves.chargedMoves.joinToString(" / ").ifBlank { "UNAVAILABLE" }}", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+                MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
+                MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
             }
         } else {
             val message = when (mode) {
@@ -188,6 +189,27 @@ private fun RowScope.EmptySpeciesCell(speciesName: String?) {
             fontSize = if (speciesName == null) 14.sp else 7.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+
+@Composable
+private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>, muted: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(label, color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+        if (moves.isEmpty()) {
+            Text("UNAVAILABLE", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+        } else {
+            moves.forEach { move ->
+                Text(
+                    text = if (move.hazardous) "⚠ ${move.name}" else move.name,
+                    color = if (move.hazardous) Color(0xFFC62828) else muted,
+                    fontSize = 8.sp,
+                    fontWeight = if (move.hazardous) FontWeight.Bold else FontWeight.Normal,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
     }
 }
 

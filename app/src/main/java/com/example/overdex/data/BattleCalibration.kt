@@ -18,7 +18,9 @@ data class BattleCalibration(
         width = 0.999074f,
         height = 0.065041f
     ),
-    val countdownRegion: AnchorRegion = AnchorRegion(),
+    // Measured from the 1080 x 2280 captured frame: this contains the central
+    // 3 / 2 / 1 / GO glyph while leaving the team badges and battlefield out.
+    val countdownRegion: AnchorRegion = DEFAULT_COUNTDOWN_REGION,
     val youWinRegion: AnchorRegion = AnchorRegion(
         x = 0.1389f,
         y = 0.4750f,
@@ -110,6 +112,24 @@ data class BattleCalibration(
         height = 0.2f
     )
 ) {
+    companion object {
+        /** Central 3 / 2 / 1 / GO band on the reference portrait capture. */
+        val DEFAULT_COUNTDOWN_REGION = AnchorRegion(
+            x = 330f / 1080f,
+            y = 110f / 2280f,
+            width = (760f - 330f) / 1080f,
+            height = (510f - 110f) / 2280f
+        )
+
+        /** The pre-contract fallback that never contained the real countdown glyph. */
+        val LEGACY_COUNTDOWN_REGION = AnchorRegion(
+            x = 0.25f,
+            y = 0.25f,
+            width = 0.50f,
+            height = 0.30f
+        )
+    }
+
     fun isCalibrated(): Boolean {
         return enemyNameRegion.width > 0f
     }

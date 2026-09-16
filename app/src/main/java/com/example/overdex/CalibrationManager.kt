@@ -199,16 +199,19 @@ class CalibrationManager(context: Context) {
         }
 
         val countdownWidth = prefs.getFloat("countdown_w", 0f)
-        val countdownRegion = if (countdownWidth > 0f && countdownWidth <= 1.0f) {
+        val storedCountdownRegion = if (countdownWidth > 0f && countdownWidth <= 1.0f) {
             AnchorRegion(
-                x = prefs.getFloat("countdown_x", 0.25f).coerceIn(0f, 1f),
-                y = prefs.getFloat("countdown_y", 0.25f).coerceIn(0f, 1f),
+                x = prefs.getFloat("countdown_x", BattleCalibration.LEGACY_COUNTDOWN_REGION.x).coerceIn(0f, 1f),
+                y = prefs.getFloat("countdown_y", BattleCalibration.LEGACY_COUNTDOWN_REGION.y).coerceIn(0f, 1f),
                 width = countdownWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("countdown_h", 0.30f).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("countdown_h", BattleCalibration.LEGACY_COUNTDOWN_REGION.height).coerceIn(0.01f, 1f)
             )
-        } else {
-            AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
-        }
+        } else null
+        // Migrate only the old shipped fallback. A box a user has actually adjusted
+        // remains authoritative, and can still be refined in Match Calibration.
+        val countdownRegion = storedCountdownRegion
+            ?.takeUnless { it == BattleCalibration.LEGACY_COUNTDOWN_REGION }
+            ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
 
         val youWinWidth = prefs.getFloat("you_win_w", 0f)
         val youWinRegion = if (youWinWidth > 0f && youWinWidth <= 1.0f) {
