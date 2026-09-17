@@ -149,15 +149,14 @@ private fun OverlayPanel(
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+        if (!isBattleHud) {
+            Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+        }
         if (isBattleHud) {
-            Text("OPPONENT TEAM", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
             }
-            if (opponentMoves == null) {
-                Text("Awaiting species evidence", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
-            } else {
+            if (opponentMoves != null) {
                 MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
                 MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
             }

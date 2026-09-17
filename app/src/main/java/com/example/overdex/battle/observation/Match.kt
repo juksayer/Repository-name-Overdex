@@ -142,12 +142,32 @@ class Match(
 
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
+                // A preserved crop from one of the battle-transition surfaces is
+                // enough to show the HUD. Recognition may arrive later or fail,
+                // but the user must never have to open Droidball manually while
+                // Pokémon GO is already presenting battle evidence.
+                if (article.payload is com.example.overdex.battle.custody.CropCaptured &&
+                    article.sourceId.id in setOf(
+                        "VS_SCREEN_CAPTURE",
+                        "COUNTDOWN_CROP_CAPTURE",
+                        "ANNOUNCEMENT_CROP_CAPTURE",
+                        "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
+                        "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE"
+                    )
+                ) {
+                    DroidballOverlayPresentation.showBattleHud()
+                    DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
+                }
                 if (article.payload is ActivePokemonSpeciesWitnessed ||
                     article.payload is ActivePokemonTypesWitnessed ||
                     article.payload is AttackIncoming ||
                     article.payload is GetReadyWitnessed ||
                     article.payload is ChargeMoveUsedAnnounced
                 ) {
+                    // Presentation is allowed to react immediately to accepted
+                    // evidence. The ViewModel receives the matching signal to
+                    // preserve the separate BattleOverlayOpened article.
+                    DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
                 }
                 (article.payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
@@ -190,6 +210,7 @@ class Match(
                 }
 
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
+                    DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
                     if (glyph.glyph in setOf("3", "2", "1", "GO")) {
                         DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.valueOf("COUNTDOWN_${glyph.glyph}"))
@@ -197,6 +218,7 @@ class Match(
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
                 }
                 if (article.payload is VsScreenWitnessed) {
+                    DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
                     DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.VS_SCREEN)
                 }
@@ -204,6 +226,7 @@ class Match(
                 if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                     announcement?.trim()?.uppercase()?.startsWith("GO,") == true
                 ) {
+                    DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
                 }
 

@@ -88,7 +88,14 @@ class MatchArchivePackageReaderTest {
             val output = ByteArrayOutputStream()
             MatchArchivePackageWriter.write(archive, output, sourceRoot)
 
-            assertEquals(archive, MatchArchivePackageReader.read(ByteArrayInputStream(output.toByteArray()), restoredRoot))
+            assertEquals(
+                archive,
+                MatchArchivePackageReader.read(
+                    ByteArrayInputStream(output.toByteArray()),
+                    restoredRoot,
+                    MatchArchivePackageReader.ArtifactPolicy.IMPORT_AND_VERIFY
+                )
+            )
             assertTrue(java.io.File(restoredRoot, path).isFile)
             assertEquals(hash, sha256(java.io.File(restoredRoot, path).readBytes()))
         } finally {

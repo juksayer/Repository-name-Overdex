@@ -140,8 +140,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
          * The single publication API for instrument signals.
          */
         fun emitSignal(signal: DroidballSignal) {
-            Log.e("OVERDEX_TEST", "App started")
-            _signals.tryEmit(signal)
+            val delivered = _signals.tryEmit(signal)
+            Log.d("DROIDBALL_SIGNAL", "published=${signal::class.simpleName} delivered=$delivered subscribers=${_signals.subscriptionCount.value}")
         }
     }
 

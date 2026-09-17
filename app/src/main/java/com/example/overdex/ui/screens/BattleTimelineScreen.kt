@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.sp
 import com.example.overdex.BattleMemory
 import com.example.overdex.model.BattleEvent
 import com.example.overdex.model.BattleEventType
+import com.example.overdex.model.TimelineRecord
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.TerminalDimGreen
@@ -32,18 +34,20 @@ fun BattleTimelineScreen(
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {}
 ) {
-    val events = battleMemory.timeline.events
+    // The live record is article-first. Semantic BattleEvent entries remain
+    // useful, but a Match Summary must never hide raw accepted testimony.
+    val records = battleMemory.timeline.records
     val startTime = battleMemory.startTime
 
     val listState = rememberLazyListState()
     val nav = rememberHandheldNavigationController(
-        itemCount = { events.size }
+        itemCount = { records.size }
     )
 
     HandheldListSync(
         listState = listState,
         selectedIndex = nav.selectedIndex,
-        totalItems = events.size
+        totalItems = records.size
     )
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
@@ -71,7 +75,7 @@ fun BattleTimelineScreen(
 
     TerminalScreen {
         TerminalPathIndicator(path = "/battle/logs/")
-        TerminalText(text = "session_history: active", color = TerminalDimGreen)
+        TerminalText(text = "ARTICLES + EVENTS: ${records.size}", color = TerminalDimGreen)
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -81,9 +85,9 @@ fun BattleTimelineScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            itemsIndexed(events) { index, event ->
-                BattleEventRow(
-                    event = event,
+            itemsIndexed(records) { index, record ->
+                BattleTimelineRecordRow(
+                    record = record,
                     battleStartTime = startTime,
                     viewModel = viewModel,
                     isSelected = index == nav.selectedIndex
@@ -94,6 +98,50 @@ fun BattleTimelineScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         TerminalButton(text = "back", onClick = onBack)
+    }
+}
+
+@Composable
+private fun BattleTimelineRecordRow(
+    record: TimelineRecord,
+    battleStartTime: Long,
+    viewModel: PokedexViewModel,
+    isSelected: Boolean
+) {
+    when (record) {
+        is BattleEvent -> BattleEventRow(record, battleStartTime, viewModel, isSelected)
+        is RealityArticle -> RealityArticleRow(record, battleStartTime, isSelected)
+        else -> Unit
+    }
+}
+
+@Composable
+private fun RealityArticleRow(
+    article: RealityArticle,
+    battleStartTime: Long,
+    isSelected: Boolean
+) {
+    val relativeMs = article.perceivedAt - battleStartTime
+    val seconds = (relativeMs / 1000) % 60
+    val minutes = (relativeMs / (1000 * 60)) % 60
+    val timeStr = String.format(Locale.ROOT, "%02d:%02d", minutes, seconds)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (isSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent)
+            .padding(vertical = 4.dp, horizontal = 8.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            TerminalText(timeStr, color = if (isSelected) TerminalGreen else TerminalDimGreen, fontSize = 12.sp, modifier = Modifier.width(48.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            TerminalText(article.sourceId.id, color = if (isSelected) TerminalGreen else Color.White, fontSize = 12.sp)
+        }
+        TerminalText(
+            text = article.payload::class.simpleName.orEmpty(),
+            color = TerminalDimGreen,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(start = 56.dp)
+        )
     }
 }
 

@@ -40,6 +40,7 @@ import com.example.overdex.battle.observation.CropCaptureWitness
 import com.example.overdex.battle.observation.BattleWitnessContracts
 import com.example.overdex.battle.observation.FirstLiveCombatRouter
 import com.example.overdex.battle.observation.PersistedSpeciesWitness
+import com.example.overdex.battle.observation.CustomCropCaptureWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
 import com.example.overdex.battle.observation.PersistedPlayerEntrySpeciesWitness
@@ -282,9 +283,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val input = DroidballObservationInput()
         val calibrationManager = CalibrationManager(getApplication())
         val calibration = calibrationManager.load()
+        val customCrops = com.example.overdex.data.CustomBattleCropManager.from(getApplication()).load()
         val cropArtifactStore = FileCropArtifactStore(getApplication<Application>().filesDir)
         val audioArtifactStore = FileAudioArtifactStore(getApplication<Application>().filesDir)
         PokemonGoTypeIconMatcher.initialize(getApplication())
+        customCrops.filter { it.enabled }.forEach { crop ->
+            observationDispatcher.register(
+                CustomCropCaptureWitness(
+                    input = input,
+                    definition = crop,
+                    artifactStore = cropArtifactStore,
+                    isEnabled = battleEvidenceLive,
+                    observerId = ObserverId("CUSTOM_CROP_${crop.id}", ObserverSource.SCREEN_CAPTURE),
+                    name = "Custom Crop: ${crop.name}"
+                )
+            )
+        }
         if (startCaptureService) {
             nextMatchVsWatcher?.stop()
             nextMatchVsWatcher = NextMatchVsWatcher(
@@ -510,8 +524,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             startDroidBallService()
         }
 
+        var battleHudOpenRecorded = false
         fun openBattleHud(reason: BattleOverlayOpenReason) {
-            if (DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD) return
+            if (!battleHudOpenRecorded) {
+                battleHudOpenRecorded = true
             val now = System.currentTimeMillis()
             match.custody.submitTestimony(
                 sourceId = SourceId("DROIDBALL_OVERLAY"),
@@ -521,6 +537,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 evidenceReferences = emptyList(),
                 monotonicTimeNanos = System.nanoTime()
             )
+            }
             DroidballOverlayPresentation.showBattleHud()
         }
 
