@@ -42,74 +42,87 @@ object MatchArchivePackageReader {
     fun read(input: InputStream, artifactRepositoryRoot: File? = null): MatchArchive {
         var manifest: MatchArchiveManifest? = null
         var archive: MatchArchive? = null
-
         var totalBytesRead = 0L
-        val artifactBytes = linkedMapOf<String, ByteArray>()
+        val stagingRoot = kotlin.io.path.createTempDirectory("odxmatch-read-").toFile()
+        val stagedArtifacts = linkedMapOf<String, File>()
 
-        input.use { rawInput ->
-            ZipInputStream(rawInput).use { zis ->
-                var entry = zis.nextEntry
-                while (entry != null) {
-                    if (entry.isDirectory) {
-                        throw IllegalArgumentException("Archive contains unexpected directory: ${entry.name}")
-                    }
-
-                    val content = ByteArrayOutputStream()
-                    val buffer = ByteArray(8192)
-                    var read: Int
-                    while (zis.read(buffer).also { read = it } != -1) {
-                        totalBytesRead += read
-                        if (totalBytesRead > MAX_TOTAL_BYTES) {
-                            throw IllegalArgumentException("Archive uncompressed size exceeds limit of $MAX_TOTAL_BYTES bytes.")
-                        }
-                        content.write(buffer, 0, read)
-                    }
-
-                    when (entry.name) {
-                        MANIFEST_ENTRY_NAME -> {
-                            if (manifest != null) throw IllegalArgumentException("Duplicate manifest entry.")
-                            manifest = decodeManifest(decodeUtf8(content.toByteArray(), entry.name))
-                        }
-                        TIMELINE_ENTRY_NAME -> {
-                            if (archive != null) throw IllegalArgumentException("Duplicate timeline entry.")
-                            archive = MatchArchiveSerializer.deserialize(decodeUtf8(content.toByteArray(), entry.name))
-                        }
-                        else -> {
-                            if (artifactBytes.put(entry.name, content.toByteArray()) != null) {
-                                throw IllegalArgumentException("Duplicate archive entry: ${entry.name}")
+        try {
+            input.use { rawInput ->
+                ZipInputStream(rawInput).use { zis ->
+                    var entry = zis.nextEntry
+                    while (entry != null) {
+                        if (entry.isDirectory) throw IllegalArgumentException("Archive contains unexpected directory: ${entry.name}")
+                        when (entry.name) {
+                            MANIFEST_ENTRY_NAME -> {
+                                if (manifest != null) throw IllegalArgumentException("Duplicate manifest entry.")
+                                val bytes = readEntryBytes(zis) { totalBytesRead += it }
+                                manifest = decodeManifest(decodeUtf8(bytes, entry.name))
+                            }
+                            TIMELINE_ENTRY_NAME -> {
+                                if (archive != null) throw IllegalArgumentException("Duplicate timeline entry.")
+                                val bytes = readEntryBytes(zis) { totalBytesRead += it }
+                                archive = MatchArchiveSerializer.deserialize(decodeUtf8(bytes, entry.name))
+                            }
+                            else -> {
+                                if (stagedArtifacts.containsKey(entry.name)) throw IllegalArgumentException("Duplicate archive entry: ${entry.name}")
+                                val staged = File(stagingRoot, "artifact-${stagedArtifacts.size}")
+                                readEntryToFile(zis, staged) { totalBytesRead += it }
+                                stagedArtifacts[entry.name] = staged
                             }
                         }
+                        if (totalBytesRead > MAX_TOTAL_BYTES) throw IllegalArgumentException("Archive uncompressed size exceeds limit of $MAX_TOTAL_BYTES bytes.")
+                        zis.closeEntry()
+                        entry = zis.nextEntry
                     }
-
-                    zis.closeEntry()
-                    entry = zis.nextEntry
                 }
             }
+
+            val finalManifest = manifest ?: throw IllegalArgumentException("Missing $MANIFEST_ENTRY_NAME in archive.")
+            val finalArchive = archive ?: throw IllegalArgumentException("Missing $TIMELINE_ENTRY_NAME in archive.")
+            validateIntegrity(finalManifest, finalArchive)
+            validateArtifacts(finalManifest, finalArchive, stagedArtifacts)
+            if (artifactRepositoryRoot != null) importArtifacts(artifactRepositoryRoot, stagedArtifacts)
+            return finalArchive
+        } finally {
+            stagingRoot.deleteRecursively()
+        }
+    }
+
+    private fun readEntryBytes(input: InputStream, onBytesRead: (Long) -> Unit): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            val buffer = ByteArray(8192)
+            var read: Int
+            while (input.read(buffer).also { read = it } != -1) {
+                onBytesRead(read.toLong())
+                output.write(buffer, 0, read)
+            }
+            output.toByteArray()
         }
 
-        // 1. Verify both files were present
-        val finalManifest = manifest ?: throw IllegalArgumentException("Missing $MANIFEST_ENTRY_NAME in archive.")
-        val finalArchive = archive ?: throw IllegalArgumentException("Missing $TIMELINE_ENTRY_NAME in archive.")
-
-        // 2. Integrity Checks
-        validateIntegrity(finalManifest, finalArchive)
-        validateArtifacts(finalManifest, finalArchive, artifactBytes)
-        if (artifactRepositoryRoot != null) {
-            val store = FileCropArtifactStore(artifactRepositoryRoot)
-            artifactBytes.forEach { (path, bytes) ->
-                if (path.startsWith("artifacts/crops/")) {
-                    val reference = store.preserveEncodedPng(bytes)
-                        ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
-                    if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
-                } else {
-                    val output = File(artifactRepositoryRoot, path)
-                    output.parentFile?.mkdirs()
-                    if (!output.exists()) output.writeBytes(bytes)
-                }
+    private fun readEntryToFile(input: InputStream, target: File, onBytesRead: (Long) -> Unit) {
+        target.outputStream().use { output ->
+            val buffer = ByteArray(8192)
+            var read: Int
+            while (input.read(buffer).also { read = it } != -1) {
+                onBytesRead(read.toLong())
+                output.write(buffer, 0, read)
             }
         }
+    }
 
-        return finalArchive
+    private fun importArtifacts(repositoryRoot: File, stagedArtifacts: Map<String, File>) {
+        val cropStore = FileCropArtifactStore(repositoryRoot)
+        stagedArtifacts.forEach { (path, staged) ->
+            if (path.startsWith("artifacts/crops/")) {
+                val reference = cropStore.preserveEncodedPng(staged.readBytes())
+                    ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
+                if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
+            } else {
+                val output = File(repositoryRoot, path)
+                output.parentFile?.mkdirs()
+                if (!output.exists()) staged.copyTo(output)
+            }
+        }
     }
 
     private fun decodeManifest(jsonString: String): MatchArchiveManifest {
@@ -140,7 +153,7 @@ object MatchArchivePackageReader {
     private fun validateArtifacts(
         manifest: MatchArchiveManifest,
         archive: MatchArchive,
-        artifactBytes: Map<String, ByteArray>
+        artifactFiles: Map<String, File>
     ) {
         val referenced = archive.articles.mapNotNull { article ->
             when (val payload = article.payload) {
@@ -151,22 +164,27 @@ object MatchArchivePackageReader {
         }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         val declared = manifest.artifacts.sortedBy { it.relativePath }
         if (referenced != declared) throw IllegalArgumentException("Crop artifact manifest does not match Timeline references.")
-        if (artifactBytes.keys != declared.map { it.relativePath }.toSet()) {
+        if (artifactFiles.keys != declared.map { it.relativePath }.toSet()) {
             throw IllegalArgumentException("Archive crop artifact entries do not match the manifest.")
         }
         declared.forEach { artifact ->
             val validCrop = artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png" && artifact.mediaType == "image/png"
             val validAudio = artifact.relativePath == "artifacts/audio/sha256/${artifact.sha256}.wav" && artifact.mediaType == "audio/wav"
             require(validCrop || validAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
-            val bytes = artifactBytes.getValue(artifact.relativePath)
-            if (bytes.size.toLong() != artifact.byteCount || sha256(bytes) != artifact.sha256) {
+            val file = artifactFiles.getValue(artifact.relativePath)
+            if (file.length() != artifact.byteCount || sha256(file) != artifact.sha256) {
                 throw IllegalArgumentException("Crop artifact hash verification failed: ${artifact.relativePath}")
             }
         }
     }
 
-    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-        .digest(bytes).joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    private fun sha256(file: File): String = file.inputStream().use { input ->
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(8192)
+        var read: Int
+        while (input.read(buffer).also { read = it } != -1) digest.update(buffer, 0, read)
+        digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
 
     private fun validateIntegrity(manifest: MatchArchiveManifest, archive: MatchArchive) {
         if (manifest.matchId != archive.matchId) {

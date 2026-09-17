@@ -26,6 +26,10 @@ data class RawTestimony(val data: Any) : TestimonyPayload
  */
 data object MatchRecordStarted : TestimonyPayload
 
+/** Droidball's presentation opened, independently timestamped from battle state. */
+data class BattleOverlayOpened(val reason: BattleOverlayOpenReason) : TestimonyPayload
+enum class BattleOverlayOpenReason { VS_SCREEN, COUNTDOWN_GLYPH, BATTLE_WITNESS, USER_REQUEST }
+
 /** The central VS screen was seen in the preserved pre-battle crop. */
 data object VsScreenWitnessed : TestimonyPayload
 

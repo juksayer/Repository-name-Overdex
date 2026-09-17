@@ -1,6 +1,7 @@
 package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
+import com.example.overdex.battle.custody.BattleOverlayOpened
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.AudioCaptured
@@ -43,6 +44,7 @@ object RealityArticleArchiveMapper {
                 }
             }
             is MatchRecordStarted -> ArchivedMatchRecordStarted
+            is BattleOverlayOpened -> ArchivedBattleOverlayOpened(p.reason.name)
             is VsScreenWitnessed -> ArchivedVsScreenWitnessed
             is AttackIncoming -> ArchivedAttackIncoming
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)

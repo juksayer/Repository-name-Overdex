@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ fun MatchArchiveDirectoryScreen(
     onBack: () -> Unit,
     onOpenArchive: (android.net.Uri) -> Unit,
     onRequestFolderConfigure: () -> Unit,
+    isLoading: Boolean = false,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
@@ -55,18 +57,19 @@ fun MatchArchiveDirectoryScreen(
 
     SideEffect {
         onUp {
-            if (isAvailable && archives.isNotEmpty()) {
+            if (!isLoading && isAvailable && archives.isNotEmpty()) {
                 selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
                 scope.launch { listState.animateScrollToItem(selectedIndex) }
             }
         }
         onDown {
-            if (isAvailable && archives.isNotEmpty()) {
+            if (!isLoading && isAvailable && archives.isNotEmpty()) {
                 selectedIndex = (selectedIndex + 1).coerceAtMost(archives.size - 1)
                 scope.launch { listState.animateScrollToItem(selectedIndex) }
             }
         }
         onA {
+            if (isLoading) return@onA
             errorMessage = null
             if (!isAvailable) {
                 onRequestFolderConfigure()
@@ -157,6 +160,28 @@ fun MatchArchiveDirectoryScreen(
                 }
             }
 
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = TerminalGreen,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    TerminalText(
+                        text = "READING MATCH ARCHIVE…",
+                        color = TerminalGreen,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             if (errorMessage != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 TerminalText(text = errorMessage!!, color = Color.Red, fontSize = 11.sp)
@@ -164,7 +189,11 @@ fun MatchArchiveDirectoryScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             TerminalText(
-                text = if (!isAvailable) "[A] SELECT FOLDER  [B] BACK" else "[A] OPEN ARCHIVE  [B] BACK",
+                text = when {
+                    isLoading -> "LOADING — PLEASE WAIT"
+                    !isAvailable -> "[A] SELECT FOLDER  [B] BACK"
+                    else -> "[A] OPEN ARCHIVE  [B] BACK"
+                },
                 color = TerminalDimGreen,
                 fontSize = 11.sp
             )

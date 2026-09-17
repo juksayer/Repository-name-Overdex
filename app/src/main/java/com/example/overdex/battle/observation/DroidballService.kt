@@ -80,7 +80,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private const val CHANNEL_ID = "droidball_observation"
         @Volatile private var activeService: DroidballService? = null
         
-        private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 1)
+        private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 64)
         val signals = _signals.asSharedFlow()
 
         private val _frames = MutableSharedFlow<CapturedVisualFrame>(
@@ -583,6 +583,8 @@ sealed class DroidballSignal {
     data object VsScreenWitnessed : DroidballSignal()
     /** A battle-entry announcement such as "GO, Pokémon!" was preserved. */
     data object BattleHudWitnessed : DroidballSignal()
+    /** User explicitly opens the field HUD when visual recognition has not arrived yet. */
+    data object OpenBattleHudRequested : DroidballSignal()
     data object BeginNextMatch : DroidballSignal()
     data class VisualCaptureGap(val durationNanos: Long) : DroidballSignal()
 }

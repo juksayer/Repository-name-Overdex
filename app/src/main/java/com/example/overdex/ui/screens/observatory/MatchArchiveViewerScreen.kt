@@ -244,6 +244,7 @@ private fun ArchiveArticleRow(
             is ArchivedRawText -> p.value
             is ArchivedRawInt -> p.value.toString()
             is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
+            is ArchivedBattleOverlayOpened -> "BATTLE OVERLAY OPENED [reason=${p.reason}]"
             is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
@@ -322,6 +323,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedRawText -> p.value
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
+                is ArchivedBattleOverlayOpened -> "BATTLE OVERLAY OPENED [reason=${p.reason}]"
                 is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"

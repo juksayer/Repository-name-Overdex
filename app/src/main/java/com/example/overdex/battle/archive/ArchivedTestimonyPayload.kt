@@ -26,6 +26,10 @@ data class ArchivedRawInt(
 data object ArchivedMatchRecordStarted : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("battle_overlay_opened")
+data class ArchivedBattleOverlayOpened(val reason: String) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("vs_screen_witnessed")
 data object ArchivedVsScreenWitnessed : ArchivedTestimonyPayload
 

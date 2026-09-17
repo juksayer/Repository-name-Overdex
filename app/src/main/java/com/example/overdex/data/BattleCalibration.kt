@@ -21,6 +21,8 @@ data class BattleCalibration(
     // Measured from the 1080 x 2280 captured frame: this contains the central
     // 3 / 2 / 1 / GO glyph while leaving the team badges and battlefield out.
     val countdownRegion: AnchorRegion = DEFAULT_COUNTDOWN_REGION,
+    // VS occupies the central transition surface, distinct from the upper glyph.
+    val vsScreenRegion: AnchorRegion = DEFAULT_VS_SCREEN_REGION,
     val youWinRegion: AnchorRegion = AnchorRegion(
         x = 0.1389f,
         y = 0.4750f,
@@ -121,13 +123,16 @@ data class BattleCalibration(
             height = (510f - 110f) / 2280f
         )
 
-        /** The pre-contract fallback that never contained the real countdown glyph. */
-        val LEGACY_COUNTDOWN_REGION = AnchorRegion(
+        /** Central VS surface, verified by the previously preserved pre-battle crop. */
+        val DEFAULT_VS_SCREEN_REGION = AnchorRegion(
             x = 0.25f,
             y = 0.25f,
             width = 0.50f,
             height = 0.30f
         )
+
+        /** The pre-contract fallback that never contained the real countdown glyph. */
+        val LEGACY_COUNTDOWN_REGION = DEFAULT_VS_SCREEN_REGION
     }
 
     fun isCalibrated(): Boolean {

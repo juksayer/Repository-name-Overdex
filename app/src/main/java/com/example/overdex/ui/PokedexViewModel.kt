@@ -13,6 +13,8 @@ import androidx.paging.cachedIn
 import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.MatchRecordStarted
+import com.example.overdex.battle.custody.BattleOverlayOpened
+import com.example.overdex.battle.custody.BattleOverlayOpenReason
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
@@ -41,6 +43,7 @@ import com.example.overdex.battle.observation.PersistedSpeciesWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
 import com.example.overdex.battle.observation.PersistedPlayerEntrySpeciesWitness
+import com.example.overdex.battle.observation.PersistedAnnouncementSpeciesWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
@@ -232,7 +235,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         // information is preserved.
         val battleEvidenceLive: () -> Boolean = {
             session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
-                session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE
+                session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE ||
+                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD
         }
         // The announcement carries entry species names before 3/2/1. The heavier
         // HUD witnesses still wait for the countdown boundary.
@@ -379,6 +383,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
         )
         observationDispatcher.register(PersistedCountdownGlyphWitness(cropArtifactStore))
+        observationDispatcher.register(
+            CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = BattleWitnessContracts.vsScreenCapture,
+                artifactStore = cropArtifactStore,
+                isEnabled = {
+                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED ||
+                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.CALIBRATING
+                },
+                observerId = ObserverId(BattleWitnessContracts.vsScreenCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "VS Screen Crop Capture Witness"
+            )
+        )
         observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore))
         observationDispatcher.register(
             CropCaptureWitness(
@@ -423,6 +441,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
         observationDispatcher.register(PersistedPlayerEntrySpeciesWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedAnnouncementSpeciesWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.getReady(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.chargeMoveUsed(cropArtifactStore))
@@ -461,9 +480,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.matchOutcomeCropCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = {
-                    calibrationManager.hasMatchOutcomeCalibration() && battleEvidenceLive()
-                },
+                isEnabled = { battleEvidenceLive() },
                 observerId = ObserverId(BattleWitnessContracts.matchOutcomeCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Match Outcome Crop Capture Witness"
             )
@@ -493,13 +510,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             startDroidBallService()
         }
 
-        // Start Observation lifecycle
-        Log.d("DEPLOY", "3 Starting observers")
-        observationDispatcher.startAll(match)
-        
+        fun openBattleHud(reason: BattleOverlayOpenReason) {
+            if (DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD) return
+            val now = System.currentTimeMillis()
+            match.custody.submitTestimony(
+                sourceId = SourceId("DROIDBALL_OVERLAY"),
+                payload = BattleOverlayOpened(reason),
+                timestamp = now,
+                confidence = null,
+                evidenceReferences = emptyList(),
+                monotonicTimeNanos = System.nanoTime()
+            )
+            DroidballOverlayPresentation.showBattleHud()
+        }
+
         // Listen for signals
         droidballSignalJob?.cancel()
-        droidballSignalJob = viewModelScope.launch {
+        droidballSignalJob = viewModelScope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
             DroidballService.signals.collect { signal ->
                 when (signal) {
                     is DroidballSignal.Started -> {
@@ -533,14 +560,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         match.custody.submitTestimony(SourceId("VISUAL_CAPTURE_CLOCK"), VisualCaptureGapObserved(signal.durationNanos), System.currentTimeMillis(), null, emptyList(), System.nanoTime())
                     }
                     is DroidballSignal.CountdownWitnessed -> {
+                        // Any accepted countdown glyph proves the VS transition has passed.
+                        openBattleHud(BattleOverlayOpenReason.COUNTDOWN_GLYPH)
                         session.armCountdown()
                     }
                     is DroidballSignal.VsScreenWitnessed -> {
-                        DroidballOverlayPresentation.showBattleHud()
+                        openBattleHud(BattleOverlayOpenReason.VS_SCREEN)
                         session.armCountdown()
                     }
                     is DroidballSignal.BattleHudWitnessed -> {
+                        openBattleHud(BattleOverlayOpenReason.BATTLE_WITNESS)
                         session.armCountdown()
+                    }
+                    is DroidballSignal.OpenBattleHudRequested -> {
+                        // Explicit user intent opens the presentation and enables the
+                        // battle-facing crops without claiming that GO has occurred.
+                        openBattleHud(BattleOverlayOpenReason.USER_REQUEST)
                     }
                     is DroidballSignal.BeginNextMatch -> {
                         if (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT) {
@@ -552,6 +587,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         }
+
+        // The listener must be live before the first observer can emit a
+        // battle-entry signal. Otherwise an early “Go, Pokémon!” can be
+        // accepted without opening the HUD that enables the remaining crops.
+        Log.d("DEPLOY", "3 Starting observers")
+        observationDispatcher.startAll(match)
         return match
     }
 

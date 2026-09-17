@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
@@ -26,6 +27,10 @@ import com.example.overdex.ui.components.TerminalText
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.ui.platform.LocalContext
+import android.graphics.BitmapFactory
+import android.net.Uri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.overdex.data.ScreenshotDirectoryManager
@@ -68,6 +73,7 @@ fun MatchCalibrationScreen(
     val samples: List<Any> = if (userSamples.isNotEmpty()) userSamples else bundledSamples
     val screenshotSourceName = remember(userSamples) { screenshotDirectory.displayName() }
     var currentImageIndex by remember { mutableIntStateOf(0) }
+    var sourceFrameSize by remember { mutableStateOf(IntSize.Zero) }
     val screenshotFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -89,9 +95,24 @@ fun MatchCalibrationScreen(
         currentImageIndex = currentImageIndex.coerceIn(0, (samples.size - 1).coerceAtLeast(0))
     }
 
+    LaunchedEffect(samples.getOrNull(currentImageIndex)) {
+        val sample = samples.getOrNull(currentImageIndex)
+        sourceFrameSize = withContext(Dispatchers.IO) {
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            runCatching {
+                when (sample) {
+                    is String -> context.assets.open("battle_samples/$sample").use { BitmapFactory.decodeStream(it, null, options) }
+                    is Uri -> context.contentResolver.openInputStream(sample)?.use { BitmapFactory.decodeStream(it, null, options) }
+                }
+                IntSize(options.outWidth.coerceAtLeast(0), options.outHeight.coerceAtLeast(0))
+            }.getOrDefault(IntSize.Zero)
+        }
+    }
+
     val matchRegions = remember {
         listOf(
             CalibrationRegion.COUNTDOWN,
+            CalibrationRegion.VS_SCREEN,
             CalibrationRegion.ANNOUNCEMENT,
             CalibrationRegion.TRAINER_TEAM_INFO,
             CalibrationRegion.OPPONENT_TEAM_INFO,
@@ -116,6 +137,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.YOU_WIN -> "You Win"
             CalibrationRegion.GOOD_EFFORT -> "Good Effort"
             CalibrationRegion.COUNTDOWN -> "Countdown"
+            CalibrationRegion.VS_SCREEN -> "VS Screen"
             CalibrationRegion.ANNOUNCEMENT -> "Announcement"
             CalibrationRegion.TRAINER_TEAM_INFO -> "Trainer Team Info"
             CalibrationRegion.OPPONENT_TEAM_INFO -> "Opponent Team Info"
@@ -140,6 +162,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
         CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
         CalibrationRegion.COUNTDOWN -> calibration.countdownRegion
+        CalibrationRegion.VS_SCREEN -> calibration.vsScreenRegion
         CalibrationRegion.ANNOUNCEMENT -> calibration.announcementRegion
         CalibrationRegion.TRAINER_TEAM_INFO -> calibration.playerTeamInfoRegion
         CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.opponentTeamInfoRegion
@@ -164,6 +187,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
             CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
             CalibrationRegion.COUNTDOWN -> calibration.copy(countdownRegion = updated)
+            CalibrationRegion.VS_SCREEN -> calibration.copy(vsScreenRegion = updated)
             CalibrationRegion.ANNOUNCEMENT -> calibration.copy(announcementRegion = updated)
             CalibrationRegion.TRAINER_TEAM_INFO -> calibration.copy(playerTeamInfoRegion = updated)
             CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.copy(opponentTeamInfoRegion = updated)
@@ -228,8 +252,8 @@ fun MatchCalibrationScreen(
         }
         onLcdDrag { delta ->
             showLcdTouchHint = false
-            val dx = delta.x / 1000f 
-            val dy = delta.y / 1000f
+            val dx = if (containerSize.width > 0f) delta.x / containerSize.width else 0f
+            val dy = if (containerSize.height > 0f) delta.y / containerSize.height else 0f
             if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
         }
         onLcdTap {
@@ -239,11 +263,20 @@ fun MatchCalibrationScreen(
     }
 
     // LCD Update
-    LaunchedEffect(selectedRegion, mode, showLcdTouchHint, screenshotSourceName) {
+    LaunchedEffect(
+        selectedRegion, mode, showLcdTouchHint, screenshotSourceName, sourceFrameSize,
+        activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
+    ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
+        val sourceWidth = sourceFrameSize.width
+        val sourceHeight = sourceFrameSize.height
+        val x = (activeRegion.x * sourceWidth).toInt()
+        val y = (activeRegion.y * sourceHeight).toInt()
+        val width = (activeRegion.width * sourceWidth).toInt()
+        val height = (activeRegion.height * sourceHeight).toInt()
         onLcdUpdate(
-            "${getReadableName(selectedRegion)} ($indexText)",
-            if (showLcdTouchHint) "SELECT: NEXT | HOLD A: FOLDER" else "MODE: ${mode.name} | SRC: $screenshotSourceName"
+            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y",
+            "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}"
         )
     }
 

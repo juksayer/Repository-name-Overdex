@@ -10,6 +10,7 @@ enum class CalibrationRegion {
     YOU_WIN,
     GOOD_EFFORT,
     COUNTDOWN,
+    VS_SCREEN,
     ANNOUNCEMENT,
     TRAINER_TEAM_INFO,
     OPPONENT_TEAM_INFO,

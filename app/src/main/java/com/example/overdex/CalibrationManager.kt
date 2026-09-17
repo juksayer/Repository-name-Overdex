@@ -70,6 +70,10 @@ class CalibrationManager(context: Context) {
             .putFloat("countdown_y", calibration.countdownRegion.y)
             .putFloat("countdown_w", calibration.countdownRegion.width)
             .putFloat("countdown_h", calibration.countdownRegion.height)
+            .putFloat("vs_screen_x", calibration.vsScreenRegion.x)
+            .putFloat("vs_screen_y", calibration.vsScreenRegion.y)
+            .putFloat("vs_screen_w", calibration.vsScreenRegion.width)
+            .putFloat("vs_screen_h", calibration.vsScreenRegion.height)
 
             .putFloat("you_win_x", calibration.youWinRegion.x)
             .putFloat("you_win_y", calibration.youWinRegion.y)
@@ -212,6 +216,16 @@ class CalibrationManager(context: Context) {
         val countdownRegion = storedCountdownRegion
             ?.takeUnless { it == BattleCalibration.LEGACY_COUNTDOWN_REGION }
             ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
+
+        val vsScreenWidth = prefs.getFloat("vs_screen_w", 0f)
+        val vsScreenRegion = if (vsScreenWidth > 0f && vsScreenWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("vs_screen_x", BattleCalibration.DEFAULT_VS_SCREEN_REGION.x).coerceIn(0f, 1f),
+                y = prefs.getFloat("vs_screen_y", BattleCalibration.DEFAULT_VS_SCREEN_REGION.y).coerceIn(0f, 1f),
+                width = vsScreenWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("vs_screen_h", BattleCalibration.DEFAULT_VS_SCREEN_REGION.height).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration.DEFAULT_VS_SCREEN_REGION
 
         val youWinWidth = prefs.getFloat("you_win_w", 0f)
         val youWinRegion = if (youWinWidth > 0f && youWinWidth <= 1.0f) {
@@ -457,6 +471,7 @@ class CalibrationManager(context: Context) {
             teamIconsRegion = teamRegion,
             moveBannerRegion = moveRegion,
             countdownRegion = countdownRegion,
+            vsScreenRegion = vsScreenRegion,
             youWinRegion = youWinRegion,
             goodEffortRegion = goodEffortRegion,
             opponentShieldsRegion = opponentShieldsRegion,

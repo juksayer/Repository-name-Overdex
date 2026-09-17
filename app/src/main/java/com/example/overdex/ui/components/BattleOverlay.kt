@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +29,9 @@ import com.example.overdex.battle.observation.CaptureDiagnostics
 import com.example.overdex.battle.observation.DroidballOverlayMode
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.OpponentMovePossibilities
+import com.example.overdex.battle.observation.ObservedOpponentSpecies
+import com.example.overdex.data.LocalSpriteProvider
+import coil.compose.AsyncImage
 import com.example.overdex.battle.observation.OverlayMovePossibility
 import com.example.overdex.battle.observation.DroidballService
 
@@ -119,7 +123,7 @@ private fun DroidballHalf(top: Boolean, displaced: Boolean) {
 private fun OverlayPanel(
     mode: DroidballOverlayMode,
     diagnostics: CaptureDiagnostics,
-    opponentSpecies: List<String>,
+    opponentSpecies: List<ObservedOpponentSpecies>,
     opponentMoves: OpponentMovePossibilities?
 ) {
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
@@ -149,7 +153,7 @@ private fun OverlayPanel(
         if (isBattleHud) {
             Text("OPPONENT TEAM", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(3) { index -> EmptySpeciesCell(opponentSpecies.getOrNull(index)) }
+                repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
             }
             if (opponentMoves == null) {
                 Text("Awaiting species evidence", color = muted, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
@@ -171,27 +175,55 @@ private fun OverlayPanel(
                 } else Modifier,
                 color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
+            if (mode == DroidballOverlayMode.PRE_BATTLE) {
+                Text(
+                    text = "OPEN BATTLE HUD",
+                    modifier = Modifier.clickable {
+                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
+                    },
+                    color = foreground,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun RowScope.EmptySpeciesCell(speciesName: String?) {
+private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
     Box(
-        modifier = Modifier.weight(1f).height(34.dp)
+        modifier = Modifier.weight(1f).height(42.dp)
             .background(Color(0x18005E5B), RoundedCornerShape(7.dp))
             .border(1.dp, Color(0x55005E5B), RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            speciesName ?: "?",
-            color = Color(0xFF397D77),
-            fontSize = if (speciesName == null) 14.sp else 7.sp,
-            fontWeight = FontWeight.Bold
-        )
+        if (species == null) {
+            Text("?", color = Color(0xFF397D77), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        } else {
+            val spriteUrl = species.speciesId?.let { id ->
+                LocalSpriteProvider(LocalContext.current.assets).getSpriteUrl(id)
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (spriteUrl != null) {
+                    AsyncImage(
+                        model = spriteUrl,
+                        contentDescription = "${species.speciesName} sprite",
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
+                Text(
+                    species.speciesName,
+                    color = Color(0xFF397D77),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
-
 
 @Composable
 private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>, muted: Color) {

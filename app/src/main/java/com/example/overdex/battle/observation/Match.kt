@@ -4,10 +4,14 @@ import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
@@ -29,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Represents the record surrounding one possible Pokémon GO battle.
@@ -65,6 +70,16 @@ class Match(
     val articles = _articles.asSharedFlow()
 
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
+
+    /**
+     * Roster-based side attribution is available only after all three Team Select
+     * slots have been independently preserved. It is a conclusion from the
+     * roster and a later species mention, never a claim that the mention carried
+     * an on-screen side label.
+     */
+    fun sideForRosterKnownSpecies(speciesName: String): ActivePokemonSide? =
+        TeamRosterSpeciesAttributor.sideFor(speciesName, playerRosterBySlot.values)
 
     /** The total number of frames processed during this Match. */
     var frameCount: Long = 0
@@ -100,6 +115,10 @@ class Match(
                     Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
 
+                (testimony.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
+                    playerRosterBySlot[rosterEntry.slot] = rosterEntry.speciesName
+                }
+
                 val article = RealityArticle(
                     id = ArticleId(UUID.randomUUID().toString()),
                     perceivedAt = testimony.timestamp,
@@ -123,6 +142,14 @@ class Match(
 
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
+                if (article.payload is ActivePokemonSpeciesWitnessed ||
+                    article.payload is ActivePokemonTypesWitnessed ||
+                    article.payload is AttackIncoming ||
+                    article.payload is GetReadyWitnessed ||
+                    article.payload is ChargeMoveUsedAnnounced
+                ) {
+                    DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
+                }
                 (article.payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
                     val species = pokemonKnowledge.getPokemonByName(witnessed.speciesName)
                     if (witnessed.side == ActivePokemonSide.PLAYER) {
@@ -130,6 +157,7 @@ class Match(
                     } else {
                         DroidballOverlayPresentation.recordOpponentSpecies(
                             speciesName = witnessed.speciesName,
+                            speciesId = witnessed.speciesId ?: species?.id,
                             possibleFastMoves = species?.fastMoves?.map { it.name to it.type }.orEmpty(),
                             possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty()
                         )

@@ -1174,6 +1174,8 @@ fun PokedexApp(
                         archiveDirectoryManager = archiveDirectoryManager,
                         onBack = { navController.popBackStack() },
                         onOpenArchive = { uri ->
+                            if (archiveLoadInProgress.value) return@MatchArchiveDirectoryScreen
+                            archiveLoadInProgress.value = true
                             scope.launch {
                                 try {
                                     val archive = withContext(Dispatchers.IO) {
@@ -1189,12 +1191,15 @@ fun PokedexApp(
                                         "Failed to open archive: ${e.message}",
                                         android.widget.Toast.LENGTH_LONG
                                     ).show()
+                                } finally {
+                                    archiveLoadInProgress.value = false
                                 }
                             }
                         },
                         onRequestFolderConfigure = {
                             onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                         },
+                        isLoading = archiveLoadInProgress.value,
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },
                         onA = { aHandler = it },
