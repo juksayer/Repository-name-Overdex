@@ -2,11 +2,10 @@ package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.example.overdex.data.observation.readText
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 
 object AnnouncementRecognizer {
 
@@ -15,7 +14,7 @@ object AnnouncementRecognizer {
 
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         return try {
-            val directText = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text
+            val directText = recognizer.readText(bitmap)
             val rawText = directText.takeIf { it.isNotBlank() } ?: recognizeHighContrast(bitmap)
             val rawTextEscaped = rawText.replace("\n", "\\n")
             Log.d("ANNOUNCEMENT_RECOGNIZER", "source=${bitmap.width}x${bitmap.height} text=\"$rawTextEscaped\"")
@@ -49,7 +48,7 @@ object AnnouncementRecognizer {
         val enlarged = Bitmap.createScaledBitmap(thresholded, bitmap.width * 2, bitmap.height * 2, false)
         thresholded.recycle()
         return try {
-            recognizer.process(InputImage.fromBitmap(enlarged, 0)).await().text
+            recognizer.readText(enlarged)
         } finally {
             enlarged.recycle()
         }

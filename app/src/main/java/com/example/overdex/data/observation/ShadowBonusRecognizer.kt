@@ -3,10 +3,8 @@ package com.example.overdex.data.observation
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 
 /**
  * Specialized recognizer for extracting the Shadow Bonus value (e.g., +3) from a move row.
@@ -29,11 +27,10 @@ object ShadowBonusRecognizer {
      * @return A list of [RecognitionResult]s containing raw and parsed data.
      */
     suspend fun recognize(bitmap: Bitmap): List<RecognitionResult<*>> {
-        val image = InputImage.fromBitmap(bitmap, 0)
         val results = mutableListOf<RecognitionResult<*>>()
 
         return try {
-            val result = recognizer.process(image).await()
+            val result = recognizer.read(bitmap)
 
             // 1. Expose Raw OCR Output
             results.add(

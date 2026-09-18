@@ -56,7 +56,8 @@ class ArchiveDirectoryManager(private val context: Context) {
     data class ArchiveEntry(
         val name: String,
         val uri: Uri,
-        val lastModified: Long
+        val lastModified: Long,
+        val byteCount: Long
     )
 
     fun listArchives(): List<ArchiveEntry> {
@@ -73,7 +74,8 @@ class ArchiveDirectoryManager(private val context: Context) {
                 ArchiveEntry(
                     name = file.name ?: "unknown.odxmatch.zip",
                     uri = file.uri,
-                    lastModified = file.lastModified()
+                    lastModified = file.lastModified(),
+                    byteCount = file.length()
                 )
             }
             .sortedByDescending { it.name } // Sort newest first by timestamp filename

@@ -2,10 +2,8 @@ package com.example.overdex.data.observation
 
 import android.graphics.Bitmap
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 
 /**
  * Generic recognizer for extracting a Move Name from a move row observation bundle.
@@ -24,9 +22,8 @@ object MoveNameRecognizer {
      * @return A [RecognitionResult] containing the extracted move name.
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
-        val image = InputImage.fromBitmap(bitmap, 0)
         return try {
-            val result = recognizer.process(image).await()
+            val result = recognizer.read(bitmap)
             
             // Extract text and find the most likely move name.
             // Move names are generally at the start and alphabetic.

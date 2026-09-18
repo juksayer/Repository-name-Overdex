@@ -78,6 +78,17 @@ class Match(
     /** Accepted Timeline articles for downstream recognizers; the Timeline remains authoritative. */
     val articles = _articles.asSharedFlow()
 
+    // Species OCR has one job: inspect the two purpose-specific name strips.
+    // Do not make it wait behind every HP, timer, and announcement crop in the
+    // general article stream.  The Timeline is appended first; this is only a
+    // small, post-publication delivery lane for the two species witnesses.
+    private val _activeSpeciesCropArticles = MutableSharedFlow<RealityArticle>(
+        replay = 256,
+        extraBufferCapacity = 256,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val activeSpeciesCropArticles = _activeSpeciesCropArticles.asSharedFlow()
+
     private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
 
@@ -151,6 +162,13 @@ class Match(
 
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
+                val capturedCropName = (article.payload as? com.example.overdex.battle.custody.CropCaptured)
+                    ?.cropProvenance?.cropName
+                if (capturedCropName == BattleCropContracts.playerActiveSpeciesText.cropName ||
+                    capturedCropName == BattleCropContracts.opponentActiveSpeciesText.cropName
+                ) {
+                    _activeSpeciesCropArticles.tryEmit(article)
+                }
                 // A preserved crop from one of the battle-transition surfaces is
                 // enough to show the HUD. Recognition may arrive later or fail,
                 // but the user must never have to open Droidball manually while

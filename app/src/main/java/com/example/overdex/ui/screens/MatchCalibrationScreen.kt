@@ -126,9 +126,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
-            CalibrationRegion.MATCH_OUTCOME,
-            CalibrationRegion.BATTLE_PARTY_TABS,
-            CalibrationRegion.OUT_OF_BATTLE_MENU
+            CalibrationRegion.MATCH_OUTCOME
         )
     }
 
@@ -154,8 +152,10 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Trainer Inactive Pokémon"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
-            CalibrationRegion.BATTLE_PARTY_TABS -> "Battle / Party Tabs"
-            CalibrationRegion.OUT_OF_BATTLE_MENU -> "Out-of-Battle Menu"
+            // Pokémon GO shows these two labels together only on the
+            // post-match screen. This is not a generic game-menu crop.
+            CalibrationRegion.BATTLE_PARTY_TABS -> "Post-Match Battle / Party Selector"
+            CalibrationRegion.OUT_OF_BATTLE_MENU -> "Post-Match Menu Support"
             CalibrationRegion.OPPONENT_SPECIES_NAME -> "Opponent Species Name"
             CalibrationRegion.OPPONENT_POKE_BALLS -> "Opponent Poké Balls"
             else -> region.name
@@ -183,6 +183,10 @@ fun MatchCalibrationScreen(
         CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         CalibrationRegion.MATCH_OUTCOME -> calibration.matchOutcomeRegion
+        CalibrationRegion.BATTLE_PARTY_TABS -> calibration.battlePartyTabsRegion
+        CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
+        CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
+        CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
         else -> calibration.enemyNameRegion
     }
 

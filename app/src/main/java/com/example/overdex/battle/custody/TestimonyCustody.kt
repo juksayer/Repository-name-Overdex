@@ -1,12 +1,10 @@
 package com.example.overdex.battle.custody
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicLong
 import com.example.overdex.battle.time.ExternalClock
 import com.example.overdex.battle.time.SystemExternalClock
 
@@ -81,46 +79,47 @@ interface TestimonyCustody {
 class InMemoryTestimonyCustody(
     private val clock: ExternalClock = SystemExternalClock
 ) : TestimonyCustody {
-    private val records = CopyOnWriteArrayList<CustodyRecord>()
-    private val sequenceCounter = AtomicLong(0)
+    private val lock = Any()
+    private val records = mutableListOf<CustodyRecord>()
+    private var nextSequenceNumber = 0L
 
-    private val _testimonyFlow = MutableSharedFlow<TestimonyRecord>(replay = 64, extraBufferCapacity = 64)
-    override val testimonyFlow = _testimonyFlow.asSharedFlow()
-    private val _custodyRecordFlow = MutableSharedFlow<CustodyRecord>(replay = 64, extraBufferCapacity = 128)
-    override val custodyRecordFlow = _custodyRecordFlow.asSharedFlow()
+    // Every consumer walks the preserved record ledger by index. A StateFlow only
+    // announces that the ledger grew; it never carries the record itself, so a
+    // burst cannot silently discard accepted testimony before Match can publish
+    // the corresponding Timeline article.
+    private val recordCount = MutableStateFlow(0)
+
+    override val testimonyFlow: Flow<TestimonyRecord> = preservedRecords()
+        .filter { it is TestimonyRecord }
+        .map { it as TestimonyRecord }
+    override val custodyRecordFlow: Flow<CustodyRecord> = preservedRecords()
 
     override fun submitAvailability(
         sourceId: SourceId,
         available: Boolean,
         timestamp: Long
-    ): SourceAvailabilityRecord {
-        val record = SourceAvailabilityRecord(
-            sequenceNumber = sequenceCounter.getAndIncrement(),
+    ): SourceAvailabilityRecord = preserve { sequenceNumber ->
+        SourceAvailabilityRecord(
+            sequenceNumber = sequenceNumber,
             timestamp = timestamp,
             sourceId = sourceId,
             available = available,
             monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
-        records.add(record)
-        _custodyRecordFlow.tryEmit(record)
-        return record
     }
 
     override fun submitInputAvailability(
         sourceId: SourceId,
         available: Boolean,
         timestamp: Long
-    ): SourceInputRecord {
-        val record = SourceInputRecord(
-            sequenceNumber = sequenceCounter.getAndIncrement(),
+    ): SourceInputRecord = preserve { sequenceNumber ->
+        SourceInputRecord(
+            sequenceNumber = sequenceNumber,
             timestamp = timestamp,
             sourceId = sourceId,
             available = available,
             monotonicTimeNanos = clock.read().monotonicTimeNanos
         )
-        records.add(record)
-        _custodyRecordFlow.tryEmit(record)
-        return record
     }
 
     override fun submitTestimony(
@@ -129,21 +128,14 @@ class InMemoryTestimonyCustody(
         timestamp: Long,
         confidence: Float?,
         evidenceReferences: List<String>
-    ): TestimonyRecord {
-        val record = TestimonyRecord(
-            sequenceNumber = sequenceCounter.getAndIncrement(),
-            timestamp = timestamp,
-            sourceId = sourceId,
-            payload = payload,
-            confidence = confidence,
-            evidenceReferences = evidenceReferences,
-            monotonicTimeNanos = clock.read().monotonicTimeNanos
-        )
-        records.add(record)
-        _custodyRecordFlow.tryEmit(record)
-        _testimonyFlow.tryEmit(record)
-        return record
-    }
+    ): TestimonyRecord = submitTestimony(
+        sourceId = sourceId,
+        payload = payload,
+        timestamp = timestamp,
+        confidence = confidence,
+        evidenceReferences = evidenceReferences,
+        monotonicTimeNanos = clock.read().monotonicTimeNanos
+    )
 
     override fun submitTestimony(
         sourceId: SourceId,
@@ -152,9 +144,9 @@ class InMemoryTestimonyCustody(
         confidence: Float?,
         evidenceReferences: List<String>,
         monotonicTimeNanos: Long
-    ): TestimonyRecord {
-        val record = TestimonyRecord(
-            sequenceNumber = sequenceCounter.getAndIncrement(),
+    ): TestimonyRecord = preserve { sequenceNumber ->
+        TestimonyRecord(
+            sequenceNumber = sequenceNumber,
             timestamp = timestamp,
             sourceId = sourceId,
             payload = payload,
@@ -162,11 +154,24 @@ class InMemoryTestimonyCustody(
             evidenceReferences = evidenceReferences,
             monotonicTimeNanos = monotonicTimeNanos
         )
-        records.add(record)
-        _custodyRecordFlow.tryEmit(record)
-        _testimonyFlow.tryEmit(record)
-        return record
     }
 
-    override fun getRecords(): List<CustodyRecord> = records.toList()
+    override fun getRecords(): List<CustodyRecord> = synchronized(lock) { records.toList() }
+
+    private fun preservedRecords(): Flow<CustodyRecord> = flow {
+        var nextIndex = 0
+        recordCount.collect { availableCount ->
+            while (nextIndex < availableCount) {
+                val record = synchronized(lock) { records[nextIndex++] }
+                emit(record)
+            }
+        }
+    }
+
+    private fun <T : CustodyRecord> preserve(create: (Long) -> T): T = synchronized(lock) {
+        val record = create(nextSequenceNumber++)
+        records += record
+        recordCount.value = records.size
+        record
+    }
 }

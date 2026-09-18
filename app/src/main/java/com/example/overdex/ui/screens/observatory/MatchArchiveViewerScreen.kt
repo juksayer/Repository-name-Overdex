@@ -46,7 +46,8 @@ fun MatchArchiveViewerScreen(
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
-    onLcdTap: (() -> Unit) -> Unit = {}
+    onLcdTap: (() -> Unit) -> Unit = {},
+    onLcdUpdate: (String, String) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -70,7 +71,8 @@ fun MatchArchiveViewerScreen(
             onA = onA,
             onB = onB,
             onLcdDrag = onLcdDrag,
-            onLcdTap = onLcdTap
+            onLcdTap = onLcdTap,
+            onLcdUpdate = onLcdUpdate
         )
         return
     }

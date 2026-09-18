@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.data.observation.readText
 import com.example.overdex.model.observation.ObservationInput
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 /**
  * Collector responsible for gathering evidence of the "Attack Incoming!" phenomenon.
@@ -39,9 +38,8 @@ class AttackIncomingCollector(
     },
     private val detect: suspend (Bitmap) -> String? = { bitmap ->
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        val image = InputImage.fromBitmap(bitmap, 0)
         try {
-            recognizer.process(image).await().text
+            recognizer.readText(bitmap)
         } catch (e: Exception) {
             null
         }

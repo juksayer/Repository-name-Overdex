@@ -2,6 +2,11 @@ package com.example.overdex.battle.custody
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import org.junit.Test
 import com.example.overdex.battle.time.ClockReading
 import com.example.overdex.battle.time.ExternalClock
@@ -177,6 +182,23 @@ class TestimonyCustodyTest {
         
         val sequenceNumbers = records.map { it.sequenceNumber }.toSet()
         assertEquals(totalSubmissions, sequenceNumbers.size)
+    }
+
+    @Test
+    fun `accepted burst testimony reaches a delayed flow consumer in custody order`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val total = 512
+        val received = async {
+            withTimeout(5_000L) {
+                custody.testimonyFlow.take(total).toList()
+            }
+        }
+
+        repeat(total) { index ->
+            custody.submitTestimony(sourceA, RawTestimony("crop-$index"), index.toLong(), 1.0f)
+        }
+
+        assertEquals((0 until total).map { it.toLong() }, received.await().map { it.sequenceNumber })
     }
 
     @Test

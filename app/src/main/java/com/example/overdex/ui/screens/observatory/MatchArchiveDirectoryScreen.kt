@@ -25,6 +25,9 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun MatchArchiveDirectoryScreen(
@@ -36,7 +39,8 @@ fun MatchArchiveDirectoryScreen(
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
+    onB: (() -> Unit) -> Unit = {},
+    onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -50,6 +54,17 @@ fun MatchArchiveDirectoryScreen(
     }
 
     val selectedEntry = archives.getOrNull(selectedIndex)
+
+    LaunchedEffect(selectedEntry, isLoading) {
+        val entry = selectedEntry
+        onLcdUpdate(
+            entry?.name?.removeSuffix(".odxmatch.zip") ?: "ARCHIVE DIRECTORY",
+            entry?.let {
+                val size = if (it.byteCount >= 1_000_000L) "${it.byteCount / 1_000_000L} MB" else "${it.byteCount / 1_000L} KB"
+                "$size  ${SimpleDateFormat("MMM d HH:mm", Locale.US).format(Date(it.lastModified))}"
+            } ?: if (isLoading) "READING MATCH ARCHIVE" else "NO ARCHIVE SELECTED"
+        )
+    }
 
     BackHandler {
         onBack()

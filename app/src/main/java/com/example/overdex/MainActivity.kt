@@ -1151,6 +1151,8 @@ fun PokedexApp(
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var lcdLine1 by remember { mutableStateOf<String?>(null) }
+                var lcdLine2 by remember { mutableStateOf<String?>(null) }
                 val scope = rememberCoroutineScope()
                 val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -1165,6 +1167,8 @@ fun PokedexApp(
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
+                    lcdLine1 = lcdLine1,
+                    lcdLine2 = lcdLine2,
                     onUp = { upHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
                     onA = { aHandler?.invoke() },
@@ -1203,7 +1207,11 @@ fun PokedexApp(
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },
                         onA = { aHandler = it },
-                        onB = { bHandler = it }
+                        onB = { bHandler = it },
+                        onLcdUpdate = { line1, line2 ->
+                            lcdLine1 = line1
+                            lcdLine2 = line2
+                        }
                     )
                 }
             }
@@ -1216,6 +1224,8 @@ fun PokedexApp(
                     var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
                     var lcdTapHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var lcdLine1 by remember { mutableStateOf<String?>(null) }
+                    var lcdLine2 by remember { mutableStateOf<String?>(null) }
 
                     ODXFiShell(
                         showBattleOverlay = false,
@@ -1234,6 +1244,8 @@ fun PokedexApp(
                         onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                         deploymentState = deploymentState,
                         frameCount = frameCount,
+                        lcdLine1 = lcdLine1,
+                        lcdLine2 = lcdLine2,
                     ) {
                         com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
                             archive = archive,
@@ -1246,7 +1258,11 @@ fun PokedexApp(
                             onA = { aHandler = it },
                             onB = { bHandler = it },
                             onLcdDrag = { lcdDragHandler = it },
-                            onLcdTap = { lcdTapHandler = it }
+                            onLcdTap = { lcdTapHandler = it },
+                            onLcdUpdate = { line1, line2 ->
+                                lcdLine1 = line1
+                                lcdLine2 = line2
+                            }
                         )
                     }
                 } else {

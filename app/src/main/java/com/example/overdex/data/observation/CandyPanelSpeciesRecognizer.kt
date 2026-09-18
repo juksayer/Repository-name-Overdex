@@ -2,10 +2,8 @@ package com.example.overdex.data.observation
 
 import android.graphics.Bitmap
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 
 /**
  * Specialized recognizer for determining species name from the Candy Panel.
@@ -24,9 +22,8 @@ object CandyPanelFamilyRecognizer {
      * @return A [RecognitionResult] containing the identified family name.
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
-        val image = InputImage.fromBitmap(bitmap, 0)
         return try {
-            val result = recognizer.process(image).await()
+            val result = recognizer.read(bitmap)
             
             // Look for lines containing "Candy" or "Mega Energy"
             var detectedFamily: String? = null

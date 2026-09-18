@@ -85,6 +85,17 @@ object MatchArchivePackageReader {
                                 }
                             }
                         }
+                        // Directory browsing and replay need the manifest and Timeline
+                        // only. Crops remain in the portable package until the user asks
+                        // to inspect or import them, so opening a large forensic archive
+                        // does not decompress and hash every PNG first.
+                        if (artifactPolicy == ArtifactPolicy.REFERENCES_ONLY && manifest != null && archive != null) {
+                            val finalManifest = manifest!!
+                            val finalArchive = archive!!
+                            validateIntegrity(finalManifest, finalArchive)
+                            validateArtifactReferences(finalManifest, finalArchive, null)
+                            return finalArchive
+                        }
                         if (totalBytesRead > MAX_TOTAL_BYTES) throw IllegalArgumentException("Archive uncompressed size exceeds limit of $MAX_TOTAL_BYTES bytes.")
                         zis.closeEntry()
                         entry = zis.nextEntry
@@ -177,7 +188,7 @@ object MatchArchivePackageReader {
     private fun validateArtifactReferences(
         manifest: MatchArchiveManifest,
         archive: MatchArchive,
-        artifactPaths: Set<String>
+        artifactPaths: Set<String>?
     ) {
         val referenced = archive.articles.mapNotNull { article ->
             when (val payload = article.payload) {
@@ -188,7 +199,7 @@ object MatchArchivePackageReader {
         }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         val declared = manifest.artifacts.sortedBy { it.relativePath }
         if (referenced != declared) throw IllegalArgumentException("Crop artifact manifest does not match Timeline references.")
-        if (artifactPaths != declared.map { it.relativePath }.toSet()) {
+        if (artifactPaths != null && artifactPaths != declared.map { it.relativePath }.toSet()) {
             throw IllegalArgumentException("Archive crop artifact entries do not match the manifest.")
         }
         declared.forEach { artifact ->
