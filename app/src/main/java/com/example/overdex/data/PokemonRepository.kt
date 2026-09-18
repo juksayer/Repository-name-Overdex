@@ -13,21 +13,67 @@ import kotlinx.serialization.json.Json
 
 class PokemonRepository(
     private val pokemonDao: PokemonDao,
-    private val spriteProvider: SpriteProvider
+    private val spriteProvider: SpriteProvider,
+    /** Current battle reference data. The legacy Pokédex import alone ends at 2017. */
+    private val gameMasterLoader: GameMasterLoader? = null
 ) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
-    override suspend fun getPokemonById(id: Int): Pokemon? {
-        return pokemonDao.getPokemonById(id)?.toDomain()
-    }
+    override suspend fun getPokemonById(id: Int): Pokemon? =
+        pokemonDao.getPokemonById(id)?.toDomain() ?: gameMasterLoader?.getPokemonByDex(id)?.toDomain()
 
-    override suspend fun getPokemonByName(name: String): Pokemon? {
-        return pokemonDao.getPokemonByName(name)?.toDomain()
-    }
+    override suspend fun getPokemonByName(name: String): Pokemon? =
+        pokemonDao.getPokemonByName(name)?.toDomain() ?: gameMasterPokemonFor(name)?.toDomain()
 
+    /**
+     * Recognition must use the same current catalogue as battle interpretation.
+     * The old `pokemon_go_data.json` import is intentionally retained for the
+     * Pokédex UI, but it cannot be the boundary of what a match can name.
+     */
     override suspend fun getAllSpeciesNames(): Set<String> {
-        return pokemonDao.getAllPokemonNames().map { it.uppercase() }.toSet()
+        val imported = pokemonDao.getAllPokemonNames()
+        val current = gameMasterLoader?.allPokemonNames().orEmpty()
+        return (imported + current).toSet()
     }
+
+    private fun gameMasterPokemonFor(name: String): com.example.overdex.model.GameMasterPokemon? {
+        val normalized = normalizedSpeciesName(name)
+        return gameMasterLoader?.allPokemon()?.firstOrNull { candidate ->
+            normalizedSpeciesName(candidate.speciesName) == normalized ||
+                normalizedSpeciesName(candidate.speciesName.substringBefore(" (")) == normalized
+        }
+    }
+
+    private fun com.example.overdex.model.GameMasterPokemon.toDomain(): Pokemon {
+        fun type(value: String) = runCatching { PokemonType.valueOf(value.uppercase()) }.getOrNull()
+        fun move(id: String, fast: Boolean): Move? = gameMasterLoader?.getMove(id)?.let { source ->
+            val moveType = type(source.type) ?: return@let null
+            Move(
+                name = source.name,
+                type = moveType,
+                damage = source.power,
+                energy = if (fast) source.energyGain else kotlin.math.abs(source.energy),
+                isFast = fast,
+                turns = if (fast) source.turns else null
+            )
+        }
+        val baseName = speciesName.substringBefore(" (")
+        return Pokemon(
+            id = dex,
+            name = baseName,
+            types = types.mapNotNull(::type),
+            region = "",
+            fastMoves = fastMoves.mapNotNull { move(it, fast = true) },
+            chargedMoves = chargedMoves.mapNotNull { move(it, fast = false) },
+            spriteUrl = spriteProvider.getSpriteUrl(dex),
+            baseAttack = baseStats?.atk ?: 0,
+            baseDefense = baseStats?.def ?: 0,
+            baseStamina = baseStats?.hp ?: 0
+        )
+    }
+
+    private fun normalizedSpeciesName(value: String): String =
+        value.uppercase().filter(Char::isLetterOrDigit)
 
     fun search(
         query: String,

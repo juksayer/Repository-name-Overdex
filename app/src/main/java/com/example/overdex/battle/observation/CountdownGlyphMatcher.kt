@@ -11,7 +11,7 @@ import com.example.overdex.R
 import java.util.*
 
 /**
- * Debug-only matcher for identifying countdown glyphs (3, 2, 1, GO) using template matching.
+ * Matcher for identifying countdown glyphs (3, 2, 1, GO) using template matching.
  */
 object CountdownGlyphMatcher {
     private const val TAG = "COUNTDOWN_GLYPH"
@@ -27,7 +27,6 @@ object CountdownGlyphMatcher {
     private var loadedTemplates: Map<String, BooleanArray>? = null
 
     fun initialize(context: Context) {
-        if (!BuildConfig.DEBUG) return
         applicationContext = context.applicationContext
     }
 
@@ -52,7 +51,6 @@ object CountdownGlyphMatcher {
     }
 
     fun match(bitmap: Bitmap): MatchResult {
-        if (!BuildConfig.DEBUG) return MatchResult(null, 0f)
         ensureTemplatesLoaded()
         val templates = loadedTemplates ?: return MatchResult(null, 0f)
         
@@ -79,6 +77,18 @@ object CountdownGlyphMatcher {
             Log.e(TAG, "Error matching glyph", e)
             MatchResult(null, 0f)
         }
+    }
+
+    /**
+     * Reports that the countdown crop contains a substantial bright central form.
+     * This is intentionally weaker than [match]: it can request a short audio
+     * window before the exact 3/2/1/GO glyph has been recognized.
+     */
+    fun hasGlyphLikePresence(bitmap: Bitmap): Boolean = try {
+        extractAndNormalizeSilhouette(bitmap) != null
+    } catch (error: Exception) {
+        Log.e(TAG, "Error detecting countdown visual presence", error)
+        false
     }
 
     private class Component(val pixels: MutableList<Int>, val bounds: Rect)

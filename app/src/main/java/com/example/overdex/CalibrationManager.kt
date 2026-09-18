@@ -105,6 +105,16 @@ class CalibrationManager(context: Context) {
             .putFloat("opponent_team_info_w", calibration.opponentTeamInfoRegion.width)
             .putFloat("opponent_team_info_h", calibration.opponentTeamInfoRegion.height)
 
+            .putFloat("opponent_species_name_x", calibration.opponentSpeciesNameRegion.x)
+            .putFloat("opponent_species_name_y", calibration.opponentSpeciesNameRegion.y)
+            .putFloat("opponent_species_name_w", calibration.opponentSpeciesNameRegion.width)
+            .putFloat("opponent_species_name_h", calibration.opponentSpeciesNameRegion.height)
+
+            .putFloat("opponent_poke_balls_x", calibration.opponentPokeBallsRegion.x)
+            .putFloat("opponent_poke_balls_y", calibration.opponentPokeBallsRegion.y)
+            .putFloat("opponent_poke_balls_w", calibration.opponentPokeBallsRegion.width)
+            .putFloat("opponent_poke_balls_h", calibration.opponentPokeBallsRegion.height)
+
             .putFloat("trainer_active_type_x", calibration.trainerActiveTypeRegion.x)
             .putFloat("trainer_active_type_y", calibration.trainerActiveTypeRegion.y)
             .putFloat("trainer_active_type_w", calibration.trainerActiveTypeRegion.width)
@@ -144,6 +154,16 @@ class CalibrationManager(context: Context) {
             .putFloat("match_outcome_y", calibration.matchOutcomeRegion.y)
             .putFloat("match_outcome_w", calibration.matchOutcomeRegion.width)
             .putFloat("match_outcome_h", calibration.matchOutcomeRegion.height)
+
+            .putFloat("battle_party_tabs_x", calibration.battlePartyTabsRegion.x)
+            .putFloat("battle_party_tabs_y", calibration.battlePartyTabsRegion.y)
+            .putFloat("battle_party_tabs_w", calibration.battlePartyTabsRegion.width)
+            .putFloat("battle_party_tabs_h", calibration.battlePartyTabsRegion.height)
+
+            .putFloat("out_of_battle_menu_x", calibration.outOfBattleMenuRegion.x)
+            .putFloat("out_of_battle_menu_y", calibration.outOfBattleMenuRegion.y)
+            .putFloat("out_of_battle_menu_w", calibration.outOfBattleMenuRegion.width)
+            .putFloat("out_of_battle_menu_h", calibration.outOfBattleMenuRegion.height)
 
             .apply()
     }
@@ -214,18 +234,24 @@ class CalibrationManager(context: Context) {
         // Migrate only the old shipped fallback. A box a user has actually adjusted
         // remains authoritative, and can still be refined in Match Calibration.
         val countdownRegion = storedCountdownRegion
-            ?.takeUnless { it == BattleCalibration.LEGACY_COUNTDOWN_REGION }
+            ?.takeUnless {
+                it == BattleCalibration.LEGACY_COUNTDOWN_REGION ||
+                    it == BattleCalibration.PREVIOUS_DEFAULT_COUNTDOWN_REGION
+            }
             ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
 
         val vsScreenWidth = prefs.getFloat("vs_screen_w", 0f)
-        val vsScreenRegion = if (vsScreenWidth > 0f && vsScreenWidth <= 1f) {
+        val storedVsScreenRegion = if (vsScreenWidth > 0f && vsScreenWidth <= 1f) {
             AnchorRegion(
-                x = prefs.getFloat("vs_screen_x", BattleCalibration.DEFAULT_VS_SCREEN_REGION.x).coerceIn(0f, 1f),
-                y = prefs.getFloat("vs_screen_y", BattleCalibration.DEFAULT_VS_SCREEN_REGION.y).coerceIn(0f, 1f),
+                x = prefs.getFloat("vs_screen_x", BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION.x).coerceIn(0f, 1f),
+                y = prefs.getFloat("vs_screen_y", BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION.y).coerceIn(0f, 1f),
                 width = vsScreenWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("vs_screen_h", BattleCalibration.DEFAULT_VS_SCREEN_REGION.height).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("vs_screen_h", BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION.height).coerceIn(0.01f, 1f)
             )
-        } else BattleCalibration.DEFAULT_VS_SCREEN_REGION
+        } else null
+        val vsScreenRegion = storedVsScreenRegion
+            ?.takeUnless { it == BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION }
+            ?: BattleCalibration.DEFAULT_VS_SCREEN_REGION
 
         val youWinWidth = prefs.getFloat("you_win_w", 0f)
         val youWinRegion = if (youWinWidth > 0f && youWinWidth <= 1.0f) {
@@ -328,6 +354,26 @@ class CalibrationManager(context: Context) {
                 height = (350f - 225f) / 2400f
             )
         }
+
+        val opponentSpeciesNameWidth = prefs.getFloat("opponent_species_name_w", 0f)
+        val opponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_species_name_x", 920f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_species_name_y", 243f / 2400f).coerceIn(0f, 1f),
+                width = opponentSpeciesNameWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_species_name_h", (275f - 243f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration().opponentSpeciesNameRegion
+
+        val opponentPokeBallsWidth = prefs.getFloat("opponent_poke_balls_w", 0f)
+        val opponentPokeBallsRegion = if (opponentPokeBallsWidth > 0f && opponentPokeBallsWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("opponent_poke_balls_x", 875f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_poke_balls_y", 280f / 2400f).coerceIn(0f, 1f),
+                width = opponentPokeBallsWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("opponent_poke_balls_h", (340f - 280f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration().opponentPokeBallsRegion
 
         val trainerActiveTypeWidth = prefs.getFloat("trainer_active_type_w", 0f)
         val trainerActiveTypeRegion = if (trainerActiveTypeWidth > 0f && trainerActiveTypeWidth <= 1.0f) {
@@ -448,6 +494,26 @@ class CalibrationManager(context: Context) {
             )
         }
 
+        val battlePartyTabsWidth = prefs.getFloat("battle_party_tabs_w", 0f)
+        val battlePartyTabsRegion = if (battlePartyTabsWidth > 0f && battlePartyTabsWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("battle_party_tabs_x", 0f).coerceIn(0f, 1f),
+                y = prefs.getFloat("battle_party_tabs_y", 100f / 2400f).coerceIn(0f, 1f),
+                width = battlePartyTabsWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("battle_party_tabs_h", 150f / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration().battlePartyTabsRegion
+
+        val outOfBattleMenuWidth = prefs.getFloat("out_of_battle_menu_w", 0f)
+        val outOfBattleMenuRegion = if (outOfBattleMenuWidth > 0f && outOfBattleMenuWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("out_of_battle_menu_x", 645f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("out_of_battle_menu_y", 350f / 2400f).coerceIn(0f, 1f),
+                width = outOfBattleMenuWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("out_of_battle_menu_h", (550f - 350f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration().outOfBattleMenuRegion
+
         val matchOutcomeWidth = prefs.getFloat("match_outcome_w", 0f)
         val matchOutcomeRegion = if (matchOutcomeWidth > 0f && matchOutcomeWidth <= 1.0f) {
             AnchorRegion(
@@ -478,6 +544,8 @@ class CalibrationManager(context: Context) {
             playerTeamInfoRegion = playerTeamInfoRegion,
             announcementRegion = announcementRegion,
             opponentTeamInfoRegion = opponentTeamInfoRegion,
+            opponentSpeciesNameRegion = opponentSpeciesNameRegion,
+            opponentPokeBallsRegion = opponentPokeBallsRegion,
             trainerActiveTypeRegion = trainerActiveTypeRegion,
             opponentActiveTypeRegion = opponentActiveTypeRegion,
             trainerHpRegion = trainerHpRegion,
@@ -485,6 +553,8 @@ class CalibrationManager(context: Context) {
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
             trainerInactivePokemonRegion = trainerInactivePokemonRegion,
+            battlePartyTabsRegion = battlePartyTabsRegion,
+            outOfBattleMenuRegion = outOfBattleMenuRegion,
             matchOutcomeRegion = matchOutcomeRegion
         )
     }

@@ -31,11 +31,14 @@ class GameMasterLoader(
             .use { it.readText() }
     }
 
-    fun getPokemon(speciesId: String): GameMasterPokemon? {
-        return gameMaster.pokemon.find {
-            it.speciesId == speciesId
-        }
-    }
+    fun getPokemon(speciesId: String): GameMasterPokemon? = gameMaster.pokemon.find { it.speciesId == speciesId }
+
+    fun allPokemon(): List<GameMasterPokemon> = gameMaster.pokemon
+
+    /** Includes Pokémon GO's visible base name as an alias for form-specific entries. */
+    fun allPokemonNames(): Set<String> = gameMaster.pokemon
+        .flatMap { listOf(it.speciesName, it.speciesName.substringBefore(" (")) }
+        .toSet()
     fun getPokemonByDex(dex: Int): GameMasterPokemon? {
         return gameMaster.pokemon.find {
             it.dex == dex

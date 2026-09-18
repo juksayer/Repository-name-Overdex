@@ -116,6 +116,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.ANNOUNCEMENT,
             CalibrationRegion.TRAINER_TEAM_INFO,
             CalibrationRegion.OPPONENT_TEAM_INFO,
+            CalibrationRegion.OPPONENT_SPECIES_NAME,
+            CalibrationRegion.OPPONENT_SHIELDS,
+            CalibrationRegion.OPPONENT_POKE_BALLS,
             CalibrationRegion.TRAINER_ACTIVE_TYPE,
             CalibrationRegion.OPPONENT_ACTIVE_TYPE,
             CalibrationRegion.TRAINER_HP,
@@ -123,7 +126,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
-            CalibrationRegion.MATCH_OUTCOME
+            CalibrationRegion.MATCH_OUTCOME,
+            CalibrationRegion.BATTLE_PARTY_TABS,
+            CalibrationRegion.OUT_OF_BATTLE_MENU
         )
     }
 
@@ -149,6 +154,10 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Trainer Inactive Pokémon"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
+            CalibrationRegion.BATTLE_PARTY_TABS -> "Battle / Party Tabs"
+            CalibrationRegion.OUT_OF_BATTLE_MENU -> "Out-of-Battle Menu"
+            CalibrationRegion.OPPONENT_SPECIES_NAME -> "Opponent Species Name"
+            CalibrationRegion.OPPONENT_POKE_BALLS -> "Opponent Poké Balls"
             else -> region.name
         }
     }
@@ -199,6 +208,10 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.copy(trainerChargeMoveControlsRegion = updated)
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.copy(trainerInactivePokemonRegion = updated)
             CalibrationRegion.MATCH_OUTCOME -> calibration.copy(matchOutcomeRegion = updated)
+            CalibrationRegion.BATTLE_PARTY_TABS -> calibration.copy(battlePartyTabsRegion = updated)
+            CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.copy(outOfBattleMenuRegion = updated)
+            CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.copy(opponentSpeciesNameRegion = updated)
+            CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.copy(opponentPokeBallsRegion = updated)
             else -> calibration
         }
         calibrationManager.save(calibration)

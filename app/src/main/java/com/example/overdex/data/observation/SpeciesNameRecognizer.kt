@@ -21,12 +21,27 @@ object SpeciesNameRecognizer {
      * @return A [RecognitionResult] containing the raw OCR text with unknown confidence.
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
-        val image = InputImage.fromBitmap(bitmap, 0)
+        // Pokémon GO draws names in muted blue over a nearly white badge. Turn that
+        // narrow, purpose-specific crop into black text on white before scaling so
+        // ML Kit sees glyph strokes instead of translucent UI color.
+        val highContrast = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        for (y in 0 until bitmap.height) {
+            for (x in 0 until bitmap.width) {
+                val color = bitmap.getPixel(x, y)
+                val luma = (android.graphics.Color.red(color) * 299 +
+                    android.graphics.Color.green(color) * 587 +
+                    android.graphics.Color.blue(color) * 114) / 1000
+                highContrast.setPixel(x, y, if (luma < 190) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        val enlarged = Bitmap.createScaledBitmap(highContrast, bitmap.width * 6, bitmap.height * 6, false)
+        highContrast.recycle()
+        val image = InputImage.fromBitmap(enlarged, 0)
         return try {
             val result = recognizer.process(image).await()
             val rawText = result.text
             val rawTextEscaped = rawText.replace("\n", "\\n")
-            Log.d("SPECIES_NAME_RECOGNIZER", "Bitmap: ${bitmap.width}x${bitmap.height} | OCR Text: \"$rawTextEscaped\"")
+            Log.d("SPECIES_NAME_RECOGNIZER", "source=${bitmap.width}x${bitmap.height} ocr=high-contrast-${enlarged.width}x${enlarged.height} text=\"$rawTextEscaped\"")
 
             RecognitionResult(
                 value = rawText,
@@ -40,6 +55,8 @@ object SpeciesNameRecognizer {
                 confidence = null,
                 recognizer = "SpeciesNameRecognizer"
             )
+        } finally {
+            enlarged.recycle()
         }
     }
 }

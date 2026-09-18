@@ -59,6 +59,16 @@ data class BattleCalibration(
         width = (1060f - 645f) / 1080f,
         height = (350f - 225f) / 2400f
     ),
+    // Purpose-specific crops inside the opponent badge. They are independently
+    // calibrated so a text adjustment cannot disturb shield or ball evidence.
+    val opponentSpeciesNameRegion: AnchorRegion = AnchorRegion(
+        x = 920f / 1080f, y = 243f / 2400f,
+        width = (1060f - 920f) / 1080f, height = (275f - 243f) / 2400f
+    ),
+    val opponentPokeBallsRegion: AnchorRegion = AnchorRegion(
+        x = 875f / 1080f, y = 280f / 2400f,
+        width = (1060f - 875f) / 1080f, height = (340f - 280f) / 2400f
+    ),
     val trainerActiveTypeRegion: AnchorRegion = AnchorRegion(
         x = 20f / 1080f,
         y = 145f / 2400f,
@@ -115,24 +125,23 @@ data class BattleCalibration(
     )
 ) {
     companion object {
-        /** Central 3 / 2 / 1 / GO band on the reference portrait capture. */
-        val DEFAULT_COUNTDOWN_REGION = AnchorRegion(
-            x = 330f / 1080f,
-            y = 110f / 2280f,
-            width = (760f - 330f) / 1080f,
-            height = (510f - 110f) / 2280f
+        /** Previous shipped box, retained only to migrate it without overwriting user work. */
+        val PREVIOUS_DEFAULT_COUNTDOWN_REGION = AnchorRegion(
+            x = 330f / 1080f, y = 110f / 2280f,
+            width = (760f - 330f) / 1080f, height = (510f - 110f) / 2280f
         )
 
-        /** Central VS surface, verified by the previously preserved pre-battle crop. */
-        val DEFAULT_VS_SCREEN_REGION = AnchorRegion(
-            x = 0.25f,
-            y = 0.25f,
-            width = 0.50f,
-            height = 0.30f
-        )
+        /** 3 / 2 / 1 / GO occupies the central battlefield, below the team badges. */
+        val DEFAULT_COUNTDOWN_REGION = AnchorRegion(x = 0.33f, y = 0.35f, width = 0.34f, height = 0.30f)
+
+        /** Previous broad VS surface, retained only to migrate it without overwriting user work. */
+        val PREVIOUS_DEFAULT_VS_SCREEN_REGION = AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
+
+        /** The VS disc and its immediate visual surround, not the two trainer portraits. */
+        val DEFAULT_VS_SCREEN_REGION = AnchorRegion(x = 0.38f, y = 0.42f, width = 0.24f, height = 0.16f)
 
         /** The pre-contract fallback that never contained the real countdown glyph. */
-        val LEGACY_COUNTDOWN_REGION = DEFAULT_VS_SCREEN_REGION
+        val LEGACY_COUNTDOWN_REGION = PREVIOUS_DEFAULT_VS_SCREEN_REGION
     }
 
     fun isCalibrated(): Boolean {

@@ -492,7 +492,7 @@ fun ODXFiShell(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect() else Modifier)
+                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect(filterSettings) else Modifier)
                 ) {
                     content(battleMemory)
                 }

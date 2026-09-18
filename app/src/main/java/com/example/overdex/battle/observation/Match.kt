@@ -31,6 +31,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -65,7 +66,15 @@ class Match(
     /** The derived GO boundary for the owning Droidball session to act upon. */
     val matchStarted = _matchStarted.asSharedFlow()
 
-    private val _articles = MutableSharedFlow<RealityArticle>(replay = 64, extraBufferCapacity = 64)
+    // Crop capture can publish several independent witness articles per frame while
+    // OCR is still reading an earlier one. Keep the whole practical recording burst
+    // available to downstream witnesses; a dropped CropCaptured article is a dropped
+    // opportunity to identify an otherwise preserved combatant.
+    private val _articles = MutableSharedFlow<RealityArticle>(
+        replay = 4_096,
+        extraBufferCapacity = 4_096,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     /** Accepted Timeline articles for downstream recognizers; the Timeline remains authoritative. */
     val articles = _articles.asSharedFlow()
 
@@ -148,11 +157,28 @@ class Match(
                 // Pokémon GO is already presenting battle evidence.
                 if (article.payload is com.example.overdex.battle.custody.CropCaptured &&
                     article.sourceId.id in setOf(
+                        // Any live battle surface is enough to make Droidball visible.
+                        // Recognition remains downstream; an unreadable crop must not
+                        // conceal the field HUD from the user.
                         "VS_SCREEN_CAPTURE",
                         "COUNTDOWN_CROP_CAPTURE",
                         "ANNOUNCEMENT_CROP_CAPTURE",
                         "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
-                        "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE"
+                        "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+                        "PLAYER_ACTIVE_TYPE_ICONS_CAPTURE",
+                        "OPPONENT_ACTIVE_TYPE_ICONS_CAPTURE",
+                        "PLAYER_TEAM_STATUS_CAPTURE",
+                        "OPPONENT_TEAM_STATUS_CAPTURE",
+                        "OPPONENT_POKE_BALLS_CAPTURE",
+                        "OPPONENT_SHIELDS_CAPTURE",
+                        "PLAYER_HP_EVIDENCE_CAPTURE",
+                        "OPPONENT_HP_EVIDENCE_CAPTURE",
+                        "CHARGE_MOVE_EXECUTION_CAPTURE",
+                        "PLAYER_CHARGE_MOVE_CONTROLS_CAPTURE",
+                        "PLAYER_INACTIVE_SPECIES_SPRITE_CAPTURE",
+                        "PLAYER_INACTIVE_HP_BAR_CAPTURE",
+                        "INACTIVE_MATCH_START_TIMER_CAPTURE",
+                        "SWITCH_LOCKOUT_TIMER_CAPTURE"
                     )
                 ) {
                     DroidballOverlayPresentation.showBattleHud()
@@ -220,7 +246,6 @@ class Match(
                 if (article.payload is VsScreenWitnessed) {
                     DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
-                    DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.VS_SCREEN)
                 }
                 val announcement = (article.payload as? RawTestimony)?.data as? String
                 if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
