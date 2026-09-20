@@ -62,8 +62,10 @@ data class BattleCalibration(
     // Purpose-specific crops inside the opponent badge. They are independently
     // calibrated so a text adjustment cannot disturb shield or ball evidence.
     val opponentSpeciesNameRegion: AnchorRegion = AnchorRegion(
-        x = 920f / 1080f, y = 243f / 2400f,
-        width = (1060f - 920f) / 1080f, height = (275f - 243f) / 2400f
+        // Mirrored player-name strip: source X 785–1038, Y 250–275.
+        // It contains even long, right-aligned opponent names without CP or balls.
+        x = 785f / 1080f, y = 250f / 2400f,
+        width = (1038f - 785f) / 1080f, height = (275f - 250f) / 2400f
     ),
     val opponentPokeBallsRegion: AnchorRegion = AnchorRegion(
         x = 875f / 1080f, y = 280f / 2400f,

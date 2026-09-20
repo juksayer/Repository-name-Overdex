@@ -19,6 +19,7 @@ fun TimelineViewerScreen(
     onExportMatch: () -> Unit = {},
     exportSelected: Boolean = false,
     exportMode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+    exportInProgress: Boolean = false,
     onOpenMatch: () -> Unit = {},
     openSelected: Boolean = false
 ) {
@@ -86,11 +87,13 @@ fun TimelineViewerScreen(
 
         if (exportMatchId != null) {
             TerminalButton(
-                text = when (exportMode) {
+                text = if (exportInProgress) {
+                    "SAVING MATCH ARCHIVE…"
+                } else when (exportMode) {
                     MatchArchiveExportMode.COMPACT_CITED_EVIDENCE -> "SAVE COMPACT MATCH ARCHIVE"
                     MatchArchiveExportMode.FULL_FORENSIC -> "SAVE FULL FORENSIC ARCHIVE"
                 },
-                onClick = onExportMatch,
+                onClick = { if (!exportInProgress) onExportMatch() },
                 selected = exportSelected
             )
             if (exportSelected) {

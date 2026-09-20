@@ -305,13 +305,20 @@ fun PokemonDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-// Description
-            Text(
-                text = pokemon.description,
-                fontSize = 14.sp,
-                color = TerminalGreen,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
+            // Battle haikus replace the imported species flavor text in the Pokedex.
+            if (fieldNotes.isNotEmpty()) {
+                fieldNotes.forEach { note ->
+                    val item = PokemonDetailNavItem.FieldNoteItem(note)
+                    val isSelected = navItems[nav.selectedIndex] == item
+                    FieldNoteSection(
+                        note = note,
+                        modifier = Modifier
+                            .bringIntoViewRequester(requesters[item]!!)
+                            .padding(vertical = 8.dp),
+                        isSelected = isSelected
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -448,20 +455,6 @@ fun PokemonDetailScreen(
                 )
             }
 
-            if (fieldNotes.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                fieldNotes.forEach { note ->
-                    val item = PokemonDetailNavItem.FieldNoteItem(note)
-                    val isSelected = navItems[nav.selectedIndex] == item
-                    FieldNoteSection(
-                        note = note,
-                        modifier = Modifier
-                            .bringIntoViewRequester(requesters[item]!!)
-                            .padding(vertical = 8.dp),
-                        isSelected = isSelected
-                    )
-                }
-            }
         }
     }
 }

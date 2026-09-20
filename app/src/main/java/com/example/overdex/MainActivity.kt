@@ -1028,12 +1028,14 @@ fun PokedexApp(
                 val archiveExportSelected = remember { mutableStateOf(false) }
                 val archiveOpenSelected = remember { mutableStateOf(false) }
                 val archiveExportMode = remember { mutableStateOf(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) }
+                val archiveExportInProgress = remember { mutableStateOf(false) }
                 val scope = rememberCoroutineScope()
                 val context = androidx.compose.ui.platform.LocalContext.current
 
                 val requestArchiveExport: () -> Unit = {
                     val source = archiveSourceState.value
-                    if (source != null) {
+                    if (source != null && !archiveExportInProgress.value) {
+                        archiveExportInProgress.value = true
                         if (archiveDirectoryManager.isFolderAvailable()) {
                             scope.launch(Dispatchers.IO) {
                                 try {
@@ -1062,9 +1064,14 @@ fun PokedexApp(
                                             android.widget.Toast.LENGTH_LONG
                                         ).show()
                                     }
+                                } finally {
+                                    withContext(Dispatchers.Main) {
+                                        archiveExportInProgress.value = false
+                                    }
                                 }
                             }
                         } else {
+                            archiveExportInProgress.value = false
                             onLaunchFolderPicker("export", source, archiveExportMode.value)
                         }
                     }
@@ -1134,6 +1141,7 @@ fun PokedexApp(
                         exportSelected = archiveExportSelected.value &&
                                 archiveSourceState.value != null,
                         exportMode = archiveExportMode.value,
+                        exportInProgress = archiveExportInProgress.value,
                         onExportMatch = requestArchiveExport,
                         onOpenMatch = {
                             if (archiveDirectoryManager.isFolderAvailable()) {

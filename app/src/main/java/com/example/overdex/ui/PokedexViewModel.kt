@@ -44,7 +44,6 @@ import com.example.overdex.battle.observation.CustomCropCaptureWitness
 import com.example.overdex.battle.observation.PersistedOutcomeTextWitness
 import com.example.overdex.battle.observation.PersistedOutcomePhraseWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementWitness
-import com.example.overdex.battle.observation.PersistedPlayerEntrySpeciesWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementSpeciesWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
@@ -289,6 +288,30 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val cropArtifactStore = FileCropArtifactStore(getApplication<Application>().filesDir)
         val audioArtifactStore = FileAudioArtifactStore(getApplication<Application>().filesDir)
         PokemonGoTypeIconMatcher.initialize(getApplication())
+
+        // Species identity is the first dependency for the battle HUD and
+        // replay. Start these narrow badge strips before every optional crop,
+        // and sample the brief entry window at 20 fps. Content-addressed PNGs
+        // deduplicate unchanged badge frames in the artifact store.
+        listOf(
+            BattleWitnessContracts.playerActiveSpeciesTextCapture to "Player Active Species Text Capture Witness",
+            BattleWitnessContracts.opponentActiveSpeciesTextCapture to "Opponent Active Species Text Capture Witness"
+        ).forEach { (contract, name) ->
+            observationDispatcher.register(CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = contract,
+                artifactStore = cropArtifactStore,
+                isEnabled = announcementEvidenceLive,
+                captureIntervalNanos = 50_000_000L,
+                captureDispatcher = Dispatchers.IO,
+                observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = name
+            ))
+        }
+        observationDispatcher.register(PersistedSpeciesWitness.player(cropArtifactStore))
+        observationDispatcher.register(PersistedSpeciesWitness.opponent(cropArtifactStore))
+
         customCrops.filter { it.enabled }.forEach { crop ->
             observationDispatcher.register(
                 CustomCropCaptureWitness(
@@ -375,8 +398,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         listOf(
-            BattleWitnessContracts.playerActiveSpeciesTextCapture to "Player Active Species Text Capture Witness",
-            BattleWitnessContracts.opponentActiveSpeciesTextCapture to "Opponent Active Species Text Capture Witness",
             BattleWitnessContracts.opponentPokeBallsCapture to "Opponent Poké Balls Capture Witness",
             BattleWitnessContracts.opponentShieldsCapture to "Opponent Shields Capture Witness"
         ).forEach { (contract, name) ->
@@ -385,22 +406,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = contract,
                 artifactStore = cropArtifactStore,
-                // A name badge can be present before countdown recognition. Species
-                // observation must therefore begin as soon as this Droidball session
-                // is armed, rather than depending on a later phase witness.
                 isEnabled = announcementEvidenceLive,
-                // Species text changes slowly and repeatedly. Sampling this one-purpose
-                // crop keeps the downstream OCR witness current without drowning it in
-                // identical PNGs from every display frame.
-                captureIntervalNanos = 250_000_000L,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = name
             ))
         }
         observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore))
         observationDispatcher.register(PersistedActivePokemonTypeWitness.opponent(cropArtifactStore))
-        observationDispatcher.register(PersistedSpeciesWitness.player(cropArtifactStore))
-        observationDispatcher.register(PersistedSpeciesWitness.opponent(cropArtifactStore))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -474,7 +486,6 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Announcement Crop Capture Witness")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
-        observationDispatcher.register(PersistedPlayerEntrySpeciesWitness())
         observationDispatcher.register(PersistedAnnouncementSpeciesWitness())
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.getReady(cropArtifactStore))

@@ -233,7 +233,7 @@ private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibilit
         } else {
             moves.forEach { move ->
                 Text(
-                    text = if (move.hazardous) "⚠ ${move.name}" else move.name,
+                    text = if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name,
                     color = if (move.hazardous) Color(0xFFC62828) else muted,
                     fontSize = 8.sp,
                     fontWeight = if (move.hazardous) FontWeight.Bold else FontWeight.Normal,

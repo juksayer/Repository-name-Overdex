@@ -356,14 +356,28 @@ class CalibrationManager(context: Context) {
         }
 
         val opponentSpeciesNameWidth = prefs.getFloat("opponent_species_name_w", 0f)
-        val opponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
+        val persistedOpponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
             AnchorRegion(
                 x = prefs.getFloat("opponent_species_name_x", 920f / 1080f).coerceIn(0f, 1f),
                 y = prefs.getFloat("opponent_species_name_y", 243f / 2400f).coerceIn(0f, 1f),
                 width = opponentSpeciesNameWidth.coerceIn(0.01f, 1f),
                 height = prefs.getFloat("opponent_species_name_h", (275f - 243f) / 2400f).coerceIn(0.01f, 1f)
             )
-        } else BattleCalibration().opponentSpeciesNameRegion
+        } else null
+        // The former 920–1060 default clipped the first letters of long names.
+        // Upgrade only an unchanged old default; never overwrite a Draggy Box the
+        // user has deliberately positioned.
+        val oldOpponentSpeciesNameDefault = persistedOpponentSpeciesNameRegion?.let { region ->
+            kotlin.math.abs(region.x - 920f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 243f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (1060f - 920f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (275f - 243f) / 2400f) < 0.0001f
+        } == true
+        val opponentSpeciesNameRegion = if (oldOpponentSpeciesNameDefault) {
+            BattleCalibration().opponentSpeciesNameRegion
+        } else {
+            persistedOpponentSpeciesNameRegion ?: BattleCalibration().opponentSpeciesNameRegion
+        }
 
         val opponentPokeBallsWidth = prefs.getFloat("opponent_poke_balls_w", 0f)
         val opponentPokeBallsRegion = if (opponentPokeBallsWidth > 0f && opponentPokeBallsWidth <= 1f) {

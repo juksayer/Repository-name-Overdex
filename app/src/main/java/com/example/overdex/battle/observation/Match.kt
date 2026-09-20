@@ -35,6 +35,8 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
  * Represents the record surrounding one possible Pokémon GO battle.
@@ -89,7 +91,13 @@ class Match(
     )
     val activeSpeciesCropArticles = _activeSpeciesCropArticles.asSharedFlow()
 
-    private val matchScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    // Custody-to-Timeline delivery must keep moving while screen capture is busy.
+    // A dedicated serial lane also preserves the ledger order without borrowing
+    // the Default pool that image capture and image processing can saturate.
+    private val matchDispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "overdex-match-$matchId").apply { isDaemon = true }
+    }.asCoroutineDispatcher()
+    private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
 
     /**
@@ -315,5 +323,6 @@ class Match(
      */
     fun release() {
         matchScope.cancel("Match released")
+        matchDispatcher.close()
     }
 }
