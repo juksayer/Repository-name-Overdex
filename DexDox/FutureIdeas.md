@@ -164,9 +164,6 @@ They should read like martial proverbs rather than strategy guides.
 The Pokédex explains what a Pokémon is.
 
 The Battle Haiku suggest what it becomes in battle.
-# Artificial Intelligence
-
-Ideas involving AI-assisted reasoning, explanation, or recommendation belong here until they mature into concrete designs.
 
 ---
 
