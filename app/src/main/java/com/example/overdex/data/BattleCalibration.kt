@@ -133,8 +133,22 @@ data class BattleCalibration(
             width = (760f - 330f) / 1080f, height = (510f - 110f) / 2280f
         )
 
-        /** 3 / 2 / 1 / GO occupies the central battlefield, below the team badges. */
-        val DEFAULT_COUNTDOWN_REGION = AnchorRegion(x = 0.33f, y = 0.35f, width = 0.34f, height = 0.30f)
+        /**
+         * The former narrow default clipped the outside of both letters in GO.
+         * Retain it solely so [CalibrationManager] can migrate unchanged installs.
+         */
+        val PREVIOUS_NARROW_COUNTDOWN_REGION = AnchorRegion(
+            x = 0.33f,
+            y = 0.35f,
+            width = 0.34f,
+            height = 0.30f
+        )
+
+        /**
+         * 3 / 2 / 1 / GO occupies the central battlefield, below the team badges.
+         * The horizontal margin deliberately includes the complete two-letter GO glyph.
+         */
+        val DEFAULT_COUNTDOWN_REGION = AnchorRegion(x = 0.20f, y = 0.35f, width = 0.60f, height = 0.30f)
 
         /** Previous broad VS surface, retained only to migrate it without overwriting user work. */
         val PREVIOUS_DEFAULT_VS_SCREEN_REGION = AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
@@ -144,6 +158,12 @@ data class BattleCalibration(
 
         /** The pre-contract fallback that never contained the real countdown glyph. */
         val LEGACY_COUNTDOWN_REGION = PREVIOUS_DEFAULT_VS_SCREEN_REGION
+
+        /** Defaults we shipped before the complete GO glyph was covered. */
+        internal fun isSupersededCountdownDefault(region: AnchorRegion): Boolean =
+            region == LEGACY_COUNTDOWN_REGION ||
+                region == PREVIOUS_DEFAULT_COUNTDOWN_REGION ||
+                region == PREVIOUS_NARROW_COUNTDOWN_REGION
     }
 
     fun isCalibrated(): Boolean {

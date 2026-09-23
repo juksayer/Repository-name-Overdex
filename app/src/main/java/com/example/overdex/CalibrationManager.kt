@@ -231,13 +231,10 @@ class CalibrationManager(context: Context) {
                 height = prefs.getFloat("countdown_h", BattleCalibration.LEGACY_COUNTDOWN_REGION.height).coerceIn(0.01f, 1f)
             )
         } else null
-        // Migrate only the old shipped fallback. A box a user has actually adjusted
-        // remains authoritative, and can still be refined in Match Calibration.
+        // Migrate only shipped defaults. A box a user has actually adjusted remains
+        // authoritative, and can still be refined in Match Calibration.
         val countdownRegion = storedCountdownRegion
-            ?.takeUnless {
-                it == BattleCalibration.LEGACY_COUNTDOWN_REGION ||
-                    it == BattleCalibration.PREVIOUS_DEFAULT_COUNTDOWN_REGION
-            }
+            ?.takeUnless(BattleCalibration::isSupersededCountdownDefault)
             ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
 
         val vsScreenWidth = prefs.getFloat("vs_screen_w", 0f)

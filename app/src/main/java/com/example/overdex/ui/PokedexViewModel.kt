@@ -48,6 +48,7 @@ import com.example.overdex.battle.observation.PersistedAnnouncementSpeciesWitnes
 import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
+import com.example.overdex.battle.observation.PersistedActiveHpBarWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveSpeciesSpriteWitness
 import com.example.overdex.battle.observation.PersistedTrainerInactiveTimerOverlayClearanceWitness
 import com.example.overdex.battle.observation.PokemonGoTypeIconMatcher
@@ -244,6 +245,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         // HUD witnesses still wait for the countdown boundary.
         val announcementEvidenceLive: () -> Boolean = {
             session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED || battleEvidenceLive()
+        }
+        // An active HP bar exists only after GO. Do not let an already-visible HUD
+        // or a pre-battle map crop create a measurement before the battle surface exists.
+        val activeHpEvidenceLive: () -> Boolean = {
+            session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE ||
+                session.battleSurfaceEstablished.value
         }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
@@ -462,12 +469,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.opponentHpEvidenceCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = battleEvidenceLive,
+                isEnabled = activeHpEvidenceLive,
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Opponent HP Evidence Capture Witness"
             )
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
+        observationDispatcher.register(PersistedActiveHpBarWitness.player(cropArtifactStore))
+        observationDispatcher.register(PersistedActiveHpBarWitness.opponent(cropArtifactStore))
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
             BattleWitnessContracts.playerTeamStatusCapture to "Player Team Status Capture Witness",
@@ -476,7 +485,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture Witness"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
-                isEnabled = battleEvidenceLive,
+                isEnabled = if (contract == BattleWitnessContracts.playerHpEvidenceCapture) activeHpEvidenceLive else battleEvidenceLive,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name = name))
         }
         observationDispatcher.register(

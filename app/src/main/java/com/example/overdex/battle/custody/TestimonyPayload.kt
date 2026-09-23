@@ -149,6 +149,22 @@ data class PlayerInactiveHpBarMeasured(
     val filledFraction: Float
 ) : TestimonyPayload
 
+/** One visible active HP bar, measured within the cited active-HP crop. */
+data class ActiveHpBarMeasured(
+    val side: ActivePokemonSide,
+    val barLeft: Int,
+    val barTop: Int,
+    val barRight: Int,
+    val barBottom: Int,
+    val filledFraction: Float
+) : TestimonyPayload {
+    init {
+        require(barLeft >= 0 && barTop >= 0)
+        require(barRight > barLeft && barBottom > barTop)
+        require(filledFraction in 0f..1f)
+    }
+}
+
 /** Reproducible visual measurement of one inactive species-sprite area. */
 data class PlayerInactiveSpeciesSpriteFingerprintMeasured(
     val slot: Int,

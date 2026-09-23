@@ -134,6 +134,17 @@ data class ArchivedPlayerInactiveHpBarMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("active_hp_bar_measured")
+data class ArchivedActiveHpBarMeasured(
+    val side: String,
+    val barLeft: Int,
+    val barTop: Int,
+    val barRight: Int,
+    val barBottom: Int,
+    val filledFraction: Float
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("player_inactive_species_sprite_fingerprint_measured")
 data class ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
     val slot: Int,

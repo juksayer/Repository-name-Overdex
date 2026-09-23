@@ -91,6 +91,15 @@ class Match(
     )
     val activeSpeciesCropArticles = _activeSpeciesCropArticles.asSharedFlow()
 
+    // Active HP bars have their own post-publication lane so their geometry and
+    // fill measurements are never queued behind unrelated crop witnesses.
+    private val _activeHpCropArticles = MutableSharedFlow<RealityArticle>(
+        replay = 128,
+        extraBufferCapacity = 128,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val activeHpCropArticles = _activeHpCropArticles.asSharedFlow()
+
     // Custody-to-Timeline delivery must keep moving while screen capture is busy.
     // A dedicated serial lane also preserves the ledger order without borrowing
     // the Default pool that image capture and image processing can saturate.
@@ -176,6 +185,11 @@ class Match(
                     capturedCropName == BattleCropContracts.opponentActiveSpeciesText.cropName
                 ) {
                     _activeSpeciesCropArticles.tryEmit(article)
+                }
+                if (capturedCropName == BattleCropContracts.playerHpEvidence.cropName ||
+                    capturedCropName == BattleCropContracts.opponentHpEvidence.cropName
+                ) {
+                    _activeHpCropArticles.tryEmit(article)
                 }
                 // A preserved crop from one of the battle-transition surfaces is
                 // enough to show the HUD. Recognition may arrive later or fail,

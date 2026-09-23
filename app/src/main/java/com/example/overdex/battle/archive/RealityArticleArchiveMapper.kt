@@ -16,6 +16,7 @@ import com.example.overdex.battle.custody.MatchRecordStarted
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprintMeasured
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
@@ -113,6 +114,14 @@ object RealityArticleArchiveMapper {
             is ChargeMoveUsedAnnounced -> ArchivedChargeMoveUsedAnnounced
             is PlayerInactiveHpBarMeasured -> ArchivedPlayerInactiveHpBarMeasured(
                 slot = p.slot,
+                filledFraction = p.filledFraction
+            )
+            is ActiveHpBarMeasured -> ArchivedActiveHpBarMeasured(
+                side = p.side.name,
+                barLeft = p.barLeft,
+                barTop = p.barTop,
+                barRight = p.barRight,
+                barBottom = p.barBottom,
                 filledFraction = p.filledFraction
             )
             is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(

@@ -13,6 +13,7 @@ import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.reality.ArticleId
@@ -118,6 +119,30 @@ class RealityArticleArchiveMapperTest {
                 basis = "POKEMON_GO_TYPE_ICON_REFERENCE_MATCH"
             ),
             RealityArticleArchiveMapper.map(article(id = "types", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps active HP evidence without turning it into a faint or move claim`() {
+        val payload = ActiveHpBarMeasured(
+            side = ActivePokemonSide.OPPONENT,
+            barLeft = 0,
+            barTop = 775,
+            barRight = 301,
+            barBottom = 804,
+            filledFraction = 0.71f
+        )
+
+        assertEquals(
+            ArchivedActiveHpBarMeasured(
+                side = "OPPONENT",
+                barLeft = 0,
+                barTop = 775,
+                barRight = 301,
+                barBottom = 804,
+                filledFraction = 0.71f
+            ),
+            RealityArticleArchiveMapper.map(article(id = "active-hp", payload = payload)).payload
         )
     }
 
