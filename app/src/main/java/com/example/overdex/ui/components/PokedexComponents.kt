@@ -153,6 +153,7 @@ fun InstrumentButton(
     }
 }
 
+// Work Order — Pokédex Binder Search
 @Composable
 fun InstrumentLCD(
     presentationState: PresentationState,
@@ -161,6 +162,7 @@ fun InstrumentLCD(
     lcdLine1: String? = null,
     lcdLine2: String? = null,
     lcdLines: List<String> = emptyList(),
+    lcdContent: (@Composable () -> Unit)? = null,
     keyboardController: TerminalKeyboardController? = null,
     onKeyActivated: ((String) -> Unit)? = null,
     onDrag: ((Offset) -> Unit)? = null,
@@ -208,6 +210,13 @@ fun InstrumentLCD(
                     onKeyActivated = onKeyActivated,
                     modifier = Modifier.fillMaxSize()
                 )
+            } else if (lcdContent != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    lcdContent()
+                }
             } else if (lcdLines.isNotEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),

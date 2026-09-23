@@ -33,6 +33,7 @@ import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.theme.*
 
+// Work Order — Pokédex Binder Search
 @Composable
 fun PokedexListScreen(
     viewModel: PokedexViewModel,
@@ -45,21 +46,22 @@ fun PokedexListScreen(
     onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
+    onSelect: (() -> Unit) -> Unit = {},
     onStart: (() -> Unit) -> Unit = {},
-    onKeyActivated: ((String) -> Unit) -> Unit = {}
+    onKeyActivated: ((String) -> Unit) -> Unit = {},
+    onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {}
 ) {
     val pokemonItems = viewModel.pagedPokemon.collectAsLazyPagingItems()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchRequest by viewModel.searchRequest.collectAsState()
     val listState = rememberLazyListState()
 
+    // Work Order — Pokédex Binder Search: Direct item index without legacy index-0 SearchBar focus
     val nav = rememberHandheldNavigationController(
-        itemCount = { pokemonItems.itemCount + 1 }, // +1 for SearchBar
+        itemCount = { pokemonItems.itemCount },
         onActivate = { index ->
-            if (index == 0) {
-                keyboardController.open()
-            } else {
-                pokemonItems[index - 1]?.let { onPokemonClick(it.id) }
+            if (index in 0 until pokemonItems.itemCount) {
+                pokemonItems[index]?.let { onPokemonClick(it.id) }
             }
         }
     )
@@ -67,13 +69,9 @@ fun PokedexListScreen(
     HandheldListSync(
         listState = listState,
         selectedIndex = nav.selectedIndex,
-        listIndexMapping = { if (it == 0) null else it - 1 },
+        listIndexMapping = { it },
         totalItems = pokemonItems.itemCount
     )
-
-    LaunchedEffect(searchQuery, searchRequest) {
-        nav.setIndex(0)
-    }
 
     fun handleActivatedKey(key: String) {
         when (key) {
@@ -94,7 +92,56 @@ fun PokedexListScreen(
         }
     }
 
+    // Work Order — Pokédex Binder Search: Pass Pokédex-owned LCD search/filter context to Service LCD
+    val hasActiveSearchContext = searchQuery.isNotEmpty() || searchRequest.activeFilters.isNotEmpty()
     SideEffect {
+        if (hasActiveSearchContext) {
+            onLcdContentUpdate {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (searchQuery.isNotEmpty()) {
+                        Text(
+                            text = "SEARCH: \"$searchQuery\"",
+                            color = TerminalGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (searchRequest.activeFilters.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            searchRequest.activeFilters.forEach { filter ->
+                                AssistChip(
+                                    onClick = { viewModel.removeFilter(filter) },
+                                    label = {
+                                        Text(
+                                            text = "${filter.label} ×",
+                                            fontSize = 9.sp,
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                        )
+                                    },
+                                    modifier = Modifier.height(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            onLcdContentUpdate(null)
+        }
+
         onUp {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
@@ -127,6 +174,10 @@ fun PokedexListScreen(
                 onBack()
             }
         }
+        // Work Order — Pokédex Binder Search: SELECT is the single Search invocation mechanism
+        onSelect {
+            keyboardController.open()
+        }
         onStart {
             if (!keyboardController.handleStart()) {
                 viewModel.startObservation()
@@ -141,24 +192,6 @@ fun PokedexListScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TerminalPathIndicator(path = "/OVERDEX")
-        
-        SearchBar(
-            query = searchQuery, 
-            selected = nav.selectedIndex == 0
-        )
-        
-        searchRequest.activeFilters.forEach { filter ->
-            AssistChip(
-                onClick = {
-                    viewModel.removeFilter(filter)
-                },
-                label = {
-                    Text(filter.label)
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         // Work Order: Brick 1 — Pokédex Binder Presentation
         val spreadCount = maxOf(1, (pokemonItems.itemCount + 23) / 24)
@@ -178,7 +211,7 @@ fun PokedexListScreen(
                 val leftPageSlots = (0 until 12).map { offset ->
                     val itemIndex = startIndex + offset
                     if (itemIndex < pokemonItems.itemCount) {
-                        Pair(pokemonItems[itemIndex], nav.selectedIndex == (itemIndex + 1))
+                        Pair(pokemonItems[itemIndex], nav.selectedIndex == itemIndex)
                     } else {
                         Pair(null, false)
                     }
@@ -187,7 +220,7 @@ fun PokedexListScreen(
                 val rightPageSlots = (0 until 12).map { offset ->
                     val itemIndex = startIndex + 12 + offset
                     if (itemIndex < pokemonItems.itemCount) {
-                        Pair(pokemonItems[itemIndex], nav.selectedIndex == (itemIndex + 1))
+                        Pair(pokemonItems[itemIndex], nav.selectedIndex == itemIndex)
                     } else {
                         Pair(null, false)
                     }

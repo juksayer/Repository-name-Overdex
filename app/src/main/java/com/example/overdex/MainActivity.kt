@@ -738,8 +738,10 @@ fun PokedexApp(
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var keyActivatedHandler by remember { mutableStateOf<((String) -> Unit)?>(null) }
+                var pokedexLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
                 ODXFiShell(
                     showBattleOverlay = false,
@@ -752,13 +754,15 @@ fun PokedexApp(
                     onRight = { rightHandler?.invoke() },
                     onA = { aHandler?.invoke() },
                     onB = { bHandler?.invoke() },
+                    onSelect = { selectHandler?.invoke() },
                     onStart = { startHandler?.invoke() },
                     onKeyActivated = { keyActivatedHandler?.invoke(it) },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
-                    keyboardController = keyboardController
+                    keyboardController = keyboardController,
+                    lcdContent = pokedexLcdContent
                 ) { _ ->
                     PokedexListScreen(
                         viewModel = viewModel,
@@ -778,8 +782,10 @@ fun PokedexApp(
                         onRight = { rightHandler = it },
                         onA = { aHandler = it },
                         onB = { bHandler = it },
+                        onSelect = { selectHandler = it },
                         onStart = { startHandler = it },
-                        onKeyActivated = { keyActivatedHandler = it }
+                        onKeyActivated = { keyActivatedHandler = it },
+                        onLcdContentUpdate = { pokedexLcdContent = it }
                     )
                 }
             }
