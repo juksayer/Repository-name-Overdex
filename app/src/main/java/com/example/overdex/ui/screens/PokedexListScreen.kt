@@ -394,12 +394,13 @@ fun PokedexCard(
                 }
             }
 
-            // Sprite Art Window
+            // The Binder is a visual index. Names belong to its LCD context and detail view;
+            // the reclaimed footer becomes a larger sprite window.
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(vertical = 1.dp)
+                    .padding(top = 1.dp)
                     .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
                     .border(0.5.dp, TerminalDimGreen.copy(alpha = 0.3f), RoundedCornerShape(2.dp)),
                 contentAlignment = Alignment.Center
@@ -407,20 +408,10 @@ fun PokedexCard(
                 AsyncImage(
                     model = pokemon.spriteUrl,
                     contentDescription = pokemon.name,
-                    modifier = Modifier.fillMaxSize().padding(2.dp),
+                    modifier = Modifier.fillMaxSize().padding(1.dp),
                     contentScale = ContentScale.Fit
                 )
             }
-
-            // Footer: Species Name
-            Text(
-                text = pokemon.name,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (selected) TerminalGreen else TerminalGreen.copy(alpha = 0.9f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

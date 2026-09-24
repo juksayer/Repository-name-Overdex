@@ -762,7 +762,8 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
-                    lcdContent = pokedexLcdContent
+                    lcdContent = pokedexLcdContent,
+                    isBinderMode = true
                 ) { _ ->
                     PokedexListScreen(
                         viewModel = viewModel,

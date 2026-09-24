@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -87,7 +89,8 @@ fun InstrumentButton(
     icon: ImageVector? = null,
     color: Color = Color.DarkGray,
     labelColor: Color = Color.White.copy(alpha = 0.6f),
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    iconRotationDegrees: Float = 0f
 ) {
     Box(
         modifier = modifier
@@ -131,7 +134,9 @@ fun InstrumentButton(
                 imageVector = icon,
                 contentDescription = null,
                 tint = labelColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(iconRotationDegrees)
             )
         } else if (label != null) {
             Text(
@@ -233,6 +238,35 @@ fun InstrumentLCD(
     }
 }
 
+/**
+ * Presents a landscape instrument viewport inside the fixed portrait hardware.
+ * The phone remains portrait; only the active instrument surface turns.
+ */
+@Composable
+private fun RotatedInstrumentViewport(
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    rotationDegrees: Float = -90f,
+    content: @Composable () -> Unit
+) {
+    if (!active) {
+        Box(modifier = modifier) { content() }
+        return
+    }
+
+    BoxWithConstraints(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .width(maxHeight)
+                .height(maxWidth)
+                .align(Alignment.Center)
+                .rotate(rotationDegrees)
+        ) {
+            content()
+        }
+    }
+}
+
 @Composable
 fun ODXFiShell(
     onUp: () -> Unit = {},
@@ -268,6 +302,7 @@ fun ODXFiShell(
     viewModel: PokedexViewModel? = null,
     instrumentState: ObservationSessionState? = null,
     isLogoInteractive: Boolean = false,
+    isBinderMode: Boolean = false,
     content: @Composable (com.example.overdex.BattleMemory?) -> Unit,
 ) {
     val activeMatch by viewModel?.activeMatch?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -309,7 +344,7 @@ fun ODXFiShell(
 
     // Permanent Front Panel doesn't use rail animations
     val crtPadding by animateDpAsState(
-        targetValue = if (serviceMode) 0.dp else 32.dp,
+        targetValue = if (serviceMode || isBinderMode) 0.dp else 32.dp,
         label = "crtPadding"
     )
 
@@ -430,13 +465,13 @@ fun ODXFiShell(
         modifier = Modifier
             .fillMaxSize()
             .background(PokedexGreen)
-            .padding(8.dp) // Tighter bezel aesthetic
+            .padding(8.dp)
     ) {
         // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp, start = 8.dp),
+                .padding(bottom = if (isBinderMode) 2.dp else 12.dp, start = if (isBinderMode) 2.dp else 8.dp),
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
@@ -462,8 +497,12 @@ fun ODXFiShell(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1.3f) // Increase dominance of CRT
-                .background(Color.DarkGray, RoundedCornerShape(4.dp))
-                .padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
+                .background(if (isBinderMode) PokedexScreen else Color.DarkGray, RoundedCornerShape(4.dp))
+                .padding(
+                    bottom = if (isBinderMode) 0.dp else 8.dp,
+                    start = if (isBinderMode) 0.dp else 8.dp,
+                    end = if (isBinderMode) 0.dp else 8.dp
+                )
                 .glassShield() // The Glass Shield enforcement point
         ) {
             if (crtPadding > 0.dp) {
@@ -486,17 +525,22 @@ fun ODXFiShell(
                     .padding(top = crtPadding)
                     .clip(RoundedCornerShape(2.dp))
                     .background(PokedexScreen)
-                    .border(4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
-                    .padding(4.dp)
+                    .border(if (isBinderMode) 0.dp else 4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
+                    .padding(if (isBinderMode) 0.dp else 4.dp)
             ) {
-                // Application Layer (Shader applied here)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect(filterSettings) else Modifier)
+                RotatedInstrumentViewport(
+                    active = isBinderMode,
+                    modifier = Modifier.fillMaxSize(),
+                    rotationDegrees = 90f
                 ) {
-                    content(battleMemory)
-                }
+                    // Application Layer (Shader applied here)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect(filterSettings) else Modifier)
+                    ) {
+                        content(battleMemory)
+                    }
 
                 // HUD Overlay Layer (Kept clean and sharp)
                 if (showBattleOverlay && serviceMode) {
@@ -596,10 +640,11 @@ fun ODXFiShell(
                         )
                     }
                 }
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(if (isBinderMode) 0.dp else 8.dp))
 
         // Permanent Front Panel Assembly (Compressed Lower Console)
         Row(
@@ -618,24 +663,24 @@ fun ODXFiShell(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(icon = Icons.Default.ArrowDropUp, onClick = {
+                InstrumentButton(icon = Icons.Default.ArrowDropUp, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
                     handleInput("UP")
                     if (showResearcherSettings) researcherUp?.invoke()
                     else if (showSettings) settingsUp?.invoke()
                     else onUp()
                 })
-                InstrumentButton(icon = Icons.Default.ArrowDropDown, onClick = {
+                InstrumentButton(icon = Icons.Default.ArrowDropDown, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
                     handleInput("DOWN")
                     if (showResearcherSettings) researcherDown?.invoke()
                     else if (showSettings) settingsDown?.invoke()
                     else onDown()
                 })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, onClick = {
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
                     handleInput("LEFT")
                     if (showSettings) settingsLeft?.invoke()
                     else onLeft()
                 })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, onClick = {
+                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
                     handleInput("RIGHT")
                     if (showSettings) settingsRight?.invoke()
                     else onRight()
@@ -643,23 +688,29 @@ fun ODXFiShell(
             }
 
             // Instrumentation Display (Center)
-            InstrumentLCD(
-                presentationState = presentationState,
-                deploymentState = deploymentState,
-                frameCount = frameCount,
-                lcdLine1 = lcdLine1,
-                lcdLine2 = lcdLine2,
-                lcdLines = lcdLines,
-                lcdContent = lcdContent,
-                keyboardController = keyboardController,
-                onKeyActivated = onKeyActivated,
-                onDrag = onLcdDrag,
-                onTap = onLcdTap,
+            RotatedInstrumentViewport(
+                active = isBinderMode,
+                rotationDegrees = 90f,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
                     .padding(horizontal = 4.dp)
-            )
+            ) {
+                InstrumentLCD(
+                    presentationState = presentationState,
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    lcdLine1 = lcdLine1,
+                    lcdLine2 = lcdLine2,
+                    lcdLines = lcdLines,
+                    lcdContent = lcdContent,
+                    keyboardController = keyboardController,
+                    onKeyActivated = onKeyActivated,
+                    onDrag = onLcdDrag,
+                    onTap = onLcdTap,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             // Action Column (Right)
             Column(
