@@ -295,34 +295,42 @@ private fun BinderSelectionDetail(
             .padding(5.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpenDetail(pokemon) },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            AsyncImage(
-                model = pokemon.spriteUrl,
-                contentDescription = pokemon.name,
-                modifier = Modifier.size(48.dp),
-                contentScale = ContentScale.Fit
+            Text(
+                text = pokemon.name.uppercase(),
+                modifier = Modifier.fillMaxWidth(),
+                color = TerminalGreen,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = pokemon.name.uppercase(),
-                    color = TerminalGreen,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                AsyncImage(
+                    model = pokemon.spriteUrl,
+                    contentDescription = pokemon.name,
+                    modifier = Modifier.size(48.dp),
+                    contentScale = ContentScale.Fit
                 )
                 Text(
                     text = "${pokemon.formattedId}  ${pokemon.genus.ifBlank { pokemon.region }}",
+                    modifier = Modifier.weight(1f),
                     color = TerminalDimGreen,
                     fontSize = 9.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
