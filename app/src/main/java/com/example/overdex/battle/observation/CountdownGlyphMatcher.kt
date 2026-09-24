@@ -20,8 +20,15 @@ object CountdownGlyphMatcher {
     private const val NORMALIZED_SIZE = 128
     private const val BRIGHT_THRESHOLD = 220
     private const val NOISE_THRESHOLD_PIXELS = 100
+    private const val NEUTRAL_BRIGHT_CHROMA_MAX = 45
+    private const val NEUTRAL_BRIGHT_LUMINANCE_MIN = 125
+    private const val GO_PAIR_THRESHOLD = 0.70f
 
-    data class MatchResult(val candidate: String?, val similarity: Float)
+    data class MatchResult(
+        val candidate: String?,
+        val similarity: Float,
+        val basis: String = "COUNTDOWN_GLYPH_TEMPLATE_MATCH"
+    )
 
     private var applicationContext: Context? = null
     private var loadedTemplates: Map<String, BooleanArray>? = null
@@ -51,6 +58,7 @@ object CountdownGlyphMatcher {
     }
 
     fun match(bitmap: Bitmap): MatchResult {
+        matchGoPairByGeometry(bitmap)?.let { return it }
         ensureTemplatesLoaded()
         val templates = loadedTemplates ?: return MatchResult(null, 0f)
         
@@ -93,65 +101,68 @@ object CountdownGlyphMatcher {
 
     private class Component(val pixels: MutableList<Int>, val bounds: Rect)
 
+    /**
+     * Pokémon GO renders GO as two very large, low-chroma bright glyphs. The
+     * player sprite can cover part of one letter, so generic brightest-pixel
+     * template matching often selects sprite highlights instead. This detector
+     * limits analysis to the central countdown band and measures the paired
+     * letter geometry directly. The unmodified crop remains the cited evidence.
+     */
+    private fun matchGoPairByGeometry(source: Bitmap): MatchResult? {
+        val width = source.width
+        val height = source.height
+        val centralCountdownBand = Rect(
+            (width * 0.03f).toInt(),
+            (height * 0.15f).toInt(),
+            (width * 0.97f).toInt(),
+            (height * 0.86f).toInt()
+        )
+        val components = extractComponents(source, centralCountdownBand) { pixel ->
+            val red = Color.red(pixel)
+            val green = Color.green(pixel)
+            val blue = Color.blue(pixel)
+            val chroma = maxOf(red, green, blue) - minOf(red, green, blue)
+            val luminance = (red + green + blue) / 3
+            chroma <= NEUTRAL_BRIGHT_CHROMA_MAX && luminance >= NEUTRAL_BRIGHT_LUMINANCE_MIN
+        }.sortedByDescending { it.pixels.size }
+        if (components.size < 2) return null
+
+        val first = components[0].toGeometry()
+        val second = components[1].toGeometry()
+        val similarity = CountdownGoGeometry.score(first, second, width, height) ?: return null
+        if (similarity < GO_PAIR_THRESHOLD) return null
+
+        if (BuildConfig.DEBUG) {
+            Log.d(
+                COMPONENTS_TAG,
+                "source=${width}x${height} | selection=go-neutral-bright-pair | " +
+                    "first=${first.pixelCount}@${first.left},${first.top},${first.right},${first.bottom} | " +
+                    "second=${second.pixelCount}@${second.left},${second.top},${second.right},${second.bottom} | " +
+                    "similarity=$similarity"
+            )
+        }
+        return MatchResult(
+            candidate = "GO",
+            similarity = similarity,
+            basis = "COUNTDOWN_GLYPH_NEUTRAL_BRIGHT_GEOMETRY"
+        )
+    }
+
+    private fun Component.toGeometry() = CountdownComponentGeometry(
+        left = bounds.left,
+        top = bounds.top,
+        right = bounds.right,
+        bottom = bounds.bottom,
+        pixelCount = pixels.size
+    )
+
     private fun extractAndNormalizeSilhouette(source: Bitmap): BooleanArray? {
         val width = source.width
         val height = source.height
-        val pixels = IntArray(width * height)
-        source.getPixels(pixels, 0, width, 0, 0, width, height)
-
-        val binary = BooleanArray(width * height)
-        for (i in pixels.indices) {
-            val p = pixels[i]
-            binary[i] = Color.red(p) >= BRIGHT_THRESHOLD && 
-                        Color.green(p) >= BRIGHT_THRESHOLD && 
-                        Color.blue(p) >= BRIGHT_THRESHOLD
-        }
-
-        val visited = BitSet(width * height)
-        val components = mutableListOf<Component>()
-
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                val idx = y * width + x
-                if (binary[idx] && !visited.get(idx)) {
-                    val compPixels = mutableListOf<Int>()
-                    val q: Queue<Int> = LinkedList()
-                    q.add(idx)
-                    visited.set(idx)
-                    
-                    var minX = x; var maxX = x; var minY = y; var maxY = y
-                    
-                    while (q.isNotEmpty()) {
-                        val curr = q.remove()
-                        compPixels.add(curr)
-                        val cx = curr % width
-                        val cy = curr / width
-                        
-                        if (cx < minX) minX = cx
-                        if (cx > maxX) maxX = cx
-                        if (cy < minY) minY = cy
-                        if (cy > maxY) maxY = cy
-                        
-                        // 4-connectivity
-                        val neighbors = intArrayOf(curr - 1, curr + 1, curr - width, curr + width)
-                        for (nb in neighbors) {
-                            if (nb in binary.indices) {
-                                val nx = nb % width
-                                val ny = nb / width
-                                if (Math.abs(nx - cx) <= 1 && Math.abs(ny - cy) <= 1 && 
-                                    binary[nb] && !visited.get(nb)) {
-                                    visited.set(nb)
-                                    q.add(nb)
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (compPixels.size >= NOISE_THRESHOLD_PIXELS) {
-                        components.add(Component(compPixels, Rect(minX, minY, maxX + 1, maxY + 1)))
-                    }
-                }
-            }
+        val components = extractComponents(source, Rect(0, 0, width, height)) { pixel ->
+            Color.red(pixel) >= BRIGHT_THRESHOLD &&
+                Color.green(pixel) >= BRIGHT_THRESHOLD &&
+                Color.blue(pixel) >= BRIGHT_THRESHOLD
         }
 
         if (components.isEmpty()) {
@@ -228,6 +239,69 @@ object CountdownGlyphMatcher {
         }
 
         return createNormalizedSilhouette(targetPixels, finalBounds, width)
+    }
+
+    private fun extractComponents(
+        source: Bitmap,
+        scanBounds: Rect,
+        isSelected: (Int) -> Boolean
+    ): MutableList<Component> {
+        val width = source.width
+        val height = source.height
+        val pixels = IntArray(width * height)
+        source.getPixels(pixels, 0, width, 0, 0, width, height)
+        val visited = BitSet(width * height)
+        val components = mutableListOf<Component>()
+        val boundedLeft = scanBounds.left.coerceIn(0, width)
+        val boundedTop = scanBounds.top.coerceIn(0, height)
+        val boundedRight = scanBounds.right.coerceIn(boundedLeft, width)
+        val boundedBottom = scanBounds.bottom.coerceIn(boundedTop, height)
+
+        for (y in boundedTop until boundedBottom) {
+            for (x in boundedLeft until boundedRight) {
+                val index = y * width + x
+                if (visited.get(index) || !isSelected(pixels[index])) continue
+
+                val componentPixels = mutableListOf<Int>()
+                val queue: Queue<Int> = LinkedList()
+                queue.add(index)
+                visited.set(index)
+                var minX = x
+                var maxX = x
+                var minY = y
+                var maxY = y
+
+                while (queue.isNotEmpty()) {
+                    val current = queue.remove()
+                    componentPixels.add(current)
+                    val currentX = current % width
+                    val currentY = current / width
+                    minX = minOf(minX, currentX)
+                    maxX = maxOf(maxX, currentX)
+                    minY = minOf(minY, currentY)
+                    maxY = maxOf(maxY, currentY)
+
+                    for ((nextX, nextY) in arrayOf(
+                        currentX - 1 to currentY,
+                        currentX + 1 to currentY,
+                        currentX to currentY - 1,
+                        currentX to currentY + 1
+                    )) {
+                        if (nextX !in boundedLeft until boundedRight || nextY !in boundedTop until boundedBottom) continue
+                        val next = nextY * width + nextX
+                        if (!visited.get(next) && isSelected(pixels[next])) {
+                            visited.set(next)
+                            queue.add(next)
+                        }
+                    }
+                }
+
+                if (componentPixels.size >= NOISE_THRESHOLD_PIXELS) {
+                    components += Component(componentPixels, Rect(minX, minY, maxX + 1, maxY + 1))
+                }
+            }
+        }
+        return components
     }
 
     private fun createNormalizedSilhouette(glyphPixels: List<Int>, bounds: Rect, sourceWidth: Int): BooleanArray {
