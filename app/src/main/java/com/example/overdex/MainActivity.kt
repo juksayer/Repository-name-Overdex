@@ -774,7 +774,7 @@ fun PokedexApp(
                                     mediaManager.warmUp(it.cryUrl)
                                 }
                             }
-                            navController.navigate("detail/$id")
+                            navController.navigate("detail/$id?binder=true")
                         },
                         keyboardController = keyboardController,
                         onUp = { upHandler = it },
@@ -791,10 +791,17 @@ fun PokedexApp(
                 }
             }
             composable(
-                route = "detail/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.IntType }),
+                route = "detail/{id}?binder={binder}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.IntType },
+                    navArgument("binder") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                ),
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("id") ?: 0
+                val binderMode = backStackEntry.arguments?.getBoolean("binder") ?: false
                 var pokemon by remember { mutableStateOf<Pokemon?>(null) }
 
                 LaunchedEffect(id) {
@@ -831,10 +838,11 @@ fun PokedexApp(
                             navController.debugPopBackStack()
                         },
                         onEvolutionClick = { evolutionId ->
-                            navController.navigate("detail/$evolutionId")
+                            navController.navigate("detail/$evolutionId?binder=$binderMode")
                         },
                         onLaunchProbe = { navController.navigate("accessibility_probe") },
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                        isBinderMode = binderMode,
                         viewModel = viewModel
                     )
                 }

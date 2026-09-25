@@ -66,6 +66,7 @@ fun PokemonDetailScreen(
     onEvolutionClick: (Int) -> Unit,
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
+    isBinderMode: Boolean = false,
     viewModel: PokedexViewModel,
 ) {
     val fieldNotes by remember(pokemon.id) { viewModel.getFieldNotes(pokemon.id) }.collectAsState(initial = emptyList())
@@ -144,6 +145,7 @@ fun PokemonDetailScreen(
         onStart = onStart,
         onLaunchProbe = onLaunchProbe,
         onLaunchObservatory = onLaunchObservatory,
+        isBinderMode = isBinderMode,
         viewModel = viewModel
     ) { _ ->
         Column(
