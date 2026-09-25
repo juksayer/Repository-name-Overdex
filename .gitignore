@@ -13,4 +13,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Checkout-local build runtime and generated tool state.
+# The bundled JBR location is documented in BUILDING.md.
+/.jbr/
+/.kotlin/
+/.artifacts/
 apikeys.properties
