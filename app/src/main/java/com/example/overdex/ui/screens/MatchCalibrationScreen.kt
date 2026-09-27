@@ -63,6 +63,7 @@ fun MatchCalibrationScreen(
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
     var showLcdTouchHint by rememberSaveable { mutableStateOf(true) }
+    var savedProfile by remember { mutableStateOf(calibrationManager.hasSavedProfile()) }
 
     val context = LocalContext.current
     val screenshotDirectory = remember(context) { ScreenshotDirectoryManager(context) }
@@ -116,6 +117,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.ANNOUNCEMENT,
             CalibrationRegion.TRAINER_TEAM_INFO,
             CalibrationRegion.OPPONENT_TEAM_INFO,
+            CalibrationRegion.PLAYER_SPECIES_NAME,
             CalibrationRegion.OPPONENT_SPECIES_NAME,
             CalibrationRegion.OPPONENT_SHIELDS,
             CalibrationRegion.OPPONENT_POKE_BALLS,
@@ -144,6 +146,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.ANNOUNCEMENT -> "Announcement"
             CalibrationRegion.TRAINER_TEAM_INFO -> "Trainer Team Info"
             CalibrationRegion.OPPONENT_TEAM_INFO -> "Opponent Team Info"
+            CalibrationRegion.PLAYER_SPECIES_NAME -> "Player Species Name"
             CalibrationRegion.TRAINER_ACTIVE_TYPE -> "Trainer Active Type"
             CalibrationRegion.OPPONENT_ACTIVE_TYPE -> "Opponent Active Type"
             CalibrationRegion.TRAINER_HP -> "Trainer HP"
@@ -175,6 +178,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.ANNOUNCEMENT -> calibration.announcementRegion
         CalibrationRegion.TRAINER_TEAM_INFO -> calibration.playerTeamInfoRegion
         CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.opponentTeamInfoRegion
+        CalibrationRegion.PLAYER_SPECIES_NAME -> calibration.playerSpeciesNameRegion
         CalibrationRegion.TRAINER_ACTIVE_TYPE -> calibration.trainerActiveTypeRegion
         CalibrationRegion.OPPONENT_ACTIVE_TYPE -> calibration.opponentActiveTypeRegion
         CalibrationRegion.TRAINER_HP -> calibration.trainerHpRegion
@@ -204,6 +208,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.ANNOUNCEMENT -> calibration.copy(announcementRegion = updated)
             CalibrationRegion.TRAINER_TEAM_INFO -> calibration.copy(playerTeamInfoRegion = updated)
             CalibrationRegion.OPPONENT_TEAM_INFO -> calibration.copy(opponentTeamInfoRegion = updated)
+            CalibrationRegion.PLAYER_SPECIES_NAME -> calibration.copy(playerSpeciesNameRegion = updated)
             CalibrationRegion.TRAINER_ACTIVE_TYPE -> calibration.copy(trainerActiveTypeRegion = updated)
             CalibrationRegion.OPPONENT_ACTIVE_TYPE -> calibration.copy(opponentActiveTypeRegion = updated)
             CalibrationRegion.TRAINER_HP -> calibration.copy(trainerHpRegion = updated)
@@ -218,7 +223,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.copy(opponentPokeBallsRegion = updated)
             else -> calibration
         }
-        calibrationManager.save(calibration)
+        savedProfile = calibrationManager.save(calibration)
         if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
             calibrationManager.recordMatchOutcomeCalibration()
         }
@@ -292,7 +297,7 @@ fun MatchCalibrationScreen(
         val width = (activeRegion.width * sourceWidth).toInt()
         val height = (activeRegion.height * sourceHeight).toInt()
         onLcdUpdate(
-            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y",
+            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  ${if (savedProfile) "SAVED" else "DEFAULT"}",
             "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}"
         )
     }

@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.replay.ReplayExcerptStore
+import com.example.overdex.battle.replay.ReplayIdentityObservation
+import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.components.TerminalHeader
 import com.example.overdex.ui.components.TerminalPathIndicator
 import com.example.overdex.ui.components.TerminalScreen
@@ -37,17 +39,33 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private enum class ArchiveViewerAction {
+    MARK_START,
+    MARK_END_AND_SAVE,
+    OPEN_REPLAY;
+
+    fun move(delta: Int): ArchiveViewerAction {
+        val values = entries
+        return values[(ordinal + delta + values.size) % values.size]
+    }
+}
+
 @Composable
 fun MatchArchiveViewerScreen(
     archive: MatchArchive,
     onBack: () -> Unit,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
-    onLcdUpdate: (String, String) -> Unit = { _, _ -> }
+    onLcdUpdate: (String, String) -> Unit = { _, _ -> },
+    resolveSpeciesId: suspend (String) -> Int? = { null },
+    resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveArchivedSpeciesCrops: suspend (MatchArchive) -> List<ReplayIdentityObservation> = { emptyList() }
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -55,12 +73,41 @@ fun MatchArchiveViewerScreen(
     var showReplay by remember { mutableStateOf(false) }
     var excerptStart by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
     var excerptStatus by remember { mutableStateOf<String?>(null) }
+    var selectedAction by remember { mutableStateOf(ArchiveViewerAction.MARK_START) }
     
     val listState = rememberLazyListState()
     val detailScrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
     val selectedArticle = archive.articles.getOrNull(selectedIndex)
+
+    fun markStart() {
+        val article = selectedArticle
+        if (article?.monotonicTimeNanos == null) {
+            excerptStatus = "SELECT A TIMED ARTICLE FIRST"
+            return
+        }
+        excerptStart = article
+        excerptStatus = "START MARKED: #${selectedIndex + 1}"
+    }
+
+    fun markEndAndSave() {
+        val start = excerptStart
+        val end = selectedArticle
+        if (start == null) {
+            excerptStatus = "MARK A START FIRST"
+            return
+        }
+        if (end?.monotonicTimeNanos == null) {
+            excerptStatus = "SELECT A TIMED END ARTICLE"
+            return
+        }
+        excerptStatus = runCatching {
+            val excerpt = ReplayExcerptStore(context.filesDir).save(archive, start, end)
+            excerptStart = null
+            "EXCERPT SAVED: ${excerpt.excerptId.take(8)}"
+        }.getOrElse { "EXCERPT NOT SAVED: ${it.message}" }
+    }
 
     if (showReplay) {
         MatchReplayScreen(
@@ -72,7 +119,10 @@ fun MatchArchiveViewerScreen(
             onB = onB,
             onLcdDrag = onLcdDrag,
             onLcdTap = onLcdTap,
-            onLcdUpdate = onLcdUpdate
+            onLcdUpdate = onLcdUpdate,
+            resolveSpeciesId = resolveSpeciesId,
+            resolveFastMoveType = resolveFastMoveType,
+            resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
         )
         return
     }
@@ -105,9 +155,19 @@ fun MatchArchiveViewerScreen(
                 scope.launch { listState.animateScrollToItem(selectedIndex) }
             }
         }
+        onLeft {
+            if (!showDetails) selectedAction = selectedAction.move(-1)
+        }
+        onRight {
+            if (!showDetails) selectedAction = selectedAction.move(1)
+        }
         onA {
             if (!showDetails) {
-                showReplay = true
+                when (selectedAction) {
+                    ArchiveViewerAction.MARK_START -> markStart()
+                    ArchiveViewerAction.MARK_END_AND_SAVE -> markEndAndSave()
+                    ArchiveViewerAction.OPEN_REPLAY -> showReplay = true
+                }
             }
         }
         onB {
@@ -143,25 +203,23 @@ fun MatchArchiveViewerScreen(
                 androidx.compose.material3.TextButton(
                     enabled = selectedArticle?.monotonicTimeNanos != null,
                     onClick = {
-                        excerptStart = selectedArticle
-                        excerptStatus = "START MARKED: #${selectedIndex + 1}"
+                        selectedAction = ArchiveViewerAction.MARK_START
+                        markStart()
                     }
-                ) { TerminalText(text = "[ MARK START ]", color = TerminalGreen, fontSize = 10.sp) }
+                ) { TerminalText(text = if (selectedAction == ArchiveViewerAction.MARK_START) "[▶ MARK START ]" else "[ MARK START ]", color = TerminalGreen, fontSize = 10.sp) }
                 androidx.compose.material3.TextButton(
                     enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null,
                     onClick = {
-                        val start = excerptStart ?: return@TextButton
-                        val end = selectedArticle ?: return@TextButton
-                        excerptStatus = runCatching {
-                            val excerpt = ReplayExcerptStore(context.filesDir).save(archive, start, end)
-                            excerptStart = null
-                            "EXCERPT SAVED: ${excerpt.excerptId.take(8)}"
-                        }.getOrElse { "EXCERPT NOT SAVED: ${it.message}" }
+                        selectedAction = ArchiveViewerAction.MARK_END_AND_SAVE
+                        markEndAndSave()
                     }
-                ) { TerminalText(text = "[ MARK END + SAVE ]", color = TerminalGreen, fontSize = 10.sp) }
+                ) { TerminalText(text = if (selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE) "[▶ MARK END + SAVE ]" else "[ MARK END + SAVE ]", color = TerminalGreen, fontSize = 10.sp) }
             }
-            androidx.compose.material3.TextButton(onClick = { showReplay = true }) {
-                TerminalText(text = "[ OPEN REPLAY ]", color = TerminalGreen, fontSize = 10.sp)
+            androidx.compose.material3.TextButton(onClick = {
+                selectedAction = ArchiveViewerAction.OPEN_REPLAY
+                showReplay = true
+            }) {
+                TerminalText(text = if (selectedAction == ArchiveViewerAction.OPEN_REPLAY) "[▶ OPEN REPLAY ]" else "[ OPEN REPLAY ]", color = TerminalGreen, fontSize = 10.sp)
             }
             excerptStatus?.let { TerminalText(text = it, color = TerminalDimGreen, fontSize = 9.sp) }
 
@@ -197,7 +255,7 @@ fun MatchArchiveViewerScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             TerminalText(
-                text = if (showDetails) "[B] CLOSE DETAILS" else "[A] OPEN REPLAY  [B] RETURN TO VIEWER",
+                text = if (showDetails) "[B] CLOSE DETAILS" else "[←/→] ACTION  [↑/↓] ARTICLE  [A] ACTIVATE  [B] BACK",
                 color = TerminalDimGreen,
                 fontSize = 10.sp
             )
@@ -256,7 +314,9 @@ private fun ArchiveArticleRow(
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
-            is ArchivedAudioCaptured -> "AUDIO CAPTURED [cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} ch, ${p.durationNanos / 1_000_000} ms, sha256=${p.sha256.take(12)}…]"
+            is ArchivedSpeciesCheckMeasured -> "SPECIES CHECK [${p.side} ${p.status}, ${p.reason}, ${p.elapsedNanos / 1_000_000} ms / ${p.targetNanos / 1_000_000} ms target${if (p.elapsedNanos > p.targetNanos) " MISSED" else ""}, species=${p.speciesName ?: "unresolved"}]"
+            is ArchivedAudioInputStatus -> "AUDIO INPUT [${p.captureSource}: ${p.state}]"
+            is ArchivedAudioCaptured -> "AUDIO CAPTURED [source=${p.captureSource}, peak=${p.peakAmplitude}, cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} ch, ${p.durationNanos / 1_000_000} ms, sha256=${p.sha256.take(12)}…]"
             is ArchivedBattleCryCandidatesMeasured -> "CRY CANDIDATES [cue=${p.cueKind}, ${p.candidates.joinToString { "#${it.speciesId} ${String.format(Locale.ROOT, "%.3f", it.similarity)}" }}]"
             is ArchivedVisualCaptureGapObserved -> "VISUAL GAP [${p.durationNanos / 1_000_000} ms unobserved]"
             is ArchivedOutOfBattleMenuWitnessed -> "OUT OF BATTLE MENU WITNESSED"
@@ -266,6 +326,12 @@ private fun ArchiveArticleRow(
             is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
             is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
+            is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
+            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
+            is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}]"
+            is ArchivedFastMoveSoundMeasured -> if (p.audible) "FAST MOVE SOUND [onset=${p.onsetOffsetNanos?.div(1_000_000)} ms, duration=${p.soundDurationNanos?.div(1_000_000)} ms, centroid=${String.format(Locale.ROOT, "%.0f", p.spectralCentroidHz)} Hz]" else "FAST MOVE SOUND [no distinct acoustic pulse]"
             is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}]"
             is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
             is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"
@@ -336,7 +402,9 @@ private fun ArticleDetailsOverlay(
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"
-                is ArchivedAudioCaptured -> "AUDIO CAPTURED [artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} channel(s), ${p.durationNanos / 1_000_000} ms]"
+                is ArchivedSpeciesCheckMeasured -> "SPECIES CHECK [${p.side} ${p.status}, ${p.reason}, ${p.elapsedNanos / 1_000_000} ms / ${p.targetNanos / 1_000_000} ms target${if (p.elapsedNanos > p.targetNanos) " MISSED" else ""}, species=${p.speciesName ?: "unresolved"}]"
+            is ArchivedAudioInputStatus -> "AUDIO INPUT [${p.captureSource}: ${p.state}]"
+            is ArchivedAudioCaptured -> "AUDIO CAPTURED [source=${p.captureSource}, peak=${p.peakAmplitude}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, cue=${p.cueKind}, ${p.sampleRateHz} Hz, ${p.channelCount} channel(s), ${p.durationNanos / 1_000_000} ms]"
                 is ArchivedBattleCryCandidatesMeasured -> "CRY CANDIDATES [cue=${p.cueKind}, ${p.candidates.joinToString { "#${it.speciesId} ${String.format(Locale.ROOT, "%.3f", it.similarity)}" }}]"
             is ArchivedVisualCaptureGapObserved -> "VISUAL GAP [${p.durationNanos / 1_000_000} ms unobserved]"
             is ArchivedOutOfBattleMenuWitnessed -> "OUT OF BATTLE MENU WITNESSED"
@@ -346,6 +414,12 @@ private fun ArticleDetailsOverlay(
                 is ArchivedChargeMoveUsedAnnounced -> "CHARGE MOVE USED"
                 is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
+            is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
+            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
+            is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}, basis=${p.basis}]"
+            is ArchivedFastMoveSoundMeasured -> if (p.audible) "FAST MOVE SOUND [onset=${p.onsetOffsetNanos?.div(1_000_000)} ms, duration=${p.soundDurationNanos?.div(1_000_000)} ms, centroid=${String.format(Locale.ROOT, "%.0f", p.spectralCentroidHz)} Hz, peak=${String.format(Locale.ROOT, "%.3f", p.peakAmplitude)}]" else "FAST MOVE SOUND [no distinct acoustic pulse, peak=${String.format(Locale.ROOT, "%.3f", p.peakAmplitude)}]"
                 is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}, bounds=${p.sampleLeft},${p.sampleTop},${p.sampleRight},${p.sampleBottom}]"
                 is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
                 is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"

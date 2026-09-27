@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.debug.observatory.EvidenceSourceType
 import com.example.overdex.battle.debug.observatory.ObservationRecorder
 import com.example.overdex.battle.debug.observatory.RecordedEvent
@@ -16,10 +15,12 @@ import com.example.overdex.ui.components.TerminalScreen
 fun TimelineViewerScreen(
     onBack: () -> Unit,
     exportMatchId: String? = null,
-    onExportMatch: () -> Unit = {},
-    exportSelected: Boolean = false,
-    exportMode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+    onExportCompact: () -> Unit = {},
+    onExportFull: () -> Unit = {},
+    compactExportSelected: Boolean = false,
+    fullExportSelected: Boolean = false,
     exportInProgress: Boolean = false,
+    exportStatus: String? = null,
     onOpenMatch: () -> Unit = {},
     openSelected: Boolean = false
 ) {
@@ -86,26 +87,33 @@ fun TimelineViewerScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (exportMatchId != null) {
-            TerminalButton(
-                text = if (exportInProgress) {
-                    "SAVING MATCH ARCHIVE…"
-                } else when (exportMode) {
-                    MatchArchiveExportMode.COMPACT_CITED_EVIDENCE -> "SAVE COMPACT MATCH ARCHIVE"
-                    MatchArchiveExportMode.FULL_FORENSIC -> "SAVE FULL FORENSIC ARCHIVE"
-                },
-                onClick = { if (!exportInProgress) onExportMatch() },
-                selected = exportSelected
-            )
-            if (exportSelected) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TerminalButton(
+                    text = if (exportInProgress && compactExportSelected) "SAVING…" else "SAVE COMPACT",
+                    onClick = { if (!exportInProgress) onExportCompact() },
+                    selected = compactExportSelected,
+                    modifier = Modifier.weight(1f)
+                )
+                TerminalButton(
+                    text = if (exportInProgress && fullExportSelected) "SAVING…" else "SAVE FULL",
+                    onClick = { if (!exportInProgress) onExportFull() },
+                    selected = fullExportSelected,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            exportStatus?.let { status ->
                 androidx.compose.material3.Text(
-                    text = "LEFT: compact evidence   RIGHT: all raw crops",
+                    text = status,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
         
-        val backSelected = !openSelected && !exportSelected
+        val backSelected = !openSelected && !compactExportSelected && !fullExportSelected
         TerminalButton(text = "BACK", onClick = onBack, selected = backSelected)
     }
 }

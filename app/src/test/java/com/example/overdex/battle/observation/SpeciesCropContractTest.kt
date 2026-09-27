@@ -11,15 +11,15 @@ class SpeciesCropContractTest {
 
         // android.graphics.Rect is a stub in local unit tests. Assert the
         // normalized contract here; resolver pixel behavior is Android-tested.
-        assertEquals(BattleRegionId.PLAYER_TEAM_INFO, BattleCropContracts.playerActiveSpeciesText.region)
-        assertEquals(22f / 425f, BattleCropContracts.playerActiveSpeciesText.areaInRegion.x)
-        assertEquals(25f / 125f, BattleCropContracts.playerActiveSpeciesText.areaInRegion.y)
-        assertEquals(253f / 425f, BattleCropContracts.playerActiveSpeciesText.areaInRegion.width)
-        assertEquals(25f / 125f, BattleCropContracts.playerActiveSpeciesText.areaInRegion.height)
+        assertEquals(BattleRegionId.PLAYER_SPECIES_NAME, BattleCropContracts.playerActiveSpeciesText.region)
+        assertEquals(20f / 1080f, calibration.playerSpeciesNameRegion.x)
+        assertEquals(237f / 2400f, calibration.playerSpeciesNameRegion.y)
+        assertEquals(273f / 1080f, calibration.playerSpeciesNameRegion.width)
+        assertEquals(60f / 2400f, calibration.playerSpeciesNameRegion.height)
         assertEquals(BattleRegionId.OPPONENT_SPECIES_NAME, BattleCropContracts.opponentActiveSpeciesText.region)
-        assertEquals(785f / 1080f, calibration.opponentSpeciesNameRegion.x)
-        assertEquals(250f / 2400f, calibration.opponentSpeciesNameRegion.y)
-        assertEquals(253f / 1080f, calibration.opponentSpeciesNameRegion.width)
-        assertEquals(25f / 2400f, calibration.opponentSpeciesNameRegion.height)
+        assertEquals(780f / 1080f, calibration.opponentSpeciesNameRegion.x)
+        assertEquals(237f / 2400f, calibration.opponentSpeciesNameRegion.y)
+        assertEquals(280f / 1080f, calibration.opponentSpeciesNameRegion.width)
+        assertEquals(48f / 2400f, calibration.opponentSpeciesNameRegion.height)
     }
 }

@@ -14,6 +14,8 @@ import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.reality.ArticleId
@@ -143,6 +145,37 @@ class RealityArticleArchiveMapperTest {
                 filledFraction = 0.71f
             ),
             RealityArticleArchiveMapper.map(article(id = "active-hp", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps HP cadence as a measurement rather than a move identity`() {
+        val payload = ActiveHpBarMotionCadenceMeasured(
+            movingSide = ActivePokemonSide.PLAYER,
+            intervalNanos = 1_500_000_000L,
+            verticalExcursionPixels = 42f,
+            sampleCount = 7
+        )
+
+        assertEquals(
+            ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 1_500_000_000L, 42f, 7),
+            RealityArticleArchiveMapper.map(article(id = "cadence", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps fast move sound metadata without presenting it as a move identity`() {
+        val payload = FastMoveSoundMeasured(
+            audible = true,
+            onsetOffsetNanos = 500_000_000L,
+            soundDurationNanos = 220_000_000L,
+            spectralCentroidHz = 930f,
+            peakAmplitude = 0.43f
+        )
+
+        assertEquals(
+            ArchivedFastMoveSoundMeasured(true, 500_000_000L, 220_000_000L, 930f, 0.43f),
+            RealityArticleArchiveMapper.map(article(id = "fast-sound", payload = payload)).payload
         )
     }
 

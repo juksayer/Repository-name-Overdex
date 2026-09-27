@@ -70,6 +70,25 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
         }
     }
 
+    /**
+     * Player-side replay art is a distinct rear view, never a mirrored opponent sprite.
+     * Some forms may not have a bundled rear asset yet; those deliberately fall back to
+     * the ordinary local sprite instead of leaving the combatant invisible.
+     */
+    fun getBackSpriteUrl(id: Int): String {
+        if (id > 0 && backSpriteExists(id)) {
+            return "file:///android_asset/sprites/pokemon/back/$id.png"
+        }
+        return getSpriteUrl(id)
+    }
+
+    private fun backSpriteExists(id: Int): Boolean = try {
+        assetManager.open("sprites/pokemon/back/$id.png").use { }
+        true
+    } catch (_: Exception) {
+        false
+    }
+
     private fun getPlaceholderUrl(): String = "file:///android_asset/sprites/items/poke-ball.png"
 }
 

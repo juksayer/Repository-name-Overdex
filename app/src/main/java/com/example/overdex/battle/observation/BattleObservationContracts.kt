@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.RawTestimony
@@ -21,6 +23,7 @@ import kotlin.reflect.KClass
 enum class BattleRegionId {
     ANNOUNCEMENT,
     PLAYER_TEAM_INFO,
+    PLAYER_SPECIES_NAME,
     OPPONENT_TEAM_INFO,
     PLAYER_ACTIVE_TYPE,
     OPPONENT_ACTIVE_TYPE,
@@ -41,6 +44,7 @@ enum class BattleRegionId {
     fun regionIn(calibration: BattleCalibration): AnchorRegion = when (this) {
         ANNOUNCEMENT -> calibration.announcementRegion
         PLAYER_TEAM_INFO -> calibration.playerTeamInfoRegion
+        PLAYER_SPECIES_NAME -> calibration.playerSpeciesNameRegion
         OPPONENT_TEAM_INFO -> calibration.opponentTeamInfoRegion
         PLAYER_ACTIVE_TYPE -> calibration.trainerActiveTypeRegion
         OPPONENT_ACTIVE_TYPE -> calibration.opponentActiveTypeRegion
@@ -87,13 +91,11 @@ object BattleCropContracts {
     )
     val playerActiveSpeciesText = BattleCropContract(
         "PlayerActiveSpeciesTextCrop",
-        BattleRegionId.PLAYER_TEAM_INFO,
-        minimumSize = 16,
-        // Measured name strip: source X 42–295, Y 250–275 within the player badge X 20–445, Y 225–350.
-        areaInRegion = CropAreaInRegion(x = 22f / 425f, y = 25f / 125f, width = 253f / 425f, height = 25f / 125f)
+        BattleRegionId.PLAYER_SPECIES_NAME,
+        minimumSize = 32
     )
     val opponentActiveSpeciesText = BattleCropContract(
-        "OpponentActiveSpeciesTextCrop", BattleRegionId.OPPONENT_SPECIES_NAME, minimumSize = 16
+        "OpponentActiveSpeciesTextCrop", BattleRegionId.OPPONENT_SPECIES_NAME, minimumSize = 32
     )
     val opponentPokeBalls = BattleCropContract(
         "OpponentPokeBallsCrop", BattleRegionId.OPPONENT_POKE_BALLS, minimumSize = 16
@@ -311,6 +313,26 @@ object BattleWitnessContracts {
         witnessId = "OPPONENT_ACTIVE_HP_BAR_WITNESS",
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarMeasured::class
+    )
+    val playerActiveHpBarCadence = BattleWitnessContract(
+        witnessId = "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = ActiveHpBarMotionCadenceMeasured::class
+    )
+    val opponentActiveHpBarCadence = BattleWitnessContract(
+        witnessId = "OPPONENT_ACTIVE_HP_BAR_CADENCE_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = ActiveHpBarMotionCadenceMeasured::class
+    )
+    val playerActiveHpBarBorderCadence = BattleWitnessContract(
+        witnessId = "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = ActiveHpBarBorderCadenceMeasured::class
+    )
+    val opponentActiveHpBarBorderCadence = BattleWitnessContract(
+        witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = ActiveHpBarBorderCadenceMeasured::class
     )
     val playerInactiveUpperHpBar = BattleWitnessContract(
         witnessId = "PLAYER_INACTIVE_UPPER_HP_BAR_WITNESS",

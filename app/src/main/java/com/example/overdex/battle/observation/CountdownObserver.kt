@@ -179,7 +179,9 @@ class CountdownObserver(
             try {
                 // Subscribing independently to the frame stream
                 DroidballService.frames
-                    .sample(100.milliseconds)
+                    // Countdown glyphs may only occupy a few display frames.
+                    // Sample at the transient-witness cadence rather than 10 fps.
+                    .sample(33.milliseconds)
                     .collect { frame ->
                         val bitmap = frame.bitmap
                         val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, bitmap)

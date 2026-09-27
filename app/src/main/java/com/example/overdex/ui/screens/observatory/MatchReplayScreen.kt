@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,10 +31,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
+import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
+import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.model.PokemonType
+import com.example.overdex.ui.components.PokemonTypeIcon
+import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.components.TerminalScreen
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.delay
@@ -48,9 +56,28 @@ fun MatchReplayScreen(
     onB: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
-    onLcdUpdate: (String, String) -> Unit = { _, _ -> }
+    onLcdUpdate: (String, String) -> Unit = { _, _ -> },
+    resolveSpeciesId: suspend (String) -> Int? = { null },
+    resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveArchivedSpeciesCrops: suspend (MatchArchive) -> List<ReplayIdentityObservation> = { emptyList() }
 ) {
-    val model = remember(archive) { MatchReplayModel(archive) }
+    val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
+    val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
+        value = referencedNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
+    }
+    val archivedCropIdentities by produceState<List<ReplayIdentityObservation>?>(null, archive) {
+        value = resolveArchivedSpeciesCrops(archive)
+    }
+    val fastMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
+        value = archive.articles.mapNotNull { article ->
+            val identified = article.payload as? ArchivedFastMoveIdentified ?: return@mapNotNull null
+            resolveFastMoveType(identified.speciesName, identified.moveName)
+                ?.let { identified.moveName.uppercase().filter(Char::isLetterOrDigit) to it }
+        }.toMap()
+    }
+    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes) {
+        MatchReplayModel(archive, speciesIds, archivedCropIdentities.orEmpty(), fastMoveTypes)
+    }
     var cursor by remember(archive) { mutableLongStateOf(model.startNanos) }
     var playing by remember { mutableStateOf(false) }
     val scene = model.sceneAt(cursor)
@@ -90,10 +117,14 @@ fun MatchReplayScreen(
 
     SideEffect {
         val fraction = ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
-        onLcdUpdate(
-            "[${if (playing) "PLAY" else "PAUSE"}] ${formatReplayTime(cursor - model.startNanos)} ${replayScrubBar(fraction)}",
-            "TAP PLAY  DRAG SCRUB  UP RESET  A PLAY  B BACK"
-        )
+        if (archivedCropIdentities == null) {
+            onLcdUpdate("[REPLAY] RESOLVING SPECIES", "VERIFYING PRESERVED CROP EVIDENCE")
+        } else {
+            onLcdUpdate(
+                "[${if (playing) "PLAY" else "PAUSE"}] ${formatReplayTime(cursor - model.startNanos)} ${replayScrubBar(fraction)}",
+                "P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}  O ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}  TAP PLAY  DRAG SCRUB"
+            )
+        }
     }
 
     LaunchedEffect(playing, cursor, model.endNanos) {
@@ -118,23 +149,47 @@ fun MatchReplayScreen(
                 .border(1.dp, TerminalGreen),
             contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ReplayCombatantSlot(
-                    combatant = scene.player,
-                    context = context,
-                    mirrorSpriteHorizontally = true
-                )
-                ReplayCombatantSlot(
-                    combatant = scene.opponent,
-                    context = context,
-                    mirrorSpriteHorizontally = false
-                )
+            Box(Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).align(Alignment.Center),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ReplayCombatantSlot(
+                        combatant = scene.player,
+                        context = context,
+                        useBackSprite = true
+                    )
+                    ReplayCombatantSlot(
+                        combatant = scene.opponent,
+                        context = context,
+                        useBackSprite = false
+                    )
+                }
+                scene.fastMoveAction?.let { action ->
+                    FastMoveReplayIndicator(action, Modifier.align(Alignment.Center))
+                }
             }
         }
+    }
+}
+
+private fun energyLedger(generated: Int, spent: Int): String =
+    "E ${generated - spent} (+$generated/-$spent)"
+
+@Composable
+private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, modifier: Modifier = Modifier) {
+    val movement = ((action.progress.coerceIn(0f, 1f) * 2f) - 1f) * 96f
+    val direction = if (action.side == "PLAYER") 1f else -1f
+    Box(
+        modifier = modifier
+            .offset(x = (movement * direction).dp)
+            .size(34.dp)
+            .background(action.type.color.copy(alpha = 0.25f))
+            .border(1.dp, action.type.color),
+        contentAlignment = Alignment.Center
+    ) {
+        PokemonTypeIcon(action.type, style = TypeIconStyle.OVERDEX, modifier = Modifier.size(26.dp))
     }
 }
 
@@ -164,7 +219,7 @@ private fun replayScrubBar(fraction: Float): String {
 private fun ReplayCombatantSlot(
     combatant: ReplayCombatant?,
     context: android.content.Context,
-    mirrorSpriteHorizontally: Boolean
+    useBackSprite: Boolean
 ) {
     Box(
         modifier = Modifier.width(150.dp).size(150.dp),
@@ -172,12 +227,12 @@ private fun ReplayCombatantSlot(
     ) {
         combatant?.speciesId?.let { speciesId ->
             AsyncImage(
-                model = LocalSpriteProvider(context.assets).getSpriteUrl(speciesId),
+                model = LocalSpriteProvider(context.assets).let { sprites ->
+                    if (useBackSprite) sprites.getBackSpriteUrl(speciesId) else sprites.getSpriteUrl(speciesId)
+                },
                 contentDescription = combatant.speciesName,
                 modifier = Modifier
-                    .size(130.dp)
-                    // Player is fixed on the left, so mirror its source sprite to face the center.
-                    .graphicsLayer(scaleX = if (mirrorSpriteHorizontally) -1f else 1f),
+                    .size(130.dp),
                 contentScale = ContentScale.Fit
             )
         }

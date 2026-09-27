@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
@@ -19,6 +21,8 @@ import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
+import com.example.overdex.battle.inference.FastMoveCadenceInference
+import com.example.overdex.battle.inference.ChargedMoveAnnouncementInference
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
@@ -60,6 +64,8 @@ class Match(
     val battleMemory: BattleMemory = BattleMemory()
 ) {
     private val interpreter = BattleInterpreter(pokemonKnowledge)
+    private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
+    private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(pokemonKnowledge)
 
     /** Owned by this match and baselined by the enclosing Droidball session at GO. */
     val clock = MatchClock()
@@ -108,6 +114,53 @@ class Match(
     }.asCoroutineDispatcher()
     private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
+    val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
+        custody.submitTestimony(SourceId("SPECIES_CHECK_COORDINATOR"), measurement,
+            System.currentTimeMillis(), null, refs, System.nanoTime())
+    }
+
+    private val countdownCuesSeen = mutableSetOf<String>()
+    private var vsCueSeen = false
+    private var lastEntryText: String? = null
+    private var lastEntryAt = Long.MIN_VALUE
+    private val emptyHp = mutableSetOf<ActivePokemonSide>()
+
+    private fun cueSpeciesChecks(article: RealityArticle) {
+        val payload = article.payload
+        val text = ((payload as? RawTestimony)?.data as? String)?.trim()
+        val at = article.monotonicTimeNanos ?: System.nanoTime()
+        if (payload is CountdownGlyphWitnessed && !countdownCuesSeen.add(payload.glyph)) return
+        if (payload is VsScreenWitnessed) {
+            if (vsCueSeen) return
+            vsCueSeen = true
+        }
+        if (payload is com.example.overdex.battle.custody.ActiveHpBarMeasured) {
+            if (payload.filledFraction > 0f) { emptyHp.remove(payload.side); return }
+            if (!emptyHp.add(payload.side)) return
+        }
+        if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true) {
+            val repeated = lastEntryText.equals(text, true) && at - lastEntryAt < 2_000_000_000L
+            lastEntryText = text
+            lastEntryAt = at
+            if (repeated) return
+        }
+        val reason = when {
+            payload is VsScreenWitnessed -> "VS"
+            payload is CountdownGlyphWitnessed -> "COUNTDOWN"
+            article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true -> "ENTRY"
+            payload is com.example.overdex.battle.custody.BattleCryCandidatesMeasured &&
+                payload.cueKind != "FAST_MOVE_IMPACT" -> "CRY"
+            payload is com.example.overdex.battle.custody.ActiveHpBarMeasured && payload.filledFraction == 0f -> "EMPTY_HP"
+            else -> return
+        }
+        val sides = if (payload is com.example.overdex.battle.custody.ActiveHpBarMeasured)
+            listOf(payload.side) else ActivePokemonSide.entries
+        if (reason == "ENTRY") DroidballService.requestCueCenteredAudio(article.id.value,
+            com.example.overdex.battle.audio.BattleCryCueKind.SPECIES_ENTRY)
+        sides.forEach { side -> speciesChecks.request(side, reason, article.id.value,
+            article.monotonicTimeNanos ?: System.nanoTime()) }
+    }
+
 
     /**
      * Roster-based side attribution is available only after all three Team Select
@@ -123,6 +176,9 @@ class Match(
         private set
 
     init {
+        matchScope.launch {
+            while (!speciesChecks.isStopped()) { speciesChecks.tick(); kotlinx.coroutines.delay(50) }
+        }
         matchScope.launch {
             custody.custodyRecordFlow.collect { record ->
                 val availability = record as? SourceAvailabilityRecord ?: return@collect
@@ -178,6 +234,7 @@ class Match(
                 }
 
                 realityTimeline.append(article)
+                cueSpeciesChecks(article)
                 _articles.tryEmit(article)
                 val capturedCropName = (article.payload as? com.example.overdex.battle.custody.CropCaptured)
                     ?.cropProvenance?.cropName
@@ -250,6 +307,10 @@ class Match(
                     }
                 }
 
+                (article.payload as? ActivePokemonSpeciesWitnessed)?.let {
+                    speciesChecks.delivered(it.side, it.speciesName, article.id.value)
+                }
+
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "RealityTimeline append confirmed: articleId=${article.id.value}")
                 }
@@ -258,6 +319,53 @@ class Match(
                 }
 
                 battleMemory.timeline.record(article)
+
+                fastMoveCadenceInference.accept(article).forEach { derivation ->
+                    val derivedArticle = RealityArticle(
+                        id = ArticleId(UUID.randomUUID().toString()),
+                        perceivedAt = derivation.observedArticle.perceivedAt,
+                        recordedAt = System.currentTimeMillis(),
+                        sourceId = SourceId("FAST_MOVE_CADENCE_INTERPRETER"),
+                        payload = derivation.payload,
+                        predecessorIds = derivation.predecessorIds,
+                        confidence = derivation.confidence,
+                        matchId = MatchId(matchId),
+                        monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+                    )
+                    realityTimeline.append(derivedArticle)
+                    _articles.tryEmit(derivedArticle)
+                    battleMemory.timeline.record(derivedArticle)
+                }
+
+                chargedMoveAnnouncementInference
+                    .accept(article, ::sideForRosterKnownSpecies)
+                    ?.let { derivation ->
+                        val derivedArticle = RealityArticle(
+                            id = ArticleId(UUID.randomUUID().toString()),
+                            perceivedAt = derivation.observedArticle.perceivedAt,
+                            recordedAt = System.currentTimeMillis(),
+                            sourceId = SourceId("CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER"),
+                            payload = derivation.payload,
+                            predecessorIds = derivation.predecessorIds,
+                            matchId = MatchId(matchId),
+                            monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+                        )
+                        realityTimeline.append(derivedArticle)
+                        _articles.tryEmit(derivedArticle)
+                        battleMemory.timeline.record(derivedArticle)
+                    }
+
+                // The visual cadence remains sufficient for move timing. It also
+                // opens a small, independently preserved microphone window that
+                // can later corroborate a move's acoustic type/signature.
+                if (article.payload is ActiveHpBarMotionCadenceMeasured ||
+                    article.payload is ActiveHpBarBorderCadenceMeasured
+                ) {
+                    DroidballService.requestCueCenteredAudio(
+                        article.id.value,
+                        com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT
+                    )
+                }
 
                 if (!matchStartRecorded) {
                     interpreter.interpretMatchStart(article)?.let { derivedArticle ->
@@ -309,6 +417,7 @@ class Match(
                             monotonicTimeNanos = article.monotonicTimeNanos
                         )
                         realityTimeline.append(derivedArticle)
+                        if (derivedArticle.payload is MatchEnded) speciesChecks.stop()
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
@@ -336,6 +445,7 @@ class Match(
      * Releases resources and cancels active subscriptions.
      */
     fun release() {
+        speciesChecks.stop()
         matchScope.cancel("Match released")
         matchDispatcher.close()
     }

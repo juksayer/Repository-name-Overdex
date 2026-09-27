@@ -24,6 +24,19 @@ object SpeciesNameRecognizer {
     // player/opponent reads from stalling behind each other; each side's caller
     // keeps only its latest durable badge crop while it waits.
     private val recognitionMutex = Mutex()
+    private var warmed = false
+
+    /** Initialize ML Kit during deployment, before an entry cue starts the latency budget. */
+    suspend fun warmUp() = recognitionMutex.withLock {
+        if (warmed) return@withLock
+        val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
+        blank.eraseColor(Color.WHITE)
+        try {
+            recognizer.process(InputImage.fromBitmap(blank, 0)).await()
+            warmed = true
+        } finally { blank.recycle() }
+    }
+
 
     data class Candidate(
         val text: String,
@@ -35,14 +48,23 @@ object SpeciesNameRecognizer {
      * the unmodified 25-pixel badge text. The padded threshold passes retain the
      * word's silhouette without changing the source crop or its evidence record.
      */
-    suspend fun recognizeCandidates(bitmap: Bitmap): List<Candidate> = recognitionMutex.withLock {
+    suspend fun recognizeCandidates(
+        bitmap: Bitmap,
+        accepts: (String) -> Boolean = { false }
+    ): List<Candidate> = recognitionMutex.withLock {
         val candidates = linkedSetOf<Candidate>()
-        recognize("raw", rawInput(bitmap))?.let { candidates += Candidate(it, "RAW") }
-        // This treatment resolves the persisted 25-pixel Camerupt badge on the
-        // physical device. Keep it as the single fallback so a live witness does
-        // not spend several seconds serially processing redundant variants.
-        recognize("threshold-190-padded", threshold(bitmap, cutoff = 190, padding = 12))
-            ?.let { candidates += Candidate(it, "THRESHOLD_190_PADDED") }
+        // The measured phone badges are under 32 px and their raw reads are truncated.
+        // Start with the successful padded treatment; retain raw as an independent fallback.
+        val treatments = if (bitmap.height < 64) listOf("THRESHOLD_190_PADDED", "RAW")
+            else listOf("RAW", "THRESHOLD_190_PADDED")
+        for (treatment in treatments) {
+            val prepared = if (treatment == "RAW") rawInput(bitmap)
+                else threshold(bitmap, cutoff = 190, padding = 12)
+            recognize(treatment, prepared)?.let {
+                candidates += Candidate(it, treatment)
+                if (accepts(it)) return@withLock candidates.toList()
+            }
+        }
         candidates.toList()
     }
 
@@ -72,7 +94,15 @@ object SpeciesNameRecognizer {
 
     private fun rawInput(source: Bitmap): Bitmap {
         val scaled = source.scaledForMlKitText()
-        return if (scaled === source) Bitmap.createBitmap(source) else scaled
+        // Bitmap.createBitmap(source) may legally return source unchanged on
+        // some Android implementations. The recognition lane owns and recycles
+        // its prepared bitmap, so the raw pass must always receive a distinct
+        // allocation before the threshold pass examines the source.
+        return if (scaled === source) {
+            source.copy(source.config ?: Bitmap.Config.ARGB_8888, false)
+        } else {
+            scaled
+        }
     }
 
     private fun threshold(source: Bitmap, cutoff: Int, padding: Int): Bitmap {

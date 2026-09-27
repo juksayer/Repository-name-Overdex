@@ -65,31 +65,43 @@ class PersistedSpeciesWitness(
                 onBufferOverflow = BufferOverflow.DROP_OLDEST
             )
             witnessScope.launch {
-                var lastScheduledAt: Long? = null
                 match.activeSpeciesCropArticles.collect { article ->
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != crop.cropName) return@collect
-                    if (lastScheduledAt == null ||
-                        article.perceivedAt - lastScheduledAt!! >= RECOGNITION_SAMPLE_INTERVAL_MILLIS
-                    ) {
-                        lastScheduledAt = article.perceivedAt
-                        scheduledCrops.trySend(article)
-                    }
+                    val at = article.monotonicTimeNanos ?: return@collect
+                    if (match.speciesChecks.windowFor(side, at) != null) scheduledCrops.trySend(article)
                 }
             }
+
             witnessScope.launch {
-                match.custody.submitAvailability(
-                    sourceId = sourceId,
-                    available = true,
-                    timestamp = System.currentTimeMillis()
-                )
+                match.custody.submitAvailability(sourceId, false, System.currentTimeMillis())
+                // Pay model/catalog initialization during ARMED, before battle entry.
+                try { SpeciesNameRecognizer.warmUp() }
+                catch (error: Exception) { Log.w("ACTIVE_SPECIES", "OCR warm-up failed; live checks will retry", error) }
+                var knownSpeciesNames: Set<String>? = runCatching { match.pokemonKnowledge.getAllSpeciesNames() }.getOrNull()
+                // Worker readiness and active checks are reported independently of capture artifacts.
+                witnessScope.launch {
+                    var previous: Boolean? = null
+                    while (true) {
+                        val operating = match.speciesChecks.isChecking(side)
+                        if (previous != operating) {
+                            match.custody.submitAvailability(sourceId, operating, System.currentTimeMillis())
+                            previous = operating
+                        }
+                        delay(50)
+                    }
+                }
                 Log.d("ACTIVE_SPECIES", "started side=$side crop=${crop.cropName}")
-                var knownSpeciesNames: Set<String>? = null
                 var lastRawOcrReadings: List<String> = emptyList()
-                var lastWitnessedSpeciesName: String? = null
+
 
                 for (article in scheduledCrops) {
-                    val recognition = recognize(article, match, knownSpeciesNames) ?: continue
+                    val window = match.speciesChecks.windowFor(side, article.monotonicTimeNanos ?: continue) ?: continue
+                    val recognition = recognize(article, match, knownSpeciesNames)
+                    if (recognition == null) {
+                        match.speciesChecks.read(side, window.id, null, article.id.value)
+                        continue
+                    }
                     knownSpeciesNames = recognition.knownNames
                     val readingSignature = recognition.rawReadings.map { "${it.treatment}:${it.text}" }
                     if (readingSignature != lastRawOcrReadings) {
@@ -106,8 +118,8 @@ class PersistedSpeciesWitness(
                         }
                     }
                     val speciesName = recognition.speciesName
-                    if (speciesName != null && speciesName != lastWitnessedSpeciesName) {
-                        lastWitnessedSpeciesName = speciesName
+                    val refs = match.speciesChecks.read(side, window.id, speciesName, article.id.value)
+                    if (speciesName != null && refs != null) {
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = RawTestimony(speciesName),
@@ -122,7 +134,7 @@ class PersistedSpeciesWitness(
                             payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
                             timestamp = article.perceivedAt,
                             confidence = recognition.confidence,
-                            evidenceReferences = listOf(article.id.value),
+                            evidenceReferences = refs,
                             monotonicTimeNanos = article.monotonicTimeNanos ?: System.nanoTime()
                         )
                     }
@@ -142,9 +154,11 @@ class PersistedSpeciesWitness(
             return null
         }
         return try {
-            val rawReadings = SpeciesNameRecognizer.recognizeCandidates(bitmap)
-            if (rawReadings.isEmpty()) return null
             val names = cachedNames ?: match.pokemonKnowledge.getAllSpeciesNames()
+            val rawReadings = SpeciesNameRecognizer.recognizeCandidates(bitmap) {
+                SpeciesTextResolver.resolve(it, names) != null
+            }
+            if (rawReadings.isEmpty()) return null
             val resolved = rawReadings.firstNotNullOfOrNull { reading ->
                 SpeciesTextResolver.resolve(reading.text, names)?.let { species -> reading to species }
             }
@@ -192,7 +206,6 @@ class PersistedSpeciesWitness(
     )
 
     companion object {
-        private const val RECOGNITION_SAMPLE_INTERVAL_MILLIS = 650L
 
         fun player(artifactStore: FileCropArtifactStore) = PersistedSpeciesWitness(
             artifactStore, BattleCropContracts.playerActiveSpeciesText, ActivePokemonSide.PLAYER,

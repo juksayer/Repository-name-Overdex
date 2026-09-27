@@ -23,15 +23,17 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
         if (scope != null) return
         val catalog = CryReferenceCatalog.load(context)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { scope -> scope.launch {
+            var references: List<CryAcousticMatcher.PreparedReference>? = null
             match.articles.collect { article ->
                 val audio = article.payload as? AudioCaptured ?: return@collect
+                if (audio.cueKind == BattleCryCueKind.FAST_MOVE_IMPACT.name) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect
                 val query = WavPcm16.decode(bytes) ?: return@collect
-                val refs = catalog.references.distinctBy { it.sha256 }.mapNotNull { ref ->
-                    catalog.openVerified(context, ref)?.let(WavPcm16::decode)?.let { ref to it }
-                }
-                val candidates = CryAcousticMatcher.rank(query, refs)
+                val refs = references ?: catalog.references.distinctBy { it.sha256 }.mapNotNull { ref ->
+                    catalog.openVerified(context, ref)?.let(WavPcm16::decode)?.let { CryAcousticMatcher.prepare(ref, it) }
+                }.also { references = it }
+                val candidates = CryAcousticMatcher.rankPrepared(query, refs)
                     .map { BattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
                 match.custody.submitTestimony(
                     SourceId(observerId.id),

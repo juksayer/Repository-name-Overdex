@@ -8,6 +8,7 @@ package com.example.overdex.battle.audio
  */
 enum class BattleCryCueKind {
     VS_SCREEN,
+    SPECIES_ENTRY,
     COUNTDOWN_3,
     COUNTDOWN_2,
     COUNTDOWN_1,
@@ -17,7 +18,9 @@ enum class BattleCryCueKind {
     POKEMON_FAINTED,
     OPPONENT_DEPARTED_NON_FAINT,
     CHARGE_MOVE_QTE_ENTERED,
-    CHARGE_MOVE_QTE_COMPLETED
+    CHARGE_MOVE_QTE_COMPLETED,
+    /** A visual HP-bar cadence measurement requests a short independent audio sample. */
+    FAST_MOVE_IMPACT
 }
 
 data class AudioCaptureCue(val articleId: String, val kind: BattleCryCueKind)

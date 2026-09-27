@@ -42,6 +42,15 @@ data class CryCandidate(val speciesId: Int, val referenceSha256: String, val sim
  * possible references but does not assert species identity; mic acoustics need corroboration.
  */
 object CryAcousticMatcher {
+    data class PreparedReference(val reference: CryReference, val envelope: FloatArray)
+    fun prepare(reference: CryReference, audio: Pcm16Audio) = PreparedReference(reference, envelope(audio.samples, 48))
+    fun rankPrepared(query: Pcm16Audio, references: List<PreparedReference>, limit: Int = 5): List<CryCandidate> {
+        val queryEnvelope = envelope(query.samples, 96)
+        return references.map { (reference, referenceEnvelope) ->
+            CryCandidate(reference.speciesId, reference.sha256, bestWindowSimilarity(queryEnvelope, referenceEnvelope))
+        }.sortedByDescending { it.similarity }.take(limit)
+    }
+
     fun rank(query: Pcm16Audio, references: List<Pair<CryReference, Pcm16Audio>>, limit: Int = 5): List<CryCandidate> {
         val queryEnvelope = envelope(query.samples, 96)
         return references.map { (reference, audio) ->

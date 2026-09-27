@@ -22,7 +22,8 @@ object MatchArchiveExporter {
         matchId: MatchId,
         output: OutputStream,
         artifactRepositoryRoot: File? = null,
-        mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+        mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): MatchArchiveManifest {
         val snapshot = realityTimeline.getArticles()
         val matchArticles = snapshot.filter { it.matchId == matchId }
@@ -34,7 +35,7 @@ object MatchArchiveExporter {
             articles = selectedArticles
         )
 
-        return MatchArchivePackageWriter.write(archive, output, artifactRepositoryRoot)
+        return MatchArchivePackageWriter.write(archive, output, artifactRepositoryRoot, onArtifactVerified)
     }
 
     /**

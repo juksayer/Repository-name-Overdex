@@ -31,7 +31,8 @@ object MatchArchivePackageWriter {
     fun write(
         archive: MatchArchive,
         output: OutputStream,
-        artifactRepositoryRoot: File? = null
+        artifactRepositoryRoot: File? = null,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): MatchArchiveManifest {
         val artifacts = archive.articles.mapNotNull { article ->
             when (val payload = article.payload) {
@@ -63,10 +64,12 @@ object MatchArchivePackageWriter {
             MatchArchiveSerializer.serializeTo(archive, zipStream)
             zipStream.closeEntry()
 
-            artifacts.forEach { artifact ->
+            onArtifactVerified?.invoke(0, artifacts.size)
+            artifacts.forEachIndexed { index, artifact ->
                 zipStream.putNextEntry(ZipEntry(artifact.relativePath))
                 copyValidatedArtifact(artifact, artifactRepositoryRoot, zipStream)
                 zipStream.closeEntry()
+                onArtifactVerified?.invoke(index + 1, artifacts.size)
             }
         }
 

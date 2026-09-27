@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
- * Promotes every published microphone snippet to an immutable artifact before the Timeline
+ * Promotes every published audio snippet to an immutable artifact before the Timeline
  * receives its AudioCaptured testimony. It intentionally performs no cry recognition.
  */
 class AudioCaptureWitness(
@@ -29,7 +29,7 @@ class AudioCaptureWitness(
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                DroidballService.microphoneCaptureAvailable.collect { available ->
+                DroidballService.audioCaptureAvailable.collect { available ->
                     if (available != null) {
                         match.custody.submitAvailability(
                             sourceId = SourceId(observerId.id),
@@ -37,6 +37,12 @@ class AudioCaptureWitness(
                             timestamp = System.currentTimeMillis()
                         )
                     }
+                }
+            }
+            witnessScope.launch {
+                DroidballService.audioInputStatus.collect { status ->
+                    match.custody.submitTestimony(SourceId("AUDIO_INPUT_STATUS"), status,
+                        System.currentTimeMillis(), null, emptyList(), System.nanoTime())
                 }
             }
             witnessScope.launch {
@@ -50,7 +56,9 @@ class AudioCaptureWitness(
                             sampleRateHz = frame.sampleRateHz,
                             channelCount = frame.channelCount,
                             durationNanos = frame.durationNanos,
-                            cueKind = frame.cueKind.name
+                            cueKind = frame.cueKind.name,
+                            captureSource = frame.captureSource,
+                            peakAmplitude = frame.peakAmplitude
                         ),
                         timestamp = frame.capturedAtWallTimeMillis,
                         confidence = null,

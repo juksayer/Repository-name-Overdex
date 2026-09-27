@@ -32,7 +32,36 @@ class PersistedPlayerEntrySpeciesWitness(
                 var knownSpeciesNames: Set<String>? = null
                 var lastAnnouncementText: String? = null
                 var lastWitnessed: Pair<ActivePokemonSide, String>? = null
+                val pendingAnnouncements = mutableListOf<Pair<com.example.overdex.battle.reality.RealityArticle, String>>()
+
+                suspend fun attributePendingAnnouncements() {
+                    val iterator = pendingAnnouncements.iterator()
+                    while (iterator.hasNext()) {
+                        val (announcement, speciesName) = iterator.next()
+                        val side = match.sideForRosterKnownSpecies(speciesName) ?: continue
+                        val monotonicTimeNanos = announcement.monotonicTimeNanos ?: continue
+                        val witnessed = side to speciesName
+                        iterator.remove()
+                        if (witnessed == lastWitnessed) continue
+                        lastWitnessed = witnessed
+                        val species = match.pokemonKnowledge.getPokemonByName(speciesName)
+                        match.custody.submitTestimony(
+                            sourceId = sourceId,
+                            payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
+                            timestamp = announcement.perceivedAt,
+                            confidence = null,
+                            evidenceReferences = listOf(announcement.id.value),
+                            monotonicTimeNanos = monotonicTimeNanos
+                        )
+                    }
+                }
+
                 match.articles.collect { article ->
+                    if (article.payload is com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed) {
+                        // Match updates its roster before publishing this article, so a
+                        // prior entry can now receive a justified side.
+                        attributePendingAnnouncements()
+                    }
                     if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
                     val rawText = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     // Pokémon GO's entry form explicitly reads “Go, <species>!”.
@@ -47,20 +76,12 @@ class PersistedPlayerEntrySpeciesWitness(
                     val speciesName = SpeciesTextResolver.resolve(rawText, names)
                     Log.d("ENTRY_ANNOUNCEMENT_SPECIES", "announcement=$rawText resolved=${speciesName ?: "none"} catalogue=${names.size}")
                     speciesName ?: return@collect
-                    val side = match.sideForRosterKnownSpecies(speciesName)
-                        ?: ActivePokemonSide.OPPONENT
-                    val witnessed = side to speciesName
-                    if (witnessed == lastWitnessed) return@collect
-                    lastWitnessed = witnessed
-                    val species = match.pokemonKnowledge.getPokemonByName(speciesName)
-                    match.custody.submitTestimony(
-                        sourceId = sourceId,
-                        payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
-                        timestamp = article.perceivedAt,
-                        confidence = null,
-                        evidenceReferences = listOf(article.id.value),
-                        monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
-                    )
+                    // An entry announcement does not identify a side on its own.  In
+                    // particular, Team Select can still be finishing while the first
+                    // entry announcement arrives. Preserve it until a complete roster
+                    // can justify the side, never defaulting a player species to enemy.
+                    pendingAnnouncements += article to speciesName
+                    attributePendingAnnouncements()
                 }
             }
         }

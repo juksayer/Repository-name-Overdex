@@ -45,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
 import com.example.overdex.battle.archive.MatchArchiveExportMode
+import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
 import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
@@ -196,6 +197,7 @@ class MainActivity : ComponentActivity() {
 
     // In-memory storage for the opened archive
     private var openedArchive = mutableStateOf<com.example.overdex.battle.archive.MatchArchive?>(null)
+    private var openedArchiveUri = mutableStateOf<Uri?>(null)
     private var archiveLoadInProgress = mutableStateOf(false)
 
     private val mediaProjectionLauncher = registerForActivityResult(
@@ -239,6 +241,7 @@ class MainActivity : ComponentActivity() {
                         ?: throw java.io.IOException("Unable to open the selected file.")
                     com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream, filesDir)
                 }
+                openedArchiveUri.value = uri
                 openedArchive.value = archive
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
                 throw cancelled
@@ -312,6 +315,7 @@ class MainActivity : ComponentActivity() {
                         timelineEvents = timelineEvents,
                         chatMessages = chatMessages,
                         openedArchive = openedArchive,
+                        openedArchiveUri = openedArchiveUri,
                         archiveLoadInProgress = archiveLoadInProgress,
                         archiveDirectoryManager = archiveDirectoryManager,
                         navigateToDirectoryRequested = navigateToDirectoryRequested,
@@ -415,6 +419,7 @@ fun PokedexApp(
     timelineEvents: List<SharedEvent>,
     chatMessages: List<ChatMessage>,
     openedArchive: MutableState<com.example.overdex.battle.archive.MatchArchive?>,
+    openedArchiveUri: MutableState<Uri?>,
     archiveLoadInProgress: MutableState<Boolean>,
     archiveDirectoryManager: ArchiveDirectoryManager,
     navigateToDirectoryRequested: MutableState<Boolean>,
@@ -1042,27 +1047,50 @@ fun PokedexApp(
                 val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
                 val archiveExportSelected = remember { mutableStateOf(false) }
                 val archiveOpenSelected = remember { mutableStateOf(false) }
-                val archiveExportMode = remember { mutableStateOf(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) }
+                val archiveExportMode = remember { mutableStateOf<MatchArchiveExportMode?>(null) }
                 val archiveExportInProgress = remember { mutableStateOf(false) }
+                val archiveExportStatus = remember { mutableStateOf<String?>(null) }
                 val scope = rememberCoroutineScope()
                 val context = androidx.compose.ui.platform.LocalContext.current
 
-                val requestArchiveExport: () -> Unit = {
+                val requestArchiveExport: (MatchArchiveExportMode) -> Unit = { mode ->
                     val source = archiveSourceState.value
                     if (source != null && !archiveExportInProgress.value) {
+                        archiveOpenSelected.value = false
+                        archiveExportSelected.value = true
+                        archiveExportMode.value = mode
                         archiveExportInProgress.value = true
+                        archiveExportStatus.value = "PREPARING ${if (mode == MatchArchiveExportMode.FULL_FORENSIC) "FULL FORENSIC" else "COMPACT"} ARCHIVE…"
                         if (archiveDirectoryManager.isFolderAvailable()) {
                             scope.launch(Dispatchers.IO) {
                                 try {
-                                    val uri = archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline, archiveExportMode.value)
+                                        val uri = archiveDirectoryManager.exportMatch(
+                                            source.matchId,
+                                            source.realityTimeline,
+                                            mode
+                                        ) { completed, total ->
+                                            scope.launch(Dispatchers.Main) {
+                                                archiveExportStatus.value = if (total == 0) {
+                                                    "VERIFYING PRESERVED EVIDENCE…"
+                                                } else {
+                                                    "VERIFYING PRESERVED EVIDENCE $completed / $total"
+                                                }
+                                            }
+                                        }
                                     withContext(Dispatchers.Main) {
                                         if (uri != null) {
+                                            archiveExportStatus.value = if (mode == MatchArchiveExportMode.FULL_FORENSIC) {
+                                                "FULL FORENSIC ARCHIVE SAVED"
+                                            } else {
+                                                "COMPACT ARCHIVE SAVED"
+                                            }
                                             android.widget.Toast.makeText(
                                                 context,
                                                 "Saved Match snapshot directly to Archive Directory",
                                                 android.widget.Toast.LENGTH_LONG
                                             ).show()
                                         } else {
+                                            archiveExportStatus.value = "SAVE FAILED — ARCHIVE FOLDER NOT WRITABLE"
                                             android.widget.Toast.makeText(
                                                 context,
                                                 "Export failed: Archive folder not writable.",
@@ -1073,6 +1101,7 @@ fun PokedexApp(
                                 } catch (e: Exception) {
                                     Log.e("MATCH_EXPORT", "Archive save failed", e)
                                     withContext(Dispatchers.Main) {
+                                        archiveExportStatus.value = "SAVE FAILED: ${e.message}"
                                         android.widget.Toast.makeText(
                                             context,
                                             "Save failed: ${e.message}",
@@ -1087,7 +1116,7 @@ fun PokedexApp(
                             }
                         } else {
                             archiveExportInProgress.value = false
-                            onLaunchFolderPicker("export", source, archiveExportMode.value)
+                            onLaunchFolderPicker("export", source, mode)
                         }
                     }
                 }
@@ -1107,12 +1136,18 @@ fun PokedexApp(
                         if (!archiveOpenSelected.value && !archiveExportSelected.value) {
                             if (archiveSourceState.value != null) {
                                 archiveExportSelected.value = true
+                                archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
                             } else {
                                 archiveOpenSelected.value = true
                             }
                         } else if (archiveExportSelected.value) {
-                            archiveExportSelected.value = false
-                            archiveOpenSelected.value = true
+                            if (archiveExportMode.value == MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) {
+                                archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
+                            } else {
+                                archiveExportSelected.value = false
+                                archiveExportMode.value = null
+                                archiveOpenSelected.value = true
+                            }
                         }
                     },
                     onDown = {
@@ -1120,9 +1155,15 @@ fun PokedexApp(
                             archiveOpenSelected.value = false
                             if (archiveSourceState.value != null) {
                                 archiveExportSelected.value = true
+                                archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
                             }
                         } else if (archiveExportSelected.value) {
-                            archiveExportSelected.value = false
+                            if (archiveExportMode.value == MatchArchiveExportMode.FULL_FORENSIC) {
+                                archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+                            } else {
+                                archiveExportSelected.value = false
+                                archiveExportMode.value = null
+                            }
                         }
                     },
                     onLeft = {
@@ -1143,7 +1184,7 @@ fun PokedexApp(
                                 onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                             }
                         } else if (archiveExportSelected.value && archiveSourceState.value != null) {
-                            requestArchiveExport()
+                            requestArchiveExport(archiveExportMode.value ?: MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                         } else {
                             navController.debugPopBackStack()
                         }
@@ -1153,11 +1194,16 @@ fun PokedexApp(
                     TimelineViewerScreen(
                         onBack = { navController.debugPopBackStack() },
                         exportMatchId = archiveSourceState.value?.matchId?.value,
-                        exportSelected = archiveExportSelected.value &&
+                        compactExportSelected = archiveExportSelected.value &&
+                                archiveExportMode.value == MatchArchiveExportMode.COMPACT_CITED_EVIDENCE &&
                                 archiveSourceState.value != null,
-                        exportMode = archiveExportMode.value,
+                        fullExportSelected = archiveExportSelected.value &&
+                                archiveExportMode.value == MatchArchiveExportMode.FULL_FORENSIC &&
+                                archiveSourceState.value != null,
                         exportInProgress = archiveExportInProgress.value,
-                        onExportMatch = requestArchiveExport,
+                        exportStatus = archiveExportStatus.value,
+                        onExportCompact = { requestArchiveExport(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) },
+                        onExportFull = { requestArchiveExport(MatchArchiveExportMode.FULL_FORENSIC) },
                         onOpenMatch = {
                             if (archiveDirectoryManager.isFolderAvailable()) {
                                 navController.navigate("match_archive_directory")
@@ -1210,6 +1256,7 @@ fun PokedexApp(
                                             ?: throw java.io.IOException("Unable to open the selected archive.")
                                         com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream, context.filesDir)
                                     }
+                                    openedArchiveUri.value = uri
                                     openedArchive.value = archive
                                 } catch (e: Exception) {
                                     Log.e("ARCHIVE_OPEN", "Failed to open archive", e)
@@ -1243,6 +1290,8 @@ fun PokedexApp(
                 if (archive != null) {
                     var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                     var lcdDragHandler by remember { mutableStateOf<((Offset) -> Unit)?>(null) }
@@ -1257,6 +1306,8 @@ fun PokedexApp(
                         onFilterSettingsChange = { filterSettings = it },
                         onUp = { upHandler?.invoke() },
                         onDown = { downHandler?.invoke() },
+                        onLeft = { leftHandler?.invoke() },
+                        onRight = { rightHandler?.invoke() },
                         onA = { aHandler?.invoke() },
                         onB = { bHandler?.invoke() },
                         onLcdDrag = { lcdDragHandler?.invoke(it) },
@@ -1274,10 +1325,13 @@ fun PokedexApp(
                             archive = archive,
                             onBack = {
                                 openedArchive.value = null
+                                openedArchiveUri.value = null
                                 navController.debugPopBackStack()
                             },
                             onUp = { upHandler = it },
                             onDown = { downHandler = it },
+                            onLeft = { leftHandler = it },
+                            onRight = { rightHandler = it },
                             onA = { aHandler = it },
                             onB = { bHandler = it },
                             onLcdDrag = { lcdDragHandler = it },
@@ -1285,6 +1339,24 @@ fun PokedexApp(
                             onLcdUpdate = { line1, line2 ->
                                 lcdLine1 = line1
                                 lcdLine2 = line2
+                            },
+                            resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
+                            resolveFastMoveType = { speciesName, moveName ->
+                                viewModel.getPokemonByName(speciesName)
+                                    ?.fastMoves
+                                    ?.firstOrNull { candidate -> candidate.name.equals(moveName, ignoreCase = true) }
+                                    ?.type
+                            },
+                            resolveArchivedSpeciesCrops = { selectedArchive ->
+                                val uri = openedArchiveUri.value
+                                if (uri == null) emptyList() else {
+                                    ArchivedSpeciesCropRecognizer.recognize(
+                                        archive = selectedArchive,
+                                        openArchive = { context.contentResolver.openInputStream(uri) },
+                                        knownSpeciesNames = viewModel.getAllSpeciesNames(),
+                                        resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id }
+                                    )
+                                }
                             }
                         )
                     }

@@ -84,7 +84,8 @@ class ArchiveDirectoryManager(private val context: Context) {
     fun exportMatch(
         matchId: MatchId,
         realityTimeline: RealityTimeline,
-        mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+        mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? {
         val uri = getFolderUri() ?: return null
         val parentDoc = DocumentFile.fromTreeUri(context, uri) ?: return null
@@ -109,7 +110,14 @@ class ArchiveDirectoryManager(private val context: Context) {
         val temporary = File.createTempFile("overdex-match-", ".odxmatch.zip", context.cacheDir)
         try {
             FileOutputStream(temporary).use {
-                MatchArchiveExporter.export(realityTimeline, matchId, it, context.filesDir, mode)
+                MatchArchiveExporter.export(
+                    realityTimeline,
+                    matchId,
+                    it,
+                    context.filesDir,
+                    mode,
+                    onArtifactVerified
+                )
             }
             require(temporary.length() > 0L) { "Archive package was empty." }
             val newFile = parentDoc.createFile("application/zip", fileName)

@@ -17,6 +17,12 @@ import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveIdentified
+import com.example.overdex.battle.custody.FastMoveEnergyDerived
+import com.example.overdex.battle.custody.ChargedMoveEnergySpent
+import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprintMeasured
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
@@ -54,6 +60,10 @@ object RealityArticleArchiveMapper {
                 speciesName = p.speciesName,
                 speciesId = p.speciesId
             )
+            is com.example.overdex.battle.custody.SpeciesCheckMeasured -> ArchivedSpeciesCheckMeasured(
+                p.side.name, p.windowId, p.status, p.reason, p.triggerMonotonicNanos,
+                p.elapsedNanos, p.targetNanos, p.speciesName
+            )
             is TeamSelectPartyWitnessed -> ArchivedTeamSelectPartyWitnessed
             is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
@@ -88,6 +98,7 @@ object RealityArticleArchiveMapper {
                 cropRight = p.cropProvenance.bounds.right,
                 cropBottom = p.cropProvenance.bounds.bottom
             )
+            is com.example.overdex.battle.custody.AudioInputStatus -> ArchivedAudioInputStatus(p.captureSource, p.state)
             is AudioCaptured -> ArchivedAudioCaptured(
                 artifactPath = p.artifact.relativePath,
                 sha256 = p.artifact.sha256,
@@ -96,7 +107,9 @@ object RealityArticleArchiveMapper {
                 sampleRateHz = p.sampleRateHz,
                 channelCount = p.channelCount,
                 durationNanos = p.durationNanos,
-                cueKind = p.cueKind
+                cueKind = p.cueKind,
+                captureSource = p.captureSource,
+                peakAmplitude = p.peakAmplitude
             )
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
@@ -123,6 +136,49 @@ object RealityArticleArchiveMapper {
                 barRight = p.barRight,
                 barBottom = p.barBottom,
                 filledFraction = p.filledFraction
+            )
+            is ActiveHpBarMotionCadenceMeasured -> ArchivedActiveHpBarMotionCadenceMeasured(
+                movingSide = p.movingSide.name,
+                intervalNanos = p.intervalNanos,
+                verticalExcursionPixels = p.verticalExcursionPixels,
+                sampleCount = p.sampleCount
+            )
+            is ActiveHpBarBorderCadenceMeasured -> ArchivedActiveHpBarBorderCadenceMeasured(
+                damagedBarSide = p.damagedBarSide.name,
+                intervalNanos = p.intervalNanos,
+                peakColorDistance = p.peakColorDistance,
+                sampleCount = p.sampleCount
+            )
+            is FastMoveIdentified -> ArchivedFastMoveIdentified(
+                side = p.side.name,
+                speciesName = p.speciesName,
+                moveName = p.moveName,
+                moveDurationNanos = p.moveDurationNanos,
+                observedMedianIntervalNanos = p.observedMedianIntervalNanos,
+                cadenceSampleCount = p.cadenceSampleCount,
+                basis = p.basis
+            )
+            is FastMoveEnergyDerived -> ArchivedFastMoveEnergyDerived(
+                side = p.side.name,
+                moveName = p.moveName,
+                observedCompletedUses = p.observedCompletedUses,
+                energyPerUse = p.energyPerUse,
+                totalEnergyGenerated = p.totalEnergyGenerated,
+                basis = p.basis
+            )
+            is ChargedMoveEnergySpent -> ArchivedChargedMoveEnergySpent(
+                side = p.side.name,
+                speciesName = p.speciesName,
+                moveName = p.moveName,
+                energyCost = p.energyCost,
+                basis = p.basis
+            )
+            is FastMoveSoundMeasured -> ArchivedFastMoveSoundMeasured(
+                audible = p.audible,
+                onsetOffsetNanos = p.onsetOffsetNanos,
+                soundDurationNanos = p.soundDurationNanos,
+                spectralCentroidHz = p.spectralCentroidHz,
+                peakAmplitude = p.peakAmplitude
             )
             is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
                 slot = p.slot,

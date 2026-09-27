@@ -15,6 +15,8 @@ class CalibrationManager(context: Context) {
         context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
 
     private companion object {
+        const val CALIBRATION_PROFILE_VERSION = "calibration_profile_version"
+        const val CALIBRATION_SAVED_AT_MILLIS = "calibration_saved_at_millis"
         const val MATCH_OUTCOME_CALIBRATED = "match_outcome_calibrated"
         const val ENEMY_X = "enemy_x"
         const val ENEMY_Y = "enemy_y"
@@ -40,12 +42,33 @@ class CalibrationManager(context: Context) {
     /** True only after the user has explicitly adjusted the Match Outcome region. */
     fun hasMatchOutcomeCalibration(): Boolean = prefs.getBoolean(MATCH_OUTCOME_CALIBRATED, false)
 
+    /**
+     * A profile is written into the application's persistent device storage. It survives
+     * ordinary app updates and installs over the existing app; clearing app data or
+     * uninstalling the app deliberately removes it.
+     */
+    fun hasSavedProfile(): Boolean =
+        prefs.contains(CALIBRATION_SAVED_AT_MILLIS) ||
+            // Profiles saved before explicit profile metadata was introduced are still
+            // user calibration, not factory defaults.
+            prefs.contains("countdown_w") || prefs.contains("opponent_species_name_w")
+
+    fun lastSavedAtMillis(): Long? =
+        prefs.takeIf { it.contains(CALIBRATION_SAVED_AT_MILLIS) }
+            ?.getLong(CALIBRATION_SAVED_AT_MILLIS, 0L)
+            ?.takeIf { it > 0L }
+
     fun recordMatchOutcomeCalibration() {
         prefs.edit().putBoolean(MATCH_OUTCOME_CALIBRATED, true).apply()
     }
 
-    fun save(calibration: BattleCalibration) {
-        prefs.edit()
+    /**
+     * Commits before returning so a completed Draggy Box adjustment cannot be lost if the
+     * process is reclaimed immediately after the user leaves Match Calibration.
+     */
+    fun save(calibration: BattleCalibration): Boolean {
+        val savedAtMillis = System.currentTimeMillis()
+        return prefs.edit()
             .putFloat(ENEMY_X, calibration.enemyNameRegion.x)
             .putFloat(ENEMY_Y, calibration.enemyNameRegion.y)
             .putFloat(ENEMY_W, calibration.enemyNameRegion.width)
@@ -104,6 +127,11 @@ class CalibrationManager(context: Context) {
             .putFloat("opponent_team_info_y", calibration.opponentTeamInfoRegion.y)
             .putFloat("opponent_team_info_w", calibration.opponentTeamInfoRegion.width)
             .putFloat("opponent_team_info_h", calibration.opponentTeamInfoRegion.height)
+
+            .putFloat("player_species_name_x", calibration.playerSpeciesNameRegion.x)
+            .putFloat("player_species_name_y", calibration.playerSpeciesNameRegion.y)
+            .putFloat("player_species_name_w", calibration.playerSpeciesNameRegion.width)
+            .putFloat("player_species_name_h", calibration.playerSpeciesNameRegion.height)
 
             .putFloat("opponent_species_name_x", calibration.opponentSpeciesNameRegion.x)
             .putFloat("opponent_species_name_y", calibration.opponentSpeciesNameRegion.y)
@@ -164,8 +192,9 @@ class CalibrationManager(context: Context) {
             .putFloat("out_of_battle_menu_y", calibration.outOfBattleMenuRegion.y)
             .putFloat("out_of_battle_menu_w", calibration.outOfBattleMenuRegion.width)
             .putFloat("out_of_battle_menu_h", calibration.outOfBattleMenuRegion.height)
-
-            .apply()
+            .putInt(CALIBRATION_PROFILE_VERSION, 1)
+            .putLong(CALIBRATION_SAVED_AT_MILLIS, savedAtMillis)
+            .commit()
     }
 
     fun load(): BattleCalibration {
@@ -352,23 +381,56 @@ class CalibrationManager(context: Context) {
             )
         }
 
+        val playerSpeciesNameWidth = prefs.getFloat("player_species_name_w", 0f)
+        val persistedPlayerSpeciesNameRegion = if (playerSpeciesNameWidth > 0f && playerSpeciesNameWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("player_species_name_x", 20f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("player_species_name_y", 237f / 2400f).coerceIn(0f, 1f),
+                width = playerSpeciesNameWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("player_species_name_h", (297f - 237f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else null
+        // Early builds accidentally used the trainer-type-icon coordinates as
+        // the player species strip. Upgrade that exact shipped default only;
+        // a user's Draggy Box position always wins.
+        val oldPlayerSpeciesNameDefault = persistedPlayerSpeciesNameRegion?.let { region ->
+            kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (320f - 20f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
+        } == true
+        val playerSpeciesNameRegion = if (oldPlayerSpeciesNameDefault) {
+            BattleCalibration().playerSpeciesNameRegion
+        } else {
+            persistedPlayerSpeciesNameRegion ?: BattleCalibration().playerSpeciesNameRegion
+        }
+
         val opponentSpeciesNameWidth = prefs.getFloat("opponent_species_name_w", 0f)
         val persistedOpponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
             AnchorRegion(
                 x = prefs.getFloat("opponent_species_name_x", 920f / 1080f).coerceIn(0f, 1f),
-                y = prefs.getFloat("opponent_species_name_y", 243f / 2400f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_species_name_y", 237f / 2400f).coerceIn(0f, 1f),
                 width = opponentSpeciesNameWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("opponent_species_name_h", (275f - 243f) / 2400f).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("opponent_species_name_h", (285f - 237f) / 2400f).coerceIn(0.01f, 1f)
             )
         } else null
         // The former 920–1060 default clipped the first letters of long names.
         // Upgrade only an unchanged old default; never overwrite a Draggy Box the
         // user has deliberately positioned.
         val oldOpponentSpeciesNameDefault = persistedOpponentSpeciesNameRegion?.let { region ->
-            kotlin.math.abs(region.x - 920f / 1080f) < 0.0001f &&
+            val clippedOld = kotlin.math.abs(region.x - 920f / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.y - 243f / 2400f) < 0.0001f &&
                 kotlin.math.abs(region.width - (1060f - 920f) / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.height - (275f - 243f) / 2400f) < 0.0001f
+            val pokeBallRowDefault = kotlin.math.abs(region.x - 785f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 250f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (1038f - 785f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (275f - 250f) / 2400f) < 0.0001f
+            val typeIconRowDefault = kotlin.math.abs(region.x - 780f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
+            clippedOld || pokeBallRowDefault || typeIconRowDefault
         } == true
         val opponentSpeciesNameRegion = if (oldOpponentSpeciesNameDefault) {
             BattleCalibration().opponentSpeciesNameRegion
@@ -555,6 +617,7 @@ class CalibrationManager(context: Context) {
             playerTeamInfoRegion = playerTeamInfoRegion,
             announcementRegion = announcementRegion,
             opponentTeamInfoRegion = opponentTeamInfoRegion,
+            playerSpeciesNameRegion = playerSpeciesNameRegion,
             opponentSpeciesNameRegion = opponentSpeciesNameRegion,
             opponentPokeBallsRegion = opponentPokeBallsRegion,
             trainerActiveTypeRegion = trainerActiveTypeRegion,

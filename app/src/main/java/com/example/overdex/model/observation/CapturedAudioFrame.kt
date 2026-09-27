@@ -12,7 +12,9 @@ data class CapturedAudioFrame(
     val capturedAtMonotonicTimeNanos: Long,
     /** The accepted visual Timeline article that requested this precise audio window. */
     val cueArticleId: String,
-    val cueKind: com.example.overdex.battle.audio.BattleCryCueKind
+    val cueKind: com.example.overdex.battle.audio.BattleCryCueKind,
+    val captureSource: String = "MICROPHONE",
+    val peakAmplitude: Float? = null
 ) {
     val durationNanos: Long
         get() = pcm16le.size.toLong() * 1_000_000_000L / (sampleRateHz * channelCount * 2L)

@@ -105,7 +105,9 @@ data class ArchivedAudioCaptured(
     val sampleRateHz: Int,
     val channelCount: Int,
     val durationNanos: Long,
-    val cueKind: String
+    val cueKind: String,
+    val captureSource: String = "MICROPHONE",
+    val peakAmplitude: Float? = null
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -145,6 +147,67 @@ data class ArchivedActiveHpBarMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("active_hp_bar_motion_cadence_measured")
+data class ArchivedActiveHpBarMotionCadenceMeasured(
+    val movingSide: String,
+    val intervalNanos: Long,
+    val verticalExcursionPixels: Float,
+    val sampleCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("active_hp_bar_border_cadence_measured")
+data class ArchivedActiveHpBarBorderCadenceMeasured(
+    val damagedBarSide: String,
+    val intervalNanos: Long,
+    val peakColorDistance: Float,
+    val sampleCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_identified")
+data class ArchivedFastMoveIdentified(
+    val side: String,
+    val speciesName: String,
+    val moveName: String,
+    val moveDurationNanos: Long,
+    val observedMedianIntervalNanos: Long,
+    val cadenceSampleCount: Int,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_energy_derived")
+data class ArchivedFastMoveEnergyDerived(
+    val side: String,
+    val moveName: String,
+    val observedCompletedUses: Int,
+    val energyPerUse: Int,
+    val totalEnergyGenerated: Int,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("charged_move_energy_spent")
+data class ArchivedChargedMoveEnergySpent(
+    val side: String,
+    val speciesName: String,
+    val moveName: String,
+    val energyCost: Int,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_sound_measured")
+data class ArchivedFastMoveSoundMeasured(
+    val audible: Boolean,
+    val onsetOffsetNanos: Long? = null,
+    val soundDurationNanos: Long? = null,
+    val spectralCentroidHz: Float? = null,
+    val peakAmplitude: Float
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("player_inactive_species_sprite_fingerprint_measured")
 data class ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
     val slot: Int,
@@ -172,3 +235,15 @@ data class ArchivedBattleCryCandidatesMeasured(
 
 @Serializable @SerialName("visual_capture_gap") data class ArchivedVisualCaptureGapObserved(val durationNanos: Long) : ArchivedTestimonyPayload
 @Serializable @SerialName("out_of_battle_menu") data object ArchivedOutOfBattleMenuWitnessed : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("species_check_measured")
+data class ArchivedSpeciesCheckMeasured(
+    val side: String, val windowId: Long, val status: String, val reason: String,
+    val triggerMonotonicNanos: Long, val elapsedNanos: Long, val targetNanos: Long,
+    val speciesName: String? = null
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("audio_input_status")
+data class ArchivedAudioInputStatus(val captureSource: String, val state: String) : ArchivedTestimonyPayload
