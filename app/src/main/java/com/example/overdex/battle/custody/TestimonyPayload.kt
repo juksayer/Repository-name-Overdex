@@ -202,6 +202,22 @@ data class ActiveHpBarBorderCadenceMeasured(
     }
 }
 
+/**
+ * One rising edge of the color/brightness pulse around a damaged active HP
+ * bar. The article timestamp is the pulse time; this payload deliberately
+ * carries no cadence or move interpretation.
+ */
+data class ActiveHpBarBorderPulseObserved(
+    val damagedBarSide: ActivePokemonSide,
+    val peakColorDistance: Float,
+    val sampleCount: Int
+) : TestimonyPayload {
+    init {
+        require(peakColorDistance >= 0f)
+        require(sampleCount >= 1)
+    }
+}
+
 /** A move identity derived from measured cadence plus species reference knowledge. */
 data class FastMoveIdentified(
     /** The Pokémon performing the move. */

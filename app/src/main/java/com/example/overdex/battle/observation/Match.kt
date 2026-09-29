@@ -7,6 +7,7 @@ import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
@@ -321,6 +322,11 @@ class Match(
                 battleMemory.timeline.record(article)
 
                 fastMoveCadenceInference.accept(article).forEach { derivation ->
+                    (derivation.payload as? FastMoveIdentified)?.let { identified ->
+                        if (identified.side == ActivePokemonSide.OPPONENT) {
+                            DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)
+                        }
+                    }
                     val derivedArticle = RealityArticle(
                         id = ArticleId(UUID.randomUUID().toString()),
                         perceivedAt = derivation.observedArticle.perceivedAt,

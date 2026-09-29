@@ -3,6 +3,8 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.OutOfBattleMenuWitnessed
@@ -116,6 +118,7 @@ internal class BattleSurfaceConfirmation {
         when (payload) {
             VsScreenWitnessed -> established = true
             is CountdownGlyphWitnessed -> established = true
+            ChargeMoveUsedAnnounced, GetReadyWitnessed -> established = true
             is ActivePokemonSpeciesWitnessed -> speciesWitnessed = true
             is ActivePokemonTypesWitnessed -> typeWitnessed = true
         }

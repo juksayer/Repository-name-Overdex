@@ -35,6 +35,7 @@ class PersistedActiveHpBarWitness(
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
+    private var lastSpeciesName: String? = null
     private val tracker = ActiveHpBarTracker()
 
     override val managesAvailability: Boolean = true
@@ -42,6 +43,7 @@ class PersistedActiveHpBarWitness(
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
+        lastSpeciesName = null
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { witnessScope ->
             // A current HP position matters more than an old one. The complete crop
@@ -54,7 +56,10 @@ class PersistedActiveHpBarWitness(
             witnessScope.launch {
                 match.articles.collect { article ->
                     val species = article.payload as? ActivePokemonSpeciesWitnessed ?: return@collect
-                    if (species.side == side) tracker.resetForNextCombatant()
+                    if (species.side == side && species.speciesName != lastSpeciesName) {
+                        tracker.resetForNextCombatant()
+                        lastSpeciesName = species.speciesName
+                    }
                 }
             }
             witnessScope.launch {

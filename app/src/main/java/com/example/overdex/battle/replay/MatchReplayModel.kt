@@ -80,36 +80,16 @@ class MatchReplayModel(
                 ?.takeIf { it.side == "OPPONENT" }
                 ?.energyCost ?: 0
         }
-        val latestFastMoveArticle = articles.lastOrNull {
-            it.payload is ArchivedFastMoveEnergyDerived || it.payload is ArchivedFastMoveIdentified
-        }
-        val fastMoveAction = latestFastMoveArticle?.let { article ->
-            val payload = article.payload
-            val side: String
-            val name: String
-            when (payload) {
-                is ArchivedFastMoveEnergyDerived -> {
-                    side = payload.side
-                    name = payload.moveName
-                }
-                is ArchivedFastMoveIdentified -> {
-                    side = payload.side
-                    name = payload.moveName
-                }
-                else -> return@let null
-            }
-            val ageNanos = monotonicTimeNanos - (article.monotonicTimeNanos ?: return@let null)
-            fastMoveTypesByName[normalizeSpeciesName(name)]
-                ?.takeIf { ageNanos in 0 until FAST_MOVE_VISUAL_NANOS }
-                ?.let { type ->
-                    ReplayFastMoveAction(
-                        side = side,
-                        moveName = name,
-                        type = type,
-                        startedAtNanos = article.monotonicTimeNanos!!,
-                        progress = ageNanos.toFloat() / FAST_MOVE_VISUAL_NANOS
-                    )
-                }
+        // Identification describes a move, not an extra attack. Only individually
+        // timed uses can drive animation; a batch total cannot locate each hit.
+        val fastMoveActions = articles.mapNotNull { article ->
+            val use = article.payload as? ArchivedFastMoveEnergyDerived ?: return@mapNotNull null
+            if (use.observedCompletedUses != 1 || use.side !in setOf("PLAYER", "OPPONENT")) return@mapNotNull null
+            val ageNanos = monotonicTimeNanos - article.monotonicTimeNanos!!
+            if (ageNanos !in 0 until FAST_MOVE_VISUAL_NANOS) return@mapNotNull null
+            val type = fastMoveTypesByName[normalizeSpeciesName(use.moveName)] ?: return@mapNotNull null
+            ReplayFastMoveAction(use.side, use.moveName, type, article.monotonicTimeNanos,
+                ageNanos.toFloat() / FAST_MOVE_VISUAL_NANOS)
         }
 
         return ReplayScene(
@@ -123,7 +103,7 @@ class MatchReplayModel(
             opponentGeneratedEnergy = opponentGeneratedEnergy,
             playerSpentEnergy = playerSpentEnergy,
             opponentSpentEnergy = opponentSpentEnergy,
-            fastMoveAction = fastMoveAction,
+            fastMoveActions = fastMoveActions,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
         )
     }
@@ -268,7 +248,7 @@ data class ReplayScene(
     val playerSpentEnergy: Int,
     /** Cost of named charged moves confirmed by preserved announcements. */
     val opponentSpentEnergy: Int,
-    val fastMoveAction: ReplayFastMoveAction?,
+    val fastMoveActions: List<ReplayFastMoveAction>,
     val latestEvidenceLabel: String
 )
 

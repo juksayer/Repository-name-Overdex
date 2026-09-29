@@ -15,6 +15,7 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
@@ -160,6 +161,20 @@ class RealityArticleArchiveMapperTest {
         assertEquals(
             ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 1_500_000_000L, 42f, 7),
             RealityArticleArchiveMapper.map(article(id = "cadence", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps each HP border pulse as an independent measurement`() {
+        val payload = ActiveHpBarBorderPulseObserved(
+            damagedBarSide = ActivePokemonSide.PLAYER,
+            peakColorDistance = 0.42f,
+            sampleCount = 6
+        )
+
+        assertEquals(
+            ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.42f, 6),
+            RealityArticleArchiveMapper.map(article(id = "pulse", payload = payload)).payload
         )
     }
 

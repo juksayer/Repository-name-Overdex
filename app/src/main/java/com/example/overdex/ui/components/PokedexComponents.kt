@@ -178,7 +178,7 @@ fun InstrumentLCD(
             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
             .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
             .then(
-                if (onDrag != null || onTap != null) {
+                if (lcdContent == null && (onDrag != null || onTap != null)) {
                     Modifier.pointerInput(Unit) {
                         detectDragGestures(
                             onDrag = { change, dragAmount ->

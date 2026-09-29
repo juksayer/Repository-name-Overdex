@@ -22,11 +22,28 @@ fun TimelineViewerScreen(
     exportInProgress: Boolean = false,
     exportStatus: String? = null,
     onOpenMatch: () -> Unit = {},
-    openSelected: Boolean = false
+    openSelected: Boolean = false,
+    onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {}
 ) {
     val lastRecording = remember { ObservationRecorder.getLastRecording() }
     var selectedEvent by remember { mutableStateOf<RecordedEvent?>(null) }
     var activeFilters by remember { mutableStateOf(EvidenceSourceType.entries.toSet()) }
+
+    PublishMatchLcd(onLcdContentUpdate) {
+        MatchLcdColumn {
+            exportMatchId?.let { MatchLcdText("ID: $it") }
+            MatchLcdButton("OPEN MATCH ARCHIVE", onOpenMatch, selected = openSelected)
+            if (exportMatchId != null) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MatchLcdButton("SAVE COMPACT", onExportCompact, Modifier.weight(1f), compactExportSelected, !exportInProgress)
+                    MatchLcdButton("SAVE FULL", onExportFull, Modifier.weight(1f), fullExportSelected, !exportInProgress)
+                }
+                if (exportInProgress) androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                exportStatus?.let { MatchLcdText(it) }
+            }
+            MatchLcdButton("BACK", onBack, selected = !openSelected && !compactExportSelected && !fullExportSelected)
+        }
+    }
 
     TerminalScreen {
         TerminalPathIndicator(path = "/signal_observatory/timeline_viewer/")
@@ -76,44 +93,5 @@ fun TimelineViewerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TerminalButton(
-            text = "OPEN MATCH ARCHIVE",
-            onClick = onOpenMatch,
-            selected = openSelected
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (exportMatchId != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TerminalButton(
-                    text = if (exportInProgress && compactExportSelected) "SAVING…" else "SAVE COMPACT",
-                    onClick = { if (!exportInProgress) onExportCompact() },
-                    selected = compactExportSelected,
-                    modifier = Modifier.weight(1f)
-                )
-                TerminalButton(
-                    text = if (exportInProgress && fullExportSelected) "SAVING…" else "SAVE FULL",
-                    onClick = { if (!exportInProgress) onExportFull() },
-                    selected = fullExportSelected,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            exportStatus?.let { status ->
-                androidx.compose.material3.Text(
-                    text = status,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        
-        val backSelected = !openSelected && !compactExportSelected && !fullExportSelected
-        TerminalButton(text = "BACK", onClick = onBack, selected = backSelected)
     }
 }

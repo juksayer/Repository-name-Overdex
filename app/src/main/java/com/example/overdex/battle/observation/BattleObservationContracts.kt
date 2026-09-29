@@ -7,6 +7,7 @@ import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.RawTestimony
@@ -333,6 +334,16 @@ object BattleWitnessContracts {
         witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarBorderCadenceMeasured::class
+    )
+    val playerActiveHpBarBorderPulse = BattleWitnessContract(
+        witnessId = "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = ActiveHpBarBorderPulseObserved::class
+    )
+    val opponentActiveHpBarBorderPulse = BattleWitnessContract(
+        witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = ActiveHpBarBorderPulseObserved::class
     )
     val playerInactiveUpperHpBar = BattleWitnessContract(
         witnessId = "PLAYER_INACTIVE_UPPER_HP_BAR_WITNESS",

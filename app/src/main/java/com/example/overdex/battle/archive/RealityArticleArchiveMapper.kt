@@ -19,6 +19,7 @@ import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveEnergyDerived
 import com.example.overdex.battle.custody.ChargedMoveEnergySpent
@@ -146,6 +147,11 @@ object RealityArticleArchiveMapper {
             is ActiveHpBarBorderCadenceMeasured -> ArchivedActiveHpBarBorderCadenceMeasured(
                 damagedBarSide = p.damagedBarSide.name,
                 intervalNanos = p.intervalNanos,
+                peakColorDistance = p.peakColorDistance,
+                sampleCount = p.sampleCount
+            )
+            is ActiveHpBarBorderPulseObserved -> ArchivedActiveHpBarBorderPulseObserved(
+                damagedBarSide = p.damagedBarSide.name,
                 peakColorDistance = p.peakColorDistance,
                 sampleCount = p.sampleCount
             )

@@ -49,9 +49,12 @@ import com.example.overdex.battle.observation.PersistedPlayerEntrySpeciesWitness
 import com.example.overdex.battle.observation.PersistedAnnouncementPhraseWitness
 import com.example.overdex.battle.observation.PersistedAttackIncomingWitness
 import com.example.overdex.battle.observation.PersistedPlayerInactiveHpBarWitness
-import com.example.overdex.battle.observation.PersistedActiveHpBarWitness
 import com.example.overdex.battle.observation.PersistedActiveHpBarCadenceWitness
-import com.example.overdex.battle.observation.PersistedActiveHpBarBorderCadenceWitness
+import com.example.overdex.battle.observation.LiveActiveHpBarWitness
+import com.example.overdex.battle.observation.LiveActiveHpBarBorderCadenceWitness
+import com.example.overdex.battle.observation.LiveActiveHpBarBorderPulseWitness
+import com.example.overdex.battle.observation.LiveActiveHpBarFrameHub
+import com.example.overdex.battle.observation.LiveOverlaySpeciesPipeline
 import com.example.overdex.battle.observation.PersistedPlayerInactiveSpeciesSpriteWitness
 import com.example.overdex.battle.observation.PersistedTrainerInactiveTimerOverlayClearanceWitness
 import com.example.overdex.battle.observation.PokemonGoTypeIconMatcher
@@ -96,9 +99,18 @@ import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import java.util.Collections
 
 class PokedexViewModel(application: Application) : AndroidViewModel(application) {
     /**
@@ -111,6 +123,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val auxiliaryCaptureDispatcher = Dispatchers.IO.limitedParallelism(2)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val combatCaptureDispatcher = Dispatchers.IO.limitedParallelism(2)
 
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
@@ -144,8 +159,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private var nextMatchVsWatcher: NextMatchVsWatcher? = null
     private val fieldMatchLedger = DroidballMatchLedger()
     private val archiveDirectoryManager = ArchiveDirectoryManager(application)
+    /** Export work survives an Activity/ViewModel recreation while the process remains alive. */
+    private val archiveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val archiveMutex = Mutex()
+    private var activeCheckpointJob: Job? = null
     /** A Match record is retained once, whether it ends by a result or capture stops early. */
-    private val retainedMatchIds = mutableSetOf<String>()
+    private val retainedMatchIds = Collections.synchronizedSet(mutableSetOf<String>())
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
@@ -261,18 +280,21 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val battleEvidenceLive: () -> Boolean = {
             session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
                 session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE ||
-                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD
+                session.battleSurfaceEstablished.value ||
+                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD ||
+                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_LIVE
         }
         // The announcement carries entry species names before 3/2/1. The heavier
         // HUD witnesses still wait for the countdown boundary.
         val announcementEvidenceLive: () -> Boolean = {
             session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.ARMED || battleEvidenceLive()
         }
-        // An active HP bar exists only after GO. Do not let an already-visible HUD
-        // or a pre-battle map crop create a measurement before the battle surface exists.
+        // HP evidence belongs to the live battle surface. Follow the same
+        // surface signal that opens the overlay instead of waiting for the
+        // later BATTLE_ACTIVE phase transition; that transition can arrive
+        // after the first usable HP frames, or be missed by a session listener.
         val activeHpEvidenceLive: () -> Boolean = {
-            session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE ||
-                session.battleSurfaceEstablished.value
+            battleEvidenceLive()
         }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
@@ -285,6 +307,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         _activeMatch.value = match
         _droidballSession.value = session
+        startMatchCheckpointing(match)
         match.custody.submitTestimony(
             sourceId = SourceId("DROIDBALL_SESSION"),
             payload = MatchRecordStarted,
@@ -315,14 +338,31 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         // Brief battle phenomena need a dense sampling lane; stable panels use
         // the default five-fps cadence to leave capture capacity for them.
         val transientIntervalNanos = 33_333_333L // 30 fps
+        // Full-width announcement and result strips remain transient evidence,
+        // but they do not need a PNG on every display frame for the entire
+        // match. Ten samples per second still catches brief text while keeping
+        // PNG encoding and native bitmap churn bounded.
+        val transientTextIntervalNanos = 100_000_000L // 10 fps
         val combatCadenceIntervalNanos = 50_000_000L // 20 fps
+        // Live HP witnesses measure every usable frame. Keep only a sparse
+        // forensic sample as PNG evidence for optional full exports.
+        val hpArtifactIntervalNanos = 2_000_000_000L // one HP crop every 2 seconds
         val inactiveTimerIntervalNanos = 100_000_000L // 10 fps
+        val playerHpFrameHub = LiveActiveHpBarFrameHub()
+        val opponentHpFrameHub = LiveActiveHpBarFrameHub()
+        val fastPlayerSpeciesOverlay = LiveOverlaySpeciesPipeline.player(cropArtifactStore)
+        val fastOpponentSpeciesOverlay = LiveOverlaySpeciesPipeline.opponent(cropArtifactStore)
         PokemonGoTypeIconMatcher.initialize(getApplication())
 
+        observationDispatcher.register(fastPlayerSpeciesOverlay)
+        observationDispatcher.register(fastOpponentSpeciesOverlay)
+
         // Species identity is the first dependency for the battle HUD and
-        // replay. Start these narrow badge strips before every optional crop,
-        // and sample short cue-triggered windows. Content-addressed PNGs
-        // deduplicate unchanged badge frames in the artifact store.
+        // replay. Preserve these narrow badge strips continuously while the
+        // field session is armed or live. The OCR worker still reads only the
+        // short, cue-triggered windows from SpeciesCheckCoordinator; keeping
+        // preservation independent means a cue can consume the very next badge
+        // frame instead of waiting for a later recovery window.
         listOf(
             BattleWitnessContracts.playerActiveSpeciesTextCapture to "Player Active Species Text Capture Witness",
             BattleWitnessContracts.opponentActiveSpeciesTextCapture to "Opponent Active Species Text Capture Witness"
@@ -332,15 +372,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = contract,
                 artifactStore = cropArtifactStore,
-                isEnabled = { announcementEvidenceLive() && match.speciesChecks.captureEnabled(
-                    if (contract == BattleWitnessContracts.playerActiveSpeciesTextCapture)
-                        com.example.overdex.battle.custody.ActivePokemonSide.PLAYER
-                    else com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
-                ) },
+                isEnabled = announcementEvidenceLive,
                 captureIntervalNanos = com.example.overdex.battle.observation.SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS,
                 captureDispatcher = identityCaptureDispatcher,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = name
+                name = name,
+                onCaptured = { captured, wallTimeMillis, monotonicTimeNanos ->
+                    if (contract == BattleWitnessContracts.playerActiveSpeciesTextCapture) {
+                        fastPlayerSpeciesOverlay.offer(captured, wallTimeMillis, monotonicTimeNanos)
+                    } else {
+                        fastOpponentSpeciesOverlay.offer(captured, wallTimeMillis, monotonicTimeNanos)
+                    }
+                }
             ))
         }
         observationDispatcher.register(PersistedSpeciesWitness.player(cropArtifactStore))
@@ -504,19 +547,21 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.opponentHpEvidenceCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = activeHpEvidenceLive,
-                captureIntervalNanos = combatCadenceIntervalNanos,
-                captureDispatcher = auxiliaryCaptureDispatcher,
+                captureIntervalNanos = hpArtifactIntervalNanos,
+                captureDispatcher = combatCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Opponent HP Evidence Capture Witness"
             )
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
-        observationDispatcher.register(PersistedActiveHpBarWitness.player(cropArtifactStore))
-        observationDispatcher.register(PersistedActiveHpBarWitness.opponent(cropArtifactStore))
+        observationDispatcher.register(LiveActiveHpBarWitness.player(input, calibration, activeHpEvidenceLive, playerHpFrameHub))
+        observationDispatcher.register(LiveActiveHpBarWitness.opponent(input, calibration, activeHpEvidenceLive, opponentHpFrameHub))
         observationDispatcher.register(PersistedActiveHpBarCadenceWitness.player())
         observationDispatcher.register(PersistedActiveHpBarCadenceWitness.opponent())
-        observationDispatcher.register(PersistedActiveHpBarBorderCadenceWitness.player(cropArtifactStore))
-        observationDispatcher.register(PersistedActiveHpBarBorderCadenceWitness.opponent(cropArtifactStore))
+        observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.player(playerHpFrameHub))
+        observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.opponent(opponentHpFrameHub))
+        observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.player(playerHpFrameHub))
+        observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.opponent(opponentHpFrameHub))
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
             BattleWitnessContracts.playerTeamStatusCapture to "Player Team Status Capture Witness",
@@ -527,18 +572,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
                 isEnabled = if (contract == BattleWitnessContracts.playerHpEvidenceCapture) activeHpEvidenceLive else battleEvidenceLive,
                 captureIntervalNanos = when (contract) {
-                    BattleWitnessContracts.playerHpEvidenceCapture,
+                    BattleWitnessContracts.playerHpEvidenceCapture -> hpArtifactIntervalNanos
                     BattleWitnessContracts.chargeMoveExecutionCapture -> combatCadenceIntervalNanos
                     BattleWitnessContracts.playerChargeMoveControlsCapture -> inactiveTimerIntervalNanos
                     else -> 200_000_000L
                 },
-                captureDispatcher = auxiliaryCaptureDispatcher,
+                captureDispatcher = if (contract == BattleWitnessContracts.playerHpEvidenceCapture) {
+                    combatCaptureDispatcher
+                } else {
+                    auxiliaryCaptureDispatcher
+                },
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name = name))
         }
         observationDispatcher.register(
             CropCaptureWitness(input, calibration, BattleWitnessContracts.announcementCropCapture, cropArtifactStore,
                 isEnabled = announcementEvidenceLive,
-                captureIntervalNanos = transientIntervalNanos,
+                captureIntervalNanos = transientTextIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Announcement Crop Capture Witness")
@@ -589,7 +638,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.matchOutcomeCropCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = { battleEvidenceLive() },
-                captureIntervalNanos = transientIntervalNanos,
+                captureIntervalNanos = transientTextIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.matchOutcomeCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Match Outcome Crop Capture Witness"
@@ -712,23 +761,50 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
      * a stopped projection yields an intentionally incomplete record rather than discarding
      * its observed portion. Droidball can then be started again without confusing the two.
      */
+    private fun startMatchCheckpointing(match: Match) {
+        activeCheckpointJob?.cancel()
+        activeCheckpointJob = archiveScope.launch {
+            while (isActive) {
+                delay(15_000L)
+                if (_activeMatch.value?.matchId != match.matchId || retainedMatchIds.contains(match.matchId)) break
+                runCatching {
+                    archiveMutex.withLock {
+                        if (archiveDirectoryManager.isFolderAvailable()) {
+                            archiveDirectoryManager.exportMatchCheckpoint(
+                                matchId = MatchId(match.matchId),
+                                realityTimeline = match.realityTimeline
+                            )
+                        }
+                    }
+                }.onFailure { error ->
+                    Log.w("MATCH_ARCHIVE", "Unable to checkpoint active match ${match.matchId}", error)
+                }
+            }
+        }
+    }
+
     private fun retainAndArchiveMatch(match: Match, reason: String) {
         if (!retainedMatchIds.add(match.matchId)) return
+        activeCheckpointJob?.cancel()
+        activeCheckpointJob = null
         match.speciesChecks.stop()
         val source = MatchArchiveSource(MatchId(match.matchId), match.realityTimeline)
         fieldMatchLedger.complete(source)
         _latestMatchArchiveSource.value = source
-        viewModelScope.launch(Dispatchers.IO) {
+        archiveScope.launch {
             runCatching {
-                if (archiveDirectoryManager.isFolderAvailable()) {
-                    archiveDirectoryManager.exportMatch(
-                        source.matchId,
-                        source.realityTimeline,
-                        MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
-                    )
-                } else null
+                archiveMutex.withLock {
+                    if (archiveDirectoryManager.isFolderAvailable()) {
+                        archiveDirectoryManager.exportMatch(
+                            source.matchId,
+                            source.realityTimeline,
+                            MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+                        )
+                    } else null
+                }
             }.onSuccess { uri ->
                 if (uri != null) {
+                    archiveDirectoryManager.deleteMatchCheckpoint(source.matchId)
                     Log.i("MATCH_ARCHIVE", "Auto-saved $reason match ${source.matchId.value}: $uri")
                 } else {
                     Log.w("MATCH_ARCHIVE", "$reason match ${source.matchId.value} remains in the field ledger; no Archive Directory is configured.")
@@ -752,6 +828,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballOverlayPresentation.reset()
         _activeMatch.value = null
         _deploymentState.value = InstrumentDeploymentState.IDLE
+    }
+
+    override fun onCleared() {
+        archiveScope.cancel()
+        super.onCleared()
     }
 
     fun startDroidBallService() {

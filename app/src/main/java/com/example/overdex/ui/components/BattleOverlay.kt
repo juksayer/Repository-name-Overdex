@@ -157,8 +157,12 @@ private fun OverlayPanel(
                 repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
             }
             if (opponentMoves != null) {
-                MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
-                MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
+                if (opponentMoves.fastMoves.isNotEmpty()) {
+                    MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
+                }
+                if (opponentMoves.chargedMoves.isNotEmpty()) {
+                    MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
+                }
             }
         } else {
             val message = when (mode) {
@@ -228,18 +232,14 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>, muted: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
         Text(label, color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
-        if (moves.isEmpty()) {
-            Text("UNAVAILABLE", color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
-        } else {
-            moves.forEach { move ->
-                Text(
-                    text = if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name,
-                    color = if (move.hazardous) Color(0xFFC62828) else muted,
-                    fontSize = 8.sp,
-                    fontWeight = if (move.hazardous) FontWeight.Bold else FontWeight.Normal,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
+        moves.forEach { move ->
+            Text(
+                text = if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name,
+                color = if (move.hazardous) Color(0xFFC62828) else muted,
+                fontSize = 8.sp,
+                fontWeight = if (move.hazardous) FontWeight.Bold else FontWeight.Normal,
+                fontFamily = FontFamily.Monospace
+            )
         }
     }
 }

@@ -86,7 +86,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
          * leaves the 60 px species strips at 45 px while substantially reducing the
          * native bitmap pressure that can make Android reclaim the app on return.
          */
-        private const val CAPTURE_SCALE = 0.75f
+        // The narrowest calibrated text strips are about 60 px high on the
+        // published 1080x2400 frame.  0.625 keeps them above the 32 px OCR
+        // floor while reducing each transient source bitmap by roughly 30%.
+        private const val CAPTURE_SCALE = 0.625f
         private const val MIN_CAPTURE_INTERVAL_NANOS = 50_000_000L // 20 fps
         @Volatile private var activeService: DroidballService? = null
         
@@ -94,8 +97,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val signals = _signals.asSharedFlow()
 
         private val _frames = MutableSharedFlow<CapturedVisualFrame>(
-            replay = 0,
-            extraBufferCapacity = 4,
+            // A published frame owns a large native Bitmap.  The capture stream
+            // is a live observation source, so retaining a queue of frames for
+            // slow crop workers only increases memory pressure and makes Android
+            // destroy the activity while Pokémon GO is in the foreground.  Each
+            // worker can safely skip an intermediate frame because every accepted
+            // crop is persisted with its own capture timestamp.
+            replay = 1,
+            extraBufferCapacity = 0,
             onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
         val frames = _frames.asSharedFlow()

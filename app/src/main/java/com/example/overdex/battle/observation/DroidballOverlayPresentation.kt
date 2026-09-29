@@ -50,6 +50,7 @@ object DroidballOverlayPresentation {
     private var activeOpponentFastMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentChargedMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentSpeciesName: String? = null
+    private var identifiedOpponentFastMove: String? = null
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
         // Session state is delivered asynchronously.  An initial ARMED emission can
@@ -92,6 +93,7 @@ object DroidballOverlayPresentation {
         activeOpponentFastMoves = emptyList()
         activeOpponentChargedMoves = emptyList()
         activeOpponentSpeciesName = null
+        identifiedOpponentFastMove = null
     }
 
     fun setActivePlayerTypes(types: List<PokemonType>) {
@@ -108,9 +110,16 @@ object DroidballOverlayPresentation {
         if (_opponentSpecies.value.none { it.speciesName == speciesName } && _opponentSpecies.value.size < 3) {
             _opponentSpecies.value += ObservedOpponentSpecies(speciesName, speciesId)
         }
+        if (activeOpponentSpeciesName != speciesName) identifiedOpponentFastMove = null
         activeOpponentSpeciesName = speciesName
         activeOpponentFastMoves = possibleFastMoves
         activeOpponentChargedMoves = possibleChargedMoves
+        publishMovePossibilities()
+    }
+
+    /** Replace the opponent's candidate fast moves after cadence identifies one. */
+    fun recordOpponentFastMove(moveName: String) {
+        identifiedOpponentFastMove = moveName
         publishMovePossibilities()
     }
 
@@ -119,8 +128,11 @@ object DroidballOverlayPresentation {
         fun scored(moves: List<Pair<String, PokemonType>>) = moves.map { (name, type) ->
             OverlayMovePossibility(name, type, effectivenessAgainstPlayer(type))
         }
+        val fastMoves = identifiedOpponentFastMove?.let { identified ->
+            activeOpponentFastMoves.filter { it.first.equals(identified, ignoreCase = true) }
+        } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
-            speciesName, scored(activeOpponentFastMoves), scored(activeOpponentChargedMoves)
+            speciesName, scored(fastMoves), scored(activeOpponentChargedMoves)
         )
     }
 

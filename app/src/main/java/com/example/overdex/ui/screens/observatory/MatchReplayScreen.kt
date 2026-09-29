@@ -1,9 +1,16 @@
 package com.example.overdex.ui.screens.observatory
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -26,13 +35,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.replay.ReplayFastMoveAction
+import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
@@ -43,6 +56,7 @@ import com.example.overdex.ui.components.PokemonTypeIcon
 import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.components.TerminalScreen
 import com.example.overdex.ui.theme.TerminalGreen
+import kotlin.math.sin
 import kotlinx.coroutines.delay
 
 /** A clean CRT battle stage. Replay transport and diagnostics live in the ODX-Fi LCD. */
@@ -57,16 +71,26 @@ fun MatchReplayScreen(
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String, String) -> Unit = { _, _ -> },
+    onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive) -> List<ReplayIdentityObservation> = { emptyList() }
+    resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
     val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
         value = referencedNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
     }
+    var cropProgress by remember(archive) { mutableStateOf(ReplayCropProgress("READING ARCHIVE")) }
+    var cropError by remember(archive) { mutableStateOf<String?>(null) }
     val archivedCropIdentities by produceState<List<ReplayIdentityObservation>?>(null, archive) {
-        value = resolveArchivedSpeciesCrops(archive)
+        value = try {
+            resolveArchivedSpeciesCrops(archive) { cropProgress = it }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            cropError = "Crop verification failed: ${error.message}"
+            emptyList()
+        }
     }
     val fastMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
         value = archive.articles.mapNotNull { article ->
@@ -115,15 +139,43 @@ fun MatchReplayScreen(
         }
     }
 
-    SideEffect {
-        val fraction = ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
-        if (archivedCropIdentities == null) {
-            onLcdUpdate("[REPLAY] RESOLVING SPECIES", "VERIFYING PRESERVED CROP EVIDENCE")
-        } else {
-            onLcdUpdate(
-                "[${if (playing) "PLAY" else "PAUSE"}] ${formatReplayTime(cursor - model.startNanos)} ${replayScrubBar(fraction)}",
-                "P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}  O ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}  TAP PLAY  DRAG SCRUB"
-            )
+    PublishMatchLcd(onLcdContentUpdate) {
+        var scrubWidth by remember { mutableIntStateOf(1) }
+        val drag by rememberUpdatedState<(Offset) -> Unit>({ delta ->
+            playing = false
+            val previous = cursor
+            cursor = (cursor + (duration * delta.x / scrubWidth).toLong()).coerceIn(model.startNanos, model.endNanos)
+            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+        })
+        val toggle by rememberUpdatedState<() -> Unit>({
+            playing = !playing
+            if (playing) transportSounds.play() else transportSounds.pause()
+        })
+        Column(Modifier.fillMaxSize().onSizeChanged { scrubWidth = it.width.coerceAtLeast(1) }
+            .pointerInput(Unit) { detectHorizontalDragGestures { change, delta -> change.consume(); drag(Offset(delta, 0f)) } }
+            .pointerInput(Unit) { detectTapGestures { toggle() } }
+            .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - model.startNanos)} / ${formatReplayTime(duration)}")
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(8.dp), color = TerminalGreen)
+            androidx.compose.material3.Text("TAP PLAY/PAUSE", color = TerminalGreen, fontSize = 10.sp)
+            androidx.compose.material3.Text("DRAG SCRUB", color = TerminalGreen, maxLines = 1, softWrap = false,
+                fontSize = 10.sp)
+            if (archivedCropIdentities == null) {
+                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
+                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
+                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+            }
+            cropError?.let { MatchLcdText(it) }
+            MatchLcdText("P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}\nO ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                MatchLcdButton("RESET", { cursor = model.startNanos; playing = false; transportSounds.reset() }, Modifier.weight(1f))
+                MatchLcdButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
+                MatchLcdButton("BACK", { playing = false; transportSounds.stop(); onBack() }, Modifier.weight(1f))
+            }
         }
     }
 
@@ -149,7 +201,8 @@ fun MatchReplayScreen(
                 .border(1.dp, TerminalGreen),
             contentAlignment = Alignment.Center
         ) {
-            Box(Modifier.fillMaxSize()) {
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val travelHalfWidth = ((maxWidth - 36.dp - 150.dp) / 2).coerceAtLeast(0.dp)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).align(Alignment.Center),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,16 +211,18 @@ fun MatchReplayScreen(
                     ReplayCombatantSlot(
                         combatant = scene.player,
                         context = context,
-                        useBackSprite = true
+                        useBackSprite = true,
+                        action = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" }
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
                         context = context,
-                        useBackSprite = false
+                        useBackSprite = false,
+                        action = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" }
                     )
                 }
-                scene.fastMoveAction?.let { action ->
-                    FastMoveReplayIndicator(action, Modifier.align(Alignment.Center))
+                scene.fastMoveActions.forEach { action ->
+                    FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
                 }
             }
         }
@@ -178,12 +233,12 @@ private fun energyLedger(generated: Int, spent: Int): String =
     "E ${generated - spent} (+$generated/-$spent)"
 
 @Composable
-private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, modifier: Modifier = Modifier) {
-    val movement = ((action.progress.coerceIn(0f, 1f) * 2f) - 1f) * 96f
+private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidth: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val movement = ((action.progress.coerceIn(0f, 1f) * 2f) - 1f)
     val direction = if (action.side == "PLAYER") 1f else -1f
     Box(
         modifier = modifier
-            .offset(x = (movement * direction).dp)
+            .offset(x = travelHalfWidth * (movement * direction))
             .size(34.dp)
             .background(action.type.color.copy(alpha = 0.25f))
             .border(1.dp, action.type.color),
@@ -219,7 +274,8 @@ private fun replayScrubBar(fraction: Float): String {
 private fun ReplayCombatantSlot(
     combatant: ReplayCombatant?,
     context: android.content.Context,
-    useBackSprite: Boolean
+    useBackSprite: Boolean,
+    action: ReplayFastMoveAction?
 ) {
     Box(
         modifier = Modifier.width(150.dp).size(150.dp),
@@ -232,7 +288,16 @@ private fun ReplayCombatantSlot(
                 },
                 contentDescription = combatant.speciesName,
                 modifier = Modifier
-                    .size(130.dp),
+                    .size(130.dp)
+                    // Pokémon GO places the player's back-facing combatant
+                    // lower in the field. A small downward offset aligns its
+                    // head with the opponent while preserving the left/right
+                    // battle orientation.
+                    .offset(y = if (useBackSprite) 24.dp else 0.dp)
+                    .graphicsLayer {
+                        // Cursor-driven pixels: pausing and scrubbing preserve the pose.
+                        translationY = action?.let { -8f * sin(it.progress * Math.PI).toFloat() } ?: 0f
+                    },
                 contentScale = ContentScale.Fit
             )
         }

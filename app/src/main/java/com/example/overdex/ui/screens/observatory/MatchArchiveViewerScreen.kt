@@ -63,9 +63,10 @@ fun MatchArchiveViewerScreen(
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String, String) -> Unit = { _, _ -> },
+    onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive) -> List<ReplayIdentityObservation> = { emptyList() }
+    resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -120,6 +121,7 @@ fun MatchArchiveViewerScreen(
             onLcdDrag = onLcdDrag,
             onLcdTap = onLcdTap,
             onLcdUpdate = onLcdUpdate,
+            onLcdContentUpdate = onLcdContentUpdate,
             resolveSpeciesId = resolveSpeciesId,
             resolveFastMoveType = resolveFastMoveType,
             resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
@@ -179,52 +181,28 @@ fun MatchArchiveViewerScreen(
         }
     }
 
+    PublishMatchLcd(onLcdContentUpdate) {
+        MatchLcdColumn {
+            MatchLcdText("ID: ${archive.matchId}")
+            MatchLcdText("ARTICLES: ${archive.articles.size}   SELECTED: ${selectedIndex + 1}")
+            MatchLcdButton("MARK START", { selectedAction = ArchiveViewerAction.MARK_START; markStart() },
+                selected = selectedAction == ArchiveViewerAction.MARK_START, enabled = selectedArticle?.monotonicTimeNanos != null)
+            MatchLcdButton("MARK END + SAVE", { selectedAction = ArchiveViewerAction.MARK_END_AND_SAVE; markEndAndSave() },
+                selected = selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE,
+                enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null)
+            MatchLcdButton("OPEN REPLAY", { showReplay = true }, selected = selectedAction == ArchiveViewerAction.OPEN_REPLAY)
+            excerptStatus?.let { MatchLcdText(it) }
+            MatchLcdButton(if (showDetails) "CLOSE DETAILS" else "ARTICLE DETAILS", { showDetails = !showDetails }, enabled = selectedArticle != null)
+            MatchLcdButton("BACK", onBack)
+            MatchLcdText("←/→ ACTION   ↑/↓ ARTICLE   A SELECT")
+        }
+    }
+
     TerminalScreen {
         TerminalPathIndicator(path = "/signal_observatory/archive_viewer/")
 
         Column(modifier = Modifier.fillMaxSize()) {
             TerminalHeader(text = "MATCH ARCHIVE")
-            TerminalText(
-                text = "ID: ${archive.matchId}",
-                color = TerminalPurple,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-            TerminalText(
-                text = "ARTICLES: ${archive.articles.size}",
-                color = TerminalDimGreen,
-                fontSize = 10.sp
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                androidx.compose.material3.TextButton(
-                    enabled = selectedArticle?.monotonicTimeNanos != null,
-                    onClick = {
-                        selectedAction = ArchiveViewerAction.MARK_START
-                        markStart()
-                    }
-                ) { TerminalText(text = if (selectedAction == ArchiveViewerAction.MARK_START) "[▶ MARK START ]" else "[ MARK START ]", color = TerminalGreen, fontSize = 10.sp) }
-                androidx.compose.material3.TextButton(
-                    enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null,
-                    onClick = {
-                        selectedAction = ArchiveViewerAction.MARK_END_AND_SAVE
-                        markEndAndSave()
-                    }
-                ) { TerminalText(text = if (selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE) "[▶ MARK END + SAVE ]" else "[ MARK END + SAVE ]", color = TerminalGreen, fontSize = 10.sp) }
-            }
-            androidx.compose.material3.TextButton(onClick = {
-                selectedAction = ArchiveViewerAction.OPEN_REPLAY
-                showReplay = true
-            }) {
-                TerminalText(text = if (selectedAction == ArchiveViewerAction.OPEN_REPLAY) "[▶ OPEN REPLAY ]" else "[ OPEN REPLAY ]", color = TerminalGreen, fontSize = 10.sp)
-            }
-            excerptStatus?.let { TerminalText(text = it, color = TerminalDimGreen, fontSize = 9.sp) }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             if (archive.articles.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     TerminalText(text = "ARCHIVE IS EMPTY", color = Color.Gray)
@@ -253,12 +231,7 @@ fun MatchArchiveViewerScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            TerminalText(
-                text = if (showDetails) "[B] CLOSE DETAILS" else "[←/→] ACTION  [↑/↓] ARTICLE  [A] ACTIVATE  [B] BACK",
-                color = TerminalDimGreen,
-                fontSize = 10.sp
-            )
+
         }
     }
 }
@@ -328,6 +301,7 @@ private fun ArchiveArticleRow(
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, signal=${String.format(Locale.ROOT, "%.3f", p.peakColorDistance)}]"
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}]"
@@ -416,6 +390,7 @@ private fun ArticleDetailsOverlay(
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
+            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, signal=${String.format(Locale.ROOT, "%.3f", p.peakColorDistance)}]"
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}, basis=${p.basis}]"

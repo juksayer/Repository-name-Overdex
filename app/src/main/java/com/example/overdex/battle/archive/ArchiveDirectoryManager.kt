@@ -85,6 +85,7 @@ class ArchiveDirectoryManager(private val context: Context) {
         matchId: MatchId,
         realityTimeline: RealityTimeline,
         mode: MatchArchiveExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+        requestedFileName: String? = null,
         onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? {
         val uri = getFolderUri() ?: return null
@@ -94,15 +95,25 @@ class ArchiveDirectoryManager(private val context: Context) {
             return null
         }
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
-        val baseTimestamp = dateFormat.format(Date())
-        var fileName = "$baseTimestamp.odxmatch.zip"
-        var counter = 1
-
-        // Check collisions inside the selected SAF folder using DocumentFile without relying on File.exists()
-        while (parentDoc.findFile(fileName) != null) {
-            fileName = "${baseTimestamp}_$counter.odxmatch.zip"
-            counter++
+        val fileName = if (requestedFileName == null) {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
+            val baseTimestamp = dateFormat.format(Date())
+            var candidate = "$baseTimestamp.odxmatch.zip"
+            var counter = 1
+            // Check collisions inside the selected SAF folder using DocumentFile without relying on File.exists()
+            while (parentDoc.findFile(candidate) != null) {
+                candidate = "${baseTimestamp}_$counter.odxmatch.zip"
+                counter++
+            }
+            candidate
+        } else {
+            require(requestedFileName.endsWith(".odxmatch.zip")) {
+                "Requested archive name must end with .odxmatch.zip"
+            }
+            // A checkpoint is replaced only after its new package has been built
+            // successfully below. This keeps an earlier checkpoint available if
+            // serialization or artifact verification fails.
+            requestedFileName
         }
 
         // Build privately first. A failed package must never appear as an empty,
@@ -120,6 +131,10 @@ class ArchiveDirectoryManager(private val context: Context) {
                 )
             }
             require(temporary.length() > 0L) { "Archive package was empty." }
+            val previousFile = requestedFileName?.let { parentDoc.findFile(it) }
+            // SAF providers generally reject duplicate display names. The old
+            // checkpoint is removed only after the new private package exists.
+            previousFile?.delete()
             val newFile = parentDoc.createFile("application/zip", fileName)
                 ?: throw java.io.IOException("Unable to create archive in selected folder.")
             try {
@@ -134,5 +149,28 @@ class ArchiveDirectoryManager(private val context: Context) {
         } finally {
             temporary.delete()
         }
+    }
+
+    /**
+     * Writes the latest accepted portion of an active match under a stable name.
+     * Checkpoints are compact and replaceable; the completed result export keeps
+     * the normal timestamped filename.
+     */
+    fun exportMatchCheckpoint(
+        matchId: MatchId,
+        realityTimeline: RealityTimeline,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
+    ): Uri? = exportMatch(
+        matchId = matchId,
+        realityTimeline = realityTimeline,
+        mode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+        onArtifactVerified = onArtifactVerified,
+        requestedFileName = "active-${matchId.value}.odxmatch.zip"
+    )
+
+    fun deleteMatchCheckpoint(matchId: MatchId): Boolean {
+        val uri = getFolderUri() ?: return false
+        val parentDoc = DocumentFile.fromTreeUri(context, uri) ?: return false
+        return parentDoc.findFile("active-${matchId.value}.odxmatch.zip")?.delete() == true
     }
 }

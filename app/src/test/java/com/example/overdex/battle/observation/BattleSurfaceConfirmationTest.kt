@@ -10,6 +10,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BattleSurfaceConfirmationTest {
+    @Test fun `charge cues open HP observation even when countdown and identity were missed`() {
+        assertTrue(BattleSurfaceConfirmation().observe(com.example.overdex.battle.custody.ChargeMoveUsedAnnounced))
+        assertTrue(BattleSurfaceConfirmation().observe(com.example.overdex.battle.custody.GetReadyWitnessed))
+    }
+
     @Test
     fun `accepted countdown evidence establishes a battle surface without GO`() {
         val confirmation = BattleSurfaceConfirmation()

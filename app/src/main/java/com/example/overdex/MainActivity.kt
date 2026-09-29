@@ -223,7 +223,10 @@ class MainActivity : ComponentActivity() {
             ).show()
             return
         }
-        startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        // Keep Pokémon GO in its own task while leaving this shell as the
+        // single launcher task to return to. MainActivity is singleTask, so
+        // reopening Overdex from the launcher reuses the existing shell.
+        startActivity(launchIntent)
     }
 
     private val archiveOpenLauncher = registerForActivityResult(
@@ -1044,6 +1047,7 @@ fun PokedexApp(
                 }
             }
             composable("timeline_viewer") {
+                var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
                 val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
                 val archiveExportSelected = remember { mutableStateOf(false) }
                 val archiveOpenSelected = remember { mutableStateOf(false) }
@@ -1122,6 +1126,7 @@ fun PokedexApp(
                 }
 
                 ODXFiShell(
+                    lcdContent = matchLcdContent,
                     showBattleOverlay = false,
                     viewModel = viewModel,
                     filterSettings = filterSettings,
@@ -1192,6 +1197,7 @@ fun PokedexApp(
                     onB = { navController.debugPopBackStack() }
                 ) {
                     TimelineViewerScreen(
+                        onLcdContentUpdate = { matchLcdContent = it },
                         onBack = { navController.debugPopBackStack() },
                         exportMatchId = archiveSourceState.value?.matchId?.value,
                         compactExportSelected = archiveExportSelected.value &&
@@ -1286,6 +1292,7 @@ fun PokedexApp(
                 }
             }
             composable("match_archive_viewer") {
+                var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
                 val archive = openedArchive.value
                 if (archive != null) {
                     var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1300,6 +1307,7 @@ fun PokedexApp(
                     var lcdLine2 by remember { mutableStateOf<String?>(null) }
 
                     ODXFiShell(
+                        lcdContent = matchLcdContent,
                         showBattleOverlay = false,
                         viewModel = viewModel,
                         filterSettings = filterSettings,
@@ -1323,6 +1331,7 @@ fun PokedexApp(
                     ) {
                         com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
                             archive = archive,
+                            onLcdContentUpdate = { matchLcdContent = it },
                             onBack = {
                                 openedArchive.value = null
                                 openedArchiveUri.value = null
@@ -1347,14 +1356,15 @@ fun PokedexApp(
                                     ?.firstOrNull { candidate -> candidate.name.equals(moveName, ignoreCase = true) }
                                     ?.type
                             },
-                            resolveArchivedSpeciesCrops = { selectedArchive ->
+                            resolveArchivedSpeciesCrops = { selectedArchive, progress ->
                                 val uri = openedArchiveUri.value
                                 if (uri == null) emptyList() else {
                                     ArchivedSpeciesCropRecognizer.recognize(
                                         archive = selectedArchive,
                                         openArchive = { context.contentResolver.openInputStream(uri) },
                                         knownSpeciesNames = viewModel.getAllSpeciesNames(),
-                                        resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id }
+                                        resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
+                                        onProgress = progress
                                     )
                                 }
                             }

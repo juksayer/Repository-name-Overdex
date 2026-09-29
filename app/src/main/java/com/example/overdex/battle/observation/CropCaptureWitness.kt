@@ -33,7 +33,9 @@ class CropCaptureWitness(
      */
     private val captureIntervalNanos: Long = 200_000_000L,
     /** The narrow identity strips use I/O so capture pressure cannot starve them. */
-    private val captureDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val captureDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /** Optional post-custody delivery. The artifact and CropCaptured record already exist. */
+    private val onCaptured: ((CropCaptured, Long, Long) -> Unit)? = null
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -60,15 +62,25 @@ class CropCaptureWitness(
                     val resolved = contract.crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
                     try {
                         val artifact = artifactStore.preservePng(resolved.bitmap) ?: return@supplyFrames
+                        val testimony = CropCaptured(artifact, resolved.provenance)
                         match.custody.submitTestimony(
                             sourceId = sourceId,
-                            payload = CropCaptured(artifact, resolved.provenance),
+                            payload = testimony,
                             timestamp = frame.capturedAtWallTimeMillis,
                             confidence = null,
                             evidenceReferences = emptyList(),
                             monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                         )
                         lastCapturedAtNanos = frame.capturedAtMonotonicTimeNanos
+                        try {
+                            onCaptured?.invoke(
+                                testimony,
+                                frame.capturedAtWallTimeMillis,
+                                frame.capturedAtMonotonicTimeNanos
+                            )
+                        } catch (error: Exception) {
+                            Log.e("CropCaptureWitness", "Post-custody delivery failed for ${contract.crop.cropName}", error)
+                        }
                     } catch (error: Exception) {
                         Log.e("CropCaptureWitness", "Crop preservation failed for ${contract.crop.cropName}", error)
                     } finally {

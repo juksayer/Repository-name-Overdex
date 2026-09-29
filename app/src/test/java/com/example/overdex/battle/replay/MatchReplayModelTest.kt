@@ -8,6 +8,7 @@ import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.PokemonType
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -83,8 +84,8 @@ class MatchReplayModelTest {
 
         val scene = model.sceneAt(200)
         assertEquals(10, scene.opponentGeneratedEnergy)
-        assertEquals(PokemonType.ICE, scene.fastMoveAction?.type)
-        assertEquals("OPPONENT", scene.fastMoveAction?.side)
+        assertEquals(PokemonType.ICE, scene.fastMoveActions.single().type)
+        assertEquals("OPPONENT", scene.fastMoveActions.single().side)
     }
 
     @Test fun `replay subtracts only confirmed named charged move costs`() {
@@ -97,6 +98,30 @@ class MatchReplayModelTest {
 
         assertEquals(20, scene.playerGeneratedEnergy)
         assertEquals(60, scene.playerSpentEnergy)
+    }
+
+    @Test fun `identification alone and aggregate totals never invent individual attacks`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("identity", ArchivedFastMoveIdentified("PLAYER", "Turtonator", "Incinerate", 2_500_000_000L, 2_500_000_000L, 3, "TEST"), 100),
+            timed("batch", ArchivedFastMoveEnergyDerived("PLAYER", "Incinerate", 3, 20, 60, "TEST"), 200)
+        ))
+        val model = MatchReplayModel(archive, fastMoveTypesByName = mapOf("INCINERATE" to PokemonType.FIRE))
+        assertTrue(model.sceneAt(100).fastMoveActions.isEmpty())
+        assertTrue(model.sceneAt(200).fastMoveActions.isEmpty())
+    }
+
+    @Test fun `both sides animate at original evidence times and scrubbing is repeatable`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("player", ArchivedFastMoveEnergyDerived("PLAYER", "Incinerate", 1, 20, 20, "TEST"), 1_000_000_000L),
+            timed("opponent", ArchivedFastMoveEnergyDerived("OPPONENT", "Ice Shard", 1, 10, 10, "TEST"), 1_100_000_000L)
+        ))
+        val model = MatchReplayModel(archive, fastMoveTypesByName = mapOf("INCINERATE" to PokemonType.FIRE, "ICESHARD" to PokemonType.ICE))
+        assertTrue(model.sceneAt(999_999_999L).fastMoveActions.isEmpty())
+        val overlap = model.sceneAt(1_200_000_000L).fastMoveActions
+        assertEquals(listOf("PLAYER", "OPPONENT"), overlap.map { it.side })
+        assertTrue(overlap[0].progress > overlap[1].progress)
+        assertTrue(model.sceneAt(1_600_000_000L).fastMoveActions.isEmpty())
+        assertEquals(overlap, model.sceneAt(1_200_000_000L).fastMoveActions)
     }
 
     private fun article(id: String, side: String, name: String, speciesId: Int, nanos: Long) =

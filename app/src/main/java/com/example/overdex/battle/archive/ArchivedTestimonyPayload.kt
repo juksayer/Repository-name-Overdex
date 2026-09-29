@@ -165,6 +165,14 @@ data class ArchivedActiveHpBarBorderCadenceMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("active_hp_bar_border_pulse_observed")
+data class ArchivedActiveHpBarBorderPulseObserved(
+    val damagedBarSide: String,
+    val peakColorDistance: Float,
+    val sampleCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("fast_move_identified")
 data class ArchivedFastMoveIdentified(
     val side: String,
