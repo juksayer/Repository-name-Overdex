@@ -18,8 +18,12 @@ import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveEnergyDerived
 import com.example.overdex.battle.custody.ChargedMoveEnergySpent
@@ -30,6 +34,7 @@ import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.TeamSelectPartyWitnessed
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
+import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.observation.MatchId
@@ -67,6 +72,9 @@ object RealityArticleArchiveMapper {
             )
             is TeamSelectPartyWitnessed -> ArchivedTeamSelectPartyWitnessed
             is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
+            is PlayerTeamSlotConfigured -> ArchivedPlayerTeamSlotConfigured(
+                p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames
+            )
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
                 frameIndex = p.frameIndex,
                 upperColorfulPixelFraction = p.upperColorfulPixelFraction,
@@ -144,16 +152,44 @@ object RealityArticleArchiveMapper {
                 verticalExcursionPixels = p.verticalExcursionPixels,
                 sampleCount = p.sampleCount
             )
+            is PlayerChargeMoveEnergyFillIncreased -> ArchivedPlayerChargeMoveEnergyFillIncreased(
+                beforeBySlot = p.beforeBySlot,
+                afterBySlot = p.afterBySlot,
+                changedSlots = p.changedSlots
+            )
+            is PlayerChargeMoveEnergyFillCadenceMeasured -> ArchivedPlayerChargeMoveEnergyFillCadenceMeasured(
+                intervalNanos = p.intervalNanos,
+                contributingSlots = p.contributingSlots
+            )
             is ActiveHpBarBorderCadenceMeasured -> ArchivedActiveHpBarBorderCadenceMeasured(
                 damagedBarSide = p.damagedBarSide.name,
                 intervalNanos = p.intervalNanos,
                 peakColorDistance = p.peakColorDistance,
-                sampleCount = p.sampleCount
+                sampleCount = p.sampleCount,
+                peakOrangeFraction = p.peakOrangeFraction,
+                baselineWhiteFraction = p.baselineWhiteFraction
             )
             is ActiveHpBarBorderPulseObserved -> ArchivedActiveHpBarBorderPulseObserved(
                 damagedBarSide = p.damagedBarSide.name,
                 peakColorDistance = p.peakColorDistance,
-                sampleCount = p.sampleCount
+                sampleCount = p.sampleCount,
+                peakOrangeFraction = p.peakOrangeFraction,
+                baselineWhiteFraction = p.baselineWhiteFraction
+            )
+            is FastMoveRecipientVisualArtifactMeasured -> ArchivedFastMoveRecipientVisualArtifactMeasured(
+                damagedSide = p.damagedSide.name,
+                changedPixelFraction = p.changedPixelFraction,
+                meanColorDistance = p.meanColorDistance,
+                meanRed = p.meanRed,
+                meanGreen = p.meanGreen,
+                meanBlue = p.meanBlue,
+                centroidX = p.centroidX,
+                centroidY = p.centroidY,
+                changedSampleCount = p.changedSampleCount
+            )
+            is FastMoveRecipientVisualCadenceMeasured -> ArchivedFastMoveRecipientVisualCadenceMeasured(
+                damagedSide = p.damagedSide.name,
+                intervalNanos = p.intervalNanos
             )
             is FastMoveIdentified -> ArchivedFastMoveIdentified(
                 side = p.side.name,

@@ -51,6 +51,7 @@ import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.data.LocalSpriteProvider
+import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.components.PokemonTypeIcon
 import com.example.overdex.ui.components.TypeIconStyle
@@ -74,6 +75,7 @@ fun MatchReplayScreen(
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
@@ -99,8 +101,17 @@ fun MatchReplayScreen(
                 ?.let { identified.moveName.uppercase().filter(Char::isLetterOrDigit) to it }
         }.toMap()
     }
-    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes) {
-        MatchReplayModel(archive, speciesIds, archivedCropIdentities.orEmpty(), fastMoveTypes)
+    val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
+        value = referencedNames.associateWith { resolveFastMoves(it) }
+    }
+    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies) {
+        MatchReplayModel(
+            archive,
+            speciesIds,
+            archivedCropIdentities.orEmpty(),
+            fastMoveTypes,
+            fastMovesBySpecies
+        )
     }
     var cursor by remember(archive) { mutableLongStateOf(model.startNanos) }
     var playing by remember { mutableStateOf(false) }
@@ -236,15 +247,18 @@ private fun energyLedger(generated: Int, spent: Int): String =
 private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidth: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
     val movement = ((action.progress.coerceIn(0f, 1f) * 2f) - 1f)
     val direction = if (action.side == "PLAYER") 1f else -1f
+    val indicatorColor = action.type?.color ?: Color(0xFFFFA000)
     Box(
         modifier = modifier
             .offset(x = travelHalfWidth * (movement * direction))
             .size(34.dp)
-            .background(action.type.color.copy(alpha = 0.25f))
-            .border(1.dp, action.type.color),
+            .background(indicatorColor.copy(alpha = 0.25f))
+            .border(1.dp, indicatorColor),
         contentAlignment = Alignment.Center
     ) {
-        PokemonTypeIcon(action.type, style = TypeIconStyle.OVERDEX, modifier = Modifier.size(26.dp))
+        action.type?.let { type ->
+            PokemonTypeIcon(type, style = TypeIconStyle.OVERDEX, modifier = Modifier.size(26.dp))
+        } ?: Box(Modifier.size(12.dp).background(indicatorColor))
     }
 }
 
@@ -296,10 +310,18 @@ private fun ReplayCombatantSlot(
                     .offset(y = if (useBackSprite) 24.dp else 0.dp)
                     .graphicsLayer {
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
-                        translationY = action?.let { -8f * sin(it.progress * Math.PI).toFloat() } ?: 0f
+                        val amplitudePixels = if (useBackSprite) 16f else 8f
+                        val quickProgress = action?.progress
+                            ?.div(REPLAY_BOB_DURATION_FRACTION)
+                            ?.coerceIn(0f, 1f)
+                        translationY = quickProgress
+                            ?.let { -amplitudePixels * sin(it * Math.PI).toFloat() }
+                            ?: 0f
                     },
                 contentScale = ContentScale.Fit
             )
         }
     }
 }
+
+private const val REPLAY_BOB_DURATION_FRACTION = 0.6f

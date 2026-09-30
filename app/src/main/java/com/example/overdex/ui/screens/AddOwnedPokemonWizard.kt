@@ -311,6 +311,7 @@ fun MoveSelectionStep(
     selectedMoves: Set<String>,
     selectedIndex: Int,
     showNext: Boolean = false,
+    nextLabel: String = "NEXT",
     onSelectedIndexChange: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -339,7 +340,7 @@ fun MoveSelectionStep(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     TerminalButton(
-                        text = "NEXT",
+                        text = nextLabel,
                         selected = selectedIndex == moves.size
                     )
                 }

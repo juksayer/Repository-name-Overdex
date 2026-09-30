@@ -8,6 +8,7 @@ sealed interface InstrumentCommand {
     data object LaunchDroidball : InstrumentCommand
     data object OpenSearch : InstrumentCommand
     data object OpenCollection : InstrumentCommand
+    data object OpenCurrentTeam : InstrumentCommand
     data object AddSpecimen : InstrumentCommand
     data object OpenBattleHistory : InstrumentCommand
     data object OpenBattleLogs : InstrumentCommand

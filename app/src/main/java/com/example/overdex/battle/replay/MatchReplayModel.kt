@@ -1,24 +1,36 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.ArchivedBattleCryCandidatesMeasured
+import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
+import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
+import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed
+import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
+import kotlin.math.abs
+import kotlin.math.max
 
 /** Pure projection of archive evidence into replay-safe scene state. */
 class MatchReplayModel(
     private val archive: MatchArchive,
     speciesIdsByName: Map<String, Int> = emptyMap(),
     archivedCropIdentities: List<ReplayIdentityObservation> = emptyList(),
-    private val fastMoveTypesByName: Map<String, PokemonType> = emptyMap()
+    private val fastMoveTypesByName: Map<String, PokemonType> = emptyMap(),
+    fastMovesBySpeciesName: Map<String, List<Move>> = emptyMap()
 ) {
     val timedArticles: List<ArchivedRealityArticle> = archive.articles
         .filter { it.monotonicTimeNanos != null }
@@ -26,6 +38,13 @@ class MatchReplayModel(
 
     val startNanos: Long = timedArticles.firstOrNull()?.monotonicTimeNanos ?: 0L
     val endNanos: Long = timedArticles.lastOrNull()?.monotonicTimeNanos ?: startNanos
+    private val configuredPlayerMembers = timedArticles
+        .mapNotNull { it.payload as? ArchivedPlayerTeamSlotConfigured }
+        .distinctBy { it.slot }
+        .sortedBy { it.slot }
+    private val configuredPlayerMovesBySpecies = configuredPlayerMembers.associate {
+        normalizeSpeciesName(it.speciesName) to it.fastMoveName
+    }
 
     // A replay receives a completed archive, not a live stream. Build the identity
     // tracks once so every frame can use facts learned anywhere in that archive.
@@ -34,12 +53,25 @@ class MatchReplayModel(
     private val cropTracks = archivedCropIdentities
         .sortedBy { it.atNanos }
         .partition { it.side == "PLAYER" }
+    private val configuredOpeningPlayer = configuredPlayerMembers.firstOrNull { it.slot == 1 }?.let {
+        listOf(ReplayIdentityObservation("PLAYER", it.speciesName, it.speciesId, startNanos, "CURRENT TEAM CONFIGURATION"))
+    }.orEmpty()
     private val playerIdentityTrack = ReplayIdentityTrack.from(
-        timedArticles, "PLAYER", cropTracks.first.ifEmpty { reconstructedTracks.first }
+        timedArticles,
+        "PLAYER",
+        cropTracks.first.ifEmpty { reconstructedTracks.first.ifEmpty { configuredOpeningPlayer } }
     )
     private val opponentIdentityTrack = ReplayIdentityTrack.from(
         timedArticles, "OPPONENT", cropTracks.second.ifEmpty { reconstructedTracks.second }
     )
+    private val identifiedFastMoves = timedArticles
+        .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
+        .filterNot { it.basis.startsWith(CHARGE_FILL_BASIS) }
+    private val possibleFastMoves = fastMovesBySpeciesName.entries.associate {
+        normalizeSpeciesName(it.key) to it.value
+    }
+    private val bufferedMoveCache = mutableMapOf<String, Move?>()
+    private val recordedFastMoveUses = reconstructFastMoveUses()
 
     fun crossedArticleBoundary(fromNanos: Long, toNanos: Long): Boolean {
         if (fromNanos == toNanos) return false
@@ -62,12 +94,12 @@ class MatchReplayModel(
 
         val playerGeneratedEnergy = articles.sumOf { article ->
             (article.payload as? ArchivedFastMoveEnergyDerived)
-                ?.takeIf { it.side == "PLAYER" }
+                ?.takeIf { it.side == "PLAYER" && !it.basis.contains(CHARGE_FILL_BASIS) }
                 ?.totalEnergyGenerated ?: 0
         }
         val opponentGeneratedEnergy = articles.sumOf { article ->
             (article.payload as? ArchivedFastMoveEnergyDerived)
-                ?.takeIf { it.side == "OPPONENT" }
+                ?.takeIf { it.side == "OPPONENT" && !it.basis.contains(CHARGE_FILL_BASIS) }
                 ?.totalEnergyGenerated ?: 0
         }
         val playerSpentEnergy = articles.sumOf { article ->
@@ -80,16 +112,28 @@ class MatchReplayModel(
                 ?.takeIf { it.side == "OPPONENT" }
                 ?.energyCost ?: 0
         }
-        // Identification describes a move, not an extra attack. Only individually
-        // timed uses can drive animation; a batch total cannot locate each hit.
-        val fastMoveActions = articles.mapNotNull { article ->
-            val use = article.payload as? ArchivedFastMoveEnergyDerived ?: return@mapNotNull null
-            if (use.observedCompletedUses != 1 || use.side !in setOf("PLAYER", "OPPONENT")) return@mapNotNull null
-            val ageNanos = monotonicTimeNanos - article.monotonicTimeNanos!!
+        // Replay is buffered. Raw, individually timed hit witnesses establish that
+        // an attack happened even before cadence identifies its move. A later move
+        // identity supplies the name and type without moving the original event.
+        val fastMoveActions = recordedFastMoveUses.mapNotNull { use ->
+            val ageNanos = monotonicTimeNanos - use.observedAtNanos
             if (ageNanos !in 0 until FAST_MOVE_VISUAL_NANOS) return@mapNotNull null
-            val type = fastMoveTypesByName[normalizeSpeciesName(use.moveName)] ?: return@mapNotNull null
-            ReplayFastMoveAction(use.side, use.moveName, type, article.monotonicTimeNanos,
-                ageNanos.toFloat() / FAST_MOVE_VISUAL_NANOS)
+            val bufferedMove = bufferedMoveFor(use.side, use.observedAtNanos)
+            val moveName = use.moveName
+                ?: identifiedMoveFor(use.side, use.observedAtNanos)
+                ?: bufferedMove?.name
+            val type = moveName?.let { fastMoveTypesByName[normalizeSpeciesName(it)] }
+                ?: moveName?.let { possibleMoveFor(use.side, use.observedAtNanos, it)?.type }
+                ?: bufferedMove?.type
+                ?: unambiguousFastMoveType(use.side, use.observedAtNanos)
+            ReplayFastMoveAction(
+                side = use.side,
+                moveName = moveName,
+                type = type,
+                startedAtNanos = use.observedAtNanos,
+                progress = ageNanos.toFloat() / FAST_MOVE_VISUAL_NANOS,
+                evidenceKinds = use.evidenceKinds
+            )
         }
 
         return ReplayScene(
@@ -115,8 +159,205 @@ class MatchReplayModel(
         is ArchivedMatchEnded -> "MATCH ENDED: ${payload.result}"
         is ArchivedFastMoveIdentified -> "FAST MOVE: ${payload.moveName}"
         is ArchivedFastMoveEnergyDerived -> "FAST ENERGY: ${payload.moveName}"
+        is ArchivedPlayerTeamSlotConfigured -> "CURRENT TEAM [${payload.slot}]: ${payload.speciesName} / ${payload.fastMoveName}"
+        is ArchivedActiveHpBarMotionCadenceMeasured -> "FAST MOVE MOTION: ${payload.movingSide}"
+        is ArchivedPlayerChargeMoveEnergyFillIncreased -> "PLAYER ENERGY FILL INCREASED"
+        is ArchivedPlayerChargeMoveEnergyFillCadenceMeasured -> "PLAYER ENERGY FILL CADENCE"
+        is ArchivedActiveHpBarBorderPulseObserved -> "FAST MOVE HIT: ${oppositeSide(payload.damagedBarSide)}"
+        is ArchivedFastMoveRecipientVisualArtifactMeasured -> "FAST MOVE VISUAL: ${oppositeSide(payload.damagedSide)}"
         is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY: ${payload.moveName} -${payload.energyCost}"
         else -> payload::class.simpleName.orEmpty().replace("Archived", "")
+    }
+
+    /**
+     * Produces one replay event per observed use. Independent witnesses from the
+     * same captured moment are coalesced, while consecutive 0.5-second moves
+     * remain separate events.
+     */
+    private fun reconstructFastMoveUses(): List<ReplayFastMoveUse> {
+        val evidence = timedArticles.mapNotNull { article ->
+            val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
+            when (val payload = article.payload) {
+                is ArchivedActiveHpBarBorderPulseObserved -> ReplayFastMoveUse(
+                    side = oppositeSide(payload.damagedBarSide),
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("HP_BORDER_PULSE")
+                )
+                is ArchivedFastMoveRecipientVisualArtifactMeasured -> ReplayFastMoveUse(
+                    side = oppositeSide(payload.damagedSide),
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("RECIPIENT_VISUAL_ARTIFACT")
+                )
+                is ArchivedActiveHpBarMotionCadenceMeasured -> ReplayFastMoveUse(
+                    side = payload.movingSide,
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("HP_BAR_MOTION_CADENCE")
+                )
+                is ArchivedActiveHpBarBorderCadenceMeasured -> ReplayFastMoveUse(
+                    side = oppositeSide(payload.damagedBarSide),
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("HP_BORDER_CADENCE")
+                )
+                is ArchivedFastMoveRecipientVisualCadenceMeasured -> ReplayFastMoveUse(
+                    side = oppositeSide(payload.damagedSide),
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("RECIPIENT_VISUAL_CADENCE")
+                )
+                is ArchivedFastMoveEnergyDerived -> payload
+                    .takeIf {
+                        it.observedCompletedUses == 1 &&
+                            it.side.isBattleSide() &&
+                            !it.basis.contains(CHARGE_FILL_BASIS)
+                    }
+                    ?.let {
+                        ReplayFastMoveUse(
+                            side = it.side,
+                            observedAtNanos = atNanos,
+                            moveName = it.moveName,
+                            evidenceKinds = setOf("ENERGY_DERIVATION")
+                        )
+                    }
+                else -> null
+            }
+        }.filter { it.side.isBattleSide() }.sortedBy { it.observedAtNanos }
+
+        return evidence.groupBy { it.side }.values.flatMap { sideEvidence ->
+            sideEvidence.fold(mutableListOf<ReplayFastMoveUse>()) { merged, current ->
+                val previous = merged.lastOrNull()
+                if (
+                    previous != null &&
+                    current.observedAtNanos - previous.observedAtNanos <= FAST_MOVE_WITNESS_MERGE_NANOS
+                ) {
+                    merged[merged.lastIndex] = previous.copy(
+                        moveName = previous.moveName ?: current.moveName,
+                        evidenceKinds = previous.evidenceKinds + current.evidenceKinds
+                    )
+                } else {
+                    merged += current
+                }
+                merged
+            }
+        }.sortedBy { it.observedAtNanos }
+    }
+
+    private fun identifiedMoveFor(side: String, atNanos: Long): String? {
+        val speciesName = when (side) {
+            "PLAYER" -> playerIdentityTrack.combatantAt(atNanos)?.speciesName
+            "OPPONENT" -> opponentIdentityTrack.combatantAt(atNanos)?.speciesName
+            else -> null
+        }
+        if (side == "PLAYER" && speciesName != null) {
+            configuredPlayerMovesBySpecies[normalizeSpeciesName(speciesName)]?.let { return it }
+        }
+        return identifiedFastMoves
+            .asSequence()
+            .filter { it.side == side }
+            .filter { identified ->
+                speciesName == null || normalizeSpeciesName(identified.speciesName) == normalizeSpeciesName(speciesName)
+            }
+            .lastOrNull()
+            ?.moveName
+    }
+
+    /**
+     * A move name remains undisclosed until cadence identifies it. Its type is
+     * still known when every legal Fast Move for the active species shares the
+     * same type, so replay may render that type without inventing a move name.
+     */
+    private fun unambiguousFastMoveType(side: String, atNanos: Long): PokemonType? {
+        val speciesName = when (side) {
+            "PLAYER" -> playerIdentityTrack.combatantAt(atNanos)?.speciesName
+            "OPPONENT" -> opponentIdentityTrack.combatantAt(atNanos)?.speciesName
+            else -> null
+        } ?: return null
+        return possibleFastMoves[normalizeSpeciesName(speciesName)]
+            .orEmpty()
+            .map { it.type }
+            .distinct()
+            .singleOrNull()
+    }
+
+    /**
+     * Replay owns the complete record, so it may apply a move conclusion learned
+     * later to earlier animation without changing the archived testimony. This
+     * uses only cadence from the same active-species interval and still requires
+     * three direct duration matches.
+     */
+    private fun bufferedMoveFor(side: String, atNanos: Long): Move? {
+        val combatant = combatantFor(side, atNanos) ?: return null
+        val cacheKey = "$side:${normalizeSpeciesName(combatant.speciesName)}:${combatant.identityEstablishedAtNanos}"
+        return bufferedMoveCache.getOrPut(cacheKey) {
+            val moves = possibleFastMoves[normalizeSpeciesName(combatant.speciesName)].orEmpty()
+            if (moves.isEmpty()) return@getOrPut null
+            REPLAY_CADENCE_BASIS_PRIORITY.firstNotNullOfOrNull { basis ->
+                val intervals = timedArticles.mapNotNull { article ->
+                    val observedAt = article.monotonicTimeNanos ?: return@mapNotNull null
+                    val cadence = replayCadence(article.payload) ?: return@mapNotNull null
+                    if (cadence.side != side || cadence.basis != basis) return@mapNotNull null
+                    val active = combatantFor(side, observedAt) ?: return@mapNotNull null
+                    if (normalizeSpeciesName(active.speciesName) != normalizeSpeciesName(combatant.speciesName)) {
+                        return@mapNotNull null
+                    }
+                    if (observedAt - cadence.intervalNanos < active.identityEstablishedAtNanos) {
+                        return@mapNotNull null
+                    }
+                    cadence.intervalNanos
+                }
+                resolveBufferedMove(moves, intervals)
+            }
+        }
+    }
+
+    private fun possibleMoveFor(side: String, atNanos: Long, moveName: String): Move? {
+        val speciesName = combatantFor(side, atNanos)?.speciesName ?: return null
+        return possibleFastMoves[normalizeSpeciesName(speciesName)]
+            .orEmpty()
+            .firstOrNull { normalizeSpeciesName(it.name) == normalizeSpeciesName(moveName) }
+    }
+
+    private fun combatantFor(side: String, atNanos: Long): ReplayCombatant? = when (side) {
+        "PLAYER" -> playerIdentityTrack.combatantAt(atNanos)
+        "OPPONENT" -> opponentIdentityTrack.combatantAt(atNanos)
+        else -> null
+    }
+
+    private fun replayCadence(payload: Any): ReplayCadence? = when (payload) {
+        is ArchivedActiveHpBarBorderCadenceMeasured -> ReplayCadence(
+            oppositeSide(payload.damagedBarSide), payload.intervalNanos, "HP_BORDER"
+        )
+        is ArchivedFastMoveRecipientVisualCadenceMeasured -> ReplayCadence(
+            oppositeSide(payload.damagedSide), payload.intervalNanos, "RECIPIENT_VISUAL"
+        )
+        is ArchivedActiveHpBarMotionCadenceMeasured -> ReplayCadence(
+            payload.movingSide, payload.intervalNanos, "HP_MOTION"
+        )
+        else -> null
+    }
+
+    private fun resolveBufferedMove(moves: List<Move>, intervals: List<Long>): Move? {
+        if (intervals.size < REPLAY_REQUIRED_CADENCE_INTERVALS) return null
+        val durationGroups = moves
+            .filter { it.turns != null }
+            .groupBy { it.turns!! * REPLAY_TURN_NANOS }
+            .mapNotNull { (expected, sameDurationMoves) ->
+                val tolerance = max(
+                    REPLAY_MIN_CADENCE_TOLERANCE_NANOS,
+                    (expected * REPLAY_RELATIVE_CADENCE_TOLERANCE).toLong()
+                )
+                val support = intervals.count { abs(it - expected) <= tolerance }
+                support.takeIf { it >= REPLAY_REQUIRED_CADENCE_INTERVALS }
+                    ?.let { ReplayMoveCandidate(sameDurationMoves, support) }
+            }
+        val strongestCount = durationGroups.maxOfOrNull { it.support } ?: return null
+        val strongest = durationGroups.filter { it.support == strongestCount }.singleOrNull() ?: return null
+        strongest.moves.singleOrNull()?.let { return it }
+        val highestEnergy = strongest.moves.maxOfOrNull { it.energy } ?: return null
+        return strongest.moves.filter { it.energy == highestEnergy }.singleOrNull()
     }
 
     /**
@@ -127,7 +368,11 @@ class MatchReplayModel(
     private fun reconstructAnnouncementTracks(): Pair<List<ReplayIdentityObservation>, List<ReplayIdentityObservation>> {
         if (canonicalSpecies.isEmpty()) return emptyList<ReplayIdentityObservation>() to emptyList()
         val roster = timedArticles.mapNotNull {
-            (it.payload as? ArchivedPlayerTeamRosterSlotWitnessed)?.speciesName
+            when (val payload = it.payload) {
+                is ArchivedPlayerTeamRosterSlotWitnessed -> payload.speciesName
+                is ArchivedPlayerTeamSlotConfigured -> payload.speciesName
+                else -> null
+            }
         }.map(::normalizeSpeciesName).toSet()
         val player = mutableListOf<ReplayIdentityObservation>()
         val opponent = mutableListOf<ReplayIdentityObservation>()
@@ -170,6 +415,7 @@ class MatchReplayModel(
                     is ArchivedActivePokemonSpeciesWitnessed -> add(payload.speciesName)
                     is ArchivedPokemonIdentified -> add(payload.species)
                     is ArchivedPlayerTeamRosterSlotWitnessed -> add(payload.speciesName)
+                    is ArchivedPlayerTeamSlotConfigured -> add(payload.speciesName)
                     is ArchivedRawText -> if (article.sourceId == "ANNOUNCEMENT_WITNESS") {
                         ENTRY_PATTERN.matchEntire(payload.value.trim())?.groupValues?.get(1)?.trim()?.let(::add)
                         MOVE_PATTERN.matchEntire(payload.value.trim())?.groupValues?.get(1)?.trim()?.let(::add)
@@ -254,11 +500,22 @@ data class ReplayScene(
 
 data class ReplayFastMoveAction(
     val side: String,
-    val moveName: String,
-    val type: PokemonType,
+    val moveName: String?,
+    val type: PokemonType?,
     val startedAtNanos: Long,
-    val progress: Float
+    val progress: Float,
+    val evidenceKinds: Set<String> = emptySet()
 )
+
+private data class ReplayFastMoveUse(
+    val side: String,
+    val observedAtNanos: Long,
+    val moveName: String?,
+    val evidenceKinds: Set<String>
+)
+
+private data class ReplayCadence(val side: String, val intervalNanos: Long, val basis: String)
+private data class ReplayMoveCandidate(val moves: List<Move>, val support: Int)
 
 data class ReplayCombatant(
     val speciesName: String,
@@ -268,3 +525,22 @@ data class ReplayCombatant(
 )
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
+private const val FAST_MOVE_WITNESS_MERGE_NANOS = 250_000_000L
+private const val REPLAY_TURN_NANOS = 500_000_000L
+private const val REPLAY_REQUIRED_CADENCE_INTERVALS = 3
+private const val REPLAY_MIN_CADENCE_TOLERANCE_NANOS = 160_000_000L
+private const val REPLAY_RELATIVE_CADENCE_TOLERANCE = 0.15
+private val REPLAY_CADENCE_BASIS_PRIORITY = listOf(
+    "HP_BORDER",
+    "RECIPIENT_VISUAL",
+    "HP_MOTION"
+)
+private const val CHARGE_FILL_BASIS = "CHARGE_MOVE_ENERGY_FILL"
+
+private fun oppositeSide(side: String): String = when (side.uppercase()) {
+    "PLAYER" -> "OPPONENT"
+    "OPPONENT" -> "PLAYER"
+    else -> side.uppercase()
+}
+
+private fun String.isBattleSide(): Boolean = this == "PLAYER" || this == "OPPONENT"

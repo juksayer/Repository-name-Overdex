@@ -312,6 +312,3 @@ Jim quietly closes the design document and opens ObservationPipeline.kt instead.
 😄
 
 
-
-i didnt want people blaming droidball for their shitty choices. the confidence
-model was born from that.

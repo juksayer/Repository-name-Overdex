@@ -57,7 +57,9 @@ class PersistedPlayerEntrySpeciesWitness(
                 }
 
                 match.articles.collect { article ->
-                    if (article.payload is com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed) {
+                    if (article.payload is com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed ||
+                        article.payload is com.example.overdex.battle.custody.PlayerTeamSlotConfigured
+                    ) {
                         // Match updates its roster before publishing this article, so a
                         // prior entry can now receive a justified side.
                         attributePendingAnnouncements()

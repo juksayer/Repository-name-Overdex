@@ -1,12 +1,19 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
+import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
+import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
+import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
@@ -48,6 +55,22 @@ class MatchReplayModelTest {
         ))
 
         assertEquals(setOf("Sneasel", "Raichu"), MatchReplayModel.referencedSpeciesNames(archive))
+    }
+
+    @Test fun `current team supplies the opening player when no player species witness survived`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "team",
+                ArchivedPlayerTeamSlotConfigured(1, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb")),
+                10
+            )
+        ))
+
+        val model = MatchReplayModel(archive)
+
+        assertEquals("Gourgeist", model.sceneAt(10).player?.speciesName)
+        assertEquals("CURRENT TEAM CONFIGURATION", model.sceneAt(10).player?.identityBasis)
+        assertEquals(setOf("Gourgeist"), MatchReplayModel.referencedSpeciesNames(archive))
     }
 
     @Test fun `replay reconstructs both sides and switches from archived species crops`() {
@@ -122,6 +145,159 @@ class MatchReplayModelTest {
         assertTrue(overlap[0].progress > overlap[1].progress)
         assertTrue(model.sceneAt(1_600_000_000L).fastMoveActions.isEmpty())
         assertEquals(overlap, model.sceneAt(1_200_000_000L).fastMoveActions)
+    }
+
+    @Test fun `player hp border pulse animates an opponent fast move without requiring identification`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            )
+        ))
+
+        val action = MatchReplayModel(archive).sceneAt(1_100_000_000L).fastMoveActions.single()
+
+        assertEquals("OPPONENT", action.side)
+        assertEquals(null, action.moveName)
+        assertEquals(null, action.type)
+        assertEquals(setOf("HP_BORDER_PULSE"), action.evidenceKinds)
+    }
+
+    @Test fun `replay renders the certain type when all possible fast moves share it`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            article("species", "OPPONENT", "Glaceon", 471, 500_000_000L),
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            )
+        ))
+        val iceMoves = listOf(
+            Move("Frost Breath", PokemonType.ICE, 7, 5, true, 2),
+            Move("Ice Shard", PokemonType.ICE, 9, 10, true, 3)
+        )
+
+        val action = MatchReplayModel(
+            archive,
+            fastMovesBySpeciesName = mapOf("Glaceon" to iceMoves)
+        ).sceneAt(1_100_000_000L).fastMoveActions.single()
+
+        assertEquals(null, action.moveName)
+        assertEquals(PokemonType.ICE, action.type)
+    }
+
+    @Test fun `completed replay resolves a noisy hp motion cluster and backfills its type icon`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            article("species", "PLAYER", "Samurott", 503, 100_000_000L),
+            timed("f1", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 463_000_000L, 20f, 5), 1_000_000_000L),
+            timed("noise", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 1_962_000_000L, 20f, 5), 3_000_000_000L),
+            timed("f2", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 367_000_000L, 20f, 5), 3_500_000_000L),
+            timed("f3", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 459_000_000L, 20f, 5), 4_000_000_000L)
+        ))
+        val fastMoves = listOf(
+            Move("Fury Cutter", PokemonType.BUG, 3, 4, true, 1),
+            Move("Waterfall", PokemonType.WATER, 11, 10, true, 3)
+        )
+
+        val action = MatchReplayModel(
+            archive,
+            fastMovesBySpeciesName = mapOf("Samurott" to fastMoves)
+        ).sceneAt(1_100_000_000L).fastMoveActions.single()
+
+        assertEquals("Fury Cutter", action.moveName)
+        assertEquals(PokemonType.BUG, action.type)
+    }
+
+    @Test fun `independent hit witnesses for one captured moment produce one replay attack`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("OPPONENT", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            ),
+            timed(
+                "artifact",
+                ArchivedFastMoveRecipientVisualArtifactMeasured(
+                    "OPPONENT", 0.2f, 0.3f, 1f, 0.5f, 0.2f, 0.5f, 0.5f, 20
+                ),
+                1_100_000_000L
+            )
+        ))
+
+        val actions = MatchReplayModel(archive).sceneAt(1_200_000_000L).fastMoveActions
+
+        assertEquals(1, actions.size)
+        assertEquals("PLAYER", actions.single().side)
+        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
+    }
+
+    @Test fun `later move identity backfills type onto earlier raw fast move observation`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            article("species", "OPPONENT", "SNEASEL", 215, 500_000_000L),
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            ),
+            timed(
+                "identity",
+                ArchivedFastMoveIdentified(
+                    "OPPONENT", "Sneasel", "Ice Shard", 1_500_000_000L, 1_500_000_000L, 3, "TEST"
+                ),
+                5_000_000_000L
+            )
+        ))
+        val model = MatchReplayModel(archive, fastMoveTypesByName = mapOf("ICESHARD" to PokemonType.ICE))
+
+        val action = model.sceneAt(1_100_000_000L).fastMoveActions.single()
+
+        assertEquals("Ice Shard", action.moveName)
+        assertEquals(PokemonType.ICE, action.type)
+    }
+
+    @Test fun `hp motion creates an attack while charge fill stages remain measurement only`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("opponent-motion", ArchivedActiveHpBarMotionCadenceMeasured("OPPONENT", 500_000_000L, 25f, 5), 1_000_000_000L),
+            timed(
+                "player-fill",
+                ArchivedPlayerChargeMoveEnergyFillIncreased(listOf(0.1f, 0.2f), listOf(0.2f, 0.3f), listOf(0, 1)),
+                1_600_000_000L
+            )
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals("OPPONENT", model.sceneAt(1_100_000_000L).fastMoveActions.single().side)
+        assertTrue(model.sceneAt(1_700_000_000L).fastMoveActions.isEmpty())
+    }
+
+    @Test fun `configured player fast move overrides a false archived charge fill conclusion`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb")), 10),
+            article("species", "PLAYER", "Gourgeist", 711, 20),
+            timed(
+                "false-identity",
+                ArchivedFastMoveIdentified(
+                    "PLAYER", "Gourgeist", "Razor Leaf", 1_000_000_000L, 900_000_000L, 3,
+                    "CHARGE_MOVE_ENERGY_FILL_CADENCE_AND_REFERENCE_KNOWLEDGE"
+                ),
+                100
+            ),
+            timed("hit", ArchivedActiveHpBarBorderPulseObserved("OPPONENT", 0.4f, 8, 0.3f, 0.8f), 1_000_000_000L)
+        ))
+        val moves = listOf(
+            Move("Incinerate", PokemonType.FIRE, 20, 20, true, 5),
+            Move("Razor Leaf", PokemonType.GRASS, 10, 4, true, 2)
+        )
+
+        val action = MatchReplayModel(
+            archive,
+            fastMoveTypesByName = mapOf("INCINERATE" to PokemonType.FIRE, "RAZORLEAF" to PokemonType.GRASS),
+            fastMovesBySpeciesName = mapOf("Gourgeist" to moves)
+        ).sceneAt(1_100_000_000L).fastMoveActions.single()
+
+        assertEquals("Incinerate", action.moveName)
+        assertEquals(PokemonType.FIRE, action.type)
     }
 
     private fun article(id: String, side: String, name: String, speciesId: Int, nanos: Long) =

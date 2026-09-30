@@ -15,7 +15,12 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
+import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
@@ -95,6 +100,22 @@ class RealityArticleArchiveMapperTest {
     }
 
     @Test
+    fun `maps current team configuration as reference input`() {
+        val payload = PlayerTeamSlotConfigured(
+            slot = 2,
+            speciesName = "Gourgeist",
+            speciesId = 711,
+            fastMoveName = "Incinerate",
+            chargedMoveNames = listOf("Seed Bomb", "Shadow Ball")
+        )
+
+        assertEquals(
+            ArchivedPlayerTeamSlotConfigured(2, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb", "Shadow Ball")),
+            RealityArticleArchiveMapper.map(article(id = "team-config", payload = payload)).payload
+        )
+    }
+
+    @Test
     fun `maps typed announcement testimony without replacing its crop evidence`() {
         assertEquals(
             ArchivedGetReadyWitnessed,
@@ -165,6 +186,28 @@ class RealityArticleArchiveMapperTest {
     }
 
     @Test
+    fun `maps player charged control fill evidence and its independent cadence`() {
+        assertEquals(
+            ArchivedPlayerChargeMoveEnergyFillIncreased(
+                listOf(0.1f, 0.2f), listOf(0.2f, 0.3f), listOf(0, 1)
+            ),
+            RealityArticleArchiveMapper.map(article(
+                id = "energy-fill",
+                payload = PlayerChargeMoveEnergyFillIncreased(
+                    listOf(0.1f, 0.2f), listOf(0.2f, 0.3f), listOf(0, 1)
+                )
+            )).payload
+        )
+        assertEquals(
+            ArchivedPlayerChargeMoveEnergyFillCadenceMeasured(500_000_000L, listOf(0, 1)),
+            RealityArticleArchiveMapper.map(article(
+                id = "energy-fill-cadence",
+                payload = PlayerChargeMoveEnergyFillCadenceMeasured(500_000_000L, listOf(0, 1))
+            )).payload
+        )
+    }
+
+    @Test
     fun `maps each HP border pulse as an independent measurement`() {
         val payload = ActiveHpBarBorderPulseObserved(
             damagedBarSide = ActivePokemonSide.PLAYER,
@@ -175,6 +218,41 @@ class RealityArticleArchiveMapperTest {
         assertEquals(
             ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.42f, 6),
             RealityArticleArchiveMapper.map(article(id = "pulse", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps recipient visual artifact features without claiming a move type`() {
+        val payload = FastMoveRecipientVisualArtifactMeasured(
+            damagedSide = ActivePokemonSide.OPPONENT,
+            changedPixelFraction = 0.24f,
+            meanColorDistance = 0.31f,
+            meanRed = 0.8f,
+            meanGreen = 0.2f,
+            meanBlue = 0.1f,
+            centroidX = 0.65f,
+            centroidY = 0.42f,
+            changedSampleCount = 138
+        )
+
+        assertEquals(
+            ArchivedFastMoveRecipientVisualArtifactMeasured(
+                "OPPONENT", 0.24f, 0.31f, 0.8f, 0.2f, 0.1f, 0.65f, 0.42f, 138
+            ),
+            RealityArticleArchiveMapper.map(article(id = "recipient-artifact", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps recipient visual cadence independently from artifact appearance`() {
+        val payload = FastMoveRecipientVisualCadenceMeasured(
+            damagedSide = ActivePokemonSide.PLAYER,
+            intervalNanos = 500_000_000L
+        )
+
+        assertEquals(
+            ArchivedFastMoveRecipientVisualCadenceMeasured("PLAYER", 500_000_000L),
+            RealityArticleArchiveMapper.map(article(id = "recipient-artifact-cadence", payload = payload)).payload
         )
     }
 
@@ -266,6 +344,20 @@ class RealityArticleArchiveMapperTest {
                     confidence = 0.85f,
                     sequenceNumber = 17L,
                     evidenceReferences = listOf("frame-17")
+                ),
+                ArchivedRealityArticle(
+                    articleId = "team-1",
+                    matchId = "match-a",
+                    perceivedAt = 101L,
+                    recordedAt = 111L,
+                    sourceId = "CURRENT_TEAM_CONFIGURATION",
+                    payload = ArchivedPlayerTeamSlotConfigured(
+                        1, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb", "Shadow Ball")
+                    ),
+                    predecessorIds = emptyList(),
+                    confidence = null,
+                    sequenceNumber = 18L,
+                    evidenceReferences = emptyList()
                 )
             )
         )

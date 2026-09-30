@@ -6,8 +6,12 @@ import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.RawTestimony
@@ -325,6 +329,16 @@ object BattleWitnessContracts {
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarMotionCadenceMeasured::class
     )
+    val playerChargeMoveEnergyFill = BattleWitnessContract(
+        witnessId = "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+        crop = BattleCropContracts.playerChargeMoveControls,
+        testimonyType = PlayerChargeMoveEnergyFillIncreased::class
+    )
+    val playerChargeMoveEnergyFillCadence = BattleWitnessContract(
+        witnessId = "PLAYER_CHARGE_MOVE_ENERGY_FILL_CADENCE_WITNESS",
+        crop = BattleCropContracts.playerChargeMoveControls,
+        testimonyType = PlayerChargeMoveEnergyFillCadenceMeasured::class
+    )
     val playerActiveHpBarBorderCadence = BattleWitnessContract(
         witnessId = "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
         crop = BattleCropContracts.playerHpEvidence,
@@ -344,6 +358,26 @@ object BattleWitnessContracts {
         witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarBorderPulseObserved::class
+    )
+    val playerFastMoveRecipientVisualArtifact = BattleWitnessContract(
+        witnessId = "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = FastMoveRecipientVisualArtifactMeasured::class
+    )
+    val opponentFastMoveRecipientVisualArtifact = BattleWitnessContract(
+        witnessId = "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = FastMoveRecipientVisualArtifactMeasured::class
+    )
+    val playerFastMoveRecipientVisualCadence = BattleWitnessContract(
+        witnessId = "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = FastMoveRecipientVisualCadenceMeasured::class
+    )
+    val opponentFastMoveRecipientVisualCadence = BattleWitnessContract(
+        witnessId = "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = FastMoveRecipientVisualCadenceMeasured::class
     )
     val playerInactiveUpperHpBar = BattleWitnessContract(
         witnessId = "PLAYER_INACTIVE_UPPER_HP_BAR_WITNESS",

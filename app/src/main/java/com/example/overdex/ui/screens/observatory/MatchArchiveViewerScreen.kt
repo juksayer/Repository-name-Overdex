@@ -66,6 +66,7 @@ fun MatchArchiveViewerScreen(
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
     val context = LocalContext.current
@@ -124,6 +125,7 @@ fun MatchArchiveViewerScreen(
             onLcdContentUpdate = onLcdContentUpdate,
             resolveSpeciesId = resolveSpeciesId,
             resolveFastMoveType = resolveFastMoveType,
+            resolveFastMoves = resolveFastMoves,
             resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
         )
         return
@@ -284,6 +286,7 @@ private fun ArchiveArticleRow(
             is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
             is ArchivedTeamSelectPartyWitnessed -> "TEAM SELECT PARTY WITNESSED"
             is ArchivedPlayerTeamRosterSlotWitnessed -> "PLAYER ROSTER [slot=${p.slot}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
+            is ArchivedPlayerTeamSlotConfigured -> "CURRENT TEAM [slot=${p.slot}, species=${p.speciesName}, fast=${p.fastMoveName}, charged=${p.chargedMoveNames.joinToString(" / ")}]"
             is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
             is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
             is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256.take(12)}…]"
@@ -300,8 +303,12 @@ private fun ArchiveArticleRow(
             is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
-            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
-            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, signal=${String.format(Locale.ROOT, "%.3f", p.peakColorDistance)}]"
+            is ArchivedPlayerChargeMoveEnergyFillIncreased -> "PLAYER ENERGY FILL [slots=${p.changedSlots.joinToString()}, before=${p.beforeBySlot.joinToString { String.format(Locale.ROOT, "%.2f", it) }}, after=${p.afterBySlot.joinToString { String.format(Locale.ROOT, "%.2f", it) }}]"
+            is ArchivedPlayerChargeMoveEnergyFillCadenceMeasured -> "PLAYER ENERGY FILL CADENCE [interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, slots=${p.contributingSlots.joinToString()}]"
+            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, orange=${p.peakOrangeFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: "legacy"}]"
+            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, orange=${p.peakOrangeFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: String.format(Locale.ROOT, "legacy %.3f", p.peakColorDistance)}]"
+            is ArchivedFastMoveRecipientVisualArtifactMeasured -> "FAST MOVE VISUAL ARTIFACT [recipient=${p.damagedSide}, area=${String.format(Locale.ROOT, "%.1f", p.changedPixelFraction * 100)}%, color=${String.format(Locale.ROOT, "%.3f", p.meanColorDistance)}, center=${String.format(Locale.ROOT, "%.2f", p.centroidX)},${String.format(Locale.ROOT, "%.2f", p.centroidY)}]"
+            is ArchivedFastMoveRecipientVisualCadenceMeasured -> "FAST MOVE VISUAL CADENCE [recipient=${p.damagedSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}]"
@@ -373,6 +380,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
                 is ArchivedTeamSelectPartyWitnessed -> "TEAM SELECT PARTY WITNESSED"
                 is ArchivedPlayerTeamRosterSlotWitnessed -> "PLAYER ROSTER [slot=${p.slot}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
+                is ArchivedPlayerTeamSlotConfigured -> "CURRENT TEAM [slot=${p.slot}, species=${p.speciesName}, id=${p.speciesId}, fast=${p.fastMoveName}, charged=${p.chargedMoveNames.joinToString(" / ")}]"
                 is ArchivedSupportingMatchStart -> "MATCH START SUPPORT [frame=${p.frameIndex}, upper=${String.format(Locale.ROOT, "%.3f", p.upperColorfulPixelFraction)}, lower=${String.format(Locale.ROOT, "%.3f", p.lowerColorfulPixelFraction)}, basis=${p.basis}]"
                 is ArchivedCountdownGlyphWitnessed -> "COUNTDOWN GLYPH [glyph=${p.glyph}, similarity=${String.format(Locale.ROOT, "%.3f", p.similarity)}, frame=${p.frameIndex}, basis=${p.basis}]"
                 is ArchivedCropCaptured -> "CROP CAPTURED [crop=${p.cropName}, artifact=${p.artifactPath}, sha256=${p.sha256}, bytes=${p.byteCount}, bounds=${p.cropLeft},${p.cropTop},${p.cropRight},${p.cropBottom}]"
@@ -389,8 +397,12 @@ private fun ArticleDetailsOverlay(
                 is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
-            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s]"
-            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, signal=${String.format(Locale.ROOT, "%.3f", p.peakColorDistance)}]"
+            is ArchivedPlayerChargeMoveEnergyFillIncreased -> "PLAYER ENERGY FILL [slots=${p.changedSlots.joinToString()}, before=${p.beforeBySlot.joinToString { String.format(Locale.ROOT, "%.3f", it) }}, after=${p.afterBySlot.joinToString { String.format(Locale.ROOT, "%.3f", it) }}]"
+            is ArchivedPlayerChargeMoveEnergyFillCadenceMeasured -> "PLAYER ENERGY FILL CADENCE [interval=${p.intervalNanos} ns (${String.format(Locale.ROOT, "%.3f", p.intervalNanos / 1_000_000_000.0)}s), slots=${p.contributingSlots.joinToString()}]"
+            is ArchivedActiveHpBarBorderCadenceMeasured -> "HP BORDER CADENCE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, orange=${p.peakOrangeFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: "legacy"}, whiteBaseline=${p.baselineWhiteFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: "legacy"}]"
+            is ArchivedActiveHpBarBorderPulseObserved -> "HP BORDER PULSE [bar=${p.damagedBarSide}, attacker=${if (p.damagedBarSide == "PLAYER") "OPPONENT" else "PLAYER"}, orange=${p.peakOrangeFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: String.format(Locale.ROOT, "legacy %.3f", p.peakColorDistance)}, whiteBaseline=${p.baselineWhiteFraction?.let { String.format(Locale.ROOT, "%.1f%%", it * 100) } ?: "legacy"}]"
+            is ArchivedFastMoveRecipientVisualArtifactMeasured -> "FAST MOVE VISUAL ARTIFACT [recipient=${p.damagedSide}, changed=${p.changedSampleCount} samples (${String.format(Locale.ROOT, "%.1f", p.changedPixelFraction * 100)}%), colorDistance=${String.format(Locale.ROOT, "%.3f", p.meanColorDistance)}, rgb=${String.format(Locale.ROOT, "%.3f", p.meanRed)},${String.format(Locale.ROOT, "%.3f", p.meanGreen)},${String.format(Locale.ROOT, "%.3f", p.meanBlue)}, centroid=${String.format(Locale.ROOT, "%.3f", p.centroidX)},${String.format(Locale.ROOT, "%.3f", p.centroidY)}]"
+            is ArchivedFastMoveRecipientVisualCadenceMeasured -> "FAST MOVE VISUAL CADENCE [recipient=${p.damagedSide}, interval=${p.intervalNanos} ns (${String.format(Locale.ROOT, "%.3f", p.intervalNanos / 1_000_000_000.0)}s)]"
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${String.format(Locale.ROOT, "%.2f", p.observedMedianIntervalNanos / 1_000_000_000.0)}s]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}, basis=${p.basis}]"

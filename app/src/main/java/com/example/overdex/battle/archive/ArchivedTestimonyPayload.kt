@@ -53,6 +53,15 @@ data class ArchivedActivePokemonSpeciesWitnessed(
 
 @Serializable @SerialName("team_select_party") data object ArchivedTeamSelectPartyWitnessed : ArchivedTestimonyPayload
 @Serializable @SerialName("player_team_roster_slot") data class ArchivedPlayerTeamRosterSlotWitnessed(val slot: Int, val speciesName: String, val speciesId: Int? = null) : ArchivedTestimonyPayload
+@Serializable
+@SerialName("player_team_slot_configured")
+data class ArchivedPlayerTeamSlotConfigured(
+    val slot: Int,
+    val speciesName: String,
+    val speciesId: Int,
+    val fastMoveName: String,
+    val chargedMoveNames: List<String>
+) : ArchivedTestimonyPayload
 
 @Serializable
 @SerialName("supporting_match_start")
@@ -156,12 +165,29 @@ data class ArchivedActiveHpBarMotionCadenceMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_charge_move_energy_fill_increased")
+data class ArchivedPlayerChargeMoveEnergyFillIncreased(
+    val beforeBySlot: List<Float>,
+    val afterBySlot: List<Float>,
+    val changedSlots: List<Int>
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_charge_move_energy_fill_cadence_measured")
+data class ArchivedPlayerChargeMoveEnergyFillCadenceMeasured(
+    val intervalNanos: Long,
+    val contributingSlots: List<Int>
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("active_hp_bar_border_cadence_measured")
 data class ArchivedActiveHpBarBorderCadenceMeasured(
     val damagedBarSide: String,
     val intervalNanos: Long,
     val peakColorDistance: Float,
-    val sampleCount: Int
+    val sampleCount: Int,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -169,7 +195,30 @@ data class ArchivedActiveHpBarBorderCadenceMeasured(
 data class ArchivedActiveHpBarBorderPulseObserved(
     val damagedBarSide: String,
     val peakColorDistance: Float,
-    val sampleCount: Int
+    val sampleCount: Int,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_recipient_visual_artifact_measured")
+data class ArchivedFastMoveRecipientVisualArtifactMeasured(
+    val damagedSide: String,
+    val changedPixelFraction: Float,
+    val meanColorDistance: Float,
+    val meanRed: Float,
+    val meanGreen: Float,
+    val meanBlue: Float,
+    val centroidX: Float,
+    val centroidY: Float,
+    val changedSampleCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_recipient_visual_cadence_measured")
+data class ArchivedFastMoveRecipientVisualCadenceMeasured(
+    val damagedSide: String,
+    val intervalNanos: Long
 ) : ArchivedTestimonyPayload
 
 @Serializable

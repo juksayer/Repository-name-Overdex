@@ -82,6 +82,7 @@ import com.example.overdex.ui.screens.BattlePreviewScreen
 import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
 import com.example.overdex.ui.screens.ChatScreen
+import com.example.overdex.ui.screens.CurrentBattleTeamScreen
 import com.example.overdex.ui.screens.EditSpecimenScreen
 import com.example.overdex.ui.screens.MatchCalibrationScreen
 import com.example.overdex.ui.screens.MainMenuPhase
@@ -466,6 +467,7 @@ fun PokedexApp(
                 InstrumentCommand.LaunchDroidball -> viewModel.startObservation()
                 InstrumentCommand.OpenSearch -> navController.navigate("list")
                 InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection")
+                InstrumentCommand.OpenCurrentTeam -> navController.navigate("current_battle_team")
                 InstrumentCommand.AddSpecimen -> navController.navigate("add_pokemon_wizard")
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("battle_log")
@@ -534,6 +536,7 @@ fun PokedexApp(
                         onNodeSelected = { node ->
                             when (node.path) {
                                 "/OVERDEX" -> navController.navigate("list")
+                                "/BATTLE/Current Team" -> navController.navigate("current_battle_team")
                                 "/BATTLE/Roster" -> navController.navigate("specimens/collection")
                                 "/BATTLE/History" -> navController.navigate("battle_history")
                                 "/OBSERVE" -> navController.navigate("calibration")
@@ -959,6 +962,14 @@ fun PokedexApp(
                     onCancel = { navController.debugPopBackStack() }
                 )
             }
+            composable("current_battle_team") {
+                CurrentBattleTeamScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onBack = { navController.debugPopBackStack() }
+                )
+            }
             composable("accessibility_probe") {
                 var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1353,8 +1364,14 @@ fun PokedexApp(
                             resolveFastMoveType = { speciesName, moveName ->
                                 viewModel.getPokemonByName(speciesName)
                                     ?.fastMoves
-                                    ?.firstOrNull { candidate -> candidate.name.equals(moveName, ignoreCase = true) }
+                                    ?.firstOrNull { candidate ->
+                                        candidate.name.uppercase().filter(Char::isLetterOrDigit) ==
+                                            moveName.uppercase().filter(Char::isLetterOrDigit)
+                                    }
                                     ?.type
+                            },
+                            resolveFastMoves = { speciesName ->
+                                viewModel.getPokemonByName(speciesName)?.fastMoves.orEmpty()
                             },
                             resolveArchivedSpeciesCrops = { selectedArchive, progress ->
                                 val uri = openedArchiveUri.value

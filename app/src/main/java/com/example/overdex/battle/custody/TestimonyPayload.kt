@@ -124,6 +124,25 @@ data class PlayerTeamRosterSlotWitnessed(
 }
 
 /**
+ * One player team slot deliberately configured in Overdex before capture.
+ * This is reference input recorded with the Match, separate from visual testimony.
+ */
+data class PlayerTeamSlotConfigured(
+    val slot: Int,
+    val speciesName: String,
+    val speciesId: Int,
+    val fastMoveName: String,
+    val chargedMoveNames: List<String>
+) : TestimonyPayload {
+    init {
+        require(slot in 1..3)
+        require(speciesName.isNotBlank())
+        require(fastMoveName.isNotBlank())
+        require(chargedMoveNames.size in 1..2)
+    }
+}
+
+/**
  * One active-type-icon witness result from one preserved Pokémon GO crop.
  *
  * This identifies the visible type-icon classification only. It neither
@@ -186,35 +205,106 @@ data class ActiveHpBarMotionCadenceMeasured(
 }
 
 /**
- * Cadence measured from the color/brightness pulse around a damaged HP bar.
+ * A persistent upward change measured in the player's charged-move energy
+ * controls. Both controls receive the same earned energy, but their visible
+ * fractions can differ because their moves have different costs.
+ */
+data class PlayerChargeMoveEnergyFillIncreased(
+    val beforeBySlot: List<Float>,
+    val afterBySlot: List<Float>,
+    val changedSlots: List<Int>
+) : TestimonyPayload {
+    init {
+        require(beforeBySlot.size == 2 && afterBySlot.size == 2)
+        require(beforeBySlot.all { it in 0f..1f } && afterBySlot.all { it in 0f..1f })
+        require(changedSlots.isNotEmpty() && changedSlots.all { it in 0..1 })
+    }
+}
+
+/** Elapsed monotonic time between two confirmed player energy-fill increases. */
+data class PlayerChargeMoveEnergyFillCadenceMeasured(
+    val intervalNanos: Long,
+    val contributingSlots: List<Int>
+) : TestimonyPayload {
+    init {
+        require(intervalNanos > 0L)
+        require(contributingSlots.isNotEmpty() && contributingSlots.all { it in 0..1 })
+    }
+}
+
+/**
+ * Cadence measured from the white-to-orange border pulse around a damaged HP bar.
  * The attacker is always the side opposite [damagedBarSide].
  */
 data class ActiveHpBarBorderCadenceMeasured(
     val damagedBarSide: ActivePokemonSide,
     val intervalNanos: Long,
     val peakColorDistance: Float,
-    val sampleCount: Int
+    val sampleCount: Int,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
 ) : TestimonyPayload {
     init {
         require(intervalNanos > 0L)
         require(peakColorDistance >= 0f)
         require(sampleCount >= 1)
+        require(peakOrangeFraction == null || peakOrangeFraction in 0f..1f)
+        require(baselineWhiteFraction == null || baselineWhiteFraction in 0f..1f)
     }
 }
 
 /**
- * One rising edge of the color/brightness pulse around a damaged active HP
+ * One rising edge of the white-to-orange border pulse around a damaged active HP
  * bar. The article timestamp is the pulse time; this payload deliberately
  * carries no cadence or move interpretation.
  */
 data class ActiveHpBarBorderPulseObserved(
     val damagedBarSide: ActivePokemonSide,
     val peakColorDistance: Float,
-    val sampleCount: Int
+    val sampleCount: Int,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
 ) : TestimonyPayload {
     init {
         require(peakColorDistance >= 0f)
         require(sampleCount >= 1)
+        require(peakOrangeFraction == null || peakOrangeFraction in 0f..1f)
+        require(baselineWhiteFraction == null || baselineWhiteFraction in 0f..1f)
+    }
+}
+
+/**
+ * One transient visual signature measured near the Pokémon receiving damage.
+ * It records color and spatial change only; move type and move name are later
+ * conclusions that may combine this measurement with cadence and sound.
+ */
+data class FastMoveRecipientVisualArtifactMeasured(
+    val damagedSide: ActivePokemonSide,
+    val changedPixelFraction: Float,
+    val meanColorDistance: Float,
+    val meanRed: Float,
+    val meanGreen: Float,
+    val meanBlue: Float,
+    val centroidX: Float,
+    val centroidY: Float,
+    val changedSampleCount: Int
+) : TestimonyPayload {
+    init {
+        require(changedPixelFraction in 0f..1f)
+        require(meanColorDistance in 0f..1f)
+        require(meanRed in 0f..1f && meanGreen in 0f..1f && meanBlue in 0f..1f)
+        require(centroidX in 0f..1f && centroidY in 0f..1f)
+        require(changedSampleCount > 0)
+    }
+}
+
+/** Cadence measured between two recipient-side visual artifact observations. */
+data class FastMoveRecipientVisualCadenceMeasured(
+    val damagedSide: ActivePokemonSide,
+    val intervalNanos: Long
+) : TestimonyPayload {
+    init {
+        require(intervalNanos > 0L)
     }
 }
 

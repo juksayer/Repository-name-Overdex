@@ -13,6 +13,7 @@ import androidx.paging.cachedIn
 import com.example.overdex.CalibrationManager
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.MatchRecordStarted
+import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.BattleOverlayOpened
 import com.example.overdex.battle.custody.BattleOverlayOpenReason
 import com.example.overdex.battle.custody.RawTestimony
@@ -53,7 +54,11 @@ import com.example.overdex.battle.observation.PersistedActiveHpBarCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderPulseWitness
+import com.example.overdex.battle.observation.LiveFastMoveRecipientVisualArtifactWitness
+import com.example.overdex.battle.observation.LiveFastMoveRecipientVisualCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarFrameHub
+import com.example.overdex.battle.observation.LivePlayerChargeMoveEnergyFillWitness
+import com.example.overdex.battle.observation.PersistedPlayerChargeMoveEnergyFillCadenceWitness
 import com.example.overdex.battle.observation.LiveOverlaySpeciesPipeline
 import com.example.overdex.battle.observation.PersistedPlayerInactiveSpeciesSpriteWitness
 import com.example.overdex.battle.observation.PersistedTrainerInactiveTimerOverlayClearanceWitness
@@ -75,6 +80,8 @@ import com.example.overdex.battle.audio.PersistedFastMoveSoundWitness
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
 import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.archive.MatchArchiveSource
+import com.example.overdex.battle.team.CurrentBattleTeam
+import com.example.overdex.battle.team.CurrentBattleTeamStore
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
@@ -159,6 +166,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private var nextMatchVsWatcher: NextMatchVsWatcher? = null
     private val fieldMatchLedger = DroidballMatchLedger()
     private val archiveDirectoryManager = ArchiveDirectoryManager(application)
+    private val currentBattleTeamStore = CurrentBattleTeamStore(application)
+    val currentBattleTeam = currentBattleTeamStore.team
     /** Export work survives an Activity/ViewModel recreation while the process remains alive. */
     private val archiveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val archiveMutex = Mutex()
@@ -184,6 +193,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ActionNode("Launch Droidball", InstrumentCommand.LaunchDroidball),
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
             DirectoryNode("BATTLE", listOf(
+                ActionNode("Current Team", InstrumentCommand.OpenCurrentTeam),
                 ActionNode("Roster", InstrumentCommand.OpenCollection),
                 DirectoryNode("Match", listOf(
                     ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs)
@@ -316,6 +326,22 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             evidenceReferences = emptyList(),
             monotonicTimeNanos = System.nanoTime()
         )
+        currentBattleTeam.value.members.forEach { member ->
+            match.custody.submitTestimony(
+                sourceId = SourceId("CURRENT_TEAM_CONFIGURATION"),
+                payload = PlayerTeamSlotConfigured(
+                    slot = member.slot,
+                    speciesName = member.speciesName,
+                    speciesId = member.speciesId,
+                    fastMoveName = member.fastMoveName,
+                    chargedMoveNames = member.chargedMoveNames
+                ),
+                timestamp = System.currentTimeMillis(),
+                confidence = null,
+                evidenceReferences = emptyList(),
+                monotonicTimeNanos = System.nanoTime()
+            )
+        }
         _latestMatchArchiveSource.value =
             com.example.overdex.battle.archive.MatchArchiveSource(
                 matchId = com.example.overdex.battle.observation.MatchId(match.matchId),
@@ -376,14 +402,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = com.example.overdex.battle.observation.SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS,
                 captureDispatcher = identityCaptureDispatcher,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = name,
-                onCaptured = { captured, wallTimeMillis, monotonicTimeNanos ->
-                    if (contract == BattleWitnessContracts.playerActiveSpeciesTextCapture) {
-                        fastPlayerSpeciesOverlay.offer(captured, wallTimeMillis, monotonicTimeNanos)
-                    } else {
-                        fastOpponentSpeciesOverlay.offer(captured, wallTimeMillis, monotonicTimeNanos)
-                    }
-                }
+                name = name
             ))
         }
         observationDispatcher.register(PersistedSpeciesWitness.player(cropArtifactStore))
@@ -562,6 +581,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.player(playerHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.opponent(opponentHpFrameHub))
+        observationDispatcher.register(LiveFastMoveRecipientVisualArtifactWitness.player(playerHpFrameHub))
+        observationDispatcher.register(LiveFastMoveRecipientVisualArtifactWitness.opponent(opponentHpFrameHub))
+        observationDispatcher.register(LiveFastMoveRecipientVisualCadenceWitness.player())
+        observationDispatcher.register(LiveFastMoveRecipientVisualCadenceWitness.opponent())
+        observationDispatcher.register(
+            LivePlayerChargeMoveEnergyFillWitness(input, calibration, battleEvidenceLive)
+        )
+        observationDispatcher.register(PersistedPlayerChargeMoveEnergyFillCadenceWitness())
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
             BattleWitnessContracts.playerTeamStatusCapture to "Player Team Status Capture Witness",
@@ -877,6 +904,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
      */
     //Design Note: PokedexViewModel provides a reusable mechanism for constructing independent search sessions. Individual workflows, such as Register Specimen, own their transient search state while sharing the same repository and paging infrastructure.
     @OptIn(ExperimentalCoroutinesApi::class)
+    fun saveCurrentBattleTeam(team: CurrentBattleTeam) {
+        currentBattleTeamStore.replace(team)
+    }
+
+    fun clearCurrentBattleTeam() {
+        currentBattleTeamStore.clear()
+    }
+
     fun createSearchFlow(
         queryFlow: Flow<String>,
         typeFlow: Flow<PokemonType?> = flowOf(null)

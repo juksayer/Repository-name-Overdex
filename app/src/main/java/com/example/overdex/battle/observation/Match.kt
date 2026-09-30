@@ -7,6 +7,7 @@ import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
@@ -15,6 +16,7 @@ import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
+import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
@@ -212,6 +214,9 @@ class Match(
                 (testimony.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
                     playerRosterBySlot[rosterEntry.slot] = rosterEntry.speciesName
                 }
+                (testimony.payload as? PlayerTeamSlotConfigured)?.let { configured ->
+                    playerRosterBySlot[configured.slot] = configured.speciesName
+                }
 
                 val article = RealityArticle(
                     id = ArticleId(UUID.randomUUID().toString()),
@@ -307,6 +312,12 @@ class Match(
                         )
                     }
                 }
+                (article.payload as? PlayerTeamSlotConfigured)
+                    ?.takeIf { it.slot == 1 }
+                    ?.let { configuredLead ->
+                        val species = pokemonKnowledge.getPokemonByName(configuredLead.speciesName)
+                        DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
+                    }
 
                 (article.payload as? ActivePokemonSpeciesWitnessed)?.let {
                     speciesChecks.delivered(it.side, it.speciesName, article.id.value)
@@ -365,7 +376,8 @@ class Match(
                 // opens a small, independently preserved microphone window that
                 // can later corroborate a move's acoustic type/signature.
                 if (article.payload is ActiveHpBarMotionCadenceMeasured ||
-                    article.payload is ActiveHpBarBorderCadenceMeasured
+                    article.payload is ActiveHpBarBorderCadenceMeasured ||
+                    article.payload is PlayerChargeMoveEnergyFillIncreased
                 ) {
                     DroidballService.requestCueCenteredAudio(
                         article.id.value,
