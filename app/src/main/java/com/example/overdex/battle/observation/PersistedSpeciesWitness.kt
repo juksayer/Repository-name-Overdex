@@ -149,7 +149,7 @@ class PersistedSpeciesWitness(
         cachedNames: Set<String>?
     ): SpeciesRecognition? {
         val captured = article.payload as? CropCaptured ?: return null
-        val bitmap = artifactStore.loadVerifiedPng(captured.artifact) ?: run {
+        val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: run {
             Log.w("ACTIVE_SPECIES", "missing verified artifact side=$side crop=${captured.cropProvenance.cropName}")
             return null
         }

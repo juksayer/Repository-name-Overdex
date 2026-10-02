@@ -1,8 +1,12 @@
 package com.example.overdex.battle.archive
 
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.reality.RealityTimeline
 import java.text.SimpleDateFormat
@@ -12,45 +16,10 @@ import java.io.FileOutputStream
 import java.io.File
 
 class ArchiveDirectoryManager(private val context: Context) {
-    private val prefs = context.getSharedPreferences("overdex_archive_directory_prefs", Context.MODE_PRIVATE)
-    private val uriKey = "archive_folder_uri"
+    private val internalArchiveDirectory = File(context.filesDir, "match_archives")
 
-    fun getFolderUri(): Uri? {
-        val uriString = prefs.getString(uriKey, null) ?: return null
-        return Uri.parse(uriString)
-    }
-
-    fun saveFolderUri(uri: Uri) {
-        prefs.edit().putString(uriKey, uri.toString()).apply()
-    }
-
-    fun clearFolderUri() {
-        prefs.edit().remove(uriKey).apply()
-    }
-
-    fun getFolderDisplayName(): String {
-        val uri = getFolderUri() ?: return "No folder configured"
-        return try {
-            val docFile = DocumentFile.fromTreeUri(context, uri)
-            docFile?.name ?: uri.lastPathSegment ?: uri.toString()
-        } catch (e: Exception) {
-            uri.toString()
-        }
-    }
-
-    fun isFolderAvailable(): Boolean {
-        val uri = getFolderUri() ?: return false
-        return try {
-            val docFile = DocumentFile.fromTreeUri(context, uri)
-            val available = docFile != null && docFile.exists() && docFile.canRead() && docFile.canWrite()
-            if (!available) {
-                clearFolderUri()
-            }
-            available
-        } catch (e: Exception) {
-            clearFolderUri()
-            false
-        }
+    init {
+        releaseRetiredArchiveFolderPermission()
     }
 
     data class ArchiveEntry(
@@ -61,24 +30,22 @@ class ArchiveDirectoryManager(private val context: Context) {
     )
 
     fun listArchives(): List<ArchiveEntry> {
-        val uri = getFolderUri() ?: return emptyList()
-        val docFile = DocumentFile.fromTreeUri(context, uri) ?: return emptyList()
-        if (!docFile.exists() || !docFile.canRead()) {
-            clearFolderUri()
-            return emptyList()
-        }
-
-        return docFile.listFiles()
-            .filter { it.isFile && it.length() > 0L && (it.name?.lowercase()?.endsWith(".odxmatch.zip") == true) }
+        return internalArchiveDirectory.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.length() > 0L && it.name.lowercase().endsWith(".odxmatch.zip") }
             .map { file ->
                 ArchiveEntry(
-                    name = file.name ?: "unknown.odxmatch.zip",
-                    uri = file.uri,
+                    name = file.name,
+                    uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.archive-files",
+                        file
+                    ),
                     lastModified = file.lastModified(),
                     byteCount = file.length()
                 )
             }
-            .sortedByDescending { it.name } // Sort newest first by timestamp filename
+            .sortedByDescending { it.name }
     }
 
     fun exportMatch(
@@ -88,20 +55,12 @@ class ArchiveDirectoryManager(private val context: Context) {
         requestedFileName: String? = null,
         onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? {
-        val uri = getFolderUri() ?: return null
-        val parentDoc = DocumentFile.fromTreeUri(context, uri) ?: return null
-        if (!parentDoc.exists() || !parentDoc.canWrite()) {
-            clearFolderUri()
-            return null
-        }
-
         val fileName = if (requestedFileName == null) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
             val baseTimestamp = dateFormat.format(Date())
             var candidate = "$baseTimestamp.odxmatch.zip"
             var counter = 1
-            // Check collisions inside the selected SAF folder using DocumentFile without relying on File.exists()
-            while (parentDoc.findFile(candidate) != null) {
+            while (File(internalArchiveDirectory, candidate).exists()) {
                 candidate = "${baseTimestamp}_$counter.odxmatch.zip"
                 counter++
             }
@@ -116,8 +75,8 @@ class ArchiveDirectoryManager(private val context: Context) {
             requestedFileName
         }
 
-        // Build privately first. A failed package must never appear as an empty,
-        // selectable archive in the user-selected folder.
+        // Build in cache first. A failed package must never replace the last
+        // valid internal checkpoint or appear as an empty archive.
         val temporary = File.createTempFile("overdex-match-", ".odxmatch.zip", context.cacheDir)
         try {
             FileOutputStream(temporary).use {
@@ -131,19 +90,81 @@ class ArchiveDirectoryManager(private val context: Context) {
                 )
             }
             require(temporary.length() > 0L) { "Archive package was empty." }
-            val previousFile = requestedFileName?.let { parentDoc.findFile(it) }
-            // SAF providers generally reject duplicate display names. The old
-            // checkpoint is removed only after the new private package exists.
-            previousFile?.delete()
-            val newFile = parentDoc.createFile("application/zip", fileName)
-                ?: throw java.io.IOException("Unable to create archive in selected folder.")
+            internalArchiveDirectory.mkdirs()
+            val destination = File(internalArchiveDirectory, fileName)
+            val staged = File(internalArchiveDirectory, ".$fileName.tmp")
+            temporary.copyTo(staged, overwrite = true)
+            if (destination.exists() && !destination.delete()) {
+                staged.delete()
+                throw java.io.IOException("Unable to replace internal match checkpoint.")
+            }
+            if (!staged.renameTo(destination)) {
+                staged.delete()
+                throw java.io.IOException("Unable to publish internal match checkpoint.")
+            }
+            return FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.archive-files",
+                destination
+            )
+        } finally {
+            temporary.delete()
+        }
+    }
+
+    /**
+     * Publishes a portable copy to Downloads/Odxmatches without requesting a
+     * folder-wide storage grant. Live checkpoints and automatic completed-match
+     * saves remain in app-owned internal storage.
+     */
+    fun exportMatchToDownloads(
+        matchId: MatchId,
+        realityTimeline: RealityTimeline,
+        mode: MatchArchiveExportMode,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
+    ): Uri? {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS", Locale.ROOT)
+        val archiveKind = if (mode == MatchArchiveExportMode.FULL_FORENSIC) "full" else "compact"
+        val fileName = "${dateFormat.format(Date())}-$archiveKind.odxmatch.zip"
+
+        val temporary = File.createTempFile("overdex-export-", ".odxmatch.zip", context.cacheDir)
+        var publishedUri: Uri? = null
+        try {
+            FileOutputStream(temporary).use {
+                MatchArchiveExporter.export(
+                    realityTimeline,
+                    matchId,
+                    it,
+                    context.filesDir,
+                    mode,
+                    onArtifactVerified
+                )
+            }
+            require(temporary.length() > 0L) { "Archive package was empty." }
+
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "application/zip")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/Odxmatches")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            publishedUri = context.contentResolver.insert(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                values
+            ) ?: throw java.io.IOException("Unable to create the archive in Downloads/Odxmatches.")
             try {
-                context.contentResolver.openOutputStream(newFile.uri, "w")
+                context.contentResolver.openOutputStream(publishedUri, "w")
                     ?.use { output -> temporary.inputStream().use { input -> input.copyTo(output) } }
-                    ?: throw java.io.IOException("Unable to write archive in selected folder.")
-                return newFile.uri
+                    ?: throw java.io.IOException("Unable to write the archive in Downloads/Odxmatches.")
+                context.contentResolver.update(
+                    publishedUri,
+                    ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
+                    null,
+                    null
+                )
+                return publishedUri
             } catch (error: Exception) {
-                newFile.delete()
+                context.contentResolver.delete(publishedUri, null, null)
                 throw error
             }
         } finally {
@@ -169,8 +190,23 @@ class ArchiveDirectoryManager(private val context: Context) {
     )
 
     fun deleteMatchCheckpoint(matchId: MatchId): Boolean {
-        val uri = getFolderUri() ?: return false
-        val parentDoc = DocumentFile.fromTreeUri(context, uri) ?: return false
-        return parentDoc.findFile("active-${matchId.value}.odxmatch.zip")?.delete() == true
+        val name = "active-${matchId.value}.odxmatch.zip"
+        val internalFile = File(internalArchiveDirectory, name)
+        return !internalFile.exists() || internalFile.delete()
+    }
+
+    /** Releases the old Archive Directory tree grant once after this storage migration. */
+    private fun releaseRetiredArchiveFolderPermission() {
+        val prefs = context.getSharedPreferences("overdex_archive_directory_prefs", Context.MODE_PRIVATE)
+        val rawUri = prefs.getString("archive_folder_uri", null)
+        if (rawUri != null) {
+            runCatching {
+                context.contentResolver.releasePersistableUriPermission(
+                    Uri.parse(rawUri),
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
+        }
+        prefs.edit().clear().apply()
     }
 }

@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import android.util.Log
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
@@ -31,9 +32,21 @@ class PersistedActivePokemonTypeWitness(
                 match.articles.collect { article ->
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != crop.cropName) return@collect
-                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: return@collect
                     try {
-                        val matches = PokemonGoTypeIconMatcher.matchCrop(bitmap)
+                        val matches = runCatching { PokemonGoTypeIconMatcher.matchCrop(bitmap) }
+                            .getOrElse { error ->
+                                // One malformed or undersized artifact means this
+                                // witness had no usable reading. It must not cancel
+                                // the observer scope or crash the field session.
+                                Log.w(
+                                    "TYPE_ICON_WITNESS",
+                                    "Unable to inspect ${captured.cropProvenance.cropName} " +
+                                        "(${bitmap.width}x${bitmap.height})",
+                                    error
+                                )
+                                emptyList()
+                            }
                         val types = matches.mapNotNull { it.type }
                         if (types.size !in 1..2 || types.distinct().size != types.size) return@collect
                         match.custody.submitTestimony(

@@ -10,6 +10,7 @@ import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.SupportingMatchStart
@@ -97,10 +98,12 @@ object BattleCropContracts {
     val playerActiveSpeciesText = BattleCropContract(
         "PlayerActiveSpeciesTextCrop",
         BattleRegionId.PLAYER_SPECIES_NAME,
-        minimumSize = 32
+        // The capture service publishes at 62.5% scale, so the measured badge
+        // strip can be 30 px high. OCR pads and enlarges it before recognition.
+        minimumSize = 16
     )
     val opponentActiveSpeciesText = BattleCropContract(
-        "OpponentActiveSpeciesTextCrop", BattleRegionId.OPPONENT_SPECIES_NAME, minimumSize = 32
+        "OpponentActiveSpeciesTextCrop", BattleRegionId.OPPONENT_SPECIES_NAME, minimumSize = 16
     )
     val opponentPokeBalls = BattleCropContract(
         "OpponentPokeBallsCrop", BattleRegionId.OPPONENT_POKE_BALLS, minimumSize = 16
@@ -358,6 +361,16 @@ object BattleWitnessContracts {
         witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarBorderPulseObserved::class
+    )
+    val playerActiveHpBarDamageTick = BattleWitnessContract(
+        witnessId = "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+        crop = BattleCropContracts.playerHpEvidence,
+        testimonyType = ActiveHpBarDamageTickMeasured::class
+    )
+    val opponentActiveHpBarDamageTick = BattleWitnessContract(
+        witnessId = "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+        crop = BattleCropContracts.opponentHpEvidence,
+        testimonyType = ActiveHpBarDamageTickMeasured::class
     )
     val playerFastMoveRecipientVisualArtifact = BattleWitnessContract(
         witnessId = "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",

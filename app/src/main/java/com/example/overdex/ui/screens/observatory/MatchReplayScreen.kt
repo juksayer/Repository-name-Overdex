@@ -45,6 +45,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.replay.ReplayFastMoveAction
+import com.example.overdex.battle.replay.ReplayChargedMoveAction
 import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
@@ -223,13 +224,15 @@ fun MatchReplayScreen(
                         combatant = scene.player,
                         context = context,
                         useBackSprite = true,
-                        action = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" }
+                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
+                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" }
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
                         context = context,
                         useBackSprite = false,
-                        action = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" }
+                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
+                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" }
                     )
                 }
                 scene.fastMoveActions.forEach { action ->
@@ -289,7 +292,8 @@ private fun ReplayCombatantSlot(
     combatant: ReplayCombatant?,
     context: android.content.Context,
     useBackSprite: Boolean,
-    action: ReplayFastMoveAction?
+    fastAction: ReplayFastMoveAction?,
+    chargedAction: ReplayChargedMoveAction?
 ) {
     Box(
         modifier = Modifier.width(150.dp).size(150.dp),
@@ -310,12 +314,24 @@ private fun ReplayCombatantSlot(
                     .offset(y = if (useBackSprite) 24.dp else 0.dp)
                     .graphicsLayer {
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
-                        val amplitudePixels = if (useBackSprite) 16f else 8f
-                        val quickProgress = action?.progress
+                        translationY = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
+                            val amplitudePixels = if (useBackSprite) 58f else 46f
+                            if (progress <= CHARGED_MOVE_RISE_FRACTION) {
+                                val rise = progress / CHARGED_MOVE_RISE_FRACTION
+                                val easedRise = rise * rise * (3f - 2f * rise)
+                                -amplitudePixels * easedRise
+                            } else {
+                                val drop = (progress - CHARGED_MOVE_RISE_FRACTION) /
+                                    (1f - CHARGED_MOVE_RISE_FRACTION)
+                                -amplitudePixels * (1f - drop)
+                            }
+                        } ?: fastAction?.progress
                             ?.div(REPLAY_BOB_DURATION_FRACTION)
                             ?.coerceIn(0f, 1f)
-                        translationY = quickProgress
-                            ?.let { -amplitudePixels * sin(it * Math.PI).toFloat() }
+                            ?.let { quickProgress ->
+                                val amplitudePixels = if (useBackSprite) 16f else 8f
+                                -amplitudePixels * sin(quickProgress * Math.PI).toFloat()
+                            }
                             ?: 0f
                     },
                 contentScale = ContentScale.Fit
@@ -325,3 +341,4 @@ private fun ReplayCombatantSlot(
 }
 
 private const val REPLAY_BOB_DURATION_FRACTION = 0.6f
+private const val CHARGED_MOVE_RISE_FRACTION = 0.78f

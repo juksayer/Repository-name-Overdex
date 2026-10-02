@@ -37,7 +37,7 @@ class PersistedOutOfBattleMenuWitness(
                     val observedAt = article.monotonicTimeNanos ?: return@collect
                     when (crop.cropProvenance.cropName) {
                         BattleCropContracts.battlePartyTabs.cropName -> {
-                            val bitmap = store.loadVerifiedPng(crop.artifact) ?: return@collect
+                            val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                             val text = try {
                                 AnnouncementRecognizer.recognize(bitmap).value.orEmpty().uppercase()
                             } finally {

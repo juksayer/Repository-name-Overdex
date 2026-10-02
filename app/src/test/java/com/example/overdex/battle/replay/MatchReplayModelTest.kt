@@ -8,10 +8,13 @@ import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
+import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
@@ -34,17 +37,17 @@ class MatchReplayModelTest {
 
     @Test fun `completed replay reconstructs missing combatants from preserved announcements`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
-            raw("sneasel", "Go, Sneasel!", 10),
-            raw("raichu", "Raichu used Trailblaze!", 20),
-            raw("vaporeon", "Go, Vaporeon!", 30)
+            raw("turtonator", "Go, Turtonator!", 10),
+            raw("sneasel", "Go, Sneasel!", 20),
+            raw("camerupt", "Go, Camerupt!", 30)
         ))
-        val model = MatchReplayModel(archive, mapOf("Sneasel" to 215, "Raichu" to 26, "Vaporeon" to 134))
+        val model = MatchReplayModel(archive, mapOf("Turtonator" to 776, "Sneasel" to 215, "Camerupt" to 323))
 
         // The completed archive is buffered: later identity evidence can fill
         // the opening interval while retaining its reconstruction basis.
-        assertEquals("Raichu", model.sceneAt(10).player?.speciesName)
+        assertEquals("Turtonator", model.sceneAt(10).player?.speciesName)
         assertEquals("Sneasel", model.sceneAt(10).opponent?.speciesName)
-        assertEquals("Vaporeon", model.sceneAt(30).opponent?.speciesName)
+        assertEquals("Camerupt", model.sceneAt(30).player?.speciesName)
         assertEquals("RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT", model.sceneAt(10).player?.identityBasis)
     }
 
@@ -121,6 +124,50 @@ class MatchReplayModelTest {
 
         assertEquals(20, scene.playerGeneratedEnergy)
         assertEquals(60, scene.playerSpentEnergy)
+    }
+
+    @Test fun `replay fuses get ready vibration and named move into one stronger charge action`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("ready", ArchivedGetReadyWitnessed, 1_000_000_000L),
+            timed(
+                "haptic",
+                ArchivedChargeMoveQteVibrationPatternInferred(
+                    "PLAYER", 3, 2_000_000_000L, "THREE_SHORT_DEVICE_MOTION_PULSES"
+                ),
+                3_000_000_000L
+            ),
+            timed(
+                "named",
+                ArchivedChargedMoveEnergySpent("PLAYER", "Turtonator", "Dragon Pulse", 60, "TEST"),
+                5_000_000_000L
+            )
+        ))
+
+        val action = MatchReplayModel(archive).sceneAt(5_900_000_000L).chargedMoveActions.single()
+
+        assertEquals("PLAYER", action.side)
+        assertEquals("Dragon Pulse", action.moveName)
+        assertEquals(5_000_000_000L, action.startedAtNanos)
+        assertEquals(setOf("GET_READY", "QTE_VIBRATION_PATTERN", "NAMED_CHARGED_MOVE"), action.evidenceKinds)
+        assertEquals(0.5f, action.progress, 0.001f)
+    }
+
+    @Test fun `vibration pattern alone animates an unnamed player charged move`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "haptic",
+                ArchivedChargeMoveQteVibrationPatternInferred(
+                    "PLAYER", 3, 2_000_000_000L, "THREE_SHORT_DEVICE_MOTION_PULSES"
+                ),
+                1_000_000_000L
+            )
+        ))
+
+        val action = MatchReplayModel(archive).sceneAt(1_500_000_000L).chargedMoveActions.single()
+
+        assertEquals("PLAYER", action.side)
+        assertEquals(null, action.moveName)
+        assertEquals(setOf("QTE_VIBRATION_PATTERN"), action.evidenceKinds)
     }
 
     @Test fun `identification alone and aggregate totals never invent individual attacks`() {
@@ -229,6 +276,42 @@ class MatchReplayModelTest {
 
         assertEquals(1, actions.size)
         assertEquals("PLAYER", actions.single().side)
+        assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
+    }
+
+    @Test fun `canonical fused use prevents replay from re-counting its raw witnesses`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            ),
+            timed(
+                "artifact",
+                ArchivedFastMoveRecipientVisualArtifactMeasured(
+                    "PLAYER", 0.2f, 0.3f, 1f, 0.5f, 0.2f, 0.5f, 0.5f, 20
+                ),
+                1_100_000_000L
+            ),
+            timed(
+                "fused",
+                ArchivedFastMoveUseObserved(
+                    useId = "fast-move-use:pulse",
+                    attackingSide = "OPPONENT",
+                    damagedSide = "PLAYER",
+                    appearanceId = "sealeo",
+                    attackerSpeciesName = "Sealeo",
+                    evidenceKinds = listOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"),
+                    basis = "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+                ),
+                1_000_000_000L
+            )
+        ))
+
+        val actions = MatchReplayModel(archive).sceneAt(1_200_000_000L).fastMoveActions
+
+        assertEquals(1, actions.size)
+        assertEquals("OPPONENT", actions.single().side)
         assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
     }
 

@@ -18,4 +18,20 @@ class TeamRosterSpeciesAttributorTest {
     @Test fun `incomplete roster does not attribute a side`() {
         assertEquals(null, TeamRosterSpeciesAttributor.sideFor("Turtonator", setOf("Camerupt", "Gourgeist")))
     }
+
+    @Test fun `entry order attributes both opening combatants without a configured team`() {
+        val tracker = EntryAnnouncementSideTracker()
+
+        assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Turtonator", emptySet()).side)
+        assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Sneasel", emptySet()).side)
+        assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Camerupt", emptySet()).side)
+    }
+
+    @Test fun `known entry keeps its side when it returns`() {
+        val tracker = EntryAnnouncementSideTracker()
+        tracker.attribute("Turtonator", emptySet())
+        tracker.attribute("Sneasel", emptySet())
+
+        assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Sneasel", emptySet()).side)
+    }
 }

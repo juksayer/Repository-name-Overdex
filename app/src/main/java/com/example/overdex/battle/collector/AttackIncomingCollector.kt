@@ -4,10 +4,8 @@ import android.graphics.Bitmap
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.TestimonyCustody
-import com.example.overdex.data.observation.readText
+import com.example.overdex.data.observation.SharedLatinTextRecognizer
 import com.example.overdex.model.observation.ObservationInput
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,9 +35,8 @@ class AttackIncomingCollector(
         } catch (e: Exception) { null }
     },
     private val detect: suspend (Bitmap) -> String? = { bitmap ->
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         try {
-            recognizer.readText(bitmap)
+            SharedLatinTextRecognizer.readText(bitmap)
         } catch (e: Exception) {
             null
         }

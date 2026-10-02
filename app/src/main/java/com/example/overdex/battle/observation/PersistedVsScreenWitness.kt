@@ -36,7 +36,7 @@ class PersistedVsScreenWitness(
                     if (crop.cropProvenance.cropName != BattleCropContracts.vsScreen.cropName) {
                         return@collect
                     }
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     val isVsScreen = try {
                         // This crop contains the central VS token. A substring match can
                         // mistake a fast-moving, high-contrast Pokémon feature for “VS”.

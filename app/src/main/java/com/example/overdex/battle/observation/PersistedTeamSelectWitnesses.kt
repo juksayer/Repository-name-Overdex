@@ -22,7 +22,7 @@ class PersistedTeamSelectPartyWitness(private val store: FileCropArtifactStore) 
                 if (accepted) return@collect
                 val crop = a.payload as? CropCaptured ?: return@collect
                 if (crop.cropProvenance.cropName != TeamSelectCropContracts.leagueText.cropName) return@collect
-                val bitmap = store.loadVerifiedPng(crop.artifact) ?: return@collect
+                val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                 val isLeague = try { AnnouncementRecognizer.recognize(bitmap).value?.uppercase()?.contains("LEAGUE") == true } finally { bitmap.recycle() }
                 if (!isLeague) return@collect
                 accepted = true
@@ -51,7 +51,7 @@ class PersistedPlayerTeamRosterSlotWitness(
                 if (!surfaceAccepted || accepted) return@collect
                 val crop = a.payload as? CropCaptured ?: return@collect
                 if (crop.cropProvenance.cropName != cropName) return@collect
-                val bitmap = store.loadVerifiedPng(crop.artifact) ?: return@collect
+                val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                 val name = try {
                     ObservationRecognizer.recognize(CaptureObservation("SpeciesName", bitmap), "TEAM_SELECT")
                         .firstOrNull { it.recognizer == "SpeciesNameRecognizer" && it.value is String }?.value as? String

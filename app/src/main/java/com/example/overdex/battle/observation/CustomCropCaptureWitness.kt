@@ -38,7 +38,12 @@ class CustomCropCaptureWitness(
                         minimumSize = 8
                     ) ?: return@supplyFrames
                     try {
-                        val artifact = artifactStore.preservePng(resolved.bitmap) ?: return@supplyFrames
+                        val artifact = artifactStore.preserveFrameCrop(
+                            frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+                            bitmap = resolved.bitmap,
+                            provenance = resolved.provenance,
+                            sourceFrame = frame.bitmap
+                        ) ?: return@supplyFrames
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = CropCaptured(artifact, resolved.provenance),

@@ -33,7 +33,7 @@ class PersistedPlayerInactiveSpeciesSpriteWitness(
                 match.articles.collect { article ->
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != crop.cropName) return@collect
-                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: return@collect
                     try {
                         val sample = PlayerInactiveSpriteFingerprinter.measure(bitmap) ?: return@collect
                         match.custody.submitTestimony(

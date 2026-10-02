@@ -34,7 +34,6 @@ fun MatchArchiveDirectoryScreen(
     archiveDirectoryManager: ArchiveDirectoryManager,
     onBack: () -> Unit,
     onOpenArchive: (android.net.Uri) -> Unit,
-    onRequestFolderConfigure: () -> Unit,
     isLoading: Boolean = false,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
@@ -47,10 +46,8 @@ fun MatchArchiveDirectoryScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    val isAvailable = remember(archiveDirectoryManager) { archiveDirectoryManager.isFolderAvailable() }
-    val folderDisplayName = remember(isAvailable) { archiveDirectoryManager.getFolderDisplayName() }
-    val archives = remember(isAvailable) {
-        if (isAvailable) archiveDirectoryManager.listArchives() else emptyList()
+    val archives = remember(archiveDirectoryManager) {
+        archiveDirectoryManager.listArchives()
     }
 
     val selectedEntry = archives.getOrNull(selectedIndex)
@@ -72,13 +69,13 @@ fun MatchArchiveDirectoryScreen(
 
     SideEffect {
         onUp {
-            if (!isLoading && isAvailable && archives.isNotEmpty()) {
+            if (!isLoading && archives.isNotEmpty()) {
                 selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
                 scope.launch { listState.animateScrollToItem(selectedIndex) }
             }
         }
         onDown {
-            if (!isLoading && isAvailable && archives.isNotEmpty()) {
+            if (!isLoading && archives.isNotEmpty()) {
                 selectedIndex = (selectedIndex + 1).coerceAtMost(archives.size - 1)
                 scope.launch { listState.animateScrollToItem(selectedIndex) }
             }
@@ -86,9 +83,7 @@ fun MatchArchiveDirectoryScreen(
         onA {
             if (isLoading) return@onA
             errorMessage = null
-            if (!isAvailable) {
-                onRequestFolderConfigure()
-            } else if (selectedEntry != null) {
+            if (selectedEntry != null) {
                 try {
                     onOpenArchive(selectedEntry.uri)
                 } catch (e: Exception) {
@@ -105,37 +100,25 @@ fun MatchArchiveDirectoryScreen(
         TerminalPathIndicator(path = "/signal_observatory/archive_directory/")
 
         Column(modifier = Modifier.fillMaxSize()) {
-            TerminalHeader(text = "ARCHIVE DIRECTORY")
+            TerminalHeader(text = "RECORDED MATCHES")
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TerminalText(
-                    text = "FOLDER: $folderDisplayName",
+                    text = "AUTOMATIC COMPACT RECORDS · OVERDEX INTERNAL",
                     color = TerminalPurple,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
-                androidx.compose.material3.TextButton(onClick = onRequestFolderConfigure) {
-                    TerminalText(text = "[ CHANGE FOLDER ]", color = TerminalGreen, fontSize = 10.sp)
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            if (!isAvailable) {
+            if (archives.isEmpty()) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        TerminalText(text = "Archive folder unavailable.", color = Color.Red, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TerminalText(text = "Press [A] or click CHANGE FOLDER to select again.", color = TerminalDimGreen, fontSize = 11.sp)
-                    }
-                }
-            } else if (archives.isEmpty()) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    TerminalText(text = "No match archives found.", color = Color.Gray)
+                    TerminalText(text = "No internally recorded matches yet.", color = Color.Gray)
                 }
             } else {
                 Box(modifier = Modifier.weight(1f)) {
@@ -206,7 +189,7 @@ fun MatchArchiveDirectoryScreen(
             TerminalText(
                 text = when {
                     isLoading -> "LOADING — PLEASE WAIT"
-                    !isAvailable -> "[A] SELECT FOLDER  [B] BACK"
+                    archives.isEmpty() -> "[B] BACK"
                     else -> "[A] OPEN ARCHIVE  [B] BACK"
                 },
                 color = TerminalDimGreen,

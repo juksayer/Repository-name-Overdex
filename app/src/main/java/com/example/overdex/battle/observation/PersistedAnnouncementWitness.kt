@@ -35,7 +35,7 @@ class PersistedAnnouncementWitness(
                     .conflate()
                     .collect { article ->
                     val crop = article.payload as CropCaptured
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         val text = AnnouncementRecognizer.recognize(bitmap).value ?: return@collect
                         match.custody.submitTestimony(sourceId, RawTestimony(text), article.perceivedAt, null, listOf(article.id.value), article.monotonicTimeNanos ?: return@collect)

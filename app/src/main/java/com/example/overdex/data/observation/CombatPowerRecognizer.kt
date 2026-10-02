@@ -2,14 +2,11 @@ package com.example.overdex.data.observation
 
 import android.graphics.Bitmap
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 /**
  * Specialized recognizer for extracting Combat Power (CP) from visual evidence.
  */
 object CombatPowerRecognizer {
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
      * Extracts the numeric CP value from the provided bitmap.
@@ -22,7 +19,7 @@ object CombatPowerRecognizer {
      */
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<Int> {
         return try {
-            val result = recognizer.read(bitmap)
+            val result = SharedLatinTextRecognizer.read(bitmap)
             // Clean text: lowercase, remove "cp", filter digits
             val cleanText = result.text.lowercase()
                 .replace("cp", "")

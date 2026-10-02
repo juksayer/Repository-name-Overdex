@@ -25,4 +25,22 @@ class CropArtifactStoreTest {
             root.deleteRecursively()
         }
     }
+
+    @Test
+    fun `writes one content-addressed frame artifact for shared crop references`() {
+        val root = Files.createTempDirectory("overdex-frames-").toFile()
+        try {
+            val bytes = byteArrayOf(9, 8, 7, 6)
+            val store = FileCropArtifactStore(root)
+
+            val first = store.preserveEncodedFramePng(bytes)!!
+            val second = store.preserveEncodedFramePng(bytes)!!
+
+            assertEquals(first, second)
+            assertTrue(first.relativePath.matches(Regex("artifacts/frames/sha256/[a-f0-9]{64}\\.png")))
+            assertArrayEquals(bytes, java.io.File(root, first.relativePath).readBytes())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 }

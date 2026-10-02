@@ -37,7 +37,14 @@ class PersistedAnnouncementSpeciesWitness(
                     if (text.trim().uppercase().startsWith("GO,")) return@collect
                     val names = knownSpeciesNames ?: match.pokemonKnowledge.getAllSpeciesNames()
                         .also { knownSpeciesNames = it }
-                    val speciesName = SpeciesTextResolver.resolve(text, names) ?: return@collect
+                    // This witness owns named, non-entry battle announcements such as
+                    // “Turtonator used Dragon Pulse!”.  Do not search the entire crop
+                    // for a species-shaped substring: Android capture can include our
+                    // own HUD, and “GREAT / Aurora Beam” is one edit away from Tauros.
+                    val speciesName = AnnouncementSpeciesTextResolver.resolveUsedMovePerformer(
+                        rawText = text,
+                        knownSpeciesNames = names
+                    ) ?: return@collect
                     val side = match.sideForRosterKnownSpecies(speciesName) ?: return@collect
                     val witnessed = side to speciesName
                     if (witnessed == lastWitnessed) return@collect
@@ -57,4 +64,22 @@ class PersistedAnnouncementSpeciesWitness(
     }
 
     override fun stop() { scope?.cancel("Witness stopped"); scope = null }
+}
+
+/** Resolves only the performer field of Pokémon GO's named move announcement. */
+object AnnouncementSpeciesTextResolver {
+    private val usedMovePattern = Regex(
+        "^\\s*(.+?)\\s+used\\s+(.+?)[!.]*\\s*$",
+        RegexOption.IGNORE_CASE
+    )
+
+    fun resolveUsedMovePerformer(
+        rawText: String,
+        knownSpeciesNames: Set<String>
+    ): String? {
+        val singleLine = rawText.trim().replace(Regex("\\s+"), " ")
+        val performerText = usedMovePattern.matchEntire(singleLine)?.groupValues?.get(1)
+            ?: return null
+        return SpeciesTextResolver.resolve(performerText, knownSpeciesNames)
+    }
 }

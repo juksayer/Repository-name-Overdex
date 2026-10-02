@@ -40,7 +40,7 @@ class PersistedTrainerInactiveTimerOverlayClearanceWitness(
                     val crop = article.payload as? CropCaptured ?: return@collect
                     if (crop.cropProvenance.cropName != BattleCropContracts.trainerInactiveTimerOverlayClearance.cropName) return@collect
                     frameIndex++
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         val stats = TrainerInactiveTimerOverlayClearanceMeasurer.measure(bitmap) ?: return@collect
                         if (!armed) {

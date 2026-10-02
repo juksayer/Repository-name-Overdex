@@ -14,9 +14,9 @@ import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
- * Attributes entry announcements from the already preserved Team Select roster.
- * Announcement order is not a side label: a trainer-leader battle can announce the
- * opponent first. A roster match is PLAYER; a non-roster species is OPPONENT.
+ * Attributes entry announcements from their explicit species field. A complete
+ * roster is strongest; skipped onboarding falls back to Pokémon GO's visible
+ * opening order so species recognition remains useful without team setup.
  */
 class PersistedPlayerEntrySpeciesWitness(
     override val observerId: ObserverId = ObserverId("ENTRY_ANNOUNCEMENT_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE),
@@ -32,38 +32,9 @@ class PersistedPlayerEntrySpeciesWitness(
                 var knownSpeciesNames: Set<String>? = null
                 var lastAnnouncementText: String? = null
                 var lastWitnessed: Pair<ActivePokemonSide, String>? = null
-                val pendingAnnouncements = mutableListOf<Pair<com.example.overdex.battle.reality.RealityArticle, String>>()
-
-                suspend fun attributePendingAnnouncements() {
-                    val iterator = pendingAnnouncements.iterator()
-                    while (iterator.hasNext()) {
-                        val (announcement, speciesName) = iterator.next()
-                        val side = match.sideForRosterKnownSpecies(speciesName) ?: continue
-                        val monotonicTimeNanos = announcement.monotonicTimeNanos ?: continue
-                        val witnessed = side to speciesName
-                        iterator.remove()
-                        if (witnessed == lastWitnessed) continue
-                        lastWitnessed = witnessed
-                        val species = match.pokemonKnowledge.getPokemonByName(speciesName)
-                        match.custody.submitTestimony(
-                            sourceId = sourceId,
-                            payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
-                            timestamp = announcement.perceivedAt,
-                            confidence = null,
-                            evidenceReferences = listOf(announcement.id.value),
-                            monotonicTimeNanos = monotonicTimeNanos
-                        )
-                    }
-                }
+                val sideTracker = EntryAnnouncementSideTracker()
 
                 match.articles.collect { article ->
-                    if (article.payload is com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed ||
-                        article.payload is com.example.overdex.battle.custody.PlayerTeamSlotConfigured
-                    ) {
-                        // Match updates its roster before publishing this article, so a
-                        // prior entry can now receive a justified side.
-                        attributePendingAnnouncements()
-                    }
                     if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
                     val rawText = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     // Pokémon GO's entry form explicitly reads “Go, <species>!”.
@@ -75,15 +46,22 @@ class PersistedPlayerEntrySpeciesWitness(
                     lastAnnouncementText = normalizedText
                     val names = knownSpeciesNames ?: match.pokemonKnowledge.getAllSpeciesNames()
                         .also { knownSpeciesNames = it }
-                    val speciesName = SpeciesTextResolver.resolve(rawText, names)
+                    val speciesName = EntryAnnouncementSpeciesTextResolver.resolve(rawText, names)
                     Log.d("ENTRY_ANNOUNCEMENT_SPECIES", "announcement=$rawText resolved=${speciesName ?: "none"} catalogue=${names.size}")
                     speciesName ?: return@collect
-                    // An entry announcement does not identify a side on its own.  In
-                    // particular, Team Select can still be finishing while the first
-                    // entry announcement arrives. Preserve it until a complete roster
-                    // can justify the side, never defaulting a player species to enemy.
-                    pendingAnnouncements += article to speciesName
-                    attributePendingAnnouncements()
+                    val attribution = sideTracker.attribute(speciesName, match.playerRosterSpecies())
+                    val witnessed = attribution.side to speciesName
+                    if (witnessed == lastWitnessed) return@collect
+                    lastWitnessed = witnessed
+                    val species = match.pokemonKnowledge.getPokemonByName(speciesName)
+                    match.custody.submitTestimony(
+                        sourceId = sourceId,
+                        payload = ActivePokemonSpeciesWitnessed(attribution.side, speciesName, species?.id),
+                        timestamp = article.perceivedAt,
+                        confidence = attribution.confidence,
+                        evidenceReferences = listOf(article.id.value),
+                        monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
+                    )
                 }
             }
         }
@@ -92,5 +70,15 @@ class PersistedPlayerEntrySpeciesWitness(
     override fun stop() {
         scope?.cancel("Witness stopped")
         scope = null
+    }
+}
+
+object EntryAnnouncementSpeciesTextResolver {
+    private val entryPattern = Regex("^\\s*Go,\\s*(.+?)[!.]*\\s*$", RegexOption.IGNORE_CASE)
+
+    fun resolve(rawText: String, knownSpeciesNames: Set<String>): String? {
+        val singleLine = rawText.trim().replace(Regex("\\s+"), " ")
+        val speciesField = entryPattern.matchEntire(singleLine)?.groupValues?.get(1) ?: return null
+        return SpeciesTextResolver.resolve(speciesField, knownSpeciesNames)
     }
 }

@@ -152,6 +152,10 @@ object MatchArchivePackageReader {
                 val reference = cropStore.preserveEncodedPng(staged.readBytes())
                     ?: throw IllegalArgumentException("Unable to preserve imported crop artifact: $path")
                 if (reference.relativePath != path) throw IllegalArgumentException("Imported crop artifact path mismatch: $path")
+            } else if (path.startsWith("artifacts/frames/")) {
+                val reference = cropStore.preserveEncodedFramePng(staged.readBytes())
+                    ?: throw IllegalArgumentException("Unable to preserve imported frame artifact: $path")
+                if (reference.relativePath != path) throw IllegalArgumentException("Imported frame artifact path mismatch: $path")
             } else {
                 val output = File(repositoryRoot, path)
                 output.parentFile?.mkdirs()
@@ -204,8 +208,9 @@ object MatchArchivePackageReader {
         }
         declared.forEach { artifact ->
             val validCrop = artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png" && artifact.mediaType == "image/png"
+            val validFrame = artifact.relativePath == "artifacts/frames/sha256/${artifact.sha256}.png" && artifact.mediaType == "image/png"
             val validAudio = artifact.relativePath == "artifacts/audio/sha256/${artifact.sha256}.wav" && artifact.mediaType == "audio/wav"
-            require(validCrop || validAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
+            require(validCrop || validFrame || validAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
         }
     }
 

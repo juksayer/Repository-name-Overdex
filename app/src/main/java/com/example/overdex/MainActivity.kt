@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -118,10 +119,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var timelineRepository: SharedTimelineRepository
     private lateinit var chatRepository: ChatRepository
     private lateinit var archiveDirectoryManager: ArchiveDirectoryManager
-    private var pendingFolderAction: String? = null
-    private var pendingExportSource: com.example.overdex.battle.archive.MatchArchiveSource? = null
-    private var pendingExportMode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
-    val navigateToDirectoryRequested = mutableStateOf(false)
     private var selectedRegion = CalibrationRegion.NONE
 
     /**
@@ -136,64 +133,6 @@ class MainActivity : ComponentActivity() {
             .putInt(INITIAL_CAPABILITY_PASS_VERSION, CAPABILITY_PASS_VERSION)
             .apply()
         Log.i("OVERDEX_CAPABILITIES", "Initial capability pass: $grants")
-    }
-
-    private val archiveFolderPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri ->
-        if (uri != null) {
-            try {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-                val docFile = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, uri)
-                if (docFile != null && docFile.exists() && docFile.canRead() && docFile.canWrite()) {
-                    archiveDirectoryManager.saveFolderUri(uri)
-                    val action = pendingFolderAction
-                    pendingFolderAction = null
-                    if (action == "open") {
-                        navigateToDirectoryRequested.value = true
-                    } else if (action == "export") {
-                        val source = pendingExportSource
-                        pendingExportSource = null
-                        if (source != null) {
-                            lifecycleScope.launch(Dispatchers.IO) {
-                                try {
-                                    archiveDirectoryManager.exportMatch(source.matchId, source.realityTimeline, pendingExportMode)
-                                    withContext(Dispatchers.Main) {
-                                        android.widget.Toast.makeText(
-                                            this@MainActivity,
-                                            "Saved Match snapshot directly to Archive Directory",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("MATCH_EXPORT", "Export failed", e)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    android.widget.Toast.makeText(
-                        this@MainActivity,
-                        "Selected folder is not accessible or writable.",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Log.e("FOLDER_PICKER", "Failed to persist folder permission", e)
-                android.widget.Toast.makeText(
-                    this@MainActivity,
-                    "Folder selection failed: ${e.message}",
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
-            }
-        } else {
-            // Cancelled: keep existing configured archive folder! Do not clear saved archive URI.
-            pendingFolderAction = null
-            pendingExportSource = null
-        }
     }
 
     // In-memory storage for the opened archive
@@ -264,6 +203,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onCreate()")
         CountdownSampleRecorder.initialize(this)
         CountdownGlyphMatcher.initialize(this)
         CountdownBurstRecorder.initialize(this)
@@ -322,13 +262,6 @@ class MainActivity : ComponentActivity() {
                         openedArchiveUri = openedArchiveUri,
                         archiveLoadInProgress = archiveLoadInProgress,
                         archiveDirectoryManager = archiveDirectoryManager,
-                        navigateToDirectoryRequested = navigateToDirectoryRequested,
-                        onLaunchFolderPicker = { action, source, mode ->
-                            pendingFolderAction = action
-                            pendingExportSource = source
-                            pendingExportMode = mode
-                            archiveFolderPickerLauncher.launch(null)
-                        },
                         onOpenArchive = {
                             if (!archiveLoadInProgress.value) {
                                 archiveLoadInProgress.value = true
@@ -356,7 +289,20 @@ class MainActivity : ComponentActivity() {
                                 startActivity(intent)
                             } else {
                                 val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                                mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+                                // Use Android's normal screen-share transition without
+                                // placing a second, competing instruction over it.
+                                runCatching {
+                                    mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+                                }.onFailure { error ->
+                                    Log.e("DROIDBALL_LAUNCH", "Unable to open screen-share prompt", error)
+                                    ViewModelProvider(this@MainActivity)[PokedexViewModel::class.java]
+                                        .stopObservation()
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Unable to open screen sharing. Please try START again.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             }
                         },
                         modifier = Modifier.padding(innerPadding),
@@ -397,12 +343,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStart()")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onResume()")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onPause()")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStop()")
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onDestroy()")
         mediaManager.release()
     }
 
     private companion object {
+        init {
+            Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] PROCESS STARTED (MainActivity init)")
+        }
+
         const val CAPABILITY_PREFERENCES = "overdex_capabilities"
         const val INITIAL_CAPABILITY_PASS_VERSION = "initial_capability_pass_version"
         const val CAPABILITY_PASS_VERSION = 2
@@ -426,8 +397,6 @@ fun PokedexApp(
     openedArchiveUri: MutableState<Uri?>,
     archiveLoadInProgress: MutableState<Boolean>,
     archiveDirectoryManager: ArchiveDirectoryManager,
-    navigateToDirectoryRequested: MutableState<Boolean>,
-    onLaunchFolderPicker: (String, com.example.overdex.battle.archive.MatchArchiveSource?, MatchArchiveExportMode) -> Unit = { _, _, _ -> },
     onOpenArchive: () -> Unit = {},
     onStartObservation: () -> Unit = {},
 
@@ -442,13 +411,6 @@ fun PokedexApp(
     val frameCount by viewModel.frameCount.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
-
-    LaunchedEffect(navigateToDirectoryRequested.value) {
-        if (navigateToDirectoryRequested.value) {
-            navigateToDirectoryRequested.value = false
-            navController.navigate("match_archive_directory")
-        }
-    }
 
     LaunchedEffect(openedArchive.value) {
         if (openedArchive.value != null) {
@@ -501,7 +463,14 @@ fun PokedexApp(
             modifier = modifier,
         ) {
             composable("main_menu") {
-                var phase by remember { mutableStateOf(MainMenuPhase.BOOT) }
+                LaunchedEffect(Unit) {
+                    Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] App Navigation: Boot/Startup Navigation Path executed (Navigated to main_menu)")
+                }
+                var phase by remember(hasBootedInSession) {
+                    mutableStateOf(
+                        if (hasBootedInSession) MainMenuPhase.READY else MainMenuPhase.BOOT
+                    )
+                }
                 val instrumentState by viewModel.observationSessionState.collectAsState()
                 val deploymentState by viewModel.deploymentState.collectAsState()
                 val frameCount by viewModel.frameCount.collectAsState()
@@ -1076,62 +1045,57 @@ fun PokedexApp(
                         archiveExportMode.value = mode
                         archiveExportInProgress.value = true
                         archiveExportStatus.value = "PREPARING ${if (mode == MatchArchiveExportMode.FULL_FORENSIC) "FULL FORENSIC" else "COMPACT"} ARCHIVE…"
-                        if (archiveDirectoryManager.isFolderAvailable()) {
-                            scope.launch(Dispatchers.IO) {
-                                try {
-                                        val uri = archiveDirectoryManager.exportMatch(
-                                            source.matchId,
-                                            source.realityTimeline,
-                                            mode
-                                        ) { completed, total ->
-                                            scope.launch(Dispatchers.Main) {
-                                                archiveExportStatus.value = if (total == 0) {
-                                                    "VERIFYING PRESERVED EVIDENCE…"
-                                                } else {
-                                                    "VERIFYING PRESERVED EVIDENCE $completed / $total"
-                                                }
-                                            }
-                                        }
-                                    withContext(Dispatchers.Main) {
-                                        if (uri != null) {
-                                            archiveExportStatus.value = if (mode == MatchArchiveExportMode.FULL_FORENSIC) {
-                                                "FULL FORENSIC ARCHIVE SAVED"
-                                            } else {
-                                                "COMPACT ARCHIVE SAVED"
-                                            }
-                                            android.widget.Toast.makeText(
-                                                context,
-                                                "Saved Match snapshot directly to Archive Directory",
-                                                android.widget.Toast.LENGTH_LONG
-                                            ).show()
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val uri = archiveDirectoryManager.exportMatchToDownloads(
+                                    source.matchId,
+                                    source.realityTimeline,
+                                    mode
+                                ) { completed, total ->
+                                    scope.launch(Dispatchers.Main) {
+                                        archiveExportStatus.value = if (total == 0) {
+                                            "VERIFYING PRESERVED EVIDENCE…"
                                         } else {
-                                            archiveExportStatus.value = "SAVE FAILED — ARCHIVE FOLDER NOT WRITABLE"
-                                            android.widget.Toast.makeText(
-                                                context,
-                                                "Export failed: Archive folder not writable.",
-                                                android.widget.Toast.LENGTH_LONG
-                                            ).show()
+                                            "VERIFYING PRESERVED EVIDENCE $completed / $total"
                                         }
                                     }
-                                } catch (e: Exception) {
-                                    Log.e("MATCH_EXPORT", "Archive save failed", e)
-                                    withContext(Dispatchers.Main) {
-                                        archiveExportStatus.value = "SAVE FAILED: ${e.message}"
+                                }
+                                withContext(Dispatchers.Main) {
+                                    if (uri != null) {
+                                        archiveExportStatus.value = if (mode == MatchArchiveExportMode.FULL_FORENSIC) {
+                                            "FULL FORENSIC ARCHIVE SAVED"
+                                        } else {
+                                            "COMPACT ARCHIVE SAVED"
+                                        }
                                         android.widget.Toast.makeText(
                                             context,
-                                            "Save failed: ${e.message}",
+                                            "Saved to Downloads/Odxmatches",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    } else {
+                                        archiveExportStatus.value = "SAVE FAILED"
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Export failed.",
                                             android.widget.Toast.LENGTH_LONG
                                         ).show()
                                     }
-                                } finally {
-                                    withContext(Dispatchers.Main) {
-                                        archiveExportInProgress.value = false
-                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MATCH_EXPORT", "Archive save failed", e)
+                                withContext(Dispatchers.Main) {
+                                    archiveExportStatus.value = "SAVE FAILED: ${e.message}"
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Save failed: ${e.message}",
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            } finally {
+                                withContext(Dispatchers.Main) {
+                                    archiveExportInProgress.value = false
                                 }
                             }
-                        } else {
-                            archiveExportInProgress.value = false
-                            onLaunchFolderPicker("export", source, mode)
                         }
                     }
                 }
@@ -1194,11 +1158,7 @@ fun PokedexApp(
                     },
                     onA = {
                         if (archiveOpenSelected.value) {
-                            if (archiveDirectoryManager.isFolderAvailable()) {
-                                navController.navigate("match_archive_directory")
-                            } else {
-                                onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
-                            }
+                            navController.navigate("match_archive_directory")
                         } else if (archiveExportSelected.value && archiveSourceState.value != null) {
                             requestArchiveExport(archiveExportMode.value ?: MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                         } else {
@@ -1222,11 +1182,7 @@ fun PokedexApp(
                         onExportCompact = { requestArchiveExport(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) },
                         onExportFull = { requestArchiveExport(MatchArchiveExportMode.FULL_FORENSIC) },
                         onOpenMatch = {
-                            if (archiveDirectoryManager.isFolderAvailable()) {
-                                navController.navigate("match_archive_directory")
-                            } else {
-                                onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
-                            }
+                            navController.navigate("match_archive_directory")
                         },
                         openSelected = archiveOpenSelected.value
                     )
@@ -1286,9 +1242,6 @@ fun PokedexApp(
                                     archiveLoadInProgress.value = false
                                 }
                             }
-                        },
-                        onRequestFolderConfigure = {
-                            onLaunchFolderPicker("open", null, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
                         },
                         isLoading = archiveLoadInProgress.value,
                         onUp = { upHandler = it },
@@ -1422,9 +1375,13 @@ fun PokedexApp(
                 }
 
                 var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var upLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var aLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1441,9 +1398,13 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onUp = { upHandler?.invoke() },
+                    onUpLong = { upLongHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
+                    onDownLong = { downLongHandler?.invoke() },
                     onLeft = { leftHandler?.invoke() },
+                    onLeftLong = { leftLongHandler?.invoke() },
                     onRight = { rightHandler?.invoke() },
+                    onRightLong = { rightLongHandler?.invoke() },
                     onA = { aHandler?.invoke() },
                     onALong = { aLongHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
@@ -1464,9 +1425,13 @@ fun PokedexApp(
                     MatchCalibrationScreen(
                         calibrationManager = calibrationManager,
                         onUp = { upHandler = it },
+                        onUpLong = { upLongHandler = it },
                         onDown = { downHandler = it },
+                        onDownLong = { downLongHandler = it },
                         onLeft = { leftHandler = it },
+                        onLeftLong = { leftLongHandler = it },
                         onRight = { rightHandler = it },
+                        onRightLong = { rightLongHandler = it },
                         onA = { aHandler = it },
                         onALong = { aLongHandler = it },
                         onSelect = { selectHandler = it },

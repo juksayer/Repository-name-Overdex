@@ -34,7 +34,7 @@ class PersistedOutcomeTextWitness(
                     .conflate()
                     .collect { article ->
                         val crop = article.payload as CropCaptured
-                        val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                         val text = try { AnnouncementRecognizer.recognize(bitmap).value?.trim() } finally { bitmap.recycle() }
                             ?.takeIf { it.isNotBlank() } ?: return@collect
                         match.custody.submitTestimony(

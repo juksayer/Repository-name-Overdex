@@ -83,7 +83,12 @@ class DroidballSession(val match: Match) {
     }
 
     fun recordFirstLiveCombat(article: RealityArticle) {
-        if (_phase.value == DroidballSessionPhase.BATTLE_ACTIVE && _firstLiveCombatArticle.value == null) {
+        // An active HP surface is already in-battle evidence even when GO OCR
+        // was missed. Retire countdown work without inventing a MatchStarted
+        // clock boundary.
+        if (_phase.value in setOf(DroidballSessionPhase.COUNTDOWN, DroidballSessionPhase.BATTLE_ACTIVE) &&
+            _firstLiveCombatArticle.value == null
+        ) {
             _firstLiveCombatArticle.value = article
         }
     }

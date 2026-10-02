@@ -3,6 +3,8 @@ package com.example.overdex.battle.archive
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
+import com.example.overdex.battle.custody.DeviceMotionPulseMeasured
+import com.example.overdex.battle.custody.ChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchRecordStarted
 import com.example.overdex.battle.custody.VsScreenWitnessed
@@ -15,12 +17,16 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveEffectiveness
+import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
+import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
@@ -124,6 +130,29 @@ class RealityArticleArchiveMapperTest {
         assertEquals(
             ArchivedChargeMoveUsedAnnounced,
             RealityArticleArchiveMapper.map(article(id = "charge-used", payload = ChargeMoveUsedAnnounced)).payload
+        )
+    }
+
+    @Test
+    fun `maps raw device motion separately from its charge move qte conclusion`() {
+        assertEquals(
+            ArchivedDeviceMotionPulseMeasured(80L, 1.2f, 0.7f, 8, "LINEAR_ACCELERATION"),
+            RealityArticleArchiveMapper.map(article(
+                id = "motion",
+                payload = DeviceMotionPulseMeasured(80L, 1.2f, 0.7f, 8)
+            )).payload
+        )
+        assertEquals(
+            ArchivedChargeMoveQteVibrationPatternInferred(
+                "PLAYER", 3, 2_000_000_000L, "THREE_SHORT_DEVICE_MOTION_PULSES"
+            ),
+            RealityArticleArchiveMapper.map(article(
+                id = "qte",
+                payload = ChargeMoveQteVibrationPatternInferred(
+                    pulseCount = 3,
+                    windowNanos = 2_000_000_000L
+                )
+            )).payload
         )
     }
 
@@ -240,6 +269,64 @@ class RealityArticleArchiveMapperTest {
                 "OPPONENT", 0.24f, 0.31f, 0.8f, 0.2f, 0.1f, 0.65f, 0.42f, 138
             ),
             RealityArticleArchiveMapper.map(article(id = "recipient-artifact", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps fast move effectiveness without inventing a damaged side`() {
+        val payload = FastMoveEffectivenessWitnessed(
+            effectiveness = FastMoveEffectiveness.SUPER_EFFECTIVE,
+            damagedSide = null,
+            recognizedText = "SUPER EFFECTIVE!"
+        )
+
+        assertEquals(
+            ArchivedFastMoveEffectivenessWitnessed(
+                effectiveness = "SUPER_EFFECTIVE",
+                damagedSide = null,
+                recognizedText = "SUPER EFFECTIVE!"
+            ),
+            RealityArticleArchiveMapper.map(article(id = "effectiveness", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps a fused fast move use with its appearance and evidence kinds`() {
+        val payload = FastMoveUseObserved(
+            useId = "fast-move-use:pulse-1",
+            attackingSide = ActivePokemonSide.OPPONENT,
+            damagedSide = ActivePokemonSide.PLAYER,
+            appearanceId = "sealeo-appearance",
+            attackerSpeciesName = "Sealeo",
+            evidenceKinds = listOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT")
+        )
+
+        assertEquals(
+            ArchivedFastMoveUseObserved(
+                useId = "fast-move-use:pulse-1",
+                attackingSide = "OPPONENT",
+                damagedSide = "PLAYER",
+                appearanceId = "sealeo-appearance",
+                attackerSpeciesName = "Sealeo",
+                evidenceKinds = listOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"),
+                basis = "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+            ),
+            RealityArticleArchiveMapper.map(article(id = "use", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps hp damage ticks as measurements on the damaged side`() {
+        val payload = ActiveHpBarDamageTickMeasured(
+            damagedSide = ActivePokemonSide.PLAYER,
+            beforeFraction = 0.82f,
+            afterFraction = 0.68f,
+            lostFraction = 0.14f
+        )
+
+        assertEquals(
+            ArchivedActiveHpBarDamageTickMeasured("PLAYER", 0.82f, 0.68f, 0.14f),
+            RealityArticleArchiveMapper.map(article(id = "hp-tick", payload = payload)).payload
         )
     }
 

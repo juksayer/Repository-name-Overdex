@@ -4,10 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -19,7 +15,6 @@ import kotlinx.coroutines.sync.withLock
  * catalogue; this recognizer never turns a partial string into a Pokémon identity.
  */
 object SpeciesNameRecognizer {
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     // ML Kit's TextRecognizer is stateful. One serial lane prevents simultaneous
     // player/opponent reads from stalling behind each other; each side's caller
     // keeps only its latest durable badge crop while it waits.
@@ -29,12 +24,8 @@ object SpeciesNameRecognizer {
     /** Initialize ML Kit during deployment, before an entry cue starts the latency budget. */
     suspend fun warmUp() = recognitionMutex.withLock {
         if (warmed) return@withLock
-        val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
-        blank.eraseColor(Color.WHITE)
-        try {
-            recognizer.process(InputImage.fromBitmap(blank, 0)).await()
-            warmed = true
-        } finally { blank.recycle() }
+        SharedLatinTextRecognizer.warmUp()
+        warmed = true
     }
 
 
@@ -79,7 +70,7 @@ object SpeciesNameRecognizer {
     }
 
     private suspend fun recognize(treatment: String, prepared: Bitmap): String? = try {
-        val text = recognizer.process(InputImage.fromBitmap(prepared, 0)).await().text.trim()
+        val text = SharedLatinTextRecognizer.readText(prepared).trim()
         Log.d(
             "SPECIES_NAME_RECOGNIZER",
             "source=${prepared.width}x${prepared.height} treatment=$treatment text=\"${text.replace("\n", "\\n")}\""

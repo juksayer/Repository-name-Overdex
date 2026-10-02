@@ -37,7 +37,7 @@ class PersistedCountdownCryCueWitness(
                     if (cueRequested) return@collect
                     val crop = article.payload as? CropCaptured ?: return@collect
                     if (crop.cropProvenance.cropName != BattleCropContracts.countdownGlyph.cropName) return@collect
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         if (!CountdownGlyphMatcher.hasGlyphLikePresence(bitmap)) return@collect
                         cueRequested = true

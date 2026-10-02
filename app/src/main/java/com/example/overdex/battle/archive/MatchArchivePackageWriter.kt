@@ -80,9 +80,11 @@ object MatchArchivePackageWriter {
     private fun requireValidArtifactPath(artifact: ArchivedArtifactEntry) {
         val isCrop = artifact.relativePath == "artifacts/crops/sha256/${artifact.sha256}.png" &&
             artifact.mediaType == "image/png"
+        val isFrame = artifact.relativePath == "artifacts/frames/sha256/${artifact.sha256}.png" &&
+            artifact.mediaType == "image/png"
         val isAudio = artifact.relativePath == "artifacts/audio/sha256/${artifact.sha256}.wav" &&
             artifact.mediaType == "audio/wav"
-        require(isCrop || isAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
+        require(isCrop || isFrame || isAudio) { "Invalid artifact reference: ${artifact.relativePath}" }
         require(artifact.sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid artifact hash." }
     }
 

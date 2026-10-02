@@ -34,6 +34,13 @@ class CropCaptureWitness(
     private val captureIntervalNanos: Long = 200_000_000L,
     /** The narrow identity strips use I/O so capture pressure cannot starve them. */
     private val captureDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    /**
+     * Stable, high-value crops can persist the complete published frame so many
+     * witnesses share one forensic image. Narrow latency-critical OCR strips
+     * persist their own small PNG: encoding a full screen must never delay the
+     * species name that opens the battle model.
+     */
+    private val preserveCompleteFrame: Boolean = true,
     /** Optional post-custody delivery. The artifact and CropCaptured record already exist. */
     private val onCaptured: ((CropCaptured, Long, Long) -> Unit)? = null
 ) : Observer {
@@ -61,7 +68,16 @@ class CropCaptureWitness(
                     ) return@supplyFrames
                     val resolved = contract.crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
                     try {
-                        val artifact = artifactStore.preservePng(resolved.bitmap) ?: return@supplyFrames
+                        val artifact = if (preserveCompleteFrame) {
+                            artifactStore.preserveFrameCrop(
+                                frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+                                bitmap = resolved.bitmap,
+                                provenance = resolved.provenance,
+                                sourceFrame = frame.bitmap
+                            )
+                        } else {
+                            artifactStore.preservePng(resolved.bitmap)
+                        } ?: return@supplyFrames
                         val testimony = CropCaptured(artifact, resolved.provenance)
                         match.custody.submitTestimony(
                             sourceId = sourceId,

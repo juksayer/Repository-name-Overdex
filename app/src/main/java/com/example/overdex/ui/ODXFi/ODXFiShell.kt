@@ -270,9 +270,13 @@ private fun RotatedInstrumentViewport(
 @Composable
 fun ODXFiShell(
     onUp: () -> Unit = {},
+    onUpLong: () -> Unit = {},
     onDown: () -> Unit = {},
+    onDownLong: () -> Unit = {},
     onLeft: () -> Unit = {},
+    onLeftLong: () -> Unit = {},
     onRight: () -> Unit = {},
+    onRightLong: () -> Unit = {},
     onA: () -> Unit = {},
     onALong: () -> Unit = {},
     onB: () -> Unit = {},
@@ -663,28 +667,56 @@ fun ODXFiShell(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InstrumentButton(icon = Icons.Default.ArrowDropUp, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
-                    handleInput("UP")
-                    if (showResearcherSettings) researcherUp?.invoke()
-                    else if (showSettings) settingsUp?.invoke()
-                    else onUp()
-                })
-                InstrumentButton(icon = Icons.Default.ArrowDropDown, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
-                    handleInput("DOWN")
-                    if (showResearcherSettings) researcherDown?.invoke()
-                    else if (showSettings) settingsDown?.invoke()
-                    else onDown()
-                })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowLeft, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
-                    handleInput("LEFT")
-                    if (showSettings) settingsLeft?.invoke()
-                    else onLeft()
-                })
-                InstrumentButton(icon = Icons.AutoMirrored.Filled.ArrowRight, iconRotationDegrees = if (isBinderMode) 90f else 0f, onClick = {
-                    handleInput("RIGHT")
-                    if (showSettings) settingsRight?.invoke()
-                    else onRight()
-                })
+                InstrumentButton(
+                    icon = Icons.Default.ArrowDropUp,
+                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                    onClick = {
+                        handleInput("UP")
+                        if (showResearcherSettings) researcherUp?.invoke()
+                        else if (showSettings) settingsUp?.invoke()
+                        else onUp()
+                    },
+                    onLongClick = {
+                        if (!showResearcherSettings && !showSettings) onUpLong()
+                    }
+                )
+                InstrumentButton(
+                    icon = Icons.Default.ArrowDropDown,
+                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                    onClick = {
+                        handleInput("DOWN")
+                        if (showResearcherSettings) researcherDown?.invoke()
+                        else if (showSettings) settingsDown?.invoke()
+                        else onDown()
+                    },
+                    onLongClick = {
+                        if (!showResearcherSettings && !showSettings) onDownLong()
+                    }
+                )
+                InstrumentButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowLeft,
+                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                    onClick = {
+                        handleInput("LEFT")
+                        if (showSettings) settingsLeft?.invoke()
+                        else onLeft()
+                    },
+                    onLongClick = {
+                        if (!showResearcherSettings && !showSettings) onLeftLong()
+                    }
+                )
+                InstrumentButton(
+                    icon = Icons.AutoMirrored.Filled.ArrowRight,
+                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                    onClick = {
+                        handleInput("RIGHT")
+                        if (showSettings) settingsRight?.invoke()
+                        else onRight()
+                    },
+                    onLongClick = {
+                        if (!showResearcherSettings && !showSettings) onRightLong()
+                    }
+                )
             }
 
             // Instrumentation Display (Center)

@@ -47,9 +47,13 @@ fun MatchCalibrationPreview() {
 fun MatchCalibrationScreen(
     calibrationManager: CalibrationManager,
     onUp: (() -> Unit) -> Unit = {},
+    onUpLong: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
+    onDownLong: (() -> Unit) -> Unit = {},
     onLeft: (() -> Unit) -> Unit = {},
+    onLeftLong: (() -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
+    onRightLong: (() -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onALong: (() -> Unit) -> Unit = {},
     onSelect: (() -> Unit) -> Unit = {},
@@ -229,7 +233,8 @@ fun MatchCalibrationScreen(
         }
     }
 
-    val step = 0.005f // Small increment for normalized coordinates
+    val step = 0.005f // Fine adjustment: 0.5% of the published frame.
+    val acceleratedStep = step * 4f
 
     fun move(dx: Float, dy: Float) {
         val maxX = (1f - activeRegion.width).coerceAtLeast(0f)
@@ -256,9 +261,13 @@ fun MatchCalibrationScreen(
     // Input Handling
     SideEffect {
         onUp { if (mode == CalibrationMode.POSITION) move(0f, -step) else resize(0f, -step) }
+        onUpLong { if (mode == CalibrationMode.POSITION) move(0f, -acceleratedStep) else resize(0f, -acceleratedStep) }
         onDown { if (mode == CalibrationMode.POSITION) move(0f, step) else resize(0f, step) }
+        onDownLong { if (mode == CalibrationMode.POSITION) move(0f, acceleratedStep) else resize(0f, acceleratedStep) }
         onLeft { if (mode == CalibrationMode.POSITION) move(-step, 0f) else resize(-step, 0f) }
+        onLeftLong { if (mode == CalibrationMode.POSITION) move(-acceleratedStep, 0f) else resize(-acceleratedStep, 0f) }
         onRight { if (mode == CalibrationMode.POSITION) move(step, 0f) else resize(step, 0f) }
+        onRightLong { if (mode == CalibrationMode.POSITION) move(acceleratedStep, 0f) else resize(acceleratedStep, 0f) }
         onA {
             val currentIndex = matchRegions.indexOf(selectedRegion)
             selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
@@ -320,7 +329,7 @@ fun MatchCalibrationScreen(
         // Selected Region Overlay (Draw ONLY the selected region's rectangle)
         Canvas(modifier = Modifier.fillMaxSize()) {
             val color = TerminalPurple
-            val stroke = 3.dp.toPx()
+            val stroke = 1.dp.toPx()
 
             drawRect(
                 color = color,

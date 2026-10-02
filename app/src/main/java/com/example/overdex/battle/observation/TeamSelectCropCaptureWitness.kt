@@ -39,7 +39,12 @@ class TeamSelectCropCaptureWitness(
                 if (!nowEnabled || frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS) return@supplyFrames
                 val crop = contract.resolve(calibration, frame.bitmap) ?: return@supplyFrames
                 try {
-                    val artifact = artifactStore.preservePng(crop.bitmap) ?: return@supplyFrames
+                    val artifact = artifactStore.preserveFrameCrop(
+                        frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+                        bitmap = crop.bitmap,
+                        provenance = crop.provenance,
+                        sourceFrame = frame.bitmap
+                    ) ?: return@supplyFrames
                     lastCaptureNanos = frame.capturedAtMonotonicTimeNanos
                     match.custody.submitTestimony(source, CropCaptured(artifact, crop.provenance), frame.capturedAtWallTimeMillis, null, emptyList(), frame.capturedAtMonotonicTimeNanos)
                 } finally { crop.bitmap.recycle() }

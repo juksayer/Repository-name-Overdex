@@ -32,7 +32,7 @@ class PersistedCountdownGlyphWitness(
                     if (acceptedGo) return@collect
                     val crop = article.payload as? CropCaptured ?: return@collect
                     if (crop.cropProvenance.cropName != BattleCropContracts.countdownGlyph.cropName) return@collect
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact) ?: return@collect
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         val templateResult = CountdownGlyphMatcher.match(bitmap)
                         val templateGlyph = templateResult.candidate

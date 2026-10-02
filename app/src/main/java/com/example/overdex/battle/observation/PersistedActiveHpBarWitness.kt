@@ -74,7 +74,7 @@ class PersistedActiveHpBarWitness(
                 match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
                 for (article in scheduledCrops) {
                     val captured = article.payload as? CropCaptured ?: continue
-                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact) ?: continue
+                    val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: continue
                     try {
                         val measurement = tracker.measure(bitmap) ?: continue
                         match.custody.submitTestimony(

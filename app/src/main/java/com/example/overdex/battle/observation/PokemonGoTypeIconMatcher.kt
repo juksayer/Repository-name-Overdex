@@ -89,12 +89,22 @@ object PokemonGoTypeIconMatcher {
             val centerY = (brightYs.min() + brightYs.max()) / 2
             // Type strips are calibrated around one badge row. Use that row's
             // height for badge scale; glyph width varies too much by type.
-            val side = (bitmap.height * 0.8f).toInt().coerceIn(32, minOf(bitmap.width, bitmap.height))
+            // This matcher normalizes every isolated badge to a 32x32 Boolean
+            // silhouette below; the source badge itself does not need to be 32
+            // pixels tall. Capture scaling can legitimately produce a 30 px
+            // strip, so clamp only to the bitmap's real dimensions.
+            val side = resolvedBadgeSide(bitmap.width, bitmap.height) ?: return@mapNotNull null
             val left = (centerX - side / 2).coerceIn(0, bitmap.width - side)
             val top = (centerY - side / 2).coerceIn(0, bitmap.height - side)
             val badge = Bitmap.createBitmap(bitmap, left, top, side, side)
             try { matchIsolatedBadge(badge) } finally { badge.recycle() }
         }
+    }
+
+    internal fun resolvedBadgeSide(width: Int, height: Int): Int? {
+        val maximum = minOf(width, height)
+        if (maximum <= 0) return null
+        return (height * 0.8f).toInt().coerceAtLeast(1).coerceAtMost(maximum)
     }
 
     private fun normalize(bitmap: Bitmap): BooleanArray {

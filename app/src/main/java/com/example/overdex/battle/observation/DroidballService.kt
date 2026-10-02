@@ -10,7 +10,12 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.AudioFormat
 import android.media.AudioAttributes
 import android.media.AudioPlaybackCaptureConfiguration
@@ -20,6 +25,8 @@ import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
@@ -42,6 +49,7 @@ import com.example.overdex.battle.audio.AudioCaptureCue
 import com.example.overdex.battle.audio.CueCenteredPcmCollector
 import com.example.overdex.battle.audio.BattleCryCueKind
 import com.example.overdex.model.observation.CapturedAudioFrame
+import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import kotlinx.coroutines.channels.BufferOverflow
@@ -56,6 +64,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.roundToInt
 
 /**
  * Capture diagnostics data class for the temporary debug HUD.
@@ -75,7 +84,8 @@ data class CaptureDiagnostics(
  * 2. WindowManager Overlay (Field Presentation)
  * 3. Foreground Lifecycle (Required for persistent capture)
  */
-class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
+class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner,
+    SensorEventListener {
 
     companion object {
         private const val NOTIFICATION_ID = 197
@@ -116,6 +126,17 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         )
         /** Raw audio snippets, published independently from captured visual frames. */
         val audioFrames = _audioFrames.asSharedFlow()
+
+        private val _motionPulses = MutableSharedFlow<CapturedDeviceMotionPulse>(
+            replay = 0,
+            extraBufferCapacity = 16,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+        /** Short device-motion bursts, before any haptic or charge-move interpretation. */
+        val motionPulses = _motionPulses.asSharedFlow()
+
+        private val _motionPulseCaptureAvailable = MutableStateFlow<Boolean?>(null)
+        val motionPulseCaptureAvailable = _motionPulseCaptureAvailable.asStateFlow()
 
         private val _audioInputStatus = MutableStateFlow(
             com.example.overdex.battle.custody.AudioInputStatus("NONE", "OFFLINE"))
@@ -173,8 +194,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
+    private var virtualDisplay: VirtualDisplay? = null
+    private var captureThread: HandlerThread? = null
+    private var captureHandler: Handler? = null
     private var audioRecord: AudioRecord? = null
     private var audioCaptureJob: kotlinx.coroutines.Job? = null
+    private var sensorManager: SensorManager? = null
+    private var linearAccelerationSensor: Sensor? = null
+    private val motionPulseDetector = DeviceMotionPulseDetector()
     private val audioCollectorLock = Any()
     // 500 ms pre-roll and 700 ms post-roll at 48 kHz mono PCM-16.
     private val cueCenteredAudio = CueCenteredPcmCollector(preRollBytes = 48_000, postRollBytes = 67_200)
@@ -214,6 +241,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     override fun onCreate() {
         super.onCreate()
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onCreate()")
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -222,6 +250,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onStartCommand()")
         val resultCode = intent?.getIntExtra("resultCode", Activity.RESULT_CANCELED) ?: Activity.RESULT_CANCELED
         val data = intent?.getParcelableExtra<Intent>("data")
 
@@ -237,17 +266,63 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             } else {
                 startForeground(NOTIFICATION_ID, createNotification())
             }
-            setupMediaProjection(resultCode, data)
-            setupOverlay()
-            startAudioCapture()
-            _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
-            _signals.tryEmit(DroidballSignal.Started)
+            runCatching {
+                setupMediaProjection(resultCode, data)
+                setupOverlay()
+                startAudioCapture()
+                runCatching { startMotionPulseCapture() }.onFailure { error ->
+                    _motionPulseCaptureAvailable.value = false
+                    Log.w("DEVICE_MOTION", "Unable to start optional motion-pulse capture", error)
+                }
+                _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
+                _signals.tryEmit(DroidballSignal.Started)
+            }.onFailure { error ->
+                Log.e("DROIDBALL_LAUNCH", "Unable to initialize Droidball service", error)
+                _signals.tryEmit(DroidballSignal.Error("Unable to initialize Droidball: ${error.message ?: error::class.simpleName}"))
+                stopSelf()
+            }
         } else {
             stopSelf()
         }
 
         return START_NOT_STICKY
     }
+
+    private fun startMotionPulseCapture() {
+        motionPulseDetector.reset()
+        val manager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensor = manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        sensorManager = manager
+        linearAccelerationSensor = sensor
+        if (sensor == null) {
+            _motionPulseCaptureAvailable.value = false
+            Log.w("DEVICE_MOTION", "Linear-acceleration sensor unavailable; haptic evidence is offline")
+            return
+        }
+        val registered = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_FASTEST)
+        _motionPulseCaptureAvailable.value = registered
+        Log.i("DEVICE_MOTION", "Linear-acceleration pulse capture registered=$registered")
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type != Sensor.TYPE_LINEAR_ACCELERATION || event.values.size < 3) return
+        motionPulseDetector.accept(
+            monotonicTimeNanos = System.nanoTime(),
+            x = event.values[0],
+            y = event.values[1],
+            z = event.values[2],
+            wallTimeMillis = System.currentTimeMillis()
+        )?.let { pulse ->
+            val delivered = _motionPulses.tryEmit(pulse)
+            Log.d(
+                "DEVICE_MOTION",
+                "pulse duration=${pulse.durationNanos} peak=${pulse.peakLinearAccelerationMetersPerSecondSquared} " +
+                    "samples=${pulse.sampleCount} delivered=$delivered"
+            )
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
     private fun setupMediaProjection(resultCode: Int, data: Intent) {
         firstFrameLogged = false
@@ -277,10 +352,15 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             realMetrics.widthPixels to realMetrics.heightPixels
         }
         val density = resources.displayMetrics.densityDpi
-        val captureWidth = (width * CAPTURE_SCALE).toInt().coerceAtLeast(1)
-        val captureHeight = (height * CAPTURE_SCALE).toInt().coerceAtLeast(1)
+        // RGBA ImageReader rows are commonly aligned to 64 bytes (16 pixels).
+        // Choosing an aligned width avoids allocating a second padded bitmap on
+        // every frame. Derive height from the resulting uniform scale so the
+        // published frame keeps the physical display's aspect ratio.
+        val captureWidth = ((width * CAPTURE_SCALE).toInt() / 16 * 16).coerceAtLeast(16)
+        val actualCaptureScale = captureWidth.toFloat() / width.toFloat()
+        val captureHeight = (height * actualCaptureScale).roundToInt().coerceAtLeast(1)
 
-        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: resources.displayMetrics: ${resources.displayMetrics.widthPixels}x${resources.displayMetrics.heightPixels}")
+        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: app-content metrics (system bars excluded): ${resources.displayMetrics.widthPixels}x${resources.displayMetrics.heightPixels}")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val currentBounds = windowManager.currentWindowMetrics.bounds
             Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: currentWindowMetrics.bounds: ${currentBounds.width()}x${currentBounds.height()}")
@@ -288,8 +368,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         } else {
             Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: display.getRealMetrics: ${width}x${height}")
         }
-        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: Requested ImageReader/VirtualDisplay: ${captureWidth}x${captureHeight} (scale=$CAPTURE_SCALE)")
+        Log.d("ODX_CAPTURE_GEOMETRY", "setupMediaProjection: Requested ImageReader/VirtualDisplay: ${captureWidth}x${captureHeight} (targetScale=$CAPTURE_SCALE actualScale=$actualCaptureScale)")
 
+        val frameHandler = captureHandler ?: HandlerThread("DroidballFrameCapture").let { thread ->
+            thread.start()
+            captureThread = thread
+            Handler(thread.looper).also { captureHandler = it }
+        }
         imageReader = ImageReader.newInstance(captureWidth, captureHeight, PixelFormat.RGBA_8888, 2).apply {
             setOnImageAvailableListener({ reader ->
                 val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
@@ -331,7 +416,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         cleanBitmap.copyPixelsFromBuffer(buffer)
                         cleanBitmap
                     }
-                    
+
                     if (!firstFrameLogged) {
                         Log.d("ODX_CAPTURE_GEOMETRY", "└── Final Published Bitmap: ${bitmap.width}x${bitmap.height}")
                         firstFrameLogged = true
@@ -368,10 +453,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 } finally {
                     image.close()
                 }
-            }, null)
+            }, frameHandler)
         }
 
-        mediaProjection?.createVirtualDisplay(
+        virtualDisplay = mediaProjection?.createVirtualDisplay(
             "DroidballCapture",
             captureWidth, captureHeight, density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
@@ -507,7 +592,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY 
             else 
                 WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                // Keep Overdex's own field UI out of screen captures even if an
+                // OEM compositor includes overlay windows in a projection.
+                WindowManager.LayoutParams.FLAG_SECURE,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -585,6 +674,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
+        Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onDestroy()")
         if (activeService === this) activeService = null
         Log.d("DroidballService", "onDestroy: Releasing resources")
         markStopped()
@@ -607,12 +697,24 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         try {
+            virtualDisplay?.release()
+        } catch (e: Exception) {
+            Log.e("DroidballService", "Error releasing virtualDisplay", e)
+        } finally {
+            virtualDisplay = null
+        }
+
+        try {
             imageReader?.close()
         } catch (e: Exception) {
             Log.e("DroidballService", "Error closing imageReader", e)
         } finally {
             imageReader = null
         }
+
+        captureHandler = null
+        captureThread?.quitSafely()
+        captureThread = null
 
         try {
             mediaProjection?.let {
@@ -632,6 +734,17 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         try { audioRecord?.stop() } catch (_: Exception) { }
         try { audioRecord?.release() } catch (_: Exception) { }
         audioRecord = null
+
+        try {
+            sensorManager?.unregisterListener(this)
+        } catch (e: Exception) {
+            Log.e("DroidballService", "Error stopping device-motion capture", e)
+        } finally {
+            sensorManager = null
+            linearAccelerationSensor = null
+            motionPulseDetector.reset()
+            _motionPulseCaptureAvailable.value = false
+        }
 
         deliveryLoggingJob?.cancel()
         val subs = _frames.subscriptionCount.value

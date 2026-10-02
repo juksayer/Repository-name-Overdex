@@ -2,6 +2,10 @@ package com.example.overdex.model
 
 import androidx.compose.runtime.mutableStateListOf
 import com.example.overdex.battle.reality.RealityArticle
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
+import com.example.overdex.battle.custody.AudioInputStatus
+import com.example.overdex.battle.custody.CropCaptured
+import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
 
 /**
  * A chronological record of battle events used for real-time UI updates.
@@ -27,7 +31,14 @@ class BattleTimeline {
                 android.util.Log.d("BATTLE_TIMELINE", "[${record.actor}] ${record.type} (#${record.pokemonId ?: "N/A"})")
             }
             is RealityArticle -> {
-                android.util.Log.d("BATTLE_TIMELINE", "[OBSERVATION] ${record.sourceId.id}")
+                val detail = when (val payload = record.payload) {
+                    is CropCaptured -> "crop=${payload.cropProvenance.cropName} sha256=${payload.artifact.sha256.take(12)}"
+                    is AudioInputStatus -> "source=${payload.captureSource} state=${payload.state}"
+                    is OpponentBattleResourceCountMeasured -> "${payload.resource}=${payload.visibleCount}/${payload.maximumCount}"
+                    is ActiveHpBarMeasured -> "side=${payload.side} fill=${"%.3f".format(java.util.Locale.ROOT, payload.filledFraction)} bounds=${payload.barLeft},${payload.barTop},${payload.barRight},${payload.barBottom}"
+                    else -> payload::class.simpleName.orEmpty()
+                }
+                android.util.Log.d("BATTLE_TIMELINE", "[OBSERVATION] ${record.sourceId.id} $detail")
             }
         }
     }

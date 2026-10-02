@@ -3,8 +3,6 @@ package com.example.overdex.data.observation
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 /**
  * Specialized recognizer for extracting the Shadow Bonus value (e.g., +3) from a move row.
@@ -12,9 +10,6 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 object ShadowBonusRecognizer {
 
     private const val TAG = "SHADOW_BONUS_REC"
-
-    private val recognizer =
-        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
      * Recognizes the shadow bonus value in a move row.
@@ -30,7 +25,7 @@ object ShadowBonusRecognizer {
         val results = mutableListOf<RecognitionResult<*>>()
 
         return try {
-            val result = recognizer.read(bitmap)
+            val result = SharedLatinTextRecognizer.read(bitmap)
 
             // 1. Expose Raw OCR Output
             results.add(

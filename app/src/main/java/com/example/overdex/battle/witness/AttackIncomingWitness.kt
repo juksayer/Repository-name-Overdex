@@ -8,10 +8,8 @@ import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
-import com.example.overdex.data.observation.readText
+import com.example.overdex.data.observation.SharedLatinTextRecognizer
 import com.example.overdex.model.observation.ObservationInput
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,9 +28,8 @@ class AttackIncomingWitness(
         ObserverId("ATTACK_INCOMING_WITNESS", ObserverSource.SCREEN_CAPTURE),
     override val name: String = "Attack Incoming Witness",
     private val perceive: suspend (Bitmap) -> String? = { bitmap ->
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         try {
-            recognizer.readText(bitmap)
+            SharedLatinTextRecognizer.readText(bitmap)
         } catch (e: Exception) {
             Log.e("AttackIncomingWitness", "Perception failed", e)
             null

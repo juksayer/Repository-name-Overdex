@@ -2,17 +2,24 @@ package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.ArchivedBattleCryCandidatesMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.observation.EntryAnnouncementSideTracker
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
+import com.example.overdex.battle.archive.ArchivedFastMoveEffectivenessWitnessed
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.archive.ArchivedFastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.archive.ArchivedFastMoveUseObserved
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
+import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
+import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
@@ -72,6 +79,7 @@ class MatchReplayModel(
     }
     private val bufferedMoveCache = mutableMapOf<String, Move?>()
     private val recordedFastMoveUses = reconstructFastMoveUses()
+    private val recordedChargedMoveUses = reconstructChargedMoveUses()
 
     fun crossedArticleBoundary(fromNanos: Long, toNanos: Long): Boolean {
         if (fromNanos == toNanos) return false
@@ -135,6 +143,17 @@ class MatchReplayModel(
                 evidenceKinds = use.evidenceKinds
             )
         }
+        val chargeMoveActions = recordedChargedMoveUses.mapNotNull { use ->
+            val ageNanos = monotonicTimeNanos - use.animationAtNanos
+            if (ageNanos !in 0 until CHARGE_MOVE_VISUAL_NANOS) return@mapNotNull null
+            ReplayChargedMoveAction(
+                side = use.side,
+                moveName = use.moveName,
+                startedAtNanos = use.animationAtNanos,
+                progress = ageNanos.toFloat() / CHARGE_MOVE_VISUAL_NANOS,
+                evidenceKinds = use.evidenceKinds
+            )
+        }
 
         return ReplayScene(
             player = player,
@@ -148,6 +167,7 @@ class MatchReplayModel(
             playerSpentEnergy = playerSpentEnergy,
             opponentSpentEnergy = opponentSpentEnergy,
             fastMoveActions = fastMoveActions,
+            chargedMoveActions = chargeMoveActions,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
         )
     }
@@ -164,9 +184,74 @@ class MatchReplayModel(
         is ArchivedPlayerChargeMoveEnergyFillIncreased -> "PLAYER ENERGY FILL INCREASED"
         is ArchivedPlayerChargeMoveEnergyFillCadenceMeasured -> "PLAYER ENERGY FILL CADENCE"
         is ArchivedActiveHpBarBorderPulseObserved -> "FAST MOVE HIT: ${oppositeSide(payload.damagedBarSide)}"
+        is ArchivedActiveHpBarDamageTickMeasured -> "HP LOSS: ${payload.damagedSide} -${(payload.lostFraction * 100).toInt()}%"
         is ArchivedFastMoveRecipientVisualArtifactMeasured -> "FAST MOVE VISUAL: ${oppositeSide(payload.damagedSide)}"
+        is ArchivedFastMoveUseObserved -> "FAST MOVE USE: ${payload.attackingSide}"
+        is ArchivedFastMoveEffectivenessWitnessed -> "${payload.effectiveness.replace('_', ' ')}${payload.damagedSide?.let { " ON $it" }.orEmpty()}"
         is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY: ${payload.moveName} -${payload.energyCost}"
+        is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE"
+        is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE: ${payload.pulseCount} PULSES"
         else -> payload::class.simpleName.orEmpty().replace("Archived", "")
+    }
+
+    /**
+     * A completed archive can combine the early Get Ready cue, later haptic
+     * pattern, and named charge-move announcement. The strongest later evidence
+     * selects the animation instant while every supporting kind stays visible.
+     */
+    private fun reconstructChargedMoveUses(): List<ReplayChargedMoveUse> {
+        val evidence = timedArticles.mapNotNull { article ->
+            val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
+            when (val payload = article.payload) {
+                ArchivedGetReadyWitnessed -> ReplayChargedMoveUse(
+                    side = "PLAYER",
+                    animationAtNanos = atNanos,
+                    lastEvidenceAtNanos = atNanos,
+                    moveName = null,
+                    anchorPriority = 1,
+                    evidenceKinds = setOf("GET_READY")
+                )
+                is ArchivedChargeMoveQteVibrationPatternInferred -> ReplayChargedMoveUse(
+                    side = payload.side,
+                    animationAtNanos = atNanos,
+                    lastEvidenceAtNanos = atNanos,
+                    moveName = null,
+                    anchorPriority = 2,
+                    evidenceKinds = setOf("QTE_VIBRATION_PATTERN")
+                )
+                is ArchivedChargedMoveEnergySpent -> ReplayChargedMoveUse(
+                    side = payload.side,
+                    animationAtNanos = atNanos,
+                    lastEvidenceAtNanos = atNanos,
+                    moveName = payload.moveName,
+                    anchorPriority = 3,
+                    evidenceKinds = setOf("NAMED_CHARGED_MOVE")
+                )
+                else -> null
+            }
+        }.filter { it.side.isBattleSide() }.sortedBy { it.animationAtNanos }
+
+        return evidence.groupBy { it.side }.values.flatMap { sideEvidence ->
+            sideEvidence.fold(mutableListOf<ReplayChargedMoveUse>()) { merged, current ->
+                val previous = merged.lastOrNull()
+                if (
+                    previous != null &&
+                    current.animationAtNanos - previous.lastEvidenceAtNanos <= CHARGE_MOVE_SEQUENCE_MERGE_NANOS
+                ) {
+                    val replaceAnchor = current.anchorPriority > previous.anchorPriority
+                    merged[merged.lastIndex] = previous.copy(
+                        animationAtNanos = if (replaceAnchor) current.animationAtNanos else previous.animationAtNanos,
+                        lastEvidenceAtNanos = maxOf(previous.lastEvidenceAtNanos, current.lastEvidenceAtNanos),
+                        moveName = current.moveName ?: previous.moveName,
+                        anchorPriority = maxOf(previous.anchorPriority, current.anchorPriority),
+                        evidenceKinds = previous.evidenceKinds + current.evidenceKinds
+                    )
+                } else {
+                    merged += current
+                }
+                merged
+            }
+        }.sortedBy { it.animationAtNanos }
     }
 
     /**
@@ -175,6 +260,19 @@ class MatchReplayModel(
      * remain separate events.
      */
     private fun reconstructFastMoveUses(): List<ReplayFastMoveUse> {
+        val fusedUses = timedArticles.mapNotNull { article ->
+            val payload = article.payload as? ArchivedFastMoveUseObserved ?: return@mapNotNull null
+            ReplayFastMoveUse(
+                side = payload.attackingSide,
+                observedAtNanos = article.monotonicTimeNanos ?: return@mapNotNull null,
+                moveName = null,
+                evidenceKinds = payload.evidenceKinds.toSet()
+            )
+        }.filter { it.side.isBattleSide() }.sortedBy { it.observedAtNanos }
+        // New recordings carry one canonical fused article per use. The older
+        // reconstruction remains only for archives created before that contract.
+        if (fusedUses.isNotEmpty()) return fusedUses
+
         val evidence = timedArticles.mapNotNull { article ->
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             when (val payload = article.payload) {
@@ -183,6 +281,12 @@ class MatchReplayModel(
                     observedAtNanos = atNanos,
                     moveName = null,
                     evidenceKinds = setOf("HP_BORDER_PULSE")
+                )
+                is ArchivedActiveHpBarDamageTickMeasured -> ReplayFastMoveUse(
+                    side = oppositeSide(payload.damagedSide),
+                    observedAtNanos = atNanos,
+                    moveName = null,
+                    evidenceKinds = setOf("HP_DAMAGE_TICK")
                 )
                 is ArchivedFastMoveRecipientVisualArtifactMeasured -> ReplayFastMoveUse(
                     side = oppositeSide(payload.damagedSide),
@@ -376,6 +480,7 @@ class MatchReplayModel(
         }.map(::normalizeSpeciesName).toSet()
         val player = mutableListOf<ReplayIdentityObservation>()
         val opponent = mutableListOf<ReplayIdentityObservation>()
+        val entrySides = EntryAnnouncementSideTracker()
 
         timedArticles.forEach { article ->
             if (article.sourceId != "ANNOUNCEMENT_WITNESS") return@forEach
@@ -385,21 +490,25 @@ class MatchReplayModel(
             val candidate = announced ?: moveUser ?: return@forEach
             val species = canonicalSpecies[normalizeSpeciesName(candidate)] ?: return@forEach
             val atNanos = article.monotonicTimeNanos ?: return@forEach
-            val isPlayer = when {
-                normalizeSpeciesName(species.key) in roster -> true
-                roster.isNotEmpty() -> false
-                announced != null -> false
-                else -> opponent.lastOrNull { it.atNanos <= atNanos }?.speciesName
-                    ?.let(::normalizeSpeciesName) != normalizeSpeciesName(species.key)
+            val side = if (announced != null) {
+                entrySides.attribute(species.key, roster).side.name
+            } else {
+                entrySides.knownSide(species.key, roster)?.name ?: when {
+                    normalizeSpeciesName(species.key) in roster -> "PLAYER"
+                    roster.size >= 3 -> "OPPONENT"
+                    opponent.lastOrNull { it.atNanos <= atNanos }?.speciesName
+                        ?.let(::normalizeSpeciesName) != normalizeSpeciesName(species.key) -> "PLAYER"
+                    else -> "OPPONENT"
+                }
             }
             val observation = ReplayIdentityObservation(
-                side = if (isPlayer) "PLAYER" else "OPPONENT",
+                side = side,
                 speciesName = species.key,
                 speciesId = species.value,
                 atNanos = atNanos,
                 basis = "RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT"
             )
-            val destination = if (isPlayer) player else opponent
+            val destination = if (side == "PLAYER") player else opponent
             if (destination.lastOrNull()?.speciesName != observation.speciesName) destination += observation
         }
         return player to opponent
@@ -495,6 +604,7 @@ data class ReplayScene(
     /** Cost of named charged moves confirmed by preserved announcements. */
     val opponentSpentEnergy: Int,
     val fastMoveActions: List<ReplayFastMoveAction>,
+    val chargedMoveActions: List<ReplayChargedMoveAction>,
     val latestEvidenceLabel: String
 )
 
@@ -507,10 +617,27 @@ data class ReplayFastMoveAction(
     val evidenceKinds: Set<String> = emptySet()
 )
 
+data class ReplayChargedMoveAction(
+    val side: String,
+    val moveName: String?,
+    val startedAtNanos: Long,
+    val progress: Float,
+    val evidenceKinds: Set<String> = emptySet()
+)
+
 private data class ReplayFastMoveUse(
     val side: String,
     val observedAtNanos: Long,
     val moveName: String?,
+    val evidenceKinds: Set<String>
+)
+
+private data class ReplayChargedMoveUse(
+    val side: String,
+    val animationAtNanos: Long,
+    val lastEvidenceAtNanos: Long,
+    val moveName: String?,
+    val anchorPriority: Int,
     val evidenceKinds: Set<String>
 )
 
@@ -525,6 +652,8 @@ data class ReplayCombatant(
 )
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
+private const val CHARGE_MOVE_VISUAL_NANOS = 1_800_000_000L
+private const val CHARGE_MOVE_SEQUENCE_MERGE_NANOS = 8_000_000_000L
 private const val FAST_MOVE_WITNESS_MERGE_NANOS = 250_000_000L
 private const val REPLAY_TURN_NANOS = 500_000_000L
 private const val REPLAY_REQUIRED_CADENCE_INTERVALS = 3

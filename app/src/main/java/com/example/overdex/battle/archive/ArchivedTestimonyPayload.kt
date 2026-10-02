@@ -138,10 +138,37 @@ data class ArchivedActivePokemonTypesWitnessed(
 @Serializable @SerialName("charge_move_used_announced") data object ArchivedChargeMoveUsedAnnounced : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("device_motion_pulse_measured")
+data class ArchivedDeviceMotionPulseMeasured(
+    val durationNanos: Long,
+    val peakLinearAccelerationMetersPerSecondSquared: Float,
+    val rmsLinearAccelerationMetersPerSecondSquared: Float,
+    val sampleCount: Int,
+    val sensorType: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("charge_move_qte_vibration_pattern_inferred")
+data class ArchivedChargeMoveQteVibrationPatternInferred(
+    val side: String,
+    val pulseCount: Int,
+    val windowNanos: Long,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("player_inactive_hp_bar_measured")
 data class ArchivedPlayerInactiveHpBarMeasured(
     val slot: Int,
     val filledFraction: Float
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("opponent_battle_resource_count_measured")
+data class ArchivedOpponentBattleResourceCountMeasured(
+    val resource: String,
+    val visibleCount: Int,
+    val maximumCount: Int
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -162,6 +189,15 @@ data class ArchivedActiveHpBarMotionCadenceMeasured(
     val intervalNanos: Long,
     val verticalExcursionPixels: Float,
     val sampleCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("active_hp_bar_damage_tick_measured")
+data class ArchivedActiveHpBarDamageTickMeasured(
+    val damagedSide: String,
+    val beforeFraction: Float,
+    val afterFraction: Float,
+    val lostFraction: Float
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -222,13 +258,33 @@ data class ArchivedFastMoveRecipientVisualCadenceMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("fast_move_use_observed")
+data class ArchivedFastMoveUseObserved(
+    val useId: String,
+    val attackingSide: String,
+    val damagedSide: String,
+    val appearanceId: String? = null,
+    val attackerSpeciesName: String? = null,
+    val evidenceKinds: List<String>,
+    val basis: String
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("fast_move_effectiveness_witnessed")
+data class ArchivedFastMoveEffectivenessWitnessed(
+    val effectiveness: String,
+    val damagedSide: String? = null,
+    val recognizedText: String
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("fast_move_identified")
 data class ArchivedFastMoveIdentified(
     val side: String,
     val speciesName: String,
     val moveName: String,
     val moveDurationNanos: Long,
-    val observedMedianIntervalNanos: Long,
+    val observedMedianIntervalNanos: Long? = null,
     val cadenceSampleCount: Int,
     val basis: String
 ) : ArchivedTestimonyPayload

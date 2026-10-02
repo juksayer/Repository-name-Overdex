@@ -5,9 +5,6 @@ import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
-import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
-import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
-import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
@@ -25,7 +22,10 @@ import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.inference.FastMoveCadenceInference
+import com.example.overdex.battle.inference.FastMoveEnergyInference
+import com.example.overdex.battle.inference.FastMoveUseInference
 import com.example.overdex.battle.inference.ChargedMoveAnnouncementInference
+import com.example.overdex.battle.inference.ChargeMoveQteVibrationInference
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
@@ -68,7 +68,10 @@ class Match(
 ) {
     private val interpreter = BattleInterpreter(pokemonKnowledge)
     private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
+    private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge)
+    private val fastMoveUseInference = FastMoveUseInference()
     private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(pokemonKnowledge)
+    private val chargeMoveQteVibrationInference = ChargeMoveQteVibrationInference()
 
     /** Owned by this match and baselined by the enclosing Droidball session at GO. */
     val clock = MatchClock()
@@ -173,6 +176,8 @@ class Match(
      */
     fun sideForRosterKnownSpecies(speciesName: String): ActivePokemonSide? =
         TeamRosterSpeciesAttributor.sideFor(speciesName, playerRosterBySlot.values)
+
+    fun playerRosterSpecies(): Collection<String> = playerRosterBySlot.values.toList()
 
     /** The total number of frames processed during this Match. */
     var frameCount: Long = 0
@@ -332,17 +337,12 @@ class Match(
 
                 battleMemory.timeline.record(article)
 
-                fastMoveCadenceInference.accept(article).forEach { derivation ->
-                    (derivation.payload as? FastMoveIdentified)?.let { identified ->
-                        if (identified.side == ActivePokemonSide.OPPONENT) {
-                            DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)
-                        }
-                    }
+                chargeMoveQteVibrationInference.accept(article)?.let { derivation ->
                     val derivedArticle = RealityArticle(
                         id = ArticleId(UUID.randomUUID().toString()),
                         perceivedAt = derivation.observedArticle.perceivedAt,
                         recordedAt = System.currentTimeMillis(),
-                        sourceId = SourceId("FAST_MOVE_CADENCE_INTERPRETER"),
+                        sourceId = SourceId("CHARGE_MOVE_QTE_VIBRATION_INTERPRETER"),
                         payload = derivation.payload,
                         predecessorIds = derivation.predecessorIds,
                         confidence = derivation.confidence,
@@ -353,6 +353,32 @@ class Match(
                     _articles.tryEmit(derivedArticle)
                     battleMemory.timeline.record(derivedArticle)
                 }
+                appendFastMoveEnergyDerivations(article)
+
+                fastMoveUseInference.accept(article).forEach { derivation ->
+                    val derivedArticle = RealityArticle(
+                        id = ArticleId(UUID.randomUUID().toString()),
+                        perceivedAt = derivation.observedArticle.perceivedAt,
+                        recordedAt = System.currentTimeMillis(),
+                        sourceId = SourceId("FAST_MOVE_USE_INTERPRETER"),
+                        payload = derivation.payload,
+                        predecessorIds = derivation.predecessorIds,
+                        confidence = derivation.confidence,
+                        matchId = MatchId(matchId),
+                        monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+                    )
+                    realityTimeline.append(derivedArticle)
+                    _articles.tryEmit(derivedArticle)
+                    battleMemory.timeline.record(derivedArticle)
+                    appendFastMoveEnergyDerivations(derivedArticle)
+                    appendFastMoveCadenceDerivations(derivedArticle)
+                    DroidballService.requestCueCenteredAudio(
+                        derivedArticle.id.value,
+                        com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT
+                    )
+                }
+
+                appendFastMoveCadenceDerivations(article)
 
                 chargedMoveAnnouncementInference
                     .accept(article, ::sideForRosterKnownSpecies)
@@ -371,19 +397,6 @@ class Match(
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
-
-                // The visual cadence remains sufficient for move timing. It also
-                // opens a small, independently preserved microphone window that
-                // can later corroborate a move's acoustic type/signature.
-                if (article.payload is ActiveHpBarMotionCadenceMeasured ||
-                    article.payload is ActiveHpBarBorderCadenceMeasured ||
-                    article.payload is PlayerChargeMoveEnergyFillIncreased
-                ) {
-                    DroidballService.requestCueCenteredAudio(
-                        article.id.value,
-                        com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT
-                    )
-                }
 
                 if (!matchStartRecorded) {
                     interpreter.interpretMatchStart(article)?.let { derivedArticle ->
@@ -441,6 +454,50 @@ class Match(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun appendFastMoveEnergyDerivations(article: RealityArticle) {
+        fastMoveEnergyInference.accept(article).forEach { derivation ->
+            val derivedArticle = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = derivation.observedArticle.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("FAST_MOVE_ENERGY_INTERPRETER"),
+                payload = derivation.payload,
+                predecessorIds = derivation.predecessorIds,
+                confidence = derivation.confidence,
+                matchId = MatchId(matchId),
+                monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+            )
+            realityTimeline.append(derivedArticle)
+            _articles.tryEmit(derivedArticle)
+            battleMemory.timeline.record(derivedArticle)
+        }
+    }
+
+    private suspend fun appendFastMoveCadenceDerivations(article: RealityArticle) {
+        fastMoveCadenceInference.accept(article).forEach { derivation ->
+            (derivation.payload as? FastMoveIdentified)?.let { identified ->
+                if (identified.side == ActivePokemonSide.OPPONENT) {
+                    DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)
+                }
+            }
+            val derivedArticle = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = derivation.observedArticle.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("FAST_MOVE_CADENCE_INTERPRETER"),
+                payload = derivation.payload,
+                predecessorIds = derivation.predecessorIds,
+                confidence = derivation.confidence,
+                matchId = MatchId(matchId),
+                monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+            )
+            realityTimeline.append(derivedArticle)
+            _articles.tryEmit(derivedArticle)
+            battleMemory.timeline.record(derivedArticle)
+            appendFastMoveEnergyDerivations(derivedArticle)
         }
     }
 

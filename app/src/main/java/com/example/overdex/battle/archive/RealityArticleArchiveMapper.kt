@@ -16,14 +16,18 @@ import com.example.overdex.battle.custody.MatchRecordStarted
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.custody.PlayerInactiveHpBarMeasured
+import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveUseObserved
+import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveEnergyDerived
 import com.example.overdex.battle.custody.ChargedMoveEnergySpent
@@ -37,6 +41,8 @@ import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.DeviceMotionPulseMeasured
+import com.example.overdex.battle.custody.ChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.reality.RealityArticle
 
@@ -134,9 +140,27 @@ object RealityArticleArchiveMapper {
             )
             is GetReadyWitnessed -> ArchivedGetReadyWitnessed
             is ChargeMoveUsedAnnounced -> ArchivedChargeMoveUsedAnnounced
+            is DeviceMotionPulseMeasured -> ArchivedDeviceMotionPulseMeasured(
+                durationNanos = p.durationNanos,
+                peakLinearAccelerationMetersPerSecondSquared = p.peakLinearAccelerationMetersPerSecondSquared,
+                rmsLinearAccelerationMetersPerSecondSquared = p.rmsLinearAccelerationMetersPerSecondSquared,
+                sampleCount = p.sampleCount,
+                sensorType = p.sensorType
+            )
+            is ChargeMoveQteVibrationPatternInferred -> ArchivedChargeMoveQteVibrationPatternInferred(
+                side = p.side.name,
+                pulseCount = p.pulseCount,
+                windowNanos = p.windowNanos,
+                basis = p.basis
+            )
             is PlayerInactiveHpBarMeasured -> ArchivedPlayerInactiveHpBarMeasured(
                 slot = p.slot,
                 filledFraction = p.filledFraction
+            )
+            is OpponentBattleResourceCountMeasured -> ArchivedOpponentBattleResourceCountMeasured(
+                resource = p.resource.name,
+                visibleCount = p.visibleCount,
+                maximumCount = p.maximumCount
             )
             is ActiveHpBarMeasured -> ArchivedActiveHpBarMeasured(
                 side = p.side.name,
@@ -151,6 +175,12 @@ object RealityArticleArchiveMapper {
                 intervalNanos = p.intervalNanos,
                 verticalExcursionPixels = p.verticalExcursionPixels,
                 sampleCount = p.sampleCount
+            )
+            is ActiveHpBarDamageTickMeasured -> ArchivedActiveHpBarDamageTickMeasured(
+                damagedSide = p.damagedSide.name,
+                beforeFraction = p.beforeFraction,
+                afterFraction = p.afterFraction,
+                lostFraction = p.lostFraction
             )
             is PlayerChargeMoveEnergyFillIncreased -> ArchivedPlayerChargeMoveEnergyFillIncreased(
                 beforeBySlot = p.beforeBySlot,
@@ -190,6 +220,20 @@ object RealityArticleArchiveMapper {
             is FastMoveRecipientVisualCadenceMeasured -> ArchivedFastMoveRecipientVisualCadenceMeasured(
                 damagedSide = p.damagedSide.name,
                 intervalNanos = p.intervalNanos
+            )
+            is FastMoveUseObserved -> ArchivedFastMoveUseObserved(
+                useId = p.useId,
+                attackingSide = p.attackingSide.name,
+                damagedSide = p.damagedSide.name,
+                appearanceId = p.appearanceId,
+                attackerSpeciesName = p.attackerSpeciesName,
+                evidenceKinds = p.evidenceKinds,
+                basis = p.basis
+            )
+            is FastMoveEffectivenessWitnessed -> ArchivedFastMoveEffectivenessWitnessed(
+                effectiveness = p.effectiveness.name,
+                damagedSide = p.damagedSide?.name,
+                recognizedText = p.recognizedText
             )
             is FastMoveIdentified -> ArchivedFastMoveIdentified(
                 side = p.side.name,
