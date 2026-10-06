@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -40,6 +41,7 @@ internal data class LiveActiveHpBarSample(
 internal data class FastMoveRecipientVisualSample(val pixels: IntArray)
 
 internal class LiveActiveHpBarFrameHub {
+    private val latest = AtomicReference<LiveActiveHpBarSample?>(null)
     private val _samples = MutableSharedFlow<LiveActiveHpBarSample>(
         replay = 0,
         // Border pulses can be shorter than one rendered frame. Keep enough
@@ -51,8 +53,11 @@ internal class LiveActiveHpBarFrameHub {
     val samples = _samples.asSharedFlow()
 
     fun publish(sample: LiveActiveHpBarSample) {
+        latest.set(sample)
         _samples.tryEmit(sample)
     }
+
+    fun latestSample(): LiveActiveHpBarSample? = latest.get()
 }
 
 /**

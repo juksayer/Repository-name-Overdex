@@ -682,8 +682,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.player(playerHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.opponent(opponentHpFrameHub))
-        observationDispatcher.register(LiveHpEffectivenessTextWitness.player(input, calibration, cropArtifactStore))
-        observationDispatcher.register(LiveHpEffectivenessTextWitness.opponent(input, calibration, cropArtifactStore))
+        observationDispatcher.register(
+            LiveHpEffectivenessTextWitness.player(
+                input, calibration, cropArtifactStore, activeHpEvidenceLive, playerHpFrameHub
+            )
+        )
+        observationDispatcher.register(
+            LiveHpEffectivenessTextWitness.opponent(
+                input, calibration, cropArtifactStore, activeHpEvidenceLive, opponentHpFrameHub
+            )
+        )
         observationDispatcher.register(LiveActiveHpBarDamageTickWitness.player(playerHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarDamageTickWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveFastMoveRecipientVisualArtifactWitness.player(playerHpFrameHub))

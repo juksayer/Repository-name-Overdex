@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.ActivePokemonSide
@@ -25,18 +26,22 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 private data class LiveHpEffectivenessCrop(
     val resolved: ResolvedBattleCrop,
-    val pulseArticleId: String,
+    val cueArticleId: String?,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long,
 )
 
 /**
- * Reads the brief effectiveness phrase from one HP territory after its border
- * reports a hit. Only a positively recognized source crop is retained, so this
- * does not turn every live HP frame into another PNG.
+ * Reads the effectiveness phrase immediately above one tracked HP bar. The
+ * text strip is sampled independently while combat is live; damage cues only
+ * increase its sampling rate. Only a positively recognized source crop is
+ * retained, so routine OCR does not turn every frame into another PNG.
  */
 internal class LiveHpEffectivenessTextWitness(
     private val input: ObservationInput,
@@ -44,6 +49,8 @@ internal class LiveHpEffectivenessTextWitness(
     private val artifactStore: FileCropArtifactStore,
     private val crop: BattleCropContract,
     private val damagedSide: ActivePokemonSide,
+    private val isEnabled: () -> Boolean,
+    private val frameHub: LiveActiveHpBarFrameHub,
     override val observerId: ObserverId,
     override val name: String,
 ) : Observer {
@@ -52,11 +59,11 @@ internal class LiveHpEffectivenessTextWitness(
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
     private var sampleChannel: Channel<LiveHpEffectivenessCrop>? = null
-    private val scanFromNanos = AtomicLong(Long.MAX_VALUE)
-    private val scanUntilNanos = AtomicLong(Long.MIN_VALUE)
-    private val currentPulseId = AtomicReference<String?>(null)
+    private val burstUntilNanos = AtomicLong(Long.MIN_VALUE)
+    private val currentCueId = AtomicReference<String?>(null)
     private val lastQueuedNanos = AtomicLong(Long.MIN_VALUE)
-    private val emittedPulseId = AtomicReference<String?>(null)
+    private val lastEmittedNanos = AtomicLong(Long.MIN_VALUE)
+    private val lastEmittedReading = AtomicReference<String?>(null)
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -96,30 +103,48 @@ internal class LiveHpEffectivenessTextWitness(
                     }
                     if (!cueMatchesSide) return@collect
                     val at = maxOf(article.monotonicTimeNanos ?: return@collect, System.nanoTime())
-                    currentPulseId.set(article.id.value)
-                    scanFromNanos.set(at)
-                    scanUntilNanos.set(at + SCAN_WINDOW_NANOS)
-                    lastQueuedNanos.set(Long.MIN_VALUE)
+                    currentCueId.set(article.id.value)
+                    burstUntilNanos.set(at + BURST_WINDOW_NANOS)
                 }
             }
             witnessScope.launch(Dispatchers.Default) {
                 match.custody.submitAvailability(textSourceId, true, System.currentTimeMillis())
                 input.supplyFrames { frame ->
+                    if (!isEnabled()) return@supplyFrames
                     val capturedAt = frame.capturedAtMonotonicTimeNanos
-                    if (capturedAt < scanFromNanos.get() || capturedAt > scanUntilNanos.get()) {
-                        return@supplyFrames
+                    val interval = if (capturedAt <= burstUntilNanos.get()) {
+                        BURST_SAMPLE_INTERVAL_NANOS
+                    } else {
+                        CONTINUOUS_SAMPLE_INTERVAL_NANOS
                     }
                     val prior = lastQueuedNanos.get()
-                    if (prior != Long.MIN_VALUE && capturedAt - prior < SAMPLE_INTERVAL_NANOS) {
+                    if (prior != Long.MIN_VALUE && capturedAt - prior < interval) {
                         return@supplyFrames
                     }
-                    val pulseId = currentPulseId.get() ?: return@supplyFrames
-                    val resolved = crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
+                    val barSample = frameHub.latestSample() ?: return@supplyFrames
+                    if (abs(capturedAt - barSample.capturedAtMonotonicTimeNanos) > MAX_BAR_LOCK_AGE_NANOS) {
+                        return@supplyFrames
+                    }
+                    val hpRegion = crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
+                    val resolved = try {
+                        HpEffectivenessTextCropper.crop(
+                            hpRegion,
+                            barSample.measurement,
+                            cropName = if (damagedSide == ActivePokemonSide.PLAYER) {
+                                "PlayerHpEffectivenessTextCrop"
+                            } else {
+                                "OpponentHpEffectivenessTextCrop"
+                            },
+                        )
+                    } finally {
+                        hpRegion.bitmap.recycle()
+                    } ?: return@supplyFrames
                     lastQueuedNanos.set(capturedAt)
                     val result = samples.trySend(
                         LiveHpEffectivenessCrop(
                             resolved = resolved,
-                            pulseArticleId = pulseId,
+                            cueArticleId = currentCueId.get()
+                                ?.takeIf { capturedAt <= burstUntilNanos.get() },
                             capturedAtWallTimeMillis = frame.capturedAtWallTimeMillis,
                             capturedAtMonotonicTimeNanos = capturedAt,
                         )
@@ -130,32 +155,33 @@ internal class LiveHpEffectivenessTextWitness(
             witnessScope.launch(Dispatchers.IO) {
                 for (sample in samples) {
                     try {
-                        if (emittedPulseId.get() == sample.pulseArticleId) continue
                         val text = AnnouncementRecognizer.recognize(sample.resolved.bitmap).value
                             ?.takeIf(String::isNotBlank) ?: continue
                         val reading = FastMoveEffectivenessTextResolver.resolve(text) ?: continue
+                        val readingKey = reading.effectiveness.name
+                        val lastReadingAt = lastEmittedNanos.get()
+                        if (lastEmittedReading.get() == readingKey &&
+                            lastReadingAt != Long.MIN_VALUE &&
+                            sample.capturedAtMonotonicTimeNanos - lastReadingAt < REPEAT_SUPPRESSION_NANOS
+                        ) continue
                         val artifact = artifactStore.preservePng(sample.resolved.bitmap) ?: continue
+                        val cueReferences = listOfNotNull(sample.cueArticleId)
                         val cropAccepted = match.custody.submitTestimony(
                             sourceId = captureSourceId,
                             payload = CropCaptured(artifact, sample.resolved.provenance),
                             timestamp = sample.capturedAtWallTimeMillis,
                             confidence = null,
-                            evidenceReferences = listOf(sample.pulseArticleId),
+                            evidenceReferences = cueReferences,
                             monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                         )
-                        emittedPulseId.set(sample.pulseArticleId)
-                        if (currentPulseId.get() == sample.pulseArticleId) {
-                            scanUntilNanos.set(Long.MIN_VALUE)
-                        }
+                        lastEmittedReading.set(readingKey)
+                        lastEmittedNanos.set(sample.capturedAtMonotonicTimeNanos)
                         match.custody.submitTestimony(
                             sourceId = textSourceId,
                             payload = RawTestimony(text),
                             timestamp = sample.capturedAtWallTimeMillis,
                             confidence = reading.confidence,
-                            evidenceReferences = listOf(
-                                sample.pulseArticleId,
-                                "custody:${cropAccepted.sequenceNumber}",
-                            ),
+                            evidenceReferences = cueReferences + "custody:${cropAccepted.sequenceNumber}",
                             monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                         )
                     } catch (cancelled: CancellationException) {
@@ -185,27 +211,34 @@ internal class LiveHpEffectivenessTextWitness(
     }
 
     private fun reset() {
-        scanFromNanos.set(Long.MAX_VALUE)
-        scanUntilNanos.set(Long.MIN_VALUE)
-        currentPulseId.set(null)
+        burstUntilNanos.set(Long.MIN_VALUE)
+        currentCueId.set(null)
         lastQueuedNanos.set(Long.MIN_VALUE)
-        emittedPulseId.set(null)
+        lastEmittedNanos.set(Long.MIN_VALUE)
+        lastEmittedReading.set(null)
     }
 
     companion object {
-        private const val SCAN_WINDOW_NANOS = 450_000_000L
-        private const val SAMPLE_INTERVAL_NANOS = 100_000_000L
+        private const val BURST_WINDOW_NANOS = 600_000_000L
+        private const val BURST_SAMPLE_INTERVAL_NANOS = 100_000_000L
+        private const val CONTINUOUS_SAMPLE_INTERVAL_NANOS = 200_000_000L
+        private const val MAX_BAR_LOCK_AGE_NANOS = 500_000_000L
+        private const val REPEAT_SUPPRESSION_NANOS = 650_000_000L
 
         fun player(
             input: ObservationInput,
             calibration: BattleCalibration,
             artifactStore: FileCropArtifactStore,
+            isEnabled: () -> Boolean,
+            frameHub: LiveActiveHpBarFrameHub,
         ) = LiveHpEffectivenessTextWitness(
             input,
             calibration,
             artifactStore,
             BattleCropContracts.playerHpEvidence,
             ActivePokemonSide.PLAYER,
+            isEnabled,
+            frameHub,
             ObserverId(FastMoveEffectivenessSources.PLAYER_TEXT, ObserverSource.SCREEN_CAPTURE),
             "Player HP Effectiveness Text Witness",
         )
@@ -214,14 +247,72 @@ internal class LiveHpEffectivenessTextWitness(
             input: ObservationInput,
             calibration: BattleCalibration,
             artifactStore: FileCropArtifactStore,
+            isEnabled: () -> Boolean,
+            frameHub: LiveActiveHpBarFrameHub,
         ) = LiveHpEffectivenessTextWitness(
             input,
             calibration,
             artifactStore,
             BattleCropContracts.opponentHpEvidence,
             ActivePokemonSide.OPPONENT,
+            isEnabled,
+            frameHub,
             ObserverId(FastMoveEffectivenessSources.OPPONENT_TEXT, ObserverSource.SCREEN_CAPTURE),
             "Opponent HP Effectiveness Text Witness",
         )
+    }
+}
+
+/** Builds the moving OCR strip from the HP bar position already tracked live. */
+internal object HpEffectivenessTextCropper {
+    fun crop(
+        hpRegion: ResolvedBattleCrop,
+        measurement: ActiveHpBarMeasurement,
+        cropName: String,
+    ): ResolvedBattleCrop? {
+        val bounds = resolveBounds(hpRegion.bitmap.width, hpRegion.bitmap.height, measurement) ?: return null
+        return try {
+            val parent = hpRegion.provenance.bounds
+            ResolvedBattleCrop(
+                provenance = BattleCropProvenance(
+                    cropName = cropName,
+                    sourceWidth = hpRegion.provenance.sourceWidth,
+                    sourceHeight = hpRegion.provenance.sourceHeight,
+                    bounds = BattleCropBounds(
+                        left = parent.left + bounds.left,
+                        top = parent.top + bounds.top,
+                        right = parent.left + bounds.right,
+                        bottom = parent.top + bounds.bottom,
+                    ),
+                ),
+                bitmap = Bitmap.createBitmap(
+                    hpRegion.bitmap,
+                    bounds.left,
+                    bounds.top,
+                    bounds.right - bounds.left,
+                    bounds.bottom - bounds.top,
+                ),
+            )
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+    internal fun resolveBounds(
+        cropWidth: Int,
+        cropHeight: Int,
+        measurement: ActiveHpBarMeasurement,
+    ): BattleCropBounds? {
+        if (cropWidth <= 0 || cropHeight <= 0 || measurement.width <= 0) return null
+        val barHeight = (measurement.bottom - measurement.top).coerceAtLeast(1)
+        val horizontalPadding = max(12, (measurement.width * 0.35f).roundToInt())
+        val textHeight = max(32, barHeight * 4)
+        val left = (measurement.left - horizontalPadding).coerceAtLeast(0)
+        val right = (measurement.right + horizontalPadding).coerceAtMost(cropWidth)
+        val bottom = (measurement.top + max(2, barHeight / 4)).coerceIn(0, cropHeight)
+        val top = (bottom - textHeight).coerceAtLeast(0)
+        return BattleCropBounds(left, top, right, bottom).takeIf {
+            it.right - it.left >= 32 && it.bottom - it.top >= 16
+        }
     }
 }
