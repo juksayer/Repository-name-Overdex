@@ -1408,6 +1408,7 @@ fun PokedexApp(
                 var aLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var lcdLine1 by remember { mutableStateOf<String?>(null) }
                 var lcdLine2 by remember { mutableStateOf<String?>(null) }
 
@@ -1431,7 +1432,8 @@ fun PokedexApp(
                     onALong = { aLongHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
                     onSelectLong = { selectLongHandler?.invoke() },
-                    onStart = { viewModel.toggleObservation() },
+                    onStart = { startHandler?.invoke() },
+                    startLabel = "SAVE AS",
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
@@ -1458,6 +1460,7 @@ fun PokedexApp(
                         onALong = { aLongHandler = it },
                         onSelect = { selectHandler = it },
                         onSelectLong = { selectLongHandler = it },
+                        onStart = { startHandler = it },
                         onLcdDrag = { lcdDragHandler = it },
                         onLcdTap = { lcdTapHandler = it },
                         onLcdUpdate = { l1, l2 ->

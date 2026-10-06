@@ -481,7 +481,9 @@ fun FieldNoteSection(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -497,7 +499,8 @@ fun FieldNoteSection(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TerminalGreen,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -509,7 +512,9 @@ fun FieldNoteSection(
                     fontStyle = FontStyle.Italic,
                     color = TerminalGreen,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 2.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
                 )
             }
 
@@ -525,7 +530,8 @@ fun FieldNoteSection(
                     text = note.lesson,
                     fontSize = 14.sp,
                     color = TerminalDimGreen,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 

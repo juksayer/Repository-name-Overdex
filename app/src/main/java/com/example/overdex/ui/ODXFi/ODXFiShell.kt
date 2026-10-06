@@ -285,6 +285,7 @@ fun ODXFiShell(
     onSelect: () -> Unit = {},
     onSelectLong: () -> Unit = {},
     onStart: () -> Unit = {},
+    startLabel: String? = null,
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
     onLaunchMatchSight: () -> Unit = {},
@@ -780,7 +781,7 @@ fun ODXFiShell(
                 })
                 InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() }, onLongClick = onSelectLong)
                 InstrumentButton(
-                    label = when (deploymentState) {
+                    label = startLabel ?: when (deploymentState) {
                         InstrumentDeploymentState.OBSERVING, 
                         InstrumentDeploymentState.DEPLOYING,
                         InstrumentDeploymentState.READY -> "STOP"

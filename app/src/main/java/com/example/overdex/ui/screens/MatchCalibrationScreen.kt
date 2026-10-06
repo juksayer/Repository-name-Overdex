@@ -2,7 +2,13 @@ package com.example.overdex.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -16,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
@@ -34,8 +41,12 @@ import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.overdex.data.ScreenshotDirectoryManager
+import com.example.overdex.data.MatchCalibrationProfileStore
+import com.example.overdex.data.MatchCalibrationProfileSummary
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
+import com.example.overdex.ui.theme.TerminalBlack
+import android.os.Build
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -60,14 +71,33 @@ fun MatchCalibrationScreen(
     onALong: (() -> Unit) -> Unit = {},
     onSelect: (() -> Unit) -> Unit = {},
     onSelectLong: (() -> Unit) -> Unit = {},
+    onStart: (() -> Unit) -> Unit = {},
     onLcdDrag: ((Offset) -> Unit) -> Unit = {},
     onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
+    val deviceScreenSize = remember(context) {
+        val windowManager = context.getSystemService(android.content.Context.WINDOW_SERVICE) as android.view.WindowManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.maximumWindowMetrics.bounds.let { IntSize(it.width(), it.height()) }
+        } else {
+            @Suppress("DEPRECATION")
+            val metrics = android.util.DisplayMetrics().also(windowManager.defaultDisplay::getRealMetrics)
+            IntSize(metrics.widthPixels, metrics.heightPixels)
+        }
+    }
     val teamSelectCalibrationStore = remember(context) { TeamSelectCalibrationStore(context) }
+    val profileStore = remember(context) { MatchCalibrationProfileStore(context) }
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
     var teamSelectCalibration by remember { mutableStateOf(teamSelectCalibrationStore.load()) }
+    var activeProfile by remember { mutableStateOf<MatchCalibrationProfileSummary?>(profileStore.activeSummary()) }
+    var showSaveProfileDialog by remember { mutableStateOf(false) }
+    var profileName by remember { mutableStateOf("") }
+    var profileModel by remember { mutableStateOf("") }
+    var profileWidth by remember { mutableStateOf("") }
+    var profileHeight by remember { mutableStateOf("") }
+    var profileSaveError by remember { mutableStateOf<String?>(null) }
     var selectedRegion by remember { mutableStateOf(CalibrationRegion.COUNTDOWN) }
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
@@ -253,6 +283,11 @@ fun MatchCalibrationScreen(
                 publishedWidth = sourceFrameSize.width.takeIf { it > 0 } ?: 1080,
                 publishedHeight = sourceFrameSize.height.takeIf { it > 0 } ?: 2400
             )
+            activeProfile = profileStore.updateActive(calibration, teamSelectUpdate)?.let {
+                MatchCalibrationProfileSummary(
+                    it.id, it.name, it.deviceModel, it.screenWidth, it.screenHeight, it.savedAtMillis
+                )
+            } ?: activeProfile
             return
         }
         calibration = when (selectedRegion) {
@@ -284,6 +319,11 @@ fun MatchCalibrationScreen(
             else -> calibration
         }
         battleProfileSaved = calibrationManager.save(calibration)
+        activeProfile = profileStore.updateActive(calibration, teamSelectCalibration)?.let {
+            MatchCalibrationProfileSummary(
+                it.id, it.name, it.deviceModel, it.screenWidth, it.screenHeight, it.savedAtMillis
+            )
+        } ?: activeProfile
         if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
             calibrationManager.recordMatchOutcomeCalibration()
         }
@@ -314,6 +354,49 @@ fun MatchCalibrationScreen(
         )
     }
 
+    fun openSaveProfileDialog() {
+        val width = deviceScreenSize.width.takeIf { it > 0 } ?: 1080
+        val height = deviceScreenSize.height.takeIf { it > 0 } ?: 2400
+        val defaultModel = listOf(Build.MANUFACTURER, Build.MODEL)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+        profileModel = activeProfile?.deviceModel?.takeIf { it.isNotBlank() } ?: defaultModel
+        profileWidth = (activeProfile?.screenWidth ?: width).toString()
+        profileHeight = (activeProfile?.screenHeight ?: height).toString()
+        profileName = activeProfile?.name ?: "$profileModel ${width}x$height"
+        profileSaveError = null
+        showSaveProfileDialog = true
+    }
+
+    fun saveNamedProfile() {
+        val width = profileWidth.toIntOrNull()
+        val height = profileHeight.toIntOrNull()
+        if (profileName.isBlank() || profileModel.isBlank() || width == null || height == null ||
+            width <= 0 || height <= 0
+        ) {
+            profileSaveError = "Enter a name, model, width, and height."
+            return
+        }
+        val saved = profileStore.saveAs(
+            name = profileName,
+            deviceModel = profileModel,
+            screenWidth = width,
+            screenHeight = height,
+            battleCalibration = calibration,
+            teamSelectCalibration = teamSelectCalibration
+        )
+        if (saved == null) {
+            profileSaveError = "The profile could not be saved."
+            return
+        }
+        activeProfile = MatchCalibrationProfileSummary(
+            saved.id, saved.name, saved.deviceModel, saved.screenWidth, saved.screenHeight, saved.savedAtMillis
+        )
+        battleProfileSaved = calibrationManager.save(calibration)
+        teamSelectProfileSaved = teamSelectCalibrationStore.save(teamSelectCalibration, width, height)
+        showSaveProfileDialog = false
+    }
+
     // Input Handling
     SideEffect {
         onUp { if (mode == CalibrationMode.POSITION) move(0f, -step) else resize(0f, -step) }
@@ -337,6 +420,7 @@ fun MatchCalibrationScreen(
         onSelectLong {
             currentImageIndex = (currentImageIndex + 1) % samples.size
         }
+        onStart { openSaveProfileDialog() }
         onLcdDrag { delta ->
             showLcdTouchHint = false
             val dx = if (containerSize.width > 0f) delta.x / containerSize.width else 0f
@@ -352,7 +436,7 @@ fun MatchCalibrationScreen(
     // LCD Update
     LaunchedEffect(
         selectedRegion, mode, showLcdTouchHint, screenshotSourceName, sourceFrameSize,
-        battleProfileSaved, teamSelectProfileSaved,
+        battleProfileSaved, teamSelectProfileSaved, activeProfile,
         activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
     ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
@@ -369,7 +453,56 @@ fun MatchCalibrationScreen(
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  ${if (selectedProfileSaved) "SAVED" else "DEFAULT"}",
-            "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}"
+            "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
+        )
+    }
+
+    if (showSaveProfileDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveProfileDialog = false },
+            title = { Text("SAVE CALIBRATION AS", color = TerminalGreen) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = profileName,
+                        onValueChange = { profileName = it },
+                        label = { Text("Profile name") },
+                        colors = calibrationTextFieldColors()
+                    )
+                    TextField(
+                        value = profileModel,
+                        onValueChange = { profileModel = it },
+                        label = { Text("Phone model") },
+                        colors = calibrationTextFieldColors()
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextField(
+                            value = profileWidth,
+                            onValueChange = { profileWidth = it.filter(Char::isDigit) },
+                            label = { Text("Width") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = calibrationTextFieldColors(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextField(
+                            value = profileHeight,
+                            onValueChange = { profileHeight = it.filter(Char::isDigit) },
+                            label = { Text("Height") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = calibrationTextFieldColors(),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    profileSaveError?.let { Text(it, color = Color(0xFFFF6B6B), fontSize = 12.sp) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = ::saveNamedProfile) { Text("SAVE", color = TerminalGreen) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveProfileDialog = false }) { Text("CANCEL", color = TerminalGreen) }
+            },
+            containerColor = TerminalBlack
         )
     }
 
@@ -403,3 +536,14 @@ fun MatchCalibrationScreen(
         
     }
 }
+
+@Composable
+private fun calibrationTextFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = TerminalBlack,
+    unfocusedContainerColor = TerminalBlack,
+    focusedTextColor = TerminalGreen,
+    unfocusedTextColor = TerminalGreen,
+    focusedLabelColor = TerminalGreen,
+    unfocusedLabelColor = TerminalGreen.copy(alpha = 0.75f),
+    cursorColor = TerminalGreen
+)

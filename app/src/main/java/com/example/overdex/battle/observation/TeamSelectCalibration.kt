@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.graphics.Bitmap
 import android.content.Context
 import android.os.Build
+import com.example.overdex.data.MatchCalibrationProfileStore
 import com.example.overdex.model.AnchorRegion
 
 /**
@@ -84,6 +85,7 @@ object TeamSelectCropContracts {
  * so a normal update never replaces a user's Draggy Box adjustments.
  */
 class TeamSelectCalibrationStore(context: Context) {
+    private val appContext = context.applicationContext
     private val prefs = context.getSharedPreferences("team_select_calibration", Context.MODE_PRIVATE)
 
     fun hasSavedProfile(): Boolean = prefs.contains(SAVED_AT)
@@ -108,6 +110,7 @@ class TeamSelectCalibrationStore(context: Context) {
     }
 
     fun load(): TeamSelectCalibration {
+        MatchCalibrationProfileStore(appContext).activeProfile()?.let { return it.teamSelectCalibration }
         val defaults = TeamSelectCalibration.measured1080x2400
         fun region(name: String, fallback: AnchorRegion): AnchorRegion {
             val width = prefs.getFloat("${name}_w", fallback.width)

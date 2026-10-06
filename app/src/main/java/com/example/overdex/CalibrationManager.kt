@@ -3,12 +3,15 @@ package com.example.overdex
 import android.content.Context
 import android.util.Log
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.MatchCalibrationProfileStore
 import com.example.overdex.model.AnchorRegion
 
 /**
  * Manages the persistence of user-defined calibration offsets for battle UI regions.
  */
 class CalibrationManager(context: Context) {
+
+    private val appContext = context.applicationContext
 
     //overmon is historical artifact. a reminder of where we came from
     private val prefs =
@@ -198,6 +201,7 @@ class CalibrationManager(context: Context) {
     }
 
     fun load(): BattleCalibration {
+        MatchCalibrationProfileStore(appContext).activeProfile()?.let { return it.battleCalibration }
         val enemyWidth = prefs.getFloat(ENEMY_W, 0f)
         val enemyRegion = if (enemyWidth > 0f) {
             AnchorRegion(
@@ -385,9 +389,9 @@ class CalibrationManager(context: Context) {
         val persistedPlayerSpeciesNameRegion = if (playerSpeciesNameWidth > 0f && playerSpeciesNameWidth <= 1f) {
             AnchorRegion(
                 x = prefs.getFloat("player_species_name_x", 20f / 1080f).coerceIn(0f, 1f),
-                y = prefs.getFloat("player_species_name_y", 237f / 2400f).coerceIn(0f, 1f),
+                y = prefs.getFloat("player_species_name_y", 145f / 2400f).coerceIn(0f, 1f),
                 width = playerSpeciesNameWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("player_species_name_h", (297f - 237f) / 2400f).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("player_species_name_h", (205f - 145f) / 2400f).coerceIn(0.01f, 1f)
             )
         } else null
         // Early builds accidentally used the trainer-type-icon coordinates as
@@ -402,7 +406,11 @@ class CalibrationManager(context: Context) {
                 kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
                 kotlin.math.abs(region.width - (293f - 20f) / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.height - (297f - 237f) / 2400f) < 0.0001f
-            typeIconDefault || formerBadgeDefault
+            val misplacedNameStripDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (292f - 20f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
+            typeIconDefault || formerBadgeDefault || misplacedNameStripDefault
         } == true
         val playerSpeciesNameRegion = if (oldPlayerSpeciesNameDefault) {
             BattleCalibration().playerSpeciesNameRegion
@@ -413,10 +421,10 @@ class CalibrationManager(context: Context) {
         val opponentSpeciesNameWidth = prefs.getFloat("opponent_species_name_w", 0f)
         val persistedOpponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
             AnchorRegion(
-                x = prefs.getFloat("opponent_species_name_x", 920f / 1080f).coerceIn(0f, 1f),
-                y = prefs.getFloat("opponent_species_name_y", 237f / 2400f).coerceIn(0f, 1f),
+                x = prefs.getFloat("opponent_species_name_x", 788f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("opponent_species_name_y", 145f / 2400f).coerceIn(0f, 1f),
                 width = opponentSpeciesNameWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("opponent_species_name_h", (285f - 237f) / 2400f).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("opponent_species_name_h", (205f - 145f) / 2400f).coerceIn(0.01f, 1f)
             )
         } else null
         // The former 920–1060 default clipped the first letters of long names.
@@ -439,7 +447,11 @@ class CalibrationManager(context: Context) {
                 kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
                 kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
-            clippedOld || pokeBallRowDefault || typeIconRowDefault || formerBadgeDefault
+            val misplacedNameStripDefault = kotlin.math.abs(region.x - 788f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (1060f - 788f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
+            clippedOld || pokeBallRowDefault || typeIconRowDefault || formerBadgeDefault || misplacedNameStripDefault
         } == true
         val opponentSpeciesNameRegion = if (oldOpponentSpeciesNameDefault) {
             BattleCalibration().opponentSpeciesNameRegion

@@ -13,13 +13,13 @@ class SpeciesCropContractTest {
         // normalized contract here; resolver pixel behavior is Android-tested.
         assertEquals(BattleRegionId.PLAYER_SPECIES_NAME, BattleCropContracts.playerActiveSpeciesText.region)
         assertEquals(20f / 1080f, calibration.playerSpeciesNameRegion.x)
-        assertEquals(237f / 2400f, calibration.playerSpeciesNameRegion.y)
+        assertEquals(145f / 2400f, calibration.playerSpeciesNameRegion.y)
         assertEquals(272f / 1080f, calibration.playerSpeciesNameRegion.width)
-        assertEquals(48f / 2400f, calibration.playerSpeciesNameRegion.height)
+        assertEquals(60f / 2400f, calibration.playerSpeciesNameRegion.height)
         assertEquals(BattleRegionId.OPPONENT_SPECIES_NAME, BattleCropContracts.opponentActiveSpeciesText.region)
         assertEquals(788f / 1080f, calibration.opponentSpeciesNameRegion.x)
-        assertEquals(237f / 2400f, calibration.opponentSpeciesNameRegion.y)
+        assertEquals(145f / 2400f, calibration.opponentSpeciesNameRegion.y)
         assertEquals(272f / 1080f, calibration.opponentSpeciesNameRegion.width)
-        assertEquals(48f / 2400f, calibration.opponentSpeciesNameRegion.height)
+        assertEquals(60f / 2400f, calibration.opponentSpeciesNameRegion.height)
     }
 }
