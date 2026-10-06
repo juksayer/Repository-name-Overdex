@@ -26,6 +26,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -62,8 +63,7 @@ internal class LiveHpEffectivenessTextWitness(
     private val burstUntilNanos = AtomicLong(Long.MIN_VALUE)
     private val currentCueId = AtomicReference<String?>(null)
     private val lastQueuedNanos = AtomicLong(Long.MIN_VALUE)
-    private val lastEmittedNanos = AtomicLong(Long.MIN_VALUE)
-    private val lastEmittedReading = AtomicReference<String?>(null)
+    private val lastEmittedAtByReading = ConcurrentHashMap<String, Long>()
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -155,35 +155,41 @@ internal class LiveHpEffectivenessTextWitness(
             witnessScope.launch(Dispatchers.IO) {
                 for (sample in samples) {
                     try {
-                        val text = AnnouncementRecognizer.recognize(sample.resolved.bitmap).value
-                            ?.takeIf(String::isNotBlank) ?: continue
-                        val reading = FastMoveEffectivenessTextResolver.resolve(text) ?: continue
-                        val readingKey = reading.effectiveness.name
-                        val lastReadingAt = lastEmittedNanos.get()
-                        if (lastEmittedReading.get() == readingKey &&
-                            lastReadingAt != Long.MIN_VALUE &&
-                            sample.capturedAtMonotonicTimeNanos - lastReadingAt < REPEAT_SUPPRESSION_NANOS
-                        ) continue
-                        val artifact = artifactStore.preservePng(sample.resolved.bitmap) ?: continue
-                        val cueReferences = listOfNotNull(sample.cueArticleId)
-                        val cropAccepted = match.custody.submitTestimony(
-                            sourceId = captureSourceId,
-                            payload = CropCaptured(artifact, sample.resolved.provenance),
-                            timestamp = sample.capturedAtWallTimeMillis,
-                            confidence = null,
-                            evidenceReferences = cueReferences,
-                            monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
-                        )
-                        lastEmittedReading.set(readingKey)
-                        lastEmittedNanos.set(sample.capturedAtMonotonicTimeNanos)
-                        match.custody.submitTestimony(
-                            sourceId = textSourceId,
-                            payload = RawTestimony(text),
-                            timestamp = sample.capturedAtWallTimeMillis,
-                            confidence = reading.confidence,
-                            evidenceReferences = cueReferences + "custody:${cropAccepted.sequenceNumber}",
-                            monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
-                        )
+                        val candidates = AnnouncementRecognizer.recognizeCandidates(sample.resolved.bitmap)
+                        for (text in candidates) {
+                            val reading = FastMoveEffectivenessTextResolver.resolve(text)
+                            val readingKey = reading?.effectiveness?.name ?: "RAW:$text"
+                            val lastReadingAt = lastEmittedAtByReading[readingKey]
+                            if (lastReadingAt != null &&
+                                sample.capturedAtMonotonicTimeNanos - lastReadingAt < REPEAT_SUPPRESSION_NANOS
+                            ) continue
+
+                            val cueReferences = listOfNotNull(sample.cueArticleId)
+                            var rawReferences = cueReferences
+                            if (reading != null) {
+                                val artifact = artifactStore.preservePng(sample.resolved.bitmap)
+                                if (artifact != null) {
+                                    val cropAccepted = match.custody.submitTestimony(
+                                        sourceId = captureSourceId,
+                                        payload = CropCaptured(artifact, sample.resolved.provenance),
+                                        timestamp = sample.capturedAtWallTimeMillis,
+                                        confidence = null,
+                                        evidenceReferences = cueReferences,
+                                        monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                                    )
+                                    rawReferences = cueReferences + "custody:${cropAccepted.sequenceNumber}"
+                                }
+                            }
+                            lastEmittedAtByReading[readingKey] = sample.capturedAtMonotonicTimeNanos
+                            match.custody.submitTestimony(
+                                sourceId = textSourceId,
+                                payload = RawTestimony(text),
+                                timestamp = sample.capturedAtWallTimeMillis,
+                                confidence = reading?.confidence,
+                                evidenceReferences = rawReferences,
+                                monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                            )
+                        }
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
@@ -214,8 +220,7 @@ internal class LiveHpEffectivenessTextWitness(
         burstUntilNanos.set(Long.MIN_VALUE)
         currentCueId.set(null)
         lastQueuedNanos.set(Long.MIN_VALUE)
-        lastEmittedNanos.set(Long.MIN_VALUE)
-        lastEmittedReading.set(null)
+        lastEmittedAtByReading.clear()
     }
 
     companion object {

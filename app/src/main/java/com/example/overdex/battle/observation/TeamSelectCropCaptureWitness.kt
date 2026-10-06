@@ -11,15 +11,19 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-/** Preserves a throttled, raw Team Select crop while the pre-battle session is armed. */
-class TeamSelectCropCaptureWitness(
+/**
+ * Preserves one coherent Team Select frame and publishes every purpose-specific
+ * aperture against that same immutable image. A single frame collector avoids
+ * ten crop workers racing for different frames while this brief screen is open.
+ */
+class TeamSelectSnapshotCaptureWitness(
     private val input: ObservationInput,
     private val calibration: TeamSelectCalibration,
-    private val contract: TeamSelectCropContract,
+    private val contracts: List<TeamSelectCropContract>,
     private val artifactStore: CropArtifactStore,
     private val isEnabled: () -> Boolean,
     override val observerId: ObserverId,
-    override val name: String
+    override val name: String,
 ) : Observer {
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
@@ -30,42 +34,77 @@ class TeamSelectCropCaptureWitness(
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
-        val source = SourceId(observerId.id)
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope -> witnessScope.launch {
-            input.supplyFrames { frame ->
-                val nowEnabled = isEnabled()
-                if (enabled != nowEnabled) {
-                    match.custody.submitAvailability(source, nowEnabled, frame.capturedAtWallTimeMillis)
-                    enabled = nowEnabled
+        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
+            witnessScope.launch {
+                input.supplyFrames { frame ->
+                    val nowEnabled = isEnabled()
+                    if (enabled != nowEnabled) {
+                        contracts.forEach { contract ->
+                            match.custody.submitAvailability(
+                                SourceId(sourceId(contract)),
+                                nowEnabled,
+                                frame.capturedAtWallTimeMillis,
+                            )
+                        }
+                        enabled = nowEnabled
+                    }
+                    if (!nowEnabled ||
+                        (lastCaptureNanos > 0L &&
+                            frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS)
+                    ) return@supplyFrames
+
+                    val resolved = contracts.mapNotNull { contract ->
+                        contract.resolve(calibration, frame.bitmap)?.let { contract to it }
+                    }
+                    if (resolved.isEmpty()) return@supplyFrames
+                    try {
+                        val first = resolved.first().second
+                        val artifact = artifactStore.preserveFrameCrop(
+                            frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+                            bitmap = first.bitmap,
+                            provenance = first.provenance,
+                            sourceFrame = frame.bitmap,
+                        ) ?: return@supplyFrames
+
+                        lastCaptureNanos = frame.capturedAtMonotonicTimeNanos
+                        resolved.forEach { (contract, crop) ->
+                            match.custody.submitTestimony(
+                                sourceId = SourceId(sourceId(contract)),
+                                payload = CropCaptured(artifact, crop.provenance),
+                                timestamp = frame.capturedAtWallTimeMillis,
+                                confidence = null,
+                                evidenceReferences = emptyList(),
+                                monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
+                            )
+                        }
+                    } finally {
+                        resolved.forEach { (_, crop) -> crop.bitmap.recycle() }
+                    }
                 }
-                if (!nowEnabled ||
-                    (lastCaptureNanos > 0L &&
-                        frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS)
-                ) return@supplyFrames
-                val crop = contract.resolve(calibration, frame.bitmap) ?: return@supplyFrames
-                try {
-                    val artifact = artifactStore.preserveFrameCrop(
-                        frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
-                        bitmap = crop.bitmap,
-                        provenance = crop.provenance,
-                        sourceFrame = frame.bitmap
-                    ) ?: return@supplyFrames
-                    lastCaptureNanos = frame.capturedAtMonotonicTimeNanos
-                    match.custody.submitTestimony(source, CropCaptured(artifact, crop.provenance), frame.capturedAtWallTimeMillis, null, emptyList(), frame.capturedAtMonotonicTimeNanos)
-                } finally { crop.bitmap.recycle() }
             }
-        } }
+        }
     }
 
     override fun stop() {
         scope?.cancel()
         scope = null
         if (enabled == true) {
-            activeMatch?.custody?.submitAvailability(SourceId(observerId.id), false, System.currentTimeMillis())
+            contracts.forEach { contract ->
+                activeMatch?.custody?.submitAvailability(
+                    SourceId(sourceId(contract)),
+                    false,
+                    System.currentTimeMillis(),
+                )
+            }
         }
         activeMatch = null
         enabled = null
         lastCaptureNanos = 0L
     }
-    private companion object { const val CAPTURE_INTERVAL_NANOS = 1_000_000_000L }
+
+    private fun sourceId(contract: TeamSelectCropContract): String = "${contract.cropName}_CAPTURE"
+
+    private companion object {
+        const val CAPTURE_INTERVAL_NANOS = 1_000_000_000L
+    }
 }

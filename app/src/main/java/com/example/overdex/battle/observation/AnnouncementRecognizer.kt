@@ -29,6 +29,21 @@ object AnnouncementRecognizer {
             )
         }
     }
+
+    /**
+     * Keeps the native-color and high-contrast readings independent. A noisy,
+     * non-empty native reading must not prevent the alternate view from seeing
+     * a short fading phrase.
+     */
+    suspend fun recognizeCandidates(bitmap: Bitmap): List<String> {
+        val direct = SharedLatinTextRecognizer.readText(bitmap)
+        val highContrast = recognizeHighContrast(bitmap)
+        return listOf(direct, highContrast)
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .distinct()
+    }
+
     private suspend fun recognizeHighContrast(bitmap: Bitmap): String {
         val thresholded = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         for (y in 0 until bitmap.height) {

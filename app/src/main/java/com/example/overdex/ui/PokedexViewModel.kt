@@ -82,7 +82,7 @@ import com.example.overdex.battle.observation.PersistedActivePokemonTypeWitness
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
 import com.example.overdex.battle.observation.TeamSelectCropContracts
-import com.example.overdex.battle.observation.TeamSelectCropCaptureWitness
+import com.example.overdex.battle.observation.TeamSelectSnapshotCaptureWitness
 import com.example.overdex.battle.observation.PersistedTeamSelectPartyWitness
 import com.example.overdex.battle.observation.PersistedTeamSelectLeagueWitness
 import com.example.overdex.battle.observation.PersistedPlayerTeamRosterSlotWitness
@@ -508,31 +508,29 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         
         Log.d("DEPLOY", "2 Registering observers")
         val teamSelectCalibration = TeamSelectCalibrationStore(getApplication()).load()
-        listOf(
-            TeamSelectCropContracts.leagueBadge to "Team Select League Shield Capture Witness",
-            TeamSelectCropContracts.leagueText to "Team Select League Text Capture Witness",
-            TeamSelectCropContracts.playerRosterSlot1 to "Team Select Player Roster Slot 1 Capture Witness",
-            TeamSelectCropContracts.playerRosterSlot2 to "Team Select Player Roster Slot 2 Capture Witness",
-            TeamSelectCropContracts.playerRosterSlot3 to "Team Select Player Roster Slot 3 Capture Witness",
-            TeamSelectCropContracts.playerRosterName1 to "Team Select Player Roster Name 1 Capture Witness",
-            TeamSelectCropContracts.playerRosterName2 to "Team Select Player Roster Name 2 Capture Witness",
-            TeamSelectCropContracts.playerRosterName3 to "Team Select Player Roster Name 3 Capture Witness",
-            TeamSelectCropContracts.restrictions to "Team Select Restrictions Capture Witness",
-            TeamSelectCropContracts.useThisParty to "Team Select Use This Party Capture Witness"
-        ).forEach { (contract, name) ->
-            observationDispatcher.register(TeamSelectCropCaptureWitness(
-                input = input,
-                calibration = teamSelectCalibration,
-                contract = contract,
-                artifactStore = cropArtifactStore,
-                isEnabled = {
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.SEEKING_TEAM_SELECT ||
-                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.TEAM_SELECT_ACTIVE
-                },
-                observerId = ObserverId("${contract.cropName}_CAPTURE", ObserverSource.SCREEN_CAPTURE),
-                name = name
-            ))
-        }
+        observationDispatcher.register(TeamSelectSnapshotCaptureWitness(
+            input = input,
+            calibration = teamSelectCalibration,
+            contracts = listOf(
+                TeamSelectCropContracts.leagueBadge,
+                TeamSelectCropContracts.leagueText,
+                TeamSelectCropContracts.playerRosterSlot1,
+                TeamSelectCropContracts.playerRosterSlot2,
+                TeamSelectCropContracts.playerRosterSlot3,
+                TeamSelectCropContracts.playerRosterName1,
+                TeamSelectCropContracts.playerRosterName2,
+                TeamSelectCropContracts.playerRosterName3,
+                TeamSelectCropContracts.restrictions,
+                TeamSelectCropContracts.useThisParty,
+            ),
+            artifactStore = cropArtifactStore,
+            isEnabled = {
+                session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.SEEKING_TEAM_SELECT ||
+                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.TEAM_SELECT_ACTIVE
+            },
+            observerId = ObserverId("TEAM_SELECT_SNAPSHOT_CAPTURE", ObserverSource.SCREEN_CAPTURE),
+            name = "Team Select Snapshot Capture Witness",
+        ))
         observationDispatcher.register(PersistedTeamSelectPartyWitness(cropArtifactStore))
         observationDispatcher.register(PersistedTeamSelectLeagueWitness(cropArtifactStore))
         listOf(
