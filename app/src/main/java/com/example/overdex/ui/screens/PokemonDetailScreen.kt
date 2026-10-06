@@ -272,22 +272,39 @@ fun PokemonDetailScreen(
                         )
                     }
                 }
-                Row {
-                    pokemon.types.forEach { type ->
-                        val item = PokemonDetailNavItem.Type(type)
-                        val isSelected = navItems[nav.selectedIndex] == item
-                        TypeBadge(
-                            type = type,
-                            onClick = null,
-                            modifier = Modifier
-                                .bringIntoViewRequester(requesters[item]!!)
-                                .then(
-                                    if (isSelected) Modifier.border(
-                                        2.dp,
-                                        TerminalGreen,
-                                        RoundedCornerShape(4.dp)
-                                    ) else Modifier
-                                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Row {
+                        pokemon.types.forEach { type ->
+                            val item = PokemonDetailNavItem.Type(type)
+                            val isSelected = navItems[nav.selectedIndex] == item
+                            TypeBadge(
+                                type = type,
+                                onClick = null,
+                                modifier = Modifier
+                                    .bringIntoViewRequester(requesters[item]!!)
+                                    .then(
+                                        if (isSelected) Modifier.border(
+                                            2.dp,
+                                            TerminalGreen,
+                                            RoundedCornerShape(4.dp)
+                                        ) else Modifier
+                                    )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "ATK ${pokemon.baseAttack}  DEF ${pokemon.baseDefense}  STA ${pokemon.baseStamina}",
+                            color = TerminalGreen,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -307,39 +324,6 @@ fun PokemonDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // Battle haikus replace the imported species flavor text in the Pokedex.
-            if (fieldNotes.isNotEmpty()) {
-                fieldNotes.forEach { note ->
-                    val item = PokemonDetailNavItem.FieldNoteItem(note)
-                    val isSelected = navItems[nav.selectedIndex] == item
-                    FieldNoteSection(
-                        note = note,
-                        modifier = Modifier
-                            .bringIntoViewRequester(requesters[item]!!)
-                            .padding(vertical = 8.dp),
-                        isSelected = isSelected
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                Box(
-                    modifier = Modifier
-                        .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = "ATK ${pokemon.baseAttack}  DEF ${pokemon.baseDefense}  STA ${pokemon.baseStamina}",
-                        color = TerminalGreen,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
             Text(
                 text = "HT ${pokemon.height}  WT ${pokemon.weight}",
                 color = TerminalDimGreen,
@@ -455,6 +439,22 @@ fun PokemonDetailScreen(
                     modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
                     selected = isSelected
                 )
+            }
+
+            // Battle haikus close the detail page, replacing imported flavor text.
+            if (fieldNotes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                fieldNotes.forEach { note ->
+                    val item = PokemonDetailNavItem.FieldNoteItem(note)
+                    val isSelected = navItems[nav.selectedIndex] == item
+                    FieldNoteSection(
+                        note = note,
+                        modifier = Modifier
+                            .bringIntoViewRequester(requesters[item]!!)
+                            .padding(vertical = 8.dp),
+                        isSelected = isSelected
+                    )
+                }
             }
 
         }

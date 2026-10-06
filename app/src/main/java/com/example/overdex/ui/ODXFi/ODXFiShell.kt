@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -46,6 +47,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +87,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun InstrumentButton(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    onPressChanged: ((Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier,
     label: String? = null,
     icon: ImageVector? = null,
@@ -95,6 +98,29 @@ fun InstrumentButton(
     labelRotationDegrees: Float = 0f,
     contentDescription: String? = label
 ) {
+    val interactionModifier = if (onPressChanged != null && enabled) {
+        Modifier.pointerInput(onClick, onLongClick, onPressChanged) {
+            detectTapGestures(
+                onPress = {
+                    onPressChanged(true)
+                    try {
+                        tryAwaitRelease()
+                    } finally {
+                        onPressChanged(false)
+                    }
+                },
+                onTap = { onClick() },
+                onLongPress = onLongClick?.let { callback -> { callback() } }
+            )
+        }
+    } else {
+        Modifier.combinedClickable(
+            enabled = enabled,
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    }
+
     Box(
         modifier = modifier
             .size(width = 56.dp, height = 36.dp)
@@ -124,11 +150,7 @@ fun InstrumentButton(
                     strokeWidth = strokeWidth * 2
                 )
             }
-            .combinedClickable(
-                enabled = enabled,
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
+            .then(interactionModifier)
             .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -279,8 +301,10 @@ fun ODXFiShell(
     onDownLong: () -> Unit = {},
     onLeft: () -> Unit = {},
     onLeftLong: () -> Unit = {},
+    onLeftPressChanged: (Boolean) -> Unit = {},
     onRight: () -> Unit = {},
     onRightLong: () -> Unit = {},
+    onRightPressChanged: (Boolean) -> Unit = {},
     onA: () -> Unit = {},
     onALong: () -> Unit = {},
     onB: () -> Unit = {},
@@ -663,13 +687,13 @@ fun ODXFiShell(
                 .height(170.dp) // Compressed from 220dp
                 .background(Color.Black.copy(alpha = 0.08f), RoundedCornerShape(4.dp))
                 .border(1.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = if (isBinderMode) 0.dp else 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Navigation Column (Left)
             Column(
-                modifier = Modifier.width(64.dp).fillMaxHeight(),
+                modifier = Modifier.width(if (isBinderMode) 56.dp else 64.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -709,7 +733,8 @@ fun ODXFiShell(
                     },
                     onLongClick = {
                         if (!showResearcherSettings && !showSettings) onLeftLong()
-                    }
+                    },
+                    onPressChanged = if (isBinderMode) onLeftPressChanged else null
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowRight,
@@ -721,7 +746,8 @@ fun ODXFiShell(
                     },
                     onLongClick = {
                         if (!showResearcherSettings && !showSettings) onRightLong()
-                    }
+                    },
+                    onPressChanged = if (isBinderMode) onRightPressChanged else null
                 )
             }
 
@@ -732,7 +758,7 @@ fun ODXFiShell(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(horizontal = 4.dp)
+                    .padding(horizontal = if (isBinderMode) 0.dp else 4.dp)
             ) {
                 InstrumentLCD(
                     presentationState = presentationState,
@@ -753,7 +779,7 @@ fun ODXFiShell(
 
             // Action Column (Right)
             Column(
-                modifier = Modifier.width(64.dp).fillMaxHeight(),
+                modifier = Modifier.width(if (isBinderMode) 56.dp else 64.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

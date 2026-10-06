@@ -747,6 +747,10 @@ fun PokedexApp(
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftPressChangedHandler by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
+                var rightPressChangedHandler by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -762,7 +766,11 @@ fun PokedexApp(
                     onUp = { upHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
                     onLeft = { leftHandler?.invoke() },
+                    onLeftLong = { leftLongHandler?.invoke() },
+                    onLeftPressChanged = { pressed -> leftPressChangedHandler?.invoke(pressed) },
                     onRight = { rightHandler?.invoke() },
+                    onRightLong = { rightLongHandler?.invoke() },
+                    onRightPressChanged = { pressed -> rightPressChangedHandler?.invoke(pressed) },
                     onA = { aHandler?.invoke() },
                     onB = { bHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
@@ -792,7 +800,11 @@ fun PokedexApp(
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },
                         onLeft = { leftHandler = it },
+                        onLeftLong = { leftLongHandler = it },
+                        onLeftPressChanged = { leftPressChangedHandler = it },
                         onRight = { rightHandler = it },
+                        onRightLong = { rightLongHandler = it },
+                        onRightPressChanged = { rightPressChangedHandler = it },
                         onA = { aHandler = it },
                         onB = { bHandler = it },
                         onSelect = { selectHandler = it },
@@ -820,6 +832,17 @@ fun PokedexApp(
                     pokemon = viewModel.getPokemonById(id)
                 }
 
+                fun returnFromPokemonDetail() {
+                    if (binderMode) {
+                        val returnedToBinder = navController.popBackStack("list", inclusive = false)
+                        if (!returnedToBinder) {
+                            navController.navigate("list") { launchSingleTop = true }
+                        }
+                    } else {
+                        navController.debugPopBackStack()
+                    }
+                }
+
                 if (pokemon != null) {
                     PokemonDetailScreen(
                         pokemon = pokemon!!,
@@ -831,10 +854,10 @@ fun PokedexApp(
                         onSelect = {
                             if (binderMode) {
                                 openPokedexSearchOnList = true
-                                navController.debugPopBackStack()
+                                returnFromPokemonDetail()
                             }
                         },
-                        onBackClick = { navController.debugPopBackStack() },
+                        onBackClick = { returnFromPokemonDetail() },
                         onPlayCry = { url ->
                             mediaManager.playSound(url)
                         },

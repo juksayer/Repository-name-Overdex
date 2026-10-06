@@ -39,6 +39,11 @@ import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private enum class BinderTurnDirection {
+    PREVIOUS,
+    NEXT
+}
+
 // Work Order — Pokédex Binder Search
 @Composable
 fun PokedexListScreen(
@@ -49,7 +54,11 @@ fun PokedexListScreen(
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onLeft: (() -> Unit) -> Unit = {},
+    onLeftLong: (() -> Unit) -> Unit = {},
+    onLeftPressChanged: ((Boolean) -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
+    onRightLong: (() -> Unit) -> Unit = {},
+    onRightPressChanged: ((Boolean) -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
     onSelect: (() -> Unit) -> Unit = {},
@@ -78,6 +87,9 @@ fun PokedexListScreen(
     var rightVisibleColumns by remember { mutableStateOf((0..2).toSet()) }
     var displayedItemIndices by remember { mutableStateOf((0 until 18).toList()) }
     var pageIsTurning by remember { mutableStateOf(false) }
+    var pageAnimationMillis by remember { mutableIntStateOf(80) }
+    var acceleratedDirection by remember { mutableStateOf<BinderTurnDirection?>(null) }
+    var acceleratedStopRequested by remember { mutableStateOf(false) }
     val pageTurnScope = rememberCoroutineScope()
 
     LaunchedEffect(spreadCount) {
@@ -97,13 +109,19 @@ fun PokedexListScreen(
         nav.setIndex(0)
     }
 
-    suspend fun refreshColumn(targetSpread: Int, pageOffset: Int, column: Int) {
+    suspend fun refreshColumn(
+        targetSpread: Int,
+        pageOffset: Int,
+        column: Int,
+        transitionMillis: Int = 80
+    ) {
+        pageAnimationMillis = transitionMillis.coerceAtLeast(18)
         if (pageOffset == 0) {
             leftVisibleColumns = leftVisibleColumns - column
         } else {
             rightVisibleColumns = rightVisibleColumns - column
         }
-        delay(90)
+        delay(pageAnimationMillis.toLong())
 
         val targetStart = targetSpread * 18 + pageOffset
         displayedItemIndices = displayedItemIndices.toMutableList().also { indices ->
@@ -118,42 +136,116 @@ fun PokedexListScreen(
         } else {
             rightVisibleColumns = rightVisibleColumns + column
         }
-        delay(90)
+        delay(pageAnimationMillis.toLong())
     }
 
-    fun turnPagesLeft() {
+    suspend fun refreshPage(
+        targetSpread: Int,
+        pageOffset: Int,
+        columns: IntProgression,
+        transitionMillis: Int = 80
+    ) {
+        for (column in columns) {
+            refreshColumn(targetSpread, pageOffset, column, transitionMillis)
+        }
+    }
+
+    fun turnToNextSpread() {
         if (pageIsTurning || spreadIndex >= maxSpreadIndex) return
         val nextSpread = spreadIndex + 1
         pageTurnScope.launch {
             pageIsTurning = true
-            for (column in 2 downTo 0) {
-                refreshColumn(nextSpread, pageOffset = 9, column = column)
-            }
-            for (column in 2 downTo 0) {
-                refreshColumn(nextSpread, pageOffset = 0, column = column)
-            }
+            refreshPage(nextSpread, pageOffset = 9, columns = 2 downTo 0)
+            refreshPage(nextSpread, pageOffset = 0, columns = 2 downTo 0)
 
             spreadIndex = nextSpread
             nav.setIndex(nextSpread * 18)
+            pageAnimationMillis = 80
             pageIsTurning = false
         }
     }
 
-    fun turnPagesRight() {
+    fun turnToPreviousSpread() {
         if (pageIsTurning || spreadIndex <= 0) return
         val nextSpread = spreadIndex - 1
         pageTurnScope.launch {
             pageIsTurning = true
-            for (column in 0..2) {
-                refreshColumn(nextSpread, pageOffset = 0, column = column)
-            }
-            for (column in 0..2) {
-                refreshColumn(nextSpread, pageOffset = 9, column = column)
-            }
+            refreshPage(nextSpread, pageOffset = 0, columns = 0..2)
+            refreshPage(nextSpread, pageOffset = 9, columns = 0..2)
 
             spreadIndex = nextSpread
             nav.setIndex(nextSpread * 18)
+            pageAnimationMillis = 80
             pageIsTurning = false
+        }
+    }
+
+    fun beginAcceleratedPaging(direction: BinderTurnDirection) {
+        if (keyboardController.isVisible || pageIsTurning || acceleratedDirection != null) return
+        val canAdvance = when (direction) {
+            BinderTurnDirection.NEXT -> spreadIndex < maxSpreadIndex
+            BinderTurnDirection.PREVIOUS -> spreadIndex > 0
+        }
+        if (!canAdvance) return
+
+        acceleratedDirection = direction
+        acceleratedStopRequested = false
+        pageIsTurning = true
+        pageTurnScope.launch {
+            var transitionMillis = 72
+            var moved = false
+            try {
+                while (!acceleratedStopRequested) {
+                    val targetSpread = when (direction) {
+                        BinderTurnDirection.NEXT -> spreadIndex + 1
+                        BinderTurnDirection.PREVIOUS -> spreadIndex - 1
+                    }
+                    if (targetSpread !in 0..maxSpreadIndex) break
+
+                    val turningPageOffset = if (direction == BinderTurnDirection.NEXT) 9 else 0
+                    val turningColumns = if (direction == BinderTurnDirection.NEXT) 2 downTo 0 else 0..2
+                    refreshPage(
+                        targetSpread = targetSpread,
+                        pageOffset = turningPageOffset,
+                        columns = turningColumns,
+                        transitionMillis = transitionMillis
+                    )
+                    spreadIndex = targetSpread
+                    moved = true
+
+                    transitionMillis = (transitionMillis * 0.76f)
+                        .toInt()
+                        .coerceAtLeast(18)
+                    if (!acceleratedStopRequested) {
+                        delay((transitionMillis * 2L).coerceAtLeast(28L))
+                    }
+                }
+
+                if (moved) {
+                    val restingPageOffset = if (direction == BinderTurnDirection.NEXT) 0 else 9
+                    val restingColumns = if (direction == BinderTurnDirection.NEXT) 2 downTo 0 else 0..2
+                    refreshPage(
+                        targetSpread = spreadIndex,
+                        pageOffset = restingPageOffset,
+                        columns = restingColumns,
+                        transitionMillis = 55
+                    )
+                    nav.setIndex(spreadIndex * 18)
+                }
+            } finally {
+                leftVisibleColumns = (0..2).toSet()
+                rightVisibleColumns = (0..2).toSet()
+                pageAnimationMillis = 80
+                pageIsTurning = false
+                acceleratedDirection = null
+                acceleratedStopRequested = false
+            }
+        }
+    }
+
+    fun stopAcceleratedPaging(direction: BinderTurnDirection) {
+        if (acceleratedDirection == direction) {
+            acceleratedStopRequested = true
         }
     }
 
@@ -211,15 +303,27 @@ fun PokedexListScreen(
             if (keyboardController.isVisible) {
                 keyboardController.handleLeft()
             } else {
-                turnPagesRight()
+                turnToPreviousSpread()
             }
+        }
+        onLeftLong {
+            beginAcceleratedPaging(BinderTurnDirection.PREVIOUS)
+        }
+        onLeftPressChanged { pressed ->
+            if (!pressed) stopAcceleratedPaging(BinderTurnDirection.PREVIOUS)
         }
         onRight {
             if (keyboardController.isVisible) {
                 keyboardController.handleRight()
             } else {
-                turnPagesLeft()
+                turnToNextSpread()
             }
+        }
+        onRightLong {
+            beginAcceleratedPaging(BinderTurnDirection.NEXT)
+        }
+        onRightPressChanged { pressed ->
+            if (!pressed) stopAcceleratedPaging(BinderTurnDirection.NEXT)
         }
         onA {
             if (keyboardController.isVisible) {
@@ -267,6 +371,7 @@ fun PokedexListScreen(
         rightPageCards = rightPageSlots,
         leftVisibleColumns = leftVisibleColumns,
         rightVisibleColumns = rightVisibleColumns,
+        columnAnimationMillis = pageAnimationMillis,
         onCardClick = { pokemon ->
             val visibleIndex = displayedItemIndices
                 .firstOrNull { it < pokemonItems.itemCount && pokemonItems[it]?.id == pokemon.id }
@@ -403,6 +508,7 @@ fun BinderSpread(
     rightPageCards: List<Pair<Pokemon?, Boolean>>,
     leftVisibleColumns: Set<Int> = (0..2).toSet(),
     rightVisibleColumns: Set<Int> = (0..2).toSet(),
+    columnAnimationMillis: Int = 80,
     onCardClick: ((Pokemon) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -422,27 +528,36 @@ fun BinderSpread(
             BinderPage(
                 cards = leftPageCards,
                 visibleColumns = leftVisibleColumns,
+                columnAnimationMillis = columnAnimationMillis,
                 onCardClick = onCardClick,
                 modifier = Modifier.weight(1f)
             )
 
-            // Central Spine Division Line / Binder Rings
+            // Open-binder gutter with three visible rings.
             Box(
                 modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight(),
+                    .width(18.dp)
+                    .fillMaxHeight()
+                    .background(Color.Black.copy(alpha = 0.72f)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     verticalArrangement = Arrangement.SpaceEvenly,
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxHeight()
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(vertical = 10.dp)
                 ) {
-                    repeat(6) {
+                    repeat(3) {
                         Box(
                             modifier = Modifier
-                                .size(width = 6.dp, height = 2.dp)
-                                .background(TerminalDimGreen.copy(alpha = 0.4f), RoundedCornerShape(1.dp))
+                                .size(width = 16.dp, height = 3.dp)
+                                .background(Color(0xFFAEB7AE), RoundedCornerShape(2.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.White.copy(alpha = 0.35f),
+                                    shape = RoundedCornerShape(2.dp)
+                                )
                         )
                     }
                 }
@@ -452,6 +567,7 @@ fun BinderSpread(
             BinderPage(
                 cards = rightPageCards,
                 visibleColumns = rightVisibleColumns,
+                columnAnimationMillis = columnAnimationMillis,
                 onCardClick = onCardClick,
                 modifier = Modifier.weight(1f)
             )
@@ -464,6 +580,7 @@ fun BinderSpread(
 fun BinderPage(
     cards: List<Pair<Pokemon?, Boolean>>,
     visibleColumns: Set<Int> = (0..2).toSet(),
+    columnAnimationMillis: Int = 80,
     onCardClick: ((Pokemon) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -509,6 +626,7 @@ fun BinderPage(
 
                         BinderPocketVisibility(
                             visible = colIndex in visibleColumns,
+                            animationDurationMillis = columnAnimationMillis,
                             modifier = playingCardModifier
                         ) {
                             Box(
@@ -540,18 +658,19 @@ fun BinderPage(
 @Composable
 private fun BinderPocketVisibility(
     visible: Boolean,
+    animationDurationMillis: Int,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(tween(80)) + expandHorizontally(
-            animationSpec = tween(80),
+        enter = fadeIn(tween(animationDurationMillis)) + expandHorizontally(
+            animationSpec = tween(animationDurationMillis),
             expandFrom = Alignment.End
         ),
-        exit = fadeOut(tween(80)) + shrinkHorizontally(
-            animationSpec = tween(80),
+        exit = fadeOut(tween(animationDurationMillis)) + shrinkHorizontally(
+            animationSpec = tween(animationDurationMillis),
             shrinkTowards = Alignment.Start
         )
     ) {
