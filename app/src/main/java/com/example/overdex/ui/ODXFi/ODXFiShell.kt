@@ -591,7 +591,8 @@ fun ODXFiShell(
                             EnemyTeamMemoryOverlay(
                                 opponent = presentationState.team.opponent,
                                 tactical = presentationState.tactical,
-                                spriteProvider = viewModel?.spriteProvider ?: com.example.overdex.data.GithubSpriteProvider()
+                                spriteProvider = viewModel?.spriteProvider
+                                    ?: com.example.overdex.data.LocalSpriteProvider(context.assets)
                             )
 
                             // Live Move Analysis Panel - Displays moves for the active enemy

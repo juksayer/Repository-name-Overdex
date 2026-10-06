@@ -101,10 +101,9 @@ import com.example.overdex.battle.team.CurrentBattleTeamStore
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
-import com.example.overdex.data.FallbackSpriteProvider
+import com.example.overdex.data.LocalCryProvider
 import com.example.overdex.data.FieldNoteRepository
 import com.example.overdex.data.GameMasterLoader
-import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.data.PokemonJsonLoader
 import com.example.overdex.data.PokemonRepository
@@ -153,13 +152,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val db = PokedexDatabase.getDatabase(application)
     private val pokemonDao = db.pokemonDao()
 
-    val spriteProvider: SpriteProvider = FallbackSpriteProvider(
-        primary = LocalSpriteProvider(application.assets),
-        secondary = GithubSpriteProvider(),
-    )
+    val spriteProvider: SpriteProvider = LocalSpriteProvider(application.assets)
+    private val cryProvider = LocalCryProvider(application.assets)
 
     private val gameMasterLoader = GameMasterLoader(application)
-    private val pokemonRepository = PokemonRepository(pokemonDao, spriteProvider, gameMasterLoader)
+    private val pokemonRepository = PokemonRepository(
+        pokemonDao = pokemonDao,
+        spriteProvider = spriteProvider,
+        gameMasterLoader = gameMasterLoader,
+        cryProvider = cryProvider,
+    )
     private val pokemonLoader = PokemonJsonLoader(application)
     private val fieldNoteRepository = FieldNoteRepository(application)
     
@@ -1295,7 +1297,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         chargedMovesJson = Json.encodeToString(chargedMoves),
 
                         spriteUrl = spriteUrl,
-                        cryUrl = "https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/$id.ogg",
+                        cryUrl = cryProvider.getCryUrl(id),
 
                         description =
                             speciesInfo?.flavor_text

@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
-import com.example.overdex.data.GithubSpriteProvider
 import com.example.overdex.data.SpriteProvider
 import com.example.overdex.presentation.*
 
@@ -32,7 +31,7 @@ import com.example.overdex.presentation.*
 fun EnemyTeamMemoryOverlay(
     opponent: OpponentTeamPresentation,
     tactical: TacticalPresentation? = null,
-    spriteProvider: SpriteProvider = GithubSpriteProvider()
+    spriteProvider: SpriteProvider
 ) {
     Row(
         modifier = Modifier
@@ -82,7 +81,7 @@ fun DecisionIcon(tactical: TacticalPresentation) {
 @Composable
 fun EnemyPokemonBlock(
     member: EnemyMemberPresentation,
-    spriteProvider: SpriteProvider = GithubSpriteProvider()
+    spriteProvider: SpriteProvider
 ) {
     // Strategic Resolution: Resolve ID from species name if possible
     // Note: In a future brick, EnemyMemberPresentation should provide speciesId.

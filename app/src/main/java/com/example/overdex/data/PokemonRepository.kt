@@ -15,7 +15,8 @@ class PokemonRepository(
     private val pokemonDao: PokemonDao,
     private val spriteProvider: SpriteProvider,
     /** Current battle reference data. The legacy Pokédex import alone ends at 2017. */
-    private val gameMasterLoader: GameMasterLoader? = null
+    private val gameMasterLoader: GameMasterLoader? = null,
+    private val cryProvider: CryProvider? = null,
 ) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
@@ -66,6 +67,7 @@ class PokemonRepository(
             fastMoves = fastMoves.mapNotNull { move(it, fast = true) },
             chargedMoves = chargedMoves.mapNotNull { move(it, fast = false) },
             spriteUrl = spriteProvider.getSpriteUrl(dex),
+            cryUrl = cryProvider?.getCryUrl(dex).orEmpty(),
             baseAttack = baseStats?.atk ?: 0,
             baseDefense = baseStats?.def ?: 0,
             baseStamina = baseStats?.hp ?: 0
@@ -163,7 +165,9 @@ class PokemonRepository(
             fastMoves = fastMoves,
             chargedMoves = chargedMoves,
             spriteUrl = spriteProvider.getSpriteUrl(id = id),
-            cryUrl = cryUrl,
+            // Resolve this at read time so existing Room rows that contain an old
+            // remote URL become offline immediately without a destructive migration.
+            cryUrl = cryProvider?.getCryUrl(id)?.takeIf(String::isNotEmpty) ?: cryUrl,
             description = description
         )
     }
