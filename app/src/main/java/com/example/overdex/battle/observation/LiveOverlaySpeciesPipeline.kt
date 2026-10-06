@@ -71,7 +71,6 @@ internal class LiveOverlaySpeciesPipeline(
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
     @Volatile private var lastSubmittedSpecies: String? = null
-    @Volatile private var recognitionNeeded = true
     private var lastRawReadings: List<String> = emptyList()
     private var lastCaptureQueuedAtNanos = 0L
     private var captureOperating: Boolean? = null
@@ -80,7 +79,6 @@ internal class LiveOverlaySpeciesPipeline(
         if (scope != null) return
         activeMatch = match
         lastSubmittedSpecies = null
-        recognitionNeeded = true
         lastRawReadings = emptyList()
         lastCaptureQueuedAtNanos = 0L
         captureOperating = null
@@ -96,7 +94,6 @@ internal class LiveOverlaySpeciesPipeline(
                 match.articles.collect { article ->
                     val check = article.payload as? SpeciesCheckMeasured ?: return@collect
                     if (check.side == side && check.status == "OPENED") {
-                        recognitionNeeded = true
                         // Permit the same species to produce a new identity article
                         // after it leaves and later returns to this side.
                         if (check.reason in setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START")) {
@@ -110,8 +107,11 @@ internal class LiveOverlaySpeciesPipeline(
             // freshest strip while the prior sample is being preserved.
             pipelineScope.launch(Dispatchers.Default) {
                 input.supplyFrames { frame ->
-                    val enabled = captureAllowed() && recognitionNeeded &&
-                        match.speciesChecks.captureEnabled(side)
+                    // Always let the coordinator advance its recovery clock while
+                    // the battle surface is visible. Short-circuiting here on the
+                    // previous successful recognition prevented recovery windows
+                    // from ever opening when a switch cue was missed.
+                    val enabled = captureAllowed() && match.speciesChecks.captureEnabled(side)
                     if (captureOperating != enabled) {
                         match.custody.submitAvailability(
                             cropSourceId,
@@ -225,7 +225,16 @@ internal class LiveOverlaySpeciesPipeline(
                     } ?: continue
                     val (reading, resolution) = resolvedReading
                     if (resolution.speciesName.equals(lastSubmittedSpecies, ignoreCase = true)) {
-                        recognitionNeeded = false
+                        // A recovery read that confirms the current combatant still
+                        // completes its window. Leaving it open made OCR chase the
+                        // unchanged badge until expiry and delayed later switches.
+                        match.speciesChecks.acceptImmediate(
+                            side = side,
+                            windowId = sample.speciesCheckWindowId,
+                            species = resolution.speciesName,
+                            cropId = sample.cropEvidenceId,
+                            capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                        )
                         continue
                     }
                     val species = match.pokemonKnowledge.getPokemonByName(resolution.speciesName) ?: continue
@@ -251,7 +260,6 @@ internal class LiveOverlaySpeciesPipeline(
                         "confidence=${resolution.confidence} treatment=${reading.treatment} " +
                             "raw=${reading.text.replace("\n", "|")}"
                     )
-                    recognitionNeeded = false
                 }
             }
         }
@@ -274,7 +282,6 @@ internal class LiveOverlaySpeciesPipeline(
             }
         }
         activeMatch = null
-        recognitionNeeded = true
         captureOperating = false
         scope?.cancel("Live overlay species pipeline stopped")
         scope = null

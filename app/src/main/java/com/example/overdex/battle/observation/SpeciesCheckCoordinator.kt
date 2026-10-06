@@ -30,8 +30,12 @@ class SpeciesCheckCoordinator(
         reportMissedTarget(side, state)
         if (state.window != null) {
             // A lifecycle cue supersedes an unrelated recovery/countdown check.
-            // Repeated samples from the same cue keep their in-flight agreement.
+            // Several independent witnesses commonly report the same entry in
+            // quick succession (announcement, cry, inferred switch). Keep the
+            // first lifecycle window so OCR already running for a valid badge
+            // crop cannot be invalidated by the supporting cue that follows it.
             if (reason !in LIFECYCLE_REASONS || state.window?.triggerId == triggerId) return
+            if (state.window?.reason in LIFECYCLE_REASONS) return
             val superseded = state.window!!
             emit(side, superseded, "SUPERSEDED", null, listOfNotNull(superseded.triggerId))
             state.recentWindows.remove(superseded.id)

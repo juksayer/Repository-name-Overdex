@@ -72,7 +72,8 @@ class SpeciesCheckCoordinatorTest {
         checks.request(side, "ENTRY", "sneasel-entry")
         val old = checks.windowFor(side, time)!!
         val oldCapturedAt = time + 100_000_000L
-        time += 200_000_000L
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1L
+        checks.tick()
         checks.request(side, "ENTRY", "sealeo-entry")
         val current = checks.windowFor(side, time)!!
         val currentCapturedAt = time + 100_000_000L
@@ -107,12 +108,15 @@ class SpeciesCheckCoordinatorTest {
     }
 
     @Test fun `switch faint and cry cues supersede an unrelated recovery check`() {
-        listOf("SWITCH", "FAINT", "CRY").forEachIndexed { index, reason ->
-            if (!checks.isChecking(side)) checks.captureEnabled(side)
+        listOf("SWITCH", "FAINT", "CRY").forEach { reason ->
+            val localReports = mutableListOf<SpeciesCheckMeasured>()
+            val localChecks = SpeciesCheckCoordinator({ time }) { report, _ -> localReports += report }
+            localChecks.captureEnabled(side)
             time += 100_000_000L
-            checks.request(side, reason, "cue-$index")
-            assertEquals(reason, reports.last().reason)
-            assertEquals("OPENED", reports.last().status)
+            localChecks.request(side, reason, "cue-$reason")
+            assertEquals(reason, localReports.last().reason)
+            assertEquals("OPENED", localReports.last().status)
+            assertEquals(listOf("OPENED", "SUPERSEDED", "OPENED"), localReports.map { it.status })
         }
     }
 
@@ -182,13 +186,20 @@ class SpeciesCheckCoordinatorTest {
         assertFalse(checks.isStopped())
     }
 
-    @Test fun `a different entry supersedes an earlier entry still being read`() {
+    @Test fun `supporting lifecycle cues preserve an earlier entry crop still being read`() {
         checks.request(side, "ENTRY", "first")
         val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 50_000_000L
         time += 100_000_000
         checks.request(side, "ENTRY", "second")
-        assertNull(checks.read(side, first.id, "Sneasel", "stale"))
-        assertEquals("second", checks.windowFor(side, time)!!.triggerId)
+        checks.request(side, "CRY", "supporting-cry")
+
+        assertEquals(first.id, checks.windowFor(side, time)!!.id)
+        assertEquals(
+            listOf("first", "entry-crop"),
+            checks.acceptImmediate(side, first.id, "Vaporeon", "entry-crop", capturedAt)
+        )
+        assertEquals("Vaporeon", reports.last().speciesName)
     }
 
 }

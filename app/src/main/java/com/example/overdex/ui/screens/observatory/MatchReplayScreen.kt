@@ -186,9 +186,13 @@ fun MatchReplayScreen(
             androidx.compose.material3.LinearProgressIndicator(
                 progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().height(8.dp), color = TerminalGreen)
-            androidx.compose.material3.Text("TAP PLAY/PAUSE", color = TerminalGreen, fontSize = 10.sp)
-            androidx.compose.material3.Text("DRAG SCRUB", color = TerminalGreen, maxLines = 1, softWrap = false,
-                fontSize = 10.sp)
+            androidx.compose.material3.Text(
+                "TAP ▶/Ⅱ   DRAG >>",
+                color = TerminalGreen,
+                maxLines = 1,
+                softWrap = false,
+                fontSize = 10.sp,
+            )
             if (archivedCropIdentities == null) {
                 MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
                 if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.R
 import com.example.overdex.battle.observation.CaptureDiagnostics
+import com.example.overdex.battle.observation.BattleHudLayout
 import com.example.overdex.battle.observation.DroidballOverlayMode
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
 import com.example.overdex.battle.observation.OpponentMovePossibilities
@@ -72,8 +74,13 @@ internal object BattleHudOverlayGeometry {
 @Composable
 fun BattleOverlay(
     panelWidthPx: Int = 415,
+    initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
+    onBattleHudDrag: (Float, Float) -> Unit = { _, _ -> },
+    onBattleHudDragFinished: () -> Unit = {},
+    onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
+    onResetBattleHudLayout: () -> Unit = {},
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> }
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
@@ -83,6 +90,11 @@ fun BattleOverlay(
     val opponentMoves by DroidballOverlayPresentation.activeOpponentMovePossibilities.collectAsState()
     val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
     val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
+    var layoutEditing by remember { mutableStateOf(false) }
+    var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
+    var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
+    var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
+    var bottomHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetY) }
     var arrived by remember { mutableStateOf(false) }
     val arrivalOffset by animateDpAsState(
         targetValue = if (arrived) 0.dp else 58.dp,
@@ -97,6 +109,9 @@ fun BattleOverlay(
     val anchoredToBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val panelIsVisible = expanded || anchoredToBattleHud
     val mayMove = !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
+    LaunchedEffect(anchoredToBattleHud) {
+        if (!anchoredToBattleHud) layoutEditing = false
+    }
     LaunchedEffect(anchoredToBattleHud, panelIsVisible) {
         onLayoutStateChanged(anchoredToBattleHud, panelIsVisible)
     }
@@ -115,11 +130,28 @@ fun BattleOverlay(
     Column(
         modifier = interactionModifier
             .offset(x = arrivalOffset)
-            .clickable { DroidballOverlayPresentation.toggleExpanded() },
+            .then(
+                if (!layoutEditing) Modifier.clickable { DroidballOverlayPresentation.toggleExpanded() }
+                else Modifier
+            ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (panelIsVisible) {
-            DroidballHalf(top = true)
+            DroidballHalf(
+                top = true,
+                layoutEditing = layoutEditing,
+                offsetX = topHalfOffsetX,
+                offsetY = topHalfOffsetY,
+                onOffsetChanged = { x, y -> topHalfOffsetX = x; topHalfOffsetY = y },
+                onDragFinished = {
+                    onHalfPositionsChanged(
+                        topHalfOffsetX,
+                        topHalfOffsetY,
+                        bottomHalfOffsetX,
+                        bottomHalfOffsetY,
+                    )
+                },
+            )
             OverlayPanel(
                 mode,
                 diagnostics,
@@ -127,9 +159,34 @@ fun BattleOverlay(
                 opponentMoves,
                 inferredPlayerTeam,
                 playerTeamConfirmed,
-                panelWidthPx
+                panelWidthPx,
+                layoutEditing = layoutEditing,
+                onLayoutEditingChanged = { layoutEditing = it },
+                onBattleHudDrag = onBattleHudDrag,
+                onBattleHudDragFinished = onBattleHudDragFinished,
+                onResetBattleHudLayout = {
+                    topHalfOffsetX = 0f
+                    topHalfOffsetY = 0f
+                    bottomHalfOffsetX = 0f
+                    bottomHalfOffsetY = 0f
+                    onResetBattleHudLayout()
+                },
             )
-            DroidballHalf(top = false)
+            DroidballHalf(
+                top = false,
+                layoutEditing = layoutEditing,
+                offsetX = bottomHalfOffsetX,
+                offsetY = bottomHalfOffsetY,
+                onOffsetChanged = { x, y -> bottomHalfOffsetX = x; bottomHalfOffsetY = y },
+                onDragFinished = {
+                    onHalfPositionsChanged(
+                        topHalfOffsetX,
+                        topHalfOffsetY,
+                        bottomHalfOffsetX,
+                        bottomHalfOffsetY,
+                    )
+                },
+            )
         } else {
             Image(
                 painter = painterResource(R.drawable.droidball),
@@ -141,16 +198,44 @@ fun BattleOverlay(
 }
 
 @Composable
-private fun DroidballHalf(top: Boolean) {
+private fun DroidballHalf(
+    top: Boolean,
+    layoutEditing: Boolean,
+    offsetX: Float,
+    offsetY: Float,
+    onOffsetChanged: (Float, Float) -> Unit,
+    onDragFinished: () -> Unit,
+) {
     val splitHeight = if (top) {
         BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP.dp
     } else {
         BattleHudOverlayGeometry.DROIDBALL_BOTTOM_HALF_DP.dp
     }
+    val currentOffsetX by rememberUpdatedState(offsetX)
+    val currentOffsetY by rememberUpdatedState(offsetY)
+    val currentOnOffsetChanged by rememberUpdatedState(onOffsetChanged)
+    val currentOnDragFinished by rememberUpdatedState(onDragFinished)
+    val dragModifier = if (layoutEditing) {
+        Modifier.pointerInput(top, layoutEditing) {
+            detectDragGestures(
+                onDragEnd = { currentOnDragFinished() },
+                onDragCancel = { currentOnDragFinished() },
+                onDrag = { change, amount ->
+                    change.consume()
+                    currentOnOffsetChanged(
+                        currentOffsetX + amount.x,
+                        currentOffsetY + amount.y,
+                    )
+                },
+            )
+        }
+    } else Modifier
     Box(
-        modifier = Modifier
+        modifier = dragModifier
+            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
             .width(48.dp)
             .height(splitHeight)
+            .then(if (layoutEditing) Modifier.border(1.dp, Color(0xFFB000FF)) else Modifier)
             .clipToBounds(),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -203,7 +288,12 @@ private fun OverlayPanel(
     opponentMoves: OpponentMovePossibilities?,
     inferredPlayerTeam: List<String?>,
     playerTeamConfirmed: Boolean,
-    panelWidthPx: Int
+    panelWidthPx: Int,
+    layoutEditing: Boolean,
+    onLayoutEditingChanged: (Boolean) -> Unit,
+    onBattleHudDrag: (Float, Float) -> Unit,
+    onBattleHudDragFinished: () -> Unit,
+    onResetBattleHudLayout: () -> Unit,
 ) {
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val heading = when (mode) {
@@ -220,8 +310,20 @@ private fun OverlayPanel(
     val foreground = if (isBattleHud) Color(0xFF004D40) else Color(0xFFD7FFF4)
     val muted = if (isBattleHud) Color(0xFF397D77) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
 
+    val panelDragModifier = if (layoutEditing) {
+        Modifier.pointerInput(layoutEditing) {
+            detectDragGestures(
+                onDragEnd = onBattleHudDragFinished,
+                onDragCancel = onBattleHudDragFinished,
+                onDrag = { change, amount ->
+                    change.consume()
+                    onBattleHudDrag(amount.x, amount.y)
+                },
+            )
+        }
+    } else Modifier
     Column(
-        modifier = Modifier
+        modifier = panelDragModifier
             .width(teamInfoWidth)
             .background(
                 background,
@@ -229,7 +331,7 @@ private fun OverlayPanel(
             )
             .border(
                 1.dp,
-                foreground.copy(alpha = 0.35f),
+                if (layoutEditing) Color(0xFFB000FF) else foreground.copy(alpha = 0.35f),
                 RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
             )
             .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -249,6 +351,37 @@ private fun OverlayPanel(
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
                     MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
                 }
+            }
+            if (layoutEditing) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("DRAG HUD / SHELLS", color = Color(0xFF7B1FA2), fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "RESET",
+                        modifier = Modifier.clickable(onClick = onResetBattleHudLayout),
+                        color = Color(0xFFC62828),
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "DONE",
+                        modifier = Modifier.clickable { onBattleHudDragFinished(); onLayoutEditingChanged(false) },
+                        color = foreground,
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            } else {
+                Text(
+                    "POSITION",
+                    modifier = Modifier.align(Alignment.End).clickable { onLayoutEditingChanged(true) },
+                    color = muted.copy(alpha = 0.68f),
+                    fontSize = 6.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
             }
         } else {
             val message = when (mode) {

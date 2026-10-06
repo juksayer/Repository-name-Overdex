@@ -219,6 +219,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var overlayAnchoredToBattleHud = false
     private var freeOverlayX: Int? = null
     private var freeOverlayY: Int? = null
+    private lateinit var battleHudLayoutStore: BattleHudLayoutStore
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
@@ -275,6 +276,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        battleHudLayoutStore = BattleHudLayoutStore(this)
         activeService = this
         createNotificationChannel()
     }
@@ -618,6 +620,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     private fun setupOverlay() {
         val bounds = displayBounds()
+        val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
         val collapsedSizePx = (48f * resources.displayMetrics.density).roundToInt()
         val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
         val params = WindowManager.LayoutParams(
@@ -646,8 +649,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             setContent {
                 BattleOverlay(
                     panelWidthPx = panelWidthPx,
+                    initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
                     onDragFinished = ::snapOverlayToNearestEdge,
+                    onBattleHudDrag = ::moveBattleHudBy,
+                    onBattleHudDragFinished = ::saveBattleHudPosition,
+                    onHalfPositionsChanged = ::saveBattleHudHalfPositions,
+                    onResetBattleHudLayout = ::resetBattleHudLayout,
                     onLayoutStateChanged = ::updateOverlayLayoutState
                 )
             }
@@ -688,6 +696,70 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         windowManager.updateViewLayout(view, params)
     }
 
+    /** Moves the anchored battle panel exactly where the user places it during a test match. */
+    private fun moveBattleHudBy(deltaX: Float, deltaY: Float) {
+        if (!overlayAnchoredToBattleHud) return
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val bounds = displayBounds()
+        params.x = (params.x + deltaX.toInt()).coerceIn(
+            0,
+            (bounds.width() - view.width.coerceAtLeast(1)).coerceAtLeast(0),
+        )
+        params.y = (params.y + deltaY.toInt()).coerceIn(
+            0,
+            (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0),
+        )
+        if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+    }
+
+    private fun saveBattleHudPosition() {
+        if (!overlayAnchoredToBattleHud) return
+        val params = overlayParams ?: return
+        val bounds = displayBounds()
+        battleHudLayoutStore.saveWindow(bounds.width(), bounds.height(), params.x, params.y)
+    }
+
+    private fun saveBattleHudHalfPositions(
+        topHalfOffsetX: Float,
+        topHalfOffsetY: Float,
+        bottomHalfOffsetX: Float,
+        bottomHalfOffsetY: Float,
+    ) {
+        val bounds = displayBounds()
+        battleHudLayoutStore.saveHalves(
+            bounds.width(),
+            bounds.height(),
+            topHalfOffsetX,
+            topHalfOffsetY,
+            bottomHalfOffsetX,
+            bottomHalfOffsetY,
+        )
+    }
+
+    private fun resetBattleHudLayout() {
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val bounds = displayBounds()
+        battleHudLayoutStore.reset(bounds.width(), bounds.height())
+        applyBattleHudWindowPosition(params, bounds, BattleHudLayout())
+        if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+    }
+
+    private fun applyBattleHudWindowPosition(
+        params: WindowManager.LayoutParams,
+        bounds: android.graphics.Rect,
+        layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
+    ) {
+        val topHalfHeightPx = (
+            BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP * resources.displayMetrics.density
+        ).roundToInt()
+        params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
+        params.y = layout.windowY ?: (
+            BattleHudOverlayGeometry.panelTopPx(bounds.height()) - topHalfHeightPx
+        ).coerceAtLeast(0)
+    }
+
     /**
      * Live battle presentation is attached to GO's opponent Team Info badge.
      * Other modes retain the user's movable, edge-snapping Droidball position.
@@ -703,13 +775,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             }
             overlayAnchoredToBattleHud = true
             val bounds = displayBounds()
-            val topHalfHeightPx = (
-                BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP * resources.displayMetrics.density
-            ).roundToInt()
-            params.x = BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-            params.y = (
-                BattleHudOverlayGeometry.panelTopPx(bounds.height()) - topHalfHeightPx
-            ).coerceAtLeast(0)
+            applyBattleHudWindowPosition(params, bounds)
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
             return
         }
