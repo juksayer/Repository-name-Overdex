@@ -62,6 +62,7 @@ import com.example.overdex.battle.observation.PersistedActiveHpBarCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderCadenceWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarBorderPulseWitness
+import com.example.overdex.battle.observation.LiveHpEffectivenessTextWitness
 import com.example.overdex.battle.observation.LiveActiveHpBarDamageTickWitness
 import com.example.overdex.battle.observation.LiveFastMoveRecipientVisualArtifactWitness
 import com.example.overdex.battle.observation.LiveFastMoveRecipientVisualCadenceWitness
@@ -681,6 +682,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.player(playerHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarBorderPulseWitness.opponent(opponentHpFrameHub))
+        observationDispatcher.register(LiveHpEffectivenessTextWitness.player(input, calibration, cropArtifactStore))
+        observationDispatcher.register(LiveHpEffectivenessTextWitness.opponent(input, calibration, cropArtifactStore))
         observationDispatcher.register(LiveActiveHpBarDamageTickWitness.player(playerHpFrameHub))
         observationDispatcher.register(LiveActiveHpBarDamageTickWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveFastMoveRecipientVisualArtifactWitness.player(playerHpFrameHub))

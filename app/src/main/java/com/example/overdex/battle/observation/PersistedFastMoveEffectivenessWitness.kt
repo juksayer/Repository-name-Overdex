@@ -2,6 +2,7 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.FastMoveEffectiveness
 import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
+import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -32,7 +33,7 @@ internal object FastMoveEffectivenessTextResolver {
             )
             // ML Kit sometimes loses the first three letters while the phrase
             // fades. This fragment cannot be produced by "NOT VERY EFFECTIVE".
-            normalized == "EREFFECTIVE" -> EffectivenessTextReading(
+            normalized.endsWith("EREFFECTIVE") && "VERY" !in normalized -> EffectivenessTextReading(
                 FastMoveEffectiveness.SUPER_EFFECTIVE,
                 0.72f
             )
@@ -42,9 +43,9 @@ internal object FastMoveEffectivenessTextResolver {
 }
 
 /**
- * Reads only the effectiveness meaning from existing preserved text testimony.
- * The broad text source cannot locate an HP-bar side, so direction remains null
- * and is resolved downstream from the two active species when it is unique.
+ * Reads only the effectiveness meaning from existing text testimony. Dedicated
+ * HP sources carry a damaged side; broad announcement text leaves direction
+ * unknown for downstream resolution from the active species and aligned hit.
  */
 class PersistedFastMoveEffectivenessWitness(
     override val observerId: ObserverId = ObserverId(
@@ -61,14 +62,15 @@ class PersistedFastMoveEffectivenessWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
-                    if (article.sourceId.id !in TEXT_SOURCES) return@collect
+                    val damagedSide = FastMoveEffectivenessSources.damagedSide(article.sourceId.id)
+                    if (article.sourceId.id !in FastMoveEffectivenessSources.acceptedTextSources) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     val reading = FastMoveEffectivenessTextResolver.resolve(text) ?: return@collect
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = FastMoveEffectivenessWitnessed(
                             effectiveness = reading.effectiveness,
-                            damagedSide = null,
+                            damagedSide = damagedSide,
                             recognizedText = text
                         ),
                         timestamp = article.perceivedAt,
@@ -86,7 +88,25 @@ class PersistedFastMoveEffectivenessWitness(
         scope = null
     }
 
-    private companion object {
-        val TEXT_SOURCES = setOf("ANNOUNCEMENT_WITNESS", "MATCH_OUTCOME_TEXT_WITNESS")
+}
+
+/** Source identity supplies direction without asking OCR to infer screen geometry. */
+internal object FastMoveEffectivenessSources {
+    const val PLAYER_TEXT = "PLAYER_HP_EFFECTIVENESS_TEXT_WITNESS"
+    const val OPPONENT_TEXT = "OPPONENT_HP_EFFECTIVENESS_TEXT_WITNESS"
+    const val PLAYER_CAPTURE = "PLAYER_HP_EFFECTIVENESS_CAPTURE"
+    const val OPPONENT_CAPTURE = "OPPONENT_HP_EFFECTIVENESS_CAPTURE"
+
+    val acceptedTextSources = setOf(
+        "ANNOUNCEMENT_WITNESS",
+        "MATCH_OUTCOME_TEXT_WITNESS",
+        PLAYER_TEXT,
+        OPPONENT_TEXT,
+    )
+
+    fun damagedSide(sourceId: String): ActivePokemonSide? = when (sourceId) {
+        PLAYER_TEXT -> ActivePokemonSide.PLAYER
+        OPPONENT_TEXT -> ActivePokemonSide.OPPONENT
+        else -> null
     }
 }
