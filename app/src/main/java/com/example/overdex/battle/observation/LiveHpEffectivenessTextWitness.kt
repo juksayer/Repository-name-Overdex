@@ -3,8 +3,11 @@ package com.example.overdex.battle.observation
 import android.util.Log
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.ApertureStatus
 import com.example.overdex.battle.custody.CropCaptured
+import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
@@ -83,9 +86,16 @@ internal class LiveHpEffectivenessTextWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
-                    val pulse = article.payload as? HpBarBorderPulse ?: return@collect
-                    if (pulse.barSide != damagedSide || pulse.status != ApertureStatus.PRESENT) return@collect
-                    val at = article.monotonicTimeNanos ?: return@collect
+                    val cueMatchesSide = when (val payload = article.payload) {
+                        is HpBarBorderPulse ->
+                            payload.barSide == damagedSide && payload.status == ApertureStatus.PRESENT
+                        is ActiveHpBarDamageTickMeasured -> payload.damagedSide == damagedSide
+                        is FastMoveRecipientVisualArtifactMeasured -> payload.damagedSide == damagedSide
+                        is FastMoveUseObserved -> payload.damagedSide == damagedSide
+                        else -> false
+                    }
+                    if (!cueMatchesSide) return@collect
+                    val at = maxOf(article.monotonicTimeNanos ?: return@collect, System.nanoTime())
                     currentPulseId.set(article.id.value)
                     scanFromNanos.set(at)
                     scanUntilNanos.set(at + SCAN_WINDOW_NANOS)

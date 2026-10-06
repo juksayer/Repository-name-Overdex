@@ -333,9 +333,16 @@ internal object FastOverlaySpeciesResolver {
 
     fun resolveDetailed(rawText: String, knownSpeciesNames: Set<String>): FastOverlaySpeciesResolution? {
         val normalizedText = normalize(rawText)
+        val normalizedLines = rawText.lineSequence()
+            .map(::normalize)
+            .filter(String::isNotEmpty)
+            .toSet()
         knownSpeciesNames
             .filter { normalize(it).isNotEmpty() }
-            .filter { normalizedText.contains(normalize(it)) }
+            .filter {
+                val species = normalize(it)
+                normalizedText == species || species in normalizedLines
+            }
             .maxByOrNull { normalize(it).length }
             ?.let {
                 val caseEvidence = SpeciesOcrTypography.caseEvidence(rawText, it)

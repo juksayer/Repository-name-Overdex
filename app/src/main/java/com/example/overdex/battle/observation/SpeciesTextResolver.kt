@@ -8,14 +8,24 @@ object SpeciesTextResolver {
         val normalizedNames = knownSpeciesNames
             .map { it to normalize(it) }
             .filter { (_, name) -> name.isNotEmpty() }
+        val normalizedLines = rawText.lineSequence()
+            .map(::normalize)
+            .filter(String::isNotEmpty)
+            .toSet()
         normalizedNames
-            .filter { (_, name) -> normalizedText.contains(name) }
+            .filter { (_, name) -> normalizedText == name || name in normalizedLines }
             .maxByOrNull { (_, name) -> name.length }
             ?.let { return it.first }
 
         // Prefer explicit compact-badge glyph confusions over arbitrary
         // substitutions. The winner must remain unambiguous.
         val candidates = normalizedNames.mapNotNull { (original, normalizedName) ->
+            // A clean prefix of a longer word is not evidence for a very short
+            // species. For example, MEWTO is a damaged MEWTWO reading, not MEW.
+            if (normalizedName.length <= 4 && normalizedLines.none {
+                    kotlin.math.abs(it.length - normalizedName.length) <= 1
+                }
+            ) return@mapNotNull null
             val allowedEdits = SpeciesOcrTypography.allowedCost(normalizedName.length)
             val distance = closestWindowDistance(normalizedText, normalizedName)
             original.takeIf { distance <= allowedEdits }?.let { it to distance }

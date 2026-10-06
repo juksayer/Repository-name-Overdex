@@ -26,4 +26,8 @@ class FastOverlaySpeciesResolverTest {
     @Test fun `does not turn cp text into a species`() {
         assertNull(FastOverlaySpeciesResolver.resolve("CP 1499", names))
     }
+
+    @Test fun `does not emit Mew from a truncated Mewtwo badge`() {
+        assertNull(FastOverlaySpeciesResolver.resolve("MewtO", names + setOf("Mew", "Mewtwo")))
+    }
 }
