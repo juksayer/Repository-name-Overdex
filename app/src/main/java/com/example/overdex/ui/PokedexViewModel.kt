@@ -86,6 +86,8 @@ import com.example.overdex.battle.observation.TeamSelectSnapshotCaptureWitness
 import com.example.overdex.battle.observation.PersistedTeamSelectPartyWitness
 import com.example.overdex.battle.observation.PersistedTeamSelectLeagueWitness
 import com.example.overdex.battle.observation.PersistedPlayerTeamRosterSlotWitness
+import com.example.overdex.battle.observation.PersistedPlayerTeamRosterSpriteWitness
+import com.example.overdex.battle.observation.TeamSelectSpriteMatcher
 import com.example.overdex.data.observation.YouWinRecognizer
 import com.example.overdex.data.observation.GoodEffortRecognizer
 import com.example.overdex.battle.artifact.FileCropArtifactStore
@@ -539,6 +541,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             3 to TeamSelectCropContracts.playerRosterName3.cropName
         ).forEach { (slot, cropName) ->
             observationDispatcher.register(PersistedPlayerTeamRosterSlotWitness(cropArtifactStore, slot, cropName))
+        }
+        val teamSelectSpriteMatcher = TeamSelectSpriteMatcher(getApplication<Application>().assets)
+        listOf(
+            1 to TeamSelectCropContracts.playerRosterSlot1.cropName,
+            2 to TeamSelectCropContracts.playerRosterSlot2.cropName,
+            3 to TeamSelectCropContracts.playerRosterSlot3.cropName,
+        ).forEach { (slot, cropName) ->
+            observationDispatcher.register(
+                PersistedPlayerTeamRosterSpriteWitness(cropArtifactStore, teamSelectSpriteMatcher, slot, cropName)
+            )
         }
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             observationDispatcher.register(

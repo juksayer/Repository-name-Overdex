@@ -149,19 +149,27 @@ class PersistedPlayerTeamRosterSlotWitness(
     private val slot: Int,
     private val cropName: String
 ) : Observer {
-    override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Team Select Player Slot $slot Witness"
+    override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_OCR_WITNESS", ObservationSource.SCREEN_CAPTURE)
+    override val name = "Team Select Player Slot $slot OCR Witness"
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { s -> s.launch {
             var surfaceAccepted = false
             var accepted = false
+            var pending: PendingRosterSlot? = null
             val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
             match.articles.collect { a ->
                 if ((a.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
-                if (a.payload is TeamSelectPartyWitnessed) { surfaceAccepted = true; return@collect }
-                if (!surfaceAccepted || accepted) return@collect
+                if (a.payload is TeamSelectPartyWitnessed) {
+                    surfaceAccepted = true
+                    pending?.let { candidate ->
+                        accepted = true
+                        submitRosterCandidate(match, candidate)
+                    }
+                    return@collect
+                }
+                if (accepted) return@collect
                 val crop = a.payload as? CropCaptured ?: return@collect
                 if (crop.cropProvenance.cropName != cropName) return@collect
                 val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
@@ -174,8 +182,7 @@ class PersistedPlayerTeamRosterSlotWitness(
                     FastOverlaySpeciesResolver.resolveDetailed(reading.text, knownNames)
                 } ?: return@collect
                 val species = match.pokemonKnowledge.getPokemonByName(resolution.speciesName) ?: return@collect
-                accepted = true
-                match.custody.submitTestimony(
+                val candidate = PendingRosterSlot(
                     SourceId(observerId.id),
                     PlayerTeamRosterSlotWitnessed(slot, species.name, species.id),
                     a.perceivedAt,
@@ -183,8 +190,101 @@ class PersistedPlayerTeamRosterSlotWitness(
                     listOf(a.id.value),
                     a.monotonicTimeNanos ?: return@collect
                 )
+                if (surfaceAccepted) {
+                    accepted = true
+                    submitRosterCandidate(match, candidate)
+                } else {
+                    pending = candidate
+                }
             }
         } }
     }
     override fun stop() { scope?.cancel(); scope = null }
+}
+
+/**
+ * Matches the actual Pokémon GO artwork in one Team Select card. This remains
+ * independent of the text witness because the text may be a nickname or only
+ * symbols while the card still contains stable species artwork.
+ */
+class PersistedPlayerTeamRosterSpriteWitness(
+    private val store: FileCropArtifactStore,
+    private val matcher: TeamSelectSpriteMatcher,
+    private val slot: Int,
+    private val cropName: String,
+) : Observer {
+    override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_VISUAL_WITNESS", ObservationSource.SCREEN_CAPTURE)
+    override val name = "Team Select Player Slot $slot Visual Witness"
+    private var scope: CoroutineScope? = null
+
+    override fun start(match: Match) {
+        if (scope != null) return
+        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
+            witnessScope.launch {
+                var surfaceAccepted = false
+                var accepted = false
+                var pending: PendingRosterSlot? = null
+                match.articles.collect { article ->
+                    if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
+                    if (article.payload is TeamSelectPartyWitnessed) {
+                        surfaceAccepted = true
+                        pending?.let { candidate ->
+                            accepted = true
+                            submitRosterCandidate(match, candidate)
+                        }
+                        return@collect
+                    }
+                    if (accepted) return@collect
+                    val crop = article.payload as? CropCaptured ?: return@collect
+                    if (crop.cropProvenance.cropName != cropName) return@collect
+                    val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                    val visualMatch = try {
+                        matcher.match(bitmap)
+                    } finally {
+                        bitmap.recycle()
+                    } ?: return@collect
+                    val species = match.pokemonKnowledge.getPokemonById(visualMatch.speciesId) ?: return@collect
+                    val candidate = PendingRosterSlot(
+                        sourceId = SourceId(observerId.id),
+                        payload = PlayerTeamRosterSlotWitnessed(slot, species.name, species.id),
+                        perceivedAt = article.perceivedAt,
+                        confidence = visualMatch.confidence,
+                        evidenceArticleIds = listOf(article.id.value),
+                        monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect,
+                    )
+                    if (surfaceAccepted) {
+                        accepted = true
+                        submitRosterCandidate(match, candidate)
+                    } else {
+                        pending = candidate
+                    }
+                }
+            }
+        }
+    }
+
+    override fun stop() {
+        scope?.cancel()
+        scope = null
+    }
+}
+
+private data class PendingRosterSlot(
+    val sourceId: SourceId,
+    val payload: PlayerTeamRosterSlotWitnessed,
+    val perceivedAt: Long,
+    val confidence: Float,
+    val evidenceArticleIds: List<String>,
+    val monotonicTimeNanos: Long,
+)
+
+private fun submitRosterCandidate(match: Match, candidate: PendingRosterSlot) {
+    match.custody.submitTestimony(
+        candidate.sourceId,
+        candidate.payload,
+        candidate.perceivedAt,
+        candidate.confidence,
+        candidate.evidenceArticleIds,
+        candidate.monotonicTimeNanos,
+    )
 }
