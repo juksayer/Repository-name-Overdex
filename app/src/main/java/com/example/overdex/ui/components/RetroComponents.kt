@@ -48,14 +48,20 @@ fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
     selectedPath: String,
     onNodeSelected: (FlattenedNode) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scrollEnabled: Boolean = true,
 ) {
     val scrollState = rememberScrollState()
+    val treeModifier = if (scrollEnabled) {
+        modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+    } else {
+        modifier.fillMaxWidth()
+    }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(scrollState),
+        modifier = treeModifier,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         visibleNodes.forEach { flattened ->
