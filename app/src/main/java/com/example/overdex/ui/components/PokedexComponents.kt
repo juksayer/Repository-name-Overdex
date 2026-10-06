@@ -164,6 +164,7 @@ fun InstrumentLCD(
     lcdLines: List<String> = emptyList(),
     lcdContent: (@Composable () -> Unit)? = null,
     keyboardController: TerminalKeyboardController? = null,
+    keyboardPrompt: String? = null,
     onKeyActivated: ((String) -> Unit)? = null,
     onDrag: ((Offset) -> Unit)? = null,
     onTap: (() -> Unit)? = null,
@@ -203,12 +204,24 @@ fun InstrumentLCD(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (keyboardController?.isVisible == true) {
+                if (keyboardPrompt != null) {
+                    Text(
+                        text = keyboardPrompt,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = TerminalGreen,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
                 TerminalKeyboard(
                     layout = keyboardController.layout,
                     currentRow = keyboardController.currentRow,
                     currentColumn = keyboardController.currentCol,
                     onKeyActivated = onKeyActivated,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.weight(1f).fillMaxWidth()
                 )
             } else if (lcdContent != null) {
                 Box(

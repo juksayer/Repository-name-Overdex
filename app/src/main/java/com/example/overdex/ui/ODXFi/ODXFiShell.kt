@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -90,7 +91,9 @@ fun InstrumentButton(
     color: Color = Color.DarkGray,
     labelColor: Color = Color.White.copy(alpha = 0.6f),
     enabled: Boolean = true,
-    iconRotationDegrees: Float = 0f
+    iconRotationDegrees: Float = 0f,
+    labelRotationDegrees: Float = 0f,
+    contentDescription: String? = label
 ) {
     Box(
         modifier = modifier
@@ -132,7 +135,7 @@ fun InstrumentButton(
         if (icon != null) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 tint = labelColor,
                 modifier = Modifier
                     .size(20.dp)
@@ -144,7 +147,8 @@ fun InstrumentButton(
                 color = labelColor,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.rotate(labelRotationDegrees)
             )
         }
     }
@@ -296,6 +300,7 @@ fun ODXFiShell(
     lcdLine2: String? = null,
     lcdLines: List<String> = emptyList(),
     lcdContent: (@Composable () -> Unit)? = null,
+    keyboardPrompt: String? = null,
     title: String? = null,
     breadcrumb: String? = null,
     keyboardController: TerminalKeyboardController? = null,
@@ -738,6 +743,7 @@ fun ODXFiShell(
                     lcdLines = lcdLines,
                     lcdContent = lcdContent,
                     keyboardController = keyboardController,
+                    keyboardPrompt = keyboardPrompt,
                     onKeyActivated = onKeyActivated,
                     onDrag = onLcdDrag,
                     onTap = onLcdTap,
@@ -753,6 +759,7 @@ fun ODXFiShell(
             ) {
                 InstrumentButton(
                     label = "A",
+                    labelRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
                         handleInput("A")
                         if (showResearcherSettings) researcherA?.invoke()
@@ -765,21 +772,35 @@ fun ODXFiShell(
                         }
                     }
                 )
-                InstrumentButton(label = "B", onClick = {
-                    handleInput("B")
-                    if (showResearcherSettings) researcherB?.invoke()
-                    else if (showSettings) settingsB?.invoke()
-                    else {
-                        val isOwner = currentRoute == owningRoute
-                        com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
-                        if (isOwner) {
-                            onB()
-                        } else {
-                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
+                InstrumentButton(
+                    label = "B",
+                    labelRotationDegrees = if (isBinderMode) 90f else 0f,
+                    onClick = {
+                        handleInput("B")
+                        if (showResearcherSettings) researcherB?.invoke()
+                        else if (showSettings) settingsB?.invoke()
+                        else {
+                            val isOwner = currentRoute == owningRoute
+                            com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
+                            if (isOwner) {
+                                onB()
+                            } else {
+                                android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
+                            }
                         }
                     }
-                })
-                InstrumentButton(label = "SELECT", onClick = { handleInput("SELECT"); onSelect() }, onLongClick = onSelectLong)
+                )
+                InstrumentButton(
+                    label = if (isBinderMode) null else "SELECT",
+                    icon = if (isBinderMode) Icons.Default.Search else null,
+                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                    contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
+                    onClick = {
+                        handleInput(if (isBinderMode) "SEARCH" else "SELECT")
+                        onSelect()
+                    },
+                    onLongClick = onSelectLong
+                )
                 InstrumentButton(
                     label = startLabel ?: when (deploymentState) {
                         InstrumentDeploymentState.OBSERVING, 

@@ -88,6 +88,15 @@ fun PokedexListScreen(
         pageIsTurning = false
     }
 
+    LaunchedEffect(searchQuery, searchRequest.type) {
+        spreadIndex = 0
+        displayedItemIndices = (0 until 18).toList()
+        leftVisibleColumns = (0..2).toSet()
+        rightVisibleColumns = (0..2).toSet()
+        pageIsTurning = false
+        nav.setIndex(0)
+    }
+
     suspend fun refreshColumn(targetSpread: Int, pageOffset: Int, column: Int) {
         if (pageOffset == 0) {
             leftVisibleColumns = leftVisibleColumns - column
@@ -224,7 +233,7 @@ fun PokedexListScreen(
                 onBack()
             }
         }
-        // Work Order — Pokédex Binder Search: SELECT is the single Search invocation mechanism
+        // The magnifying-glass hardware control owns Pokédex search.
         onSelect {
             keyboardController.open()
         }
@@ -295,49 +304,47 @@ private fun BinderSelectionDetail(
             .padding(5.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onOpenDetail(pokemon) },
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+                .height(112.dp)
+                .clickable { onOpenDetail(pokemon) }
         ) {
             Text(
                 text = pokemon.name.uppercase(),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter),
                 color = TerminalGreen,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                AsyncImage(
-                    model = pokemon.spriteUrl,
-                    contentDescription = pokemon.name,
-                    modifier = Modifier.size(48.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Text(
-                    text = "${pokemon.formattedId}  ${pokemon.genus.ifBlank { pokemon.region }}",
-                    modifier = Modifier.weight(1f),
-                    color = TerminalDimGreen,
-                    fontSize = 9.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
+            AsyncImage(
+                model = pokemon.spriteUrl,
+                contentDescription = pokemon.name,
+                modifier = Modifier
+                    .size(92.dp)
+                    .align(Alignment.Center),
+                contentScale = ContentScale.Fit
+            )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            pokemon.types.forEach { type ->
-                TypeBadge(type = type, style = TypeIconStyle.OVERDEX, modifier = Modifier.scale(0.7f))
+            Row(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                pokemon.types.forEach { type ->
+                    PokemonTypeIcon(
+                        type = type,
+                        style = TypeIconStyle.OVERDEX,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 

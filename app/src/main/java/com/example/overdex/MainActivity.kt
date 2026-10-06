@@ -410,6 +410,7 @@ fun PokedexApp(
 
 ){
     val navController = rememberNavController()
+    var openPokedexSearchOnList by remember { mutableStateOf(false) }
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
 
@@ -733,6 +734,14 @@ fun PokedexApp(
             }
             composable("list") {
                 val keyboardController = rememberTerminalKeyboardController()
+                val pokedexSearchQuery by viewModel.searchQuery.collectAsState()
+
+                LaunchedEffect(openPokedexSearchOnList) {
+                    if (openPokedexSearchOnList) {
+                        keyboardController.open()
+                        openPokedexSearchOnList = false
+                    }
+                }
 
                 var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -764,6 +773,7 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
+                    keyboardPrompt = "SEARCH: ${pokedexSearchQuery.ifBlank { "_" }}",
                     lcdContent = pokedexLcdContent,
                     isBinderMode = true
                 ) { _ ->
@@ -818,7 +828,12 @@ fun PokedexApp(
                             filterSettings = newSettings
                         },
                         onStart = { /* Reserved */ },
-                        onSelect = { /* Reserved */ },
+                        onSelect = {
+                            if (binderMode) {
+                                openPokedexSearchOnList = true
+                                navController.debugPopBackStack()
+                            }
+                        },
                         onBackClick = { navController.debugPopBackStack() },
                         onPlayCry = { url ->
                             mediaManager.playSound(url)

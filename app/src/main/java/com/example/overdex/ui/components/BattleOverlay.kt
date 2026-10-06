@@ -37,6 +37,32 @@ import com.example.overdex.data.LocalSpriteProvider
 import coil.compose.AsyncImage
 import com.example.overdex.battle.observation.OverlayMovePossibility
 import com.example.overdex.battle.observation.DroidballService
+import kotlin.math.roundToInt
+
+/** Geometry shared by the floating window and its Compose content. */
+internal object BattleHudOverlayGeometry {
+    private const val REFERENCE_WIDTH = 1080f
+    private const val REFERENCE_HEIGHT = 2400f
+    private const val OPPONENT_BADGE_LEFT = 645f
+    private const val OPPONENT_BADGE_BOTTOM = 350f
+    private const val OPPONENT_BADGE_WIDTH = 415f
+
+    // The vector's equatorial band begins at 10.5/24 of its 48dp field body.
+    // Splitting here keeps the band and center button entirely on the lower jaw.
+    const val DROIDBALL_TOP_HALF_DP = 21f
+    const val DROIDBALL_BOTTOM_BODY_DP = 27f
+    const val DROIDBALL_BUTTON_UNDERBITE_DP = 3f
+    const val DROIDBALL_BOTTOM_HALF_DP = DROIDBALL_BOTTOM_BODY_DP + DROIDBALL_BUTTON_UNDERBITE_DP
+
+    fun panelLeftPx(displayWidth: Int): Int =
+        (displayWidth * OPPONENT_BADGE_LEFT / REFERENCE_WIDTH).roundToInt()
+
+    fun panelTopPx(displayHeight: Int): Int =
+        (displayHeight * OPPONENT_BADGE_BOTTOM / REFERENCE_HEIGHT).roundToInt()
+
+    fun panelWidthPx(displayWidth: Int): Int =
+        (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
+}
 
 /**
  * Droidball's field body. Before battle it is a movable control; opening it
@@ -45,8 +71,10 @@ import com.example.overdex.battle.observation.DroidballService
  */
 @Composable
 fun BattleOverlay(
+    panelWidthPx: Int = 415,
     onDrag: (Float, Float) -> Unit = { _, _ -> },
-    onDragFinished: () -> Unit = {}
+    onDragFinished: () -> Unit = {},
+    onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> }
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -66,8 +94,12 @@ fun BattleOverlay(
     )
     LaunchedEffect(Unit) { arrived = true }
 
-    val panelIsVisible = expanded || mode == DroidballOverlayMode.BATTLE_HUD
-    val mayMove = mode != DroidballOverlayMode.BATTLE_HUD && mode != DroidballOverlayMode.RESULT
+    val anchoredToBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
+    val panelIsVisible = expanded || anchoredToBattleHud
+    val mayMove = !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
+    LaunchedEffect(anchoredToBattleHud, panelIsVisible) {
+        onLayoutStateChanged(anchoredToBattleHud, panelIsVisible)
+    }
     val interactionModifier = if (mayMove) {
         Modifier.pointerInput(Unit) {
             detectDragGestures(
@@ -87,9 +119,17 @@ fun BattleOverlay(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (panelIsVisible) {
-            DroidballHalf(top = true, displaced = true)
-            OverlayPanel(mode, diagnostics, opponentSpecies, opponentMoves, inferredPlayerTeam, playerTeamConfirmed)
-            DroidballHalf(top = false, displaced = true)
+            DroidballHalf(top = true)
+            OverlayPanel(
+                mode,
+                diagnostics,
+                opponentSpecies,
+                opponentMoves,
+                inferredPlayerTeam,
+                playerTeamConfirmed,
+                panelWidthPx
+            )
+            DroidballHalf(top = false)
         } else {
             Image(
                 painter = painterResource(R.drawable.droidball),
@@ -101,26 +141,57 @@ fun BattleOverlay(
 }
 
 @Composable
-private fun DroidballHalf(top: Boolean, displaced: Boolean) {
+private fun DroidballHalf(top: Boolean) {
+    val splitHeight = if (top) {
+        BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP.dp
+    } else {
+        BattleHudOverlayGeometry.DROIDBALL_BOTTOM_HALF_DP.dp
+    }
     Box(
         modifier = Modifier
             .width(48.dp)
-            .height(24.dp)
+            .height(splitHeight)
             .clipToBounds(),
-        contentAlignment = if (top) Alignment.BottomCenter else Alignment.TopCenter
+        contentAlignment = Alignment.TopCenter
     ) {
-        Image(
-            painter = painterResource(R.drawable.droidball),
-            contentDescription = null,
-            modifier = Modifier
-                .size(48.dp)
-                .offset(y = when {
-                    top && displaced -> (-5).dp
-                    !top && displaced -> (-19).dp
-                    top -> 0.dp
-                    else -> (-24).dp
-                })
-        )
+        if (top) {
+            Image(
+                painter = painterResource(R.drawable.droidball_top_shell),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        } else {
+            // The lower shell begins at the upper edge of the equatorial band.
+            Box(
+                modifier = Modifier
+                    .offset(y = BattleHudOverlayGeometry.DROIDBALL_BUTTON_UNDERBITE_DP.dp)
+                    .width(48.dp)
+                    .height(BattleHudOverlayGeometry.DROIDBALL_BOTTOM_BODY_DP.dp)
+                    .clipToBounds()
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.droidball),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .offset(y = (-BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP).dp)
+                )
+            }
+            // The button starts above the band, so render it independently as
+            // part of the lower shell instead of leaving its crown on the top.
+            Image(
+                painter = painterResource(R.drawable.droidball_center_button),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .offset(
+                        y = -(
+                            BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP -
+                                BattleHudOverlayGeometry.DROIDBALL_BUTTON_UNDERBITE_DP
+                            ).dp
+                    )
+            )
+        }
     }
 }
 
@@ -131,7 +202,8 @@ private fun OverlayPanel(
     opponentSpecies: List<ObservedOpponentSpecies>,
     opponentMoves: OpponentMovePossibilities?,
     inferredPlayerTeam: List<String?>,
-    playerTeamConfirmed: Boolean
+    playerTeamConfirmed: Boolean,
+    panelWidthPx: Int
 ) {
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val heading = when (mode) {
@@ -142,10 +214,8 @@ private fun OverlayPanel(
         DroidballOverlayMode.RESULT -> "RESULT OBSERVED"
         else -> "BATTLE HUD"
     }
-    // Pokémon GO's Team Info panels measure 415 source pixels wide on the
-    // calibrated 1080px capture. Resolve that physical width at runtime rather
-    // than using an arbitrary dp panel size.
-    val teamInfoWidth = with(LocalDensity.current) { 415.toDp() }
+    // Match the calibrated opponent badge exactly at every display width.
+    val teamInfoWidth = with(LocalDensity.current) { panelWidthPx.toDp() }
     val background = if (isBattleHud) Color(0xE8E0F2F1) else Color(0xE810231F)
     val foreground = if (isBattleHud) Color(0xFF004D40) else Color(0xFFD7FFF4)
     val muted = if (isBattleHud) Color(0xFF397D77) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
@@ -153,8 +223,15 @@ private fun OverlayPanel(
     Column(
         modifier = Modifier
             .width(teamInfoWidth)
-            .background(background, RoundedCornerShape(8.dp))
-            .border(1.dp, foreground.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+            .background(
+                background,
+                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+            )
+            .border(
+                1.dp,
+                foreground.copy(alpha = 0.35f),
+                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+            )
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {

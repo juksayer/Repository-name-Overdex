@@ -52,6 +52,7 @@ import com.example.overdex.model.observation.CapturedAudioFrame
 import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
+import com.example.overdex.ui.components.BattleHudOverlayGeometry
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -215,6 +216,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private lateinit var windowManager: WindowManager
     private var overlayView: ComposeView? = null
     private var overlayParams: WindowManager.LayoutParams? = null
+    private var overlayAnchoredToBattleHud = false
+    private var freeOverlayX: Int? = null
+    private var freeOverlayY: Int? = null
     
     private var mediaProjection: MediaProjection? = null
     private var imageReader: ImageReader? = null
@@ -613,6 +617,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun setupOverlay() {
+        val bounds = displayBounds()
+        val collapsedSizePx = (48f * resources.displayMetrics.density).roundToInt()
+        val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -628,21 +635,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            val displayWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                windowManager.maximumWindowMetrics.bounds.width()
-            } else {
-                resources.displayMetrics.widthPixels
-            }
-            x = (displayWidth - 60).coerceAtLeast(0)
+            x = (bounds.width() - collapsedSizePx).coerceAtLeast(0)
             y = 350
         }
+        freeOverlayX = params.x
+        freeOverlayY = params.y
         overlayParams = params
 
         overlayView = ComposeView(this).apply {
             setContent {
                 BattleOverlay(
+                    panelWidthPx = panelWidthPx,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
-                    onDragFinished = ::snapOverlayToNearestEdge
+                    onDragFinished = ::snapOverlayToNearestEdge,
+                    onLayoutStateChanged = ::updateOverlayLayoutState
                 )
             }
         }
@@ -658,27 +664,78 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun moveOverlayBy(deltaX: Float, deltaY: Float) {
+        if (overlayAnchoredToBattleHud) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
         params.x += deltaX.toInt()
         params.y += deltaY.toInt()
+        freeOverlayX = params.x
+        freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
     }
 
     private fun snapOverlayToNearestEdge() {
+        if (overlayAnchoredToBattleHud) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
-        val bounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            windowManager.maximumWindowMetrics.bounds
-        } else {
-            android.graphics.Rect(0, 0, resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)
-        }
+        val bounds = displayBounds()
         val viewWidth = view.width.coerceAtLeast(1)
         val viewHeight = view.height.coerceAtLeast(1)
         params.x = if (params.x + viewWidth / 2 < bounds.width() / 2) 0 else (bounds.width() - viewWidth).coerceAtLeast(0)
         params.y = params.y.coerceIn(0, (bounds.height() - viewHeight).coerceAtLeast(0))
+        freeOverlayX = params.x
+        freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
     }
+
+    /**
+     * Live battle presentation is attached to GO's opponent Team Info badge.
+     * Other modes retain the user's movable, edge-snapping Droidball position.
+     */
+    private fun updateOverlayLayoutState(anchoredToBattleHud: Boolean, panelVisible: Boolean) {
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val wasAnchored = overlayAnchoredToBattleHud
+        if (anchoredToBattleHud) {
+            if (!wasAnchored) {
+                freeOverlayX = params.x
+                freeOverlayY = params.y
+            }
+            overlayAnchoredToBattleHud = true
+            val bounds = displayBounds()
+            val topHalfHeightPx = (
+                BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP * resources.displayMetrics.density
+            ).roundToInt()
+            params.x = BattleHudOverlayGeometry.panelLeftPx(bounds.width())
+            params.y = (
+                BattleHudOverlayGeometry.panelTopPx(bounds.height()) - topHalfHeightPx
+            ).coerceAtLeast(0)
+            if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+            return
+        }
+
+        overlayAnchoredToBattleHud = false
+        if (wasAnchored) {
+            params.x = freeOverlayX ?: params.x
+            params.y = freeOverlayY ?: params.y
+            if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+        }
+        // Expansion changes the window width. Let Compose finish measuring it,
+        // then keep the entire movable panel inside the display.
+        if (panelVisible) view.post(::snapOverlayToNearestEdge)
+    }
+
+    private fun displayBounds(): android.graphics.Rect =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.maximumWindowMetrics.bounds
+        } else {
+            android.graphics.Rect(
+                0,
+                0,
+                resources.displayMetrics.widthPixels,
+                resources.displayMetrics.heightPixels
+            )
+        }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
