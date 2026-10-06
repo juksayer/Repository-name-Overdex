@@ -1,7 +1,9 @@
 package com.example.overdex.battle.replay
 
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
@@ -15,6 +17,7 @@ import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
+import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
@@ -35,20 +38,43 @@ class MatchReplayModelTest {
         assertEquals("GOURGEIST", model.sceneAt(15).player?.speciesName)
     }
 
-    @Test fun `completed replay reconstructs missing combatants from preserved announcements`() {
+    @Test fun `completed replay uses the player roster to reconstruct the actual announcement sequence`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
-            raw("turtonator", "Go, Turtonator!", 10),
+            timed("team-1", ArchivedPlayerTeamSlotConfigured(1, "Pikachu", 25, "", emptyList()), 1),
+            timed("team-2", ArchivedPlayerTeamSlotConfigured(2, "Camerupt", 323, "", emptyList()), 2),
+            timed("team-3", ArchivedPlayerTeamSlotConfigured(3, "Gourgeist", 711, "", emptyList()), 3),
+            raw("pikachu", "Go, Pikachu!", 10),
             raw("sneasel", "Go, Sneasel!", 20),
-            raw("camerupt", "Go, Camerupt!", 30)
+            raw("sealeo", "Go, Sealeo!", 30),
+            raw("vaporeon", "Go, Vaporeon!", 40)
         ))
-        val model = MatchReplayModel(archive, mapOf("Turtonator" to 776, "Sneasel" to 215, "Camerupt" to 323))
+        val model = MatchReplayModel(
+            archive,
+            mapOf("Pikachu" to 25, "Camerupt" to 323, "Gourgeist" to 711,
+                "Sneasel" to 215, "Sealeo" to 364, "Vaporeon" to 134)
+        )
 
         // The completed archive is buffered: later identity evidence can fill
         // the opening interval while retaining its reconstruction basis.
-        assertEquals("Turtonator", model.sceneAt(10).player?.speciesName)
+        assertEquals("Pikachu", model.sceneAt(10).player?.speciesName)
         assertEquals("Sneasel", model.sceneAt(10).opponent?.speciesName)
-        assertEquals("Camerupt", model.sceneAt(30).player?.speciesName)
+        assertEquals("Sealeo", model.sceneAt(30).opponent?.speciesName)
+        assertEquals("Vaporeon", model.sceneAt(40).opponent?.speciesName)
+        assertEquals("Pikachu", model.sceneAt(40).player?.speciesName)
         assertEquals("RECONSTRUCTED FROM ARCHIVED ANNOUNCEMENT", model.sceneAt(10).player?.identityBasis)
+    }
+
+    @Test fun `late first announcement does not become the player in replay`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("vs", ArchivedVsScreenWitnessed, 1_000_000_000L),
+            raw("late-vaporeon", "Go, Vaporeon!", 40_000_000_000L)
+        ))
+
+        val scene = MatchReplayModel(archive, mapOf("Vaporeon" to 134))
+            .sceneAt(40_000_000_000L)
+
+        assertEquals(null, scene.player)
+        assertEquals(null, scene.opponent)
     }
 
     @Test fun `replay exposes archived announcement species for reference lookup`() {
@@ -99,6 +125,48 @@ class MatchReplayModelTest {
         assertEquals("Sealeo", model.sceneAt(20).opponent?.speciesName)
         assertEquals("Camerupt", model.sceneAt(30).player?.speciesName)
         assertEquals("Vaporeon", model.sceneAt(30).opponent?.speciesName)
+    }
+
+    @Test fun `one live identity does not discard switches recovered from archived crops`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            article("accepted", "OPPONENT", "Sneasel", 215, 20)
+        ))
+        val identities = listOf(
+            ReplayIdentityObservation("OPPONENT", "Sneasel", 215, 10, "RECONSTRUCTED FROM ARCHIVED SPECIES CROP"),
+            ReplayIdentityObservation("OPPONENT", "Sealeo", 364, 30, "RECONSTRUCTED FROM ARCHIVED SPECIES CROP"),
+            ReplayIdentityObservation("OPPONENT", "Vaporeon", 134, 50, "RECONSTRUCTED FROM ARCHIVED SPECIES CROP")
+        )
+
+        val model = MatchReplayModel(archive, archivedCropIdentities = identities)
+
+        assertEquals("Sneasel", model.sceneAt(10).opponent?.speciesName)
+        assertEquals("Sneasel", model.sceneAt(20).opponent?.speciesName)
+        assertEquals("Sealeo", model.sceneAt(30).opponent?.speciesName)
+        assertEquals("Vaporeon", model.sceneAt(50).opponent?.speciesName)
+    }
+
+    @Test fun `replay grays the fainted combatant until the next entry`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            article("sneasel", "OPPONENT", "Sneasel", 215, 10),
+            timed(
+                "faint",
+                ArchivedActivePokemonFaintedWitnessed(
+                    side = "OPPONENT",
+                    speciesName = "Sneasel",
+                    speciesId = 215,
+                    basis = "OPPONENT_POKE_BALL_COUNT_DECREASE"
+                ),
+                20
+            ),
+            article("repeated-sneasel-badge", "OPPONENT", "Sneasel", 215, 25),
+            article("sealeo", "OPPONENT", "Sealeo", 364, 30)
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals(true, model.sceneAt(20).opponent?.isFainted)
+        assertEquals(true, model.sceneAt(25).opponent?.isFainted)
+        assertEquals("Sealeo", model.sceneAt(30).opponent?.speciesName)
+        assertEquals(false, model.sceneAt(30).opponent?.isFainted)
     }
 
     @Test fun `replay projects confirmed fast move type and derived generation`() {
@@ -168,6 +236,25 @@ class MatchReplayModelTest {
         assertEquals("PLAYER", action.side)
         assertEquals(null, action.moveName)
         assertEquals(setOf("QTE_VIBRATION_PATTERN"), action.evidenceKinds)
+    }
+
+    @Test fun `forward replay crosses preserved vibration pattern exactly once`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("ready", ArchivedGetReadyWitnessed, 500_000_000L),
+            timed(
+                "haptic",
+                ArchivedChargeMoveQteVibrationPatternInferred(
+                    "PLAYER", 3, 2_000_000_000L, "THREE_SHORT_DEVICE_MOTION_PULSES"
+                ),
+                1_000_000_000L
+            )
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals(1, model.hapticEventsBetween(999_000_000L, 1_000_000_000L).size)
+        assertEquals(3, model.hapticEventsBetween(999_000_000L, 1_000_000_000L).single().pulseCount)
+        assertTrue(model.hapticEventsBetween(1_000_000_000L, 1_100_000_000L).isEmpty())
+        assertTrue(model.hapticEventsBetween(1_100_000_000L, 900_000_000L).isEmpty())
     }
 
     @Test fun `identification alone and aggregate totals never invent individual attacks`() {
@@ -315,6 +402,42 @@ class MatchReplayModelTest {
         assertEquals(setOf("HP_BORDER_PULSE", "RECIPIENT_VISUAL_ARTIFACT"), actions.single().evidenceKinds)
     }
 
+    @Test fun `canonical use does not hide a later uncovered damage tick`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed(
+                "pulse",
+                ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f),
+                1_000_000_000L
+            ),
+            timed(
+                "fused",
+                ArchivedFastMoveUseObserved(
+                    useId = "fast-move-use:pulse",
+                    attackingSide = "OPPONENT",
+                    damagedSide = "PLAYER",
+                    appearanceId = "sneasel",
+                    attackerSpeciesName = "Sneasel",
+                    evidenceKinds = listOf("HP_BORDER_PULSE"),
+                    basis = "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+                ),
+                1_000_000_000L
+            ),
+            timed(
+                "later-damage",
+                ArchivedActiveHpBarDamageTickMeasured("PLAYER", 0.8f, 0.72f, 0.08f),
+                1_500_000_000L
+            )
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals(1, model.sceneAt(1_100_000_000L).fastMoveActions.size)
+        assertEquals(1, model.sceneAt(1_600_000_000L).fastMoveActions.size)
+        assertEquals(
+            setOf("HP_DAMAGE_TICK"),
+            model.sceneAt(1_600_000_000L).fastMoveActions.single().evidenceKinds
+        )
+    }
+
     @Test fun `later move identity backfills type onto earlier raw fast move observation`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             article("species", "OPPONENT", "SNEASEL", 215, 500_000_000L),
@@ -339,7 +462,7 @@ class MatchReplayModelTest {
         assertEquals(PokemonType.ICE, action.type)
     }
 
-    @Test fun `hp motion creates an attack while charge fill stages remain measurement only`() {
+    @Test fun `hp motion and charge fill each create their side's attack`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("opponent-motion", ArchivedActiveHpBarMotionCadenceMeasured("OPPONENT", 500_000_000L, 25f, 5), 1_000_000_000L),
             timed(
@@ -351,7 +474,11 @@ class MatchReplayModelTest {
         val model = MatchReplayModel(archive)
 
         assertEquals("OPPONENT", model.sceneAt(1_100_000_000L).fastMoveActions.single().side)
-        assertTrue(model.sceneAt(1_700_000_000L).fastMoveActions.isEmpty())
+        assertEquals("PLAYER", model.sceneAt(1_700_000_000L).fastMoveActions.single().side)
+        assertEquals(
+            setOf("PLAYER_CHARGE_FILL_INCREASE"),
+            model.sceneAt(1_700_000_000L).fastMoveActions.single().evidenceKinds
+        )
     }
 
     @Test fun `configured player fast move overrides a false archived charge fill conclusion`() {

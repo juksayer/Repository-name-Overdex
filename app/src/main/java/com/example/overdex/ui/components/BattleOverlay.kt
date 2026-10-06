@@ -15,7 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +53,8 @@ fun BattleOverlay(
     val diagnostics by DroidballService.captureDiagnostics.collectAsState()
     val opponentSpecies by DroidballOverlayPresentation.opponentSpecies.collectAsState()
     val opponentMoves by DroidballOverlayPresentation.activeOpponentMovePossibilities.collectAsState()
+    val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
+    val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
     var arrived by remember { mutableStateOf(false) }
     val arrivalOffset by animateDpAsState(
         targetValue = if (arrived) 0.dp else 58.dp,
@@ -83,7 +88,7 @@ fun BattleOverlay(
     ) {
         if (panelIsVisible) {
             DroidballHalf(top = true, displaced = true)
-            OverlayPanel(mode, diagnostics, opponentSpecies, opponentMoves)
+            OverlayPanel(mode, diagnostics, opponentSpecies, opponentMoves, inferredPlayerTeam, playerTeamConfirmed)
             DroidballHalf(top = false, displaced = true)
         } else {
             Image(
@@ -124,11 +129,15 @@ private fun OverlayPanel(
     mode: DroidballOverlayMode,
     diagnostics: CaptureDiagnostics,
     opponentSpecies: List<ObservedOpponentSpecies>,
-    opponentMoves: OpponentMovePossibilities?
+    opponentMoves: OpponentMovePossibilities?,
+    inferredPlayerTeam: List<String?>,
+    playerTeamConfirmed: Boolean
 ) {
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val heading = when (mode) {
-        DroidballOverlayMode.PRE_BATTLE -> "ASSISTANCE ARMED"
+        DroidballOverlayMode.PRE_BATTLE -> "NAVIGATION IDLE"
+        DroidballOverlayMode.SEEKING_TEAM_SELECT -> "SEEKING TEAM SELECT"
+        DroidballOverlayMode.TEAM_SELECT -> "TEAM SELECT ACTIVE"
         DroidballOverlayMode.CALIBRATING -> "CALIBRATION"
         DroidballOverlayMode.RESULT -> "RESULT OBSERVED"
         else -> "BATTLE HUD"
@@ -166,7 +175,9 @@ private fun OverlayPanel(
             }
         } else {
             val message = when (mode) {
-                DroidballOverlayMode.PRE_BATTLE -> "Start a Pokémon GO battle. VS opens the HUD."
+                DroidballOverlayMode.PRE_BATTLE -> "Navigate freely. Start scanning when Team Select is visible."
+                DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Looking for agreeing league, party-card, restriction, and use-party signals."
+                DroidballOverlayMode.TEAM_SELECT -> "Team Select accepted. Player roster observation is active."
                 DroidballOverlayMode.CALIBRATING -> "Adjust crop boxes in Overdex."
                 DroidballOverlayMode.RESULT -> "Outcome evidence is preserved. Tap to arm the next match."
                 else -> captureLine(diagnostics)
@@ -179,6 +190,36 @@ private fun OverlayPanel(
                 color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
             if (mode == DroidballOverlayMode.PRE_BATTLE) {
+                OverlayControl("SCAN TEAM SELECT") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
+                }
+            }
+            if (mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {
+                OverlayControl("IGNORE CURRENT SCREEN") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.IgnoreCurrentScreenRequested)
+                }
+                OverlayControl("RESTART OBSERVATION") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RestartObservationRequested)
+                }
+            }
+            if (mode == DroidballOverlayMode.TEAM_SELECT) {
+                if (inferredPlayerTeam.any { it != null }) {
+                    Text(
+                        inferredPlayerTeam.mapIndexed { index, species -> "${index + 1}. ${species ?: "?"}" }.joinToString("  "),
+                        color = foreground,
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+                if (inferredPlayerTeam.all { it != null } && !playerTeamConfirmed) {
+                    Text("IS THIS YOUR TEAM?", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OverlayControl("YES") { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ConfirmInferredPlayerTeamRequested) }
+                        OverlayControl("NO / RESCAN") { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RejectInferredPlayerTeamRequested) }
+                    }
+                } else if (playerTeamConfirmed) {
+                    Text("TEAM CONFIRMED", color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                }
                 Text(
                     text = "OPEN BATTLE HUD",
                     modifier = Modifier.clickable {
@@ -189,9 +230,35 @@ private fun OverlayPanel(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 )
+                OverlayControl("RESTART OBSERVATION") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RestartObservationRequested)
+                }
+            }
+            if (mode in setOf(
+                    DroidballOverlayMode.PRE_BATTLE,
+                    DroidballOverlayMode.SEEKING_TEAM_SELECT,
+                    DroidballOverlayMode.TEAM_SELECT,
+                    DroidballOverlayMode.CALIBRATING
+                )
+            ) {
+                OverlayControl("STOP SESSION") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.StopSessionRequested)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun OverlayControl(label: String, action: () -> Unit) {
+    Text(
+        text = label,
+        modifier = Modifier.clickable(onClick = action),
+        color = Color(0xFFD7FFF4),
+        fontSize = 9.sp,
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace
+    )
 }
 
 @Composable
@@ -213,7 +280,10 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
                     AsyncImage(
                         model = spriteUrl,
                         contentDescription = "${species.speciesName} sprite",
-                        modifier = Modifier.size(25.dp)
+                        modifier = Modifier.size(25.dp).alpha(if (species.isFainted) 0.35f else 1f),
+                        colorFilter = if (species.isFainted) {
+                            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                        } else null
                     )
                 }
                 Text(
@@ -222,6 +292,14 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
                     fontSize = 7.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
+                )
+            }
+            if (species.isFainted) {
+                Text(
+                    "×",
+                    color = Color(0xFFD32F2F),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black
                 )
             }
         }

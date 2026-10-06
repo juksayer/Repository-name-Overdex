@@ -34,6 +34,8 @@ import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.overdex.data.ScreenshotDirectoryManager
+import com.example.overdex.battle.observation.TeamSelectCalibration
+import com.example.overdex.battle.observation.TeamSelectCalibrationStore
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -62,14 +64,16 @@ fun MatchCalibrationScreen(
     onLcdTap: (() -> Unit) -> Unit = {},
     onLcdUpdate: (String?, String?) -> Unit = { _, _ -> }
 ) {
+    val context = LocalContext.current
+    val teamSelectCalibrationStore = remember(context) { TeamSelectCalibrationStore(context) }
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
+    var teamSelectCalibration by remember { mutableStateOf(teamSelectCalibrationStore.load()) }
     var selectedRegion by remember { mutableStateOf(CalibrationRegion.COUNTDOWN) }
     var mode by remember { mutableStateOf(CalibrationMode.POSITION) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
     var showLcdTouchHint by rememberSaveable { mutableStateOf(true) }
-    var savedProfile by remember { mutableStateOf(calibrationManager.hasSavedProfile()) }
-
-    val context = LocalContext.current
+    var battleProfileSaved by remember { mutableStateOf(calibrationManager.hasSavedProfile()) }
+    var teamSelectProfileSaved by remember { mutableStateOf(teamSelectCalibrationStore.hasSavedProfile()) }
     val screenshotDirectory = remember(context) { ScreenshotDirectoryManager(context) }
     var userSamples by remember { mutableStateOf(screenshotDirectory.imageUris()) }
     val bundledSamples = remember {
@@ -117,6 +121,16 @@ fun MatchCalibrationScreen(
     val matchRegions = remember {
         listOf(
             CalibrationRegion.COUNTDOWN,
+            CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE,
+            CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT,
+            CalibrationRegion.TEAM_SELECT_RESTRICTIONS,
+            CalibrationRegion.TEAM_SELECT_USE_THIS_PARTY,
+            CalibrationRegion.TEAM_SELECT_ROSTER_1,
+            CalibrationRegion.TEAM_SELECT_ROSTER_2,
+            CalibrationRegion.TEAM_SELECT_ROSTER_3,
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_1,
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_2,
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_3,
             CalibrationRegion.VS_SCREEN,
             CalibrationRegion.ANNOUNCEMENT,
             CalibrationRegion.TRAINER_TEAM_INFO,
@@ -165,6 +179,16 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OUT_OF_BATTLE_MENU -> "Post-Match Menu Support"
             CalibrationRegion.OPPONENT_SPECIES_NAME -> "Opponent Species Name"
             CalibrationRegion.OPPONENT_POKE_BALLS -> "Opponent Poké Balls"
+            CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> "Team Select League Badge"
+            CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> "Team Select League Text"
+            CalibrationRegion.TEAM_SELECT_RESTRICTIONS -> "Team Select Restrictions"
+            CalibrationRegion.TEAM_SELECT_USE_THIS_PARTY -> "Team Select Use This Party"
+            CalibrationRegion.TEAM_SELECT_ROSTER_1 -> "Team Select Player Card 1"
+            CalibrationRegion.TEAM_SELECT_ROSTER_2 -> "Team Select Player Card 2"
+            CalibrationRegion.TEAM_SELECT_ROSTER_3 -> "Team Select Player Card 3"
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_1 -> "Team Select Player Name 1"
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_2 -> "Team Select Player Name 2"
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_3 -> "Team Select Player Name 3"
             else -> region.name
         }
     }
@@ -195,10 +219,42 @@ fun MatchCalibrationScreen(
         CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
         CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
         CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
+        CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> teamSelectCalibration.leagueBadge
+        CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> teamSelectCalibration.leagueText
+        CalibrationRegion.TEAM_SELECT_RESTRICTIONS -> teamSelectCalibration.restrictions
+        CalibrationRegion.TEAM_SELECT_USE_THIS_PARTY -> teamSelectCalibration.useThisParty
+        CalibrationRegion.TEAM_SELECT_ROSTER_1 -> teamSelectCalibration.rosterSlot1
+        CalibrationRegion.TEAM_SELECT_ROSTER_2 -> teamSelectCalibration.rosterSlot2
+        CalibrationRegion.TEAM_SELECT_ROSTER_3 -> teamSelectCalibration.rosterSlot3
+        CalibrationRegion.TEAM_SELECT_ROSTER_NAME_1 -> teamSelectCalibration.rosterName1
+        CalibrationRegion.TEAM_SELECT_ROSTER_NAME_2 -> teamSelectCalibration.rosterName2
+        CalibrationRegion.TEAM_SELECT_ROSTER_NAME_3 -> teamSelectCalibration.rosterName3
         else -> calibration.enemyNameRegion
     }
 
     fun updateCalibration(updated: AnchorRegion) {
+        val teamSelectUpdate = when (selectedRegion) {
+            CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> teamSelectCalibration.copy(leagueBadge = updated)
+            CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> teamSelectCalibration.copy(leagueText = updated)
+            CalibrationRegion.TEAM_SELECT_RESTRICTIONS -> teamSelectCalibration.copy(restrictions = updated)
+            CalibrationRegion.TEAM_SELECT_USE_THIS_PARTY -> teamSelectCalibration.copy(useThisParty = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_1 -> teamSelectCalibration.copy(rosterSlot1 = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_2 -> teamSelectCalibration.copy(rosterSlot2 = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_3 -> teamSelectCalibration.copy(rosterSlot3 = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_1 -> teamSelectCalibration.copy(rosterName1 = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_2 -> teamSelectCalibration.copy(rosterName2 = updated)
+            CalibrationRegion.TEAM_SELECT_ROSTER_NAME_3 -> teamSelectCalibration.copy(rosterName3 = updated)
+            else -> null
+        }
+        if (teamSelectUpdate != null) {
+            teamSelectCalibration = teamSelectUpdate
+            teamSelectProfileSaved = teamSelectCalibrationStore.save(
+                teamSelectUpdate,
+                publishedWidth = sourceFrameSize.width.takeIf { it > 0 } ?: 1080,
+                publishedHeight = sourceFrameSize.height.takeIf { it > 0 } ?: 2400
+            )
+            return
+        }
         calibration = when (selectedRegion) {
             CalibrationRegion.ENEMY_NAME -> calibration.copy(enemyNameRegion = updated)
             CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
@@ -227,7 +283,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.copy(opponentPokeBallsRegion = updated)
             else -> calibration
         }
-        savedProfile = calibrationManager.save(calibration)
+        battleProfileSaved = calibrationManager.save(calibration)
         if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
             calibrationManager.recordMatchOutcomeCalibration()
         }
@@ -296,6 +352,7 @@ fun MatchCalibrationScreen(
     // LCD Update
     LaunchedEffect(
         selectedRegion, mode, showLcdTouchHint, screenshotSourceName, sourceFrameSize,
+        battleProfileSaved, teamSelectProfileSaved,
         activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
     ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
@@ -305,8 +362,13 @@ fun MatchCalibrationScreen(
         val y = (activeRegion.y * sourceHeight).toInt()
         val width = (activeRegion.width * sourceWidth).toInt()
         val height = (activeRegion.height * sourceHeight).toInt()
+        val selectedProfileSaved = if (selectedRegion.name.startsWith("TEAM_SELECT_")) {
+            teamSelectProfileSaved
+        } else {
+            battleProfileSaved
+        }
         onLcdUpdate(
-            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  ${if (savedProfile) "SAVED" else "DEFAULT"}",
+            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  ${if (selectedProfileSaved) "SAVED" else "DEFAULT"}",
             "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}"
         )
     }

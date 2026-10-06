@@ -4,12 +4,14 @@ import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
@@ -120,6 +122,8 @@ class Match(
     }.asCoroutineDispatcher()
     private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
+    private val playerRosterIdBySlot = ConcurrentHashMap<Int, Int>()
+    private val openingCrySideGate = OpeningCrySideGate()
     val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
         custody.submitTestimony(SourceId("SPECIES_CHECK_COORDINATOR"), measurement,
             System.currentTimeMillis(), null, refs, System.nanoTime())
@@ -129,7 +133,9 @@ class Match(
     private var vsCueSeen = false
     private var lastEntryText: String? = null
     private var lastEntryAt = Long.MIN_VALUE
-    private val emptyHp = mutableSetOf<ActivePokemonSide>()
+    private val activeSpeciesBySide = mutableMapOf<ActivePokemonSide, String>()
+    @Volatile var observationAttemptStartedAtNanos: Long = System.nanoTime()
+        private set
 
     private fun cueSpeciesChecks(article: RealityArticle) {
         val payload = article.payload
@@ -140,29 +146,43 @@ class Match(
             if (vsCueSeen) return
             vsCueSeen = true
         }
-        if (payload is com.example.overdex.battle.custody.ActiveHpBarMeasured) {
-            if (payload.filledFraction > 0f) { emptyHp.remove(payload.side); return }
-            if (!emptyHp.add(payload.side)) return
-        }
         if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true) {
             val repeated = lastEntryText.equals(text, true) && at - lastEntryAt < 2_000_000_000L
             lastEntryText = text
             lastEntryAt = at
             if (repeated) return
         }
+        val switchedSide = (payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
+            val prior = activeSpeciesBySide.put(witnessed.side, witnessed.speciesName)
+            witnessed.side.takeIf { prior != null && !prior.equals(witnessed.speciesName, ignoreCase = true) }
+        }
         val reason = when {
             payload is VsScreenWitnessed -> "VS"
             payload is CountdownGlyphWitnessed -> "COUNTDOWN"
+            payload is MatchStarted -> "MATCH_START"
             article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true -> "ENTRY"
+            payload is ActivePokemonFaintedWitnessed -> "FAINT"
+            switchedSide != null -> "SWITCH"
             payload is com.example.overdex.battle.custody.BattleCryCandidatesMeasured &&
                 payload.cueKind != "FAST_MOVE_IMPACT" -> "CRY"
-            payload is com.example.overdex.battle.custody.ActiveHpBarMeasured && payload.filledFraction == 0f -> "EMPTY_HP"
             else -> return
         }
-        val sides = if (payload is com.example.overdex.battle.custody.ActiveHpBarMeasured)
-            listOf(payload.side) else ActivePokemonSide.entries
-        if (reason == "ENTRY") DroidballService.requestCueCenteredAudio(article.id.value,
-            com.example.overdex.battle.audio.BattleCryCueKind.SPECIES_ENTRY)
+        val sides = when {
+            payload is ActivePokemonFaintedWitnessed -> listOf(payload.side)
+            switchedSide != null -> listOf(switchedSide)
+            payload is com.example.overdex.battle.custody.BattleCryCandidatesMeasured ->
+                openingCrySideGate.sidesFor(
+                    payload.candidates.map { it.speciesId to it.similarity },
+                    playerRosterIdBySlot[1]
+                )
+            else -> ActivePokemonSide.entries
+        }
+        when (reason) {
+            "ENTRY" -> DroidballService.requestCueCenteredAudio(
+                article.id.value,
+                com.example.overdex.battle.audio.BattleCryCueKind.SPECIES_ENTRY
+            )
+        }
         sides.forEach { side -> speciesChecks.request(side, reason, article.id.value,
             article.monotonicTimeNanos ?: System.nanoTime()) }
     }
@@ -178,6 +198,20 @@ class Match(
         TeamRosterSpeciesAttributor.sideFor(speciesName, playerRosterBySlot.values)
 
     fun playerRosterSpecies(): Collection<String> = playerRosterBySlot.values.toList()
+
+    /** Clears only mutable conclusions from an abandoned pre-battle attempt. */
+    fun restartPreBattleObservationAttempt() {
+        observationAttemptStartedAtNanos = System.nanoTime()
+        speciesChecks.restartObservationAttempt()
+        playerRosterBySlot.clear()
+        playerRosterIdBySlot.clear()
+        openingCrySideGate.reset()
+        countdownCuesSeen.clear()
+        vsCueSeen = false
+        lastEntryText = null
+        lastEntryAt = Long.MIN_VALUE
+        activeSpeciesBySide.clear()
+    }
 
     /** The total number of frames processed during this Match. */
     var frameCount: Long = 0
@@ -218,9 +252,12 @@ class Match(
 
                 (testimony.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
                     playerRosterBySlot[rosterEntry.slot] = rosterEntry.speciesName
+                    rosterEntry.speciesId?.let { playerRosterIdBySlot[rosterEntry.slot] = it }
+                    DroidballOverlayPresentation.recordInferredPlayerRosterSlot(rosterEntry.slot, rosterEntry.speciesName)
                 }
                 (testimony.payload as? PlayerTeamSlotConfigured)?.let { configured ->
                     playerRosterBySlot[configured.slot] = configured.speciesName
+                    playerRosterIdBySlot[configured.slot] = configured.speciesId
                 }
 
                 val article = RealityArticle(
@@ -259,39 +296,6 @@ class Match(
                 ) {
                     _activeHpCropArticles.tryEmit(article)
                 }
-                // A preserved crop from one of the battle-transition surfaces is
-                // enough to show the HUD. Recognition may arrive later or fail,
-                // but the user must never have to open Droidball manually while
-                // Pokémon GO is already presenting battle evidence.
-                if (article.payload is com.example.overdex.battle.custody.CropCaptured &&
-                    article.sourceId.id in setOf(
-                        // Any live battle surface is enough to make Droidball visible.
-                        // Recognition remains downstream; an unreadable crop must not
-                        // conceal the field HUD from the user.
-                        "VS_SCREEN_CAPTURE",
-                        "COUNTDOWN_CROP_CAPTURE",
-                        "ANNOUNCEMENT_CROP_CAPTURE",
-                        "PLAYER_ACTIVE_SPECIES_TEXT_CAPTURE",
-                        "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
-                        "PLAYER_ACTIVE_TYPE_ICONS_CAPTURE",
-                        "OPPONENT_ACTIVE_TYPE_ICONS_CAPTURE",
-                        "PLAYER_TEAM_STATUS_CAPTURE",
-                        "OPPONENT_TEAM_STATUS_CAPTURE",
-                        "OPPONENT_POKE_BALLS_CAPTURE",
-                        "OPPONENT_SHIELDS_CAPTURE",
-                        "PLAYER_HP_EVIDENCE_CAPTURE",
-                        "OPPONENT_HP_EVIDENCE_CAPTURE",
-                        "CHARGE_MOVE_EXECUTION_CAPTURE",
-                        "PLAYER_CHARGE_MOVE_CONTROLS_CAPTURE",
-                        "PLAYER_INACTIVE_SPECIES_SPRITE_CAPTURE",
-                        "PLAYER_INACTIVE_HP_BAR_CAPTURE",
-                        "INACTIVE_MATCH_START_TIMER_CAPTURE",
-                        "SWITCH_LOCKOUT_TIMER_CAPTURE"
-                    )
-                ) {
-                    DroidballOverlayPresentation.showBattleHud()
-                    DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
-                }
                 if (article.payload is ActivePokemonSpeciesWitnessed ||
                     article.payload is ActivePokemonTypesWitnessed ||
                     article.payload is AttackIncoming ||
@@ -315,6 +319,11 @@ class Match(
                             possibleFastMoves = species?.fastMoves?.map { it.name to it.type }.orEmpty(),
                             possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty()
                         )
+                    }
+                }
+                (article.payload as? ActivePokemonFaintedWitnessed)?.let { witnessed ->
+                    if (witnessed.side == ActivePokemonSide.OPPONENT) {
+                        DroidballOverlayPresentation.markOpponentFainted(witnessed.speciesName)
                     }
                 }
                 (article.payload as? PlayerTeamSlotConfigured)
@@ -401,6 +410,8 @@ class Match(
                 if (!matchStartRecorded) {
                     interpreter.interpretMatchStart(article)?.let { derivedArticle ->
                         realityTimeline.append(derivedArticle)
+                        cueSpeciesChecks(derivedArticle)
+                        _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                         matchStartRecorded = true
                         _matchStarted.tryEmit(derivedArticle)

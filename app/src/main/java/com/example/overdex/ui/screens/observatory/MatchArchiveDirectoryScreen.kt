@@ -25,6 +25,8 @@ import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,8 +48,22 @@ fun MatchArchiveDirectoryScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    val archives = remember(archiveDirectoryManager) {
-        archiveDirectoryManager.listArchives()
+    var archives by remember(archiveDirectoryManager) {
+        mutableStateOf(archiveDirectoryManager.listArchives())
+    }
+
+    // Completed and recovered matches can arrive while this screen remains
+    // composed. Keep the directory current instead of freezing its first list.
+    LaunchedEffect(archiveDirectoryManager) {
+        while (isActive) {
+            val current = archiveDirectoryManager.listArchives()
+            if (current != archives) archives = current
+            delay(1_000L)
+        }
+    }
+
+    LaunchedEffect(archives.size) {
+        selectedIndex = selectedIndex.coerceIn(0, (archives.size - 1).coerceAtLeast(0))
     }
 
     val selectedEntry = archives.getOrNull(selectedIndex)

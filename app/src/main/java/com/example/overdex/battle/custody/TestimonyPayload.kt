@@ -16,6 +16,19 @@ import com.example.overdex.model.PokemonType
 interface TestimonyPayload
 
 /**
+ * The common vocabulary used by a Witness to report the state of its aperture.
+ *
+ * A Witness is the operator. The payload names the bounded signal it can sense
+ * and reports only whether that signal is present, absent, or unavailable.
+ * Meaning and battle-event inference remain downstream of the Timeline.
+ */
+enum class ApertureStatus { PRESENT, ABSENT, UNAVAILABLE }
+
+interface ApertureOutput : TestimonyPayload {
+    val status: ApertureStatus
+}
+
+/**
  * A simple, neutral implementation of [TestimonyPayload] used for generic data.
  */
 data class RawTestimony(val data: Any) : TestimonyPayload
@@ -29,6 +42,18 @@ data object MatchRecordStarted : TestimonyPayload
 /** Droidball's presentation opened, independently timestamped from battle state. */
 data class BattleOverlayOpened(val reason: BattleOverlayOpenReason) : TestimonyPayload
 enum class BattleOverlayOpenReason { VS_SCREEN, COUNTDOWN_GLYPH, BATTLE_WITNESS, USER_REQUEST }
+
+/** The user armed Team Select interpretation while leaving projection capture available. */
+data object TeamSelectScanStartedByUser : TestimonyPayload
+
+/** The user deliberately suspended screen interpretation without ending the field session. */
+data object ScreenIgnoredByUser : TestimonyPayload
+
+/** The user cleared incomplete interpretation state and began another pre-battle attempt. */
+data object ObservationRestartedByUser : TestimonyPayload
+
+/** The user explicitly ended the current Droidball field session. */
+data object ObservationSessionStoppedByUser : TestimonyPayload
 
 /** The central VS screen was seen in the preserved pre-battle crop. */
 data object VsScreenWitnessed : TestimonyPayload
@@ -111,8 +136,22 @@ data class ActivePokemonSpeciesWitnessed(
     val speciesId: Int? = null
 ) : TestimonyPayload
 
-/** The pre-GO Pokémon GO Team Select surface was accepted from preserved league text. */
+/** A stable opponent Poké Ball count decrease established that the active opponent fainted. */
+data class ActivePokemonFaintedWitnessed(
+    val side: ActivePokemonSide,
+    val speciesName: String? = null,
+    val speciesId: Int? = null,
+    val basis: String = "OPPONENT_POKE_BALL_COUNT_DECREASE"
+) : TestimonyPayload
+
+/** The pre-GO Pokémon GO Team Select surface was accepted from independent league signals. */
 data object TeamSelectPartyWitnessed : TestimonyPayload
+
+/** The large Team Select shield identified the battle's standard league. */
+data class TeamSelectLeagueWitnessed(
+    val league: String,
+    val basis: String = "LEAGUE_SHIELD_COLOR_PATTERN"
+) : TestimonyPayload
 
 /** One Player-selected Team Select card, preserving its left-to-right roster slot. */
 data class PlayerTeamRosterSlotWitnessed(
@@ -121,6 +160,14 @@ data class PlayerTeamRosterSlotWitnessed(
     val speciesId: Int? = null
 ) : TestimonyPayload {
     init { require(slot in 1..3) }
+}
+
+/** User response to the Team Select roster inferred from visual testimony. */
+data class PlayerTeamRosterConfirmation(
+    val confirmed: Boolean,
+    val speciesBySlot: List<String?>
+) : TestimonyPayload {
+    init { require(speciesBySlot.size == 3) }
 }
 
 /**
@@ -314,11 +361,8 @@ data class ActiveHpBarBorderCadenceMeasured(
     }
 }
 
-/**
- * One rising edge of the white-to-orange border pulse around a damaged active HP
- * bar. The article timestamp is the pulse time; this payload deliberately
- * carries no cadence or move interpretation.
- */
+/** Legacy payload retained so existing recordings remain readable. */
+@Deprecated("Use HpBarBorderPulse with an explicit aperture status.")
 data class ActiveHpBarBorderPulseObserved(
     val damagedBarSide: ActivePokemonSide,
     val peakColorDistance: Float,
@@ -329,6 +373,32 @@ data class ActiveHpBarBorderPulseObserved(
     init {
         require(peakColorDistance >= 0f)
         require(sampleCount >= 1)
+        require(peakOrangeFraction == null || peakOrangeFraction in 0f..1f)
+        require(baselineWhiteFraction == null || baselineWhiteFraction in 0f..1f)
+    }
+}
+
+/**
+ * State reported by the colored-pulse aperture around one active HP bar.
+ *
+ * [barSide] identifies the bar being inspected. It deliberately does not name
+ * a damaged side, attacker, Fast Move, or any other downstream conclusion.
+ * Pulse measurements are present only for a PRESENT transition.
+ */
+data class HpBarBorderPulse(
+    val barSide: ActivePokemonSide,
+    override val status: ApertureStatus,
+    val peakColorDistance: Float? = null,
+    val sampleCount: Int? = null,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
+) : ApertureOutput {
+    init {
+        require(status != ApertureStatus.PRESENT || (peakColorDistance != null && sampleCount != null)) {
+            "A present HP-border pulse must include its measured signal."
+        }
+        require(peakColorDistance == null || peakColorDistance >= 0f)
+        require(sampleCount == null || sampleCount >= 1)
         require(peakOrangeFraction == null || peakOrangeFraction in 0f..1f)
         require(baselineWhiteFraction == null || baselineWhiteFraction in 0f..1f)
     }

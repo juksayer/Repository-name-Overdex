@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /** Presentation-only state for the service-owned Droidball overlay. */
 enum class DroidballOverlayMode {
     PRE_BATTLE,
+    SEEKING_TEAM_SELECT,
+    TEAM_SELECT,
     CALIBRATING,
     /** The Droidball Battle HUD is open; GO has not necessarily started the Match yet. */
     BATTLE_HUD,
@@ -16,7 +18,8 @@ enum class DroidballOverlayMode {
 
 data class ObservedOpponentSpecies(
     val speciesName: String,
-    val speciesId: Int?
+    val speciesId: Int?,
+    val isFainted: Boolean = false
 )
 
 data class OpponentMovePossibilities(
@@ -44,6 +47,10 @@ object DroidballOverlayPresentation {
     private val _opponentSpecies = MutableStateFlow<List<ObservedOpponentSpecies>>(emptyList())
     /** First-seen opponent identities for the three HUD cells. */
     val opponentSpecies = _opponentSpecies.asStateFlow()
+    private val _inferredPlayerTeam = MutableStateFlow<List<String?>>(List(3) { null })
+    val inferredPlayerTeam = _inferredPlayerTeam.asStateFlow()
+    private val _playerTeamConfirmed = MutableStateFlow(false)
+    val playerTeamConfirmed = _playerTeamConfirmed.asStateFlow()
     private val _activeOpponentMovePossibilities = MutableStateFlow<OpponentMovePossibilities?>(null)
     val activeOpponentMovePossibilities = _activeOpponentMovePossibilities.asStateFlow()
     private var activePlayerTypes: List<PokemonType> = emptyList()
@@ -53,15 +60,13 @@ object DroidballOverlayPresentation {
     private var identifiedOpponentFastMove: String? = null
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
-        // Session state is delivered asynchronously.  An initial ARMED emission can
+        // Session state is delivered asynchronously. A prebattle emission can
         // arrive after VS/countdown has already opened the HUD; it must not erase
         // the field presentation that the accepted witness just requested.
         _mode.value = when (phase) {
-            DroidballSessionPhase.ARMED -> if (_mode.value == DroidballOverlayMode.BATTLE_HUD) {
-                DroidballOverlayMode.BATTLE_HUD
-            } else {
-                DroidballOverlayMode.PRE_BATTLE
-            }
+            DroidballSessionPhase.NAVIGATION_IDLE -> preserveBattleHudOr(DroidballOverlayMode.PRE_BATTLE)
+            DroidballSessionPhase.SEEKING_TEAM_SELECT -> preserveBattleHudOr(DroidballOverlayMode.SEEKING_TEAM_SELECT)
+            DroidballSessionPhase.TEAM_SELECT_ACTIVE -> preserveBattleHudOr(DroidballOverlayMode.TEAM_SELECT)
             DroidballSessionPhase.CALIBRATING -> if (_mode.value == DroidballOverlayMode.BATTLE_HUD) {
                 DroidballOverlayMode.BATTLE_HUD
             } else {
@@ -77,6 +82,9 @@ object DroidballOverlayPresentation {
             phase == DroidballSessionPhase.RESULT
         ) _expanded.value = true
     }
+
+    private fun preserveBattleHudOr(requested: DroidballOverlayMode): DroidballOverlayMode =
+        if (_mode.value == DroidballOverlayMode.BATTLE_HUD) DroidballOverlayMode.BATTLE_HUD else requested
 
     /** Opens the field HUD as soon as VS is witnessed, independent of GO. */
     fun showBattleHud() {
@@ -96,6 +104,19 @@ object DroidballOverlayPresentation {
         identifiedOpponentFastMove = null
     }
 
+    fun recordInferredPlayerRosterSlot(slot: Int, speciesName: String) {
+        if (slot !in 1..3) return
+        _inferredPlayerTeam.value = _inferredPlayerTeam.value.toMutableList().also { it[slot - 1] = speciesName }
+        _playerTeamConfirmed.value = false
+    }
+
+    fun confirmInferredPlayerTeam() { _playerTeamConfirmed.value = true }
+
+    fun clearInferredPlayerTeam() {
+        _inferredPlayerTeam.value = List(3) { null }
+        _playerTeamConfirmed.value = false
+    }
+
     fun setActivePlayerTypes(types: List<PokemonType>) {
         activePlayerTypes = types
         publishMovePossibilities()
@@ -109,12 +130,32 @@ object DroidballOverlayPresentation {
     ) {
         if (_opponentSpecies.value.none { it.speciesName == speciesName } && _opponentSpecies.value.size < 3) {
             _opponentSpecies.value += ObservedOpponentSpecies(speciesName, speciesId)
+        } else {
+            _opponentSpecies.value = _opponentSpecies.value.map { observed ->
+                if (observed.speciesName.equals(speciesName, ignoreCase = true)) {
+                    // Pokémon GO can leave the same badge readable after a
+                    // faint. Repeated identity evidence must not revive it.
+                    observed.copy(speciesId = speciesId ?: observed.speciesId)
+                } else observed
+            }
         }
         if (activeOpponentSpeciesName != speciesName) identifiedOpponentFastMove = null
         activeOpponentSpeciesName = speciesName
         activeOpponentFastMoves = possibleFastMoves
         activeOpponentChargedMoves = possibleChargedMoves
         publishMovePossibilities()
+    }
+
+    fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName) {
+        val target = speciesName ?: return
+        _opponentSpecies.value = _opponentSpecies.value.map { observed ->
+            if (observed.speciesName.equals(target, ignoreCase = true)) {
+                observed.copy(isFainted = true)
+            } else observed
+        }
+        if (activeOpponentSpeciesName.equals(target, ignoreCase = true)) {
+            _activeOpponentMovePossibilities.value = null
+        }
     }
 
     /** Replace the opponent's candidate fast moves after cadence identifies one. */
@@ -155,5 +196,6 @@ object DroidballOverlayPresentation {
         _mode.value = DroidballOverlayMode.PRE_BATTLE
         _expanded.value = false
         clearOpponentSpecies()
+        clearInferredPlayerTeam()
     }
 }

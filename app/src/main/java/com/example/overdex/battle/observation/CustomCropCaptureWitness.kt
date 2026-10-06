@@ -23,6 +23,7 @@ class CustomCropCaptureWitness(
     override val name: String
 ) : Observer {
     private var scope: CoroutineScope? = null
+    private var lastCaptureNanos = Long.MIN_VALUE
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -31,6 +32,9 @@ class CustomCropCaptureWitness(
             witnessScope.launch {
                 input.supplyFrames { frame ->
                     if (!definition.enabled || !isEnabled()) return@supplyFrames
+                    if (frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS) {
+                        return@supplyFrames
+                    }
                     val resolved = BattleCropResolver.resolve(
                         cropName = "Custom:${definition.id}:${definition.name}",
                         region = definition.region,
@@ -38,12 +42,7 @@ class CustomCropCaptureWitness(
                         minimumSize = 8
                     ) ?: return@supplyFrames
                     try {
-                        val artifact = artifactStore.preserveFrameCrop(
-                            frameMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos,
-                            bitmap = resolved.bitmap,
-                            provenance = resolved.provenance,
-                            sourceFrame = frame.bitmap
-                        ) ?: return@supplyFrames
+                        val artifact = artifactStore.preservePng(resolved.bitmap) ?: return@supplyFrames
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = CropCaptured(artifact, resolved.provenance),
@@ -52,6 +51,7 @@ class CustomCropCaptureWitness(
                             evidenceReferences = emptyList(),
                             monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                         )
+                        lastCaptureNanos = frame.capturedAtMonotonicTimeNanos
                     } catch (error: Exception) {
                         Log.e("CustomCropCapture", "Unable to preserve ${definition.name}", error)
                     } finally {
@@ -63,4 +63,8 @@ class CustomCropCaptureWitness(
     }
 
     override fun stop() { scope?.cancel("Custom crop stopped"); scope = null }
+
+    private companion object {
+        const val CAPTURE_INTERVAL_NANOS = 200_000_000L
+    }
 }

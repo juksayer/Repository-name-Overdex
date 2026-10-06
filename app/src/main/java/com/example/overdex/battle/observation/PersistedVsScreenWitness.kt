@@ -10,6 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 /**
@@ -30,12 +32,17 @@ class PersistedVsScreenWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 var accepted = false
-                match.articles.collect { article ->
-                    if (accepted) return@collect
-                    val crop = article.payload as? CropCaptured ?: return@collect
-                    if (crop.cropProvenance.cropName != BattleCropContracts.vsScreen.cropName) {
-                        return@collect
+                match.articles
+                    .filter { article ->
+                        (article.payload as? CropCaptured)?.cropProvenance?.cropName ==
+                            BattleCropContracts.vsScreen.cropName
                     }
+                    // The VS surface lasts long enough for the newest durable
+                    // crop to replace stale frames while the shared OCR model is busy.
+                    .conflate()
+                    .collect { article ->
+                    if (accepted) return@collect
+                    val crop = article.payload as CropCaptured
                     val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     val isVsScreen = try {
                         // This crop contains the central VS token. A substring match can

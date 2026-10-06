@@ -56,4 +56,18 @@ class ObservationDispatcher {
         }
         activeMatch = null
     }
+
+    /** Restarts one bounded witness group without replacing its owning Match. */
+    fun restartWhere(match: Match, predicate: (Observer) -> Boolean) {
+        observers.filter(predicate).forEach { observer ->
+            observer.stop()
+            if (!observer.managesAvailability) match.custody.submitAvailability(
+                sourceId = SourceId(observer.observerId.id), available = false, timestamp = System.currentTimeMillis()
+            )
+            observer.start(match)
+            if (!observer.managesAvailability) match.custody.submitAvailability(
+                sourceId = SourceId(observer.observerId.id), available = true, timestamp = System.currentTimeMillis()
+            )
+        }
+    }
 }

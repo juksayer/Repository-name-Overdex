@@ -29,6 +29,11 @@ data object ArchivedMatchRecordStarted : ArchivedTestimonyPayload
 @SerialName("battle_overlay_opened")
 data class ArchivedBattleOverlayOpened(val reason: String) : ArchivedTestimonyPayload
 
+@Serializable @SerialName("team_select_scan_started_by_user") data object ArchivedTeamSelectScanStartedByUser : ArchivedTestimonyPayload
+@Serializable @SerialName("screen_ignored_by_user") data object ArchivedScreenIgnoredByUser : ArchivedTestimonyPayload
+@Serializable @SerialName("observation_restarted_by_user") data object ArchivedObservationRestartedByUser : ArchivedTestimonyPayload
+@Serializable @SerialName("observation_session_stopped_by_user") data object ArchivedObservationSessionStoppedByUser : ArchivedTestimonyPayload
+
 @Serializable
 @SerialName("vs_screen_witnessed")
 data object ArchivedVsScreenWitnessed : ArchivedTestimonyPayload
@@ -51,8 +56,19 @@ data class ArchivedActivePokemonSpeciesWitnessed(
     val speciesId: Int? = null
 ) : ArchivedTestimonyPayload
 
+@Serializable
+@SerialName("active_pokemon_fainted_witnessed")
+data class ArchivedActivePokemonFaintedWitnessed(
+    val side: String,
+    val speciesName: String? = null,
+    val speciesId: Int? = null,
+    val basis: String
+) : ArchivedTestimonyPayload
+
 @Serializable @SerialName("team_select_party") data object ArchivedTeamSelectPartyWitnessed : ArchivedTestimonyPayload
+@Serializable @SerialName("team_select_league") data class ArchivedTeamSelectLeagueWitnessed(val league: String, val basis: String) : ArchivedTestimonyPayload
 @Serializable @SerialName("player_team_roster_slot") data class ArchivedPlayerTeamRosterSlotWitnessed(val slot: Int, val speciesName: String, val speciesId: Int? = null) : ArchivedTestimonyPayload
+@Serializable @SerialName("player_team_roster_confirmation") data class ArchivedPlayerTeamRosterConfirmation(val confirmed: Boolean, val speciesBySlot: List<String?>) : ArchivedTestimonyPayload
 @Serializable
 @SerialName("player_team_slot_configured")
 data class ArchivedPlayerTeamSlotConfigured(
@@ -232,6 +248,17 @@ data class ArchivedActiveHpBarBorderPulseObserved(
     val damagedBarSide: String,
     val peakColorDistance: Float,
     val sampleCount: Int,
+    val peakOrangeFraction: Float? = null,
+    val baselineWhiteFraction: Float? = null
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("hp_bar_border_pulse")
+data class ArchivedHpBarBorderPulse(
+    val barSide: String,
+    val status: String,
+    val peakColorDistance: Float? = null,
+    val sampleCount: Int? = null,
     val peakOrangeFraction: Float? = null,
     val baselineWhiteFraction: Float? = null
 ) : ArchivedTestimonyPayload

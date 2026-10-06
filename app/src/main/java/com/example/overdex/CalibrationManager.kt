@@ -394,10 +394,15 @@ class CalibrationManager(context: Context) {
         // the player species strip. Upgrade that exact shipped default only;
         // a user's Draggy Box position always wins.
         val oldPlayerSpeciesNameDefault = persistedPlayerSpeciesNameRegion?.let { region ->
-            kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
+            val typeIconDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
                 kotlin.math.abs(region.width - (320f - 20f) / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
+            val formerBadgeDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (293f - 20f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (297f - 237f) / 2400f) < 0.0001f
+            typeIconDefault || formerBadgeDefault
         } == true
         val playerSpeciesNameRegion = if (oldPlayerSpeciesNameDefault) {
             BattleCalibration().playerSpeciesNameRegion
@@ -430,7 +435,11 @@ class CalibrationManager(context: Context) {
                 kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
                 kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
                 kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
-            clippedOld || pokeBallRowDefault || typeIconRowDefault
+            val formerBadgeDefault = kotlin.math.abs(region.x - 780f / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
+                kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
+                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
+            clippedOld || pokeBallRowDefault || typeIconRowDefault || formerBadgeDefault
         } == true
         val opponentSpeciesNameRegion = if (oldOpponentSpeciesNameDefault) {
             BattleCalibration().opponentSpeciesNameRegion

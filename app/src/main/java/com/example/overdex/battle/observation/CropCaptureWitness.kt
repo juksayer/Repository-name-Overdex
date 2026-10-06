@@ -35,12 +35,12 @@ class CropCaptureWitness(
     /** The narrow identity strips use I/O so capture pressure cannot starve them. */
     private val captureDispatcher: CoroutineDispatcher = Dispatchers.Default,
     /**
-     * Stable, high-value crops can persist the complete published frame so many
-     * witnesses share one forensic image. Narrow latency-critical OCR strips
-     * persist their own small PNG: encoding a full screen must never delay the
-     * species name that opens the battle model.
+     * Stable, high-value crops may persist the complete published frame as a
+     * sparse forensic sample. Frequent recognizers persist only their measured
+     * region: repeatedly encoding a full screen must never delay the live
+     * Timeline or make Android reclaim the activity.
      */
-    private val preserveCompleteFrame: Boolean = true,
+    private val preserveCompleteFrame: Boolean = false,
     /** Optional post-custody delivery. The artifact and CropCaptured record already exist. */
     private val onCaptured: ((CropCaptured, Long, Long) -> Unit)? = null
 ) : Observer {

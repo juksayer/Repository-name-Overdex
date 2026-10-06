@@ -121,6 +121,14 @@ class MainActivity : ComponentActivity() {
     private lateinit var archiveDirectoryManager: ArchiveDirectoryManager
     private var selectedRegion = CalibrationRegion.NONE
 
+    /** One battle owner survives MainActivity reclamation while Droidball remains deployed. */
+    private val pokedexViewModel: PokedexViewModel by lazy {
+        ViewModelProvider(
+            application as OverdexApplication,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[PokedexViewModel::class.java]
+    }
+
     /**
      * The initial capability pass is deliberately optional. Declining a sensor leaves the
      * instrument usable and only disables the witnesses that require that sensor.
@@ -143,12 +151,11 @@ class MainActivity : ComponentActivity() {
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val viewModel = ViewModelProvider(this)[PokedexViewModel::class.java]
         if (result.resultCode == RESULT_OK && result.data != null) {
-            viewModel.deployInstrument(result.resultCode, result.data!!)
+            pokedexViewModel.deployInstrument(result.resultCode, result.data!!)
             launchPokemonGo()
         } else {
-            viewModel.stopObservation()
+            pokedexViewModel.stopObservation()
         }
     }
 
@@ -248,6 +255,7 @@ class MainActivity : ComponentActivity() {
             OverdexTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding: PaddingValues ->
                     PokedexApp(
+                        viewModel = pokedexViewModel,
                         mediaManager = mediaManager,
                         calibrationManager = calibrationManager,
                         trainerRepository = trainerRepository,
@@ -295,8 +303,7 @@ class MainActivity : ComponentActivity() {
                                     mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
                                 }.onFailure { error ->
                                     Log.e("DROIDBALL_LAUNCH", "Unable to open screen-share prompt", error)
-                                    ViewModelProvider(this@MainActivity)[PokedexViewModel::class.java]
-                                        .stopObservation()
+                                    pokedexViewModel.stopObservation()
                                     Toast.makeText(
                                         this@MainActivity,
                                         "Unable to open screen sharing. Please try START again.",
@@ -382,6 +389,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun PokedexApp(
+    viewModel: PokedexViewModel,
     modifier: Modifier = Modifier,
     mediaManager: MediaManager,
     calibrationManager: CalibrationManager,
@@ -402,13 +410,13 @@ fun PokedexApp(
 
 ){
     val navController = rememberNavController()
-    val viewModel: PokedexViewModel = viewModel()
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
 
     val treeState by viewModel.treeState.collectAsState()
     val deploymentState by viewModel.deploymentState.collectAsState()
     val frameCount by viewModel.frameCount.collectAsState()
+    val interruptedObservationNotice by viewModel.interruptedObservationNotice.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -480,6 +488,20 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     showBattleOverlay = false,
+                    lcdLines = interruptedObservationNotice?.let { notice ->
+                        buildList {
+                            add("OBSERVATION INTERRUPTED")
+                            if (notice.recoveredMatchCount > 0) {
+                                val suffix = if (notice.recoveredMatchCount == 1) "" else "ES"
+                                add("${notice.recoveredMatchCount} MATCH$suffix RECOVERED")
+                            }
+                            if (notice.preservedCheckpointCount > 0) {
+                                val suffix = if (notice.preservedCheckpointCount == 1) "" else "S"
+                                add("${notice.preservedCheckpointCount} CHECKPOINT$suffix PRESERVED")
+                            }
+                            add("[START] NEW SESSION")
+                        }
+                    } ?: emptyList(),
 
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },

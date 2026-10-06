@@ -8,8 +8,14 @@ class DroidballOverlayPresentationTest {
     @Test
     fun `maps session phases to their matching overlay layouts`() {
         DroidballOverlayPresentation.reset()
-        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.ARMED)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.NAVIGATION_IDLE)
         assertEquals(DroidballOverlayMode.PRE_BATTLE, DroidballOverlayPresentation.mode.value)
+
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.SEEKING_TEAM_SELECT)
+        assertEquals(DroidballOverlayMode.SEEKING_TEAM_SELECT, DroidballOverlayPresentation.mode.value)
+
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
+        assertEquals(DroidballOverlayMode.TEAM_SELECT, DroidballOverlayPresentation.mode.value)
 
         DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.COUNTDOWN)
         assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
@@ -22,11 +28,13 @@ class DroidballOverlayPresentationTest {
     }
 
     @Test
-    fun `stale armed phase cannot close a HUD opened by battle evidence`() {
+    fun `stale prebattle phases cannot close a HUD opened by battle evidence`() {
         DroidballOverlayPresentation.reset()
         DroidballOverlayPresentation.showBattleHud()
 
-        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.ARMED)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.NAVIGATION_IDLE)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.SEEKING_TEAM_SELECT)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
 
         assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
     }
@@ -42,5 +50,17 @@ class DroidballOverlayPresentationTest {
         )
 
         assertEquals(listOf(ObservedOpponentSpecies("Turtonator", 776)), DroidballOverlayPresentation.opponentSpecies.value)
+    }
+
+    @Test
+    fun `marks the active opponent sprite fainted despite repeated identity evidence`() {
+        DroidballOverlayPresentation.clearOpponentSpecies()
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), emptyList())
+
+        DroidballOverlayPresentation.markOpponentFainted()
+
+        assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.single().isFainted)
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), emptyList())
+        assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.single().isFainted)
     }
 }

@@ -1,5 +1,10 @@
 package com.example.overdex.ui.screens.observatory
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.rememberScrollState
@@ -18,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.Composable
@@ -34,7 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
@@ -120,9 +130,13 @@ fun MatchReplayScreen(
     val duration = (model.endNanos - model.startNanos).coerceAtLeast(1L)
     val context = LocalContext.current
     val transportSounds = remember { ReplayTransportSounds(context) }
+    val replayHaptics = remember { ReplayHaptics(context) }
 
-    DisposableEffect(transportSounds) {
-        onDispose { transportSounds.release() }
+    DisposableEffect(transportSounds, replayHaptics) {
+        onDispose {
+            transportSounds.release()
+            replayHaptics.release()
+        }
     }
 
     SideEffect {
@@ -197,6 +211,9 @@ fun MatchReplayScreen(
             val previous = cursor
             cursor = (cursor + 33_000_000L).coerceAtMost(model.endNanos)
             if (model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            model.hapticEventsBetween(previous, cursor).forEach { event ->
+                replayHaptics.play(event.pulseCount)
+            }
         }
         if (playing && cursor >= model.endNanos) {
             playing = false
@@ -243,6 +260,32 @@ fun MatchReplayScreen(
     }
 }
 
+/** Replays accepted QTE vibration testimony only while the archive is playing forward. */
+private class ReplayHaptics(context: Context) {
+    private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    }
+
+    fun play(pulseCount: Int) {
+        val pulses = pulseCount.coerceIn(1, 4)
+        val timings = LongArray(pulses * 2) { index -> if (index % 2 == 0) 0L else 36L }
+        for (index in 2 until timings.size step 2) timings[index] = 54L
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator?.vibrate(VibrationEffect.createWaveform(timings, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator?.vibrate(timings, -1)
+        }
+    }
+
+    fun release() {
+        vibrator?.cancel()
+    }
+}
+
 private fun energyLedger(generated: Int, spent: Int): String =
     "E ${generated - spent} (+$generated/-$spent)"
 
@@ -250,18 +293,22 @@ private fun energyLedger(generated: Int, spent: Int): String =
 private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidth: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
     val movement = ((action.progress.coerceIn(0f, 1f) * 2f) - 1f)
     val direction = if (action.side == "PLAYER") 1f else -1f
-    val indicatorColor = action.type?.color ?: Color(0xFFFFA000)
+    val indicatorColor = action.type?.color ?: Color(0xFF88AFA0)
     Box(
         modifier = modifier
             .offset(x = travelHalfWidth * (movement * direction))
             .size(34.dp)
-            .background(indicatorColor.copy(alpha = 0.25f))
-            .border(1.dp, indicatorColor),
+            .background(indicatorColor.copy(alpha = 0.18f), CircleShape)
+            .border(1.dp, indicatorColor, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         action.type?.let { type ->
             PokemonTypeIcon(type, style = TypeIconStyle.OVERDEX, modifier = Modifier.size(26.dp))
-        } ?: Box(Modifier.size(12.dp).background(indicatorColor))
+        } ?: Box(
+            Modifier
+                .size(12.dp)
+                .border(1.dp, indicatorColor, CircleShape)
+        )
     }
 }
 
@@ -307,6 +354,7 @@ private fun ReplayCombatantSlot(
                 contentDescription = combatant.speciesName,
                 modifier = Modifier
                     .size(130.dp)
+                    .alpha(if (combatant.isFainted) 0.35f else 1f)
                     // Pokémon GO places the player's back-facing combatant
                     // lower in the field. A small downward offset aligns its
                     // head with the opponent while preserving the left/right
@@ -334,8 +382,14 @@ private fun ReplayCombatantSlot(
                             }
                             ?: 0f
                     },
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Fit,
+                colorFilter = if (combatant.isFainted) {
+                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                } else null
             )
+            if (combatant.isFainted) {
+                Text("×", color = Color(0xFFD32F2F), fontSize = 72.sp)
+            }
         }
     }
 }

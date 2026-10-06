@@ -2,6 +2,10 @@ package com.example.overdex.battle.archive
 
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.BattleOverlayOpened
+import com.example.overdex.battle.custody.TeamSelectScanStartedByUser
+import com.example.overdex.battle.custody.ScreenIgnoredByUser
+import com.example.overdex.battle.custody.ObservationRestartedByUser
+import com.example.overdex.battle.custody.ObservationSessionStoppedByUser
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.AudioCaptured
@@ -23,6 +27,7 @@ import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
@@ -36,8 +41,11 @@ import com.example.overdex.battle.custody.PlayerInactiveSpeciesSpriteFingerprint
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.ActivePokemonTypesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.TeamSelectPartyWitnessed
+import com.example.overdex.battle.custody.TeamSelectLeagueWitnessed
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
+import com.example.overdex.battle.custody.PlayerTeamRosterConfirmation
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
@@ -64,6 +72,10 @@ object RealityArticleArchiveMapper {
             }
             is MatchRecordStarted -> ArchivedMatchRecordStarted
             is BattleOverlayOpened -> ArchivedBattleOverlayOpened(p.reason.name)
+            is TeamSelectScanStartedByUser -> ArchivedTeamSelectScanStartedByUser
+            is ScreenIgnoredByUser -> ArchivedScreenIgnoredByUser
+            is ObservationRestartedByUser -> ArchivedObservationRestartedByUser
+            is ObservationSessionStoppedByUser -> ArchivedObservationSessionStoppedByUser
             is VsScreenWitnessed -> ArchivedVsScreenWitnessed
             is AttackIncoming -> ArchivedAttackIncoming
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)
@@ -72,12 +84,20 @@ object RealityArticleArchiveMapper {
                 speciesName = p.speciesName,
                 speciesId = p.speciesId
             )
+            is ActivePokemonFaintedWitnessed -> ArchivedActivePokemonFaintedWitnessed(
+                side = p.side.name,
+                speciesName = p.speciesName,
+                speciesId = p.speciesId,
+                basis = p.basis
+            )
             is com.example.overdex.battle.custody.SpeciesCheckMeasured -> ArchivedSpeciesCheckMeasured(
                 p.side.name, p.windowId, p.status, p.reason, p.triggerMonotonicNanos,
                 p.elapsedNanos, p.targetNanos, p.speciesName
             )
             is TeamSelectPartyWitnessed -> ArchivedTeamSelectPartyWitnessed
+            is TeamSelectLeagueWitnessed -> ArchivedTeamSelectLeagueWitnessed(p.league, p.basis)
             is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
+            is PlayerTeamRosterConfirmation -> ArchivedPlayerTeamRosterConfirmation(p.confirmed, p.speciesBySlot)
             is PlayerTeamSlotConfigured -> ArchivedPlayerTeamSlotConfigured(
                 p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames
             )
@@ -201,6 +221,14 @@ object RealityArticleArchiveMapper {
             )
             is ActiveHpBarBorderPulseObserved -> ArchivedActiveHpBarBorderPulseObserved(
                 damagedBarSide = p.damagedBarSide.name,
+                peakColorDistance = p.peakColorDistance,
+                sampleCount = p.sampleCount,
+                peakOrangeFraction = p.peakOrangeFraction,
+                baselineWhiteFraction = p.baselineWhiteFraction
+            )
+            is HpBarBorderPulse -> ArchivedHpBarBorderPulse(
+                barSide = p.barSide.name,
+                status = p.status.name,
                 peakColorDistance = p.peakColorDistance,
                 sampleCount = p.sampleCount,
                 peakOrangeFraction = p.peakOrangeFraction,

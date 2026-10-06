@@ -14,12 +14,12 @@ class SpeciesCropContractTest {
         assertEquals(BattleRegionId.PLAYER_SPECIES_NAME, BattleCropContracts.playerActiveSpeciesText.region)
         assertEquals(20f / 1080f, calibration.playerSpeciesNameRegion.x)
         assertEquals(237f / 2400f, calibration.playerSpeciesNameRegion.y)
-        assertEquals(273f / 1080f, calibration.playerSpeciesNameRegion.width)
-        assertEquals(60f / 2400f, calibration.playerSpeciesNameRegion.height)
+        assertEquals(272f / 1080f, calibration.playerSpeciesNameRegion.width)
+        assertEquals(48f / 2400f, calibration.playerSpeciesNameRegion.height)
         assertEquals(BattleRegionId.OPPONENT_SPECIES_NAME, BattleCropContracts.opponentActiveSpeciesText.region)
-        assertEquals(780f / 1080f, calibration.opponentSpeciesNameRegion.x)
+        assertEquals(788f / 1080f, calibration.opponentSpeciesNameRegion.x)
         assertEquals(237f / 2400f, calibration.opponentSpeciesNameRegion.y)
-        assertEquals(280f / 1080f, calibration.opponentSpeciesNameRegion.width)
+        assertEquals(272f / 1080f, calibration.opponentSpeciesNameRegion.width)
         assertEquals(48f / 2400f, calibration.opponentSpeciesNameRegion.height)
     }
 }

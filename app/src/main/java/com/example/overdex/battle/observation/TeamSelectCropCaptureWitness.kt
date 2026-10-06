@@ -23,11 +23,13 @@ class TeamSelectCropCaptureWitness(
 ) : Observer {
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
-    private var lastCaptureNanos = Long.MIN_VALUE
+    private var activeMatch: Match? = null
+    private var lastCaptureNanos = 0L
     private var enabled: Boolean? = null
 
     override fun start(match: Match) {
         if (scope != null) return
+        activeMatch = match
         val source = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope -> witnessScope.launch {
             input.supplyFrames { frame ->
@@ -36,7 +38,10 @@ class TeamSelectCropCaptureWitness(
                     match.custody.submitAvailability(source, nowEnabled, frame.capturedAtWallTimeMillis)
                     enabled = nowEnabled
                 }
-                if (!nowEnabled || frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS) return@supplyFrames
+                if (!nowEnabled ||
+                    (lastCaptureNanos > 0L &&
+                        frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS)
+                ) return@supplyFrames
                 val crop = contract.resolve(calibration, frame.bitmap) ?: return@supplyFrames
                 try {
                     val artifact = artifactStore.preserveFrameCrop(
@@ -52,6 +57,15 @@ class TeamSelectCropCaptureWitness(
         } }
     }
 
-    override fun stop() { scope?.cancel(); scope = null }
+    override fun stop() {
+        scope?.cancel()
+        scope = null
+        if (enabled == true) {
+            activeMatch?.custody?.submitAvailability(SourceId(observerId.id), false, System.currentTimeMillis())
+        }
+        activeMatch = null
+        enabled = null
+        lastCaptureNanos = 0L
+    }
     private companion object { const val CAPTURE_INTERVAL_NANOS = 1_000_000_000L }
 }

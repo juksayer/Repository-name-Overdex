@@ -17,6 +17,15 @@ class SpeciesTextResolverTest {
         assertEquals("TURTONATOR", SpeciesTextResolver.resolve("CP 1499 TURT0NATOR", setOf("TURTONATOR", "GOURGEIST")))
     }
 
+    @Test fun `repairs explicit digit letter confusions`() {
+        assertEquals("SNEASEL", SpeciesTextResolver.resolve("5NEA5EL", setOf("SNEASEL", "SEALEO")))
+        assertEquals("GARBODOR", SpeciesTextResolver.resolve("G4RB0DOR", setOf("GARBODOR", "GARDEVOIR")))
+    }
+
+    @Test fun `does not accept an arbitrary same length substitution`() {
+        assertNull(SpeciesTextResolver.resolve("SXEASEL", setOf("SNEASEL", "SEALEO")))
+    }
+
     @Test fun `does not turn unrelated text into a species`() {
         assertNull(SpeciesTextResolver.resolve("CP 1481", setOf("GOURGEIST")))
     }

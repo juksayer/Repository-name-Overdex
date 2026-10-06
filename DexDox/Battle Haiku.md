@@ -11268,15 +11268,13 @@ Steadiness outlasts urgency.
 
 Field Note
 
-Deep beneath the lake.
-Two bright embers drifted slow.
+Deep beneath the lake. 
+Two Bright embers drifted slow.
 Water guarded fire.
 
 Pokémon Proverb
 
 Even great power needs restraint.
-
-The Treasures of Ruin always felt less like villains to me and more like cautionary tales. Each one is magnificent, but each asks for humility.
 
 #1005 Roaring Moon
 

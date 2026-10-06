@@ -64,13 +64,13 @@ data class BattleCalibration(
         // the Pokéball row. Keep this purpose-specific crop out of both of the
         // neighbouring visual bands.
         x = 20f / 1080f, y = 237f / 2400f,
-        width = (293f - 20f) / 1080f, height = (297f - 237f) / 2400f
+        width = (292f - 20f) / 1080f, height = (285f - 237f) / 2400f
     ),
     // Purpose-specific crops inside the opponent badge. They are independently
     // calibrated so a text adjustment cannot disturb shield or ball evidence.
     val opponentSpeciesNameRegion: AnchorRegion = AnchorRegion(
-        x = 780f / 1080f, y = 237f / 2400f,
-        width = (1060f - 780f) / 1080f, height = (285f - 237f) / 2400f
+        x = 788f / 1080f, y = 237f / 2400f,
+        width = (1060f - 788f) / 1080f, height = (285f - 237f) / 2400f
     ),
     val opponentPokeBallsRegion: AnchorRegion = AnchorRegion(
         x = 875f / 1080f, y = 280f / 2400f,

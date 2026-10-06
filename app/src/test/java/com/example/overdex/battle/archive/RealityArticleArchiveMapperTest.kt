@@ -7,6 +7,10 @@ import com.example.overdex.battle.custody.DeviceMotionPulseMeasured
 import com.example.overdex.battle.custody.ChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchRecordStarted
+import com.example.overdex.battle.custody.TeamSelectScanStartedByUser
+import com.example.overdex.battle.custody.ScreenIgnoredByUser
+import com.example.overdex.battle.custody.ObservationRestartedByUser
+import com.example.overdex.battle.custody.ObservationSessionStoppedByUser
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
@@ -22,6 +26,8 @@ import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.ApertureStatus
+import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.FastMoveEffectiveness
@@ -103,6 +109,26 @@ class RealityArticleArchiveMapperTest {
         val article = article(id = "coverage", payload = WitnessOperating(operating = true))
 
         assertEquals(ArchivedWitnessOperating(operating = true), RealityArticleArchiveMapper.map(article).payload)
+    }
+
+    @Test
+    fun `maps field controls as typed testimony`() {
+        assertEquals(
+            ArchivedTeamSelectScanStartedByUser,
+            RealityArticleArchiveMapper.map(article(id = "scan", payload = TeamSelectScanStartedByUser)).payload
+        )
+        assertEquals(
+            ArchivedScreenIgnoredByUser,
+            RealityArticleArchiveMapper.map(article(id = "ignore", payload = ScreenIgnoredByUser)).payload
+        )
+        assertEquals(
+            ArchivedObservationRestartedByUser,
+            RealityArticleArchiveMapper.map(article(id = "restart", payload = ObservationRestartedByUser)).payload
+        )
+        assertEquals(
+            ArchivedObservationSessionStoppedByUser,
+            RealityArticleArchiveMapper.map(article(id = "stop", payload = ObservationSessionStoppedByUser)).payload
+        )
     }
 
     @Test
@@ -247,6 +273,23 @@ class RealityArticleArchiveMapperTest {
         assertEquals(
             ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.42f, 6),
             RealityArticleArchiveMapper.map(article(id = "pulse", payload = payload)).payload
+        )
+    }
+
+    @Test
+    fun `maps HP border aperture status without adding a battle conclusion`() {
+        val payload = HpBarBorderPulse(
+            barSide = ActivePokemonSide.PLAYER,
+            status = ApertureStatus.PRESENT,
+            peakColorDistance = 0.42f,
+            sampleCount = 6,
+            peakOrangeFraction = 0.31f,
+            baselineWhiteFraction = 0.78f
+        )
+
+        assertEquals(
+            ArchivedHpBarBorderPulse("PLAYER", "PRESENT", 0.42f, 6, 0.31f, 0.78f),
+            RealityArticleArchiveMapper.map(article(id = "aperture-pulse", payload = payload)).payload
         )
     }
 

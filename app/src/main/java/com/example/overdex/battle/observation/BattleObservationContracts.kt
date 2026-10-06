@@ -9,7 +9,7 @@ import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
-import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
@@ -355,12 +355,12 @@ object BattleWitnessContracts {
     val playerActiveHpBarBorderPulse = BattleWitnessContract(
         witnessId = "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
         crop = BattleCropContracts.playerHpEvidence,
-        testimonyType = ActiveHpBarBorderPulseObserved::class
+        testimonyType = HpBarBorderPulse::class
     )
     val opponentActiveHpBarBorderPulse = BattleWitnessContract(
         witnessId = "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
         crop = BattleCropContracts.opponentHpEvidence,
-        testimonyType = ActiveHpBarBorderPulseObserved::class
+        testimonyType = HpBarBorderPulse::class
     )
     val playerActiveHpBarDamageTick = BattleWitnessContract(
         witnessId = "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",

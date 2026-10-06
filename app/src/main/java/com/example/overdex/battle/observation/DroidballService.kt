@@ -77,6 +77,19 @@ data class CaptureDiagnostics(
 )
 
 /**
+ * Process-local truth for the foreground capture service.
+ *
+ * Activity and navigation state may be recreated while Pokemon GO owns the
+ * screen. Controls must read this state instead of assuming a newly-created
+ * ViewModel means Droidball is docked.
+ */
+enum class DroidballRuntimeState {
+    STOPPED,
+    STARTING,
+    ACTIVE
+}
+
+/**
  * The technical infrastructure layer for the ODX-FI.
  * 
  * DroidballService manages:
@@ -102,6 +115,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private const val CAPTURE_SCALE = 0.625f
         private const val MIN_CAPTURE_INTERVAL_NANOS = 50_000_000L // 20 fps
         @Volatile private var activeService: DroidballService? = null
+
+        private val _runtimeState = MutableStateFlow(DroidballRuntimeState.STOPPED)
+        val runtimeState = _runtimeState.asStateFlow()
+
+        fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
         
         private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 64)
         val signals = _signals.asSharedFlow()
@@ -149,14 +167,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val captureDiagnostics = _captureDiagnostics.asStateFlow()
 
         fun start(context: Context, resultCode: Int, data: Intent) {
+            _runtimeState.value = DroidballRuntimeState.STARTING
             val intent = Intent(context, DroidballService::class.java).apply {
                 putExtra("resultCode", resultCode)
                 putExtra("data", data)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (error: Throwable) {
+                _runtimeState.value = DroidballRuntimeState.STOPPED
+                throw error
             }
         }
 
@@ -228,6 +252,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun markStopped() {
         val current = _captureDiagnostics.value
         _captureDiagnostics.value = current.copy(state = "STOPPED")
+        _runtimeState.value = DroidballRuntimeState.STOPPED
+        DroidballRuntimeMarker.markStopped(this)
     }
     
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -275,6 +301,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     Log.w("DEVICE_MOTION", "Unable to start optional motion-pulse capture", error)
                 }
                 _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
+                _runtimeState.value = DroidballRuntimeState.ACTIVE
+                DroidballRuntimeMarker.markActive(this)
                 _signals.tryEmit(DroidballSignal.Started)
             }.onFailure { error ->
                 Log.e("DROIDBALL_LAUNCH", "Unable to initialize Droidball service", error)
@@ -768,6 +796,12 @@ sealed class DroidballSignal {
     data object BattleHudWitnessed : DroidballSignal()
     /** User explicitly opens the field HUD when visual recognition has not arrived yet. */
     data object OpenBattleHudRequested : DroidballSignal()
+    data object ScanTeamSelectRequested : DroidballSignal()
+    data object RestartObservationRequested : DroidballSignal()
+    data object IgnoreCurrentScreenRequested : DroidballSignal()
+    data object StopSessionRequested : DroidballSignal()
+    data object ConfirmInferredPlayerTeamRequested : DroidballSignal()
+    data object RejectInferredPlayerTeamRequested : DroidballSignal()
     data object BeginNextMatch : DroidballSignal()
     data class VisualCaptureGap(val durationNanos: Long) : DroidballSignal()
 }

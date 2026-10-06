@@ -14,6 +14,9 @@ import java.util.Date
 import java.util.Locale
 import java.io.FileOutputStream
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class ArchiveDirectoryManager(private val context: Context) {
     private val internalArchiveDirectory = File(context.filesDir, "match_archives")
@@ -28,6 +31,67 @@ class ArchiveDirectoryManager(private val context: Context) {
         val lastModified: Long,
         val byteCount: Long
     )
+
+    data class InterruptedMatchRecovery(
+        val recoveredNames: List<String>,
+        val failures: Map<String, String>
+    )
+
+    /**
+     * Makes valid checkpoints from an interrupted process visible as ordinary
+     * archives without decoding or rewriting their evidence. Invalid files are
+     * retained under their active name so recovery never destroys evidence.
+     */
+    fun recoverInterruptedMatchCheckpoints(): InterruptedMatchRecovery {
+        val checkpoints = internalArchiveDirectory.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.name.startsWith("active-") && it.name.endsWith(".odxmatch.zip") }
+            .sortedBy { it.name }
+        val recovered = mutableListOf<String>()
+        val failures = linkedMapOf<String, String>()
+
+        checkpoints.forEach { checkpoint ->
+            runCatching {
+                val archive = checkpoint.inputStream().use { input ->
+                    MatchArchivePackageReader.read(
+                        input = input,
+                        artifactPolicy = MatchArchivePackageReader.ArtifactPolicy.REFERENCES_ONLY
+                    )
+                }
+                val matchStartedAt = archive.articles.minOfOrNull { it.perceivedAt }
+                    ?: checkpoint.lastModified()
+                val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
+                    .format(Date(matchStartedAt))
+                val destination = nextRecoveredDestination(timestamp)
+                moveCheckpoint(checkpoint, destination)
+                destination
+            }.onSuccess { destination ->
+                recovered += destination.name
+            }.onFailure { error ->
+                failures[checkpoint.name] = error.message ?: error::class.java.simpleName
+            }
+        }
+        return InterruptedMatchRecovery(recovered, failures)
+    }
+
+    private fun nextRecoveredDestination(timestamp: String): File {
+        var candidate = File(internalArchiveDirectory, "${timestamp}_recovered.odxmatch.zip")
+        var counter = 1
+        while (candidate.exists()) {
+            candidate = File(internalArchiveDirectory, "${timestamp}_recovered_$counter.odxmatch.zip")
+            counter++
+        }
+        return candidate
+    }
+
+    private fun moveCheckpoint(source: File, destination: File) {
+        destination.parentFile?.mkdirs()
+        try {
+            Files.move(source.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE)
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(source.toPath(), destination.toPath())
+        }
+    }
 
     fun listArchives(): List<ArchiveEntry> {
         return internalArchiveDirectory.listFiles()

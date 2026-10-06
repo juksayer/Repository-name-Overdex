@@ -19,19 +19,53 @@ class TeamRosterSpeciesAttributorTest {
         assertEquals(null, TeamRosterSpeciesAttributor.sideFor("Turtonator", setOf("Camerupt", "Gourgeist")))
     }
 
-    @Test fun `entry order attributes both opening combatants without a configured team`() {
+    @Test fun `witnessed lead attributes player before remaining slots are known`() {
+        assertEquals(ActivePokemonSide.PLAYER, TeamRosterSpeciesAttributor.sideFor("Camerupt", setOf("Camerupt")))
+    }
+
+    @Test fun `entry order alone does not assign either opening combatant`() {
         val tracker = EntryAnnouncementSideTracker()
 
-        assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Turtonator", emptySet()).side)
-        assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Sneasel", emptySet()).side)
-        assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Camerupt", emptySet()).side)
+        assertEquals(null, tracker.attribute("Pikachu", emptySet()))
+        assertEquals(null, tracker.attribute("Sneasel", emptySet()))
     }
 
     @Test fun `known entry keeps its side when it returns`() {
         val tracker = EntryAnnouncementSideTracker()
-        tracker.attribute("Turtonator", emptySet())
-        tracker.attribute("Sneasel", emptySet())
+        tracker.attribute("Pikachu", setOf("Pikachu"))
 
-        assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Sneasel", emptySet()).side)
+        assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Pikachu", emptySet())?.side)
+    }
+
+    @Test fun `late first observed announcement is not mislabeled as player`() {
+        val tracker = EntryAnnouncementSideTracker()
+
+        assertEquals(null, tracker.attribute("Vaporeon", emptySet()))
+    }
+
+    @Test fun `complete roster still attributes a late announcement`() {
+        val tracker = EntryAnnouncementSideTracker()
+
+        assertEquals(
+            ActivePokemonSide.OPPONENT,
+            tracker.attribute("Vaporeon", roster)?.side
+        )
+    }
+
+    @Test fun `clear player lead cry routes first opening cue to player and mirror to opponent`() {
+        val gate = OpeningCrySideGate()
+        val candidates = listOf(776 to 0.84f, 91 to 0.71f)
+
+        assertEquals(listOf(ActivePokemonSide.PLAYER), gate.sidesFor(candidates, 776))
+        assertEquals(listOf(ActivePokemonSide.OPPONENT), gate.sidesFor(candidates, 776))
+    }
+
+    @Test fun `ambiguous cry continues checking both sides`() {
+        val gate = OpeningCrySideGate()
+
+        assertEquals(
+            ActivePokemonSide.entries,
+            gate.sidesFor(listOf(776 to 0.70f, 91 to 0.69f), 776)
+        )
     }
 }

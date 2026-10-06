@@ -24,7 +24,7 @@ object SpeciesNameRecognizer {
     /** Initialize ML Kit during deployment, before an entry cue starts the latency budget. */
     suspend fun warmUp() = recognitionMutex.withLock {
         if (warmed) return@withLock
-        SharedLatinTextRecognizer.warmUp()
+        PrioritySpeciesTextRecognizer.warmUp()
         warmed = true
     }
 
@@ -70,7 +70,7 @@ object SpeciesNameRecognizer {
     }
 
     private suspend fun recognize(treatment: String, prepared: Bitmap): String? = try {
-        val text = SharedLatinTextRecognizer.readText(prepared).trim()
+        val text = PrioritySpeciesTextRecognizer.readText(prepared).trim()
         Log.d(
             "SPECIES_NAME_RECOGNIZER",
             "source=${prepared.width}x${prepared.height} treatment=$treatment text=\"${text.replace("\n", "\\n")}\""

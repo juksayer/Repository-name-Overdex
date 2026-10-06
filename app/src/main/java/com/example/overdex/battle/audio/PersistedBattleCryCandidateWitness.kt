@@ -22,18 +22,20 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
     override fun start(match: Match) {
         if (scope != null) return
         val catalog = CryReferenceCatalog.load(context)
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { scope -> scope.launch {
-            var references: List<CryAcousticMatcher.PreparedReference>? = null
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { scope -> scope.launch {
+            // Build the 1,025-reference acoustic index while the player is still
+            // choosing a team. The first entry cry must not pay this cost after
+            // its short visual cue has already disappeared.
+            val references = catalog.references.distinctBy { it.sha256 }.mapNotNull { ref ->
+                catalog.openVerified(context, ref)?.let(WavPcm16::decode)?.let { CryAcousticMatcher.prepare(ref, it) }
+            }
             match.articles.collect { article ->
                 val audio = article.payload as? AudioCaptured ?: return@collect
                 if (audio.cueKind == BattleCryCueKind.FAST_MOVE_IMPACT.name) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect
                 val query = WavPcm16.decode(bytes) ?: return@collect
-                val refs = references ?: catalog.references.distinctBy { it.sha256 }.mapNotNull { ref ->
-                    catalog.openVerified(context, ref)?.let(WavPcm16::decode)?.let { CryAcousticMatcher.prepare(ref, it) }
-                }.also { references = it }
-                val candidates = CryAcousticMatcher.rankPrepared(query, refs)
+                val candidates = CryAcousticMatcher.rankPrepared(query, references)
                     .map { BattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
                 match.custody.submitTestimony(
                     SourceId(observerId.id),

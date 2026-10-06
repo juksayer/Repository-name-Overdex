@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 /** The user-initiated Droidball assistance session surrounding a possible battle. */
 class DroidballSession(val match: Match) {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val _phase = MutableStateFlow(DroidballSessionPhase.ARMED)
+    private val _phase = MutableStateFlow(DroidballSessionPhase.NAVIGATION_IDLE)
     val phase = _phase.asStateFlow()
     private val battleSurfaceConfirmation = BattleSurfaceConfirmation()
     private val _battleSurfaceEstablished = MutableStateFlow(false)
@@ -44,6 +44,11 @@ class DroidballSession(val match: Match) {
         scope.launch {
             match.articles.collect { article ->
                 when (article.payload) {
+                    is com.example.overdex.battle.custody.TeamSelectPartyWitnessed -> {
+                        if (_phase.value == DroidballSessionPhase.SEEKING_TEAM_SELECT) {
+                            _phase.value = DroidballSessionPhase.TEAM_SELECT_ACTIVE
+                        }
+                    }
                     is MatchEnded -> {
                         hasCompletedMatch = true
                         battleSurfaceConfirmation.reset()
@@ -53,7 +58,7 @@ class DroidballSession(val match: Match) {
                     is OutOfBattleMenuWitnessed -> {
                         battleSurfaceConfirmation.reset()
                         _battleSurfaceEstablished.value = false
-                        _phase.value = DroidballSessionPhase.ARMED
+                        _phase.value = DroidballSessionPhase.NAVIGATION_IDLE
                     }
                     else -> if (battleSurfaceConfirmation.observe(article.payload)) {
                         _battleSurfaceEstablished.value = true
@@ -64,13 +69,39 @@ class DroidballSession(val match: Match) {
     }
 
     fun beginCalibration() {
-        if (_phase.value == DroidballSessionPhase.ARMED) {
+        if (_phase.value in setOf(DroidballSessionPhase.NAVIGATION_IDLE, DroidballSessionPhase.SEEKING_TEAM_SELECT, DroidballSessionPhase.TEAM_SELECT_ACTIVE)) {
             _phase.value = DroidballSessionPhase.CALIBRATING
         }
     }
 
+    fun beginTeamSelectScan() {
+        if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return
+        battleSurfaceConfirmation.reset()
+        _battleSurfaceEstablished.value = false
+        _phase.value = DroidballSessionPhase.SEEKING_TEAM_SELECT
+    }
+
+    fun ignoreCurrentScreen(): Boolean {
+        if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return false
+        battleSurfaceConfirmation.reset()
+        _battleSurfaceEstablished.value = false
+        _phase.value = DroidballSessionPhase.NAVIGATION_IDLE
+        return true
+    }
+
+    /** Starts another pre-battle attempt without replacing this Match record. */
+    fun restartObservation(): Boolean {
+        if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return false
+        battleSurfaceConfirmation.reset()
+        _battleSurfaceEstablished.value = false
+        _firstLiveCombatArticle.value = null
+        match.restartPreBattleObservationAttempt()
+        _phase.value = DroidballSessionPhase.SEEKING_TEAM_SELECT
+        return true
+    }
+
     fun armCountdown() {
-        if (_phase.value == DroidballSessionPhase.ARMED || _phase.value == DroidballSessionPhase.CALIBRATING) {
+        if (_phase.value in setOf(DroidballSessionPhase.SEEKING_TEAM_SELECT, DroidballSessionPhase.TEAM_SELECT_ACTIVE, DroidballSessionPhase.CALIBRATING)) {
             _phase.value = DroidballSessionPhase.COUNTDOWN
         }
     }
@@ -100,7 +131,9 @@ class DroidballSession(val match: Match) {
 }
 
 enum class DroidballSessionPhase {
-    ARMED,
+    NAVIGATION_IDLE,
+    SEEKING_TEAM_SELECT,
+    TEAM_SELECT_ACTIVE,
     CALIBRATING,
     COUNTDOWN,
     BATTLE_ACTIVE,
