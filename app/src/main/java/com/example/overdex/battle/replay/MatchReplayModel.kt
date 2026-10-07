@@ -10,6 +10,7 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.observation.EntryAnnouncementSideTracker
 import com.example.overdex.battle.archive.ArchivedMatchEnded
+import com.example.overdex.battle.archive.ArchivedMatchStarted
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
 import com.example.overdex.battle.archive.ArchivedFastMoveEffectivenessWitnessed
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
@@ -49,6 +50,10 @@ class MatchReplayModel(
 
     val startNanos: Long = timedArticles.firstOrNull()?.monotonicTimeNanos ?: 0L
     val endNanos: Long = timedArticles.lastOrNull()?.monotonicTimeNanos ?: startNanos
+    /** The witnessed GO boundary, independent from the earlier recording start. */
+    val matchStartNanos: Long? = timedArticles
+        .firstOrNull { it.payload is ArchivedMatchStarted }
+        ?.monotonicTimeNanos
     private val configuredPlayerMembers = timedArticles
         .mapNotNull { it.payload as? ArchivedPlayerTeamSlotConfigured }
         .distinctBy { it.slot }

@@ -69,7 +69,9 @@ import com.example.overdex.ui.components.PokemonTypeIcon
 import com.example.overdex.ui.components.TypeIconStyle
 import com.example.overdex.ui.components.TerminalScreen
 import com.example.overdex.ui.theme.TerminalGreen
+import com.example.overdex.ui.theme.TerminalPurple
 import kotlin.math.sin
+import kotlin.math.pow
 import kotlinx.coroutines.delay
 
 /** A clean CRT battle stage. Replay transport and diagnostics live in the ODX-Fi LCD. */
@@ -129,6 +131,9 @@ fun MatchReplayScreen(
     var playing by remember { mutableStateOf(false) }
     val scene = model.sceneAt(cursor)
     val duration = (model.endNanos - model.startNanos).coerceAtLeast(1L)
+    val matchStartFraction = model.matchStartNanos?.let { matchStartNanos ->
+        ((matchStartNanos - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
+    }
     val context = LocalContext.current
     val transportSounds = remember { ReplayTransportSounds(context) }
     val replayHaptics = remember { ReplayHaptics(context) }
@@ -138,6 +143,10 @@ fun MatchReplayScreen(
             transportSounds.release()
             replayHaptics.release()
         }
+    }
+
+    LaunchedEffect(transportSounds) {
+        transportSounds.insert()
     }
 
     SideEffect {
@@ -162,7 +171,7 @@ fun MatchReplayScreen(
             // A complete lower-LCD-width sweep spans the complete match record.
             val deltaNanos = (duration * (delta.x / LCD_SCRUB_WIDTH_PX)).toLong()
             cursor = (cursor + deltaNanos).coerceIn(model.startNanos, model.endNanos)
-            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.scrub()
         }
     }
 
@@ -172,7 +181,7 @@ fun MatchReplayScreen(
             playing = false
             val previous = cursor
             cursor = (cursor + (duration * delta.x / scrubWidth).toLong()).coerceIn(model.startNanos, model.endNanos)
-            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.scrub()
         })
         val toggle by rememberUpdatedState<() -> Unit>({
             playing = !playing
@@ -184,9 +193,22 @@ fun MatchReplayScreen(
             .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
             MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - model.startNanos)} / ${formatReplayTime(duration)}")
-            androidx.compose.material3.LinearProgressIndicator(
-                progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp), color = TerminalGreen)
+            BoxWithConstraints(Modifier.fillMaxWidth().height(14.dp)) {
+                androidx.compose.material3.LinearProgressIndicator(
+                    progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
+                    color = TerminalGreen,
+                )
+                matchStartFraction?.let { fraction ->
+                    Box(
+                        Modifier
+                            .offset(x = (maxWidth - 3.dp) * fraction)
+                            .width(3.dp)
+                            .height(14.dp)
+                            .background(TerminalPurple)
+                    )
+                }
+            }
             androidx.compose.material3.Text(
                 "TAP ▶/Ⅱ   DRAG >>",
                 color = TerminalGreen,
@@ -421,16 +443,24 @@ private fun ReplayCombatantSlot(
                             } else {
                                 val drop = (progress - CHARGED_MOVE_RISE_FRACTION) /
                                     (1f - CHARGED_MOVE_RISE_FRACTION)
-                                // Hold near the apex for a moment, then
-                                // accelerate into the impact.
-                                -amplitudePixels * (1f - drop * drop)
+                                // Spend most of the gesture rising, then cover
+                                // the return distance immediately so landing
+                                // reads as an impact instead of a float.
+                                -amplitudePixels * (1f - drop).pow(3)
                             }
                         } ?: fastAction?.progress
                             ?.div(REPLAY_BOB_DURATION_FRACTION)
                             ?.coerceIn(0f, 1f)
                             ?.let { quickProgress ->
                                 val amplitudePixels = if (useBackSprite) 16f else 8f
-                                -amplitudePixels * sin(quickProgress * Math.PI).toFloat()
+                                if (quickProgress <= FAST_MOVE_RISE_FRACTION) {
+                                    val rise = quickProgress / FAST_MOVE_RISE_FRACTION
+                                    -amplitudePixels * sin(rise * Math.PI / 2.0).toFloat()
+                                } else {
+                                    val drop = (quickProgress - FAST_MOVE_RISE_FRACTION) /
+                                        (1f - FAST_MOVE_RISE_FRACTION)
+                                    -amplitudePixels * (1f - drop).pow(3)
+                                }
                             }
                             ?: 0f
                     },
@@ -447,4 +477,5 @@ private fun ReplayCombatantSlot(
 }
 
 private const val REPLAY_BOB_DURATION_FRACTION = 0.6f
+private const val FAST_MOVE_RISE_FRACTION = 0.72f
 private const val CHARGED_MOVE_RISE_FRACTION = 0.78f

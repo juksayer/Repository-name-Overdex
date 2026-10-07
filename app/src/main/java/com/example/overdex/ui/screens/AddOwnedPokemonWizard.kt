@@ -156,19 +156,35 @@ fun AddOwnedPokemonWizard(
         }
     }
 
-    val lcdLine1 = "REGISTRATION"
-    val lcdLine2 = when (currentStep) {
-        WizardStep.SPECIES_SEARCH -> "STEP 1: SPECIES"
-        WizardStep.FAST_MOVE_SELECTION -> "STEP 2: FAST MOVE"
-        WizardStep.CHARGED_MOVE_SELECTION -> "STEP 3: CHARGED MOVES"
-        WizardStep.CP_INPUT -> "STEP 4: CP INPUT"
-        WizardStep.ATTRIBUTES -> "STEP 5: ATTRIBUTES"
+    val lcdLines = when (currentStep) {
+        WizardStep.SPECIES_SEARCH -> listOf("REGISTRATION", "STEP 1: SPECIES")
+        WizardStep.FAST_MOVE_SELECTION -> moveSelectionLcdLines(
+            move = selectedSpecies?.fastMoves?.getOrNull(nav.selectedIndex),
+        )
+        WizardStep.CHARGED_MOVE_SELECTION -> {
+            val moves = selectedSpecies?.chargedMoves.orEmpty()
+            val highlighted = moves.getOrNull(nav.selectedIndex)
+            if (highlighted != null) {
+                moveSelectionLcdLines(
+                    move = highlighted,
+                    selected = highlighted.name in selectedChargedMoves,
+                )
+            } else {
+                listOf(
+                    "NEXT: CP INPUT",
+                    selectedSpecies?.name?.uppercase() ?: "UNKNOWN SPECIES",
+                    "FAST ${selectedFastMove ?: "---"}",
+                    "CHARGED ${selectedChargedMoves.size}/2",
+                ) + selectedChargedMoves.map(String::uppercase)
+            }
+        }
+        WizardStep.CP_INPUT -> listOf("REGISTRATION", "STEP 4: CP INPUT")
+        WizardStep.ATTRIBUTES -> listOf("REGISTRATION", "STEP 5: ATTRIBUTES")
     }
 
     ODXFiShell(
         viewModel = pokedexViewModel,
-        lcdLine1 = lcdLine1,
-        lcdLine2 = lcdLine2,
+        lcdLines = lcdLines,
         onUp = {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()

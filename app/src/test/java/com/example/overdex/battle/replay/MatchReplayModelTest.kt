@@ -19,6 +19,7 @@ import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternI
 import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
+import com.example.overdex.battle.archive.ArchivedMatchStarted
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.Move
@@ -28,6 +29,18 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchReplayModelTest {
+    @Test fun `replay exposes the witnessed match start separately from recording start`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("recording", com.example.overdex.battle.archive.ArchivedMatchRecordStarted, 1_000_000_000L),
+            timed("go", ArchivedMatchStarted, 35_000_000_000L),
+        ))
+
+        val model = MatchReplayModel(archive)
+
+        assertEquals(1_000_000_000L, model.startNanos)
+        assertEquals(35_000_000_000L, model.matchStartNanos)
+    }
+
     @Test fun `menus remain empty and countdown appears at its preserved time`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("recording", com.example.overdex.battle.archive.ArchivedMatchRecordStarted, 1_000_000_000L),

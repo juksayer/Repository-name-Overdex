@@ -16,6 +16,7 @@ import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.SpeciesCheckMeasured
 import com.example.overdex.battle.reality.ArticleId
@@ -51,11 +52,24 @@ class FastMoveUseInference {
     private val pending = EnumMap<ActivePokemonSide, PendingUse>(ActivePokemonSide::class.java)
     private var watermarkNanos = Long.MIN_VALUE
     private var suppressUntilNanos = Long.MIN_VALUE
+    private var matchStarted = false
 
     fun accept(article: RealityArticle): List<FastMoveUseDerivation> {
         val atNanos = article.monotonicTimeNanos ?: return emptyList()
         watermarkNanos = max(watermarkNanos, atNanos)
-        val output = flushExpired(watermarkNanos).toMutableList()
+
+        if (article.payload is MatchStarted) {
+            // The countdown shades the charged-move controls before GO. Those
+            // visual changes remain raw Timeline evidence, but they cannot be a
+            // completed Fast Move. Re-anchor the use stream at the GO boundary.
+            pending.clear()
+            suppressUntilNanos = Long.MIN_VALUE
+            matchStarted = true
+            return emptyList()
+        }
+
+        val output = if (matchStarted) flushExpired(watermarkNanos).toMutableList()
+        else mutableListOf()
 
         when (val payload = article.payload) {
             AttackIncoming -> {
@@ -78,8 +92,11 @@ class FastMoveUseInference {
                 return output
             }
             is MatchEnded -> {
-                pending.values.sortedBy { it.anchorNanos }.forEach { output += finalize(it) }
+                if (matchStarted) {
+                    pending.values.sortedBy { it.anchorNanos }.forEach { output += finalize(it) }
+                }
                 pending.clear()
+                matchStarted = false
                 return output
             }
             is ActivePokemonFaintedWitnessed -> {
@@ -104,6 +121,9 @@ class FastMoveUseInference {
             }
         }
 
+        // Identity testimony is useful before GO and was handled above. Combat
+        // evidence is preserved by the Timeline but may not become a use yet.
+        if (!matchStarted) return output
         if (atNanos <= suppressUntilNanos) return output
         val evidence = evidenceFrom(article) ?: return output
         val attackingSide = evidence.first

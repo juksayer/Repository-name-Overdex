@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.SourceId
@@ -55,6 +56,13 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
+                    if (article.payload is MatchStarted) {
+                        // Countdown shading is deliberately retained in the
+                        // Timeline. The first live frame after GO becomes the
+                        // new comparison baseline for actual energy gain.
+                        synchronized(stateLock) { detector.reset() }
+                        return@collect
+                    }
                     val species = article.payload as? ActivePokemonSpeciesWitnessed ?: return@collect
                     if (species.side == ActivePokemonSide.PLAYER && species.speciesName != lastSpeciesName) {
                         synchronized(stateLock) { detector.reset() }

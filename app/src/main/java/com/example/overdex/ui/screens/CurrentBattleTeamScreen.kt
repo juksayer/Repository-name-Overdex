@@ -44,7 +44,8 @@ fun CurrentBattleTeamScreen(
     viewModel: PokedexViewModel,
     filterSettings: FilterSettings,
     onFilterSettingsChange: (FilterSettings) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onReadyToLaunch: (() -> Unit)? = null,
 ) {
     val savedTeam by viewModel.currentBattleTeam.collectAsState()
     var step by remember { mutableStateOf(CurrentTeamStep.TEAM) }
@@ -63,6 +64,7 @@ fun CurrentBattleTeamScreen(
         when (step) {
             CurrentTeamStep.TEAM -> savedTeam.members.size +
                 (if (savedTeam.members.size < 3) 1 else 0) +
+                (if (savedTeam.members.size == 3 && onReadyToLaunch != null) 1 else 0) +
                 (if (savedTeam.members.isNotEmpty()) 1 else 0)
             CurrentTeamStep.SPECIES -> pokemonItems.itemCount + 1
             CurrentTeamStep.FAST_MOVE -> selectedSpecies?.fastMoves?.size ?: 0
@@ -110,6 +112,13 @@ fun CurrentBattleTeamScreen(
                 if (savedTeam.members.size < 3) {
                     if (index == actionIndex) {
                         beginMember(null)
+                        return
+                    }
+                    actionIndex++
+                }
+                if (savedTeam.members.size == 3 && onReadyToLaunch != null) {
+                    if (index == actionIndex) {
+                        onReadyToLaunch()
                         return
                     }
                     actionIndex++
@@ -163,16 +172,41 @@ fun CurrentBattleTeamScreen(
         }
     }
 
+    val lcdLines = when (step) {
+        CurrentTeamStep.TEAM -> listOf(
+            "CURRENT TEAM",
+            "${savedTeam.members.size}/3 READY",
+        )
+        CurrentTeamStep.SPECIES -> listOf(
+            "SELECT SPECIES",
+            query.ifBlank { "TYPE A NAME OR BROWSE" },
+        )
+        CurrentTeamStep.FAST_MOVE -> moveSelectionLcdLines(
+            move = selectedSpecies?.fastMoves?.getOrNull(nav.selectedIndex),
+        )
+        CurrentTeamStep.CHARGED_MOVES -> {
+            val moves = selectedSpecies?.chargedMoves.orEmpty()
+            val highlighted = moves.getOrNull(nav.selectedIndex)
+            if (highlighted != null) {
+                moveSelectionLcdLines(
+                    move = highlighted,
+                    selected = highlighted.name in selectedChargedMoves,
+                )
+            } else {
+                listOf(
+                    "ADD TO TEAM",
+                    selectedSpecies?.name?.uppercase() ?: "UNKNOWN SPECIES",
+                    "FAST ${selectedFastMove ?: "---"}",
+                    "CHARGED ${selectedChargedMoves.size}/2",
+                ) + selectedChargedMoves.map(String::uppercase)
+            }
+        }
+    }
+
     ODXFiShell(
         viewModel = viewModel,
         showBattleOverlay = false,
-        lcdLine1 = "CURRENT TEAM",
-        lcdLine2 = when (step) {
-            CurrentTeamStep.TEAM -> "${savedTeam.members.size}/3 READY"
-            CurrentTeamStep.SPECIES -> "SELECT SPECIES"
-            CurrentTeamStep.FAST_MOVE -> "SELECT FAST MOVE"
-            CurrentTeamStep.CHARGED_MOVES -> "SELECT 1-2 CHARGED"
-        },
+        lcdLines = lcdLines,
         onUp = { if (keyboard.isVisible) keyboard.handleUp() else nav.moveUp() },
         onDown = { if (keyboard.isVisible) keyboard.handleDown() else nav.moveDown() },
         onLeft = { if (keyboard.isVisible) keyboard.handleLeft() },
@@ -190,7 +224,11 @@ fun CurrentBattleTeamScreen(
         Column(Modifier.fillMaxSize()) {
             TerminalHeader("current team")
             when (step) {
-                CurrentTeamStep.TEAM -> CurrentTeamOverview(savedTeam, nav.selectedIndex)
+                CurrentTeamStep.TEAM -> CurrentTeamOverview(
+                    savedTeam,
+                    nav.selectedIndex,
+                    showLaunch = onReadyToLaunch != null,
+                )
                 CurrentTeamStep.SPECIES -> SpeciesSearchStep(query, pokemonItems, nav.selectedIndex) { }
                 CurrentTeamStep.FAST_MOVE -> MoveSelectionStep(
                     "SELECT FAST MOVE",
@@ -212,7 +250,11 @@ fun CurrentBattleTeamScreen(
 }
 
 @Composable
-private fun CurrentTeamOverview(team: CurrentBattleTeam, selectedIndex: Int) {
+private fun CurrentTeamOverview(
+    team: CurrentBattleTeam,
+    selectedIndex: Int,
+    showLaunch: Boolean = false,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -242,6 +284,10 @@ private fun CurrentTeamOverview(team: CurrentBattleTeam, selectedIndex: Int) {
         var actionIndex = team.members.size
         if (team.members.size < 3) {
             item { TerminalMenuOption("ADD POKEMON", selected = selectedIndex == actionIndex) }
+            actionIndex++
+        }
+        if (team.members.size == 3 && showLaunch) {
+            item { TerminalMenuOption("LAUNCH DROIDBALL", selected = selectedIndex == actionIndex) }
             actionIndex++
         }
         if (team.members.isNotEmpty()) {

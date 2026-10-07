@@ -84,6 +84,7 @@ import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
 import com.example.overdex.ui.screens.ChatScreen
 import com.example.overdex.ui.screens.CurrentBattleTeamScreen
+import com.example.overdex.ui.screens.DroidballReadinessScreen
 import com.example.overdex.ui.screens.EditSpecimenScreen
 import com.example.overdex.ui.screens.MatchCalibrationScreen
 import com.example.overdex.ui.screens.MainMenuPhase
@@ -435,7 +436,7 @@ fun PokedexApp(
     LaunchedEffect(Unit) {
         viewModel.pendingCommand.collect { command ->
             when (command) {
-                InstrumentCommand.LaunchDroidball -> viewModel.startObservation()
+                InstrumentCommand.LaunchDroidball -> navController.navigate("droidball_readiness")
                 InstrumentCommand.OpenSearch -> navController.navigate("list")
                 InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection")
                 InstrumentCommand.OpenCurrentTeam -> navController.navigate("current_battle_team")
@@ -510,7 +511,15 @@ fun PokedexApp(
                     onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
                     onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
                     onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
-                    onStart = { if (phase == MainMenuPhase.READY) viewModel.toggleObservation() },
+                    onStart = {
+                        if (phase == MainMenuPhase.READY) {
+                            if (deploymentState == InstrumentDeploymentState.IDLE) {
+                                navController.navigate("droidball_readiness")
+                            } else {
+                                viewModel.toggleObservation()
+                            }
+                        }
+                    },
                     onSelect = { /* Reserved */ },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
@@ -997,6 +1006,31 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("droidball_readiness") {
+                DroidballReadinessScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onLaunch = {
+                        navController.popBackStack()
+                        viewModel.startObservation()
+                    },
+                    onConfigureTeam = { navController.navigate("droidball_team_setup") },
+                    onBack = { navController.debugPopBackStack() },
+                )
+            }
+            composable("droidball_team_setup") {
+                CurrentBattleTeamScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onBack = { navController.debugPopBackStack() },
+                    onReadyToLaunch = {
+                        navController.popBackStack("main_menu", inclusive = false)
+                        viewModel.startObservation()
+                    },
                 )
             }
             composable("accessibility_probe") {

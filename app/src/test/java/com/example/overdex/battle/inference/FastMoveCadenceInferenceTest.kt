@@ -130,6 +130,97 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
+    fun `individual observed uses provide cadence when aggregate cadence is absent`() = runBlocking {
+        val iceShard = move("Ice Shard", 3, 10, PokemonType.ICE)
+        val feintAttack = move("Feint Attack", 2, 6, PokemonType.DARK)
+        val sneasel = Pokemon(
+            id = 215,
+            name = "Sneasel",
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            region = "Johto",
+            fastMoves = listOf(iceShard, feintAttack),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(sneasel))
+        engine.accept(article(
+            "species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215),
+        ))
+
+        assertTrue(engine.accept(fastUseAt("use-1", 10_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(fastUseAt("use-2", 11_450_000_000L)).isEmpty())
+        val resolved = engine.accept(fastUseAt("use-3", 12_950_000_000L))
+
+        val identified = resolved.single().payload as FastMoveIdentified
+        assertEquals("Ice Shard", identified.moveName)
+        assertEquals(2, identified.cadenceSampleCount)
+        assertTrue(identified.basis.startsWith("OBSERVED_USES_CADENCE"))
+        assertEquals(
+            setOf("species", "use-1", "use-2", "use-3"),
+            resolved.single().predecessorIds.map { it.value }.toSet(),
+        )
+    }
+
+    @Test
+    fun `observed uses before a late species identity are recovered`() = runBlocking {
+        val sneasel = Pokemon(
+            id = 215,
+            name = "Sneasel",
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            region = "Johto",
+            fastMoves = listOf(
+                move("Ice Shard", 3, 10, PokemonType.ICE),
+                move("Feint Attack", 2, 6, PokemonType.DARK),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(sneasel))
+
+        assertTrue(engine.accept(fastUseAt("early-use-1", 10_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(fastUseAt("early-use-2", 11_450_000_000L)).isEmpty())
+        assertTrue(engine.accept(fastUseAt("early-use-3", 12_950_000_000L)).isEmpty())
+
+        val resolved = engine.accept(article(
+            "late-species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215),
+        ))
+
+        val identified = resolved.single().payload as FastMoveIdentified
+        assertEquals("Ice Shard", identified.moveName)
+        assertTrue(identified.basis.startsWith("OBSERVED_USES_CADENCE"))
+        assertEquals(
+            setOf("late-species", "early-use-1", "early-use-2", "early-use-3"),
+            resolved.single().predecessorIds.map { it.value }.toSet(),
+        )
+    }
+
+    @Test
+    fun `charge fill only uses cannot invent a move cadence`() = runBlocking {
+        val sneasel = Pokemon(
+            id = 215,
+            name = "Sneasel",
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            region = "Johto",
+            fastMoves = listOf(move("Ice Shard", 3, 10, PokemonType.ICE)),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(sneasel))
+        engine.accept(article(
+            "species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215),
+        ))
+
+        repeat(4) { index ->
+            val at = 10_000_000_000L + index * 1_500_000_000L
+            assertTrue(engine.accept(fastUseAt(
+                id = "fill-$index",
+                at = at,
+                evidenceKinds = listOf("PLAYER_CHARGE_FILL_INCREASE"),
+            )).isEmpty())
+        }
+    }
+
+    @Test
     fun `noise outside identified duration does not prevent identity`() = runBlocking {
         val pokemon = Pokemon(503, "Samurott", listOf(PokemonType.WATER), "Unova",
             fastMoves = listOf(move("Fury Cutter", 1, 4), move("Waterfall", 3, 10)),
@@ -427,6 +518,22 @@ class FastMoveCadenceInferenceTest {
             evidenceKinds = listOf("HP_BORDER_PULSE")
         )
     )
+
+    private fun fastUseAt(
+        id: String,
+        at: Long,
+        evidenceKinds: List<String> = listOf("HP_DAMAGE_TICK"),
+    ) = article(
+        id,
+        FastMoveUseObserved(
+            useId = id,
+            attackingSide = ActivePokemonSide.OPPONENT,
+            damagedSide = ActivePokemonSide.PLAYER,
+            appearanceId = "appearance",
+            attackerSpeciesName = "Sneasel",
+            evidenceKinds = evidenceKinds,
+        )
+    ).copy(monotonicTimeNanos = at)
 
     private fun article(id: String, payload: com.example.overdex.battle.custody.TestimonyPayload) = RealityArticle(
         id = ArticleId(id),

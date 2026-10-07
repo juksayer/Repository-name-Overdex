@@ -12,6 +12,7 @@ import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -20,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** A durable species crop delivered immediately after Custody accepts CropCaptured. */
@@ -27,6 +29,7 @@ internal data class PreservedSpeciesCrop(
     val crop: CropCaptured,
     val bitmap: android.graphics.Bitmap,
     val cropEvidenceId: String,
+    val searchIndex: Int,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long
@@ -35,6 +38,7 @@ internal data class PreservedSpeciesCrop(
 /** A private bitmap copy made immediately while the published live frame is current. */
 private data class LiveSpeciesCrop(
     val resolved: ResolvedBattleCrop,
+    val searchIndex: Int,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long
@@ -76,6 +80,8 @@ internal class LiveOverlaySpeciesPipeline(
     private var lastRawReadings: List<String> = emptyList()
     private var lastCaptureQueuedAtNanos = 0L
     private var captureOperating: Boolean? = null
+    @Volatile private var activeSearchWindowId = Long.MIN_VALUE
+    @Volatile private var cropSearchIndex = 0
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -84,6 +90,8 @@ internal class LiveOverlaySpeciesPipeline(
         lastRawReadings = emptyList()
         lastCaptureQueuedAtNanos = 0L
         captureOperating = null
+        activeSearchWindowId = Long.MIN_VALUE
+        cropSearchIndex = 0
         val sourceId = SourceId(observerId.id)
         val rawSourceId = SourceId("${observerId.id}_OCR")
         val cropContract = when (side) {
@@ -96,6 +104,8 @@ internal class LiveOverlaySpeciesPipeline(
                 match.articles.collect { article ->
                     val check = article.payload as? SpeciesCheckMeasured ?: return@collect
                     if (check.side == side && check.status == "OPENED") {
+                        activeSearchWindowId = check.windowId
+                        cropSearchIndex = 0
                         // Permit the same species to produce a new identity article
                         // after it leaves and later returns to this side.
                         if (check.reason in setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START")) {
@@ -131,12 +141,26 @@ internal class LiveOverlaySpeciesPipeline(
                         side,
                         frame.capturedAtMonotonicTimeNanos
                     ) ?: return@supplyFrames
-                    val resolved = cropContract.crop.resolve(calibration, frame.bitmap)
+                    if (activeSearchWindowId != window.id) {
+                        activeSearchWindowId = window.id
+                        cropSearchIndex = 0
+                    }
+                    val searchIndex = cropSearchIndex
+                    val calibratedRegion = cropContract.crop.region.regionIn(calibration)
+                    val searchRegion = SpeciesCropSearchPlan.region(calibratedRegion, searchIndex)
+                    val resolved = BattleCropResolver.resolve(
+                        cropName = cropContract.crop.cropName,
+                        region = searchRegion,
+                        source = frame.bitmap,
+                        minimumSize = cropContract.crop.minimumSize,
+                        area = cropContract.crop.areaInRegion,
+                    )
                         ?: return@supplyFrames
                     lastCaptureQueuedAtNanos = frame.capturedAtMonotonicTimeNanos
                     liveCrops.trySend(
                         LiveSpeciesCrop(
                             resolved,
+                            searchIndex,
                             window.id,
                             frame.capturedAtWallTimeMillis,
                             frame.capturedAtMonotonicTimeNanos
@@ -159,6 +183,10 @@ internal class LiveOverlaySpeciesPipeline(
                             evidenceReferences = emptyList(),
                             monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                         )
+                        val cropArticle = match.articles.first { article ->
+                            article.sequenceNumber == accepted.sequenceNumber &&
+                                article.payload is CropCaptured
+                        }
                         // Custody has accepted the immutable raw crop before OCR
                         // sees it. Queue it directly from that acceptance rather
                         // than waiting for the general Match article consumer,
@@ -167,7 +195,8 @@ internal class LiveOverlaySpeciesPipeline(
                             PreservedSpeciesCrop(
                                 crop = crop,
                                 bitmap = sample.resolved.bitmap,
-                                cropEvidenceId = "custody:${accepted.sequenceNumber}",
+                                cropEvidenceId = cropArticle.id.value,
+                                searchIndex = sample.searchIndex,
                                 speciesCheckWindowId = sample.speciesCheckWindowId,
                                 capturedAtWallTimeMillis = sample.capturedAtWallTimeMillis,
                                 capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
@@ -225,7 +254,11 @@ internal class LiveOverlaySpeciesPipeline(
                     val resolvedReading = readings.firstNotNullOfOrNull { reading ->
                         FastOverlaySpeciesResolver.resolveDetailed(reading.text, knownNames)
                             ?.let { resolution -> reading to resolution }
-                    } ?: continue
+                    }
+                    if (resolvedReading == null) {
+                        advanceCropSearch(sample.speciesCheckWindowId, sample.searchIndex)
+                        continue
+                    }
                     val (reading, resolution) = resolvedReading
                     if (resolution.speciesName.equals(lastSubmittedSpecies, ignoreCase = true)) {
                         // A recovery read that confirms the current combatant still
@@ -238,6 +271,7 @@ internal class LiveOverlaySpeciesPipeline(
                             cropId = sample.cropEvidenceId,
                             capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                         )
+                        resetCropSearch(sample.speciesCheckWindowId)
                         continue
                     }
                     val species = match.pokemonKnowledge.getPokemonByName(resolution.speciesName) ?: continue
@@ -249,6 +283,7 @@ internal class LiveOverlaySpeciesPipeline(
                         capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                     ) ?: continue
                     lastSubmittedSpecies = species.name
+                    resetCropSearch(sample.speciesCheckWindowId)
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = ActivePokemonSpeciesWitnessed(side, species.name, species.id),
@@ -290,6 +325,18 @@ internal class LiveOverlaySpeciesPipeline(
         scope = null
     }
 
+    @Synchronized
+    private fun advanceCropSearch(windowId: Long, completedIndex: Int) {
+        if (activeSearchWindowId == windowId && cropSearchIndex == completedIndex) {
+            cropSearchIndex = SpeciesCropSearchPlan.next(completedIndex)
+        }
+    }
+
+    @Synchronized
+    private fun resetCropSearch(windowId: Long) {
+        if (activeSearchWindowId == windowId) cropSearchIndex = 0
+    }
+
     companion object {
         fun player(
             input: ObservationInput,
@@ -321,6 +368,25 @@ internal class LiveOverlaySpeciesPipeline(
             "Opponent Species Overlay Pipeline"
         )
     }
+}
+
+/**
+ * Keeps a species worker on its single assignment while recovering from a
+ * calibrated strip that has drifted by one text row in the live capture.
+ * Every attempted crop retains its real bounds in [BattleCropProvenance].
+ */
+internal object SpeciesCropSearchPlan {
+    private val rowOffsets = intArrayOf(0, -1, 1, -2, 2)
+
+    fun region(calibrated: AnchorRegion, searchIndex: Int): AnchorRegion {
+        val rowOffset = rowOffsets[searchIndex.coerceIn(rowOffsets.indices)]
+        return calibrated.copy(
+            y = (calibrated.y + calibrated.height * rowOffset)
+                .coerceIn(0f, 1f - calibrated.height)
+        )
+    }
+
+    fun next(searchIndex: Int): Int = (searchIndex + 1) % rowOffsets.size
 }
 
 internal data class FastOverlaySpeciesResolution(

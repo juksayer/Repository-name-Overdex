@@ -40,9 +40,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private enum class ArchiveViewerAction {
+    OPEN_REPLAY,
     MARK_START,
-    MARK_END_AND_SAVE,
-    OPEN_REPLAY;
+    MARK_END_AND_SAVE;
 
     fun move(delta: Int): ArchiveViewerAction {
         val values = entries
@@ -75,7 +75,7 @@ fun MatchArchiveViewerScreen(
     var showReplay by remember { mutableStateOf(false) }
     var excerptStart by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
     var excerptStatus by remember { mutableStateOf<String?>(null) }
-    var selectedAction by remember { mutableStateOf(ArchiveViewerAction.MARK_START) }
+    var selectedAction by remember { mutableStateOf(ArchiveViewerAction.OPEN_REPLAY) }
     
     val listState = rememberLazyListState()
     val detailScrollState = rememberScrollState()
@@ -187,12 +187,13 @@ fun MatchArchiveViewerScreen(
         MatchLcdColumn {
             MatchLcdText("ID: ${archive.matchId}")
             MatchLcdText("ARTICLES: ${archive.articles.size}   SELECTED: ${selectedIndex + 1}")
+            MatchLcdButton("OPEN REPLAY", { selectedAction = ArchiveViewerAction.OPEN_REPLAY; showReplay = true },
+                selected = selectedAction == ArchiveViewerAction.OPEN_REPLAY)
             MatchLcdButton("MARK START", { selectedAction = ArchiveViewerAction.MARK_START; markStart() },
                 selected = selectedAction == ArchiveViewerAction.MARK_START, enabled = selectedArticle?.monotonicTimeNanos != null)
             MatchLcdButton("MARK END + SAVE", { selectedAction = ArchiveViewerAction.MARK_END_AND_SAVE; markEndAndSave() },
                 selected = selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE,
                 enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null)
-            MatchLcdButton("OPEN REPLAY", { showReplay = true }, selected = selectedAction == ArchiveViewerAction.OPEN_REPLAY)
             excerptStatus?.let { MatchLcdText(it) }
             MatchLcdButton(if (showDetails) "CLOSE DETAILS" else "ARTICLE DETAILS", { showDetails = !showDetails }, enabled = selectedArticle != null)
             MatchLcdButton("BACK", onBack)

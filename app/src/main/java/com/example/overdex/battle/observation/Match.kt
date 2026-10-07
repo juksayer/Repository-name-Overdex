@@ -123,6 +123,7 @@ class Match(
     private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
     private val playerRosterIdBySlot = ConcurrentHashMap<Int, Int>()
+    private val playerRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
     private val openingCrySideGate = OpeningCrySideGate()
     val speciesChecks = SpeciesCheckCoordinator { measurement, refs ->
         custody.submitTestimony(SourceId("SPECIES_CHECK_COORDINATOR"), measurement,
@@ -207,6 +208,7 @@ class Match(
         speciesChecks.restartObservationAttempt()
         playerRosterBySlot.clear()
         playerRosterIdBySlot.clear()
+        playerRosterArticleBySlot.clear()
         openingCrySideGate.reset()
         countdownCuesSeen.clear()
         vsCueSeen = false
@@ -274,6 +276,9 @@ class Match(
                     matchId = MatchId(matchId),
                     monotonicTimeNanos = testimony.monotonicTimeNanos
                 )
+                (article.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
+                    playerRosterArticleBySlot[rosterEntry.slot] = article.id
+                }
 
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "Match created RealityArticle: articleId=${article.id.value}, matchId=${article.matchId?.value}, type=${article.payload::class.simpleName}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
@@ -350,6 +355,25 @@ class Match(
 
                 battleMemory.timeline.record(article)
 
+                // Establish the GO boundary before any inference sees this
+                // source article. Countdown shading in the charged-move controls
+                // must remain raw evidence without becoming a Fast Move use.
+                if (!matchStartRecorded) {
+                    interpreter.interpretMatchStart(article)?.let { derivedArticle ->
+                        realityTimeline.append(derivedArticle)
+                        cueSpeciesChecks(derivedArticle)
+                        _articles.tryEmit(derivedArticle)
+                        battleMemory.timeline.record(derivedArticle)
+                        matchStartRecorded = true
+                        fastMoveUseInference.accept(derivedArticle)
+                        appendFastMoveEnergyDerivations(derivedArticle)
+                        appendFastMoveCadenceDerivations(derivedArticle)
+                        appendTeamSelectLeadAtMatchStart(derivedArticle)
+                        _matchStarted.tryEmit(derivedArticle)
+                        Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
+                    }
+                }
+
                 chargeMoveQteVibrationInference.accept(article)?.let { derivation ->
                     val derivedArticle = RealityArticle(
                         id = ArticleId(UUID.randomUUID().toString()),
@@ -410,18 +434,6 @@ class Match(
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
-
-                if (!matchStartRecorded) {
-                    interpreter.interpretMatchStart(article)?.let { derivedArticle ->
-                        realityTimeline.append(derivedArticle)
-                        cueSpeciesChecks(derivedArticle)
-                        _articles.tryEmit(derivedArticle)
-                        battleMemory.timeline.record(derivedArticle)
-                        matchStartRecorded = true
-                        _matchStarted.tryEmit(derivedArticle)
-                        Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
-                    }
-                }
 
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
@@ -489,6 +501,48 @@ class Match(
             _articles.tryEmit(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
         }
+    }
+
+    /**
+     * Team Select slot 1 is the player's lead. Publish that known identity at GO
+     * when a transient entry announcement was missed, while retaining both the
+     * roster observation and MatchStarted as causal predecessors.
+     */
+    private suspend fun appendTeamSelectLeadAtMatchStart(matchStartArticle: RealityArticle) {
+        val speciesName = playerRosterBySlot[1] ?: return
+        if (activeSpeciesBySide[ActivePokemonSide.PLAYER]
+                ?.equals(speciesName, ignoreCase = true) == true
+        ) return
+        val species = pokemonKnowledge.getPokemonByName(speciesName)
+        val leadArticle = RealityArticle(
+            id = ArticleId(UUID.randomUUID().toString()),
+            perceivedAt = matchStartArticle.perceivedAt,
+            recordedAt = System.currentTimeMillis(),
+            sourceId = SourceId("TEAM_SELECT_LEAD_INFERENCE"),
+            payload = ActivePokemonSpeciesWitnessed(
+                side = ActivePokemonSide.PLAYER,
+                speciesName = speciesName,
+                speciesId = playerRosterIdBySlot[1] ?: species?.id,
+            ),
+            predecessorIds = buildList {
+                playerRosterArticleBySlot[1]?.let(::add)
+                add(matchStartArticle.id)
+            }.distinct(),
+            confidence = 0.99f,
+            matchId = MatchId(matchId),
+            monotonicTimeNanos = matchStartArticle.monotonicTimeNanos,
+        )
+        realityTimeline.append(leadArticle)
+        cueSpeciesChecks(leadArticle)
+        _articles.tryEmit(leadArticle)
+        battleMemory.timeline.record(leadArticle)
+        speciesChecks.delivered(ActivePokemonSide.PLAYER, speciesName, leadArticle.id.value)
+        DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
+        DroidballOverlayPresentation.showBattleHud()
+        DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
+        fastMoveUseInference.accept(leadArticle)
+        appendFastMoveEnergyDerivations(leadArticle)
+        appendFastMoveCadenceDerivations(leadArticle)
     }
 
     private suspend fun appendFastMoveCadenceDerivations(article: RealityArticle) {

@@ -1,6 +1,5 @@
 package com.example.overdex.ui.ODXFi
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,7 +75,6 @@ import com.example.overdex.ui.lcdDisplayEffect
 import com.example.overdex.ui.screens.ResearcherModeOverlay
 import com.example.overdex.ui.theme.PokedexGreen
 import com.example.overdex.ui.theme.PokedexScreen
-import com.example.overdex.ui.theme.PokedexScreenBorder
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.delay
 import java.util.UUID
@@ -376,11 +374,11 @@ fun ODXFiShell(
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
 
-    // Permanent Front Panel doesn't use rail animations
-    val crtPadding by animateDpAsState(
-        targetValue = if (serviceMode || isBinderMode) 0.dp else 32.dp,
-        label = "crtPadding"
-    )
+    // Shared physical material for the CRT and lower service assembly. The top
+    // CRT rail is deeper only to retain the etched model badge.
+    val instrumentBezelColor = Color.Black.copy(alpha = 0.08f)
+    val instrumentBezelBorderColor = Color.Black.copy(alpha = 0.15f)
+    val crtTopBezel = 28.dp
 
     val context = LocalContext.current
     val researcherManager = remember { ResearcherManager(context) }
@@ -505,7 +503,7 @@ fun ODXFiShell(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = if (isBinderMode) 2.dp else 12.dp, start = if (isBinderMode) 2.dp else 8.dp),
+                .padding(bottom = 2.dp, start = 2.dp),
             verticalAlignment = Alignment.Top
         ) {
             // Device Emblem (Permanent branding)
@@ -531,36 +529,34 @@ fun ODXFiShell(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1.3f) // Increase dominance of CRT
-                .background(if (isBinderMode) PokedexScreen else Color.DarkGray, RoundedCornerShape(4.dp))
+                .background(instrumentBezelColor, RoundedCornerShape(4.dp))
+                .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
                 .padding(
-                    bottom = if (isBinderMode) 0.dp else 8.dp,
-                    start = if (isBinderMode) 0.dp else 8.dp,
-                    end = if (isBinderMode) 0.dp else 8.dp
+                    bottom = 8.dp,
+                    start = 8.dp,
+                    end = 8.dp
                 )
                 .glassShield() // The Glass Shield enforcement point
         ) {
-            if (crtPadding > 0.dp) {
-                Text(
-                    text = "oDX-Fi",
-                    color = Color.Black.copy(alpha = 0.4f), // Etched look on gray bezel
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 2.sp,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 8.dp)
-                )
-            }
+            Text(
+                text = "oDX-Fi",
+                color = Color.Black.copy(alpha = 0.4f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 2.sp,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 5.dp)
+            )
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = crtPadding)
+                    .padding(top = crtTopBezel)
                     .clip(RoundedCornerShape(2.dp))
                     .background(PokedexScreen)
-                    .border(if (isBinderMode) 0.dp else 4.dp, PokedexScreenBorder, RoundedCornerShape(2.dp))
-                    .padding(if (isBinderMode) 0.dp else 4.dp)
+                    .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
             ) {
                 RotatedInstrumentViewport(
                     active = isBinderMode,
@@ -679,22 +675,22 @@ fun ODXFiShell(
             }
         }
 
-        Spacer(modifier = Modifier.height(if (isBinderMode) 0.dp else 8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         // Permanent Front Panel Assembly (Compressed Lower Console)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp) // Compressed from 220dp
-                .background(Color.Black.copy(alpha = 0.08f), RoundedCornerShape(4.dp))
-                .border(1.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                .padding(horizontal = if (isBinderMode) 0.dp else 4.dp, vertical = 8.dp),
+                .background(instrumentBezelColor, RoundedCornerShape(4.dp))
+                .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Navigation Column (Left)
             Column(
-                modifier = Modifier.width(if (isBinderMode) 56.dp else 64.dp).fillMaxHeight(),
+                modifier = Modifier.width(56.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -752,35 +748,30 @@ fun ODXFiShell(
                 )
             }
 
-            // Instrumentation Display (Center)
-            RotatedInstrumentViewport(
-                active = isBinderMode,
-                rotationDegrees = 90f,
+            // Instrumentation Display (Center). The LCD is physical hardware;
+            // Binder mode rotates only the pixels shown inside its fixed frame.
+            InstrumentLCD(
+                presentationState = presentationState,
+                deploymentState = deploymentState,
+                frameCount = frameCount,
+                lcdLine1 = lcdLine1,
+                lcdLine2 = lcdLine2,
+                lcdLines = lcdLines,
+                lcdContent = lcdContent,
+                keyboardController = keyboardController,
+                keyboardPrompt = keyboardPrompt,
+                onKeyActivated = onKeyActivated,
+                onDrag = onLcdDrag,
+                onTap = onLcdTap,
+                contentRotationDegrees = if (isBinderMode) 90f else 0f,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(horizontal = if (isBinderMode) 0.dp else 4.dp)
-            ) {
-                InstrumentLCD(
-                    presentationState = presentationState,
-                    deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    lcdLine1 = lcdLine1,
-                    lcdLine2 = lcdLine2,
-                    lcdLines = lcdLines,
-                    lcdContent = lcdContent,
-                    keyboardController = keyboardController,
-                    keyboardPrompt = keyboardPrompt,
-                    onKeyActivated = onKeyActivated,
-                    onDrag = onLcdDrag,
-                    onTap = onLcdTap,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            )
 
             // Action Column (Right)
             Column(
-                modifier = Modifier.width(if (isBinderMode) 56.dp else 64.dp).fillMaxHeight(),
+                modifier = Modifier.width(56.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

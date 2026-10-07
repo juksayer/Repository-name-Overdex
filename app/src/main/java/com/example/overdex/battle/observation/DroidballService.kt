@@ -623,7 +623,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
         val collapsedSizePx = (48f * resources.displayMetrics.density).roundToInt()
         val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
-        val opponentBadgeHeightPx = BattleHudOverlayGeometry.opponentBadgeHeightPx(bounds.height())
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -650,7 +649,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             setContent {
                 BattleOverlay(
                     panelWidthPx = panelWidthPx,
-                    opponentBadgeHeightPx = opponentBadgeHeightPx,
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
                     onDragFinished = ::snapOverlayToNearestEdge,
@@ -658,7 +656,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     onBattleHudDragFinished = ::saveBattleHudPosition,
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onResetBattleHudLayout = ::resetBattleHudLayout,
-                    onLayoutStateChanged = ::updateOverlayLayoutState
+                    onLayoutStateChanged = ::updateOverlayLayoutState,
                 )
             }
         }
@@ -669,6 +667,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         overlayView!!.setViewTreeSavedStateRegistryOwner(this)
         
         windowManager.addView(overlayView, params)
+
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
@@ -709,7 +708,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             (bounds.width() - view.width.coerceAtLeast(1)).coerceAtLeast(0),
         )
         params.y = (params.y + deltaY.toInt()).coerceIn(
-            0,
+            BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height()),
             (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0),
         )
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
@@ -753,13 +752,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         bounds: android.graphics.Rect,
         layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
     ) {
-        val topHalfHeightPx = (
-            BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP * resources.displayMetrics.density
-        ).roundToInt()
         params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-        params.y = layout.windowY ?: (
-            BattleHudOverlayGeometry.opponentBadgeTopPx(bounds.height()) - topHalfHeightPx
-        ).coerceAtLeast(0)
+        params.y = (layout.windowY ?: BattleHudOverlayGeometry.panelTopPx(bounds.height()))
+            .coerceAtLeast(BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height()))
     }
 
     /**

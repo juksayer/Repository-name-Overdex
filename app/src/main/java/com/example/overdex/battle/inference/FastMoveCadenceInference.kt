@@ -34,11 +34,12 @@ data class FastMoveCadenceDerivation(
  * the explicit higher-energy assumption.
  */
 class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
-    private enum class CadenceBasis { BORDER_PULSE, RECIPIENT_VISUAL_ARTIFACT, BAR_MOTION }
+    private enum class CadenceBasis { OBSERVED_USES, BORDER_PULSE, RECIPIENT_VISUAL_ARTIFACT, BAR_MOTION }
     private data class CadenceEvidence(
         val article: RealityArticle,
         val intervalNanos: Long,
-        val basis: CadenceBasis
+        val basis: CadenceBasis,
+        val predecessorIds: List<ArticleId> = listOf(article.id),
     )
     private data class ConfiguredPlayerMove(
         val moveName: String,
@@ -55,7 +56,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var identifiedMove: Move? = null,
         var selectedBasis: CadenceBasis? = null,
         var assumedHigherEnergyTieBreak: Boolean = false,
-        var identificationEvidence: List<ArticleId> = emptyList()
+        var identificationEvidence: List<ArticleId> = emptyList(),
+        var lastDirectUseArticle: RealityArticle? = null,
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
@@ -89,7 +91,6 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         if (species != null) {
             // Reconfirming an unchanged badge must not reset timing or recount energy.
             if (states[species.side]?.speciesName == species.speciesName) return emptyList()
-            recentUses.removeAll { (it.payload as FastMoveUseObserved).attackingSide == species.side }
             val pokemon = species.speciesId?.let { pokemonKnowledge.getPokemonById(it) }
                 ?: pokemonKnowledge.getPokemonByName(species.speciesName)
             val possibleMoves = pokemon?.fastMoves.orEmpty().filter { it.isFast && it.turns != null }
@@ -117,6 +118,15 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             )
             states[species.side] = state
             val early = pending.remove(species.side).orEmpty()
+            val appearanceStart = appearanceStarts[species.side]
+            val earlyUses = recentUses.filter { useArticle ->
+                val use = useArticle.payload as FastMoveUseObserved
+                val at = useArticle.monotonicTimeNanos
+                use.attackingSide == species.side &&
+                    (appearanceStart == null || (at != null && at >= appearanceStart)) &&
+                    (use.attackerSpeciesName == null ||
+                        normalize(use.attackerSpeciesName) == normalize(species.speciesName))
+            }.sortedBy { it.monotonicTimeNanos }
             val effectiveness = if (states.size == ActivePokemonSide.entries.size) {
                 pendingEffectiveness.toList().also { pendingEffectiveness.clear() }
             } else emptyList()
@@ -137,7 +147,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                     observedArticle = article
                 ))
             } else emptyList()
-            return configuredResult + (effectiveness + early).flatMap { accept(it) }
+            return configuredResult + (effectiveness + early + earlyUses)
+                .distinctBy { it.id }
+                .sortedBy { it.monotonicTimeNanos }
+                .flatMap { accept(it) }
         }
 
         val effectiveness = article.payload as? FastMoveEffectivenessWitnessed
@@ -154,18 +167,22 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         if (use != null) {
             if (recentUses.none { (it.payload as FastMoveUseObserved).useId == use.useId }) recentUses += article
             if (recentUses.size > MAX_USE_HISTORY) recentUses.removeAt(0)
-            if (states.size < ActivePokemonSide.entries.size) return emptyList()
-            val newlyAligned = pendingEffectiveness.filter { pendingArticle ->
-                val pendingPayload = pendingArticle.payload as FastMoveEffectivenessWitnessed
-                alignedUses(pendingArticle, pendingPayload).isNotEmpty()
+            val effectivenessResults = if (states.size == ActivePokemonSide.entries.size) {
+                val newlyAligned = pendingEffectiveness.filter { pendingArticle ->
+                    val pendingPayload = pendingArticle.payload as FastMoveEffectivenessWitnessed
+                    alignedUses(pendingArticle, pendingPayload).isNotEmpty()
+                }
+                pendingEffectiveness.removeAll(newlyAligned.toSet())
+                newlyAligned.flatMap { pendingArticle ->
+                    acceptEffectiveness(
+                        pendingArticle,
+                        pendingArticle.payload as FastMoveEffectivenessWitnessed
+                    )
+                }
+            } else {
+                emptyList()
             }
-            pendingEffectiveness.removeAll(newlyAligned.toSet())
-            return newlyAligned.flatMap { pendingArticle ->
-                acceptEffectiveness(
-                    pendingArticle,
-                    pendingArticle.payload as FastMoveEffectivenessWitnessed
-                )
-            }
+            return effectivenessResults + acceptObservedUseCadence(article, use)
         }
 
         val cadence = when (val payload = article.payload) {
@@ -186,6 +203,51 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             )
             else -> return emptyList()
         }
+        return acceptCadence(article, cadence)
+    }
+
+    /**
+     * The fused FastMoveUseObserved stream is already the best statement that a
+     * particular attack occurred. Its monotonic timestamps therefore provide a
+     * cadence even when no dedicated border/motion cadence witness produced an
+     * aggregate interval. Charge-fill-only uses are excluded because one attack
+     * can expose several fill steps.
+     */
+    private fun acceptObservedUseCadence(
+        article: RealityArticle,
+        use: FastMoveUseObserved,
+    ): List<FastMoveCadenceDerivation> {
+        if (use.evidenceKinds.none(DIRECT_USE_EVIDENCE_KINDS::contains)) return emptyList()
+        val state = states[use.attackingSide] ?: return emptyList()
+        val at = article.monotonicTimeNanos ?: return emptyList()
+        val previous = state.lastDirectUseArticle
+        val previousAt = previous?.monotonicTimeNanos
+        if (previous == null || previousAt == null) {
+            state.lastDirectUseArticle = article
+            return emptyList()
+        }
+        if (at <= previousAt) return emptyList()
+        val interval = at - previousAt
+        // Independent witnesses can occasionally publish two fragments of the
+        // same hit outside the fusion window. Do not let that replace the prior
+        // anchor with a physically impossible sub-turn interval.
+        if (interval < MIN_USE_INTERVAL_NANOS) return emptyList()
+        state.lastDirectUseArticle = article
+        return acceptCadence(
+            article,
+            CadenceInput(
+                attackingSide = use.attackingSide,
+                intervalNanos = interval,
+                basis = CadenceBasis.OBSERVED_USES,
+                predecessorIds = listOf(previous.id, article.id),
+            )
+        )
+    }
+
+    private fun acceptCadence(
+        article: RealityArticle,
+        cadence: CadenceInput,
+    ): List<FastMoveCadenceDerivation> {
         val attackingSide = cadence.attackingSide
         val start = appearanceStarts[attackingSide]
         val end = article.monotonicTimeNanos
@@ -200,7 +262,12 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         }
         if (state.cadenceEvidence.any { it.article.id == article.id })
             return emptyList()
-        state.cadenceEvidence += CadenceEvidence(article, cadence.intervalNanos, cadence.basis)
+        state.cadenceEvidence += CadenceEvidence(
+            article,
+            cadence.intervalNanos,
+            cadence.basis,
+            cadence.predecessorIds.ifEmpty { listOf(article.id) },
+        )
         if (state.cadenceEvidence.size > MAX_CADENCE_HISTORY) state.cadenceEvidence.removeAt(0)
 
         // Once another independent signal has identified a move, the first
@@ -217,6 +284,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         // Move can produce several visible fill stages, so those measurements are
         // preserved as energy evidence without pretending each stage is a move.
         val resolved = listOf(
+            CadenceBasis.OBSERVED_USES,
             CadenceBasis.BORDER_PULSE,
             CadenceBasis.RECIPIENT_VISUAL_ARTIFACT,
             CadenceBasis.BAR_MOTION
@@ -242,8 +310,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             state.assumedHigherEnergyTieBreak = resolved.move.assumedHigherEnergyTieBreak
             state.identificationEvidence = buildList {
                 add(state.speciesArticleId)
-                addAll(resolved.evidence.map { it.article.id })
-            }
+                addAll(resolved.evidence.flatMap { it.predecessorIds })
+            }.distinct()
         }
         val move = state.identifiedMove ?: return emptyList()
         val selectedBasis = state.selectedBasis ?: return emptyList()
@@ -438,7 +506,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private data class CadenceInput(
         val attackingSide: ActivePokemonSide,
         val intervalNanos: Long,
-        val basis: CadenceBasis
+        val basis: CadenceBasis,
+        val predecessorIds: List<ArticleId> = emptyList(),
     )
 
     private data class MoveResolution(
@@ -469,7 +538,14 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         const val MAX_EFFECTIVENESS_HISTORY = 16
         const val MAX_USE_HISTORY = 16
         const val EFFECTIVENESS_USE_ALIGNMENT_NANOS = 500_000_000L
+        const val MIN_USE_INTERVAL_NANOS = 300_000_000L
         const val MIN_TOLERANCE_NANOS = 160_000_000L
         const val RELATIVE_TOLERANCE = 0.15
+        val DIRECT_USE_EVIDENCE_KINDS = setOf(
+            "HP_BORDER_PULSE",
+            "HP_DAMAGE_TICK",
+            "HP_BAR_MOTION_COMPLETION",
+            "RECIPIENT_VISUAL_ARTIFACT",
+        )
     }
 }

@@ -46,7 +46,6 @@ internal object BattleHudOverlayGeometry {
     private const val REFERENCE_WIDTH = 1080f
     private const val REFERENCE_HEIGHT = 2400f
     private const val OPPONENT_BADGE_LEFT = 645f
-    private const val OPPONENT_BADGE_TOP = 225f
     private const val OPPONENT_BADGE_BOTTOM = 350f
     private const val OPPONENT_BADGE_WIDTH = 415f
 
@@ -63,11 +62,13 @@ internal object BattleHudOverlayGeometry {
     fun panelTopPx(displayHeight: Int): Int =
         (displayHeight * OPPONENT_BADGE_BOTTOM / REFERENCE_HEIGHT).roundToInt()
 
-    fun opponentBadgeTopPx(displayHeight: Int): Int =
-        (displayHeight * OPPONENT_BADGE_TOP / REFERENCE_HEIGHT).roundToInt()
-
-    fun opponentBadgeHeightPx(displayHeight: Int): Int =
-        (displayHeight * (OPPONENT_BADGE_BOTTOM - OPPONENT_BADGE_TOP) / REFERENCE_HEIGHT).roundToInt()
+    /**
+     * The secure HUD surface must begin below the GO badge. A secure window is
+     * redacted as one opaque rectangle by MediaProjection, including its
+     * transparent spacer pixels, so allowing the window above this boundary
+     * hides the very species text Overdex needs to read.
+     */
+    fun minimumPanelWindowTopPx(displayHeight: Int): Int = panelTopPx(displayHeight)
 
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
@@ -81,7 +82,6 @@ internal object BattleHudOverlayGeometry {
 @Composable
 fun BattleOverlay(
     panelWidthPx: Int = 415,
-    opponentBadgeHeightPx: Int = 125,
     initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
@@ -89,7 +89,7 @@ fun BattleOverlay(
     onBattleHudDragFinished: () -> Unit = {},
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
     onResetBattleHudLayout: () -> Unit = {},
-    onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> }
+    onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -134,8 +134,6 @@ fun BattleOverlay(
             )
         }
     } else Modifier
-    val opponentBadgeHeight = with(LocalDensity.current) { opponentBadgeHeightPx.toDp() }
-
     Column(
         modifier = interactionModifier
             .offset(x = arrivalOffset)
@@ -146,22 +144,23 @@ fun BattleOverlay(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (panelIsVisible) {
-            DroidballHalf(
-                top = true,
-                layoutEditing = layoutEditing,
-                offsetX = topHalfOffsetX,
-                offsetY = topHalfOffsetY,
-                onOffsetChanged = { x, y -> topHalfOffsetX = x; topHalfOffsetY = y },
-                onDragFinished = {
-                    onHalfPositionsChanged(
-                        topHalfOffsetX,
-                        topHalfOffsetY,
-                        bottomHalfOffsetX,
-                        bottomHalfOffsetY,
-                    )
-                },
-            )
-            if (anchoredToBattleHud) Spacer(Modifier.height(opponentBadgeHeight))
+            if (!anchoredToBattleHud) {
+                DroidballHalf(
+                    top = true,
+                    layoutEditing = layoutEditing,
+                    offsetX = topHalfOffsetX,
+                    offsetY = topHalfOffsetY,
+                    onOffsetChanged = { x, y -> topHalfOffsetX = x; topHalfOffsetY = y },
+                    onDragFinished = {
+                        onHalfPositionsChanged(
+                            topHalfOffsetX,
+                            topHalfOffsetY,
+                            bottomHalfOffsetX,
+                            bottomHalfOffsetY,
+                        )
+                    },
+                )
+            }
             OverlayPanel(
                 mode,
                 diagnostics,
@@ -182,21 +181,23 @@ fun BattleOverlay(
                     onResetBattleHudLayout()
                 },
             )
-            DroidballHalf(
-                top = false,
-                layoutEditing = layoutEditing,
-                offsetX = bottomHalfOffsetX,
-                offsetY = bottomHalfOffsetY,
-                onOffsetChanged = { x, y -> bottomHalfOffsetX = x; bottomHalfOffsetY = y },
-                onDragFinished = {
-                    onHalfPositionsChanged(
-                        topHalfOffsetX,
-                        topHalfOffsetY,
-                        bottomHalfOffsetX,
-                        bottomHalfOffsetY,
-                    )
-                },
-            )
+            if (!anchoredToBattleHud) {
+                DroidballHalf(
+                    top = false,
+                    layoutEditing = layoutEditing,
+                    offsetX = bottomHalfOffsetX,
+                    offsetY = bottomHalfOffsetY,
+                    onOffsetChanged = { x, y -> bottomHalfOffsetX = x; bottomHalfOffsetY = y },
+                    onDragFinished = {
+                        onHalfPositionsChanged(
+                            topHalfOffsetX,
+                            topHalfOffsetY,
+                            bottomHalfOffsetX,
+                            bottomHalfOffsetY,
+                        )
+                    },
+                )
+            }
         } else {
             Image(
                 painter = painterResource(R.drawable.droidball),

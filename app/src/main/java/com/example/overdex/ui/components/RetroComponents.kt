@@ -173,7 +173,9 @@ fun TerminalMenuOption(
         if (status != null) {
             Text(
                 text = "[ $status ]",
-                color = if (selected) TerminalBlack else TerminalGreen,
+                // Menu rows no longer paint a light selection background, so
+                // black status text disappeared until focus moved elsewhere.
+                color = TerminalGreen,
                 fontSize = 14.sp
             )
         }

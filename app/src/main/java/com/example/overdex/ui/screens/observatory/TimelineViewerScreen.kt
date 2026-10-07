@@ -31,18 +31,20 @@ fun TimelineViewerScreen(
 
     PublishMatchLcd(onLcdContentUpdate) {
         MatchLcdColumn {
-            exportMatchId?.let { MatchLcdText("ID: $it") }
             MatchLcdButton("OPEN RECORDED MATCHES", onOpenMatch, selected = openSelected)
             if (exportMatchId != null) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     MatchLcdButton("EXPORT COMPACT", onExportCompact, Modifier.weight(1f), compactExportSelected, !exportInProgress)
                     MatchLcdButton("EXPORT FULL", onExportFull, Modifier.weight(1f), fullExportSelected, !exportInProgress)
                 }
-                MatchLcdText("EXPORTS: DOWNLOADS/ODXMATCHES")
                 if (exportInProgress) androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 exportStatus?.let { MatchLcdText(it) }
             }
             MatchLcdButton("BACK", onBack, selected = !openSelected && !compactExportSelected && !fullExportSelected)
+            exportMatchId?.let {
+                MatchLcdText("ID: $it")
+                MatchLcdText("EXPORTS: DOWNLOADS/ODXMATCHES")
+            }
         }
     }
 

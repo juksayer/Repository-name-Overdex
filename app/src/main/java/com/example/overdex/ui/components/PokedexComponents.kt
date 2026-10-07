@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -168,6 +169,7 @@ fun InstrumentLCD(
     onKeyActivated: ((String) -> Unit)? = null,
     onDrag: ((Offset) -> Unit)? = null,
     onTap: (() -> Unit)? = null,
+    contentRotationDegrees: Float = 0f,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -203,6 +205,15 @@ fun InstrumentLCD(
                 .padding(horizontal = 8.dp, vertical = if (keyboardController?.isVisible == true) 4.dp else 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            RotatedLcdPixels(
+                active = contentRotationDegrees != 0f,
+                rotationDegrees = contentRotationDegrees,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
             if (keyboardController?.isVisible == true) {
                 if (keyboardPrompt != null) {
                     Text(
@@ -392,6 +403,37 @@ fun InstrumentLCD(
                     }
                 }
             }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Rotates only the pixels presented by the LCD. The surrounding frame, bezel,
+ * hit area, and the space it occupies in the ODX-Fi console remain fixed.
+ */
+@Composable
+private fun RotatedLcdPixels(
+    active: Boolean,
+    rotationDegrees: Float,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    if (!active) {
+        Box(modifier = modifier) { content() }
+        return
+    }
+
+    BoxWithConstraints(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .width(maxHeight)
+                .height(maxWidth)
+                .align(Alignment.Center)
+                .rotate(rotationDegrees),
+        ) {
+            content()
         }
     }
 }
