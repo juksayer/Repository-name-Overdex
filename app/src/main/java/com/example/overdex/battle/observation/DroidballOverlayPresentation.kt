@@ -19,7 +19,10 @@ enum class DroidballOverlayMode {
 data class ObservedOpponentSpecies(
     val speciesName: String,
     val speciesId: Int?,
-    val isFainted: Boolean = false
+    val isFainted: Boolean = false,
+    /** Audio may populate the HUD immediately while visual witnesses catch up. */
+    val isProvisional: Boolean = false,
+    val observedAtNanos: Long? = null,
 )
 
 data class OpponentMovePossibilities(
@@ -126,16 +129,54 @@ object DroidballOverlayPresentation {
         speciesName: String,
         speciesId: Int?,
         possibleFastMoves: List<Pair<String, PokemonType>>,
-        possibleChargedMoves: List<Pair<String, PokemonType>>
+        possibleChargedMoves: List<Pair<String, PokemonType>>,
+        provisional: Boolean = false,
+        observedAtNanos: Long? = null,
     ) {
-        if (_opponentSpecies.value.none { it.speciesName == speciesName } && _opponentSpecies.value.size < 3) {
-            _opponentSpecies.value += ObservedOpponentSpecies(speciesName, speciesId)
+        val existing = _opponentSpecies.value.firstOrNull {
+            it.speciesName.equals(speciesName, ignoreCase = true)
+        }
+        if (existing == null && !provisional) {
+            val replaceable = _opponentSpecies.value.indexOfFirst { observed ->
+                observed.isProvisional &&
+                    observed.observedAtNanos != null &&
+                    observedAtNanos != null &&
+                    observedAtNanos - observed.observedAtNanos in 0..PROVISIONAL_CORRECTION_WINDOW_NANOS
+            }
+            if (replaceable >= 0) {
+                _opponentSpecies.value = _opponentSpecies.value.toMutableList().also { species ->
+                    species[replaceable] = ObservedOpponentSpecies(
+                        speciesName = speciesName,
+                        speciesId = speciesId,
+                        isProvisional = false,
+                        observedAtNanos = observedAtNanos,
+                    )
+                }
+            } else if (_opponentSpecies.value.size < 3) {
+                _opponentSpecies.value += ObservedOpponentSpecies(
+                    speciesName,
+                    speciesId,
+                    isProvisional = false,
+                    observedAtNanos = observedAtNanos,
+                )
+            }
+        } else if (existing == null && _opponentSpecies.value.size < 3) {
+            _opponentSpecies.value += ObservedOpponentSpecies(
+                speciesName,
+                speciesId,
+                isProvisional = true,
+                observedAtNanos = observedAtNanos,
+            )
         } else {
             _opponentSpecies.value = _opponentSpecies.value.map { observed ->
                 if (observed.speciesName.equals(speciesName, ignoreCase = true)) {
                     // Pokémon GO can leave the same badge readable after a
                     // faint. Repeated identity evidence must not revive it.
-                    observed.copy(speciesId = speciesId ?: observed.speciesId)
+                    observed.copy(
+                        speciesId = speciesId ?: observed.speciesId,
+                        isProvisional = observed.isProvisional && provisional,
+                        observedAtNanos = observedAtNanos ?: observed.observedAtNanos,
+                    )
                 } else observed
             }
         }
@@ -145,6 +186,8 @@ object DroidballOverlayPresentation {
         activeOpponentChargedMoves = possibleChargedMoves
         publishMovePossibilities()
     }
+
+    private const val PROVISIONAL_CORRECTION_WINDOW_NANOS = 4_000_000_000L
 
     fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName) {
         val target = speciesName ?: return

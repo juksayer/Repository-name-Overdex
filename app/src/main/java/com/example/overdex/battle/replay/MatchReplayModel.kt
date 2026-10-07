@@ -107,19 +107,42 @@ class MatchReplayModel(
     private val bufferedMoveCache = mutableMapOf<String, Move?>()
     private val recordedFastMoveUses = reconstructFastMoveUses()
     private val recordedChargedMoveUses = reconstructChargedMoveUses()
-    private val replayHapticEvents = timedArticles.mapNotNull { article ->
+    private val timedArticlesById = timedArticles.associateBy(ArchivedRealityArticle::articleId)
+    private val replayQteMilestonesByPatternId: Map<String, List<ReplayQteMilestone>> = timedArticles.mapNotNull { article ->
         val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
             ?: return@mapNotNull null
-        val hapticAt = article.monotonicTimeNanos ?: return@mapNotNull null
+        val pulses = article.predecessorIds
+            .mapNotNull(timedArticlesById::get)
+            .filter { it.payload is ArchivedDeviceMotionPulseMeasured }
+            .take(vibration.pulseCount)
+        if (pulses.size < 3) return@mapNotNull null
+        article.articleId to pulses.take(3).mapIndexed { index, pulse ->
+            ReplayQteMilestone(
+                atNanos = pulse.monotonicTimeNanos ?: return@mapNotNull null,
+                label = QTE_MILESTONE_LABELS[index],
+                side = vibration.side,
+            )
+        }
+    }.toMap()
+    private val replayHapticEvents = timedArticles.flatMap { article ->
+        val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
+            ?: return@flatMap emptyList()
+        replayQteMilestonesByPatternId[article.articleId]?.let { milestones ->
+            return@flatMap milestones.map { ReplayHapticEvent(it.atNanos, pulseCount = 1) }
+        }
+        // Older archives do not have predecessor links to the individual
+        // physical pulses. Retain their established aggregate replay behavior.
+        val hapticAt = article.monotonicTimeNanos ?: return@flatMap emptyList()
         val corroborated = timedArticles.any { support ->
             val supportAt = support.monotonicTimeNanos ?: return@any false
             abs(supportAt - hapticAt) <= CHARGE_MOVE_SEQUENCE_MERGE_NANOS &&
                 (support.payload is ArchivedGetReadyWitnessed || support.payload is ArchivedChargedMoveEnergySpent)
         }
-        if (!corroborated) return@mapNotNull null
-        ReplayHapticEvent(
-            atNanos = hapticAt,
-            pulseCount = vibration.pulseCount.coerceAtLeast(1)
+        if (!corroborated) emptyList() else listOf(
+            ReplayHapticEvent(
+                atNanos = hapticAt,
+                pulseCount = vibration.pulseCount.coerceAtLeast(1)
+            )
         )
     }
 
@@ -148,6 +171,14 @@ class MatchReplayModel(
             val glyph = article.payload as? ArchivedCountdownGlyphWitnessed ?: return@firstNotNullOfOrNull null
             val observedAt = article.monotonicTimeNanos ?: return@firstNotNullOfOrNull null
             glyph.glyph.takeIf { monotonicTimeNanos - observedAt < COUNTDOWN_GLYPH_VISUAL_NANOS }
+        }
+        val qteMilestone = replayQteMilestonesByPatternId.values.firstNotNullOfOrNull { milestones ->
+            val first = milestones.firstOrNull() ?: return@firstNotNullOfOrNull null
+            val last = milestones.last()
+            if (monotonicTimeNanos !in first.atNanos..(last.atNanos + QTE_MILESTONE_VISUAL_NANOS)) {
+                return@firstNotNullOfOrNull null
+            }
+            milestones.lastOrNull { it.atNanos <= monotonicTimeNanos }
         }
         // The prebuilt tracks choose the correct known identity interval.
         val player = applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), articles)
@@ -224,6 +255,8 @@ class MatchReplayModel(
             fastMoveActions = fastMoveActions,
             chargedMoveActions = chargeMoveActions,
             countdownGlyph = countdownGlyph,
+            qteMilestone = qteMilestone?.label,
+            qteMilestoneSide = qteMilestone?.side,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
         )
     }
@@ -731,6 +764,9 @@ data class ReplayScene(
     val chargedMoveActions: List<ReplayChargedMoveAction>,
     /** 3, 2, 1, or GO only during its preserved on-screen interval. */
     val countdownGlyph: String?,
+    /** QTE grade milestone at the exact preserved physical pulse time. */
+    val qteMilestone: String?,
+    val qteMilestoneSide: String?,
     val latestEvidenceLabel: String
 )
 
@@ -755,6 +791,8 @@ data class ReplayHapticEvent(
     val atNanos: Long,
     val pulseCount: Int
 )
+
+private data class ReplayQteMilestone(val atNanos: Long, val label: String, val side: String)
 
 private data class ReplayFastMoveUse(
     val side: String,
@@ -786,6 +824,7 @@ data class ReplayCombatant(
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
 private const val COUNTDOWN_GLYPH_VISUAL_NANOS = 850_000_000L
+private const val QTE_MILESTONE_VISUAL_NANOS = 700_000_000L
 private const val CHARGE_MOVE_VISUAL_NANOS = 1_800_000_000L
 private const val CHARGE_MOVE_SEQUENCE_MERGE_NANOS = 8_000_000_000L
 private const val FAST_MOVE_WITNESS_MERGE_NANOS = 450_000_000L
@@ -799,6 +838,7 @@ private val REPLAY_CADENCE_BASIS_PRIORITY = listOf(
     "HP_MOTION"
 )
 private const val CHARGE_FILL_BASIS = "CHARGE_MOVE_ENERGY_FILL"
+private val QTE_MILESTONE_LABELS = listOf("NICE", "GREAT", "EXCELLENT")
 
 private fun oppositeSide(side: String): String = when (side.uppercase()) {
     "PLAYER" -> "OPPONENT"

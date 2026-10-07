@@ -32,6 +32,7 @@ import com.example.overdex.battle.observation.DroidballRuntimeState
 import com.example.overdex.battle.observation.DroidballSignal
 import com.example.overdex.battle.observation.DroidballSession
 import com.example.overdex.battle.observation.DeviceMotionPulseWitness
+import com.example.overdex.battle.observation.DecisiveBattleCrySpeciesWitness
 import com.example.overdex.battle.observation.DroidballMatchLedger
 import com.example.overdex.battle.observation.NextMatchVsWatcher
 import com.example.overdex.battle.custody.CropCaptured
@@ -560,6 +561,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 )
             )
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
+            observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
             observationDispatcher.register(PersistedFastMoveSoundWitness(getApplication<Application>().filesDir))
         } else {
             // Coverage is itself evidence: no cry could have been heard without the microphone.

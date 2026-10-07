@@ -199,6 +199,8 @@ class Match(
 
     fun playerRosterSpecies(): Collection<String> = playerRosterBySlot.values.toList()
 
+    fun playerLeadSpeciesId(): Int? = playerRosterIdBySlot[1]
+
     /** Clears only mutable conclusions from an abandoned pre-battle attempt. */
     fun restartPreBattleObservationAttempt() {
         observationAttemptStartedAtNanos = System.nanoTime()
@@ -317,7 +319,9 @@ class Match(
                             speciesName = witnessed.speciesName,
                             speciesId = witnessed.speciesId ?: species?.id,
                             possibleFastMoves = species?.fastMoves?.map { it.name to it.type }.orEmpty(),
-                            possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty()
+                            possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty(),
+                            provisional = article.sourceId.id == "DECISIVE_BATTLE_CRY_SPECIES_WITNESS",
+                            observedAtNanos = article.monotonicTimeNanos,
                         )
                     }
                 }

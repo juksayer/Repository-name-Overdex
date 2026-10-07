@@ -17,6 +17,7 @@ import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
+import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.MatchArchive
@@ -278,6 +279,31 @@ class MatchReplayModelTest {
         assertEquals(3, model.hapticEventsBetween(999_000_000L, 1_000_000_000L).single().pulseCount)
         assertTrue(model.hapticEventsBetween(1_000_000_000L, 1_100_000_000L).isEmpty())
         assertTrue(model.hapticEventsBetween(1_100_000_000L, 900_000_000L).isEmpty())
+    }
+
+    @Test fun `linked physical QTE pulses replay exact nice great and excellent milestones`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("ready", ArchivedGetReadyWitnessed, 500_000_000L),
+            timed("nice", motionPulse(), 1_000_000_000L),
+            timed("great", motionPulse(), 1_600_000_000L),
+            timed("excellent", motionPulse(), 2_300_000_000L),
+            timed(
+                "pattern",
+                ArchivedChargeMoveQteVibrationPatternInferred(
+                    "PLAYER", 3, 1_300_000_000L, "THREE_SHORT_DEVICE_MOTION_PULSES"
+                ),
+                1_000_000_000L,
+            ).copy(predecessorIds = listOf("ready", "nice", "great", "excellent")),
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals("NICE", model.sceneAt(1_100_000_000L).qteMilestone)
+        assertEquals("GREAT", model.sceneAt(1_700_000_000L).qteMilestone)
+        assertEquals("EXCELLENT", model.sceneAt(2_400_000_000L).qteMilestone)
+        assertEquals("PLAYER", model.sceneAt(2_400_000_000L).qteMilestoneSide)
+        assertEquals(1, model.hapticEventsBetween(900_000_000L, 1_000_000_000L).single().pulseCount)
+        assertEquals(1, model.hapticEventsBetween(1_500_000_000L, 1_600_000_000L).single().pulseCount)
+        assertEquals(1, model.hapticEventsBetween(2_200_000_000L, 2_300_000_000L).single().pulseCount)
     }
 
     @Test fun `identification alone and aggregate totals never invent individual attacks`() {
@@ -555,4 +581,12 @@ class MatchReplayModelTest {
             predecessorIds = emptyList(), confidence = null, sequenceNumber = null,
             evidenceReferences = emptyList(), monotonicTimeNanos = nanos
         )
+
+    private fun motionPulse() = ArchivedDeviceMotionPulseMeasured(
+        durationNanos = 36_000_000L,
+        peakLinearAccelerationMetersPerSecondSquared = 1.2f,
+        rmsLinearAccelerationMetersPerSecondSquared = 0.7f,
+        sampleCount = 8,
+        sensorType = "LINEAR_ACCELERATION",
+    )
 }

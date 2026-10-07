@@ -63,4 +63,21 @@ class DroidballOverlayPresentationTest {
         DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), emptyList())
         assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.single().isFainted)
     }
+
+    @Test
+    fun `visual identity confirms or corrects a recent provisional cry without consuming a team cell`() {
+        DroidballOverlayPresentation.clearOpponentSpecies()
+        DroidballOverlayPresentation.recordOpponentSpecies(
+            "Honedge", 679, emptyList(), emptyList(), provisional = true, observedAtNanos = 1_000_000_000L
+        )
+
+        DroidballOverlayPresentation.recordOpponentSpecies(
+            "Sneasel", 215, emptyList(), emptyList(), provisional = false, observedAtNanos = 2_000_000_000L
+        )
+
+        assertEquals(
+            listOf(ObservedOpponentSpecies("Sneasel", 215, observedAtNanos = 2_000_000_000L)),
+            DroidballOverlayPresentation.opponentSpecies.value,
+        )
+    }
 }

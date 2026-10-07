@@ -49,6 +49,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -246,14 +247,16 @@ fun MatchReplayScreen(
                         context = context,
                         useBackSprite = true,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
-                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" }
+                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" },
+                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "PLAYER" },
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
                         context = context,
                         useBackSprite = false,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
-                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" }
+                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
+                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
                     )
                 }
                 scene.fastMoveActions.forEach { action ->
@@ -265,6 +268,19 @@ fun MatchReplayScreen(
                         color = Color.White,
                         fontSize = if (glyph == "GO") 72.sp else 88.sp,
                         modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                scene.qteMilestone?.let { milestone ->
+                    Text(
+                        text = milestone,
+                        color = when (milestone) {
+                            "NICE" -> Color.White
+                            "GREAT" -> Color(0xFFFFD54F)
+                            else -> Color(0xFFFF8A65)
+                        },
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Center).offset(y = (-76).dp),
                     )
                 }
             }
@@ -352,12 +368,33 @@ private fun ReplayCombatantSlot(
     context: android.content.Context,
     useBackSprite: Boolean,
     fastAction: ReplayFastMoveAction?,
-    chargedAction: ReplayChargedMoveAction?
+    chargedAction: ReplayChargedMoveAction?,
+    qteMilestone: String?,
 ) {
     Box(
         modifier = Modifier.width(150.dp).size(150.dp),
         contentAlignment = Alignment.Center
     ) {
+        val qteLevel = when (qteMilestone) {
+            "NICE" -> 1
+            "GREAT" -> 2
+            "EXCELLENT" -> 3
+            else -> 0
+        }
+        if (qteLevel > 0) {
+            val glowColor = when (qteLevel) {
+                1 -> Color.White
+                2 -> Color(0xFFFFD54F)
+                else -> Color(0xFFFF8A65)
+            }
+            Box(
+                Modifier
+                    .size((132 + qteLevel * 8).dp)
+                    .alpha(0.18f + qteLevel * 0.08f)
+                    .background(glowColor.copy(alpha = 0.22f), CircleShape)
+                    .border(qteLevel.dp, glowColor.copy(alpha = 0.72f), CircleShape)
+            )
+        }
         combatant?.speciesId?.let { speciesId ->
             AsyncImage(
                 model = LocalSpriteProvider(context.assets).let { sprites ->
@@ -375,7 +412,8 @@ private fun ReplayCombatantSlot(
                     .graphicsLayer {
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
                         translationY = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
-                            val amplitudePixels = if (useBackSprite) 58f else 46f
+                            val fastMoveAmplitudePixels = if (useBackSprite) 16f else 8f
+                            val amplitudePixels = fastMoveAmplitudePixels * 3f
                             if (progress <= CHARGED_MOVE_RISE_FRACTION) {
                                 val rise = progress / CHARGED_MOVE_RISE_FRACTION
                                 val easedRise = rise * rise * (3f - 2f * rise)
@@ -383,7 +421,9 @@ private fun ReplayCombatantSlot(
                             } else {
                                 val drop = (progress - CHARGED_MOVE_RISE_FRACTION) /
                                     (1f - CHARGED_MOVE_RISE_FRACTION)
-                                -amplitudePixels * (1f - drop)
+                                // Hold near the apex for a moment, then
+                                // accelerate into the impact.
+                                -amplitudePixels * (1f - drop * drop)
                             }
                         } ?: fastAction?.progress
                             ?.div(REPLAY_BOB_DURATION_FRACTION)
