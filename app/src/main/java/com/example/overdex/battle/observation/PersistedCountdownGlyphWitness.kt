@@ -28,6 +28,8 @@ class PersistedCountdownGlyphWitness(
             witnessScope.launch {
                 var frameIndex = 0
                 var acceptedGo = false
+                var lastOcrAtNanos = Long.MIN_VALUE
+                val acceptedGlyphs = mutableSetOf<String>()
                 match.articles.collect { article ->
                     if (acceptedGo) return@collect
                     val crop = article.payload as? CropCaptured ?: return@collect
@@ -36,14 +38,21 @@ class PersistedCountdownGlyphWitness(
                     try {
                         val templateResult = CountdownGlyphMatcher.match(bitmap)
                         val templateGlyph = templateResult.candidate
-                        // OCR is the exact GO witness. A weak template false-positive
-                        // for 3/2/1 must not suppress it at the match boundary.
-                        // GO does not depend on recognizing earlier countdown glyphs.
-                        val ocrGlyph = CountdownRecognizer.recognize(bitmap).value
-                            ?.uppercase()
-                            ?.replace(Regex("[^A-Z0-9]"), "")
-                            ?.takeIf { it == "GO" }
+                        val atNanos = article.monotonicTimeNanos ?: return@collect
+                        // Template geometry handles 3/2/1 without placing every
+                        // 30-fps frame into the general OCR lane. OCR is reserved
+                        // for GO and throttled uncertain frames.
+                        val shouldRunOcr = templateGlyph == "GO" ||
+                            (templateGlyph == null && atNanos - lastOcrAtNanos >= OCR_INTERVAL_NANOS)
+                        val ocrGlyph = if (shouldRunOcr) {
+                            lastOcrAtNanos = atNanos
+                            CountdownRecognizer.recognize(bitmap).value
+                                ?.uppercase()
+                                ?.replace(Regex("[^A-Z0-9]"), "")
+                                ?.takeIf { it == "GO" }
+                        } else null
                         val glyph = ocrGlyph ?: templateGlyph ?: return@collect
+                        if (!acceptedGlyphs.add(glyph)) return@collect
                         frameIndex++
                         match.custody.submitTestimony(
                             sourceId = sourceId,
@@ -77,5 +86,9 @@ class PersistedCountdownGlyphWitness(
     override fun stop() {
         scope?.cancel("Witness stopped")
         scope = null
+    }
+
+    private companion object {
+        const val OCR_INTERVAL_NANOS = 150_000_000L
     }
 }

@@ -8,6 +8,7 @@ import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.CountdownGlyphWitnessed
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.OutOfBattleMenuWitnessed
+import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import kotlinx.coroutines.CoroutineScope
@@ -34,8 +35,10 @@ class DroidballSession(val match: Match) {
     @Volatile var hasCompletedMatch: Boolean = false
         private set
     private val _firstLiveCombatArticle = MutableStateFlow<RealityArticle?>(null)
-    /** The first preserved in-battle HUD evidence; it retires countdown work. */
+    /** The first preserved in-battle HUD evidence. Countdown can still follow it. */
     val firstLiveCombatArticle = _firstLiveCombatArticle.asStateFlow()
+    @Volatile private var countdownCaptureDeadlineNanos = Long.MIN_VALUE
+    @Volatile private var countdownCaptureFinished = false
 
     init {
         scope.launch {
@@ -43,6 +46,15 @@ class DroidballSession(val match: Match) {
         }
         scope.launch {
             match.articles.collect { article ->
+                val announcement = (article.payload as? RawTestimony)?.data as? String
+                if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
+                    announcement?.trim()?.startsWith("Go,", ignoreCase = true) == true
+                ) {
+                    countdownCaptureDeadlineNanos = maxOf(
+                        countdownCaptureDeadlineNanos,
+                        (article.monotonicTimeNanos ?: System.nanoTime()) + COUNTDOWN_AFTER_ENTRY_NANOS,
+                    )
+                }
                 when (article.payload) {
                     is com.example.overdex.battle.custody.TeamSelectPartyWitnessed -> {
                         if (_phase.value == DroidballSessionPhase.SEEKING_TEAM_SELECT) {
@@ -104,19 +116,33 @@ class DroidballSession(val match: Match) {
         if (_phase.value in setOf(DroidballSessionPhase.SEEKING_TEAM_SELECT, DroidballSessionPhase.TEAM_SELECT_ACTIVE, DroidballSessionPhase.CALIBRATING)) {
             _phase.value = DroidballSessionPhase.COUNTDOWN
         }
+        if (!countdownCaptureFinished) {
+            countdownCaptureDeadlineNanos = maxOf(
+                countdownCaptureDeadlineNanos,
+                System.nanoTime() + COUNTDOWN_ARM_WINDOW_NANOS,
+            )
+        }
     }
 
     private fun beginBattle(article: RealityArticle) {
         requireNotNull(article.monotonicTimeNanos) {
             "MatchStarted article must preserve GO monotonic time"
         }
+        countdownCaptureFinished = true
         _phase.value = DroidballSessionPhase.BATTLE_ACTIVE
+    }
+
+    /** Keep 3/2/1/GO online after pre-countdown species and HP become visible. */
+    fun countdownWitnessingActive(nowNanos: Long = System.nanoTime()): Boolean {
+        if (countdownCaptureFinished || hasCompletedMatch) return false
+        if (_phase.value !in setOf(DroidballSessionPhase.COUNTDOWN, DroidballSessionPhase.BATTLE_ACTIVE)) return false
+        return countdownCaptureDeadlineNanos == Long.MIN_VALUE || nowNanos <= countdownCaptureDeadlineNanos
     }
 
     fun recordFirstLiveCombat(article: RealityArticle) {
         // An active HP surface is already in-battle evidence even when GO OCR
-        // was missed. Retire countdown work without inventing a MatchStarted
-        // clock boundary.
+        // was missed. It must not retire countdown work: names and HP appear
+        // before 3/2/1/GO in Pokémon GO.
         if (_phase.value in setOf(DroidballSessionPhase.COUNTDOWN, DroidballSessionPhase.BATTLE_ACTIVE) &&
             _firstLiveCombatArticle.value == null
         ) {
@@ -127,6 +153,11 @@ class DroidballSession(val match: Match) {
     fun end() {
         _phase.value = DroidballSessionPhase.ENDED
         scope.cancel("Droidball session ended")
+    }
+
+    private companion object {
+        const val COUNTDOWN_ARM_WINDOW_NANOS = 20_000_000_000L
+        const val COUNTDOWN_AFTER_ENTRY_NANOS = 12_000_000_000L
     }
 }
 

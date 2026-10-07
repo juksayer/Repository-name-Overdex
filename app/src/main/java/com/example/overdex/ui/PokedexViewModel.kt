@@ -614,8 +614,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.countdownCropCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = {
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN &&
-                        session.firstLiveCombatArticle.value == null
+                    session.countdownWitnessingActive()
                 },
                 captureIntervalNanos = transientIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
@@ -656,8 +655,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.trainerInactiveTimerOverlayClearanceCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = {
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN &&
-                        session.firstLiveCombatArticle.value == null
+                    session.countdownWitnessingActive()
                 },
                 captureIntervalNanos = transientIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,

@@ -75,7 +75,7 @@ class BattleHudLayoutStore(context: Context) {
     }
 
     private fun prefix(displayWidth: Int, displayHeight: Int): String =
-        "${Build.MODEL}_${displayWidth.coerceAtLeast(1)}x${displayHeight.coerceAtLeast(1)}"
+        "${Build.MODEL}_${displayWidth.coerceAtLeast(1)}x${displayHeight.coerceAtLeast(1)}_v2"
 
     private fun android.content.SharedPreferences.intOrNull(key: String): Int? =
         if (contains(key)) getInt(key, 0) else null

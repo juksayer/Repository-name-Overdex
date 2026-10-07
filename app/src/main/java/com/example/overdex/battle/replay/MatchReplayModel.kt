@@ -20,11 +20,13 @@ import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncr
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
+import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.MatchArchive
@@ -62,18 +64,39 @@ class MatchReplayModel(
     private val cropTracks = archivedCropIdentities
         .sortedBy { it.atNanos }
         .partition { it.side == "PLAYER" }
+    /** Menus remain part of the record, but the reanimated battlefield begins at battle evidence. */
+    private val battlePresentationStartNanos = sequenceOf(
+        timedArticles.firstNotNullOfOrNull { article ->
+            when (val payload = article.payload) {
+                ArchivedVsScreenWitnessed,
+                is ArchivedCountdownGlyphWitnessed,
+                is ArchivedActivePokemonSpeciesWitnessed -> article.monotonicTimeNanos
+                is ArchivedRawText -> article.monotonicTimeNanos?.takeIf {
+                    article.sourceId == "ANNOUNCEMENT_WITNESS" &&
+                        ENTRY_PATTERN.matches(payload.value.trim())
+                }
+                else -> null
+            }
+        },
+        reconstructedTracks.first.minOfOrNull { it.atNanos },
+        reconstructedTracks.second.minOfOrNull { it.atNanos },
+        cropTracks.first.minOfOrNull { it.atNanos },
+        cropTracks.second.minOfOrNull { it.atNanos },
+    ).filterNotNull().minOrNull() ?: startNanos
     private val configuredOpeningPlayer = configuredPlayerMembers.firstOrNull { it.slot == 1 }?.let {
-        listOf(ReplayIdentityObservation("PLAYER", it.speciesName, it.speciesId, startNanos, "CURRENT TEAM CONFIGURATION"))
+        listOf(ReplayIdentityObservation("PLAYER", it.speciesName, it.speciesId, battlePresentationStartNanos, "CURRENT TEAM CONFIGURATION"))
     }.orEmpty()
     private val playerIdentityTrack = ReplayIdentityTrack.from(
         timedArticles,
         "PLAYER",
-        configuredOpeningPlayer + reconstructedTracks.first + cropTracks.first
+        configuredOpeningPlayer + reconstructedTracks.first + cropTracks.first,
+        battlePresentationStartNanos,
     )
     private val opponentIdentityTrack = ReplayIdentityTrack.from(
         timedArticles,
         "OPPONENT",
-        reconstructedTracks.second + cropTracks.second
+        reconstructedTracks.second + cropTracks.second,
+        battlePresentationStartNanos,
     )
     private val identifiedFastMoves = timedArticles
         .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
@@ -121,6 +144,11 @@ class MatchReplayModel(
         val candidateArticle = articles.lastOrNull { it.payload is ArchivedBattleCryCandidatesMeasured }
         val candidate = candidateArticle?.payload as? ArchivedBattleCryCandidatesMeasured
         val latest = articles.lastOrNull()
+        val countdownGlyph = articles.asReversed().firstNotNullOfOrNull { article ->
+            val glyph = article.payload as? ArchivedCountdownGlyphWitnessed ?: return@firstNotNullOfOrNull null
+            val observedAt = article.monotonicTimeNanos ?: return@firstNotNullOfOrNull null
+            glyph.glyph.takeIf { monotonicTimeNanos - observedAt < COUNTDOWN_GLYPH_VISUAL_NANOS }
+        }
         // The prebuilt tracks choose the correct known identity interval.
         val player = applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), articles)
         val opponent = applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), articles)
@@ -195,6 +223,7 @@ class MatchReplayModel(
             opponentSpentEnergy = opponentSpentEnergy,
             fastMoveActions = fastMoveActions,
             chargedMoveActions = chargeMoveActions,
+            countdownGlyph = countdownGlyph,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
         )
     }
@@ -616,9 +645,11 @@ class MatchReplayModel(
 }
 
 private class ReplayIdentityTrack private constructor(
-    private val observations: List<ReplayIdentityObservation>
+    private val observations: List<ReplayIdentityObservation>,
+    private val visibleFromNanos: Long,
 ) {
     fun combatantAt(cursorNanos: Long): ReplayCombatant? {
+        if (cursorNanos < visibleFromNanos) return null
         // The first known combatant is available for the opening interval, but
         // its later establishment stays visible in the replay UI. Each later
         // identity article begins the next known interval.
@@ -637,7 +668,8 @@ private class ReplayIdentityTrack private constructor(
         fun from(
             articles: List<ArchivedRealityArticle>,
             side: String,
-            reconstructed: List<ReplayIdentityObservation>
+            reconstructed: List<ReplayIdentityObservation>,
+            visibleFromNanos: Long,
         ): ReplayIdentityTrack {
             val observed = articles.mapNotNull { article ->
                 val species = article.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
@@ -658,7 +690,7 @@ private class ReplayIdentityTrack private constructor(
                 compareBy<ReplayIdentityObservation> { it.atNanos }
                     .thenBy { identityBasisPriority(it.basis) }
             )
-            return ReplayIdentityTrack(combined)
+            return ReplayIdentityTrack(combined, visibleFromNanos)
         }
 
         private fun identityBasisPriority(basis: String): Int = when {
@@ -697,6 +729,8 @@ data class ReplayScene(
     val opponentSpentEnergy: Int,
     val fastMoveActions: List<ReplayFastMoveAction>,
     val chargedMoveActions: List<ReplayChargedMoveAction>,
+    /** 3, 2, 1, or GO only during its preserved on-screen interval. */
+    val countdownGlyph: String?,
     val latestEvidenceLabel: String
 )
 
@@ -751,6 +785,7 @@ data class ReplayCombatant(
 )
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
+private const val COUNTDOWN_GLYPH_VISUAL_NANOS = 850_000_000L
 private const val CHARGE_MOVE_VISUAL_NANOS = 1_800_000_000L
 private const val CHARGE_MOVE_SEQUENCE_MERGE_NANOS = 8_000_000_000L
 private const val FAST_MOVE_WITNESS_MERGE_NANOS = 450_000_000L

@@ -23,8 +23,9 @@ data class TeamSelectSpriteMatch(
 
 /**
  * Translation-tolerant matcher for the exact Pokémon GO art shown inside a
- * Team Select card. It is independent of OCR, so nicknames and symbol-only
- * names do not prevent the player roster from being identified.
+ * Team Select card. Normal, shiny, and regional references all resolve to one
+ * Pokédex ID. It is independent of OCR, so nicknames and symbol-only names do
+ * not prevent the player roster from being identified.
  */
 class TeamSelectSpriteMatcher(assetManager: AssetManager) {
     private val descriptors: List<TeamSelectSpriteDescriptor> = assetManager
@@ -134,7 +135,9 @@ internal object TeamSelectSpriteDescriptorMeasurer {
                 val normalizedHue = hsv[0] / 360f
                 val normalizedSaturation = hsv[1]
                 val normalizedValue = hsv[2]
-                if (normalizedSaturation < 0.07f && normalizedValue > 0.91f) continue
+                if ((normalizedSaturation < 0.07f && normalizedValue > 0.91f) ||
+                    (normalizedValue > 0.88f && normalizedSaturation < 0.68f)
+                ) continue
                 hue[min(23, (normalizedHue * 24).toInt())]++
                 saturation[min(7, (normalizedSaturation * 8).toInt())]++
                 value[min(7, (normalizedValue * 8).toInt())]++

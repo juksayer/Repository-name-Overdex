@@ -103,21 +103,35 @@ object SpeciesNameRecognizer {
             Bitmap.Config.ARGB_8888
         )
         thresholded.eraseColor(Color.WHITE)
-        for (y in 0 until source.height) {
-            for (x in 0 until source.width) {
-                val color = source.getPixel(x, y)
+        val sourcePixels = IntArray(source.width * source.height)
+        val thresholdPixels = IntArray(source.width * source.height)
+        source.getPixels(sourcePixels, 0, source.width, 0, 0, source.width, source.height)
+        sourcePixels.forEachIndexed { index, color ->
                 val luma = (Color.red(color) * 299 + Color.green(color) * 587 + Color.blue(color) * 114) / 1000
-                thresholded.setPixel(
-                    x + padding,
-                    y + padding,
-                    if (luma < cutoff) Color.BLACK else Color.WHITE
-                )
-            }
+            thresholdPixels[index] = if (luma < cutoff) Color.BLACK else Color.WHITE
         }
+        thresholded.setPixels(
+            thresholdPixels,
+            0,
+            source.width,
+            padding,
+            padding,
+            source.width,
+            source.height,
+        )
+        val scale = maxOf(1f, TARGET_THRESHOLD_HEIGHT / thresholded.height.toFloat())
+        if (scale == 1f) return thresholded
         return try {
-            Bitmap.createScaledBitmap(thresholded, thresholded.width * 6, thresholded.height * 6, false)
+            Bitmap.createScaledBitmap(
+                thresholded,
+                (thresholded.width * scale).toInt(),
+                (thresholded.height * scale).toInt(),
+                false,
+            )
         } finally {
             thresholded.recycle()
         }
     }
+
+    private const val TARGET_THRESHOLD_HEIGHT = 160f
 }

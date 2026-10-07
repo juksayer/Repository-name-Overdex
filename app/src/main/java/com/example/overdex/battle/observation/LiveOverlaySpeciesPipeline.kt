@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 /** A durable species crop delivered immediately after Custody accepts CropCaptured. */
 internal data class PreservedSpeciesCrop(
     val crop: CropCaptured,
+    val bitmap: android.graphics.Bitmap,
     val cropEvidenceId: String,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
@@ -61,7 +62,8 @@ internal class LiveOverlaySpeciesPipeline(
 
     private val crops = Channel<PreservedSpeciesCrop>(
         capacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        onUndeliveredElement = { sample -> sample.bitmap.recycle() },
     )
     private val liveCrops = Channel<LiveSpeciesCrop>(
         capacity = 1,
@@ -144,6 +146,7 @@ internal class LiveOverlaySpeciesPipeline(
             }
             pipelineScope.launch {
                 for (sample in liveCrops) {
+                    var handedToOcr = false
                     try {
                         val artifact = artifactStore.preservePng(sample.resolved.bitmap)
                             ?: continue
@@ -160,15 +163,16 @@ internal class LiveOverlaySpeciesPipeline(
                         // sees it. Queue it directly from that acceptance rather
                         // than waiting for the general Match article consumer,
                         // which can be busy deriving combat evidence.
-                        crops.trySend(
+                        handedToOcr = crops.trySend(
                             PreservedSpeciesCrop(
                                 crop = crop,
+                                bitmap = sample.resolved.bitmap,
                                 cropEvidenceId = "custody:${accepted.sequenceNumber}",
                                 speciesCheckWindowId = sample.speciesCheckWindowId,
                                 capturedAtWallTimeMillis = sample.capturedAtWallTimeMillis,
                                 capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                             )
-                        )
+                        ).isSuccess
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
@@ -178,7 +182,7 @@ internal class LiveOverlaySpeciesPipeline(
                             error
                         )
                     } finally {
-                        sample.resolved.bitmap.recycle()
+                        if (!handedToOcr) sample.resolved.bitmap.recycle()
                     }
                 }
             }
@@ -186,9 +190,8 @@ internal class LiveOverlaySpeciesPipeline(
                 match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
                 for (sample in crops) {
-                    val bitmap = artifactStore.loadVerifiedPng(sample.crop.artifact, sample.crop.cropProvenance) ?: continue
                     val readings = try {
-                        SpeciesNameRecognizer.recognizeCandidates(bitmap) { rawText ->
+                        SpeciesNameRecognizer.recognizeCandidates(sample.bitmap) { rawText ->
                             FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
                         }
                     } catch (cancelled: CancellationException) {
@@ -197,7 +200,7 @@ internal class LiveOverlaySpeciesPipeline(
                         Log.w("FAST_OVERLAY_SPECIES", "OCR failed side=$side", error)
                         continue
                     } finally {
-                        bitmap.recycle()
+                        sample.bitmap.recycle()
                     }
 
                     val readingSignature = readings.map { "${it.treatment}:${it.text}" }

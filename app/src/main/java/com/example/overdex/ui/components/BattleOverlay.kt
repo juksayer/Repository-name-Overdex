@@ -46,6 +46,7 @@ internal object BattleHudOverlayGeometry {
     private const val REFERENCE_WIDTH = 1080f
     private const val REFERENCE_HEIGHT = 2400f
     private const val OPPONENT_BADGE_LEFT = 645f
+    private const val OPPONENT_BADGE_TOP = 225f
     private const val OPPONENT_BADGE_BOTTOM = 350f
     private const val OPPONENT_BADGE_WIDTH = 415f
 
@@ -62,6 +63,12 @@ internal object BattleHudOverlayGeometry {
     fun panelTopPx(displayHeight: Int): Int =
         (displayHeight * OPPONENT_BADGE_BOTTOM / REFERENCE_HEIGHT).roundToInt()
 
+    fun opponentBadgeTopPx(displayHeight: Int): Int =
+        (displayHeight * OPPONENT_BADGE_TOP / REFERENCE_HEIGHT).roundToInt()
+
+    fun opponentBadgeHeightPx(displayHeight: Int): Int =
+        (displayHeight * (OPPONENT_BADGE_BOTTOM - OPPONENT_BADGE_TOP) / REFERENCE_HEIGHT).roundToInt()
+
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
 }
@@ -74,6 +81,7 @@ internal object BattleHudOverlayGeometry {
 @Composable
 fun BattleOverlay(
     panelWidthPx: Int = 415,
+    opponentBadgeHeightPx: Int = 125,
     initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
@@ -126,6 +134,7 @@ fun BattleOverlay(
             )
         }
     } else Modifier
+    val opponentBadgeHeight = with(LocalDensity.current) { opponentBadgeHeightPx.toDp() }
 
     Column(
         modifier = interactionModifier
@@ -152,6 +161,7 @@ fun BattleOverlay(
                     )
                 },
             )
+            if (anchoredToBattleHud) Spacer(Modifier.height(opponentBadgeHeight))
             OverlayPanel(
                 mode,
                 diagnostics,
@@ -306,9 +316,12 @@ private fun OverlayPanel(
     }
     // Match the calibrated opponent badge exactly at every display width.
     val teamInfoWidth = with(LocalDensity.current) { panelWidthPx.toDp() }
-    val background = if (isBattleHud) Color(0xE8E0F2F1) else Color(0xE810231F)
-    val foreground = if (isBattleHud) Color(0xFF004D40) else Color(0xFFD7FFF4)
-    val muted = if (isBattleHud) Color(0xFF397D77) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
+    // Pokémon GO's team badge is a translucent white card with blue-teal ink.
+    // Continuing the same material below its flat lower edge makes this panel
+    // read as one attached piece of battle UI.
+    val background = if (isBattleHud) Color.White.copy(alpha = 0.90f) else Color(0xE810231F)
+    val foreground = if (isBattleHud) Color(0xFF275F6D) else Color(0xFFD7FFF4)
+    val muted = if (isBattleHud) Color(0xFF397786) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
 
     val panelDragModifier = if (layoutEditing) {
         Modifier.pointerInput(layoutEditing) {
@@ -327,12 +340,14 @@ private fun OverlayPanel(
             .width(teamInfoWidth)
             .background(
                 background,
-                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 14.dp, bottomEnd = 14.dp)
             )
-            .border(
-                1.dp,
-                if (layoutEditing) Color(0xFFB000FF) else foreground.copy(alpha = 0.35f),
-                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+            .then(
+                if (layoutEditing) Modifier.border(
+                    1.dp,
+                    Color(0xFFB000FF),
+                    RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 14.dp, bottomEnd = 14.dp),
+                ) else Modifier
             )
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)

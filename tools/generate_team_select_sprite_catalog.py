@@ -38,7 +38,10 @@ def descriptor(path: Path) -> list[float]:
             if highest > 238 and highest - lowest < 18:
                 continue
             h, s, v = colorsys.rgb_to_hsv(red / 255, green / 255, blue / 255)
-            if s < 0.07 and v > 0.91:
+            # Pale card backgrounds, lucky-card bubbles, and sparkle fields are
+            # presentation decoration. They are deliberately excluded so the
+            # Pokémon artwork remains the matching signal.
+            if (s < 0.07 and v > 0.91) or (v > 0.88 and s < 0.68):
                 continue
             hue[min(23, int(h * 24))] += 1
             saturation[min(7, int(s * 8))] += 1
@@ -78,9 +81,11 @@ def main() -> None:
         if not match:
             continue
         variant = match.group(2)
-        # Shiny is appearance evidence, not a different species. Costumes add
-        # many near-duplicates and are intentionally left to their base image.
-        if ".s" in variant or ".c" in variant:
+        # Shiny is appearance evidence, not a different species, but its colors
+        # can differ enough that it still needs a reference descriptor. Every
+        # descriptor maps back to the same Pokédex ID. Costumes add many
+        # near-duplicates and are intentionally left to their base image.
+        if ".c" in variant:
             continue
         records.append((int(match.group(1)), variant.removeprefix(".") or "base", path))
 

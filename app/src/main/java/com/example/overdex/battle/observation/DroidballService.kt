@@ -623,6 +623,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
         val collapsedSizePx = (48f * resources.displayMetrics.density).roundToInt()
         val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
+        val opponentBadgeHeightPx = BattleHudOverlayGeometry.opponentBadgeHeightPx(bounds.height())
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -649,6 +650,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             setContent {
                 BattleOverlay(
                     panelWidthPx = panelWidthPx,
+                    opponentBadgeHeightPx = opponentBadgeHeightPx,
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
                     onDragFinished = ::snapOverlayToNearestEdge,
@@ -756,7 +758,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         ).roundToInt()
         params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
         params.y = layout.windowY ?: (
-            BattleHudOverlayGeometry.panelTopPx(bounds.height()) - topHalfHeightPx
+            BattleHudOverlayGeometry.opponentBadgeTopPx(bounds.height()) - topHalfHeightPx
         ).coerceAtLeast(0)
     }
 

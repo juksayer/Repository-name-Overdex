@@ -16,6 +16,7 @@ import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCade
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.MatchArchive
@@ -26,6 +27,28 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchReplayModelTest {
+    @Test fun `menus remain empty and countdown appears at its preserved time`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("recording", com.example.overdex.battle.archive.ArchivedMatchRecordStarted, 1_000_000_000L),
+            timed("vs", ArchivedVsScreenWitnessed, 120_000_000_000L),
+            timed(
+                "three",
+                ArchivedCountdownGlyphWitnessed("3", 0.95f, 1, basis = "TEST"),
+                125_000_000_000L,
+            ),
+            article("player", "PLAYER", "Cresselia", 488, 126_000_000_000L),
+            article("opponent", "OPPONENT", "Glaceon", 471, 126_000_000_000L),
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals(null, model.sceneAt(60_000_000_000L).player)
+        assertEquals(null, model.sceneAt(60_000_000_000L).opponent)
+        assertEquals("3", model.sceneAt(125_400_000_000L).countdownGlyph)
+        assertEquals(null, model.sceneAt(126_000_000_000L).countdownGlyph)
+        assertEquals("Cresselia", model.sceneAt(126_000_000_000L).player?.speciesName)
+        assertEquals("Glaceon", model.sceneAt(126_000_000_000L).opponent?.speciesName)
+    }
+
     @Test fun `replay changes the right combatant at its witnessed switch time`() {
         val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
             article("p", "PLAYER", "GOURGEIST", 711, 10),

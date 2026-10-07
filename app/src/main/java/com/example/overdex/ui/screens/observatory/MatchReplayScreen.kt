@@ -259,6 +259,14 @@ fun MatchReplayScreen(
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
                 }
+                scene.countdownGlyph?.let { glyph ->
+                    Text(
+                        text = glyph,
+                        color = Color.White,
+                        fontSize = if (glyph == "GO") 72.sp else 88.sp,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
             }
         }
     }
