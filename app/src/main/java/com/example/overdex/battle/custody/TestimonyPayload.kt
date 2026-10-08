@@ -228,9 +228,10 @@ data class DeviceMotionPulseMeasured(
 }
 
 /**
- * A charge-move quick-time vibration pattern inferred from several separately
- * preserved device-motion pulses. It supports a charge-move use; it does not
- * identify the move name.
+ * A charge-move quick-time vibration pattern inferred from one to three
+ * separately preserved device-motion pulses. The count records whether the
+ * player reached Nice, Great, or Excellent. It supports a charge-move use; it
+ * does not identify the move name.
  */
 data class ChargeMoveQteVibrationPatternInferred(
     val side: ActivePokemonSide = ActivePokemonSide.PLAYER,
@@ -239,8 +240,8 @@ data class ChargeMoveQteVibrationPatternInferred(
     val basis: String = "THREE_SHORT_DEVICE_MOTION_PULSES"
 ) : TestimonyPayload {
     init {
-        require(pulseCount >= 3)
-        require(windowNanos > 0L)
+        require(pulseCount in 1..3)
+        require(windowNanos >= 0L)
     }
 }
 
@@ -249,6 +250,17 @@ data class PlayerInactiveHpBarMeasured(
     val slot: Int,
     val filledFraction: Float
 ) : TestimonyPayload
+
+/** A stable count read from the player's purpose-specific Poké Ball badge crop. */
+data class PlayerPokeBallCountMeasured(
+    val visibleCount: Int,
+    val maximumCount: Int = 3
+) : TestimonyPayload {
+    init {
+        require(maximumCount > 0)
+        require(visibleCount in 0..maximumCount)
+    }
+}
 
 /** A count read from one purpose-specific opponent badge crop. */
 data class OpponentBattleResourceCountMeasured(
@@ -532,13 +544,18 @@ data class FastMoveSoundMeasured(
     val onsetOffsetNanos: Long?,
     val soundDurationNanos: Long?,
     val spectralCentroidHz: Float?,
-    val peakAmplitude: Float
+    val peakAmplitude: Float,
+    /** Side of the canonical visual use that requested this audio window. */
+    val attackingSide: ActivePokemonSide? = null,
+    /** Absolute onset inside the cue-centered capture, when measurable. */
+    val soundOnsetMonotonicNanos: Long? = null,
 ) : TestimonyPayload {
     init {
         require(peakAmplitude in 0f..1f)
         require(!audible || (onsetOffsetNanos != null && soundDurationNanos != null && spectralCentroidHz != null))
         require(soundDurationNanos == null || soundDurationNanos > 0L)
         require(spectralCentroidHz == null || spectralCentroidHz >= 0f)
+        require(soundOnsetMonotonicNanos == null || audible)
     }
 }
 

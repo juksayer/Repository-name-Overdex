@@ -5,6 +5,7 @@ import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.OpponentBattleResource
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
+import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
@@ -91,6 +92,69 @@ class PersistedOpponentBattleResourceWitness private constructor(
             observerId = ObserverId("OPPONENT_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
             name = "Opponent Shields Witness"
         )
+    }
+}
+
+/** Reads the player's dedicated Poké Ball strip without inspecting the rest of the badge. */
+class PersistedPlayerPokeBallWitness(
+    private val artifactStore: FileCropArtifactStore,
+    override val observerId: ObserverId = ObserverId(
+        "PLAYER_POKE_BALLS_WITNESS",
+        ObservationSource.SCREEN_CAPTURE
+    ),
+    override val name: String = "Player Poké Balls Witness"
+) : Observer {
+    private var scope: CoroutineScope? = null
+
+    override fun start(match: Match) {
+        if (scope != null) return
+        val sourceId = SourceId(observerId.id)
+        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
+            witnessScope.launch {
+                var candidate: Int? = null
+                var candidateReference: String? = null
+                var delivered: Int? = null
+                match.articles
+                    .filter {
+                        (it.payload as? CropCaptured)?.cropProvenance?.cropName ==
+                            BattleCropContracts.playerPokeBalls.cropName
+                    }
+                    .collect { article ->
+                        val captured = article.payload as CropCaptured
+                        val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
+                            ?: return@collect
+                        val count = try {
+                            OpponentBattleResourceCounter.count(
+                                bitmap,
+                                maximumCount = 3,
+                                acceptsPixel = OpponentBattleResourceCounter::isBrightPokeBallRed
+                            )
+                        } finally {
+                            bitmap.recycle()
+                        }
+                        if (candidate != count) {
+                            candidate = count
+                            candidateReference = article.id.value
+                            return@collect
+                        }
+                        if (delivered == count) return@collect
+                        match.custody.submitTestimony(
+                            sourceId = sourceId,
+                            payload = PlayerPokeBallCountMeasured(count),
+                            timestamp = article.perceivedAt,
+                            confidence = null,
+                            evidenceReferences = listOfNotNull(candidateReference, article.id.value).distinct(),
+                            monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
+                        )
+                        delivered = count
+                    }
+            }
+        }
+    }
+
+    override fun stop() {
+        scope?.cancel("Witness stopped")
+        scope = null
     }
 }
 

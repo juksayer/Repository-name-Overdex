@@ -36,7 +36,7 @@ class PersistedAnnouncementPhraseWitness(
                 match.articles.collect { article ->
                     if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
-                    val phraseIsVisible = text.uppercase().replace(" ", "").contains(phrase)
+                    val phraseIsVisible = announcementContainsPhrase(text, phrase)
 
                     if (!phraseIsVisible) {
                         phraseWasVisible = false
@@ -75,5 +75,15 @@ class PersistedAnnouncementPhraseWitness(
             ObserverId("CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS", ObservationSource.SCREEN_CAPTURE),
             "Charge Move Used Announcement Witness"
         )
+    }
+}
+
+/** OCR commonly clips the last one or two letters of the brief Get Ready cue. */
+internal fun announcementContainsPhrase(text: String, phrase: String): Boolean {
+    val normalizedText = text.uppercase().filter(Char::isLetterOrDigit)
+    val normalizedPhrase = phrase.uppercase().filter(Char::isLetterOrDigit)
+    return when (normalizedPhrase) {
+        "GETREADY" -> normalizedText.contains("GETREADY") || normalizedText.contains("GETREA")
+        else -> normalizedText.contains(normalizedPhrase)
     }
 }

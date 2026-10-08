@@ -9,6 +9,7 @@ import com.example.overdex.battle.custody.FastMoveEffectiveness
 import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
@@ -327,6 +328,43 @@ class FastMoveCadenceInferenceTest {
         assertEquals(ActivePokemonSide.OPPONENT, identity.side)
         assertEquals("Water Gun", identity.moveName)
         assertEquals(1, resolved.size)
+    }
+
+    @Test
+    fun `audible onset cadence narrows the cued attacking side and visual cadence corroborates it`() = runBlocking {
+        val sneasel = Pokemon(
+            id = 215,
+            name = "Sneasel",
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            region = "Johto",
+            fastMoves = listOf(
+                move("Ice Shard", 3, 10, PokemonType.ICE),
+                move("Feint Attack", 2, 6, PokemonType.DARK),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(sneasel))
+        engine.accept(article(
+            "species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215),
+        ))
+
+        assertTrue(engine.accept(sound("sound-1", 10_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(sound("sound-2", 11_000_000_000L)).isEmpty())
+        val audioIdentity = engine.accept(sound("sound-3", 12_000_000_000L))
+            .single().payload as FastMoveIdentified
+        assertEquals("Feint Attack", audioIdentity.moveName)
+        assertTrue(audioIdentity.basis.startsWith("AUDIO_PROFILE_CADENCE"))
+        assertTrue(!audioIdentity.basis.contains("CORROBORATED"))
+
+        val corroborated = engine.accept(borderCadence("border", 1_000_000_000L))
+            .single().payload as FastMoveIdentified
+        assertEquals("Feint Attack", corroborated.moveName)
+        assertTrue(corroborated.basis.contains("CORROBORATED_BY_BORDER_PULSE"))
+        assertEquals(
+            listOf("CADENCE", "AUDIO"),
+            engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.evidenceKinds,
+        )
     }
 
     @Test
@@ -703,6 +741,19 @@ class FastMoveCadenceInferenceTest {
         id,
         PlayerChargeMoveEnergyFillCadenceMeasured(intervalNanos, listOf(0, 1))
     )
+
+    private fun sound(id: String, onsetNanos: Long) = article(
+        id,
+        FastMoveSoundMeasured(
+            audible = true,
+            onsetOffsetNanos = 500_000_000L,
+            soundDurationNanos = 200_000_000L,
+            spectralCentroidHz = 900f,
+            peakAmplitude = 0.4f,
+            attackingSide = ActivePokemonSide.OPPONENT,
+            soundOnsetMonotonicNanos = onsetNanos,
+        ),
+    ).copy(monotonicTimeNanos = onsetNanos - 500_000_000L)
 
     private fun fastUse(id: String, side: ActivePokemonSide, speciesName: String) = article(
         id,

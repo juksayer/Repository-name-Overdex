@@ -13,6 +13,8 @@ import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEvent
 import com.example.overdex.model.BattleEventType
 import com.example.overdex.model.BattleResult
+import com.example.overdex.battle.observation.MatchOutcomePhrase
+import com.example.overdex.battle.observation.MatchOutcomeTextResolver
 import com.example.overdex.model.Confidence
 import com.example.overdex.model.ConfidenceLevel
 import java.util.UUID
@@ -120,8 +122,8 @@ class BattleInterpreter(
             }
 
             sourceId == "YOU_WIN_WITNESS" -> {
-                val payloadText = (payload.data as? String)?.trim()?.uppercase() ?: ""
-                if (payloadText in setOf("YOU WIN!", "YOU WIN", "YOU WVIN!", "YOU WVIN")) {
+                val payloadText = (payload.data as? String).orEmpty()
+                if (MatchOutcomeTextResolver.resolve(payloadText) == MatchOutcomePhrase.WIN) {
                     BattleEvent(
                         timestamp = article.perceivedAt,
                         type = BattleEventType.BATTLE_ENDED,
@@ -134,8 +136,8 @@ class BattleInterpreter(
             }
 
             sourceId == "GOOD_EFFORT_WITNESS" -> {
-                val payloadText = (payload.data as? String)?.trim()?.uppercase() ?: ""
-                if (payloadText.contains("GOOD EFFORT")) {
+                val payloadText = (payload.data as? String).orEmpty()
+                if (MatchOutcomeTextResolver.resolve(payloadText) == MatchOutcomePhrase.LOSS) {
                     BattleEvent(
                         timestamp = article.perceivedAt,
                         type = BattleEventType.BATTLE_ENDED,

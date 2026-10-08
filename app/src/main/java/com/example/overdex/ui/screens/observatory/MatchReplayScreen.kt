@@ -305,6 +305,23 @@ fun MatchReplayScreen(
                         modifier = Modifier.align(Alignment.Center).offset(y = (-76).dp),
                     )
                 }
+                scene.outcome?.let { outcome ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .background(Color(0xE6102418))
+                            .border(2.dp, TerminalGreen)
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = replayOutcomeLabel(outcome),
+                            color = Color.White,
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
             }
         }
     }
@@ -338,6 +355,15 @@ private class ReplayHaptics(context: Context) {
 
 private fun energyLedger(generated: Int, spent: Int): String =
     "E ${generated - spent} (+$generated/-$spent)"
+
+private fun replayOutcomeLabel(outcome: String): String = when (
+    outcome.uppercase().filter(Char::isLetterOrDigit)
+) {
+    "WIN", "WON", "VICTORY", "PLAYERWIN" -> "YOU WIN"
+    "LOSS", "LOSE", "DEFEAT", "OPPONENTWIN" -> "GOOD EFFORT"
+    "TIE", "DRAW" -> "TIE"
+    else -> outcome.replace('_', ' ').uppercase()
+}
 
 @Composable
 private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidth: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {

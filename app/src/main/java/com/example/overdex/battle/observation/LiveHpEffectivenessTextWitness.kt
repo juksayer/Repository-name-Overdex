@@ -126,20 +126,26 @@ internal class LiveHpEffectivenessTextWitness(
                     if (abs(capturedAt - barSample.capturedAtMonotonicTimeNanos) > MAX_BAR_LOCK_AGE_NANOS) {
                         return@supplyFrames
                     }
-                    val hpRegion = crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
-                    val resolved = try {
-                        HpEffectivenessTextCropper.crop(
-                            hpRegion,
-                            barSample.measurement,
-                            cropName = if (damagedSide == ActivePokemonSide.PLAYER) {
-                                "PlayerHpEffectivenessTextCrop"
-                            } else {
-                                "OpponentHpEffectivenessTextCrop"
-                            },
-                        )
-                    } finally {
-                        hpRegion.bitmap.recycle()
-                    } ?: return@supplyFrames
+                    val hpRegionBounds = crop.resolveRect(
+                        calibration,
+                        frame.bitmap.width,
+                        frame.bitmap.height,
+                    ) ?: return@supplyFrames
+                    val resolved = HpEffectivenessTextCropper.crop(
+                        sourceFrame = frame.bitmap,
+                        hpRegionBounds = BattleCropBounds(
+                            left = hpRegionBounds.left,
+                            top = hpRegionBounds.top,
+                            right = hpRegionBounds.right,
+                            bottom = hpRegionBounds.bottom,
+                        ),
+                        measurement = barSample.measurement,
+                        cropName = if (damagedSide == ActivePokemonSide.PLAYER) {
+                            "PlayerHpEffectivenessTextCrop"
+                        } else {
+                            "OpponentHpEffectivenessTextCrop"
+                        },
+                    ) ?: return@supplyFrames
                     lastQueuedNanos.set(capturedAt)
                     val result = samples.trySend(
                         LiveHpEffectivenessCrop(
@@ -285,27 +291,27 @@ internal class LiveHpEffectivenessTextWitness(
 /** Builds the moving OCR strip from the HP bar position already tracked live. */
 internal object HpEffectivenessTextCropper {
     fun crop(
-        hpRegion: ResolvedBattleCrop,
+        sourceFrame: Bitmap,
+        hpRegionBounds: BattleCropBounds,
         measurement: ActiveHpBarMeasurement,
         cropName: String,
     ): ResolvedBattleCrop? {
-        val bounds = resolveBounds(hpRegion.bitmap.width, hpRegion.bitmap.height, measurement) ?: return null
+        val bounds = resolveBounds(
+            sourceWidth = sourceFrame.width,
+            sourceHeight = sourceFrame.height,
+            hpRegionBounds = hpRegionBounds,
+            measurement = measurement,
+        ) ?: return null
         return try {
-            val parent = hpRegion.provenance.bounds
             ResolvedBattleCrop(
                 provenance = BattleCropProvenance(
                     cropName = cropName,
-                    sourceWidth = hpRegion.provenance.sourceWidth,
-                    sourceHeight = hpRegion.provenance.sourceHeight,
-                    bounds = BattleCropBounds(
-                        left = parent.left + bounds.left,
-                        top = parent.top + bounds.top,
-                        right = parent.left + bounds.right,
-                        bottom = parent.top + bounds.bottom,
-                    ),
+                    sourceWidth = sourceFrame.width,
+                    sourceHeight = sourceFrame.height,
+                    bounds = bounds,
                 ),
                 bitmap = Bitmap.createBitmap(
-                    hpRegion.bitmap,
+                    sourceFrame,
                     bounds.left,
                     bounds.top,
                     bounds.right - bounds.left,
@@ -318,17 +324,25 @@ internal object HpEffectivenessTextCropper {
     }
 
     internal fun resolveBounds(
-        cropWidth: Int,
-        cropHeight: Int,
+        sourceWidth: Int,
+        sourceHeight: Int,
+        hpRegionBounds: BattleCropBounds,
         measurement: ActiveHpBarMeasurement,
     ): BattleCropBounds? {
-        if (cropWidth <= 0 || cropHeight <= 0 || measurement.width <= 0) return null
+        if (sourceWidth <= 0 || sourceHeight <= 0 || measurement.width <= 0 ||
+            hpRegionBounds.left < 0 || hpRegionBounds.top < 0 ||
+            hpRegionBounds.right > sourceWidth || hpRegionBounds.bottom > sourceHeight ||
+            hpRegionBounds.right <= hpRegionBounds.left || hpRegionBounds.bottom <= hpRegionBounds.top
+        ) return null
         val barHeight = (measurement.bottom - measurement.top).coerceAtLeast(1)
         val horizontalPadding = max(12, (measurement.width * 0.35f).roundToInt())
         val textHeight = max(32, barHeight * 4)
-        val left = (measurement.left - horizontalPadding).coerceAtLeast(0)
-        val right = (measurement.right + horizontalPadding).coerceAtMost(cropWidth)
-        val bottom = (measurement.top + max(2, barHeight / 4)).coerceIn(0, cropHeight)
+        val globalBarLeft = hpRegionBounds.left + measurement.left
+        val globalBarTop = hpRegionBounds.top + measurement.top
+        val globalBarRight = hpRegionBounds.left + measurement.right
+        val left = (globalBarLeft - horizontalPadding).coerceAtLeast(0)
+        val right = (globalBarRight + horizontalPadding).coerceAtMost(sourceWidth)
+        val bottom = (globalBarTop + max(2, barHeight / 4)).coerceIn(0, sourceHeight)
         val top = (bottom - textHeight).coerceAtLeast(0)
         return BattleCropBounds(left, top, right, bottom).takeIf {
             it.right - it.left >= 32 && it.bottom - it.top >= 16

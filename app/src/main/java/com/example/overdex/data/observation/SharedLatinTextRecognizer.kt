@@ -80,3 +80,39 @@ object PrioritySpeciesTextRecognizer {
         }
     }
 }
+
+/**
+ * One reserved result-screen reader.
+ *
+ * Result text is brief, but it must never jump ahead of a species-name read or
+ * wait behind the full-width announcement queue. A third process-wide client
+ * keeps those latency domains independent while still creating only one model
+ * interpreter for this entire witness family.
+ */
+object OutcomeTextRecognizer {
+    private val recognizer by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    }
+    private val lane = Mutex()
+    @Volatile private var warmed = false
+
+    suspend fun readText(bitmap: Bitmap): String = lane.withLock {
+        warmed = true
+        recognizer.read(bitmap).text
+    }
+
+    suspend fun warmUp() {
+        if (warmed) return
+        lane.withLock {
+            if (warmed) return@withLock
+            val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
+            blank.eraseColor(Color.WHITE)
+            try {
+                recognizer.read(blank)
+                warmed = true
+            } finally {
+                blank.recycle()
+            }
+        }
+    }
+}

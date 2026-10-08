@@ -245,6 +245,7 @@ class Match(
         }
         matchScope.launch {
             var matchStartRecorded = false
+            var matchEndRecorded = false
             custody.testimonyFlow.collect { testimony ->
                 if (testimony.payload is AttackIncoming) {
                     Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
@@ -447,7 +448,10 @@ class Match(
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
                     DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
-                    if (glyph.glyph in setOf("3", "2", "1", "GO")) {
+                    // A countdown-shaped battlefield animation may fool this
+                    // crop later in combat. It may still remain raw visual
+                    // testimony, but it must not open a new battle-cry window.
+                    if (!matchStartRecorded && glyph.glyph in setOf("3", "2", "1", "GO")) {
                         DroidballService.requestCueCenteredAudio(article.id.value, com.example.overdex.battle.audio.BattleCryCueKind.valueOf("COUNTDOWN_${glyph.glyph}"))
                     }
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
@@ -466,7 +470,12 @@ class Match(
 
                 interpreter.interpret(article)?.let { event ->
                     battleMemory.recordEvent(event)
-                    if (event.type == BattleEventType.BATTLE_ENDED && event.result != null) {
+                    if (event.type == BattleEventType.BATTLE_ENDED && event.result != null && !matchEndRecorded) {
+                        // Preserve every raw result reading, including the later
+                        // result screen that returns after the summary card, but
+                        // establish exactly one semantic Match end at the first
+                        // accepted outcome phrase.
+                        matchEndRecorded = true
                         val derivedArticle = RealityArticle(
                             id = ArticleId(UUID.randomUUID().toString()),
                             perceivedAt = article.perceivedAt,

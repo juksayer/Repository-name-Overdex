@@ -6,6 +6,7 @@ import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.AudioInputStatus
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
+import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
 
 /**
  * A chronological record of battle events used for real-time UI updates.
@@ -34,6 +35,7 @@ class BattleTimeline {
                 val detail = when (val payload = record.payload) {
                     is CropCaptured -> "crop=${payload.cropProvenance.cropName} sha256=${payload.artifact.sha256.take(12)}"
                     is AudioInputStatus -> "source=${payload.captureSource} state=${payload.state}"
+                    is PlayerPokeBallCountMeasured -> "PLAYER POKE_BALLS=${payload.visibleCount}/${payload.maximumCount}"
                     is OpponentBattleResourceCountMeasured -> "${payload.resource}=${payload.visibleCount}/${payload.maximumCount}"
                     is ActiveHpBarMeasured -> "side=${payload.side} fill=${"%.3f".format(java.util.Locale.ROOT, payload.filledFraction)} bounds=${payload.barLeft},${payload.barTop},${payload.barRight},${payload.barBottom}"
                     else -> payload::class.simpleName.orEmpty()

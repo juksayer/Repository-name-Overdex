@@ -141,6 +141,11 @@ class CalibrationManager(context: Context) {
             .putFloat("opponent_species_name_w", calibration.opponentSpeciesNameRegion.width)
             .putFloat("opponent_species_name_h", calibration.opponentSpeciesNameRegion.height)
 
+            .putFloat("player_poke_balls_x", calibration.playerPokeBallsRegion.x)
+            .putFloat("player_poke_balls_y", calibration.playerPokeBallsRegion.y)
+            .putFloat("player_poke_balls_w", calibration.playerPokeBallsRegion.width)
+            .putFloat("player_poke_balls_h", calibration.playerPokeBallsRegion.height)
+
             .putFloat("opponent_poke_balls_x", calibration.opponentPokeBallsRegion.x)
             .putFloat("opponent_poke_balls_y", calibration.opponentPokeBallsRegion.y)
             .putFloat("opponent_poke_balls_w", calibration.opponentPokeBallsRegion.width)
@@ -459,6 +464,16 @@ class CalibrationManager(context: Context) {
             persistedOpponentSpeciesNameRegion ?: BattleCalibration().opponentSpeciesNameRegion
         }
 
+        val playerPokeBallsWidth = prefs.getFloat("player_poke_balls_w", 0f)
+        val playerPokeBallsRegion = if (playerPokeBallsWidth > 0f && playerPokeBallsWidth <= 1f) {
+            AnchorRegion(
+                x = prefs.getFloat("player_poke_balls_x", 20f / 1080f).coerceIn(0f, 1f),
+                y = prefs.getFloat("player_poke_balls_y", 280f / 2400f).coerceIn(0f, 1f),
+                width = playerPokeBallsWidth.coerceIn(0.01f, 1f),
+                height = prefs.getFloat("player_poke_balls_h", (340f - 280f) / 2400f).coerceIn(0.01f, 1f)
+            )
+        } else BattleCalibration().playerPokeBallsRegion
+
         val opponentPokeBallsWidth = prefs.getFloat("opponent_poke_balls_w", 0f)
         val opponentPokeBallsRegion = if (opponentPokeBallsWidth > 0f && opponentPokeBallsWidth <= 1f) {
             AnchorRegion(
@@ -640,6 +655,7 @@ class CalibrationManager(context: Context) {
             opponentTeamInfoRegion = opponentTeamInfoRegion,
             playerSpeciesNameRegion = playerSpeciesNameRegion,
             opponentSpeciesNameRegion = opponentSpeciesNameRegion,
+            playerPokeBallsRegion = playerPokeBallsRegion,
             opponentPokeBallsRegion = opponentPokeBallsRegion,
             trainerActiveTypeRegion = trainerActiveTypeRegion,
             opponentActiveTypeRegion = opponentActiveTypeRegion,

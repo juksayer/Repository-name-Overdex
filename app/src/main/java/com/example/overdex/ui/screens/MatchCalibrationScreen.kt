@@ -87,11 +87,25 @@ fun MatchCalibrationScreen(
             IntSize(metrics.widthPixels, metrics.heightPixels)
         }
     }
+    val detectedDeviceModel = remember {
+        listOf(Build.MANUFACTURER, Build.MODEL)
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .joinToString(" ")
+            .ifBlank { "Android device" }
+    }
+    val detectedScreenWidth = deviceScreenSize.width.takeIf { it > 0 } ?: 1080
+    val detectedScreenHeight = deviceScreenSize.height.takeIf { it > 0 } ?: 2400
     val teamSelectCalibrationStore = remember(context) { TeamSelectCalibrationStore(context) }
     val profileStore = remember(context) { MatchCalibrationProfileStore(context) }
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
     var teamSelectCalibration by remember { mutableStateOf(teamSelectCalibrationStore.load()) }
     var activeProfile by remember { mutableStateOf<MatchCalibrationProfileSummary?>(profileStore.activeSummary()) }
+    val activeProfileMatchesDetectedDevice = activeProfile?.let {
+        it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) &&
+            it.screenWidth == detectedScreenWidth && it.screenHeight == detectedScreenHeight
+    } == true
+    var deviceGuessOffered by rememberSaveable { mutableStateOf(false) }
     var showSaveProfileDialog by remember { mutableStateOf(false) }
     var profileName by remember { mutableStateOf("") }
     var profileModel by remember { mutableStateOf("") }
@@ -168,6 +182,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.PLAYER_SPECIES_NAME,
             CalibrationRegion.OPPONENT_SPECIES_NAME,
             CalibrationRegion.OPPONENT_SHIELDS,
+            CalibrationRegion.PLAYER_POKE_BALLS,
             CalibrationRegion.OPPONENT_POKE_BALLS,
             CalibrationRegion.TRAINER_ACTIVE_TYPE,
             CalibrationRegion.OPPONENT_ACTIVE_TYPE,
@@ -208,6 +223,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.BATTLE_PARTY_TABS -> "Post-Match Battle / Party Selector"
             CalibrationRegion.OUT_OF_BATTLE_MENU -> "Post-Match Menu Support"
             CalibrationRegion.OPPONENT_SPECIES_NAME -> "Opponent Species Name"
+            CalibrationRegion.PLAYER_POKE_BALLS -> "Player Poké Balls"
             CalibrationRegion.OPPONENT_POKE_BALLS -> "Opponent Poké Balls"
             CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> "Team Select League Badge"
             CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> "Team Select League Text"
@@ -248,6 +264,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.BATTLE_PARTY_TABS -> calibration.battlePartyTabsRegion
         CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
         CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
+        CalibrationRegion.PLAYER_POKE_BALLS -> calibration.playerPokeBallsRegion
         CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
         CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> teamSelectCalibration.leagueBadge
         CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> teamSelectCalibration.leagueText
@@ -315,6 +332,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.BATTLE_PARTY_TABS -> calibration.copy(battlePartyTabsRegion = updated)
             CalibrationRegion.OUT_OF_BATTLE_MENU -> calibration.copy(outOfBattleMenuRegion = updated)
             CalibrationRegion.OPPONENT_SPECIES_NAME -> calibration.copy(opponentSpeciesNameRegion = updated)
+            CalibrationRegion.PLAYER_POKE_BALLS -> calibration.copy(playerPokeBallsRegion = updated)
             CalibrationRegion.OPPONENT_POKE_BALLS -> calibration.copy(opponentPokeBallsRegion = updated)
             else -> calibration
         }
@@ -355,17 +373,28 @@ fun MatchCalibrationScreen(
     }
 
     fun openSaveProfileDialog() {
-        val width = deviceScreenSize.width.takeIf { it > 0 } ?: 1080
-        val height = deviceScreenSize.height.takeIf { it > 0 } ?: 2400
-        val defaultModel = listOf(Build.MANUFACTURER, Build.MODEL)
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
-        profileModel = activeProfile?.deviceModel?.takeIf { it.isNotBlank() } ?: defaultModel
-        profileWidth = (activeProfile?.screenWidth ?: width).toString()
-        profileHeight = (activeProfile?.screenHeight ?: height).toString()
-        profileName = activeProfile?.name ?: "$profileModel ${width}x$height"
+        val matchingActiveProfile = activeProfile?.takeIf {
+            it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) &&
+                it.screenWidth == detectedScreenWidth && it.screenHeight == detectedScreenHeight
+        }
+        // An active profile can arrive from another phone through restored app
+        // data. On a new device, offer Android's current full-display bounds
+        // instead of silently carrying the former phone's dimensions forward.
+        profileModel = matchingActiveProfile?.deviceModel ?: detectedDeviceModel
+        profileWidth = (matchingActiveProfile?.screenWidth ?: detectedScreenWidth).toString()
+        profileHeight = (matchingActiveProfile?.screenHeight ?: detectedScreenHeight).toString()
+        profileName = matchingActiveProfile?.name
+            ?: "$detectedDeviceModel ${detectedScreenWidth}x$detectedScreenHeight"
         profileSaveError = null
         showSaveProfileDialog = true
+    }
+
+    fun useDetectedDeviceGuess() {
+        profileModel = detectedDeviceModel
+        profileWidth = detectedScreenWidth.toString()
+        profileHeight = detectedScreenHeight.toString()
+        profileName = "$detectedDeviceModel ${detectedScreenWidth}x$detectedScreenHeight"
+        profileSaveError = null
     }
 
     fun saveNamedProfile() {
@@ -395,6 +424,18 @@ fun MatchCalibrationScreen(
         battleProfileSaved = calibrationManager.save(calibration)
         teamSelectProfileSaved = teamSelectCalibrationStore.save(teamSelectCalibration, width, height)
         showSaveProfileDialog = false
+    }
+
+    LaunchedEffect(
+        activeProfile?.id,
+        detectedDeviceModel,
+        detectedScreenWidth,
+        detectedScreenHeight,
+    ) {
+        if (!deviceGuessOffered && !activeProfileMatchesDetectedDevice) {
+            deviceGuessOffered = true
+            openSaveProfileDialog()
+        }
     }
 
     // Input Handling
@@ -463,6 +504,25 @@ fun MatchCalibrationScreen(
             title = { Text("SAVE CALIBRATION AS", color = TerminalGreen) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "DETECTED GUESS: $detectedDeviceModel  ${detectedScreenWidth}×${detectedScreenHeight}",
+                        color = TerminalGreen,
+                        fontSize = 12.sp,
+                    )
+                    activeProfile?.takeIf {
+                        !it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) ||
+                            it.screenWidth != detectedScreenWidth ||
+                            it.screenHeight != detectedScreenHeight
+                    }?.let { current ->
+                        Text(
+                            "ACTIVE PROFILE: ${current.deviceModel}  ${current.screenWidth}×${current.screenHeight}",
+                            color = Color(0xFFFFC857),
+                            fontSize = 11.sp,
+                        )
+                    }
+                    TextButton(onClick = ::useDetectedDeviceGuess) {
+                        Text("USE DETECTED DEVICE", color = TerminalGreen)
+                    }
                     TextField(
                         value = profileName,
                         onValueChange = { profileName = it },

@@ -71,6 +71,10 @@ data class BattleCalibration(
         x = 788f / 1080f, y = 145f / 2400f,
         width = (1060f - 788f) / 1080f, height = (205f - 145f) / 2400f
     ),
+    val playerPokeBallsRegion: AnchorRegion = AnchorRegion(
+        x = 20f / 1080f, y = 280f / 2400f,
+        width = (205f - 20f) / 1080f, height = (340f - 280f) / 2400f
+    ),
     val opponentPokeBallsRegion: AnchorRegion = AnchorRegion(
         x = 875f / 1080f, y = 280f / 2400f,
         width = (1060f - 875f) / 1080f, height = (340f - 280f) / 2400f

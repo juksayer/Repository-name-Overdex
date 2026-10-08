@@ -162,9 +162,18 @@ internal class ActiveHpBarTracker {
     fun measure(bitmap: Bitmap): ActiveHpBarMeasurement? {
         val candidates = ActiveHpBarMeasurer.measureAll(bitmap)
         if (candidates.isEmpty()) return null
-        val anchor = latestLock ?: initialLock
+        // X belongs to the initial per-combatant lock. Score against the latest
+        // location for continuity, but never allow successive small errors to
+        // walk the accepted bar sideways into another bright battlefield edge.
+        val anchor = initialLock
         val selected = if (anchor == null) {
-            candidates.maxByOrNull { it.confidence * it.width }
+            // Width used to dominate this choice. A cloud edge or battlefield
+            // effect could therefore become the combatant's permanent X anchor,
+            // even when the real bar was present in the same frame. The measurer
+            // now folds the rectangular side edges and GO bar proportions into
+            // confidence, so acquire the strongest shape rather than the widest
+            // bright line.
+            candidates.maxByOrNull { it.confidence }
         } else {
             candidates
                 .filter { it.matches(anchor) }
@@ -209,24 +218,29 @@ internal object ActiveHpBarMeasurer {
         pixelAt: (x: Int, y: Int) -> Int
     ): List<ActiveHpBarMeasurement> {
         if (width < 32 || height < 24) return emptyList()
-        // The lower neutral outline can be interrupted by the coloured fill or
-        // transient combat effects, so join only short gaps within one bar.
-        val maxGap = max(8, width / 20)
+        // The outline is a foreground UI rectangle and is nearly continuous.
+        // A larger gap joined separate cloud highlights into hundreds of fake
+        // outlines, making one frame expensive enough to starve later frames.
+        val maxGap = max(3, width / 100)
         // Active HP bars span roughly half of their purpose-specific crop. This
         // excludes short QTE and charge-effect outlines that can be bright and filled.
         val minBarWidth = max(100, width * 9 / 20)
+        // Keep room for a tightly calibrated crop while excluding a full-width
+        // screen edge. Shape confidence still strongly favors the normal 60% bar.
+        val maxBarWidth = width * 9 / 10
         val outlines = buildList {
             for (y in 0 until height) {
-                addAll(findRuns(width, maxGap) { x -> isBrightNeutral(pixelAt(x, y)) }
-                    .filter { it.second - it.first >= minBarWidth }
+                addAll(findRuns(width, maxGap) { x -> isTrackableOutline(pixelAt(x, y)) }
+                    .filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
                     .map { (left, right) -> OutlineRun(y, left, right) })
             }
         }
         if (outlines.isEmpty()) return emptyList()
 
-        // A Pokémon GO HP bar has a visible vertical body. Short horizontal effects
-        // are never promoted to HP evidence, even if they contain saturated colour.
-        val minBarHeight = max(18, height / 110)
+        // The 62.5%-scale capture can reduce a real 16 px outline separation to
+        // 10 px. Short QTE lines remain excluded by the paired-outline and fill
+        // requirements, so do not discard a legitimate compact bar here.
+        val minBarHeight = max(8, height / 160)
         val maxBarHeight = max(28, height / 24)
         val edgeTolerance = max(12, width / 20)
         val candidates = mutableListOf<ActiveHpBarMeasurement>()
@@ -245,10 +259,68 @@ internal object ActiveHpBarMeasurer {
                 val left = max(top.left, bottom.left)
                 val right = minOf(top.right, bottom.right)
                 if (right - left < minBarWidth) continue
-                measureFill(left, top.y, right, bottom.y, width, pixelAt)?.let(candidates::add)
+                val edgeMargin = max(MIN_EDGE_MARGIN_PX, width / 50)
+                if (left < edgeMargin || right > width - edgeMargin) continue
+                val edgeSupport = verticalEdgeSupport(
+                    left = left,
+                    top = top.y,
+                    right = right,
+                    bottom = bottom.y,
+                    width = width,
+                    pixelAt = pixelAt
+                )
+                if (edgeSupport < MIN_VERTICAL_EDGE_SUPPORT) continue
+                measureFill(left, top.y, right, bottom.y, width, pixelAt)?.let { measurement ->
+                    val widthRatio = measurement.width.toFloat() / width
+                    val widthScore = (1f - abs(widthRatio - EXPECTED_WIDTH_RATIO) / WIDTH_RATIO_TOLERANCE)
+                        .coerceIn(0f, 1f)
+                    val heightRatio = (measurement.bottom - measurement.top).toFloat() /
+                        measurement.width.coerceAtLeast(1)
+                    val heightScore = (1f - abs(heightRatio - EXPECTED_HEIGHT_RATIO) / HEIGHT_RATIO_TOLERANCE)
+                        .coerceIn(0f, 1f)
+                    val shapeConfidence = edgeSupport * 0.60f + widthScore * 0.25f + heightScore * 0.15f
+                    candidates += measurement.copy(
+                        confidence = (measurement.confidence * 0.45f + shapeConfidence * 0.55f)
+                            .coerceIn(0f, 0.99f)
+                    )
+                }
             }
         }
-        return candidates.distinctBy { listOf(it.left, it.top, it.right, it.bottom, it.filledFraction) }
+        return candidates
+            .distinctBy { listOf(it.left, it.top, it.right, it.bottom, it.filledFraction) }
+            .sortedByDescending { it.confidence }
+    }
+
+    /**
+     * The real GO bar has two tall neutral (or pulsing orange) end caps. Requiring
+     * both is the inexpensive distinction between the UI rectangle and long
+     * highlights in clouds, attacks, Pokémon art, and the battlefield.
+     */
+    private fun verticalEdgeSupport(
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+        width: Int,
+        pixelAt: (x: Int, y: Int) -> Int
+    ): Float {
+        if (bottom <= top || right <= left) return 0f
+        fun bestNear(edgeX: Int): Float {
+            var best = 0f
+            val searchLeft = (edgeX - EDGE_SEARCH_RADIUS).coerceAtLeast(0)
+            val searchRight = (edgeX + EDGE_SEARCH_RADIUS).coerceAtMost(width - 1)
+            for (x in searchLeft..searchRight) {
+                var matches = 0
+                var samples = 0
+                for (y in top..bottom) {
+                    samples++
+                    if (isTrackableOutline(pixelAt(x, y))) matches++
+                }
+                if (samples > 0) best = max(best, matches.toFloat() / samples)
+            }
+            return best
+        }
+        return minOf(bestNear(left), bestNear(right - 1))
     }
 
     private fun hasSaturatedFillBelow(
@@ -357,10 +429,30 @@ internal object ActiveHpBarMeasurer {
         return minOf(red, green, blue) >= 175 && maxOf(red, green, blue) - minOf(red, green, blue) <= 48
     }
 
+    /** A hit changes the normally white outline to orange for only a frame or two. */
+    private fun isTrackableOutline(color: Int): Boolean =
+        isBrightNeutral(color) || isOrangePulseOutline(color)
+
+    private fun isOrangePulseOutline(color: Int): Boolean {
+        val red = color ushr 16 and 0xff
+        val green = color ushr 8 and 0xff
+        val blue = color and 0xff
+        return red >= 155 && green in 65..210 && blue <= 135 &&
+            red - green >= 22 && green - blue >= 12
+    }
+
     private fun isSaturatedFill(color: Int): Boolean {
         val red = color ushr 16 and 0xff
         val green = color ushr 8 and 0xff
         val blue = color and 0xff
         return maxOf(red, green, blue) >= 145 && maxOf(red, green, blue) - minOf(red, green, blue) >= 55
     }
+
+    private const val EDGE_SEARCH_RADIUS = 3
+    private const val MIN_EDGE_MARGIN_PX = 6
+    private const val MIN_VERTICAL_EDGE_SUPPORT = 0.55f
+    private const val EXPECTED_WIDTH_RATIO = 0.60f
+    private const val WIDTH_RATIO_TOLERANCE = 0.18f
+    private const val EXPECTED_HEIGHT_RATIO = 0.09f
+    private const val HEIGHT_RATIO_TOLERANCE = 0.065f
 }

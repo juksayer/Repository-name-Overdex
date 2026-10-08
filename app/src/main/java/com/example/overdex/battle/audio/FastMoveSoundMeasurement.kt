@@ -2,6 +2,7 @@ package com.example.overdex.battle.audio
 
 import com.example.overdex.battle.custody.AudioCaptured
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
+import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.observation.Match
 import com.example.overdex.battle.observation.Observer
@@ -40,9 +41,23 @@ class PersistedFastMoveSoundWitness(private val root: File) : Observer {
                     val bytes = file.takeIf(File::isFile)?.readBytes() ?: return@collect
                     if (sha256(bytes) != audio.artifact.sha256) return@collect
                     val pcm = WavPcm16.decode(bytes) ?: return@collect
+                    val measured = FastMoveSoundAnalyzer.measure(pcm)
+                    val cueUse = article.evidenceReferences
+                        ?.asSequence()
+                        ?.mapNotNull { cueId ->
+                            match.realityTimeline.getArticles().asReversed()
+                                .firstOrNull { it.id.value == cueId }
+                        }
+                        ?.mapNotNull { it.payload as? FastMoveUseObserved }
+                        ?.firstOrNull()
                     match.custody.submitTestimony(
                         sourceId = SourceId(observerId.id),
-                        payload = FastMoveSoundAnalyzer.measure(pcm),
+                        payload = measured.copy(
+                            attackingSide = cueUse?.attackingSide,
+                            soundOnsetMonotonicNanos = if (measured.audible) {
+                                article.monotonicTimeNanos?.plus(requireNotNull(measured.onsetOffsetNanos))
+                            } else null,
+                        ),
                         timestamp = article.perceivedAt,
                         confidence = null,
                         evidenceReferences = listOf(article.id.value),

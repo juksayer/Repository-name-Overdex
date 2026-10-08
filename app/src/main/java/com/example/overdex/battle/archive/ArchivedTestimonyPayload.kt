@@ -180,6 +180,13 @@ data class ArchivedPlayerInactiveHpBarMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_poke_ball_count_measured")
+data class ArchivedPlayerPokeBallCountMeasured(
+    val visibleCount: Int,
+    val maximumCount: Int
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("opponent_battle_resource_count_measured")
 data class ArchivedOpponentBattleResourceCountMeasured(
     val resource: String,
@@ -344,7 +351,9 @@ data class ArchivedFastMoveSoundMeasured(
     val onsetOffsetNanos: Long? = null,
     val soundDurationNanos: Long? = null,
     val spectralCentroidHz: Float? = null,
-    val peakAmplitude: Float
+    val peakAmplitude: Float,
+    val attackingSide: String? = null,
+    val soundOnsetMonotonicNanos: Long? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable

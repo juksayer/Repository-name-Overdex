@@ -8,6 +8,7 @@ import com.example.overdex.battle.custody.FastMoveEffectiveness
 import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveRecipientVisualCadenceMeasured
+import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.TestimonyPayload
@@ -51,7 +52,13 @@ data class FastMoveCandidateSnapshot(
  * the explicit higher-energy assumption.
  */
 class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
-    private enum class CadenceBasis { OBSERVED_USES, BORDER_PULSE, RECIPIENT_VISUAL_ARTIFACT, BAR_MOTION }
+    private enum class CadenceBasis {
+        OBSERVED_USES,
+        BORDER_PULSE,
+        AUDIO_PROFILE,
+        RECIPIENT_VISUAL_ARTIFACT,
+        BAR_MOTION,
+    }
     private data class CadenceEvidence(
         val article: RealityArticle,
         val intervalNanos: Long,
@@ -83,6 +90,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var assumedHigherEnergyTieBreak: Boolean = false,
         var identificationEvidence: List<ArticleId> = emptyList(),
         var lastDirectUseArticle: RealityArticle? = null,
+        var lastSoundOnsetNanos: Long? = null,
+        var lastSoundArticle: RealityArticle? = null,
+        var corroborationSignature: String = "",
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
@@ -234,6 +244,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             return effectivenessResults + acceptObservedUseCadence(article, use)
         }
 
+        val sound = article.payload as? FastMoveSoundMeasured
+        if (sound != null) return acceptSoundCadence(article, sound)
+
         val cadence = when (val payload = article.payload) {
             is ActiveHpBarMotionCadenceMeasured -> CadenceInput(
                 attackingSide = payload.movingSide,
@@ -253,6 +266,39 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             else -> return emptyList()
         }
         return acceptCadence(article, cadence)
+    }
+
+    /**
+     * Audio does not name a move here. It contributes only the measured spacing
+     * between audible onsets, on the side inherited from the visual cue that
+     * requested the clip. Reference-sound matching remains a later, separately
+     * cited conclusion.
+     */
+    private fun acceptSoundCadence(
+        article: RealityArticle,
+        sound: FastMoveSoundMeasured,
+    ): List<FastMoveCadenceDerivation> {
+        if (!sound.audible) return emptyList()
+        val side = sound.attackingSide ?: return emptyList()
+        val onset = sound.soundOnsetMonotonicNanos ?: return emptyList()
+        val state = states[side] ?: return emptyList()
+        val previousAt = state.lastSoundOnsetNanos
+        val previousArticle = state.lastSoundArticle
+        state.lastSoundOnsetNanos = onset
+        state.lastSoundArticle = article
+        if (previousAt == null || previousArticle == null || onset <= previousAt) return emptyList()
+        val interval = onset - previousAt
+        if (interval < MIN_USE_INTERVAL_NANOS) return emptyList()
+        return acceptCadence(
+            article,
+            CadenceInput(
+                attackingSide = side,
+                intervalNanos = interval,
+                basis = CadenceBasis.AUDIO_PROFILE,
+                predecessorIds = listOf(previousArticle.id, article.id),
+                eventAtNanos = onset,
+            )
+        )
     }
 
     /**
@@ -299,7 +345,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     ): List<FastMoveCadenceDerivation> {
         val attackingSide = cadence.attackingSide
         val start = appearanceStarts[attackingSide]
-        val end = article.monotonicTimeNanos
+        val end = cadence.eventAtNanos ?: article.monotonicTimeNanos
         // A cadence spanning a witnessed change cannot be assigned to the new combatant.
         if (start != null && (end == null || end - cadence.intervalNanos < start)) return emptyList()
         val state = states[attackingSide] ?: run {
@@ -326,6 +372,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val resolved = listOf(
             CadenceBasis.OBSERVED_USES,
             CadenceBasis.BORDER_PULSE,
+            CadenceBasis.AUDIO_PROFILE,
             CadenceBasis.RECIPIENT_VISUAL_ARTIFACT,
             CadenceBasis.BAR_MOTION
         ).firstNotNullOfOrNull { basis ->
@@ -343,18 +390,23 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                     )
                 }
         }
+        val corroboration = resolved?.let { corroborationFor(state, it) }
+        val corroborationSignature = corroboration?.labels?.joinToString("+").orEmpty()
         val newlyIdentified = resolved != null && (
             state.identifiedMove != resolved.move.move ||
                 state.selectedBasis != resolved.basis ||
-                state.assumedHigherEnergyTieBreak != resolved.move.assumedHigherEnergyTieBreak
+                state.assumedHigherEnergyTieBreak != resolved.move.assumedHigherEnergyTieBreak ||
+                state.corroborationSignature != corroborationSignature
             )
         if (newlyIdentified) {
             state.identifiedMove = resolved!!.move.move
             state.selectedBasis = resolved.basis
             state.assumedHigherEnergyTieBreak = resolved.move.assumedHigherEnergyTieBreak
+            state.corroborationSignature = corroborationSignature
             state.identificationEvidence = buildList {
                 add(state.speciesArticleId)
                 addAll(resolved.evidence.flatMap { it.predecessorIds })
+                addAll(corroboration?.predecessorIds.orEmpty())
             }.distinct()
         }
         val move = state.identifiedMove ?: return emptyList()
@@ -366,8 +418,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val median = median(intervals)
         val predecessors = state.identificationEvidence
         val timingError = abs(median - move.turns!! * TURN_NANOS)
-        val timingConfidence = (1f - timingError.toFloat() / max(move.turns * TURN_NANOS, 1L))
-            .coerceIn(0f, 1f) * if (state.assumedHigherEnergyTieBreak) 0.7f else 1f
+        val timingConfidence = ((1f - timingError.toFloat() / max(move.turns * TURN_NANOS, 1L)) +
+            0.06f * corroborationSignature.split('+').count { it.isNotBlank() })
+            .coerceIn(0f, 0.99f) * if (state.assumedHigherEnergyTieBreak) 0.7f else 1f
         val output = mutableListOf<FastMoveCadenceDerivation>()
         if (newlyIdentified) {
             output += FastMoveCadenceDerivation(
@@ -378,8 +431,15 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                     moveDurationNanos = move.turns * TURN_NANOS,
                     observedMedianIntervalNanos = median,
                     cadenceSampleCount = intervals.size,
-                    basis = "${selectedBasis.name}_CADENCE_AND_REFERENCE_KNOWLEDGE" +
-                        if (state.assumedHigherEnergyTieBreak) "_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION" else ""
+                    basis = buildString {
+                        append("${selectedBasis.name}_CADENCE_AND_REFERENCE_KNOWLEDGE")
+                        if (state.assumedHigherEnergyTieBreak) {
+                            append("_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION")
+                        }
+                        if (corroborationSignature.isNotBlank()) {
+                            append("_CORROBORATED_BY_$corroborationSignature")
+                        }
+                    }
                 ),
                 predecessorIds = predecessors,
                 confidence = timingConfidence,
@@ -488,6 +548,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             eliminatedMoveNames = allMoves.filterNot { normalize(it.name) in remainingKeys }.map { it.name },
             evidenceKinds = buildList {
                 if (state.cadenceEvidence.isNotEmpty()) add("CADENCE")
+                if (state.cadenceEvidence.any { it.basis == CadenceBasis.AUDIO_PROFILE }) add("AUDIO")
                 if (state.effectivenessEvidence.isNotEmpty()) add("EFFECTIVENESS")
             },
             identifiedMoveName = identified?.name,
@@ -500,6 +561,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val cadenceCandidates = listOf(
             CadenceBasis.OBSERVED_USES,
             CadenceBasis.BORDER_PULSE,
+            CadenceBasis.AUDIO_PROFILE,
             CadenceBasis.RECIPIENT_VISUAL_ARTIFACT,
             CadenceBasis.BAR_MOTION,
         ).firstNotNullOfOrNull { basis ->
@@ -540,6 +602,36 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             if (matching.isNotEmpty()) return matching
         }
         return state.possibleMoves
+    }
+
+    private fun corroborationFor(state: SideState, resolved: ResolvedCadence): Corroboration {
+        val labels = linkedSetOf<String>()
+        val predecessors = linkedSetOf<ArticleId>()
+        state.cadenceEvidence
+            .filter { evidence ->
+                evidence.basis != resolved.basis &&
+                    intervalMatchesMove(evidence.intervalNanos, resolved.move.move)
+            }
+            .groupBy { it.basis }
+            .forEach { (basis, evidence) ->
+                labels += basis.name
+                evidence.flatMapTo(predecessors) { it.predecessorIds }
+            }
+
+        val fusedKinds = resolved.evidence
+            .mapNotNull { it.article.payload as? FastMoveUseObserved }
+            .flatMap { it.evidenceKinds }
+            .filter(DIRECT_USE_EVIDENCE_KINDS::contains)
+            .distinct()
+        if (fusedKinds.size >= 2) labels += "FUSED_VISUAL_USE"
+
+        state.effectivenessEvidence.asReversed().firstOrNull { evidence ->
+            effectivenessMatches(resolved.move.move.type, evidence.defenderTypes, evidence.effectiveness)
+        }?.let { evidence ->
+            labels += "EFFECTIVENESS"
+            predecessors += evidence.article.id
+        }
+        return Corroboration(labels.toList().sorted(), predecessors.toList())
     }
 
     private fun alignedUses(
@@ -656,6 +748,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val intervalNanos: Long,
         val basis: CadenceBasis,
         val predecessorIds: List<ArticleId> = emptyList(),
+        val eventAtNanos: Long? = null,
     )
 
     private data class MoveResolution(
@@ -668,6 +761,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val move: MoveResolution,
         val basis: CadenceBasis,
         val evidence: List<CadenceEvidence>
+    )
+    private data class Corroboration(
+        val labels: List<String>,
+        val predecessorIds: List<ArticleId>,
     )
     private data class EffectivenessMoveCandidate(
         val attackingSide: ActivePokemonSide,

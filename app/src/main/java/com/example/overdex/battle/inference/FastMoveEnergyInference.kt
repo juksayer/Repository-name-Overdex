@@ -56,6 +56,15 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
 
             is FastMoveIdentified -> {
+                // A single cadence source (and especially a higher-energy tie
+                // break) is useful as a live HUD hypothesis, not yet an exact
+                // energy identity. Preserve it on the Timeline and wait for a
+                // second source, unique reference pool, configured player move,
+                // or uniquely resolving effectiveness text.
+                if (!identityIsReadyForExactEnergy(payload.basis)) {
+                    identities.remove(payload.side)
+                    return emptyList()
+                }
                 val pokemon = pokemonKnowledge.getPokemonByName(payload.speciesName)
                 val move = pokemon?.fastMoves?.firstOrNull {
                     normalize(it.name) == normalize(payload.moveName)
@@ -67,6 +76,11 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
 
             is FastMoveUseObserved -> {
+                // Charge-button shade can advance through several visual steps
+                // during one move, and also changes during the countdown. It is
+                // supporting evidence, not a trustworthy one-use counter by
+                // itself. Exact energy requires a battlefield hit/use witness.
+                if (payload.evidenceKinds.none(COUNTABLE_USE_EVIDENCE::contains)) return emptyList()
                 if (!attributedUseIds.add(payload.useId)) return emptyList()
                 val identity = identities[payload.attackingSide]
                 if (identity == null) {
@@ -108,8 +122,24 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     private fun normalize(value: String): String = value.uppercase().filter(Char::isLetterOrDigit)
 
+    private fun identityIsReadyForExactEnergy(basis: String): Boolean =
+        !basis.contains(HIGHER_ENERGY_TIE_BREAK_ASSUMPTION) &&
+            (basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
+                basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
+                basis.contains("EFFECTIVENESS_TEXT") ||
+                basis.contains("_CORROBORATED_BY_"))
+
     private companion object {
         const val DEFAULT_USE_CONFIDENCE = 0.75f
         const val DEFAULT_IDENTITY_CONFIDENCE = 0.70f
+        const val HIGHER_ENERGY_TIE_BREAK_ASSUMPTION = "HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
+        val COUNTABLE_USE_EVIDENCE = setOf(
+            "HP_BORDER_PULSE",
+            "HP_DAMAGE_TICK",
+            "RECIPIENT_VISUAL_ARTIFACT",
+            "HP_BORDER_CADENCE",
+            "HP_BAR_MOTION_COMPLETION",
+            "RECIPIENT_VISUAL_CADENCE",
+        )
     }
 }

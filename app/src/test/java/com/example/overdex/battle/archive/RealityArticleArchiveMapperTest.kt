@@ -25,6 +25,7 @@ import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
+import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.ApertureStatus
 import com.example.overdex.battle.custody.HpBarBorderPulse
@@ -226,6 +227,16 @@ class RealityArticleArchiveMapperTest {
     }
 
     @Test
+    fun `maps player poke ball count as its own badge observation`() {
+        assertEquals(
+            ArchivedPlayerPokeBallCountMeasured(visibleCount = 1, maximumCount = 3),
+            RealityArticleArchiveMapper.map(
+                article(id = "player-balls", payload = PlayerPokeBallCountMeasured(1))
+            ).payload
+        )
+    }
+
+    @Test
     fun `maps HP cadence as a measurement rather than a move identity`() {
         val payload = ActiveHpBarMotionCadenceMeasured(
             movingSide = ActivePokemonSide.PLAYER,
@@ -393,11 +404,16 @@ class RealityArticleArchiveMapperTest {
             onsetOffsetNanos = 500_000_000L,
             soundDurationNanos = 220_000_000L,
             spectralCentroidHz = 930f,
-            peakAmplitude = 0.43f
+            peakAmplitude = 0.43f,
+            attackingSide = ActivePokemonSide.OPPONENT,
+            soundOnsetMonotonicNanos = 1_500_000_000L,
         )
 
         assertEquals(
-            ArchivedFastMoveSoundMeasured(true, 500_000_000L, 220_000_000L, 930f, 0.43f),
+            ArchivedFastMoveSoundMeasured(
+                true, 500_000_000L, 220_000_000L, 930f, 0.43f,
+                "OPPONENT", 1_500_000_000L,
+            ),
             RealityArticleArchiveMapper.map(article(id = "fast-sound", payload = payload)).payload
         )
     }

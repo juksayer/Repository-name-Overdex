@@ -4,6 +4,7 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidateMeasurement
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
+import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
@@ -28,8 +29,19 @@ internal object DecisiveBattleCryRule {
     private const val MINIMUM_SIMILARITY = 0.88f
     private const val MINIMUM_DISTINCT_SPECIES_MARGIN = 0.035f
 
-    fun match(payload: BattleCryCandidatesMeasured): DecisiveBattleCryMatch? {
+    fun match(
+        payload: BattleCryCandidatesMeasured,
+        cueAtNanos: Long? = null,
+        matchStartedAtNanos: Long? = null,
+    ): DecisiveBattleCryMatch? {
         if (payload.cueKind == "FAST_MOVE_IMPACT" || payload.candidates.isEmpty()) return null
+        // Countdown-shaped false positives can occur throughout combat as a
+        // moving Pokemon crosses that crop. A real opening cry may finish its
+        // short post-roll just after GO; it cannot begin tens of seconds later.
+        if (payload.cueKind.startsWith("COUNTDOWN_") &&
+            cueAtNanos != null && matchStartedAtNanos != null &&
+            cueAtNanos > matchStartedAtNanos + OPENING_AUDIO_TAIL_NANOS
+        ) return null
         val ranked = payload.candidates.sortedByDescending(BattleCryCandidateMeasurement::similarity)
         val best = ranked.first()
         val runnerUp = ranked.firstOrNull { it.speciesId != best.speciesId } ?: return null
@@ -37,6 +49,8 @@ internal object DecisiveBattleCryRule {
         if (best.similarity < MINIMUM_SIMILARITY || margin < MINIMUM_DISTINCT_SPECIES_MARGIN) return null
         return DecisiveBattleCryMatch(best.speciesId, best.similarity, margin)
     }
+
+    private const val OPENING_AUDIO_TAIL_NANOS = 3_000_000_000L
 }
 
 class DecisiveBattleCrySpeciesWitness(
@@ -55,9 +69,18 @@ class DecisiveBattleCrySpeciesWitness(
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
+                var matchStartedAtNanos: Long? = null
                 match.articles.collect { article ->
+                    if (article.payload is MatchStarted) {
+                        matchStartedAtNanos = article.monotonicTimeNanos
+                        return@collect
+                    }
                     val candidates = article.payload as? BattleCryCandidatesMeasured ?: return@collect
-                    val decisive = DecisiveBattleCryRule.match(candidates) ?: return@collect
+                    val decisive = DecisiveBattleCryRule.match(
+                        candidates,
+                        cueAtNanos = article.monotonicTimeNanos,
+                        matchStartedAtNanos = matchStartedAtNanos,
+                    ) ?: return@collect
                     val species = match.pokemonKnowledge.getPokemonById(decisive.speciesId) ?: return@collect
                     val roster = match.playerRosterSpecies()
                     val leadId = match.playerLeadSpeciesId()

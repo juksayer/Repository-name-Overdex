@@ -22,6 +22,24 @@ class DecisiveBattleCryRuleTest {
         assertNull(DecisiveBattleCryRule.match(candidates(0.98f, 0.80f, "FAST_MOVE_IMPACT")))
     }
 
+    @Test fun `countdown shaped cue late in combat cannot become species identity`() {
+        assertNull(DecisiveBattleCryRule.match(
+            candidates(0.94f, 0.88f, "COUNTDOWN_GO"),
+            cueAtNanos = 35_000_000_000L,
+            matchStartedAtNanos = 5_000_000_000L,
+        ))
+    }
+
+    @Test fun `opening countdown cry may finish shortly after GO`() {
+        val result = DecisiveBattleCryRule.match(
+            candidates(0.94f, 0.88f, "COUNTDOWN_GO"),
+            cueAtNanos = 6_000_000_000L,
+            matchStartedAtNanos = 5_000_000_000L,
+        )
+
+        assertEquals(395, result?.speciesId)
+    }
+
     private fun candidates(best: Float, second: Float, cue: String = "SPECIES_ENTRY") =
         BattleCryCandidatesMeasured(
             cue,

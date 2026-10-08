@@ -19,7 +19,6 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 /** Measures only the white-to-orange outline pulse around one damaged active HP bar. */
 class PersistedActiveHpBarBorderCadenceWitness(
@@ -138,8 +137,15 @@ internal data class ActiveHpBarBorderAppearance(
 )
 
 internal object ActiveHpBarBorderAppearanceMeasurer {
-    fun measure(bitmap: Bitmap, bar: ActiveHpBarMeasurement): ActiveHpBarBorderAppearance? {
-        val thickness = max(1, (bar.bottom - bar.top) / 12)
+    fun measure(bitmap: Bitmap, bar: ActiveHpBarMeasurement): ActiveHpBarBorderAppearance? =
+        measure(bitmap.width, bitmap.height, bar, bitmap::getPixel)
+
+    internal fun measure(
+        width: Int,
+        height: Int,
+        bar: ActiveHpBarMeasurement,
+        pixelAt: (x: Int, y: Int) -> Int
+    ): ActiveHpBarBorderAppearance? {
         var red = 0L
         var green = 0L
         var blue = 0L
@@ -147,8 +153,8 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
         var white = 0
         var count = 0
         fun sample(x: Int, y: Int) {
-            if (x !in 0 until bitmap.width || y !in 0 until bitmap.height) return
-            val color = bitmap.getPixel(x, y)
+            if (x !in 0 until width || y !in 0 until height) return
+            val color = pixelAt(x, y)
             red += color ushr 16 and 0xff
             green += color ushr 8 and 0xff
             blue += color and 0xff
@@ -156,17 +162,16 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
             if (isWhiteBorder(color)) white++
             count++
         }
+        // Only inspect the measured outline. Sampling even one row inside the
+        // bar lets the orange HP-loss afterimage impersonate an orange border
+        // pulse, despite the two phenomena carrying different evidence.
         for (x in bar.left until bar.right) {
-            for (offset in 0..thickness) {
-                sample(x, bar.top + offset)
-                sample(x, bar.bottom - offset)
-            }
+            sample(x, bar.top)
+            sample(x, bar.bottom)
         }
-        for (y in bar.top until bar.bottom) {
-            for (offset in 0..thickness) {
-                sample(bar.left + offset, y)
-                sample(bar.right - 1 - offset, y)
-            }
+        for (y in bar.top + 1 until bar.bottom) {
+            sample(bar.left, y)
+            sample(bar.right - 1, y)
         }
         if (count == 0) return null
         val r = red.toFloat() / count / 255f

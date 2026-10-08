@@ -62,14 +62,17 @@ internal object BattleHudOverlayGeometry {
     fun panelTopPx(displayHeight: Int): Int =
         (displayHeight * OPPONENT_BADGE_BOTTOM / REFERENCE_HEIGHT).roundToInt()
 
-    /**
-     * The secure HUD surface must begin below the GO badge. A secure window is
-     * redacted as one opaque rectangle by MediaProjection, including its
-     * transparent spacer pixels, so allowing the window above this boundary
-     * hides the very species text Overdex needs to read.
-     */
-    fun minimumPanelWindowTopPx(displayHeight: Int, windowScreenOffsetY: Int): Int =
+    /** Window Y that places the panel's top edge directly against the GO badge. */
+    fun attachedPanelWindowTopPx(displayHeight: Int, windowScreenOffsetY: Int): Int =
         (panelTopPx(displayHeight) - windowScreenOffsetY).coerceAtLeast(0)
+
+    /**
+     * The editor may move the HUD above its default badge seam. Only the actual
+     * screen edge is a hard stop; the badge anchor is a starting position, not
+     * a movement restriction.
+     */
+    fun minimumEditableWindowTopPx(windowScreenOffsetY: Int): Int =
+        (-windowScreenOffsetY).coerceAtLeast(0)
 
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
@@ -345,13 +348,15 @@ private fun OverlayPanel(
             .width(teamInfoWidth)
             .background(
                 background,
-                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 14.dp, bottomEnd = 14.dp)
+                // The GO team-info badge uses square upper corners at the seam
+                // and a shallow 27 px lower curve on a 480 dpi phone.
+                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 9.dp, bottomEnd = 9.dp)
             )
             .then(
                 if (layoutEditing) Modifier.border(
                     1.dp,
                     Color(0xFFB000FF),
-                    RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 14.dp, bottomEnd = 14.dp),
+                    RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 9.dp, bottomEnd = 9.dp),
                 ) else Modifier
             )
             .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -361,7 +366,10 @@ private fun OverlayPanel(
             Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
         }
         if (isBattleHud) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Preserve only the panel's outside padding. The three stock-like
+            // inactive cards share their edges so every available pixel can
+            // belong to the sprites.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                 repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
             }
             if (opponentMoves != null) {
@@ -505,9 +513,9 @@ private fun OverlayControl(label: String, action: () -> Unit) {
 @Composable
 private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
     Box(
-        modifier = Modifier.weight(1f).height(42.dp)
-            .background(Color(0x18005E5B), RoundedCornerShape(7.dp))
-            .border(1.dp, Color(0x55005E5B), RoundedCornerShape(7.dp)),
+        modifier = Modifier.weight(1f).height(52.dp)
+            .background(Color(0x18005E5B), RoundedCornerShape(6.dp))
+            .border(1.dp, Color(0x55005E5B), RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
     ) {
         if (species == null) {
@@ -521,7 +529,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
                     AsyncImage(
                         model = spriteUrl,
                         contentDescription = "${species.speciesName} sprite",
-                        modifier = Modifier.size(25.dp).alpha(if (species.isFainted) 0.35f else 1f),
+                        modifier = Modifier.size(38.dp).alpha(if (species.isFainted) 0.35f else 1f),
                         colorFilter = if (species.isFainted) {
                             ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                         } else null
@@ -530,9 +538,10 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
                 Text(
                     species.speciesName,
                     color = Color(0xFF397D77),
-                    fontSize = 7.sp,
+                    fontSize = 6.5.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 1,
+                    lineHeight = 7.sp,
                 )
             }
             if (species.isFainted) {

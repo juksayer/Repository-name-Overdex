@@ -44,6 +44,7 @@ enum class BattleRegionId {
     OUT_OF_BATTLE_MENU,
     BATTLE_PARTY_TABS,
     OPPONENT_SPECIES_NAME,
+    PLAYER_POKE_BALLS,
     OPPONENT_POKE_BALLS,
     OPPONENT_SHIELDS;
 
@@ -65,6 +66,7 @@ enum class BattleRegionId {
         OUT_OF_BATTLE_MENU -> calibration.outOfBattleMenuRegion
         BATTLE_PARTY_TABS -> calibration.battlePartyTabsRegion
         OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
+        PLAYER_POKE_BALLS -> calibration.playerPokeBallsRegion
         OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
         OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
     }
@@ -104,6 +106,9 @@ object BattleCropContracts {
     )
     val opponentActiveSpeciesText = BattleCropContract(
         "OpponentActiveSpeciesTextCrop", BattleRegionId.OPPONENT_SPECIES_NAME, minimumSize = 16
+    )
+    val playerPokeBalls = BattleCropContract(
+        "PlayerPokeBallsCrop", BattleRegionId.PLAYER_POKE_BALLS, minimumSize = 16
     )
     val opponentPokeBalls = BattleCropContract(
         "OpponentPokeBallsCrop", BattleRegionId.OPPONENT_POKE_BALLS, minimumSize = 16
@@ -188,6 +193,11 @@ object BattleWitnessContracts {
     val opponentActiveSpeciesTextCapture = BattleWitnessContract(
         witnessId = "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
         crop = BattleCropContracts.opponentActiveSpeciesText,
+        testimonyType = CropCaptured::class
+    )
+    val playerPokeBallsCapture = BattleWitnessContract(
+        witnessId = "PLAYER_POKE_BALLS_CAPTURE",
+        crop = BattleCropContracts.playerPokeBalls,
         testimonyType = CropCaptured::class
     )
     val opponentPokeBallsCapture = BattleWitnessContract(

@@ -14,6 +14,7 @@ import com.example.overdex.battle.custody.VisualCaptureGapObserved
 import com.example.overdex.battle.custody.OutOfBattleMenuWitnessed
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.MatchRecordStarted
@@ -177,6 +178,10 @@ object RealityArticleArchiveMapper {
                 slot = p.slot,
                 filledFraction = p.filledFraction
             )
+            is PlayerPokeBallCountMeasured -> ArchivedPlayerPokeBallCountMeasured(
+                visibleCount = p.visibleCount,
+                maximumCount = p.maximumCount
+            )
             is OpponentBattleResourceCountMeasured -> ArchivedOpponentBattleResourceCountMeasured(
                 resource = p.resource.name,
                 visibleCount = p.visibleCount,
@@ -292,7 +297,9 @@ object RealityArticleArchiveMapper {
                 onsetOffsetNanos = p.onsetOffsetNanos,
                 soundDurationNanos = p.soundDurationNanos,
                 spectralCentroidHz = p.spectralCentroidHz,
-                peakAmplitude = p.peakAmplitude
+                peakAmplitude = p.peakAmplitude,
+                attackingSide = p.attackingSide?.name,
+                soundOnsetMonotonicNanos = p.soundOnsetMonotonicNanos,
             )
             is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
                 slot = p.slot,

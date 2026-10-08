@@ -16,10 +16,12 @@ import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCade
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedChargeMoveUsedAnnounced
 import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedMatchStarted
+import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.Move
@@ -73,6 +75,39 @@ class MatchReplayModelTest {
         assertEquals("VAPOREON", model.sceneAt(15).opponent?.speciesName)
         assertEquals("SNEASEL", model.sceneAt(20).opponent?.speciesName)
         assertEquals("GOURGEIST", model.sceneAt(15).player?.speciesName)
+    }
+
+    @Test fun `brief cry identity bracketed by stable badge OCR is omitted`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("before", "OPPONENT", "Sealeo", 364, 10_000_000_000L)
+                .copy(sourceId = "OPPONENT_SPECIES_OVERLAY_PIPELINE", confidence = 0.98f),
+            article("cry", "OPPONENT", "Lillipup", 506, 11_000_000_000L)
+                .copy(sourceId = "DECISIVE_BATTLE_CRY_SPECIES_WITNESS", confidence = 0.93f),
+            article("after", "OPPONENT", "Sealeo", 364, 13_000_000_000L)
+                .copy(sourceId = "OPPONENT_SPECIES_OVERLAY_PIPELINE", confidence = 0.98f),
+        )))
+
+        assertEquals("Sealeo", model.sceneAt(11_500_000_000L).opponent?.speciesName)
+    }
+
+    @Test fun `late badge confirmation backdates immediate opening player switch to first hit`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Turtonator", 776, "Incinerate", emptyList()), 1L),
+            timed("go", ArchivedMatchStarted, 1_000_000_000L),
+            article("lead", "PLAYER", "Turtonator", 776, 1_000_000_000L)
+                .copy(sourceId = "TEAM_SELECT_LEAD_INFERENCE"),
+            timed(
+                "first-hit",
+                ArchivedActiveHpBarDamageTickMeasured("OPPONENT", 1f, 0.9f, 0.1f),
+                3_000_000_000L,
+            ),
+            article("late-camerupt", "PLAYER", "Camerupt", 323, 9_000_000_000L)
+                .copy(sourceId = "PLAYER_SPECIES_OVERLAY_PIPELINE", confidence = 0.98f),
+        )))
+
+        assertEquals("Turtonator", model.sceneAt(2_000_000_000L).player?.speciesName)
+        assertEquals("Camerupt", model.sceneAt(3_000_000_000L).player?.speciesName)
+        assertEquals("OBSERVED SPECIES / FIRST PLAYER HIT", model.sceneAt(3_000_000_000L).player?.identityBasis)
     }
 
     @Test fun `completed replay uses the player roster to reconstruct the actual announcement sequence`() {
@@ -317,6 +352,57 @@ class MatchReplayModelTest {
         assertEquals(1, model.hapticEventsBetween(900_000_000L, 1_000_000_000L).single().pulseCount)
         assertEquals(1, model.hapticEventsBetween(1_500_000_000L, 1_600_000_000L).single().pulseCount)
         assertEquals(1, model.hapticEventsBetween(2_200_000_000L, 2_300_000_000L).single().pulseCount)
+    }
+
+    @Test fun `old archive reconstructs QTE milestones from short pulses before charge announcement`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("nice", motionPulse(116_000_000L), 1_000_000_000L),
+            timed("great", motionPulse(209_000_000L), 2_194_000_000L),
+            timed("excellent", motionPulse(243_000_000L), 4_731_000_000L),
+            timed("charge-used", ArchivedChargeMoveUsedAnnounced, 5_000_000_000L),
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals("NICE", model.sceneAt(1_100_000_000L).qteMilestone)
+        assertEquals("GREAT", model.sceneAt(2_300_000_000L).qteMilestone)
+        assertEquals("EXCELLENT", model.sceneAt(4_800_000_000L).qteMilestone)
+        assertEquals("PLAYER", model.sceneAt(4_800_000_000L).qteMilestoneSide)
+        assertEquals(3, model.hapticEventsBetween(0L, 5_000_000_000L).size)
+    }
+
+    @Test fun `clipped get ready cue permits replay of a partial Great result`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            raw("ready", "Get Rea", 500_000_000L),
+            timed("nice", motionPulse(), 1_000_000_000L),
+            timed("great", motionPulse(), 2_000_000_000L),
+            timed("charge-used", ArchivedChargeMoveUsedAnnounced, 3_000_000_000L),
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals("NICE", model.sceneAt(1_100_000_000L).qteMilestone)
+        assertEquals("GREAT", model.sceneAt(2_100_000_000L).qteMilestone)
+        assertEquals(null, model.sceneAt(2_800_000_000L).qteMilestone)
+    }
+
+    @Test fun `two unprompted motion pulses do not invent a replay QTE`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("one", motionPulse(), 1_000_000_000L),
+            timed("two", motionPulse(), 2_000_000_000L),
+            timed("charge-used", ArchivedChargeMoveUsedAnnounced, 3_000_000_000L),
+        ))
+
+        assertEquals(null, MatchReplayModel(archive).sceneAt(2_100_000_000L).qteMilestone)
+    }
+
+    @Test fun `replay exposes the archived winner only after match end`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("started", ArchivedMatchStarted, 1_000_000_000L),
+            timed("ended", ArchivedMatchEnded("WIN"), 5_000_000_000L),
+        ))
+        val model = MatchReplayModel(archive)
+
+        assertEquals(null, model.sceneAt(4_999_999_999L).outcome)
+        assertEquals("WIN", model.sceneAt(5_000_000_000L).outcome)
     }
 
     @Test fun `identification alone and aggregate totals never invent individual attacks`() {
@@ -595,8 +681,8 @@ class MatchReplayModelTest {
             evidenceReferences = emptyList(), monotonicTimeNanos = nanos
         )
 
-    private fun motionPulse() = ArchivedDeviceMotionPulseMeasured(
-        durationNanos = 36_000_000L,
+    private fun motionPulse(durationNanos: Long = 36_000_000L) = ArchivedDeviceMotionPulseMeasured(
+        durationNanos = durationNanos,
         peakLinearAccelerationMetersPerSecondSquared = 1.2f,
         rmsLinearAccelerationMetersPerSecondSquared = 0.7f,
         sampleCount = 8,

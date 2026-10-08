@@ -192,4 +192,31 @@ class MatchInterpretationTest {
 
         match.release()
     }
+
+    @Test
+    fun `returning result screen preserves both readings but creates one match end`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "TEST_RETURNING_RESULT",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+
+        custody.submitTestimony(
+            SourceId("YOU_WIN_WITNESS"), RawTestimony("YOUWIN!"), 1_500L
+        )
+        custody.submitTestimony(
+            SourceId("YOU_WIN_WITNESS"), RawTestimony("YOU WIN!"), 4_500L
+        )
+        delay(150)
+
+        assertEquals(2, timeline.getArticles().count {
+            it.sourceId == SourceId("YOU_WIN_WITNESS") && it.payload is RawTestimony
+        })
+        assertEquals(1, timeline.getArticles().count { it.payload is MatchEnded })
+
+        match.release()
+    }
 }

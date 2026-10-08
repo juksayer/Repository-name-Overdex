@@ -114,7 +114,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // published 1080x2400 frame.  0.625 keeps them above the 32 px OCR
         // floor while reducing each transient source bitmap by roughly 30%.
         private const val CAPTURE_SCALE = 0.625f
-        private const val MIN_CAPTURE_INTERVAL_NANOS = 50_000_000L // 20 fps
         @Volatile private var activeService: DroidballService? = null
 
         private val _runtimeState = MutableStateFlow(DroidballRuntimeState.STOPPED)
@@ -365,10 +364,23 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         rejectedEmitCount = 0L
         deliveryLoggingJob?.cancel()
         deliveryLoggingJob = serviceScope.launch {
+            var previousSuccessCount = 0L
+            var previousLogNanos = System.nanoTime()
             while (true) {
                 kotlinx.coroutines.delay(5000L)
+                val now = System.nanoTime()
                 val subs = _frames.subscriptionCount.value
-                Log.d("FRAME_DELIVERY", "Cumulative Summary [5s]: attempts=$publicationAttempts, emitSucceeded=$successEmitCount, rejected=$rejectedEmitCount, subscribers=$subs")
+                val elapsed = (now - previousLogNanos).coerceAtLeast(1L)
+                val delivered = successEmitCount - previousSuccessCount
+                val measuredFps = (delivered * 10_000_000_000L / elapsed).toFloat() / 10f
+                Log.d(
+                    "FRAME_DELIVERY",
+                    "Cumulative Summary [5s]: attempts=$publicationAttempts, emitSucceeded=$successEmitCount, " +
+                        "rejected=$rejectedEmitCount, subscribers=$subs, measuredFps=$measuredFps, " +
+                        "targetFps=${LiveCaptureSamplingPolicy.TARGET_FRAMES_PER_SECOND}"
+                )
+                previousSuccessCount = successEmitCount
+                previousLogNanos = now
             }
         }
 
@@ -418,7 +430,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     // but the session has no observing consumers (for example during
                     // an Android activity recreation).
                     if (_frames.subscriptionCount.value == 0) return@setOnImageAvailableListener
-                    if (lastPublishedFrameNanos?.let { receivedAtNanos - it < MIN_CAPTURE_INTERVAL_NANOS } == true) {
+                    if (!LiveCaptureSamplingPolicy.shouldPublish(lastPublishedFrameNanos, receivedAtNanos)) {
                         return@setOnImageAvailableListener
                     }
                     val planes = image.planes
@@ -709,7 +721,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             (bounds.width() - view.width.coerceAtLeast(1)).coerceAtLeast(0),
         )
         params.y = (params.y + deltaY.toInt()).coerceIn(
-            BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height(), windowScreenOffsetY),
+            BattleHudOverlayGeometry.minimumEditableWindowTopPx(windowScreenOffsetY),
             (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0),
         )
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
@@ -755,21 +767,18 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
     ) {
         val windowScreenOffsetY = overlayWindowScreenOffsetY(view, params)
-        val minimumWindowTop = BattleHudOverlayGeometry.minimumPanelWindowTopPx(
+        val attachedWindowTop = BattleHudOverlayGeometry.attachedPanelWindowTopPx(
             bounds.height(),
             windowScreenOffsetY,
         )
-        val oldUntranslatedFloor = BattleHudOverlayGeometry.panelTopPx(bounds.height())
+        val minimumWindowTop = BattleHudOverlayGeometry.minimumEditableWindowTopPx(
+            windowScreenOffsetY,
+        )
+        val maximumWindowTop = (bounds.height() - view.height.coerceAtLeast(1))
+            .coerceAtLeast(minimumWindowTop)
         val savedY = layout.windowY
         params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-        params.y = when {
-            // v2 positions at or above this floor were either saved with the old
-            // Droidball/spacer geometry or stopped by the untranslated clamp.
-            // Both should migrate to the first safe pixel below the GO badge.
-            savedY == null -> minimumWindowTop
-            savedY <= oldUntranslatedFloor -> minimumWindowTop
-            else -> savedY.coerceAtLeast(minimumWindowTop)
-        }
+        params.y = (savedY ?: attachedWindowTop).coerceIn(minimumWindowTop, maximumWindowTop)
     }
 
     /**

@@ -78,18 +78,71 @@ class FastMoveEnergyInferenceTest {
         assertEquals("new-use", resolved.single().observedArticle.id.value)
     }
 
+    @Test
+    fun `charge fill alone cannot count exact fast move energy`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity("identity", "Sealeo", "Water Gun"))
+
+        val result = engine.accept(use("shade", listOf("PLAYER_CHARGE_FILL_INCREASE")))
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `higher energy tie break remains a hypothesis until corroborated`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity(
+            "assumption", "Sealeo", "Powder Snow", basis =
+                "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
+        ))
+
+        assertTrue(engine.accept(use("use-before-proof")).isEmpty())
+        val confirmed = engine.accept(identity(
+            "confirmed", "Sealeo", "Powder Snow",
+            basis = "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE"
+        ))
+
+        assertEquals(8, confirmed.single().payload.totalEnergyGenerated)
+    }
+
+    @Test
+    fun `single uncorroborated cadence narrows move without starting exact energy`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity(
+            "cadence-only", "Sealeo", "Water Gun",
+            basis = "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        ))
+
+        assertTrue(engine.accept(use("use-before-agreement")).isEmpty())
+        val confirmed = engine.accept(identity(
+            "cadence-agreed", "Sealeo", "Water Gun",
+            basis = "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_AUDIO_PROFILE"
+        ))
+
+        assertEquals(3, confirmed.single().payload.totalEnergyGenerated)
+    }
+
     private fun species(id: String, name: String, at: Long = 1L) = article(
         id, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, name, 364), at
     )
 
-    private fun identity(id: String, species: String, move: String, at: Long = 1L) = article(
+    private fun identity(
+        id: String,
+        species: String,
+        move: String,
+        at: Long = 1L,
+        basis: String = "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE",
+    ) = article(
         id,
         FastMoveIdentified(
             ActivePokemonSide.OPPONENT, species, move,
             moveDurationNanos = if (move == "Water Gun") 500_000_000L else 1_000_000_000L,
             observedMedianIntervalNanos = null,
             cadenceSampleCount = 0,
-            basis = "TEST"
+            basis = basis
         ),
         at,
         confidence = 0.8f

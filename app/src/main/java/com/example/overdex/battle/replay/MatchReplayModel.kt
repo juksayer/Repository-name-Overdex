@@ -21,6 +21,7 @@ import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillIncr
 import com.example.overdex.battle.archive.ArchivedPlayerChargeMoveEnergyFillCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.archive.ArchivedChargeMoveQteVibrationPatternInferred
+import com.example.overdex.battle.archive.ArchivedChargeMoveUsedAnnounced
 import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
@@ -96,12 +97,14 @@ class MatchReplayModel(
         "PLAYER",
         configuredOpeningPlayer + reconstructedTracks.first + cropTracks.first,
         battlePresentationStartNanos,
+        matchStartNanos,
     )
     private val opponentIdentityTrack = ReplayIdentityTrack.from(
         timedArticles,
         "OPPONENT",
         reconstructedTracks.second + cropTracks.second,
         battlePresentationStartNanos,
+        matchStartNanos,
     )
     private val identifiedFastMoves = timedArticles
         .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
@@ -110,46 +113,35 @@ class MatchReplayModel(
         normalizeSpeciesName(it.key) to it.value
     }
     private val bufferedMoveCache = mutableMapOf<String, Move?>()
+    private val timedArticlesById = timedArticles.associateBy(ArchivedRealityArticle::articleId)
+    private val replayQteMilestonesByPatternId = reconstructQteMilestones()
+    private val replayQteMilestones = replayQteMilestonesByPatternId.values
+        .flatten()
+        .distinctBy { "${it.side}:${it.atNanos}:${it.label}" }
+        .sortedBy { it.atNanos }
     private val recordedFastMoveUses = reconstructFastMoveUses()
     private val recordedChargedMoveUses = reconstructChargedMoveUses()
-    private val timedArticlesById = timedArticles.associateBy(ArchivedRealityArticle::articleId)
-    private val replayQteMilestonesByPatternId: Map<String, List<ReplayQteMilestone>> = timedArticles.mapNotNull { article ->
-        val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
-            ?: return@mapNotNull null
-        val pulses = article.predecessorIds
-            .mapNotNull(timedArticlesById::get)
-            .filter { it.payload is ArchivedDeviceMotionPulseMeasured }
-            .take(vibration.pulseCount)
-        if (pulses.size < 3) return@mapNotNull null
-        article.articleId to pulses.take(3).mapIndexed { index, pulse ->
-            ReplayQteMilestone(
-                atNanos = pulse.monotonicTimeNanos ?: return@mapNotNull null,
-                label = QTE_MILESTONE_LABELS[index],
-                side = vibration.side,
-            )
+    private val replayHapticEvents = buildList {
+        addAll(replayQteMilestones.map { ReplayHapticEvent(it.atNanos, pulseCount = 1) })
+        timedArticles.forEach { article ->
+            val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
+                ?: return@forEach
+            if (replayQteMilestonesByPatternId.containsKey(article.articleId)) return@forEach
+            // Older archives may contain only the accepted aggregate pattern,
+            // without predecessor links to its physical pulses.
+            val hapticAt = article.monotonicTimeNanos ?: return@forEach
+            val corroborated = timedArticles.any { support ->
+                val supportAt = support.monotonicTimeNanos ?: return@any false
+                abs(supportAt - hapticAt) <= CHARGE_MOVE_SEQUENCE_MERGE_NANOS &&
+                    (support.payload is ArchivedGetReadyWitnessed ||
+                        support.payload is ArchivedChargeMoveUsedAnnounced ||
+                        support.payload is ArchivedChargedMoveEnergySpent)
+            }
+            if (corroborated) {
+                add(ReplayHapticEvent(hapticAt, pulseCount = vibration.pulseCount.coerceAtLeast(1)))
+            }
         }
-    }.toMap()
-    private val replayHapticEvents = timedArticles.flatMap { article ->
-        val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
-            ?: return@flatMap emptyList()
-        replayQteMilestonesByPatternId[article.articleId]?.let { milestones ->
-            return@flatMap milestones.map { ReplayHapticEvent(it.atNanos, pulseCount = 1) }
-        }
-        // Older archives do not have predecessor links to the individual
-        // physical pulses. Retain their established aggregate replay behavior.
-        val hapticAt = article.monotonicTimeNanos ?: return@flatMap emptyList()
-        val corroborated = timedArticles.any { support ->
-            val supportAt = support.monotonicTimeNanos ?: return@any false
-            abs(supportAt - hapticAt) <= CHARGE_MOVE_SEQUENCE_MERGE_NANOS &&
-                (support.payload is ArchivedGetReadyWitnessed || support.payload is ArchivedChargedMoveEnergySpent)
-        }
-        if (!corroborated) emptyList() else listOf(
-            ReplayHapticEvent(
-                atNanos = hapticAt,
-                pulseCount = vibration.pulseCount.coerceAtLeast(1)
-            )
-        )
-    }
+    }.distinctBy { "${it.atNanos}:${it.pulseCount}" }.sortedBy { it.atNanos }
 
     fun crossedArticleBoundary(fromNanos: Long, toNanos: Long): Boolean {
         if (fromNanos == toNanos) return false
@@ -177,13 +169,8 @@ class MatchReplayModel(
             val observedAt = article.monotonicTimeNanos ?: return@firstNotNullOfOrNull null
             glyph.glyph.takeIf { monotonicTimeNanos - observedAt < COUNTDOWN_GLYPH_VISUAL_NANOS }
         }
-        val qteMilestone = replayQteMilestonesByPatternId.values.firstNotNullOfOrNull { milestones ->
-            val first = milestones.firstOrNull() ?: return@firstNotNullOfOrNull null
-            val last = milestones.last()
-            if (monotonicTimeNanos !in first.atNanos..(last.atNanos + QTE_MILESTONE_VISUAL_NANOS)) {
-                return@firstNotNullOfOrNull null
-            }
-            milestones.lastOrNull { it.atNanos <= monotonicTimeNanos }
+        val qteMilestone = replayQteMilestones.lastOrNull { milestone ->
+            monotonicTimeNanos - milestone.atNanos in 0 until QTE_MILESTONE_VISUAL_NANOS
         }
         // The prebuilt tracks choose the correct known identity interval.
         val player = applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), articles)
@@ -264,6 +251,111 @@ class MatchReplayModel(
             qteMilestoneSide = qteMilestone?.side,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
         )
+    }
+
+    /**
+     * Builds exact Nice/Great/Excellent instants from accepted patterns. Older
+     * archives can be repaired in memory from their retained short pulses and
+     * charge-move cues; the archive itself and its raw evidence stay unchanged.
+     */
+    private fun reconstructQteMilestones(): Map<String, List<ReplayQteMilestone>> {
+        val sequences = linkedMapOf<String, List<ReplayQteMilestone>>()
+        val usedPulseIds = mutableSetOf<String>()
+
+        timedArticles.forEach { article ->
+            val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
+                ?: return@forEach
+            val expectedCount = vibration.pulseCount.coerceIn(1, QTE_MILESTONE_LABELS.size)
+            val linkedPulses = article.predecessorIds
+                .mapNotNull(timedArticlesById::get)
+                .filter { it.payload is ArchivedDeviceMotionPulseMeasured }
+                .sortedBy { it.monotonicTimeNanos }
+                .take(expectedCount)
+            if (linkedPulses.size < expectedCount) return@forEach
+            sequences[article.articleId] = linkedPulses.toMilestones(vibration.side)
+            usedPulseIds += linkedPulses.map { it.articleId }
+        }
+
+        val getReadyCues = timedArticles.filter(::isReplayGetReadyCue)
+        val chargeMoveCues = timedArticles.filter { it.payload is ArchivedChargeMoveUsedAnnounced }
+        chargeMoveCues.forEach { closingCue ->
+            val closingAt = closingCue.monotonicTimeNanos ?: return@forEach
+            val alreadyCovered = sequences.values.flatten().any { milestone ->
+                milestone.atNanos in (closingAt - REPLAY_QTE_CLOSE_ASSOCIATION_NANOS)..closingAt
+            }
+            if (alreadyCovered) return@forEach
+            val getReady = getReadyCues
+                .filter { cue -> cue.monotonicTimeNanos?.let { it in (closingAt - REPLAY_QTE_WINDOW_NANOS)..closingAt } == true }
+                .maxByOrNull { it.monotonicTimeNanos ?: Long.MIN_VALUE }
+            val start = getReady?.monotonicTimeNanos ?: (closingAt - REPLAY_QTE_WINDOW_NANOS)
+            val selected = latestPlausibleQteRun(
+                shortReplayMotionPulses(usedPulseIds).filter { pulse ->
+                    pulse.monotonicTimeNanos?.let { it in start..closingAt } == true
+                }
+            ).takeLast(QTE_MILESTONE_LABELS.size)
+            val minimum = if (getReady != null) 1 else QTE_MILESTONE_LABELS.size
+            if (selected.size < minimum) return@forEach
+            sequences["reconstructed:${closingCue.articleId}"] = selected.toMilestones("PLAYER")
+            usedPulseIds += selected.map { it.articleId }
+        }
+
+        // A Get Ready cue and all three physical milestones are sufficient even
+        // if the closing announcement witness did not survive in an old archive.
+        getReadyCues.forEach { cue ->
+            val cueAt = cue.monotonicTimeNanos ?: return@forEach
+            val alreadyCovered = sequences.values.flatten().any { milestone ->
+                milestone.atNanos in cueAt..(cueAt + REPLAY_QTE_WINDOW_NANOS)
+            }
+            if (alreadyCovered) return@forEach
+            val selected = latestPlausibleQteRun(
+                shortReplayMotionPulses(usedPulseIds).filter { pulse ->
+                    pulse.monotonicTimeNanos?.let { it in cueAt..(cueAt + REPLAY_QTE_WINDOW_NANOS) } == true
+                }
+            ).takeLast(QTE_MILESTONE_LABELS.size)
+            if (selected.size < QTE_MILESTONE_LABELS.size) return@forEach
+            sequences["reconstructed:${cue.articleId}"] = selected.toMilestones("PLAYER")
+            usedPulseIds += selected.map { it.articleId }
+        }
+        return sequences
+    }
+
+    private fun shortReplayMotionPulses(usedPulseIds: Set<String>): List<ArchivedRealityArticle> =
+        timedArticles.filter { article ->
+            if (article.articleId in usedPulseIds) return@filter false
+            val pulse = article.payload as? ArchivedDeviceMotionPulseMeasured ?: return@filter false
+            pulse.durationNanos in REPLAY_QTE_MIN_PULSE_NANOS..REPLAY_QTE_MAX_PULSE_NANOS
+        }
+
+    private fun latestPlausibleQteRun(source: List<ArchivedRealityArticle>): List<ArchivedRealityArticle> {
+        var run = mutableListOf<ArchivedRealityArticle>()
+        source.sortedBy { it.monotonicTimeNanos }.forEach { pulse ->
+            val at = pulse.monotonicTimeNanos ?: return@forEach
+            val previousAt = run.lastOrNull()?.monotonicTimeNanos
+            when {
+                previousAt == null -> run += pulse
+                at - previousAt < REPLAY_QTE_MIN_INTER_PULSE_NANOS -> run[run.lastIndex] = pulse
+                at - previousAt <= REPLAY_QTE_MAX_INTER_PULSE_NANOS -> run += pulse
+                else -> run = mutableListOf(pulse)
+            }
+            while (run.size > QTE_MILESTONE_LABELS.size) run.removeAt(0)
+        }
+        return run
+    }
+
+    private fun List<ArchivedRealityArticle>.toMilestones(side: String): List<ReplayQteMilestone> =
+        take(QTE_MILESTONE_LABELS.size).mapIndexed { index, pulse ->
+            ReplayQteMilestone(
+                atNanos = requireNotNull(pulse.monotonicTimeNanos),
+                label = QTE_MILESTONE_LABELS[index],
+                side = side,
+            )
+        }
+
+    private fun isReplayGetReadyCue(article: ArchivedRealityArticle): Boolean {
+        if (article.payload is ArchivedGetReadyWitnessed) return true
+        if (article.sourceId != "ANNOUNCEMENT_WITNESS") return false
+        val raw = (article.payload as? ArchivedRawText)?.value ?: return false
+        return raw.uppercase().filter(Char::isLetterOrDigit).contains("GETREA")
     }
 
 
@@ -708,6 +800,7 @@ private class ReplayIdentityTrack private constructor(
             side: String,
             reconstructed: List<ReplayIdentityObservation>,
             visibleFromNanos: Long,
+            matchStartNanos: Long? = null,
         ): ReplayIdentityTrack {
             val observed = articles.mapNotNull { article ->
                 val species = article.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
@@ -717,27 +810,114 @@ private class ReplayIdentityTrack private constructor(
                     species.speciesName,
                     species.speciesId,
                     article.monotonicTimeNanos ?: return@mapNotNull null,
-                    "OBSERVED SPECIES"
+                    "OBSERVED SPECIES",
+                    sourceId = article.sourceId,
+                    confidence = article.confidence,
+                    articleId = article.articleId,
                 )
             }
+            val withoutBriefCryContradictions = observed.filterNot { candidate ->
+                candidate.sourceId == DECISIVE_CRY_SOURCE &&
+                    isBracketedCryContradiction(candidate, reconstructed + observed)
+            }
+            val timeAdjustedObserved = backdateImmediateOpeningPlayerSwitch(
+                side = side,
+                articles = articles,
+                reconstructed = reconstructed,
+                observed = withoutBriefCryContradictions,
+                matchStartNanos = matchStartNanos,
+            )
             // Completed replay can learn different intervals from different
             // evidence paths. One accepted identity must not discard switches
             // recovered from archived crops or announcements. At the same
             // instant, stronger live testimony sorts last and therefore wins.
-            val combined = (reconstructed + observed).sortedWith(
+            val combined = (reconstructed + timeAdjustedObserved).sortedWith(
                 compareBy<ReplayIdentityObservation> { it.atNanos }
                     .thenBy { identityBasisPriority(it.basis) }
             )
             return ReplayIdentityTrack(combined, visibleFromNanos)
         }
 
+        private fun isBracketedCryContradiction(
+            candidate: ReplayIdentityObservation,
+            all: List<ReplayIdentityObservation>,
+        ): Boolean {
+            val strongVisual = all.filter { observation ->
+                observation.side == candidate.side &&
+                    observation !== candidate &&
+                    observation.sourceId != DECISIVE_CRY_SOURCE &&
+                    (observation.sourceId?.contains("SPECIES_OVERLAY_PIPELINE") == true ||
+                        observation.basis.contains("CROP") ||
+                        observation.basis.contains("ANNOUNCEMENT"))
+            }
+            val before = strongVisual.lastOrNull { it.atNanos < candidate.atNanos }
+            val after = strongVisual.firstOrNull { it.atNanos > candidate.atNanos }
+            return before != null && after != null &&
+                candidate.atNanos - before.atNanos <= CRY_CONTRADICTION_WINDOW_NANOS &&
+                after.atNanos - candidate.atNanos <= CRY_CONTRADICTION_WINDOW_NANOS &&
+                normalize(before.speciesName) == normalize(after.speciesName) &&
+                normalize(candidate.speciesName) != normalize(before.speciesName)
+        }
+
+        /**
+         * A completed archive may learn an immediate opening switch from badge
+         * OCR only after that Pokemon has already attacked. Move the confirmed
+         * identity back to its first player-hit evidence, without claiming it
+         * was present before any battlefield evidence of the replacement.
+         */
+        private fun backdateImmediateOpeningPlayerSwitch(
+            side: String,
+            articles: List<ArchivedRealityArticle>,
+            reconstructed: List<ReplayIdentityObservation>,
+            observed: List<ReplayIdentityObservation>,
+            matchStartNanos: Long?,
+        ): List<ReplayIdentityObservation> {
+            if (side != "PLAYER" || matchStartNanos == null) return observed
+            val configuredLead = reconstructed.firstOrNull {
+                it.basis == "CURRENT TEAM CONFIGURATION"
+            } ?: return observed
+            val replacement = observed
+                .filter {
+                    it.atNanos >= matchStartNanos &&
+                        it.atNanos - matchStartNanos <= IMMEDIATE_OPENING_SWITCH_WINDOW_NANOS &&
+                        normalize(it.speciesName) != normalize(configuredLead.speciesName)
+                }
+                .minByOrNull { it.atNanos }
+                ?: return observed
+            val firstPlayerHit = articles.firstNotNullOfOrNull { article ->
+                val at = article.monotonicTimeNanos ?: return@firstNotNullOfOrNull null
+                if (at !in matchStartNanos..replacement.atNanos) return@firstNotNullOfOrNull null
+                val isPlayerHit = when (val payload = article.payload) {
+                    is ArchivedFastMoveUseObserved -> payload.attackingSide == "PLAYER"
+                    is ArchivedActiveHpBarDamageTickMeasured -> payload.damagedSide == "OPPONENT"
+                    is ArchivedActiveHpBarBorderPulseObserved -> payload.damagedBarSide == "OPPONENT"
+                    is ArchivedHpBarBorderPulse -> payload.barSide == "OPPONENT" && payload.status == "PRESENT"
+                    is ArchivedFastMoveRecipientVisualArtifactMeasured -> payload.damagedSide == "OPPONENT"
+                    else -> false
+                }
+                at.takeIf { isPlayerHit }
+            } ?: return observed
+            return observed.map {
+                if (it.articleId == replacement.articleId) it.copy(
+                    atNanos = firstPlayerHit,
+                    basis = "OBSERVED SPECIES / FIRST PLAYER HIT",
+                ) else it
+            }
+        }
+
+        private fun normalize(value: String): String = value.uppercase().filter(Char::isLetterOrDigit)
+
         private fun identityBasisPriority(basis: String): Int = when {
             basis == "CURRENT TEAM CONFIGURATION" -> 0
             basis.contains("ANNOUNCEMENT") -> 1
             basis.contains("CROP") -> 2
-            basis == "OBSERVED SPECIES" -> 3
+            basis.startsWith("OBSERVED SPECIES") -> 3
             else -> 1
         }
+
+        private const val DECISIVE_CRY_SOURCE = "DECISIVE_BATTLE_CRY_SPECIES_WITNESS"
+        private const val CRY_CONTRADICTION_WINDOW_NANOS = 4_000_000_000L
+        private const val IMMEDIATE_OPENING_SWITCH_WINDOW_NANOS = 10_000_000_000L
     }
 }
 
@@ -746,7 +926,10 @@ data class ReplayIdentityObservation(
     val speciesName: String,
     val speciesId: Int?,
     val atNanos: Long,
-    val basis: String
+    val basis: String,
+    val sourceId: String? = null,
+    val confidence: Float? = null,
+    val articleId: String? = null,
 )
 
 data class ReplayScene(
@@ -830,6 +1013,12 @@ data class ReplayCombatant(
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L
 private const val COUNTDOWN_GLYPH_VISUAL_NANOS = 850_000_000L
 private const val QTE_MILESTONE_VISUAL_NANOS = 700_000_000L
+private const val REPLAY_QTE_WINDOW_NANOS = 10_000_000_000L
+private const val REPLAY_QTE_MIN_PULSE_NANOS = 25_000_000L
+private const val REPLAY_QTE_MAX_PULSE_NANOS = 300_000_000L
+private const val REPLAY_QTE_MIN_INTER_PULSE_NANOS = 80_000_000L
+private const val REPLAY_QTE_MAX_INTER_PULSE_NANOS = 3_000_000_000L
+private const val REPLAY_QTE_CLOSE_ASSOCIATION_NANOS = 1_500_000_000L
 private const val CHARGE_MOVE_VISUAL_NANOS = 1_800_000_000L
 private const val CHARGE_MOVE_SEQUENCE_MERGE_NANOS = 8_000_000_000L
 private const val FAST_MOVE_WITNESS_MERGE_NANOS = 450_000_000L

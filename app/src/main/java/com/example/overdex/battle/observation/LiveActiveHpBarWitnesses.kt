@@ -47,7 +47,10 @@ internal class LiveActiveHpBarFrameHub {
         // Border pulses can be shorter than one rendered frame. Keep enough
         // bitmap-free measurements for the detector coroutines to survive a
         // brief scheduling stall without silently losing several move uses.
-        extraBufferCapacity = 16,
+        // At 30 fps this preserves about one second of bitmap-free history for
+        // every independent detector. It costs only small measurements and
+        // sampled color grids, never source-frame Bitmaps.
+        extraBufferCapacity = 32,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val samples = _samples.asSharedFlow()
