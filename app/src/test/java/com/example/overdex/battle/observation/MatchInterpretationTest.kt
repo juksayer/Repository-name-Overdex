@@ -19,6 +19,27 @@ import org.junit.Test
 class MatchInterpretationTest {
 
     @Test
+    fun `explicit HUD start arms countdown observation without starting the Match clock`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "TEST_MANUAL_HUD",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+        val session = DroidballSession(match)
+
+        session.armCountdown()
+
+        assertEquals(DroidballSessionPhase.COUNTDOWN, session.phase.value)
+        assertEquals(MatchState.CREATED, match.state)
+        assertEquals(0, timeline.getArticles().count { it.payload is MatchStarted })
+        session.end()
+        match.release()
+    }
+
+    @Test
     fun `GO glyph creates one match start while timer support remains independent`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()

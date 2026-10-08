@@ -68,7 +68,8 @@ internal object BattleHudOverlayGeometry {
      * transparent spacer pixels, so allowing the window above this boundary
      * hides the very species text Overdex needs to read.
      */
-    fun minimumPanelWindowTopPx(displayHeight: Int): Int = panelTopPx(displayHeight)
+    fun minimumPanelWindowTopPx(displayHeight: Int, windowScreenOffsetY: Int): Int =
+        (panelTopPx(displayHeight) - windowScreenOffsetY).coerceAtLeast(0)
 
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
@@ -98,6 +99,7 @@ fun BattleOverlay(
     val opponentMoves by DroidballOverlayPresentation.activeOpponentMovePossibilities.collectAsState()
     val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
     val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
+    val configuredPlayerTeam by DroidballOverlayPresentation.configuredPlayerTeam.collectAsState()
     var layoutEditing by remember { mutableStateOf(false) }
     var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
     var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
@@ -168,6 +170,7 @@ fun BattleOverlay(
                 opponentMoves,
                 inferredPlayerTeam,
                 playerTeamConfirmed,
+                configuredPlayerTeam,
                 panelWidthPx,
                 layoutEditing = layoutEditing,
                 onLayoutEditingChanged = { layoutEditing = it },
@@ -299,6 +302,7 @@ private fun OverlayPanel(
     opponentMoves: OpponentMovePossibilities?,
     inferredPlayerTeam: List<String?>,
     playerTeamConfirmed: Boolean,
+    configuredPlayerTeam: List<String>,
     panelWidthPx: Int,
     layoutEditing: Boolean,
     onLayoutEditingChanged: (Boolean) -> Unit,
@@ -400,8 +404,13 @@ private fun OverlayPanel(
                 )
             }
         } else {
+            val configuredTeamReady = configuredPlayerTeam.size == 3
             val message = when (mode) {
-                DroidballOverlayMode.PRE_BATTLE -> "Navigate freely. Start scanning when Team Select is visible."
+                DroidballOverlayMode.PRE_BATTLE -> if (configuredTeamReady) {
+                    "Team and moves confirmed. At Team Select, start the Battle HUD."
+                } else {
+                    "Navigate freely. Start scanning when Team Select is visible."
+                }
                 DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Looking for agreeing league, party-card, restriction, and use-party signals."
                 DroidballOverlayMode.TEAM_SELECT -> "Team Select accepted. Player roster observation is active."
                 DroidballOverlayMode.CALIBRATING -> "Adjust crop boxes in Overdex."
@@ -416,8 +425,14 @@ private fun OverlayPanel(
                 color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
             if (mode == DroidballOverlayMode.PRE_BATTLE) {
-                OverlayControl("SCAN TEAM SELECT") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
+                if (configuredTeamReady) {
+                    OverlayControl("START BATTLE HUD") {
+                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
+                    }
+                } else {
+                    OverlayControl("SCAN TEAM SELECT") {
+                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
+                    }
                 }
             }
             if (mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {

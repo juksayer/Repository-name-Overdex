@@ -703,12 +703,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()
+        val windowScreenOffsetY = overlayWindowScreenOffsetY(view, params)
         params.x = (params.x + deltaX.toInt()).coerceIn(
             0,
             (bounds.width() - view.width.coerceAtLeast(1)).coerceAtLeast(0),
         )
         params.y = (params.y + deltaY.toInt()).coerceIn(
-            BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height()),
+            BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height(), windowScreenOffsetY),
             (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0),
         )
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
@@ -743,18 +744,47 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val params = overlayParams ?: return
         val bounds = displayBounds()
         battleHudLayoutStore.reset(bounds.width(), bounds.height())
-        applyBattleHudWindowPosition(params, bounds, BattleHudLayout())
+        applyBattleHudWindowPosition(view, params, bounds, BattleHudLayout())
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
 
     private fun applyBattleHudWindowPosition(
+        view: android.view.View,
         params: WindowManager.LayoutParams,
         bounds: android.graphics.Rect,
         layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
     ) {
+        val windowScreenOffsetY = overlayWindowScreenOffsetY(view, params)
+        val minimumWindowTop = BattleHudOverlayGeometry.minimumPanelWindowTopPx(
+            bounds.height(),
+            windowScreenOffsetY,
+        )
+        val oldUntranslatedFloor = BattleHudOverlayGeometry.panelTopPx(bounds.height())
+        val savedY = layout.windowY
         params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-        params.y = (layout.windowY ?: BattleHudOverlayGeometry.panelTopPx(bounds.height()))
-            .coerceAtLeast(BattleHudOverlayGeometry.minimumPanelWindowTopPx(bounds.height()))
+        params.y = when {
+            // v2 positions at or above this floor were either saved with the old
+            // Droidball/spacer geometry or stopped by the untranslated clamp.
+            // Both should migrate to the first safe pixel below the GO badge.
+            savedY == null -> minimumWindowTop
+            savedY <= oldUntranslatedFloor -> minimumWindowTop
+            else -> savedY.coerceAtLeast(minimumWindowTop)
+        }
+    }
+
+    /**
+     * WindowManager.LayoutParams.y and captured-screen Y are not always the same
+     * coordinate on phones with status-bar or developer-overlay insets. Measure
+     * that translation from the attached view instead of guessing its height.
+     */
+    private fun overlayWindowScreenOffsetY(
+        view: android.view.View,
+        params: WindowManager.LayoutParams,
+    ): Int {
+        if (!view.isAttachedToWindow) return 0
+        val location = IntArray(2)
+        view.getLocationOnScreen(location)
+        return location[1] - params.y
     }
 
     /**
@@ -772,8 +802,17 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             }
             overlayAnchoredToBattleHud = true
             val bounds = displayBounds()
-            applyBattleHudWindowPosition(params, bounds)
+            applyBattleHudWindowPosition(view, params, bounds)
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+            // The first state callback can precede WindowManager's initial layout.
+            // Reapply once attached so getLocationOnScreen supplies the real inset.
+            view.post {
+                if (overlayAnchoredToBattleHud && overlayView === view && view.isAttachedToWindow) {
+                    val liveParams = overlayParams ?: return@post
+                    applyBattleHudWindowPosition(view, liveParams, displayBounds())
+                    windowManager.updateViewLayout(view, liveParams)
+                }
+            }
             return
         }
 

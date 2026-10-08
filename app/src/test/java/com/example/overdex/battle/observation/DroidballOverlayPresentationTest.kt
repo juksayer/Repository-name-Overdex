@@ -40,6 +40,21 @@ class DroidballOverlayPresentationTest {
     }
 
     @Test
+    fun `keeps configured team distinct from inferred Team Select testimony`() {
+        DroidballOverlayPresentation.reset()
+
+        DroidballOverlayPresentation.setConfiguredPlayerTeam(listOf("Pikachu", "Sealeo", "Vaporeon"))
+
+        assertEquals(
+            listOf("Pikachu", "Sealeo", "Vaporeon"),
+            DroidballOverlayPresentation.configuredPlayerTeam.value,
+        )
+        assertEquals(List(3) { null }, DroidballOverlayPresentation.inferredPlayerTeam.value)
+        assertEquals(false, DroidballOverlayPresentation.playerTeamConfirmed.value)
+        DroidballOverlayPresentation.reset()
+    }
+
+    @Test
     fun `keeps a species ID with the opponent evidence for offline sprite rendering`() {
         DroidballOverlayPresentation.clearOpponentSpecies()
         DroidballOverlayPresentation.recordOpponentSpecies(

@@ -113,7 +113,13 @@ class DroidballSession(val match: Match) {
     }
 
     fun armCountdown() {
-        if (_phase.value in setOf(DroidballSessionPhase.SEEKING_TEAM_SELECT, DroidballSessionPhase.TEAM_SELECT_ACTIVE, DroidballSessionPhase.CALIBRATING)) {
+        if (_phase.value in setOf(
+                DroidballSessionPhase.NAVIGATION_IDLE,
+                DroidballSessionPhase.SEEKING_TEAM_SELECT,
+                DroidballSessionPhase.TEAM_SELECT_ACTIVE,
+                DroidballSessionPhase.CALIBRATING,
+            )
+        ) {
             _phase.value = DroidballSessionPhase.COUNTDOWN
         }
         if (!countdownCaptureFinished) {

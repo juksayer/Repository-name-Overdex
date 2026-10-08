@@ -368,7 +368,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             monotonicTimeNanos = System.nanoTime()
         )
         fun submitCurrentTeamConfiguration() {
-            currentBattleTeam.value.members.forEach { member ->
+            val configuredMembers = currentBattleTeam.value.members.sortedBy { it.slot }
+            DroidballOverlayPresentation.setConfiguredPlayerTeam(configuredMembers.map { it.speciesName })
+            configuredMembers.forEach { member ->
                 match.custody.submitTestimony(
                     sourceId = SourceId("CURRENT_TEAM_CONFIGURATION"),
                     payload = PlayerTeamSlotConfigured(
@@ -927,6 +929,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         // Explicit user intent opens the presentation and enables the
                         // battle-facing crops without claiming that GO has occurred.
                         openBattleHud(BattleOverlayOpenReason.USER_REQUEST)
+                        session.armCountdown()
                     }
                     is DroidballSignal.ScanTeamSelectRequested -> {
                         session.beginTeamSelectScan()

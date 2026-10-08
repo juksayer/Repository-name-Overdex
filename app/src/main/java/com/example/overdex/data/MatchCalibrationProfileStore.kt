@@ -5,6 +5,7 @@ import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.model.AnchorRegion
 import java.io.File
 import java.util.UUID
+import kotlin.math.abs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -31,8 +32,9 @@ data class MatchCalibrationProfileSummary(
 
 /**
  * App-private calibration profiles survive ordinary APK installs and updates.
- * A profile is a complete snapshot, so loading it cannot mix migrated factory
- * defaults with a user's hand-positioned battle or Team Select regions.
+ * A profile is a complete snapshot. Versioned migrations may repair a known
+ * shipped geometry defect, while all unrelated hand-positioned regions remain
+ * exactly as the user saved them.
  */
 class MatchCalibrationProfileStore(context: Context) {
     private val appContext = context.applicationContext
@@ -99,7 +101,17 @@ class MatchCalibrationProfileStore(context: Context) {
 
     private fun load(id: String): MatchCalibrationProfile? {
         val file = File(directory, "$id.json")
-        return runCatching { decode(file.readText()) }.getOrNull()
+        return runCatching {
+            val stored = decodeStored(file.readText())
+            val profile = stored.toProfile()
+            if (stored.schemaVersion < MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION) {
+                // Publish the upgraded snapshot immediately so the correction
+                // survives future launches even if Calibration is never opened.
+                write(profile) ?: profile
+            } else {
+                profile
+            }
+        }.getOrNull()
     }
 
     private fun write(profile: MatchCalibrationProfile): MatchCalibrationProfile? = runCatching {
@@ -113,7 +125,10 @@ class MatchCalibrationProfileStore(context: Context) {
     }.getOrNull()
 
     private fun decode(encoded: String): MatchCalibrationProfile =
-        json.decodeFromString(StoredProfile.serializer(), encoded).toProfile()
+        decodeStored(encoded).toProfile()
+
+    private fun decodeStored(encoded: String): StoredProfile =
+        json.decodeFromString(StoredProfile.serializer(), encoded)
 
     private fun MatchCalibrationProfile.summary() = MatchCalibrationProfileSummary(
         id, name, deviceModel, screenWidth, screenHeight, savedAtMillis
@@ -128,7 +143,7 @@ class MatchCalibrationProfileStore(context: Context) {
 
 @Serializable
 private data class StoredProfile(
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION,
     val id: String,
     val name: String,
     val deviceModel: String,
@@ -162,6 +177,33 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
     val teamDefaults = TeamSelectCalibration.measured1080x2400
     fun Map<String, StoredRegion>.region(name: String, fallback: AnchorRegion) =
         get(name)?.toRegion() ?: fallback
+    val storedBattleCalibration = BattleCalibration(
+        enemyNameRegion = battleRegions.region("enemy_name", battleDefaults.enemyNameRegion),
+        hpBarRegion = battleRegions.region("hp_bar", battleDefaults.hpBarRegion),
+        teamIconsRegion = battleRegions.region("team_icons", battleDefaults.teamIconsRegion),
+        moveBannerRegion = battleRegions.region("move_banner", battleDefaults.moveBannerRegion),
+        countdownRegion = battleRegions.region("countdown", battleDefaults.countdownRegion),
+        vsScreenRegion = battleRegions.region("vs_screen", battleDefaults.vsScreenRegion),
+        youWinRegion = battleRegions.region("you_win", battleDefaults.youWinRegion),
+        goodEffortRegion = battleRegions.region("good_effort", battleDefaults.goodEffortRegion),
+        opponentShieldsRegion = battleRegions.region("opponent_shields", battleDefaults.opponentShieldsRegion),
+        playerTeamInfoRegion = battleRegions.region("player_team_info", battleDefaults.playerTeamInfoRegion),
+        announcementRegion = battleRegions.region("announcement", battleDefaults.announcementRegion),
+        opponentTeamInfoRegion = battleRegions.region("opponent_team_info", battleDefaults.opponentTeamInfoRegion),
+        playerSpeciesNameRegion = battleRegions.region("player_species_name", battleDefaults.playerSpeciesNameRegion),
+        opponentSpeciesNameRegion = battleRegions.region("opponent_species_name", battleDefaults.opponentSpeciesNameRegion),
+        opponentPokeBallsRegion = battleRegions.region("opponent_poke_balls", battleDefaults.opponentPokeBallsRegion),
+        trainerActiveTypeRegion = battleRegions.region("trainer_active_type", battleDefaults.trainerActiveTypeRegion),
+        opponentActiveTypeRegion = battleRegions.region("opponent_active_type", battleDefaults.opponentActiveTypeRegion),
+        trainerHpRegion = battleRegions.region("trainer_hp", battleDefaults.trainerHpRegion),
+        opponentHpRegion = battleRegions.region("opponent_hp", battleDefaults.opponentHpRegion),
+        chargeMoveExecutionRegion = battleRegions.region("charge_move_execution", battleDefaults.chargeMoveExecutionRegion),
+        trainerChargeMoveControlsRegion = battleRegions.region("trainer_charge_move_controls", battleDefaults.trainerChargeMoveControlsRegion),
+        trainerInactivePokemonRegion = battleRegions.region("trainer_inactive_pokemon", battleDefaults.trainerInactivePokemonRegion),
+        battlePartyTabsRegion = battleRegions.region("battle_party_tabs", battleDefaults.battlePartyTabsRegion),
+        outOfBattleMenuRegion = battleRegions.region("out_of_battle_menu", battleDefaults.outOfBattleMenuRegion),
+        matchOutcomeRegion = battleRegions.region("match_outcome", battleDefaults.matchOutcomeRegion)
+    )
     return MatchCalibrationProfile(
         id = id,
         name = name,
@@ -169,32 +211,11 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         screenWidth = screenWidth,
         screenHeight = screenHeight,
         savedAtMillis = savedAtMillis,
-        battleCalibration = BattleCalibration(
-            enemyNameRegion = battleRegions.region("enemy_name", battleDefaults.enemyNameRegion),
-            hpBarRegion = battleRegions.region("hp_bar", battleDefaults.hpBarRegion),
-            teamIconsRegion = battleRegions.region("team_icons", battleDefaults.teamIconsRegion),
-            moveBannerRegion = battleRegions.region("move_banner", battleDefaults.moveBannerRegion),
-            countdownRegion = battleRegions.region("countdown", battleDefaults.countdownRegion),
-            vsScreenRegion = battleRegions.region("vs_screen", battleDefaults.vsScreenRegion),
-            youWinRegion = battleRegions.region("you_win", battleDefaults.youWinRegion),
-            goodEffortRegion = battleRegions.region("good_effort", battleDefaults.goodEffortRegion),
-            opponentShieldsRegion = battleRegions.region("opponent_shields", battleDefaults.opponentShieldsRegion),
-            playerTeamInfoRegion = battleRegions.region("player_team_info", battleDefaults.playerTeamInfoRegion),
-            announcementRegion = battleRegions.region("announcement", battleDefaults.announcementRegion),
-            opponentTeamInfoRegion = battleRegions.region("opponent_team_info", battleDefaults.opponentTeamInfoRegion),
-            playerSpeciesNameRegion = battleRegions.region("player_species_name", battleDefaults.playerSpeciesNameRegion),
-            opponentSpeciesNameRegion = battleRegions.region("opponent_species_name", battleDefaults.opponentSpeciesNameRegion),
-            opponentPokeBallsRegion = battleRegions.region("opponent_poke_balls", battleDefaults.opponentPokeBallsRegion),
-            trainerActiveTypeRegion = battleRegions.region("trainer_active_type", battleDefaults.trainerActiveTypeRegion),
-            opponentActiveTypeRegion = battleRegions.region("opponent_active_type", battleDefaults.opponentActiveTypeRegion),
-            trainerHpRegion = battleRegions.region("trainer_hp", battleDefaults.trainerHpRegion),
-            opponentHpRegion = battleRegions.region("opponent_hp", battleDefaults.opponentHpRegion),
-            chargeMoveExecutionRegion = battleRegions.region("charge_move_execution", battleDefaults.chargeMoveExecutionRegion),
-            trainerChargeMoveControlsRegion = battleRegions.region("trainer_charge_move_controls", battleDefaults.trainerChargeMoveControlsRegion),
-            trainerInactivePokemonRegion = battleRegions.region("trainer_inactive_pokemon", battleDefaults.trainerInactivePokemonRegion),
-            battlePartyTabsRegion = battleRegions.region("battle_party_tabs", battleDefaults.battlePartyTabsRegion),
-            outOfBattleMenuRegion = battleRegions.region("out_of_battle_menu", battleDefaults.outOfBattleMenuRegion),
-            matchOutcomeRegion = battleRegions.region("match_outcome", battleDefaults.matchOutcomeRegion)
+        battleCalibration = migrateNamedSpeciesRegions(
+            schemaVersion = schemaVersion,
+            screenWidth = screenWidth,
+            screenHeight = screenHeight,
+            calibration = storedBattleCalibration
         ),
         teamSelectCalibration = TeamSelectCalibration(
             rosterSlot1 = teamSelectRegions.region("roster_1", teamDefaults.rosterSlot1),
@@ -210,6 +231,55 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         )
     )
 }
+
+/**
+ * Schema 1 profiles could preserve the former species-name row after the
+ * factory default moved upward. Those profiles then captured shields and
+ * Pokéballs indefinitely, even across APK updates. Migrate only the known
+ * 1080 x 2400 strip geometry; every other user-positioned box is left alone.
+ */
+internal fun migrateNamedSpeciesRegions(
+    schemaVersion: Int,
+    screenWidth: Int,
+    screenHeight: Int,
+    calibration: BattleCalibration
+): BattleCalibration {
+    if (schemaVersion >= MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION ||
+        screenWidth != 1080 || screenHeight != 2400
+    ) {
+        return calibration
+    }
+
+    val defaults = BattleCalibration()
+    fun isFormerNameStrip(region: AnchorRegion, expected: AnchorRegion): Boolean {
+        fun Float.inPixels(axisSize: Int) = this * axisSize
+        val xMatches = abs(region.x.inPixels(screenWidth) - expected.x.inPixels(screenWidth)) <= 12f
+        val widthMatches = abs(region.width.inPixels(screenWidth) - expected.width.inPixels(screenWidth)) <= 12f
+        val yPixels = region.y.inPixels(screenHeight)
+        val heightPixels = region.height.inPixels(screenHeight)
+        return xMatches && widthMatches && yPixels in 215f..265f && heightPixels in 40f..75f
+    }
+
+    fun migrated(region: AnchorRegion, expected: AnchorRegion): AnchorRegion =
+        if (isFormerNameStrip(region, expected)) {
+            region.copy(y = expected.y, height = expected.height)
+        } else {
+            region
+        }
+
+    return calibration.copy(
+        playerSpeciesNameRegion = migrated(
+            calibration.playerSpeciesNameRegion,
+            defaults.playerSpeciesNameRegion
+        ),
+        opponentSpeciesNameRegion = migrated(
+            calibration.opponentSpeciesNameRegion,
+            defaults.opponentSpeciesNameRegion
+        )
+    )
+}
+
+internal const val MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION = 2
 
 private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(
     "enemy_name" to enemyNameRegion.stored(),

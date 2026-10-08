@@ -54,6 +54,9 @@ object DroidballOverlayPresentation {
     val inferredPlayerTeam = _inferredPlayerTeam.asStateFlow()
     private val _playerTeamConfirmed = MutableStateFlow(false)
     val playerTeamConfirmed = _playerTeamConfirmed.asStateFlow()
+    private val _configuredPlayerTeam = MutableStateFlow<List<String>>(emptyList())
+    /** Deliberate pre-flight configuration; kept separate from visual Team Select testimony. */
+    val configuredPlayerTeam = _configuredPlayerTeam.asStateFlow()
     private val _activeOpponentMovePossibilities = MutableStateFlow<OpponentMovePossibilities?>(null)
     val activeOpponentMovePossibilities = _activeOpponentMovePossibilities.asStateFlow()
     private var activePlayerTypes: List<PokemonType> = emptyList()
@@ -118,6 +121,10 @@ object DroidballOverlayPresentation {
     fun clearInferredPlayerTeam() {
         _inferredPlayerTeam.value = List(3) { null }
         _playerTeamConfirmed.value = false
+    }
+
+    fun setConfiguredPlayerTeam(speciesNames: List<String>) {
+        _configuredPlayerTeam.value = speciesNames.filter(String::isNotBlank).take(3)
     }
 
     fun setActivePlayerTypes(types: List<PokemonType>) {
@@ -240,5 +247,6 @@ object DroidballOverlayPresentation {
         _expanded.value = false
         clearOpponentSpecies()
         clearInferredPlayerTeam()
+        setConfiguredPlayerTeam(emptyList())
     }
 }

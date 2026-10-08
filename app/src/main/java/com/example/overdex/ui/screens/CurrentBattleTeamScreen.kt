@@ -255,6 +255,14 @@ private fun CurrentTeamOverview(
     selectedIndex: Int,
     showLaunch: Boolean = false,
 ) {
+    val addActionIndex = team.members.size.takeIf { team.members.size < 3 }
+    val launchActionIndex = if (team.members.size == 3 && showLaunch) team.members.size else null
+    val clearActionIndex = if (team.members.isNotEmpty()) {
+        team.members.size +
+            (if (addActionIndex != null) 1 else 0) +
+            (if (launchActionIndex != null) 1 else 0)
+    } else null
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -281,17 +289,14 @@ private fun CurrentTeamOverview(
                 )
             }
         }
-        var actionIndex = team.members.size
-        if (team.members.size < 3) {
-            item { TerminalMenuOption("ADD POKEMON", selected = selectedIndex == actionIndex) }
-            actionIndex++
+        if (addActionIndex != null) {
+            item { TerminalMenuOption("ADD POKEMON", selected = selectedIndex == addActionIndex) }
         }
-        if (team.members.size == 3 && showLaunch) {
-            item { TerminalMenuOption("LAUNCH DROIDBALL", selected = selectedIndex == actionIndex) }
-            actionIndex++
+        if (launchActionIndex != null) {
+            item { TerminalMenuOption("LAUNCH DROIDBALL", selected = selectedIndex == launchActionIndex) }
         }
-        if (team.members.isNotEmpty()) {
-            item { TerminalMenuOption("CLEAR TEAM", selected = selectedIndex == actionIndex) }
+        if (clearActionIndex != null) {
+            item { TerminalMenuOption("CLEAR TEAM", selected = selectedIndex == clearActionIndex) }
         }
     }
 }
