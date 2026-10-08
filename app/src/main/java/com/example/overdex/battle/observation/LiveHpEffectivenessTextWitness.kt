@@ -15,6 +15,7 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.BattleCalibration
+import com.example.overdex.data.observation.SharedLatinTextRecognizer
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -155,7 +156,20 @@ internal class LiveHpEffectivenessTextWitness(
             witnessScope.launch(Dispatchers.IO) {
                 for (sample in samples) {
                     try {
-                        val candidates = AnnouncementRecognizer.recognizeCandidates(sample.resolved.bitmap)
+                        val directText = SharedLatinTextRecognizer.readText(sample.resolved.bitmap)
+                        val directReading = FastMoveEffectivenessTextResolver.resolve(directText)
+                        val candidates = if (directReading != null || sample.cueArticleId == null) {
+                            listOf(directText).map(String::trim).filter(String::isNotBlank)
+                        } else {
+                            // The second OCR pass is valuable around a witnessed
+                            // hit, but running it continuously on two HP bars
+                            // starves the shared OCR lane and makes live evidence
+                            // arrive seconds after a switch.
+                            AnnouncementRecognizer.recognizeCandidates(
+                                sample.resolved.bitmap,
+                                directText = directText,
+                            )
+                        }
                         for (text in candidates) {
                             val reading = FastMoveEffectivenessTextResolver.resolve(text)
                             val readingKey = reading?.effectiveness?.name ?: "RAW:$text"

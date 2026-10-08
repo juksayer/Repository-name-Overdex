@@ -46,6 +46,55 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
+    fun `one interval can narrow the HUD without prematurely identifying the move`() = runBlocking {
+        val sneasel = Pokemon(
+            id = 215,
+            name = "Sneasel",
+            types = listOf(PokemonType.DARK, PokemonType.ICE),
+            region = "Johto",
+            fastMoves = listOf(
+                move("Ice Shard", 3, 10, PokemonType.ICE),
+                move("Feint Attack", 2, 6, PokemonType.DARK),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(sneasel))
+        engine.accept(article(
+            "species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215),
+        ))
+
+        assertTrue(engine.accept(borderCadence("first-interval", 1_000_000_000L)).isEmpty())
+        val snapshot = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+
+        assertEquals(listOf("Feint Attack"), snapshot.remainingMoveNames)
+        assertEquals(listOf("Ice Shard"), snapshot.eliminatedMoveNames)
+        assertNull(snapshot.identifiedMoveName)
+        assertEquals(listOf("CADENCE"), snapshot.evidenceKinds)
+    }
+
+    @Test
+    fun `a species with one legal fast move is identified immediately`() = runBlocking {
+        val vaporeon = Pokemon(
+            id = 134,
+            name = "Vaporeon",
+            types = listOf(PokemonType.WATER),
+            region = "Kanto",
+            fastMoves = listOf(move("Water Gun", 1, 3, PokemonType.WATER)),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(vaporeon))
+
+        val result = engine.accept(article(
+            "species",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134),
+        )).single().payload as FastMoveIdentified
+
+        assertEquals("Water Gun", result.moveName)
+        assertEquals("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE", result.basis)
+    }
+
+    @Test
     fun `equal duration candidates prefer the uniquely higher energy move`() {
         assertEquals(
             "Move B",
@@ -381,6 +430,154 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
+    fun `side located effectiveness narrows Sealeo without waiting for a separate hit witness`() = runBlocking {
+        val camerupt = Pokemon(
+            id = 323,
+            name = "Camerupt",
+            types = listOf(PokemonType.FIRE, PokemonType.GROUND),
+            region = "Hoenn",
+            fastMoves = listOf(move("Incinerate", 5, 20, PokemonType.FIRE)),
+            chargedMoves = emptyList(),
+        )
+        val sealeo = Pokemon(
+            id = 364,
+            name = "Sealeo",
+            types = listOf(PokemonType.ICE, PokemonType.WATER),
+            region = "Hoenn",
+            fastMoves = listOf(
+                move("Water Gun", 1, 3, PokemonType.WATER),
+                move("Powder Snow", 2, 8, PokemonType.ICE),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(camerupt, sealeo))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Camerupt", 323)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+
+        val results = engine.accept(article(
+            "effect",
+            FastMoveEffectivenessWitnessed(
+                FastMoveEffectiveness.SUPER_EFFECTIVE,
+                damagedSide = ActivePokemonSide.PLAYER,
+                recognizedText = "SUPER EFFECTIVE!",
+            ),
+        ))
+
+        assertEquals("Water Gun", (results.single().payload as FastMoveIdentified).moveName)
+        val snapshot = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals(listOf("Water Gun"), snapshot.remainingMoveNames)
+        assertEquals(listOf("Powder Snow"), snapshot.eliminatedMoveNames)
+        assertEquals(listOf("EFFECTIVENESS"), snapshot.evidenceKinds)
+    }
+
+    @Test
+    fun `bar motion cannot resurrect Powder Snow after effectiveness identifies Water Gun`() = runBlocking {
+        val camerupt = Pokemon(
+            id = 323,
+            name = "Camerupt",
+            types = listOf(PokemonType.FIRE, PokemonType.GROUND),
+            region = "Hoenn",
+            fastMoves = listOf(move("Incinerate", 5, 20, PokemonType.FIRE)),
+            chargedMoves = emptyList(),
+        )
+        val sealeo = Pokemon(
+            id = 364,
+            name = "Sealeo",
+            types = listOf(PokemonType.ICE, PokemonType.WATER),
+            region = "Hoenn",
+            fastMoves = listOf(
+                move("Water Gun", 1, 3, PokemonType.WATER),
+                move("Powder Snow", 2, 8, PokemonType.ICE),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(camerupt, sealeo))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Camerupt", 323)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(article(
+            "effect",
+            FastMoveEffectivenessWitnessed(
+                FastMoveEffectiveness.SUPER_EFFECTIVE,
+                damagedSide = ActivePokemonSide.PLAYER,
+                recognizedText = "SUPER EFFECTIVE!",
+            ),
+        ))
+
+        assertTrue(engine.accept(article(
+            "motion-1",
+            ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 1_000_000_000L, 40f, 6),
+        )).isEmpty())
+        val secondMotion = engine.accept(article(
+            "motion-2",
+            ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 1_000_000_000L, 40f, 6),
+        ))
+
+        assertTrue(secondMotion.none { (it.payload as? FastMoveIdentified)?.moveName == "Powder Snow" })
+        val snapshot = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals("Water Gun", snapshot.identifiedMoveName)
+        assertEquals(listOf("Water Gun"), snapshot.remainingMoveNames)
+        assertEquals(listOf("Powder Snow"), snapshot.eliminatedMoveNames)
+    }
+
+    @Test
+    fun `late effectiveness text cannot identify the replacement opponent`() = runBlocking {
+        val camerupt = Pokemon(
+            id = 323,
+            name = "Camerupt",
+            types = listOf(PokemonType.FIRE, PokemonType.GROUND),
+            region = "Hoenn",
+            fastMoves = listOf(move("Incinerate", 5, 20, PokemonType.FIRE)),
+            chargedMoves = emptyList(),
+        )
+        val replacement = Pokemon(
+            id = 10_001,
+            name = "Replacement",
+            types = listOf(PokemonType.NORMAL),
+            region = "Test",
+            fastMoves = listOf(
+                move("Water Gun", 1, 3, PokemonType.WATER),
+                move("Tackle", 1, 3, PokemonType.NORMAL),
+            ),
+            chargedMoves = emptyList(),
+        )
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(camerupt, replacement))
+        engine.accept(article(
+            "player",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Camerupt", 323),
+        ).copy(monotonicTimeNanos = 1_000_000_000L))
+        engine.accept(article(
+            "entry",
+            com.example.overdex.battle.custody.SpeciesCheckMeasured(
+                ActivePokemonSide.OPPONENT,
+                1,
+                "OPENED",
+                "ENTRY",
+                10_000_000_000L,
+                0,
+                10_000_000_000L,
+            ),
+        ).copy(monotonicTimeNanos = 10_000_000_000L))
+        engine.accept(article(
+            "replacement",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Replacement", 10_001),
+        ).copy(monotonicTimeNanos = 10_000_000_000L))
+
+        val result = engine.accept(article(
+            "late-effect",
+            FastMoveEffectivenessWitnessed(
+                FastMoveEffectiveness.SUPER_EFFECTIVE,
+                damagedSide = ActivePokemonSide.PLAYER,
+                recognizedText = "SUPER EFFECTIVE!",
+            ),
+        ).copy(monotonicTimeNanos = 9_000_000_000L))
+
+        assertTrue(result.isEmpty())
+        val snapshot = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals(listOf("Water Gun", "Tackle"), snapshot.remainingMoveNames)
+        assertNull(snapshot.identifiedMoveName)
+    }
+
+    @Test
     fun `cadence remains evidence after effectiveness identifies the move without counting energy`() = runBlocking {
         val camerupt = Pokemon(323, "Camerupt", listOf(PokemonType.FIRE, PokemonType.GROUND), "Hoenn",
             fastMoves = listOf(move("Incinerate", 5, 20, PokemonType.FIRE)), chargedMoves = emptyList())
@@ -445,7 +642,7 @@ class FastMoveCadenceInferenceTest {
         engine.accept(borderCadence("crossing", 500_000_000L).copy(monotonicTimeNanos = 1_200_000_000L))
         engine.accept(borderCadence("new1", 500_000_000L).copy(monotonicTimeNanos = 1_600_000_000L))
         val result = engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134)))
-        assertEquals(0, result.size)
+        assertEquals(1, result.count { it.payload is FastMoveIdentified })
         val resolved = engine.accept(borderCadence("new2", 500_000_000L).copy(monotonicTimeNanos = 2_100_000_000L))
         assertEquals(1, resolved.count { it.payload is FastMoveIdentified })
     }

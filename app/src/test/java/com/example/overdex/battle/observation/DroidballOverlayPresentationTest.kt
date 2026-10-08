@@ -1,9 +1,15 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.model.PokemonType
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
+    @After
+    fun resetPresentation() {
+        DroidballOverlayPresentation.reset()
+    }
 
     @Test
     fun `maps session phases to their matching overlay layouts`() {
@@ -93,6 +99,41 @@ class DroidballOverlayPresentationTest {
         assertEquals(
             listOf(ObservedOpponentSpecies("Sneasel", 215, observedAtNanos = 2_000_000_000L)),
             DroidballOverlayPresentation.opponentSpecies.value,
+        )
+    }
+
+    @Test
+    fun `candidate evidence removes impossible fast moves and can be revised`() {
+        DroidballOverlayPresentation.recordOpponentSpecies(
+            speciesName = "Sealeo",
+            speciesId = 364,
+            possibleFastMoves = listOf(
+                "Water Gun" to PokemonType.WATER,
+                "Powder Snow" to PokemonType.ICE,
+            ),
+            possibleChargedMoves = emptyList(),
+        )
+
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
+            speciesName = "Sealeo",
+            moveNames = listOf("Water Gun"),
+        )
+        assertEquals(
+            listOf("Water Gun"),
+            DroidballOverlayPresentation.activeOpponentMovePossibilities.value
+                ?.fastMoves
+                ?.map { it.name },
+        )
+
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
+            speciesName = "Sealeo",
+            moveNames = listOf("Water Gun", "Powder Snow"),
+        )
+        assertEquals(
+            listOf("Water Gun", "Powder Snow"),
+            DroidballOverlayPresentation.activeOpponentMovePossibilities.value
+                ?.fastMoves
+                ?.map { it.name },
         )
     }
 }

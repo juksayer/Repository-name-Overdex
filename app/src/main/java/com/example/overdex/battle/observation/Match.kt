@@ -323,7 +323,10 @@ class Match(
                         DroidballOverlayPresentation.recordOpponentSpecies(
                             speciesName = witnessed.speciesName,
                             speciesId = witnessed.speciesId ?: species?.id,
-                            possibleFastMoves = species?.fastMoves?.map { it.name to it.type }.orEmpty(),
+                            possibleFastMoves = species?.fastMoves
+                                ?.filter { it.isFast && it.turns != null }
+                                ?.map { it.name to it.type }
+                                .orEmpty(),
                             possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty(),
                             provisional = article.sourceId.id == "DECISIVE_BATTLE_CRY_SPECIES_WITNESS",
                             observedAtNanos = article.monotonicTimeNanos,
@@ -546,7 +549,14 @@ class Match(
     }
 
     private suspend fun appendFastMoveCadenceDerivations(article: RealityArticle) {
-        fastMoveCadenceInference.accept(article).forEach { derivation ->
+        val derivations = fastMoveCadenceInference.accept(article)
+        fastMoveCadenceInference.candidateSnapshot(ActivePokemonSide.OPPONENT)?.let { candidates ->
+            DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
+                speciesName = candidates.speciesName,
+                moveNames = candidates.remainingMoveNames,
+            )
+        }
+        derivations.forEach { derivation ->
             (derivation.payload as? FastMoveIdentified)?.let { identified ->
                 if (identified.side == ActivePokemonSide.OPPONENT) {
                     DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)

@@ -512,33 +512,62 @@ fun BinderSpread(
     onCardClick: ((Pokemon) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    BinderSpreadLayout(
+        leftPageCards = leftPageCards,
+        rightPageCards = rightPageCards,
+        leftVisibleColumns = leftVisibleColumns,
+        rightVisibleColumns = rightVisibleColumns,
+        columnAnimationMillis = columnAnimationMillis,
+        onCardClick = onCardClick,
+        modifier = modifier,
+    ) { pokemon, selected, cardModifier ->
+        PokedexCard(
+            pokemon = pokemon,
+            selected = selected,
+            modifier = cardModifier,
+        )
+    }
+}
+
+/** Shared open-binder presentation used by the Pokédex and owned-card binders. */
+@Composable
+internal fun <T> BinderSpreadLayout(
+    leftPageCards: List<Pair<T?, Boolean>>,
+    rightPageCards: List<Pair<T?, Boolean>>,
+    leftVisibleColumns: Set<Int> = (0..2).toSet(),
+    rightVisibleColumns: Set<Int> = (0..2).toSet(),
+    columnAnimationMillis: Int = 80,
+    onCardClick: ((T) -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    cardContent: @Composable (T, Boolean, Modifier) -> Unit,
+) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = TerminalBlack,
+        color = Color(0xFF241A12),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, TerminalDimGreen.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-                .padding(1.dp),
+                .fillMaxSize()
+                .padding(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left Page
-            BinderPage(
+            BinderPageLayout(
                 cards = leftPageCards,
                 visibleColumns = leftVisibleColumns,
                 columnAnimationMillis = columnAnimationMillis,
                 onCardClick = onCardClick,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                cardContent = cardContent,
             )
 
             // Open-binder gutter with three visible rings.
             Box(
                 modifier = Modifier
-                    .width(18.dp)
+                    .width(34.dp)
                     .fillMaxHeight()
-                    .background(Color.Black.copy(alpha = 0.72f)),
+                    .background(Color(0xFF17100C)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -551,7 +580,7 @@ fun BinderSpread(
                     repeat(3) {
                         Box(
                             modifier = Modifier
-                                .size(width = 16.dp, height = 3.dp)
+                                .size(width = 24.dp, height = 4.dp)
                                 .background(Color(0xFFAEB7AE), RoundedCornerShape(2.dp))
                                 .border(
                                     width = 1.dp,
@@ -564,12 +593,13 @@ fun BinderSpread(
             }
 
             // Right Page
-            BinderPage(
+            BinderPageLayout(
                 cards = rightPageCards,
                 visibleColumns = rightVisibleColumns,
                 columnAnimationMillis = columnAnimationMillis,
                 onCardClick = onCardClick,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                cardContent = cardContent,
             )
         }
     }
@@ -583,6 +613,30 @@ fun BinderPage(
     columnAnimationMillis: Int = 80,
     onCardClick: ((Pokemon) -> Unit)? = null,
     modifier: Modifier = Modifier
+) {
+    BinderPageLayout(
+        cards = cards,
+        visibleColumns = visibleColumns,
+        columnAnimationMillis = columnAnimationMillis,
+        onCardClick = onCardClick,
+        modifier = modifier,
+    ) { pokemon, selected, cardModifier ->
+        PokedexCard(
+            pokemon = pokemon,
+            selected = selected,
+            modifier = cardModifier,
+        )
+    }
+}
+
+@Composable
+internal fun <T> BinderPageLayout(
+    cards: List<Pair<T?, Boolean>>,
+    visibleColumns: Set<Int> = (0..2).toSet(),
+    columnAnimationMillis: Int = 80,
+    onCardClick: ((T) -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    cardContent: @Composable (T, Boolean, Modifier) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -601,7 +655,7 @@ fun BinderPage(
             ) {
                 for (colIndex in 0 until 3) {
                     val slotIndex = rowIndex * 3 + colIndex
-                    val (pokemon, selected) = if (slotIndex < cards.size) cards[slotIndex] else Pair(null, false)
+                    val (item, selected) = if (slotIndex < cards.size) cards[slotIndex] else Pair(null, false)
                     BoxWithConstraints(
                         modifier = Modifier
                             .weight(1f)
@@ -635,13 +689,13 @@ fun BinderPage(
                                     .border(1.dp, TerminalDimGreen.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
                                     .padding(1.dp)
                             ) {
-                                if (pokemon != null) {
-                                    PokedexCard(
-                                        pokemon = pokemon,
-                                        selected = selected,
-                                        modifier = if (onCardClick != null) {
-                                            Modifier.clickable { onCardClick(pokemon) }
-                                        } else Modifier
+                                if (item != null) {
+                                    cardContent(
+                                        item,
+                                        selected,
+                                        if (onCardClick != null) {
+                                            Modifier.clickable { onCardClick(item) }
+                                        } else Modifier,
                                     )
                                 } else {
                                     EmptyCardPocket()

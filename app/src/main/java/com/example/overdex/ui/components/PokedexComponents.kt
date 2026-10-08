@@ -170,6 +170,7 @@ fun InstrumentLCD(
     onDrag: ((Offset) -> Unit)? = null,
     onTap: (() -> Unit)? = null,
     contentRotationDegrees: Float = 0f,
+    edgeToEdgeContent: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val latestIdentifiedPokemon = presentationState.timeline.events
@@ -194,7 +195,7 @@ fun InstrumentLCD(
                     }
                 } else Modifier
             )
-            .padding(8.dp)
+            .padding(if (edgeToEdgeContent) 3.dp else 8.dp)
     ) {
         // LCD Surface
         Column(
@@ -202,7 +203,14 @@ fun InstrumentLCD(
                 .fillMaxSize()
                 .background(Color(0xFF121510)) // Dim greenish-black LCD
                 .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
-                .padding(horizontal = 8.dp, vertical = if (keyboardController?.isVisible == true) 4.dp else 12.dp),
+                .padding(
+                    horizontal = if (edgeToEdgeContent) 2.dp else 8.dp,
+                    vertical = when {
+                        edgeToEdgeContent -> 2.dp
+                        keyboardController?.isVisible == true -> 4.dp
+                        else -> 12.dp
+                    }
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             RotatedLcdPixels(
@@ -428,8 +436,11 @@ private fun RotatedLcdPixels(
     BoxWithConstraints(modifier = modifier) {
         Box(
             modifier = Modifier
-                .width(maxHeight)
-                .height(maxWidth)
+                // The rotated pixels need the parent's height as their width and
+                // vice versa. required* prevents the portrait bounds from
+                // coercing the result into a square.
+                .requiredWidth(maxHeight)
+                .requiredHeight(maxWidth)
                 .align(Alignment.Center)
                 .rotate(rotationDegrees),
         ) {

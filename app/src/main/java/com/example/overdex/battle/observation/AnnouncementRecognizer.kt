@@ -35,8 +35,8 @@ object AnnouncementRecognizer {
      * non-empty native reading must not prevent the alternate view from seeing
      * a short fading phrase.
      */
-    suspend fun recognizeCandidates(bitmap: Bitmap): List<String> {
-        val direct = SharedLatinTextRecognizer.readText(bitmap)
+    suspend fun recognizeCandidates(bitmap: Bitmap, directText: String? = null): List<String> {
+        val direct = directText ?: SharedLatinTextRecognizer.readText(bitmap)
         val highContrast = recognizeHighContrast(bitmap)
         return listOf(direct, highContrast)
             .map(String::trim)

@@ -1,306 +1,635 @@
 package com.example.overdex.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.model.OwnedPokemon
+import com.example.overdex.model.OwnedPokemonBinder
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.*
-import com.example.overdex.ui.theme.*
+import com.example.overdex.ui.components.PokemonTypeIcon
+import com.example.overdex.ui.components.TerminalKeyboardController
+import com.example.overdex.ui.components.TypeIconStyle
+import com.example.overdex.ui.components.rememberHandheldNavigationController
+import com.example.overdex.ui.theme.TerminalBlack
+import com.example.overdex.ui.theme.TerminalDimGreen
+import com.example.overdex.ui.theme.TerminalGreen
+import com.example.overdex.ui.theme.TerminalPurple
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+private enum class OwnedBinderTurnDirection {
+    PREVIOUS,
+    NEXT,
+}
+
+private data class OwnedBinderCardData(
+    val owned: OwnedPokemon,
+    val species: Pokemon?,
+    val spriteUrl: String,
+)
+
+/**
+ * The trainer's owned cards presented through the same 18-pocket binder used by
+ * the Pokédex. Each pocket points to one stable [OwnedPokemon.id].
+ */
 @Composable
 fun MyCollectionScreen(
     pokedexViewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
-    filterSettings: FilterSettings,
-    onFilterSettingsChange: (FilterSettings) -> Unit,
+    binder: OwnedPokemonBinder,
     onItemClick: (String) -> Unit,
     onAddClick: () -> Unit,
     onBack: () -> Unit,
+    keyboardController: TerminalKeyboardController,
     onUp: (() -> Unit) -> Unit = {},
     onDown: (() -> Unit) -> Unit = {},
     onLeft: (() -> Unit) -> Unit = {},
+    onLeftLong: (() -> Unit) -> Unit = {},
+    onLeftPressChanged: ((Boolean) -> Unit) -> Unit = {},
     onRight: (() -> Unit) -> Unit = {},
+    onRightLong: (() -> Unit) -> Unit = {},
+    onRightPressChanged: ((Boolean) -> Unit) -> Unit = {},
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
-    keyboardController: TerminalKeyboardController
+    onSelect: (() -> Unit) -> Unit = {},
+    onStart: (() -> Unit) -> Unit = {},
+    onKeyActivated: ((String) -> Unit) -> Unit = {},
+    onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
 ) {
-    val ownedPokemon by collectionViewModel.ownedPokemon.collectAsState()
+    val allOwnedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val searchQuery by collectionViewModel.searchQuery.collectAsState()
-    val selectedIndex by collectionViewModel.selectedIndex.collectAsState()
-    val listState = rememberLazyListState()
+
+    val speciesIds = remember(allOwnedPokemon) {
+        allOwnedPokemon.map { it.speciesId }.distinct()
+    }
+    var speciesById by remember { mutableStateOf<Map<Int, Pokemon>>(emptyMap()) }
+    LaunchedEffect(speciesIds) {
+        speciesById = speciesIds.mapNotNull { id ->
+            pokedexViewModel.getPokemonById(id)?.let { id to it }
+        }.toMap()
+    }
+
+    val cards = remember(allOwnedPokemon, speciesById, binder) {
+        allOwnedPokemon
+            .filter(binder::contains)
+            .map { owned ->
+                OwnedBinderCardData(
+                    owned = owned,
+                    species = speciesById[owned.speciesId],
+                    spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
+                        id = owned.speciesId,
+                        isShiny = owned.isShiny,
+                        isShadow = owned.isShadow,
+                        isPurified = owned.isPurified,
+                    ),
+                )
+            }
+    }
 
     val nav = rememberHandheldNavigationController(
-        initialIndex = selectedIndex,
-        itemCount = { ownedPokemon.size + 2 }, // SearchBar + Register + List
+        key = binder.routeKey,
+        itemCount = { cards.size },
         onActivate = { index ->
-            when (index) {
-                0 -> keyboardController.open()
-                1 -> onAddClick()
-                else -> {
-                    val actualIndex = index - 2
-                    if (actualIndex in ownedPokemon.indices) {
-                        onItemClick(ownedPokemon[actualIndex].id)
-                    }
-                }
+            cards.getOrNull(index)?.let { onItemClick(it.owned.id) }
+        },
+    )
+
+    val spreadCount = maxOf(1, (cards.size + 17) / 18)
+    val maxSpreadIndex = spreadCount - 1
+    var spreadIndex by rememberSaveable(binder.routeKey) { mutableIntStateOf(0) }
+    var leftVisibleColumns by remember { mutableStateOf((0..2).toSet()) }
+    var rightVisibleColumns by remember { mutableStateOf((0..2).toSet()) }
+    var displayedItemIndices by remember { mutableStateOf((0 until 18).toList()) }
+    var pageIsTurning by remember { mutableStateOf(false) }
+    var pageAnimationMillis by remember { mutableIntStateOf(80) }
+    var acceleratedDirection by remember { mutableStateOf<OwnedBinderTurnDirection?>(null) }
+    var acceleratedStopRequested by remember { mutableStateOf(false) }
+    val pageTurnScope = rememberCoroutineScope()
+
+    LaunchedEffect(spreadCount) {
+        spreadIndex = spreadIndex.coerceIn(0, maxSpreadIndex)
+        displayedItemIndices = ((spreadIndex * 18) until (spreadIndex * 18 + 18)).toList()
+        leftVisibleColumns = (0..2).toSet()
+        rightVisibleColumns = (0..2).toSet()
+        pageIsTurning = false
+        if (cards.isNotEmpty()) {
+            nav.setIndex(
+                nav.selectedIndex.coerceIn(
+                    spreadIndex * 18,
+                    minOf(cards.lastIndex, spreadIndex * 18 + 17),
+                ),
+            )
+        }
+    }
+
+    LaunchedEffect(searchQuery, binder) {
+        spreadIndex = 0
+        displayedItemIndices = (0 until 18).toList()
+        leftVisibleColumns = (0..2).toSet()
+        rightVisibleColumns = (0..2).toSet()
+        pageIsTurning = false
+        if (cards.isNotEmpty()) nav.setIndex(0)
+    }
+
+    suspend fun refreshColumn(
+        targetSpread: Int,
+        pageOffset: Int,
+        column: Int,
+        transitionMillis: Int = 80,
+    ) {
+        pageAnimationMillis = transitionMillis.coerceAtLeast(18)
+        if (pageOffset == 0) {
+            leftVisibleColumns = leftVisibleColumns - column
+        } else {
+            rightVisibleColumns = rightVisibleColumns - column
+        }
+        delay(pageAnimationMillis.toLong())
+
+        val targetStart = targetSpread * 18 + pageOffset
+        displayedItemIndices = displayedItemIndices.toMutableList().also { indices ->
+            for (row in 0..2) {
+                val slot = pageOffset + row * 3 + column
+                indices[slot] = targetStart + row * 3 + column
             }
         }
-    )
+
+        if (pageOffset == 0) {
+            leftVisibleColumns = leftVisibleColumns + column
+        } else {
+            rightVisibleColumns = rightVisibleColumns + column
+        }
+        delay(pageAnimationMillis.toLong())
+    }
+
+    suspend fun refreshPage(
+        targetSpread: Int,
+        pageOffset: Int,
+        columns: IntProgression,
+        transitionMillis: Int = 80,
+    ) {
+        columns.forEach { column ->
+            refreshColumn(targetSpread, pageOffset, column, transitionMillis)
+        }
+    }
+
+    fun turnToNextSpread() {
+        if (pageIsTurning || spreadIndex >= maxSpreadIndex) return
+        val nextSpread = spreadIndex + 1
+        pageTurnScope.launch {
+            pageIsTurning = true
+            refreshPage(nextSpread, pageOffset = 9, columns = 2 downTo 0)
+            refreshPage(nextSpread, pageOffset = 0, columns = 2 downTo 0)
+            spreadIndex = nextSpread
+            if (cards.isNotEmpty()) nav.setIndex(nextSpread * 18)
+            pageAnimationMillis = 80
+            pageIsTurning = false
+        }
+    }
+
+    fun turnToPreviousSpread() {
+        if (pageIsTurning || spreadIndex <= 0) return
+        val nextSpread = spreadIndex - 1
+        pageTurnScope.launch {
+            pageIsTurning = true
+            refreshPage(nextSpread, pageOffset = 0, columns = 0..2)
+            refreshPage(nextSpread, pageOffset = 9, columns = 0..2)
+            spreadIndex = nextSpread
+            if (cards.isNotEmpty()) nav.setIndex(nextSpread * 18)
+            pageAnimationMillis = 80
+            pageIsTurning = false
+        }
+    }
+
+    fun beginAcceleratedPaging(direction: OwnedBinderTurnDirection) {
+        if (keyboardController.isVisible || pageIsTurning || acceleratedDirection != null) return
+        val canAdvance = when (direction) {
+            OwnedBinderTurnDirection.NEXT -> spreadIndex < maxSpreadIndex
+            OwnedBinderTurnDirection.PREVIOUS -> spreadIndex > 0
+        }
+        if (!canAdvance) return
+
+        acceleratedDirection = direction
+        acceleratedStopRequested = false
+        pageIsTurning = true
+        pageTurnScope.launch {
+            var transitionMillis = 72
+            var moved = false
+            try {
+                while (!acceleratedStopRequested) {
+                    val targetSpread = when (direction) {
+                        OwnedBinderTurnDirection.NEXT -> spreadIndex + 1
+                        OwnedBinderTurnDirection.PREVIOUS -> spreadIndex - 1
+                    }
+                    if (targetSpread !in 0..maxSpreadIndex) break
+
+                    val turningPageOffset = if (direction == OwnedBinderTurnDirection.NEXT) 9 else 0
+                    val turningColumns = if (direction == OwnedBinderTurnDirection.NEXT) 2 downTo 0 else 0..2
+                    refreshPage(targetSpread, turningPageOffset, turningColumns, transitionMillis)
+                    spreadIndex = targetSpread
+                    moved = true
+                    transitionMillis = (transitionMillis * 0.76f).toInt().coerceAtLeast(18)
+                    if (!acceleratedStopRequested) {
+                        delay((transitionMillis * 2L).coerceAtLeast(28L))
+                    }
+                }
+
+                if (moved) {
+                    val restingPageOffset = if (direction == OwnedBinderTurnDirection.NEXT) 0 else 9
+                    val restingColumns = if (direction == OwnedBinderTurnDirection.NEXT) 2 downTo 0 else 0..2
+                    refreshPage(spreadIndex, restingPageOffset, restingColumns, transitionMillis = 55)
+                    if (cards.isNotEmpty()) nav.setIndex(spreadIndex * 18)
+                }
+            } finally {
+                leftVisibleColumns = (0..2).toSet()
+                rightVisibleColumns = (0..2).toSet()
+                pageAnimationMillis = 80
+                pageIsTurning = false
+                acceleratedDirection = null
+                acceleratedStopRequested = false
+            }
+        }
+    }
+
+    fun stopAcceleratedPaging(direction: OwnedBinderTurnDirection) {
+        if (acceleratedDirection == direction) acceleratedStopRequested = true
+    }
+
+    fun handleActivatedKey(key: String) {
+        val currentQuery = collectionViewModel.searchQuery.value
+        when (key) {
+            "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
+            "DELETE" -> if (currentQuery.isNotEmpty()) {
+                collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
+            }
+            else -> collectionViewModel.updateSearchQuery(currentQuery + key)
+        }
+    }
+
+    val selectedCard = cards.getOrNull(nav.selectedIndex)
     SideEffect {
+        onLcdContentUpdate {
+            OwnedBinderSelectionDetail(
+                card = selectedCard,
+                binder = binder,
+                position = if (selectedCard == null) 0 else nav.selectedIndex + 1,
+                total = cards.size,
+                query = searchQuery,
+                onOpenDetail = { onItemClick(it.owned.id) },
+            )
+        }
         onUp {
             if (keyboardController.isVisible) {
                 keyboardController.handleUp()
-            } else {
+            } else if (!pageIsTurning && nav.selectedIndex > spreadIndex * 18) {
                 nav.moveUp()
             }
         }
-
         onDown {
             if (keyboardController.isVisible) {
                 keyboardController.handleDown()
-            } else {
+            } else if (
+                !pageIsTurning &&
+                nav.selectedIndex < minOf(cards.size, (spreadIndex + 1) * 18) - 1
+            ) {
                 nav.moveDown()
             }
         }
-
         onLeft {
-            if (keyboardController.isVisible) {
-                keyboardController.handleLeft()
-            }
+            if (keyboardController.isVisible) keyboardController.handleLeft() else turnToPreviousSpread()
         }
-
+        onLeftLong { beginAcceleratedPaging(OwnedBinderTurnDirection.PREVIOUS) }
+        onLeftPressChanged { pressed ->
+            if (!pressed) stopAcceleratedPaging(OwnedBinderTurnDirection.PREVIOUS)
+        }
         onRight {
-            if (keyboardController.isVisible) {
-                keyboardController.handleRight()
-            }
+            if (keyboardController.isVisible) keyboardController.handleRight() else turnToNextSpread()
         }
-
+        onRightLong { beginAcceleratedPaging(OwnedBinderTurnDirection.NEXT) }
+        onRightPressChanged { pressed ->
+            if (!pressed) stopAcceleratedPaging(OwnedBinderTurnDirection.NEXT)
+        }
         onA {
             if (keyboardController.isVisible) {
-                keyboardController.handleA(searchQuery) { key ->
-                    val currentQuery = collectionViewModel.searchQuery.value
-                    when (key) {
-                        "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
-                        "DELETE" -> {
-                            if (currentQuery.isNotEmpty()) {
-                                collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
-                            }
-                        }
-                        else -> {
-                            collectionViewModel.updateSearchQuery(currentQuery + key)
-                        }
-                    }
-                }
+                keyboardController.handleA(searchQuery) { handleActivatedKey(it) }
             } else {
                 nav.activate()
             }
         }
-
         onB {
-            if (keyboardController.isVisible) {
-                keyboardController.close()
-                nav.setIndex(0) // Return focus to search bar
-            } else {
-                onBack()
-            }
+            if (!keyboardController.handleB()) onBack()
+        }
+        onSelect { keyboardController.open() }
+        onStart { onAddClick() }
+        onKeyActivated { key ->
+            if (keyboardController.isVisible) handleActivatedKey(key)
         }
     }
-    // Sync UI selection state back to ViewModel if needed for state restoration
-    LaunchedEffect(nav.selectedIndex) {
-        collectionViewModel.updateSelectedIndex(nav.selectedIndex)
+
+    val leftPageSlots = displayedItemIndices.take(9).map { itemIndex ->
+        Pair(cards.getOrNull(itemIndex), nav.selectedIndex == itemIndex)
+    }
+    val rightPageSlots = displayedItemIndices.drop(9).take(9).map { itemIndex ->
+        Pair(cards.getOrNull(itemIndex), nav.selectedIndex == itemIndex)
     }
 
-    HandheldListSync(
-        listState = listState,
-        selectedIndex = nav.selectedIndex,
-        listIndexMapping = { if (it == 0) null else it - 1 },
-        totalItems = ownedPokemon.size + 1
-    )
+    BinderSpreadLayout(
+        leftPageCards = leftPageSlots,
+        rightPageCards = rightPageSlots,
+        leftVisibleColumns = leftVisibleColumns,
+        rightVisibleColumns = rightVisibleColumns,
+        columnAnimationMillis = pageAnimationMillis,
+        onCardClick = { card ->
+            val visibleIndex = displayedItemIndices.firstOrNull { index ->
+                cards.getOrNull(index)?.owned?.id == card.owned.id
+            }
+            if (!pageIsTurning && visibleIndex != null) nav.handleTouch(visibleIndex)
+        },
+        modifier = Modifier.fillMaxSize(),
+    ) { card, selected, cardModifier ->
+        OwnedPokemonBinderCard(
+            card = card,
+            selected = selected,
+            modifier = cardModifier,
+        )
+    }
+}
 
-
-        Column(modifier = Modifier.fillMaxSize()) {
-                TerminalPathIndicator(path = "/BATTLE/Roster")
-                TerminalHeader(text = "my collection")
-
-                SearchBar(
-                    query = searchQuery,
-                    selected = nav.selectedIndex == 0
-                )
-
+@Composable
+private fun OwnedPokemonBinderCard(
+    card: OwnedBinderCardData,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxSize()
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) TerminalGreen else TerminalDimGreen.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(3.dp),
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) TerminalGreen.copy(alpha = 0.15f) else TerminalBlack,
+            contentColor = TerminalGreen,
+        ),
+        shape = RoundedCornerShape(3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(3.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = "${ownedPokemon.size} SPECIMENS",
-                    color = TerminalDimGreen,
-                    fontSize = 12.sp,
+                    text = card.owned.cp?.let { "CP $it" } ?: card.species?.formattedId.orEmpty(),
+                    fontSize = 8.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    color = if (selected) TerminalGreen else TerminalDimGreen,
+                    maxLines = 1,
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Persistent Registration Entry
-                    item {
-                        RegisterSpecimenItem(
-                            selected = nav.selectedIndex == 1
-                        )
-                    }
-
-                    // Specimen List
-                    itemsIndexed(ownedPokemon) { index, owned ->
-                        var species by remember(owned.speciesId) { mutableStateOf<Pokemon?>(null) }
-                        LaunchedEffect(owned.speciesId) {
-                            species = pokedexViewModel.getPokemonById(owned.speciesId)
-                        }
-
-                        OwnedPokemonListItem(
-                            owned = owned,
-                            species = species,
-                            selected = nav.selectedIndex == index + 2,
-                            pokedexViewModel = pokedexViewModel
+                Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                    card.species?.types?.forEach { type ->
+                        PokemonTypeIcon(
+                            type = type,
+                            style = TypeIconStyle.OVERDEX,
+                            modifier = Modifier.size(12.dp),
                         )
                     }
                 }
-        }
-    }
+            }
 
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(top = 1.dp)
+                    .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                    .border(0.5.dp, TerminalDimGreen.copy(alpha = 0.3f), RoundedCornerShape(2.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                AsyncImage(
+                    model = card.spriteUrl,
+                    contentDescription = card.owned.displayName ?: card.species?.name,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(1.dp),
+                    contentScale = ContentScale.Fit,
+                )
 
-@Composable
-fun RegisterSpecimenItem(selected: Boolean) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) TerminalGreen else TerminalBlack,
-            contentColor = if (selected) TerminalBlack else TerminalGreen
-        ),
-        shape = RoundedCornerShape(0.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = if (selected) "▶" else " ",
-                color = if (selected) TerminalBlack else TerminalGreen,
-                fontSize = 14.sp,
-                modifier = Modifier.width(20.dp)
-            )
-            
-            Text(
-                text = "[+] REGISTER SPECIMEN",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
-            )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    if (card.owned.isFavorite) BinderCardMarker("★", TerminalGreen)
+                    if (card.owned.isShiny) BinderCardMarker("✦", TerminalPurple)
+                    if (card.owned.isShadow) BinderCardMarker("S", Color(0xFFBC13FE))
+                    if (card.owned.isPurified) BinderCardMarker("P", Color(0xFF00E5FF))
+                }
+            }
         }
     }
 }
 
 @Composable
-fun OwnedPokemonListItem(
-    owned: OwnedPokemon,
-    species: Pokemon?,
-    selected: Boolean,
-    pokedexViewModel: PokedexViewModel
-) {
-    Card(
+private fun BinderCardMarker(text: String, color: Color) {
+    Text(
+        text = text,
+        color = color,
+        fontSize = 7.sp,
+        fontWeight = FontWeight.Black,
         modifier = Modifier
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) TerminalGreen else TerminalBlack,
-            contentColor = if (selected) TerminalBlack else TerminalGreen
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(0.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            .background(TerminalBlack.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+            .padding(horizontal = 2.dp),
+    )
+}
+
+@Composable
+private fun OwnedBinderSelectionDetail(
+    card: OwnedBinderCardData?,
+    binder: OwnedPokemonBinder,
+    position: Int,
+    total: Int,
+    query: String,
+    onOpenDetail: (OwnedBinderCardData) -> Unit,
+) {
+    if (card == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = if (selected) "▶" else " ",
-                color = if (selected) TerminalBlack else TerminalGreen,
-                fontSize = 14.sp,
-                modifier = Modifier.width(20.dp)
+                text = binder.displayName,
+                color = TerminalGreen,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
             )
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(
+                text = if (query.isBlank()) "EMPTY BINDER" else "NO MATCHING CARDS",
+                color = TerminalDimGreen,
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+            Text(
+                text = "[START] ADD CARD",
+                color = TerminalGreen.copy(alpha = 0.75f),
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(top = 5.dp),
+            )
+        }
+        return
+    }
 
-            // Sprite resolution through unified pipeline
-            val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
-                id = owned.speciesId,
-                isShiny = owned.isShiny,
-                isShadow = owned.isShadow,
-                isPurified = owned.isPurified
-            )
+    val owned = card.owned
+    val species = card.species
+    val displayName = owned.displayName?.takeIf { it.isNotBlank() } ?: species?.name ?: "UNKNOWN"
+    val status = buildList {
+        if (owned.isFavorite) add("FAVORITE")
+        if (owned.isShiny) add("SHINY")
+        if (owned.isShadow) add("SHADOW")
+        if (owned.isPurified) add("PURIFIED")
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(1.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = "${binder.displayName}  $position/$total",
+            modifier = Modifier.fillMaxWidth(),
+            color = TerminalDimGreen,
+            fontSize = 8.sp,
+            textAlign = TextAlign.Center,
+            fontFamily = FontFamily.Monospace,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clickable { onOpenDetail(card) },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             AsyncImage(
-                model = spriteUrl,
-                contentDescription = species?.name,
-                modifier = Modifier.size(50.dp),
-                contentScale = ContentScale.Fit
+                model = card.spriteUrl,
+                contentDescription = displayName,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(1.dp),
+                contentScale = ContentScale.Fit,
             )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+            ) {
                 Text(
-                    text = owned.displayName?.ifBlank { species?.name } ?: species?.name ?: "Unknown",
-                    fontSize = 16.sp,
+                    text = displayName.uppercase(),
+                    modifier = Modifier.fillMaxWidth(),
+                    color = TerminalGreen,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (selected) TerminalBlack else if (owned.isShiny) TerminalPurple else TerminalGreen,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    fontFamily = FontFamily.Monospace,
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (owned.isShadow) {
-                        Text("SHADOW ", color = if (selected) TerminalBlack else Color(0xFFBC13FE), fontSize = 10.sp, fontWeight = FontWeight.Black)
-                    }
-                    if (owned.isPurified) {
-                        Text("PURIFIED ", color = if (selected) TerminalBlack else Color(0xFF00E5FF), fontSize = 10.sp, fontWeight = FontWeight.Black)
-                    }
-                    if (owned.cp != null) {
-                        Text("CP ${owned.cp}", fontSize = 12.sp, color = if (selected) TerminalBlack else TerminalDimGreen)
-                    }
+                if (owned.displayName?.takeIf { it.isNotBlank() } != null && species != null) {
+                    Text(
+                        text = species.name.uppercase(),
+                        color = TerminalDimGreen,
+                        fontSize = 8.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = FontFamily.Monospace,
+                    )
                 }
-            }
-
-            if (owned.isFavorite) {
-                Text("★", color = if (selected) TerminalBlack else Color.Yellow, fontSize = 16.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-
-            if (owned.isShiny) {
-                Text("✨", fontSize = 14.sp)
-            }
-            
-            if (species != null) {
-                Row {
-                    species.types.forEach { type ->
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    species?.types?.forEach { type ->
                         PokemonTypeIcon(
-                            type = type, 
-                            style = TypeIconStyle.OVERDEX, 
-                            modifier = Modifier.size(14.dp).padding(1.dp)
+                            type = type,
+                            style = TypeIconStyle.OVERDEX,
+                            modifier = Modifier.size(15.dp),
                         )
                     }
                 }
             }
         }
+
+        OwnedLcdLine(
+            "CP",
+            buildString {
+                append(owned.cp ?: "---")
+                if (status.isNotEmpty()) append("  ${status.joinToString("/")}")
+            },
+        )
+        OwnedLcdLine("FAST", owned.fastMove ?: "UNDISCLOSED")
+        OwnedLcdLine("CHG 1", owned.chargedMove1 ?: "UNDISCLOSED")
+        OwnedLcdLine("CHG 2", owned.chargedMove2 ?: "UNDISCLOSED")
     }
+}
+
+@Composable
+private fun OwnedLcdLine(label: String, value: String) {
+    Text(
+        text = "$label: $value",
+        color = TerminalGreen.copy(alpha = 0.82f),
+        fontSize = 8.sp,
+        lineHeight = 10.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        fontFamily = FontFamily.Monospace,
+    )
 }

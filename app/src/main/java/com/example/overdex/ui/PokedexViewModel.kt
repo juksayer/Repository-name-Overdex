@@ -119,6 +119,7 @@ import com.example.overdex.data.observation.DroidballObservationInput
 import com.example.overdex.model.*
 import com.example.overdex.model.navigation.ActionNode
 import com.example.overdex.model.navigation.DirectoryNode
+import com.example.overdex.model.navigation.TreeNodeIcon
 import com.example.overdex.model.navigation.InstrumentCommand
 import com.example.overdex.model.navigation.InstrumentTree
 import com.example.overdex.model.observation.InstrumentDeploymentState
@@ -224,7 +225,32 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
             DirectoryNode("BATTLE", listOf(
                 ActionNode("Current Team", InstrumentCommand.OpenCurrentTeam),
-                ActionNode("Roster", InstrumentCommand.OpenCollection),
+                DirectoryNode(
+                    "BINDERS",
+                    listOf(
+                        ActionNode(
+                            "All Owned",
+                            InstrumentCommand.OpenOwnedBinder(com.example.overdex.model.OwnedPokemonBinder.ALL),
+                            icon = TreeNodeIcon.BINDER,
+                        ),
+                        ActionNode(
+                            "Favorites",
+                            InstrumentCommand.OpenOwnedBinder(com.example.overdex.model.OwnedPokemonBinder.FAVORITES),
+                            icon = TreeNodeIcon.BINDER,
+                        ),
+                        ActionNode(
+                            "Shadow",
+                            InstrumentCommand.OpenOwnedBinder(com.example.overdex.model.OwnedPokemonBinder.SHADOW),
+                            icon = TreeNodeIcon.BINDER,
+                        ),
+                        ActionNode(
+                            "Shiny",
+                            InstrumentCommand.OpenOwnedBinder(com.example.overdex.model.OwnedPokemonBinder.SHINY),
+                            icon = TreeNodeIcon.BINDER,
+                        ),
+                    ),
+                    icon = TreeNodeIcon.BINDER,
+                ),
                 DirectoryNode("Match", listOf(
                     ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs)
                 )),
@@ -257,6 +283,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     fun handleA() {
         instrumentTree.executeSelected()?.let { command ->
+            _pendingCommand.tryEmit(command)
+        }
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun handleTreeNode(path: String) {
+        instrumentTree.executePath(path)?.let { command ->
             _pendingCommand.tryEmit(command)
         }
         _treeState.value = instrumentTree.getState()

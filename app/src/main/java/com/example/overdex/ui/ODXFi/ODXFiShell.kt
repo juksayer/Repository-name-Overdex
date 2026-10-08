@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -281,8 +283,11 @@ private fun RotatedInstrumentViewport(
     BoxWithConstraints(modifier = modifier) {
         Box(
             modifier = Modifier
-                .width(maxHeight)
-                .height(maxWidth)
+                // Rotation swaps the available axes. required* is intentional:
+                // ordinary width/height are clamped by the portrait parent and
+                // collapse this landscape surface into a square.
+                .requiredWidth(maxHeight)
+                .requiredHeight(maxWidth)
                 .align(Alignment.Center)
                 .rotate(rotationDegrees)
         ) {
@@ -508,7 +513,9 @@ fun ODXFiShell(
         ) {
             // Device Emblem (Permanent branding)
             AndroidPokeballLogo(
-                modifier = Modifier.size(54.dp),
+                modifier = Modifier
+                    .size(54.dp)
+                    .rotate(if (isBinderMode) 90f else 0f),
                 isInteractive = isLogoInteractive
             )
 
@@ -555,7 +562,7 @@ fun ODXFiShell(
                     .fillMaxSize()
                     .padding(top = crtTopBezel)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(PokedexScreen)
+                    .background(if (isBinderMode) Color(0xFF241A12) else PokedexScreen)
                     .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
             ) {
                 RotatedInstrumentViewport(
@@ -567,7 +574,16 @@ fun ODXFiShell(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(if (filterSettings.isEnabled) Modifier.lcdDisplayEffect(filterSettings) else Modifier)
+                            // A binder is viewed as a physical object on a tabletop. Keep
+                            // the CRT shader for instrument screens, but do not bend,
+                            // vignette, or scan-line the binder pages.
+                            .then(
+                                if (filterSettings.isEnabled && !isBinderMode) {
+                                    Modifier.lcdDisplayEffect(filterSettings)
+                                } else {
+                                    Modifier
+                                }
+                            )
                     ) {
                         content(battleMemory)
                     }
@@ -764,6 +780,7 @@ fun ODXFiShell(
                 onDrag = onLcdDrag,
                 onTap = onLcdTap,
                 contentRotationDegrees = if (isBinderMode) 90f else 0f,
+                edgeToEdgeContent = isBinderMode,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()

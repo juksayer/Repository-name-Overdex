@@ -64,6 +64,7 @@ object DroidballOverlayPresentation {
     private var activeOpponentChargedMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentSpeciesName: String? = null
     private var identifiedOpponentFastMove: String? = null
+    private var opponentFastMoveCandidateNames: Set<String>? = null
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
         // Session state is delivered asynchronously. A prebattle emission can
@@ -108,6 +109,7 @@ object DroidballOverlayPresentation {
         activeOpponentChargedMoves = emptyList()
         activeOpponentSpeciesName = null
         identifiedOpponentFastMove = null
+        opponentFastMoveCandidateNames = null
     }
 
     fun recordInferredPlayerRosterSlot(slot: Int, speciesName: String) {
@@ -187,7 +189,10 @@ object DroidballOverlayPresentation {
                 } else observed
             }
         }
-        if (activeOpponentSpeciesName != speciesName) identifiedOpponentFastMove = null
+        if (activeOpponentSpeciesName != speciesName) {
+            identifiedOpponentFastMove = null
+            opponentFastMoveCandidateNames = null
+        }
         activeOpponentSpeciesName = speciesName
         activeOpponentFastMoves = possibleFastMoves
         activeOpponentChargedMoves = possibleChargedMoves
@@ -211,6 +216,24 @@ object DroidballOverlayPresentation {
     /** Replace the opponent's candidate fast moves after cadence identifies one. */
     fun recordOpponentFastMove(moveName: String) {
         identifiedOpponentFastMove = moveName
+        opponentFastMoveCandidateNames = setOf(normalizeMoveName(moveName))
+        publishMovePossibilities()
+    }
+
+    /**
+     * Narrows the visible move pool without discarding Reference Knowledge.
+     * A later, contradictory observation may expand or replace this set.
+     */
+    fun recordOpponentFastMoveCandidates(speciesName: String, moveNames: List<String>) {
+        if (!activeOpponentSpeciesName.equals(speciesName, ignoreCase = true)) return
+        val candidates = moveNames.map(::normalizeMoveName).filter(String::isNotBlank).toSet()
+        if (candidates.isEmpty() && activeOpponentFastMoves.isNotEmpty()) return
+        opponentFastMoveCandidateNames = candidates
+        if (identifiedOpponentFastMove != null &&
+            normalizeMoveName(requireNotNull(identifiedOpponentFastMove)) !in candidates
+        ) {
+            identifiedOpponentFastMove = null
+        }
         publishMovePossibilities()
     }
 
@@ -221,6 +244,8 @@ object DroidballOverlayPresentation {
         }
         val fastMoves = identifiedOpponentFastMove?.let { identified ->
             activeOpponentFastMoves.filter { it.first.equals(identified, ignoreCase = true) }
+        } ?: opponentFastMoveCandidateNames?.let { candidates ->
+            activeOpponentFastMoves.filter { normalizeMoveName(it.first) in candidates }
         } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
             speciesName, scored(fastMoves), scored(activeOpponentChargedMoves)
@@ -235,6 +260,9 @@ object DroidballOverlayPresentation {
                 else -> 1.0
             }
         }
+
+    private fun normalizeMoveName(value: String): String =
+        value.uppercase().filter(Char::isLetterOrDigit)
 
     fun toggleExpanded() {
         if (_mode.value != DroidballOverlayMode.BATTLE_LIVE) {

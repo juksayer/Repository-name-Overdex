@@ -65,6 +65,7 @@ import kotlinx.coroutines.withContext
 import com.example.overdex.model.ChatMessage
 import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.model.Pokemon
+import com.example.overdex.model.OwnedPokemonBinder
 import com.example.overdex.model.SharedEvent
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.navigation.InstrumentCommand
@@ -438,7 +439,10 @@ fun PokedexApp(
             when (command) {
                 InstrumentCommand.LaunchDroidball -> navController.navigate("droidball_readiness")
                 InstrumentCommand.OpenSearch -> navController.navigate("list")
-                InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection")
+                InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection?binder=all")
+                is InstrumentCommand.OpenOwnedBinder -> {
+                    navController.navigate("specimens/collection?binder=${command.binder.routeKey}")
+                }
                 InstrumentCommand.OpenCurrentTeam -> navController.navigate("current_battle_team")
                 InstrumentCommand.AddSpecimen -> navController.navigate("add_pokemon_wizard")
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
@@ -534,16 +538,7 @@ fun PokedexApp(
                         selectedPath = treeState.selectedPath,
                         trainerIdentity = trainerIdentity,
                         onPhaseChange = { phase = it },
-                        onNodeSelected = { node ->
-                            when (node.path) {
-                                "/OVERDEX" -> navController.navigate("list")
-                                "/BATTLE/Current Team" -> navController.navigate("current_battle_team")
-                                "/BATTLE/Roster" -> navController.navigate("specimens/collection")
-                                "/BATTLE/History" -> navController.navigate("battle_history")
-                                "/OBSERVE" -> navController.navigate("calibration")
-                                "/TRAINER/Profile" -> navController.navigate("trainer_profile")
-                            }
-                        }
+                        onNodeSelected = { node -> viewModel.handleTreeNode(node.path) }
                     )
                 }
             }
@@ -896,26 +891,52 @@ fun PokedexApp(
                     )
                 }
             }
-            composable("specimens/collection") {
+            composable(
+                route = "specimens/collection?binder={binder}",
+                arguments = listOf(
+                    navArgument("binder") {
+                        type = NavType.StringType
+                        defaultValue = OwnedPokemonBinder.ALL.routeKey
+                    },
+                ),
+            ) { backStackEntry ->
                 val collectionViewModel: MyCollectionViewModel = viewModel()
                 val keyboardController = rememberTerminalKeyboardController()
+                val binder = OwnedPokemonBinder.fromRouteKey(
+                    backStackEntry.arguments?.getString("binder"),
+                )
+                val ownedSearchQuery by collectionViewModel.searchQuery.collectAsState()
 
                 var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightLongHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftPressChangedHandler by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
+                var rightPressChangedHandler by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
                 var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-
+                var selectHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var startHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var keyActivatedHandler by remember { mutableStateOf<((String) -> Unit)?>(null) }
+                var ownedBinderLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
                 ODXFiShell(
                     showBattleOverlay = false,
                     onUp = { upHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
                     onLeft = { leftHandler?.invoke() },
+                    onLeftLong = { leftLongHandler?.invoke() },
+                    onLeftPressChanged = { pressed -> leftPressChangedHandler?.invoke(pressed) },
                     onRight = { rightHandler?.invoke() },
+                    onRightLong = { rightLongHandler?.invoke() },
+                    onRightPressChanged = { pressed -> rightPressChangedHandler?.invoke(pressed) },
                     onA = { aHandler?.invoke() },
                     onB = { bHandler?.invoke() },
+                    onSelect = { selectHandler?.invoke() },
+                    onStart = { startHandler?.invoke() },
+                    startLabel = "ADD",
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
@@ -926,26 +947,15 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
-                    onKeyActivated = { key ->
-                        val currentQuery = collectionViewModel.searchQuery.value
-                        when (key) {
-                            "SPACE" -> collectionViewModel.updateSearchQuery(currentQuery + " ")
-                            "DELETE" -> {
-                                if (currentQuery.isNotEmpty()) {
-                                    collectionViewModel.updateSearchQuery(currentQuery.dropLast(1))
-                                }
-                            }
-                            else -> {
-                                collectionViewModel.updateSearchQuery(currentQuery + key)
-                            }
-                        }
-                    }
+                    keyboardPrompt = "SEARCH OWNED: ${ownedSearchQuery.ifBlank { "_" }}",
+                    onKeyActivated = { key -> keyActivatedHandler?.invoke(key) },
+                    lcdContent = ownedBinderLcdContent,
+                    isBinderMode = true,
                 ) {
                     MyCollectionScreen(
                         pokedexViewModel = viewModel,
                         collectionViewModel = collectionViewModel,
-                        filterSettings = filterSettings,
-                        onFilterSettingsChange = { filterSettings = it },
+                        binder = binder,
                         onAddClick = { navController.navigate("add_pokemon_wizard") },
                         onBack = { navController.debugPopBackStack() },
                         onItemClick = { id ->
@@ -954,10 +964,18 @@ fun PokedexApp(
                         onUp = { upHandler = it },
                         onDown = { downHandler = it },
                         onLeft = { leftHandler = it },
+                        onLeftLong = { leftLongHandler = it },
+                        onLeftPressChanged = { leftPressChangedHandler = it },
                         onRight = { rightHandler = it },
+                        onRightLong = { rightLongHandler = it },
+                        onRightPressChanged = { rightPressChangedHandler = it },
                         onA = { aHandler = it },
                         onB = { bHandler = it },
-                        keyboardController = keyboardController
+                        onSelect = { selectHandler = it },
+                        onStart = { startHandler = it },
+                        onKeyActivated = { keyActivatedHandler = it },
+                        onLcdContentUpdate = { ownedBinderLcdContent = it },
+                        keyboardController = keyboardController,
                     )
                 }
             }

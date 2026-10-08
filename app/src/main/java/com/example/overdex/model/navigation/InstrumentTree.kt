@@ -4,16 +4,23 @@ import androidx.compose.runtime.Stable
 
 sealed interface TreeNode {
     val name: String
+    val icon: TreeNodeIcon?
+}
+
+enum class TreeNodeIcon {
+    BINDER,
 }
 
 data class DirectoryNode(
     override val name: String,
-    val children: List<TreeNode>
+    val children: List<TreeNode>,
+    override val icon: TreeNodeIcon? = null,
 ) : TreeNode
 
 data class ActionNode(
     override val name: String,
-    val command: InstrumentCommand
+    val command: InstrumentCommand,
+    override val icon: TreeNodeIcon? = null,
 ) : TreeNode
 
 @Stable
@@ -91,6 +98,13 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
                 node.command
             }
         }
+    }
+
+    /** Selects the tapped visible row, then applies the same action as the A button. */
+    fun executePath(path: String): InstrumentCommand? {
+        if (project().none { it.path == path }) return null
+        selectedPath = path
+        return executeSelected()
     }
 
     fun navigateBack(): Boolean {

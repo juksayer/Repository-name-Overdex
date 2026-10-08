@@ -2,6 +2,7 @@ package com.example.overdex.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -36,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.example.overdex.model.navigation.ActionNode
 import com.example.overdex.model.navigation.DirectoryNode
 import com.example.overdex.model.navigation.FlattenedNode
+import com.example.overdex.model.navigation.TreeNodeIcon
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
@@ -86,6 +92,12 @@ fun DirectoryTree(
             TerminalMenuOption(
                 label = label,
                 selected = isSelected,
+                leadingIcon = when (flattened.node.icon) {
+                    TreeNodeIcon.BINDER -> {
+                        { BinderDirectoryIcon(color = if (isSelected) TerminalGreen else TerminalDimGreen) }
+                    }
+                    null -> null
+                },
                 modifier = Modifier
                     .padding(start = (flattened.depth * 16).dp)
                     .bringIntoViewRequester(requester),
@@ -151,6 +163,7 @@ fun TerminalMenuOption(
     modifier: Modifier = Modifier,
     status: String? = null,
     selected: Boolean = false,
+    leadingIcon: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
     Row(
@@ -163,7 +176,17 @@ fun TerminalMenuOption(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = if (selected) "> $label" else "  $label",
+                text = if (selected) "> " else "  ",
+                color = if (selected) TerminalGreen else TerminalDimGreen,
+                fontSize = 16.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+            )
+            if (leadingIcon != null) {
+                leadingIcon()
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            Text(
+                text = label,
                 color = if (selected) TerminalGreen else TerminalDimGreen,
                 fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
@@ -177,6 +200,38 @@ fun TerminalMenuOption(
                 // black status text disappeared until focus moved elsewhere.
                 color = TerminalGreen,
                 fontSize = 14.sp
+            )
+        }
+    }
+}
+
+/** Compact three-ring binder glyph for the Directory Tree. */
+@Composable
+private fun BinderDirectoryIcon(
+    color: Color,
+    modifier: Modifier = Modifier.size(width = 15.dp, height = 17.dp),
+) {
+    Canvas(modifier = modifier) {
+        val stroke = (size.minDimension * 0.09f).coerceAtLeast(1f)
+        val spineX = size.width * 0.24f
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(stroke / 2f, stroke / 2f),
+            size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+            cornerRadius = CornerRadius(size.width * 0.12f),
+            style = Stroke(width = stroke),
+        )
+        drawLine(
+            color = color,
+            start = Offset(spineX, stroke),
+            end = Offset(spineX, size.height - stroke),
+            strokeWidth = stroke,
+        )
+        repeat(3) { index ->
+            drawCircle(
+                color = color,
+                radius = stroke * 0.72f,
+                center = Offset(spineX, size.height * (0.25f + index * 0.25f)),
             )
         }
     }

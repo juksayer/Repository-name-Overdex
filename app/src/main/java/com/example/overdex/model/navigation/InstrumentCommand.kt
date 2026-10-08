@@ -1,5 +1,7 @@
 package com.example.overdex.model.navigation
 
+import com.example.overdex.model.OwnedPokemonBinder
+
 /**
  * Represents a command that can be executed by the instrument terminal.
  */
@@ -8,6 +10,7 @@ sealed interface InstrumentCommand {
     data object LaunchDroidball : InstrumentCommand
     data object OpenSearch : InstrumentCommand
     data object OpenCollection : InstrumentCommand
+    data class OpenOwnedBinder(val binder: OwnedPokemonBinder) : InstrumentCommand
     data object OpenCurrentTeam : InstrumentCommand
     data object AddSpecimen : InstrumentCommand
     data object OpenBattleHistory : InstrumentCommand
