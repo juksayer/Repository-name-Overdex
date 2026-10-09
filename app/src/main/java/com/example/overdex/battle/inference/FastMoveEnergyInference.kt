@@ -39,7 +39,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
     suspend fun accept(article: RealityArticle): List<FastMoveEnergyDerivation> {
         when (val payload = article.payload) {
             is SpeciesCheckMeasured -> if (
-                payload.status == "OPENED" && payload.reason in setOf("ENTRY", "EMPTY_HP")
+                payload.status == "OPENED" && payload.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH")
             ) {
                 identities.remove(payload.side)
                 activeSpecies.remove(payload.side)

@@ -252,6 +252,9 @@ object CountdownGlyphMatcher {
         source.getPixels(pixels, 0, width, 0, 0, width, height)
         val visited = BitSet(width * height)
         val components = mutableListOf<Component>()
+        // Reuse a primitive queue. Per-pixel linked nodes and four Pair objects
+        // made a bright countdown frame particularly expensive on the phone.
+        val queue = IntArray(width * height)
         val boundedLeft = scanBounds.left.coerceIn(0, width)
         val boundedTop = scanBounds.top.coerceIn(0, height)
         val boundedRight = scanBounds.right.coerceIn(boundedLeft, width)
@@ -263,16 +266,17 @@ object CountdownGlyphMatcher {
                 if (visited.get(index) || !isSelected(pixels[index])) continue
 
                 val componentPixels = mutableListOf<Int>()
-                val queue: Queue<Int> = LinkedList()
-                queue.add(index)
+                var queueHead = 0
+                var queueTail = 0
+                queue[queueTail++] = index
                 visited.set(index)
                 var minX = x
                 var maxX = x
                 var minY = y
                 var maxY = y
 
-                while (queue.isNotEmpty()) {
-                    val current = queue.remove()
+                while (queueHead < queueTail) {
+                    val current = queue[queueHead++]
                     componentPixels.add(current)
                     val currentX = current % width
                     val currentY = current / width
@@ -281,17 +285,14 @@ object CountdownGlyphMatcher {
                     minY = minOf(minY, currentY)
                     maxY = maxOf(maxY, currentY)
 
-                    for ((nextX, nextY) in arrayOf(
-                        currentX - 1 to currentY,
-                        currentX + 1 to currentY,
-                        currentX to currentY - 1,
-                        currentX to currentY + 1
-                    )) {
+                    for (direction in 0..3) {
+                        val nextX = currentX + when (direction) { 0 -> -1; 1 -> 1; else -> 0 }
+                        val nextY = currentY + when (direction) { 2 -> -1; 3 -> 1; else -> 0 }
                         if (nextX !in boundedLeft until boundedRight || nextY !in boundedTop until boundedBottom) continue
                         val next = nextY * width + nextX
                         if (!visited.get(next) && isSelected(pixels[next])) {
                             visited.set(next)
-                            queue.add(next)
+                            queue[queueTail++] = next
                         }
                     }
                 }

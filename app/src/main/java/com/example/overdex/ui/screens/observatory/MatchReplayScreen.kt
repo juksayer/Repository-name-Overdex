@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.rememberScrollState
@@ -40,15 +41,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +68,7 @@ import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
+import com.example.overdex.battle.replay.ReplayHpState
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.Move
@@ -135,6 +143,11 @@ fun MatchReplayScreen(
         ((matchStartNanos - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
     }
     val context = LocalContext.current
+    val replayPreferences = remember(context) { context.getSharedPreferences("match_replay", Context.MODE_PRIVATE) }
+    var eventBlipsEnabled by remember(replayPreferences) {
+        mutableStateOf(replayPreferences.getBoolean("event_blips_enabled", true))
+    }
+    val currentEventBlipsEnabled by rememberUpdatedState(eventBlipsEnabled)
     val transportSounds = remember { ReplayTransportSounds(context) }
     val replayHaptics = remember { ReplayHaptics(context) }
 
@@ -223,12 +236,21 @@ fun MatchReplayScreen(
                 else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
             }
             cropError?.let { MatchLcdText(it) }
-            MatchLcdText("P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}\nO ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 MatchLcdButton("RESET", { cursor = model.startNanos; playing = false; transportSounds.reset() }, Modifier.weight(1f))
                 MatchLcdButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
+                MatchLcdButton(
+                    label = "BLIPS ${if (eventBlipsEnabled) "ON" else "OFF"}",
+                    onClick = {
+                        eventBlipsEnabled = !eventBlipsEnabled
+                        replayPreferences.edit().putBoolean("event_blips_enabled", eventBlipsEnabled).apply()
+                    },
+                    modifier = Modifier.weight(1.5f).semantics { contentDescription = "Replay event blips" },
+                    selected = eventBlipsEnabled,
+                )
                 MatchLcdButton("BACK", { playing = false; transportSounds.stop(); onBack() }, Modifier.weight(1f))
             }
+            MatchLcdText("P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}\nO ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}")
         }
     }
 
@@ -237,7 +259,7 @@ fun MatchReplayScreen(
             delay(33)
             val previous = cursor
             cursor = (cursor + 33_000_000L).coerceAtMost(model.endNanos)
-            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            if (currentEventBlipsEnabled && model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
             model.hapticEventsBetween(previous, cursor).forEach { event ->
                 replayHaptics.play(event.pulseCount)
             }
@@ -266,6 +288,7 @@ fun MatchReplayScreen(
                 ) {
                     ReplayCombatantSlot(
                         combatant = scene.player,
+                        hp = scene.playerHp,
                         context = context,
                         useBackSprite = true,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
@@ -274,6 +297,7 @@ fun MatchReplayScreen(
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
+                        hp = scene.opponentHp,
                         context = context,
                         useBackSprite = false,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
@@ -413,6 +437,7 @@ private fun replayScrubBar(fraction: Float): String {
 @Composable
 private fun ReplayCombatantSlot(
     combatant: ReplayCombatant?,
+    hp: ReplayHpState?,
     context: android.content.Context,
     useBackSprite: Boolean,
     fastAction: ReplayFastMoveAction?,
@@ -499,6 +524,53 @@ private fun ReplayCombatantSlot(
                 Text("×", color = Color(0xFFD32F2F), fontSize = 72.sp)
             }
         }
+        if (combatant != null && hp != null) {
+            ReplayHpBar(
+                hp,
+                "${if (useBackSprite) "Player" else "Opponent"} ${combatant.speciesName} HP",
+                Modifier.align(Alignment.TopCenter).offset(y = if (useBackSprite) 4.dp else (-20).dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = Modifier) {
+    val fraction = hp.filledFraction
+    val fillColor = when {
+        fraction == null -> Color.Transparent
+        fraction <= 0.2f -> Color(0xFFEF5350)
+        fraction <= 0.5f -> Color(0xFFFFDF4F)
+        else -> Color(0xFF00DFAC)
+    }
+    val orange = Color(0xFFFFA000)
+    Canvas(modifier.width(132.dp).height(11.dp).semantics {
+        contentDescription = label
+        stateDescription = fraction?.let { "${(it * 100).toInt()} percent" } ?: "HP not recorded"
+    }) {
+        val inset = 2.dp.toPx()
+        val innerWidth = (size.width - inset * 2).coerceAtLeast(0f)
+        val innerHeight = (size.height - inset * 2).coerceAtLeast(0f)
+        drawRoundRect(Color.Black.copy(alpha = 0.55f), cornerRadius = CornerRadius(inset))
+        if (fraction != null) {
+            drawRect(fillColor, Offset(inset, inset), Size(innerWidth * fraction, innerHeight))
+            hp.damageTrailFraction?.let { trail ->
+                drawRect(orange, Offset(inset + innerWidth * fraction, inset),
+                    Size(innerWidth * (trail - fraction).coerceAtLeast(0f), innerHeight))
+            }
+        } else {
+            // A small dash distinguishes an unmeasured bar from a witnessed empty bar.
+            drawLine(Color.White.copy(alpha = 0.55f),
+                Offset(size.width * 0.46f, size.height / 2),
+                Offset(size.width * 0.54f, size.height / 2), 1.dp.toPx())
+        }
+        drawRoundRect(
+            if (hp.borderPulse) orange else Color.White,
+            topLeft = Offset(0.75.dp.toPx(), 0.75.dp.toPx()),
+            size = Size(size.width - 1.5.dp.toPx(), size.height - 1.5.dp.toPx()),
+            cornerRadius = CornerRadius(inset),
+            style = Stroke(1.5.dp.toPx()),
+        )
     }
 }
 

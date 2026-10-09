@@ -29,6 +29,17 @@ object SharedLatinTextRecognizer {
 
     suspend fun readText(bitmap: Bitmap): String = read(bitmap).text
 
+    /** Optional readers must not queue a live boundary behind background OCR. */
+    suspend fun readTextIfIdle(bitmap: Bitmap): String? {
+        if (!lane.tryLock()) return null
+        return try {
+            warmed = true
+            recognizer.read(bitmap).text
+        } finally {
+            lane.unlock()
+        }
+    }
+
     suspend fun warmUp() {
         if (warmed) return
         lane.withLock {

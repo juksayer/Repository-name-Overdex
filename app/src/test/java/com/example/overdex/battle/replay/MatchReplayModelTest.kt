@@ -4,6 +4,8 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.archive.ArchivedActiveHpBarMeasured
+import com.example.overdex.battle.archive.ArchivedHpBarBorderPulse
 import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
@@ -657,6 +659,120 @@ class MatchReplayModelTest {
         assertEquals("Incinerate", action.moveName)
         assertEquals(PokemonType.FIRE, action.type)
     }
+
+    @Test fun `hp follows its own combatant and restores when scrubbing backwards`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("player", "PLAYER", "Turtonator", 776, 10),
+            article("opponent", "OPPONENT", "Sneasel", 215, 10),
+            hp("player-full", "PLAYER", 1f, 20),
+            hp("opponent-low", "OPPONENT", 0.19f, 20),
+            hp("player-hit", "PLAYER", 0.48f, 30),
+        )))
+
+        assertEquals(0.48f, model.sceneAt(30).playerHp?.filledFraction)
+        assertEquals(0.19f, model.sceneAt(30).opponentHp?.filledFraction)
+        assertEquals(1f, model.sceneAt(20).playerHp?.filledFraction)
+        assertEquals(null, model.sceneAt(10).playerHp?.filledFraction)
+    }
+
+    @Test fun `hp persists across repeated names but never leaks across switches`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("sneasel", "OPPONENT", "Sneasel", 215, 10),
+            hp("low", "OPPONENT", 0.1f, 20),
+            article("name-repeat", "OPPONENT", "Sneasel", 215, 25),
+            article("sealeo", "OPPONENT", "Sealeo", 364, 30),
+            hp("replacement-hp", "OPPONENT", 0.95f, 40),
+            article("sneasel-return", "OPPONENT", "Sneasel", 215, 50),
+        )))
+
+        assertEquals(0.1f, model.sceneAt(25).opponentHp?.filledFraction)
+        assertEquals(null, model.sceneAt(30).opponentHp?.filledFraction)
+        assertEquals(0.95f, model.sceneAt(40).opponentHp?.filledFraction)
+        assertEquals(null, model.sceneAt(50).opponentHp?.filledFraction)
+        assertEquals(0.1f, model.sceneAt(20).opponentHp?.filledFraction)
+    }
+
+    @Test fun `late opening identity uses earlier hp without showing hp in menus`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("recording", com.example.overdex.battle.archive.ArchivedMatchRecordStarted, 1),
+            timed("vs", ArchivedVsScreenWitnessed, 10),
+            hp("measured-before-name", "OPPONENT", 0.8f, 20),
+            article("late-name", "OPPONENT", "Sneasel", 215, 30),
+        )))
+
+        assertEquals(null, model.sceneAt(1).opponentHp)
+        assertEquals("Sneasel", model.sceneAt(20).opponent?.speciesName)
+        assertEquals(0.8f, model.sceneAt(20).opponentHp?.filledFraction)
+    }
+
+    @Test fun `damage trail and border pulse replay separately at their recorded times`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("player", "PLAYER", "Turtonator", 776, 0),
+            article("opponent", "OPPONENT", "Sneasel", 215, 0),
+            hp("full", "PLAYER", 1f, 0),
+            timed("pulse", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 2), 1_000_000_000L),
+            timed("damage", ArchivedActiveHpBarDamageTickMeasured("PLAYER", 1f, 0.75f, 0.25f), 1_050_000_000L),
+        )))
+
+        val pulseOnly = model.sceneAt(1_025_000_000L).playerHp!!
+        assertEquals(1f, pulseOnly.filledFraction)
+        assertEquals(null, pulseOnly.damageTrailFraction)
+        assertTrue(pulseOnly.borderPulse)
+        val hit = model.sceneAt(1_100_000_000L)
+        assertEquals(0.75f, hit.playerHp?.filledFraction)
+        assertEquals(1f, hit.playerHp?.damageTrailFraction)
+        assertEquals(true, hit.playerHp?.borderPulse)
+        assertEquals(false, hit.opponentHp?.borderPulse)
+        assertEquals(false, model.sceneAt(1_200_000_000L).playerHp?.borderPulse)
+        assertEquals(1f, model.sceneAt(1_200_000_000L).playerHp?.damageTrailFraction)
+        assertEquals(null, model.sceneAt(1_400_000_000L).playerHp?.damageTrailFraction)
+        assertEquals(hit.playerHp, model.sceneAt(1_100_000_000L).playerHp)
+    }
+
+    @Test fun `new appearance cannot inherit an old border flash or damage trail`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("first", "OPPONENT", "Sneasel", 215, 0),
+            timed("pulse", ArchivedHpBarBorderPulse("OPPONENT", "PRESENT"), 1_000_000_000L),
+            timed("hit", ArchivedActiveHpBarDamageTickMeasured("OPPONENT", 0.1f, 0f, 0.1f), 1_000_000_000L),
+            article("next", "OPPONENT", "Sealeo", 364, 1_050_000_000L),
+        )))
+
+        assertEquals(true, model.sceneAt(1_025_000_000L).opponentHp?.borderPulse)
+        assertEquals(ReplayHpState(null), model.sceneAt(1_100_000_000L).opponentHp)
+    }
+
+    @Test fun `invalid hp and unavailable pulse records cannot fabricate a hit`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("species", "PLAYER", "Turtonator", 776, 0),
+            hp("valid", "PLAYER", 0.6f, 10),
+            hp("nan", "PLAYER", Float.NaN, 20),
+            hp("infinite", "PLAYER", Float.POSITIVE_INFINITY, 30),
+            hp("negative", "PLAYER", -0.1f, 40),
+            hp("too-big", "PLAYER", 1.5f, 50),
+            timed("bad-damage", ArchivedActiveHpBarDamageTickMeasured("PLAYER", 0.1f, 0.9f, -0.8f), 60),
+            timed("unavailable", ArchivedHpBarBorderPulse("PLAYER", "UNAVAILABLE"), 70),
+        )))
+
+        assertEquals(ReplayHpState(0.6f), model.sceneAt(70).playerHp)
+    }
+
+    @Test fun `confirmed faint empties hp without requiring a final empty measurement`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("sneasel", "OPPONENT", "Sneasel", 215, 10),
+            hp("last-visible", "OPPONENT", 0.06f, 20),
+            timed("faint", ArchivedActivePokemonFaintedWitnessed(
+                "OPPONENT", "Sneasel", 215, "OPPONENT_POKE_BALL_COUNT_DECREASE"), 30),
+            hp("stale", "OPPONENT", 0.06f, 35),
+            article("sealeo", "OPPONENT", "Sealeo", 364, 40),
+        )))
+
+        assertEquals(0f, model.sceneAt(35).opponentHp?.filledFraction)
+        assertEquals(null, model.sceneAt(40).opponentHp?.filledFraction)
+        assertEquals(0.06f, model.sceneAt(20).opponentHp?.filledFraction)
+    }
+
+    private fun hp(id: String, side: String, fraction: Float, nanos: Long) =
+        timed(id, ArchivedActiveHpBarMeasured(side, 10, 20, 110, 30, fraction), nanos)
 
     private fun article(id: String, side: String, name: String, speciesId: Int, nanos: Long) =
         ArchivedRealityArticle(

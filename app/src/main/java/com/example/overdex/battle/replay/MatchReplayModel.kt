@@ -106,6 +106,8 @@ class MatchReplayModel(
         battlePresentationStartNanos,
         matchStartNanos,
     )
+    private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER")
+    private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT")
     private val identifiedFastMoves = timedArticles
         .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
         .filterNot { it.basis.startsWith(CHARGE_FILL_BASIS) }
@@ -249,7 +251,13 @@ class MatchReplayModel(
             countdownGlyph = countdownGlyph,
             qteMilestone = qteMilestone?.label,
             qteMilestoneSide = qteMilestone?.side,
-            latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence"
+            latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence",
+            playerHp = player?.let {
+                playerHpTrack.stateAt(monotonicTimeNanos, playerIdentityTrack.appearanceStartAt(monotonicTimeNanos), it.isFainted)
+            },
+            opponentHp = opponent?.let {
+                opponentHpTrack.stateAt(monotonicTimeNanos, opponentIdentityTrack.appearanceStartAt(monotonicTimeNanos), it.isFainted)
+            },
         )
     }
 
@@ -778,6 +786,14 @@ private class ReplayIdentityTrack private constructor(
     private val observations: List<ReplayIdentityObservation>,
     private val visibleFromNanos: Long,
 ) {
+    fun appearanceStartAt(cursorNanos: Long): Long {
+        var index = observations.indexOfLast { it.atNanos <= cursorNanos }.coerceAtLeast(0)
+        while (index > 0 && normalize(observations[index - 1].speciesName) == normalize(observations[index].speciesName)) {
+            index--
+        }
+        return if (index == 0) visibleFromNanos else observations[index].atNanos
+    }
+
     fun combatantAt(cursorNanos: Long): ReplayCombatant? {
         if (cursorNanos < visibleFromNanos) return null
         // The first known combatant is available for the opening interval, but
@@ -955,7 +971,9 @@ data class ReplayScene(
     /** QTE grade milestone at the exact preserved physical pulse time. */
     val qteMilestone: String?,
     val qteMilestoneSide: String?,
-    val latestEvidenceLabel: String
+    val latestEvidenceLabel: String,
+    val playerHp: ReplayHpState? = null,
+    val opponentHp: ReplayHpState? = null,
 )
 
 data class ReplayFastMoveAction(

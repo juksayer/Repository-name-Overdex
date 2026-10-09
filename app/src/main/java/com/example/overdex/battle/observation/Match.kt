@@ -522,9 +522,9 @@ class Match(
      */
     private suspend fun appendTeamSelectLeadAtMatchStart(matchStartArticle: RealityArticle) {
         val speciesName = playerRosterBySlot[1] ?: return
-        if (activeSpeciesBySide[ActivePokemonSide.PLAYER]
-                ?.equals(speciesName, ignoreCase = true) == true
-        ) return
+        // A late GO result can arrive after the player has already switched.
+        // Team Select may fill an unknown lead; it must not replace a witnessed active species.
+        if (activeSpeciesBySide[ActivePokemonSide.PLAYER] != null) return
         val species = pokemonKnowledge.getPokemonByName(speciesName)
         val leadArticle = RealityArticle(
             id = ArticleId(UUID.randomUUID().toString()),
