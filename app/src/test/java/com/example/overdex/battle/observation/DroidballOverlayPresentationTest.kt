@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.model.PokemonType
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
@@ -135,5 +136,46 @@ class DroidballOverlayPresentationTest {
                 ?.fastMoves
                 ?.map { it.name },
         )
+    }
+
+    @Test fun `two named charged moves remain confirmed across switches and remove other possibilities`() {
+        val moves = listOf("Foul Play" to PokemonType.DARK, "Avalanche" to PokemonType.ICE, "Ice Punch" to PokemonType.ICE)
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), moves)
+        DroidballOverlayPresentation.recordOpponentChargedMove("Sneasel", "Foul Play")
+        DroidballOverlayPresentation.recordOpponentChargedMove("Sneasel", "FOUL PLAY")
+        assertEquals(3, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.size)
+        assertEquals(listOf("Foul Play"), DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.filter { it.isConfirmed }.map { it.name })
+
+        DroidballOverlayPresentation.recordOpponentChargedMove("Sneasel", "Avalanche")
+        DroidballOverlayPresentation.recordOpponentSpecies("Sealeo", 364, emptyList(), listOf("Body Slam" to PokemonType.NORMAL))
+        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.single().isConfirmed)
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), moves)
+        val confirmed = DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves
+        assertEquals(listOf("Foul Play", "Avalanche"), confirmed.map { it.name })
+        assertEquals(true, confirmed.all { it.isConfirmed })
+
+        DroidballOverlayPresentation.reset()
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), moves)
+        assertEquals(3, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.size)
+        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.any { it.isConfirmed })
+    }
+
+    @Test fun `late move evidence cannot revive a fainted combatant`() {
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, listOf("Ice Shard" to PokemonType.ICE), listOf("Foul Play" to PokemonType.DARK))
+        DroidballOverlayPresentation.markOpponentFainted("Sneasel")
+        DroidballOverlayPresentation.recordOpponentChargedMove("Sneasel", "Foul Play")
+        DroidballOverlayPresentation.setActivePlayerTypes(listOf(PokemonType.FIRE))
+        assertNull(DroidballOverlayPresentation.activeOpponentMovePossibilities.value)
+        assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.single().isFainted)
+    }
+
+    @Test fun `faint can precede sprite identity and zero survivors marks every known cell`() {
+        DroidballOverlayPresentation.markOpponentFainted("Sneasel")
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215, emptyList(), emptyList())
+        assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.single().isFainted)
+        DroidballOverlayPresentation.recordOpponentSpecies("Sealeo", 364, emptyList(), emptyList())
+        DroidballOverlayPresentation.markOpponentTeamFainted()
+        assertEquals(true, DroidballOverlayPresentation.opponentSpecies.value.all { it.isFainted })
+        assertNull(DroidballOverlayPresentation.activeOpponentMovePossibilities.value)
     }
 }

@@ -43,16 +43,20 @@ class PersistedOpponentBattleResourceWitness private constructor(
                         val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
                             ?: return@collect
                         val count = try {
-                            OpponentBattleResourceCounter.count(bitmap, maximumCount, acceptsPixel)
+                            if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap)
+                            else OpponentBattleResourceCounter.count(bitmap, maximumCount, acceptsPixel)
                         } finally {
                             bitmap.recycle()
                         }
+                        if (count == null) { candidate = null; candidateReference = null; return@collect }
                         if (candidate != count) {
                             candidate = count
                             candidateReference = article.id.value
                             return@collect
                         }
-                        if (delivered == count) return@collect
+                        // Repeated ball snapshots also prove that an intervening
+                        // species change was a switch, rather than a faint.
+                        if (resource != OpponentBattleResource.POKE_BALLS && delivered == count) return@collect
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = OpponentBattleResourceCountMeasured(resource, count, maximumCount),
@@ -124,14 +128,11 @@ class PersistedPlayerPokeBallWitness(
                         val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
                             ?: return@collect
                         val count = try {
-                            OpponentBattleResourceCounter.count(
-                                bitmap,
-                                maximumCount = 3,
-                                acceptsPixel = OpponentBattleResourceCounter::isBrightPokeBallRed
-                            )
+                            OpponentBattleResourceCounter.pokeBallCount(bitmap)
                         } finally {
                             bitmap.recycle()
                         }
+                        if (count == null) { candidate = null; candidateReference = null; return@collect }
                         if (candidate != count) {
                             candidate = count
                             candidateReference = article.id.value
@@ -159,6 +160,29 @@ class PersistedPlayerPokeBallWitness(
 }
 
 internal object OpponentBattleResourceCounter {
+    fun pokeBallCount(bitmap: Bitmap): Int? = pokeBallCount(bitmap.width, bitmap.height, bitmap::getPixel)
+
+    /** Missing/covered badge pixels are unavailable evidence, never zero survivors. */
+    internal fun pokeBallCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? {
+        if (width < 3 || height < 3) return null
+        var badgePixels = 0
+        val outlinePixels = IntArray(3)
+        for (y in 0 until height) for (x in 0 until width) {
+            val pixel = pixelAt(x, y)
+            val r = pixel ushr 16 and 255
+            val g = pixel ushr 8 and 255
+            val b = pixel and 255
+            val high = maxOf(r, g, b)
+            val low = minOf(r, g, b)
+            if (low >= 180 && high - low <= 50) badgePixels++
+            if (high <= 180 && high - low <= 45) outlinePixels[(x * 3 / width).coerceAtMost(2)]++
+        }
+        // Each of the three fixed slots retains an outline even when its ball
+        // darkens. Requiring the badge and slots rejects black masks and sky.
+        if (badgePixels < width * height / 4 || outlinePixels.any { it < maxOf(2, width * height / 400) }) return null
+        return count(width, height, pixelAt, 3, ::isBrightPokeBallRed)
+    }
+
     fun count(bitmap: Bitmap, maximumCount: Int, acceptsPixel: (Int) -> Boolean): Int {
         return count(bitmap.width, bitmap.height, bitmap::getPixel, maximumCount, acceptsPixel)
     }

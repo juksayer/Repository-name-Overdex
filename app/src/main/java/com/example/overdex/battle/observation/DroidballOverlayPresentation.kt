@@ -35,7 +35,8 @@ data class OverlayMovePossibility(
     val name: String,
     val type: PokemonType,
     /** Damage multiplier from this move's type against the currently observed player types. */
-    val effectivenessMultiplier: Double
+    val effectivenessMultiplier: Double,
+    val isConfirmed: Boolean = false,
 ) {
     val hazardous: Boolean get() = effectivenessMultiplier > 1.0
     /** The increase over neutral damage, for a compact live HUD warning. */
@@ -65,6 +66,8 @@ object DroidballOverlayPresentation {
     private var activeOpponentSpeciesName: String? = null
     private var identifiedOpponentFastMove: String? = null
     private var opponentFastMoveCandidateNames: Set<String>? = null
+    private val confirmedChargedMovesBySpecies = mutableMapOf<String, MutableSet<String>>()
+    private val faintedSpeciesNames = mutableSetOf<String>()
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
         // Session state is delivered asynchronously. A prebattle emission can
@@ -101,7 +104,7 @@ object DroidballOverlayPresentation {
         }
     }
 
-    fun clearOpponentSpecies() {
+    @Synchronized fun clearOpponentSpecies() {
         _opponentSpecies.value = emptyList()
         _activeOpponentMovePossibilities.value = null
         activePlayerTypes = emptyList()
@@ -110,6 +113,8 @@ object DroidballOverlayPresentation {
         activeOpponentSpeciesName = null
         identifiedOpponentFastMove = null
         opponentFastMoveCandidateNames = null
+        confirmedChargedMovesBySpecies.clear()
+        faintedSpeciesNames.clear()
     }
 
     fun recordInferredPlayerRosterSlot(slot: Int, speciesName: String) {
@@ -129,12 +134,12 @@ object DroidballOverlayPresentation {
         _configuredPlayerTeam.value = speciesNames.filter(String::isNotBlank).take(3)
     }
 
-    fun setActivePlayerTypes(types: List<PokemonType>) {
+    @Synchronized fun setActivePlayerTypes(types: List<PokemonType>) {
         activePlayerTypes = types
         publishMovePossibilities()
     }
 
-    fun recordOpponentSpecies(
+    @Synchronized fun recordOpponentSpecies(
         speciesName: String,
         speciesId: Int?,
         possibleFastMoves: List<Pair<String, PokemonType>>,
@@ -158,6 +163,7 @@ object DroidballOverlayPresentation {
                         speciesName = speciesName,
                         speciesId = speciesId,
                         isProvisional = false,
+                        isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
                         observedAtNanos = observedAtNanos,
                     )
                 }
@@ -166,6 +172,7 @@ object DroidballOverlayPresentation {
                     speciesName,
                     speciesId,
                     isProvisional = false,
+                    isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
                     observedAtNanos = observedAtNanos,
                 )
             }
@@ -174,6 +181,7 @@ object DroidballOverlayPresentation {
                 speciesName,
                 speciesId,
                 isProvisional = true,
+                isFainted = normalizeMoveName(speciesName) in faintedSpeciesNames,
                 observedAtNanos = observedAtNanos,
             )
         } else {
@@ -201,8 +209,9 @@ object DroidballOverlayPresentation {
 
     private const val PROVISIONAL_CORRECTION_WINDOW_NANOS = 4_000_000_000L
 
-    fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName) {
+    @Synchronized fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName) {
         val target = speciesName ?: return
+        faintedSpeciesNames += normalizeMoveName(target)
         _opponentSpecies.value = _opponentSpecies.value.map { observed ->
             if (observed.speciesName.equals(target, ignoreCase = true)) {
                 observed.copy(isFainted = true)
@@ -213,8 +222,15 @@ object DroidballOverlayPresentation {
         }
     }
 
+    /** Only a visible, validated badge showing zero remaining balls calls this. */
+    @Synchronized fun markOpponentTeamFainted() {
+        _opponentSpecies.value.forEach { faintedSpeciesNames += normalizeMoveName(it.speciesName) }
+        _opponentSpecies.value = _opponentSpecies.value.map { it.copy(isFainted = true) }
+        _activeOpponentMovePossibilities.value = null
+    }
+
     /** Replace the opponent's candidate fast moves after cadence identifies one. */
-    fun recordOpponentFastMove(moveName: String) {
+    @Synchronized fun recordOpponentFastMove(moveName: String) {
         identifiedOpponentFastMove = moveName
         opponentFastMoveCandidateNames = setOf(normalizeMoveName(moveName))
         publishMovePossibilities()
@@ -224,7 +240,7 @@ object DroidballOverlayPresentation {
      * Narrows the visible move pool without discarding Reference Knowledge.
      * A later, contradictory observation may expand or replace this set.
      */
-    fun recordOpponentFastMoveCandidates(speciesName: String, moveNames: List<String>) {
+    @Synchronized fun recordOpponentFastMoveCandidates(speciesName: String, moveNames: List<String>) {
         if (!activeOpponentSpeciesName.equals(speciesName, ignoreCase = true)) return
         val candidates = moveNames.map(::normalizeMoveName).filter(String::isNotBlank).toSet()
         if (candidates.isEmpty() && activeOpponentFastMoves.isNotEmpty()) return
@@ -237,8 +253,22 @@ object DroidballOverlayPresentation {
         publishMovePossibilities()
     }
 
+    /** A resolved named announcement confirms a move for that combatant across switches. */
+    @Synchronized fun recordOpponentChargedMove(speciesName: String, moveName: String) {
+        val confirmed = confirmedChargedMovesBySpecies.getOrPut(normalizeMoveName(speciesName)) { linkedSetOf() }
+        val move = normalizeMoveName(moveName)
+        if (move.isBlank()) return
+        if (confirmed.size < 2) confirmed += move
+        publishMovePossibilities()
+    }
+
     private fun publishMovePossibilities() {
         val speciesName = activeOpponentSpeciesName ?: return
+        if (normalizeMoveName(speciesName) in faintedSpeciesNames) {
+            _activeOpponentMovePossibilities.value = null
+            return
+        }
+        val confirmedCharged = confirmedChargedMovesBySpecies[normalizeMoveName(speciesName)].orEmpty()
         fun scored(moves: List<Pair<String, PokemonType>>) = moves.map { (name, type) ->
             OverlayMovePossibility(name, type, effectivenessAgainstPlayer(type))
         }
@@ -248,7 +278,10 @@ object DroidballOverlayPresentation {
             activeOpponentFastMoves.filter { normalizeMoveName(it.first) in candidates }
         } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
-            speciesName, scored(fastMoves), scored(activeOpponentChargedMoves)
+            speciesName,
+            scored(fastMoves),
+            scored(activeOpponentChargedMoves.filter { confirmedCharged.size < 2 || normalizeMoveName(it.first) in confirmedCharged })
+                .map { it.copy(isConfirmed = normalizeMoveName(it.name) in confirmedCharged) }
         )
     }
 

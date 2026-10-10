@@ -4,6 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -13,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalGreen
@@ -22,6 +27,7 @@ import com.example.overdex.ui.theme.TerminalGreen
  * Designed as a firmware module that receives navigation events from hardware controls.
  */
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun TerminalKeyboard(
     layout: List<List<String>>,
     currentRow: Int,
@@ -29,24 +35,33 @@ fun TerminalKeyboard(
     modifier: Modifier = Modifier,
     onKeyActivated: ((String) -> Unit)? = null
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        layout.forEachIndexed { rowIndex, row ->
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                row.forEachIndexed { colIndex, key ->
-                    val isSelected = currentRow == rowIndex && currentColumn == colIndex
-                    
-                    KeyboardKey(
-                        key = key,
-                        isSelected = isSelected,
-                        onClick = { onKeyActivated?.invoke(key) },
-                        modifier = Modifier.weight(1f)
-                    )
+    val rowRequesters = remember(layout) { List(layout.size) { BringIntoViewRequester() } }
+    LaunchedEffect(layout, currentRow) { rowRequesters.getOrNull(currentRow)?.bringIntoView() }
+    BoxWithConstraints(modifier) {
+        val rowGap = 6.dp
+        val keyHeight = if (layout.size in 1..4 && maxHeight != Dp.Infinity) {
+            ((maxHeight - rowGap * (layout.size - 1)) / layout.size).coerceIn(20.dp, 32.dp)
+        } else 28.dp
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(rowGap, Alignment.CenterVertically)
+        ) {
+            layout.forEachIndexed { rowIndex, row ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxWidth().bringIntoViewRequester(rowRequesters[rowIndex])
+                ) {
+                    row.forEachIndexed { colIndex, key ->
+                        val isSelected = currentRow == rowIndex && currentColumn == colIndex
+
+                        KeyboardKey(
+                            key = key,
+                            isSelected = isSelected,
+                            onClick = { onKeyActivated?.invoke(key) },
+                            keyHeight = keyHeight,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -58,13 +73,14 @@ private fun KeyboardKey(
     key: String,
     isSelected: Boolean,
     onClick: () -> Unit,
+    keyHeight: Dp,
     modifier: Modifier = Modifier
 ) {
     val isBlank = key.isEmpty()
     
     Box(
         modifier = modifier
-            .height(28.dp)
+            .height(keyHeight)
             .background(
                 color = if (isSelected) TerminalGreen else Color.Transparent,
                 shape = RoundedCornerShape(2.dp)
@@ -119,7 +135,7 @@ val LettersLayout = listOf(
     listOf("A", "B", "C", "D", "E", "F", "G", "H"),
     listOf("I", "J", "K", "L", "M", "N", "O", "P"),
     listOf("Q", "R", "S", "T", "U", "V", "W", "X"),
-    listOf("Y", "Z", "SPACE", "DELETE", "#", "")
+    listOf("Y", "Z", "SPACE", "DELETE", "#", ",")
 )
 
 /**

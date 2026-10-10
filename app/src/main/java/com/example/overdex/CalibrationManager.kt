@@ -51,7 +51,8 @@ class CalibrationManager(context: Context) {
      * uninstalling the app deliberately removes it.
      */
     fun hasSavedProfile(): Boolean =
-        prefs.contains(CALIBRATION_SAVED_AT_MILLIS) ||
+        MatchCalibrationProfileStore(appContext).activeProfile() != null ||
+            prefs.contains(CALIBRATION_SAVED_AT_MILLIS) ||
             // Profiles saved before explicit profile metadata was introduced are still
             // user calibration, not factory defaults.
             prefs.contains("countdown_w") || prefs.contains("opponent_species_name_w")
@@ -70,6 +71,7 @@ class CalibrationManager(context: Context) {
      * process is reclaimed immediately after the user leaves Match Calibration.
      */
     fun save(calibration: BattleCalibration): Boolean {
+        if (!MatchCalibrationProfileStore(appContext).updateBattleCalibration(calibration)) return false
         val savedAtMillis = System.currentTimeMillis()
         return prefs.edit()
             .putFloat(ENEMY_X, calibration.enemyNameRegion.x)
@@ -269,11 +271,9 @@ class CalibrationManager(context: Context) {
                 height = prefs.getFloat("countdown_h", BattleCalibration.LEGACY_COUNTDOWN_REGION.height).coerceIn(0.01f, 1f)
             )
         } else null
-        // Migrate only shipped defaults. A box a user has actually adjusted remains
-        // authoritative, and can still be refined in Match Calibration.
-        val countdownRegion = storedCountdownRegion
-            ?.takeUnless(BattleCalibration::isSupersededCountdownDefault)
-            ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
+        // Saved coordinates are user data, including positions that happen to
+        // match an older default. Loading must not recalibrate a box.
+        val countdownRegion = storedCountdownRegion ?: BattleCalibration.DEFAULT_COUNTDOWN_REGION
 
         val vsScreenWidth = prefs.getFloat("vs_screen_w", 0f)
         val storedVsScreenRegion = if (vsScreenWidth > 0f && vsScreenWidth <= 1f) {
@@ -284,9 +284,7 @@ class CalibrationManager(context: Context) {
                 height = prefs.getFloat("vs_screen_h", BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION.height).coerceIn(0.01f, 1f)
             )
         } else null
-        val vsScreenRegion = storedVsScreenRegion
-            ?.takeUnless { it == BattleCalibration.PREVIOUS_DEFAULT_VS_SCREEN_REGION }
-            ?: BattleCalibration.DEFAULT_VS_SCREEN_REGION
+        val vsScreenRegion = storedVsScreenRegion ?: BattleCalibration.DEFAULT_VS_SCREEN_REGION
 
         val youWinWidth = prefs.getFloat("you_win_w", 0f)
         val youWinRegion = if (youWinWidth > 0f && youWinWidth <= 1.0f) {
@@ -399,29 +397,7 @@ class CalibrationManager(context: Context) {
                 height = prefs.getFloat("player_species_name_h", (205f - 145f) / 2400f).coerceIn(0.01f, 1f)
             )
         } else null
-        // Early builds accidentally used the trainer-type-icon coordinates as
-        // the player species strip. Upgrade that exact shipped default only;
-        // a user's Draggy Box position always wins.
-        val oldPlayerSpeciesNameDefault = persistedPlayerSpeciesNameRegion?.let { region ->
-            val typeIconDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (320f - 20f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
-            val formerBadgeDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (293f - 20f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (297f - 237f) / 2400f) < 0.0001f
-            val misplacedNameStripDefault = kotlin.math.abs(region.x - 20f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (292f - 20f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
-            typeIconDefault || formerBadgeDefault || misplacedNameStripDefault
-        } == true
-        val playerSpeciesNameRegion = if (oldPlayerSpeciesNameDefault) {
-            BattleCalibration().playerSpeciesNameRegion
-        } else {
-            persistedPlayerSpeciesNameRegion ?: BattleCalibration().playerSpeciesNameRegion
-        }
+        val playerSpeciesNameRegion = persistedPlayerSpeciesNameRegion ?: BattleCalibration().playerSpeciesNameRegion
 
         val opponentSpeciesNameWidth = prefs.getFloat("opponent_species_name_w", 0f)
         val persistedOpponentSpeciesNameRegion = if (opponentSpeciesNameWidth > 0f && opponentSpeciesNameWidth <= 1f) {
@@ -432,37 +408,7 @@ class CalibrationManager(context: Context) {
                 height = prefs.getFloat("opponent_species_name_h", (205f - 145f) / 2400f).coerceIn(0.01f, 1f)
             )
         } else null
-        // The former 920–1060 default clipped the first letters of long names.
-        // Upgrade only an unchanged old default; never overwrite a Draggy Box the
-        // user has deliberately positioned.
-        val oldOpponentSpeciesNameDefault = persistedOpponentSpeciesNameRegion?.let { region ->
-            val clippedOld = kotlin.math.abs(region.x - 920f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 243f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (1060f - 920f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (275f - 243f) / 2400f) < 0.0001f
-            val pokeBallRowDefault = kotlin.math.abs(region.x - 785f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 250f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (1038f - 785f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (275f - 250f) / 2400f) < 0.0001f
-            val typeIconRowDefault = kotlin.math.abs(region.x - 780f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 165f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (213f - 165f) / 2400f) < 0.0001f
-            val formerBadgeDefault = kotlin.math.abs(region.x - 780f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (1060f - 780f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
-            val misplacedNameStripDefault = kotlin.math.abs(region.x - 788f / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.y - 237f / 2400f) < 0.0001f &&
-                kotlin.math.abs(region.width - (1060f - 788f) / 1080f) < 0.0001f &&
-                kotlin.math.abs(region.height - (285f - 237f) / 2400f) < 0.0001f
-            clippedOld || pokeBallRowDefault || typeIconRowDefault || formerBadgeDefault || misplacedNameStripDefault
-        } == true
-        val opponentSpeciesNameRegion = if (oldOpponentSpeciesNameDefault) {
-            BattleCalibration().opponentSpeciesNameRegion
-        } else {
-            persistedOpponentSpeciesNameRegion ?: BattleCalibration().opponentSpeciesNameRegion
-        }
+        val opponentSpeciesNameRegion = persistedOpponentSpeciesNameRegion ?: BattleCalibration().opponentSpeciesNameRegion
 
         val playerPokeBallsWidth = prefs.getFloat("player_poke_balls_w", 0f)
         val playerPokeBallsRegion = if (playerPokeBallsWidth > 0f && playerPokeBallsWidth <= 1f) {

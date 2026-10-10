@@ -377,7 +377,7 @@ private fun OverlayPanel(
                     MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
                 }
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine("POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
+                    MovePossibilityLine(if (opponentMoves.chargedMoves.all { it.isConfirmed }) "CHARGED" else "POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
                 }
             }
             if (layoutEditing) {
@@ -562,10 +562,11 @@ private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibilit
         Text(label, color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
         moves.forEach { move ->
             Text(
-                text = if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name,
-                color = if (move.hazardous) Color(0xFFC62828) else muted,
+                text = (if (move.isConfirmed) "✓ " else "") +
+                    (if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name),
+                color = if (move.hazardous) Color(0xFFC62828) else if (move.isConfirmed) Color(0xFF005E5B) else muted,
                 fontSize = 8.sp,
-                fontWeight = if (move.hazardous) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
                 fontFamily = FontFamily.Monospace
             )
         }

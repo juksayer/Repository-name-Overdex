@@ -60,7 +60,7 @@ class TerminalKeyboardController(
     }
 
     fun handleRight() {
-        if (currentCol < layout[currentRow].size - 1) {
+        if (currentCol < (layout.getOrNull(currentRow)?.size ?: 0) - 1) {
             currentCol++
             if (layout[currentRow][currentCol].isEmpty()) handleRight()
         }
@@ -71,7 +71,12 @@ class TerminalKeyboardController(
      * Activates the currently selected key on the grid.
      */
     fun handleA(query: String, onKeyActivated: (String) -> Unit) {
-        val key = layout[currentRow][currentCol]
+        val key = layout.getOrNull(currentRow)?.getOrNull(currentCol) ?: return
+        activateKey(key, onKeyActivated)
+    }
+
+    /** Touch and instrument buttons use exactly the same page-switch behavior. */
+    fun activateKey(key: String, onKeyActivated: (String) -> Unit) {
         if (key == "#") {
             handleModeSwitch()
         } else if (key.isNotEmpty()) {

@@ -118,6 +118,8 @@ fun MatchCalibrationScreen(
     var showLcdTouchHint by rememberSaveable { mutableStateOf(true) }
     var battleProfileSaved by remember { mutableStateOf(calibrationManager.hasSavedProfile()) }
     var teamSelectProfileSaved by remember { mutableStateOf(teamSelectCalibrationStore.hasSavedProfile()) }
+    var battleSaveFailed by remember { mutableStateOf(false) }
+    var teamSelectSaveFailed by remember { mutableStateOf(false) }
     val screenshotDirectory = remember(context) { ScreenshotDirectoryManager(context) }
     var userSamples by remember { mutableStateOf(screenshotDirectory.imageUris()) }
     val bundledSamples = remember {
@@ -216,7 +218,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_HP -> "Opponent HP"
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> "Charge-Move Execution"
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
-            CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Trainer Inactive Pokémon"
+            CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Inactive Cards: Upper / Lower"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
             // Pokémon GO shows these two labels together only on the
             // post-match screen. This is not a generic game-menu crop.
@@ -300,11 +302,8 @@ fun MatchCalibrationScreen(
                 publishedWidth = sourceFrameSize.width.takeIf { it > 0 } ?: 1080,
                 publishedHeight = sourceFrameSize.height.takeIf { it > 0 } ?: 2400
             )
-            activeProfile = profileStore.updateActive(calibration, teamSelectUpdate)?.let {
-                MatchCalibrationProfileSummary(
-                    it.id, it.name, it.deviceModel, it.screenWidth, it.screenHeight, it.savedAtMillis
-                )
-            } ?: activeProfile
+            teamSelectSaveFailed = !teamSelectProfileSaved
+            activeProfile = profileStore.activeSummary()
             return
         }
         calibration = when (selectedRegion) {
@@ -337,11 +336,8 @@ fun MatchCalibrationScreen(
             else -> calibration
         }
         battleProfileSaved = calibrationManager.save(calibration)
-        activeProfile = profileStore.updateActive(calibration, teamSelectCalibration)?.let {
-            MatchCalibrationProfileSummary(
-                it.id, it.name, it.deviceModel, it.screenWidth, it.screenHeight, it.savedAtMillis
-            )
-        } ?: activeProfile
+        battleSaveFailed = !battleProfileSaved
+        activeProfile = profileStore.activeSummary()
         if (selectedRegion == CalibrationRegion.MATCH_OUTCOME) {
             calibrationManager.recordMatchOutcomeCalibration()
         }
@@ -423,6 +419,12 @@ fun MatchCalibrationScreen(
         )
         battleProfileSaved = calibrationManager.save(calibration)
         teamSelectProfileSaved = teamSelectCalibrationStore.save(teamSelectCalibration, width, height)
+        battleSaveFailed = !battleProfileSaved
+        teamSelectSaveFailed = !teamSelectProfileSaved
+        if (battleSaveFailed || teamSelectSaveFailed) {
+            profileSaveError = "The profile was saved, but its device settings could not be updated. Please retry."
+            return
+        }
         showSaveProfileDialog = false
     }
 
@@ -477,7 +479,7 @@ fun MatchCalibrationScreen(
     // LCD Update
     LaunchedEffect(
         selectedRegion, mode, showLcdTouchHint, screenshotSourceName, sourceFrameSize,
-        battleProfileSaved, teamSelectProfileSaved, activeProfile,
+        battleProfileSaved, teamSelectProfileSaved, battleSaveFailed, teamSelectSaveFailed, activeProfile,
         activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
     ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
@@ -492,8 +494,14 @@ fun MatchCalibrationScreen(
         } else {
             battleProfileSaved
         }
+        val selectedSaveFailed = if (selectedRegion.name.startsWith("TEAM_SELECT_")) teamSelectSaveFailed else battleSaveFailed
+        val saveStatus = when {
+            selectedSaveFailed -> "SAVE FAILED"
+            selectedProfileSaved -> "SAVED"
+            else -> "DEFAULT"
+        }
         onLcdUpdate(
-            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  ${if (selectedProfileSaved) "SAVED" else "DEFAULT"}",
+            "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
             "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
         )
     }
@@ -592,6 +600,15 @@ fun MatchCalibrationScreen(
                 size = Size(activeRegion.width * size.width, activeRegion.height * size.height),
                 style = Stroke(width = stroke)
             )
+            if (selectedRegion == CalibrationRegion.TRAINER_INACTIVE_POKEMON) {
+                val middleY = (activeRegion.y + activeRegion.height / 2f) * size.height
+                drawLine(
+                    color = color,
+                    start = Offset(activeRegion.x * size.width, middleY),
+                    end = Offset((activeRegion.x + activeRegion.width) * size.width, middleY),
+                    strokeWidth = stroke,
+                )
+            }
         }
         
     }

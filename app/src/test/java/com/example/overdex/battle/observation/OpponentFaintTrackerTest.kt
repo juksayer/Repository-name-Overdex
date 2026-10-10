@@ -62,6 +62,15 @@ class OpponentFaintTrackerTest {
         assertEquals("Sneasel", faint?.speciesName)
     }
 
+    @Test fun `repeated count after a switch prevents fainting the previous occupant`() {
+        val tracker = OpponentFaintTracker()
+        tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
+        tracker.accept(article("balls-3", 2, balls(3)))
+        tracker.accept(article("sealeo", 3, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        assertNull(tracker.accept(article("still-3", 4, balls(3))))
+        assertEquals("Sealeo", tracker.accept(article("balls-2", 5, balls(2)))?.speciesName)
+    }
+
     private fun balls(count: Int) = OpponentBattleResourceCountMeasured(
         OpponentBattleResource.POKE_BALLS,
         count,

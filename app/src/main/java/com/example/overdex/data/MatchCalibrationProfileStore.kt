@@ -4,8 +4,10 @@ import android.content.Context
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.model.AnchorRegion
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.UUID
-import kotlin.math.abs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -32,9 +34,9 @@ data class MatchCalibrationProfileSummary(
 
 /**
  * App-private calibration profiles survive ordinary APK installs and updates.
- * A profile is a complete snapshot. Versioned migrations may repair a known
- * shipped geometry defect, while all unrelated hand-positioned regions remain
- * exactly as the user saved them.
+ * A profile is a complete user-owned snapshot. Reading it never moves a box,
+ * even if its coordinates resemble a former default. Defaults apply only to
+ * fields that have never been saved.
  */
 class MatchCalibrationProfileStore(context: Context) {
     private val appContext = context.applicationContext
@@ -60,7 +62,7 @@ class MatchCalibrationProfileStore(context: Context) {
         screenHeight: Int,
         battleCalibration: BattleCalibration,
         teamSelectCalibration: TeamSelectCalibration
-    ): MatchCalibrationProfile? {
+    ): MatchCalibrationProfile? = synchronized(profileLock) {
         val cleanName = name.trim().ifEmpty { "$deviceModel ${screenWidth}x$screenHeight" }
         val existing = list().firstOrNull {
             it.name.equals(cleanName, ignoreCase = true) &&
@@ -77,50 +79,53 @@ class MatchCalibrationProfileStore(context: Context) {
             battleCalibration = battleCalibration,
             teamSelectCalibration = teamSelectCalibration
         )
-        return write(profile)?.also { prefs.edit().putString(ACTIVE_PROFILE_ID, it.id).commit() }
+        if (write(profile) == null) return@synchronized null
+        if (!prefs.edit().putString(ACTIVE_PROFILE_ID, profile.id).commit()) return@synchronized null
+        profile
     }
 
-    /** Keeps the selected named profile current while its Draggy Boxes are adjusted. */
-    fun updateActive(
-        battleCalibration: BattleCalibration,
-        teamSelectCalibration: TeamSelectCalibration
-    ): MatchCalibrationProfile? {
-        val current = activeProfile() ?: return null
-        return write(
-            current.copy(
-                savedAtMillis = System.currentTimeMillis(),
-                battleCalibration = battleCalibration,
-                teamSelectCalibration = teamSelectCalibration
-            )
-        )
-    }
+    /** Update the same snapshot that load() reads, without stale copies of its other half. */
+    fun updateBattleCalibration(calibration: BattleCalibration): Boolean =
+        updateActive { it.copy(battleCalibration = calibration) }
 
-    fun activate(id: String): MatchCalibrationProfile? = load(id)?.also {
-        prefs.edit().putString(ACTIVE_PROFILE_ID, id).commit()
+    fun updateTeamSelectCalibration(calibration: TeamSelectCalibration): Boolean =
+        updateActive { it.copy(teamSelectCalibration = calibration) }
+
+    private fun updateActive(transform: (MatchCalibrationProfile) -> MatchCalibrationProfile): Boolean =
+        synchronized(profileLock) {
+            val id = prefs.getString(ACTIVE_PROFILE_ID, null) ?: return@synchronized true
+            // A selected but unreadable profile is a failed save, not permission
+            // to write elsewhere and report success while load() uses old data.
+            val current = load(id) ?: return@synchronized false
+            write(transform(current).copy(savedAtMillis = System.currentTimeMillis())) != null
+        }
+
+    fun activate(id: String): MatchCalibrationProfile? = synchronized(profileLock) {
+        val profile = load(id) ?: return@synchronized null
+        if (!prefs.edit().putString(ACTIVE_PROFILE_ID, id).commit()) return@synchronized null
+        profile
     }
 
     private fun load(id: String): MatchCalibrationProfile? {
         val file = File(directory, "$id.json")
-        return runCatching {
-            val stored = decodeStored(file.readText())
-            val profile = stored.toProfile()
-            if (stored.schemaVersion < MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION) {
-                // Publish the upgraded snapshot immediately so the correction
-                // survives future launches even if Calibration is never opened.
-                write(profile) ?: profile
-            } else {
-                profile
-            }
-        }.getOrNull()
+        return runCatching { decode(file.readText()) }.getOrNull()
     }
 
     private fun write(profile: MatchCalibrationProfile): MatchCalibrationProfile? = runCatching {
-        directory.mkdirs()
+        check(directory.isDirectory || directory.mkdirs()) { "Could not create calibration directory" }
         val target = File(directory, "${profile.id}.json")
-        val temporary = File(directory, "${profile.id}.json.tmp")
-        temporary.writeText(json.encodeToString(StoredProfile.serializer(), profile.toStored()))
-        if (target.exists() && !target.delete()) error("Could not replace calibration profile")
-        if (!temporary.renameTo(target)) error("Could not publish calibration profile")
+        val temporary = File.createTempFile("${profile.id}-", ".tmp", directory)
+        try {
+            FileOutputStream(temporary).use { output ->
+                output.write(json.encodeToString(StoredProfile.serializer(), profile.toStored()).toByteArray(Charsets.UTF_8))
+                output.fd.sync()
+            }
+            // Never delete the last good profile before publishing its replacement.
+            // Readers see either the complete old snapshot or the complete new one.
+            Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } finally {
+            temporary.delete()
+        }
         profile
     }.getOrNull()
 
@@ -138,6 +143,7 @@ class MatchCalibrationProfileStore(context: Context) {
         const val DIRECTORY = "calibration_profiles"
         const val PREFERENCES = "match_calibration_profile_selection"
         const val ACTIVE_PROFILE_ID = "active_profile_id"
+        val profileLock = Any()
     }
 }
 
@@ -212,12 +218,7 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         screenWidth = screenWidth,
         screenHeight = screenHeight,
         savedAtMillis = savedAtMillis,
-        battleCalibration = migrateNamedSpeciesRegions(
-            schemaVersion = schemaVersion,
-            screenWidth = screenWidth,
-            screenHeight = screenHeight,
-            calibration = storedBattleCalibration
-        ),
+        battleCalibration = storedBattleCalibration,
         teamSelectCalibration = TeamSelectCalibration(
             rosterSlot1 = teamSelectRegions.region("roster_1", teamDefaults.rosterSlot1),
             rosterSlot2 = teamSelectRegions.region("roster_2", teamDefaults.rosterSlot2),
@@ -229,53 +230,6 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
             leagueText = teamSelectRegions.region("league_text", teamDefaults.leagueText),
             restrictions = teamSelectRegions.region("restrictions", teamDefaults.restrictions),
             useThisParty = teamSelectRegions.region("use_this_party", teamDefaults.useThisParty)
-        )
-    )
-}
-
-/**
- * Schema 1 profiles could preserve the former species-name row after the
- * factory default moved upward. Those profiles then captured shields and
- * Pokéballs indefinitely, even across APK updates. Migrate only the known
- * 1080 x 2400 strip geometry; every other user-positioned box is left alone.
- */
-internal fun migrateNamedSpeciesRegions(
-    schemaVersion: Int,
-    screenWidth: Int,
-    screenHeight: Int,
-    calibration: BattleCalibration
-): BattleCalibration {
-    if (schemaVersion >= MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION ||
-        screenWidth != 1080 || screenHeight != 2400
-    ) {
-        return calibration
-    }
-
-    val defaults = BattleCalibration()
-    fun isFormerNameStrip(region: AnchorRegion, expected: AnchorRegion): Boolean {
-        fun Float.inPixels(axisSize: Int) = this * axisSize
-        val xMatches = abs(region.x.inPixels(screenWidth) - expected.x.inPixels(screenWidth)) <= 12f
-        val widthMatches = abs(region.width.inPixels(screenWidth) - expected.width.inPixels(screenWidth)) <= 12f
-        val yPixels = region.y.inPixels(screenHeight)
-        val heightPixels = region.height.inPixels(screenHeight)
-        return xMatches && widthMatches && yPixels in 215f..265f && heightPixels in 40f..75f
-    }
-
-    fun migrated(region: AnchorRegion, expected: AnchorRegion): AnchorRegion =
-        if (isFormerNameStrip(region, expected)) {
-            region.copy(y = expected.y, height = expected.height)
-        } else {
-            region
-        }
-
-    return calibration.copy(
-        playerSpeciesNameRegion = migrated(
-            calibration.playerSpeciesNameRegion,
-            defaults.playerSpeciesNameRegion
-        ),
-        opponentSpeciesNameRegion = migrated(
-            calibration.opponentSpeciesNameRegion,
-            defaults.opponentSpeciesNameRegion
         )
     )
 }

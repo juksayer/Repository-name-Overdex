@@ -5,7 +5,8 @@ import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.SoundPool
-import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.RawRes
 import com.example.overdex.R
 
@@ -24,41 +25,57 @@ class ReplayTransportSounds(context: Context) {
     private val pause = pool.load(context, R.raw.replay_transport_pause, 1)
     private val tick = pool.load(context, R.raw.replay_transport_tick, 1)
     private val stop = pool.load(context, R.raw.replay_transport_stop, 1)
-    private val fastForward = pool.load(context, R.raw.replay_vhs_fast_forward, 1)
+    // Steady motor section (3–5 s) of the user's cassette recording, crossfaded
+    // into a loop. The original recording and its transport clunks stay intact.
+    private val scrubWhir = pool.load(context, R.raw.replay_scrub_whir, 1)
     private var longFormPlayer: MediaPlayer? = null
-    private var lastFastForwardAtMillis = 0L
+    private var transportStream = 0
+    private var scrubStream = 0
+    private val handler = Handler(Looper.getMainLooper())
+    private val finishScrub = Runnable { endScrub() }
 
     fun insert() = playLongForm(R.raw.replay_vhs_tape_insert, volume = 0.42f)
     fun play() {
+        endScrub()
         stopLongForm()
         emit(play)
     }
     fun pause() {
+        endScrub()
         stopLongForm()
         emit(pause)
     }
     fun tick() = emit(tick, 0.45f)
     fun scrub() {
         stopLongForm()
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastFastForwardAtMillis < FAST_FORWARD_RETRIGGER_MILLIS) return
-        lastFastForwardAtMillis = now
-        emit(fastForward, 0.48f)
+        pool.stop(transportStream)
+        if (scrubStream == 0) scrubStream = pool.play(scrubWhir, 0.48f, 0.48f, 1, -1, 1f)
+        handler.removeCallbacks(finishScrub)
+        // Also handles the shell's drag callback, which has no release callback.
+        handler.postDelayed(finishScrub, 180L)
+    }
+    fun endScrub() {
+        handler.removeCallbacks(finishScrub)
+        pool.stop(scrubStream)
+        scrubStream = 0
     }
     fun reset() = playLongForm(R.raw.replay_cassette_rewind, volume = 0.42f)
     fun stop() {
+        endScrub()
         stopLongForm()
         emit(stop)
     }
     fun release() {
+        endScrub()
         stopLongForm()
         pool.release()
     }
 
     private fun emit(sound: Int, volume: Float = 0.7f): Int =
-        pool.play(sound, volume, volume, 1, 0, 1f)
+        pool.play(sound, volume, volume, 1, 0, 1f).also { transportStream = it }
 
     private fun playLongForm(@RawRes sound: Int, volume: Float) {
+        endScrub()
         stopLongForm()
         longFormPlayer = MediaPlayer.create(
             appContext,
@@ -78,9 +95,5 @@ class ReplayTransportSounds(context: Context) {
     private fun stopLongForm() {
         longFormPlayer?.release()
         longFormPlayer = null
-    }
-
-    private companion object {
-        const val FAST_FORWARD_RETRIGGER_MILLIS = 900L
     }
 }

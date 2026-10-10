@@ -142,6 +142,14 @@ internal data class ActiveHpBarMeasurement(
     val centerX: Float get() = (left + right) / 2f
 }
 
+/** Active bars retain their dimensions while their vertical position changes. */
+internal object ActiveHpBarGeometry {
+    fun matchesSize(width: Int, height: Int, anchorWidth: Int, anchorHeight: Int): Boolean =
+        anchorWidth > 0 && anchorHeight > 0 &&
+            width.toFloat() / anchorWidth in 0.90f..1.10f &&
+            height.toFloat() / anchorHeight in 0.65f..1.50f
+}
+
 /**
  * Holds a per-combatant lock. Candidate matching retains the original X range
  * while allowing the bar to travel vertically with its Pokémon. If a frame has
@@ -189,9 +197,8 @@ internal class ActiveHpBarTracker {
     }
 
     private fun ActiveHpBarMeasurement.matches(anchor: ActiveHpBarMeasurement): Boolean {
-        val widthRatio = width.toFloat() / anchor.width.coerceAtLeast(1)
-        return widthRatio in 0.70f..1.30f &&
-            abs(centerX - anchor.centerX) <= anchor.width * 0.35f
+        return ActiveHpBarGeometry.matchesSize(width, bottom - top, anchor.width, anchor.bottom - anchor.top) &&
+            abs(centerX - anchor.centerX) <= anchor.width * 0.20f
     }
 }
 
@@ -350,11 +357,14 @@ internal object ActiveHpBarMeasurer {
         val inset = max(2, (right - left) / 80)
         val innerLeft = left + inset
         val innerRight = right - inset
-        val innerTop = top + 1
-        val innerBottom = bottom - 1
+        // Inspect the centre of the interior. A thick orange outline bleeds
+        // into its first rows and used to turn a nearly empty bar into 100% HP.
+        val verticalInset = max(2, (bottom - top) / 4)
+        val innerTop = top + verticalInset
+        val innerBottom = bottom - verticalInset
         if (innerRight - innerLeft < 24 || innerBottom - innerTop < 3) return null
 
-        val requiredFilledRows = max(1, (innerBottom - innerTop) / 10)
+        val requiredFilledRows = max(2, (innerBottom - innerTop + 1) / 2)
         val filledColumns = BooleanArray(innerRight - innerLeft) { index ->
             val x = innerLeft + index
             var filledRows = 0
@@ -445,7 +455,12 @@ internal object ActiveHpBarMeasurer {
         val red = color ushr 16 and 0xff
         val green = color ushr 8 and 0xff
         val blue = color and 0xff
-        return maxOf(red, green, blue) >= 145 && maxOf(red, green, blue) - minOf(red, green, blue) >= 55
+        // HP is green, yellow, or red. Orange is lost HP / a border pulse,
+        // and other saturated attack colours are not remaining health.
+        val greenFill = green >= 145 && green - red >= 55 && green - blue >= 15
+        val yellowFill = red >= 145 && green >= 145 && blue <= 135 && abs(red - green) <= 55
+        val redFill = red >= 145 && green < 100 && blue <= 135 && red - green >= 65
+        return (greenFill || yellowFill || redFill) && !isOrangePulseOutline(color)
     }
 
     private const val EDGE_SEARCH_RADIUS = 3

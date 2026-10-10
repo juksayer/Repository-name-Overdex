@@ -45,7 +45,7 @@ class PersistedAnnouncementSpeciesWitness(
                         rawText = text,
                         knownSpeciesNames = names
                     ) ?: return@collect
-                    val side = match.sideForRosterKnownSpecies(speciesName) ?: return@collect
+                    val side = match.sideForNamedMovePerformer(speciesName) ?: return@collect
                     val witnessed = side to speciesName
                     if (witnessed == lastWitnessed) return@collect
                     lastWitnessed = witnessed

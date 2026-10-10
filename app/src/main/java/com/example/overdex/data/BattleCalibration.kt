@@ -135,7 +135,7 @@ data class BattleCalibration(
     )
 ) {
     companion object {
-        /** Previous shipped box, retained only to migrate it without overwriting user work. */
+        /** Historical defaults retained for diagnostics and persistence regression coverage. */
         val PREVIOUS_DEFAULT_COUNTDOWN_REGION = AnchorRegion(
             x = 330f / 1080f, y = 110f / 2280f,
             width = (760f - 330f) / 1080f, height = (510f - 110f) / 2280f
@@ -143,7 +143,7 @@ data class BattleCalibration(
 
         /**
          * The former narrow default clipped the outside of both letters in GO.
-         * Retain it solely so [CalibrationManager] can migrate unchanged installs.
+         * A saved box at these coordinates remains authoritative on load.
          */
         val PREVIOUS_NARROW_COUNTDOWN_REGION = AnchorRegion(
             x = 0.33f,
@@ -158,7 +158,7 @@ data class BattleCalibration(
          */
         val DEFAULT_COUNTDOWN_REGION = AnchorRegion(x = 0.20f, y = 0.35f, width = 0.60f, height = 0.30f)
 
-        /** Previous broad VS surface, retained only to migrate it without overwriting user work. */
+        /** Previous broad VS surface; saved boxes are no longer migrated by their coordinates. */
         val PREVIOUS_DEFAULT_VS_SCREEN_REGION = AnchorRegion(x = 0.25f, y = 0.25f, width = 0.50f, height = 0.30f)
 
         /** The VS disc and its immediate visual surround, not the two trainer portraits. */
@@ -166,12 +166,6 @@ data class BattleCalibration(
 
         /** The pre-contract fallback that never contained the real countdown glyph. */
         val LEGACY_COUNTDOWN_REGION = PREVIOUS_DEFAULT_VS_SCREEN_REGION
-
-        /** Defaults we shipped before the complete GO glyph was covered. */
-        internal fun isSupersededCountdownDefault(region: AnchorRegion): Boolean =
-            region == LEGACY_COUNTDOWN_REGION ||
-                region == PREVIOUS_DEFAULT_COUNTDOWN_REGION ||
-                region == PREVIOUS_NARROW_COUNTDOWN_REGION
     }
 
     fun isCalibrated(): Boolean {

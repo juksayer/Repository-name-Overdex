@@ -81,11 +81,13 @@ fun PokedexListScreen(
     )
 
     val spreadCount = maxOf(1, (pokemonItems.itemCount + 17) / 18)
-    val maxSpreadIndex = spreadCount - 1
+    val maxSpreadIndex by rememberUpdatedState(spreadCount - 1)
     var spreadIndex by rememberSaveable { mutableIntStateOf(0) }
     var leftVisibleColumns by remember { mutableStateOf((0..2).toSet()) }
     var rightVisibleColumns by remember { mutableStateOf((0..2).toSet()) }
-    var displayedItemIndices by remember { mutableStateOf((0 until 18).toList()) }
+    var displayedItemIndices by remember {
+        mutableStateOf((spreadIndex * 18 until spreadIndex * 18 + 18).toList())
+    }
     var pageIsTurning by remember { mutableStateOf(false) }
     var pageAnimationMillis by remember { mutableIntStateOf(80) }
     var acceleratedDirection by remember { mutableStateOf<BinderTurnDirection?>(null) }
@@ -93,6 +95,10 @@ fun PokedexListScreen(
     val pageTurnScope = rememberCoroutineScope()
 
     LaunchedEffect(spreadCount) {
+        // Reading the first new column can load another Paging batch. Growth
+        // must not restore the old spread halfway through its column turns.
+        // Only a shortened result set that invalidates our spread needs a reset.
+        if (spreadIndex <= maxSpreadIndex) return@LaunchedEffect
         spreadIndex = spreadIndex.coerceIn(0, maxSpreadIndex)
         leftVisibleColumns = (0..2).toSet()
         rightVisibleColumns = (0..2).toSet()

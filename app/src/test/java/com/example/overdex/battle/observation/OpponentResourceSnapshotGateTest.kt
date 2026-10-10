@@ -42,9 +42,11 @@ class TeamResourceSnapshotGateTest {
         val balls = "OpponentPokeBallsCrop"
         val shields = "OpponentShieldsCrop"
         val playerBalls = "PlayerPokeBallsCrop"
+        var now = 0L
         val gate = TeamResourceSnapshotGate(
             setOf(playerBalls, balls, shields),
-            setOf(playerBalls, balls)
+            setOf(playerBalls, balls),
+            now = { now },
         )
 
         gate.observeActiveHp(ActivePokemonSide.OPPONENT, 0.21f)
@@ -56,13 +58,38 @@ class TeamResourceSnapshotGateTest {
         assertFalse(gate.isEnabled(shields))
         gate.captured(balls)
         gate.captured(balls)
+        assertTrue(gate.isEnabled(balls))
+        gate.captured(playerBalls)
+        gate.captured(playerBalls)
+        now = 3_000_000_000L
         assertFalse(gate.isEnabled(balls))
-        gate.captured(playerBalls)
-        gate.captured(playerBalls)
         assertFalse(gate.isEnabled(playerBalls))
 
         gate.observeDamageTick(ActivePokemonSide.OPPONENT, 0.14f)
         assertTrue(gate.isEnabled(balls))
         assertTrue(gate.isEnabled(playerBalls))
+    }
+
+    @Test fun `accepted species opens a bounded window and repeated identity does not keep it open`() {
+        val balls = "OpponentPokeBallsCrop"
+        val shields = "OpponentShieldsCrop"
+        var now = 0L
+        val gate = TeamResourceSnapshotGate(setOf(balls, shields), setOf(balls), now = { now })
+
+        gate.observeSpecies(ActivePokemonSide.OPPONENT, "Sneasel")
+        repeat(2) { gate.captured(balls); gate.captured(shields) }
+        assertTrue(gate.isEnabled(balls))
+        assertFalse(gate.isEnabled(shields))
+        now = 2_500_000_000L
+        gate.observeSpecies(ActivePokemonSide.OPPONENT, "sneasel")
+        now = 3_000_000_000L
+        assertFalse(gate.isEnabled(balls))
+
+        gate.observeSpecies(ActivePokemonSide.OPPONENT, "Sealeo")
+        assertTrue(gate.isEnabled(balls))
+        assertTrue(gate.isEnabled(shields))
+        gate.stop()
+        assertFalse(gate.isEnabled(balls))
+        assertFalse(gate.isEnabled(shields))
     }
 }

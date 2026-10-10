@@ -20,10 +20,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-/** Two-frame resource snapshots requested by start/entry/switch cues and cry checks. */
+/** Two-frame resource snapshots, with a brief ball watch spanning entry and faint animations. */
 class TeamResourceSnapshotGate(
     private val cropNames: Set<String>,
-    private val pokeBallCropNames: Set<String>
+    private val pokeBallCropNames: Set<String>,
+    private val now: () -> Long = System::nanoTime,
 ) : Observer {
     override val observerId = ObserverId("TEAM_RESOURCE_SNAPSHOT_GATE", ObservationSource.SCREEN_CAPTURE)
     override val name = "Team Resource Snapshot Gate"
@@ -31,8 +32,11 @@ class TeamResourceSnapshotGate(
     private var scope: CoroutineScope? = null
     private val remainingByCrop = cropNames.associateWith { 0 }.toMutableMap()
     private val criticalHpSides = mutableSetOf<ActivePokemonSide>()
+    private var faintWatchUntil = Long.MIN_VALUE
+    private val speciesBySide = mutableMapOf<ActivePokemonSide, String>()
 
-    @Synchronized fun isEnabled(cropName: String): Boolean = remainingByCrop.getOrDefault(cropName, 0) > 0
+    @Synchronized fun isEnabled(cropName: String): Boolean =
+        remainingByCrop.getOrDefault(cropName, 0) > 0 || (cropName in pokeBallCropNames && now() < faintWatchUntil)
 
     @Synchronized fun captured(cropName: String) {
         val remaining = remainingByCrop.getOrDefault(cropName, 0)
@@ -47,12 +51,26 @@ class TeamResourceSnapshotGate(
 
     @Synchronized internal fun requestPokeBallSnapshot() = requestSnapshot(pokeBallCropNames)
 
+    /** Entry/faint animations can hide a badge for the first two frames. */
+    @Synchronized internal fun requestFaintWatch() {
+        requestPokeBallSnapshot()
+        faintWatchUntil = now() + 3_000_000_000L
+    }
+
+    @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String) {
+        val previous = speciesBySide.put(side, species)
+        if (!species.equals(previous, ignoreCase = true)) {
+            requestSnapshot()
+            requestFaintWatch()
+        }
+    }
+
     /** Red HP is an early warning. A later ball-count decrease remains the faint evidence. */
     @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, filledFraction: Float) {
         when {
             side !in criticalHpSides && filledFraction <= CRITICAL_HP_FRACTION -> {
                 criticalHpSides += side
-                requestPokeBallSnapshot()
+                requestFaintWatch()
             }
             side in criticalHpSides && filledFraction >= CRITICAL_HP_REARM_FRACTION -> {
                 criticalHpSides -= side
@@ -64,7 +82,7 @@ class TeamResourceSnapshotGate(
     @Synchronized internal fun observeDamageTick(damagedSide: ActivePokemonSide, afterFraction: Float) {
         if (afterFraction <= CRITICAL_HP_FRACTION) {
             criticalHpSides += damagedSide
-            requestPokeBallSnapshot()
+            requestFaintWatch()
         }
     }
 
@@ -77,17 +95,19 @@ class TeamResourceSnapshotGate(
                         is RawTestimony -> if (
                             article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                             (payload.data as? String)?.trim()?.startsWith("Go,", ignoreCase = true) == true
-                        ) requestSnapshot()
-                        is MatchStarted -> requestSnapshot()
+                        ) { requestSnapshot(); requestFaintWatch() }
+                        is MatchStarted -> { requestSnapshot(); requestFaintWatch() }
+                        is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName)
                         is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction)
                         is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction)
-                        is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty()) {
-                            requestPokeBallSnapshot()
+                        is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty() && payload.cueKind != "FAST_MOVE_IMPACT") {
+                            requestFaintWatch()
                         }
                         is SpeciesCheckMeasured -> if (
                             payload.status == "OPENED" &&
-                            payload.reason in setOf("ENTRY", "SWITCH")
-                        ) requestSnapshot()
+                            payload.reason in setOf("ENTRY", "SWITCH", "FAINT")
+                        ) { requestSnapshot(); requestFaintWatch() }
+                        is MatchEnded -> clearPending()
                     }
                 }
             }
@@ -97,10 +117,14 @@ class TeamResourceSnapshotGate(
     override fun stop() {
         scope?.cancel("Resource snapshot gate stopped")
         scope = null
-        synchronized(this) {
-            remainingByCrop.keys.forEach { remainingByCrop[it] = 0 }
-            criticalHpSides.clear()
-        }
+        clearPending()
+    }
+
+    @Synchronized private fun clearPending() {
+        remainingByCrop.keys.forEach { remainingByCrop[it] = 0 }
+        criticalHpSides.clear()
+        speciesBySide.clear()
+        faintWatchUntil = Long.MIN_VALUE
     }
 
     private companion object {

@@ -29,6 +29,31 @@ class ActiveHpBarDamageTickDetectorTest {
     }
 
     @Test
+    fun `orange pulse cannot reset a low baseline or manufacture another hit`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(0.24f, 0.9f, 0L)
+        assertNull(detector.accept(1f, 0.9f, 100_000_000L))
+        assertNull(detector.accept(0.24f, 0.9f, 200_000_000L))
+        assertNull(detector.accept(0.24f, 0.9f, 300_000_000L))
+        assertNull(detector.accept(0.20f, 0.9f, 400_000_000L))
+
+        val tick = detector.accept(0.20f, 0.9f, 500_000_000L)!!
+
+        assertEquals(0.24f, tick.beforeFraction, 0.0001f)
+        assertEquals(0.04f, tick.lostFraction, 0.0001f)
+    }
+
+    @Test
+    fun `a single low outlier must settle before it becomes damage`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(0.8f, 0.9f, 0L)
+        detector.accept(0.2f, 0.9f, 100_000_000L)
+        assertNull(detector.accept(0.7f, 0.9f, 200_000_000L))
+        val tick = detector.accept(0.7f, 0.9f, 300_000_000L)!!
+        assertEquals(0.1f, tick.lostFraction, 0.0001f)
+    }
+
+    @Test
     fun `reset prevents a new combatant from inheriting the old hp baseline`() {
         val detector = ActiveHpBarDamageTickDetector()
         detector.accept(0.20f, 0.9f, 0L)

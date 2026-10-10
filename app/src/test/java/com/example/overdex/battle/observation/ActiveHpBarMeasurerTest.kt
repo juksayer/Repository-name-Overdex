@@ -7,6 +7,13 @@ import org.junit.Test
 
 class ActiveHpBarMeasurerTest {
     @Test
+    fun `active bar size does not jump to a smaller card or thin effect`() {
+        assertTrue(ActiveHpBarGeometry.matchesSize(191, 18, 193, 17))
+        assertTrue(!ActiveHpBarGeometry.matchesSize(144, 8, 193, 17))
+        assertTrue(!ActiveHpBarGeometry.matchesSize(187, 8, 193, 17))
+    }
+
+    @Test
     fun `measures active HP bar outline geometry and left-aligned fill`() {
         val width = 240
         val height = 120
@@ -88,6 +95,39 @@ class ActiveHpBarMeasurerTest {
         assertNotNull(result)
         assertEquals(20, result!!.left)
         assertEquals(220, result.right)
+        assertEquals(0.65f, result.filledFraction, 0.03f)
+    }
+
+    @Test
+    fun `thick orange outline and orange damage chunk do not count as remaining hp`() {
+        val result = ActiveHpBarMeasurer.measureAll(240, 120) { x, y ->
+            when {
+                x in 20 until 220 && (y in 40..42 || y in 60..62) -> 0xffff8a20.toInt()
+                (x in 20..22 || x in 217..219) && y in 40..62 -> 0xffff8a20.toInt()
+                x in 23 until 72 && y in 44..58 -> 0xff1effbc.toInt()
+                x in 72 until 145 && y in 44..58 -> 0xffff8a20.toInt()
+                else -> 0xff182825.toInt()
+            }
+        }.firstOrNull()
+
+        assertNotNull(result)
+        assertEquals(0.25f, result!!.filledFraction, 0.03f)
+    }
+
+    @Test
+    fun `yellow and red hp remain measurable`() {
+        for (fill in listOf(0xfff7ee59.toInt(), 0xffee3540.toInt())) {
+            val result = ActiveHpBarMeasurer.measureAll(240, 120) { x, y ->
+                when {
+                    (y == 40 || y == 62) && x in 20 until 220 -> 0xffeeeeee.toInt()
+                    (x == 20 || x == 219) && y in 40..62 -> 0xffeeeeee.toInt()
+                    x in 23 until 62 && y in 44..58 -> fill
+                    else -> 0xff182825.toInt()
+                }
+            }.singleOrNull()
+            assertNotNull(result)
+            assertEquals(0.20f, result!!.filledFraction, 0.03f)
+        }
     }
 
     @Test

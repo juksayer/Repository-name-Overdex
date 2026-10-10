@@ -15,6 +15,13 @@ class TeamRosterSpeciesAttributorTest {
         assertEquals(ActivePokemonSide.OPPONENT, TeamRosterSpeciesAttributor.sideFor("Turtonator", roster))
     }
 
+    @Test fun `GO name without catalogue form label still belongs to the player`() {
+        val configured = listOf("Turtonator", "Camerupt", "Gourgeist (Average)")
+        assertEquals(ActivePokemonSide.PLAYER, TeamRosterSpeciesAttributor.sideFor("Gourgeist", configured))
+        assertEquals(ActivePokemonSide.PLAYER, EntryAnnouncementSideTracker().attribute("Gourgeist", configured)?.side)
+        assertEquals(ActivePokemonSide.OPPONENT, TeamRosterSpeciesAttributor.sideFor("Sealeo", configured))
+    }
+
     @Test fun `incomplete roster does not attribute a side`() {
         assertEquals(null, TeamRosterSpeciesAttributor.sideFor("Turtonator", setOf("Camerupt", "Gourgeist")))
     }

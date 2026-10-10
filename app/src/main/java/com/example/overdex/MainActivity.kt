@@ -936,7 +936,7 @@ fun PokedexApp(
                     onB = { bHandler?.invoke() },
                     onSelect = { selectHandler?.invoke() },
                     onStart = { startHandler?.invoke() },
-                    startLabel = "ADD",
+                    startLabel = "+",
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },

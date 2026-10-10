@@ -576,7 +576,7 @@ private fun OwnedBinderSelectionDetail(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
-                Text(
+                com.example.overdex.ui.components.TypeIconText(
                     text = displayName.uppercase(),
                     modifier = Modifier.fillMaxWidth(),
                     color = TerminalGreen,

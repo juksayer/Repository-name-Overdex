@@ -72,6 +72,7 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
         } else {
             entities.filter { 
                 it.owned.displayName?.contains(query, ignoreCase = true) == true ||
+                it.owned.toDomain().teams.any { team -> team.contains(query, ignoreCase = true) } ||
                 it.speciesName?.contains(query, ignoreCase = true) == true
             }
         }
@@ -95,8 +96,12 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
 
     fun updateOwnedPokemon(pokemon: OwnedPokemon) {
         viewModelScope.launch {
-            ownedPokemonDao.updateOwnedPokemon(pokemon.toEntity())
+            saveOwnedPokemon(pokemon)
         }
+    }
+
+    suspend fun saveOwnedPokemon(pokemon: OwnedPokemon) {
+        ownedPokemonDao.updateOwnedPokemon(pokemon.toEntity())
     }
 
     fun removeOwnedPokemon(id: String) {

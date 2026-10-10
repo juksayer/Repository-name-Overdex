@@ -91,6 +91,9 @@ fun SpecimenDetailScreen(
                         fontWeight = FontWeight.Black,
                         color = if (owned.isShiny) TerminalPurple else TerminalGreen,
                     )
+                    owned.displayName?.let { nickname ->
+                        TypeIconText(nickname, color = TerminalGreen, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
                     
                     // Reduced prominence Specimen ID
                     Text(
@@ -173,7 +176,7 @@ fun SpecimenDetailScreen(
             PlaceholderContent()
 
             BinderSectionTitle("TEAMS")
-            PlaceholderContent()
+            TerminalText(owned.teams.joinToString(", ").ifBlank { "No teams assigned — START to edit" })
 
             BinderSectionTitle("LEAGUE ELIGIBILITY")
             PlaceholderContent()

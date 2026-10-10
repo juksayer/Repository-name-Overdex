@@ -194,7 +194,7 @@ fun TerminalMenuOption(
         }
 
         if (status != null) {
-            Text(
+            TypeIconText(
                 text = "[ $status ]",
                 // Menu rows no longer paint a light selection background, so
                 // black status text disappeared until focus moved elsewhere.

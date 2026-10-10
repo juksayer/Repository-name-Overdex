@@ -22,10 +22,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.Composable
@@ -34,10 +37,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -70,19 +77,21 @@ import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayHpState
 import com.example.overdex.battle.replay.ReplayTransportSounds
+import com.example.overdex.battle.replay.ReplayPlaybackClock
 import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.components.PokemonTypeIcon
 import com.example.overdex.ui.components.TypeIconStyle
-import com.example.overdex.ui.components.TerminalScreen
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import kotlin.math.sin
 import kotlin.math.pow
-import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
+import java.util.Locale
 
 /** A clean CRT battle stage. Replay transport and diagnostics live in the ODX-Fi LCD. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun MatchReplayScreen(
     archive: MatchArchive,
@@ -136,7 +145,9 @@ fun MatchReplayScreen(
         )
     }
     var cursor by remember(archive) { mutableLongStateOf(model.startNanos) }
-    var playing by remember { mutableStateOf(false) }
+    var playing by remember(archive) { mutableStateOf(false) }
+    var playbackSpeed by remember(archive) { mutableFloatStateOf(1f) }
+    val currentModel by rememberUpdatedState(model)
     val scene = model.sceneAt(cursor)
     val duration = (model.endNanos - model.startNanos).coerceAtLeast(1L)
     val matchStartFraction = model.matchStartNanos?.let { matchStartNanos ->
@@ -162,84 +173,114 @@ fun MatchReplayScreen(
         transportSounds.insert()
     }
 
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        playing = false
+        transportSounds.endScrub()
+        replayHaptics.release()
+    }
+
+    fun togglePlayback() {
+        if (!playing && cursor >= model.endNanos) cursor = model.startNanos
+        playing = !playing
+        if (playing) transportSounds.play() else transportSounds.pause()
+    }
+
+    fun scrubBy(deltaNanos: Long) {
+        playing = false
+        val previous = cursor
+        cursor = (cursor + deltaNanos).coerceIn(model.startNanos, model.endNanos)
+        if (cursor != previous) transportSounds.scrub()
+    }
+
     SideEffect {
-        onUp {
-            cursor = model.startNanos
-            playing = false
-            transportSounds.reset()
-        }
-        onDown { cursor = (cursor + SCRUB_STEP_NANOS).coerceAtMost(model.endNanos) }
-        onA {
-            playing = !playing
-            if (playing) transportSounds.play() else transportSounds.pause()
-        }
+        onUp { scrubBy(-SCRUB_STEP_NANOS) }
+        onDown { scrubBy(SCRUB_STEP_NANOS) }
+        onA { togglePlayback() }
         onB { playing = false; transportSounds.stop(); onBack() }
-        onLcdTap {
-            playing = !playing
-            if (playing) transportSounds.play() else transportSounds.pause()
-        }
+        onLcdTap { togglePlayback() }
         onLcdDrag { delta ->
-            playing = false
-            val previous = cursor
             // A complete lower-LCD-width sweep spans the complete match record.
-            val deltaNanos = (duration * (delta.x / LCD_SCRUB_WIDTH_PX)).toLong()
-            cursor = (cursor + deltaNanos).coerceIn(model.startNanos, model.endNanos)
-            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.scrub()
+            scrubBy((duration * (delta.x / LCD_SCRUB_WIDTH_PX)).toLong())
         }
     }
 
     PublishMatchLcd(onLcdContentUpdate) {
         var scrubWidth by remember { mutableIntStateOf(1) }
         val drag by rememberUpdatedState<(Offset) -> Unit>({ delta ->
-            playing = false
-            val previous = cursor
-            cursor = (cursor + (duration * delta.x / scrubWidth).toLong()).coerceIn(model.startNanos, model.endNanos)
-            if (model.crossedArticleBoundary(previous, cursor)) transportSounds.scrub()
+            scrubBy((duration * delta.x / scrubWidth).toLong())
         })
-        val toggle by rememberUpdatedState<() -> Unit>({
-            playing = !playing
-            if (playing) transportSounds.play() else transportSounds.pause()
-        })
+        val toggle by rememberUpdatedState<() -> Unit>({ togglePlayback() })
+        // Only the time display/scrubber and hint handle drag-to-seek. Keeping
+        // these gestures off the parent lets the speed slider own its drags.
+        val scrubGesture = Modifier
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = { transportSounds.endScrub() },
+                    onDragCancel = { transportSounds.endScrub() },
+                ) { change, delta -> change.consume(); drag(Offset(delta, 0f)) }
+            }
+            .pointerInput(Unit) { detectTapGestures { toggle() } }
         Column(Modifier.fillMaxSize().onSizeChanged { scrubWidth = it.width.coerceAtLeast(1) }
-            .pointerInput(Unit) { detectHorizontalDragGestures { change, delta -> change.consume(); drag(Offset(delta, 0f)) } }
             .pointerInput(Unit) { detectTapGestures { toggle() } }
             .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - model.startNanos)} / ${formatReplayTime(duration)}")
-            BoxWithConstraints(Modifier.fillMaxWidth().height(14.dp)) {
-                androidx.compose.material3.LinearProgressIndicator(
-                    progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
-                    color = TerminalGreen,
-                )
-                matchStartFraction?.let { fraction ->
-                    Box(
-                        Modifier
-                            .offset(x = (maxWidth - 3.dp) * fraction)
-                            .width(3.dp)
-                            .height(14.dp)
-                            .background(TerminalPurple)
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.fillMaxWidth().then(scrubGesture)) {
+                MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - model.startNanos)} / ${formatReplayTime(duration)}")
+                BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp)) {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
+                        color = TerminalGreen,
                     )
+                    matchStartFraction?.let { fraction ->
+                        Box(
+                            Modifier.align(Alignment.CenterStart)
+                                .offset(x = (maxWidth - 3.dp) * fraction)
+                                .width(3.dp).height(14.dp).background(TerminalPurple)
+                        )
+                    }
                 }
             }
-            androidx.compose.material3.Text(
-                "TAP ▶/Ⅱ   DRAG >>",
-                color = TerminalGreen,
-                maxLines = 1,
-                softWrap = false,
-                fontSize = 10.sp,
-            )
-            if (archivedCropIdentities == null) {
-                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
-                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
-                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
-                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                MatchLcdTextButton("BACK", { scrubBy(-SCRUB_STEP_NANOS) },
+                    Modifier.weight(1f).semantics { contentDescription = "Step backward one second" })
+                Text("TAP ▶/Ⅱ  DRAG >>", color = TerminalGreen, maxLines = 1, softWrap = false,
+                    fontSize = 10.sp, lineHeight = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.weight(3.5f).then(scrubGesture).padding(vertical = 4.dp))
+                MatchLcdTextButton("FWD", { scrubBy(SCRUB_STEP_NANOS) },
+                    Modifier.weight(1f).semantics { contentDescription = "Step forward one second" })
             }
-            cropError?.let { MatchLcdText(it) }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                MatchLcdTextButton(String.format(Locale.ROOT, "%.1f×", playbackSpeed), { playbackSpeed = 1f },
+                    Modifier.width(40.dp).semantics { contentDescription = "Reset replay speed to 1x" })
+                Slider(
+                    value = playbackSpeed,
+                    onValueChange = { playbackSpeed = (it * 10f).roundToInt() / 10f },
+                    valueRange = ReplayPlaybackClock.MIN_SPEED..ReplayPlaybackClock.MAX_SPEED,
+                    steps = 48,
+                    modifier = Modifier.weight(1f).height(28.dp).semantics {
+                        contentDescription = "Replay speed"
+                        stateDescription = String.format(Locale.ROOT, "%.1f times", playbackSpeed)
+                    },
+                    colors = SliderDefaults.colors(thumbColor = TerminalGreen, activeTrackColor = TerminalGreen),
+                    thumb = { Box(Modifier.size(12.dp).background(TerminalGreen, CircleShape)) },
+                    track = { slider ->
+                        SliderDefaults.Track(
+                            sliderState = slider,
+                            modifier = Modifier.height(4.dp),
+                            colors = SliderDefaults.colors(activeTrackColor = TerminalGreen,
+                                inactiveTrackColor = TerminalGreen.copy(alpha = 0.25f)),
+                            drawTick = { _, _ -> },
+                            drawStopIndicator = null,
+                            thumbTrackGapSize = 0.dp,
+                        )
+                    },
+                )
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                MatchLcdButton("RESET", { cursor = model.startNanos; playing = false; transportSounds.reset() }, Modifier.weight(1f))
-                MatchLcdButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
-                MatchLcdButton(
+                MatchLcdTextButton("RESET", { cursor = model.startNanos; playing = false; transportSounds.reset() }, Modifier.weight(1f))
+                MatchLcdTextButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
+                MatchLcdTextButton(
                     label = "BLIPS ${if (eventBlipsEnabled) "ON" else "OFF"}",
                     onClick = {
                         eventBlipsEnabled = !eventBlipsEnabled
@@ -248,19 +289,30 @@ fun MatchReplayScreen(
                     modifier = Modifier.weight(1.5f).semantics { contentDescription = "Replay event blips" },
                     selected = eventBlipsEnabled,
                 )
-                MatchLcdButton("BACK", { playing = false; transportSounds.stop(); onBack() }, Modifier.weight(1f))
+                MatchLcdTextButton("BACK", { playing = false; transportSounds.stop(); onBack() }, Modifier.weight(1f))
             }
+            if (archivedCropIdentities == null) {
+                MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
+                if (cropProgress.total > 0) androidx.compose.material3.LinearProgressIndicator(
+                    progress = { cropProgress.completed.toFloat() / cropProgress.total }, modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+                else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
+            }
+            cropError?.let { MatchLcdText(it) }
             MatchLcdText("P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}\nO ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}")
         }
     }
 
-    LaunchedEffect(playing, cursor, model.endNanos) {
+    LaunchedEffect(playing, playbackSpeed, model.endNanos) {
+        // Cursor is deliberately not an effect key. A frame is a chance to draw,
+        // not a fixed amount of Match time; slow frames must not slow the clock.
+        val clock = ReplayPlaybackClock(cursor, model.endNanos, playbackSpeed)
         while (playing && cursor < model.endNanos) {
-            delay(33)
+            val frameNanos = withFrameNanos { it }
+            if (!playing) break
             val previous = cursor
-            cursor = (cursor + 33_000_000L).coerceAtMost(model.endNanos)
-            if (currentEventBlipsEnabled && model.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
-            model.hapticEventsBetween(previous, cursor).forEach { event ->
+            cursor = clock.positionAt(frameNanos)
+            if (currentEventBlipsEnabled && currentModel.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            currentModel.hapticEventsBetween(previous, cursor).forEach { event ->
                 replayHaptics.play(event.pulseCount)
             }
         }
@@ -270,17 +322,18 @@ fun MatchReplayScreen(
         }
     }
 
-    TerminalScreen {
+    Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(10.dp)
+                .padding(2.dp)
                 .background(Color(0xFF163721))
                 .border(1.dp, TerminalGreen),
             contentAlignment = Alignment.Center
         ) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val travelHalfWidth = ((maxWidth - 36.dp - 150.dp) / 2).coerceAtLeast(0.dp)
+                val travelHalfWidth = ((maxWidth - 36.dp) / 4).coerceAtLeast(0.dp)
+                val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).align(Alignment.Center),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -294,6 +347,8 @@ fun MatchReplayScreen(
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
                         chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" },
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "PLAYER" },
+                        spriteSize = spriteSize * 1.15f,
+                        modifier = Modifier.weight(1f),
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
@@ -303,6 +358,8 @@ fun MatchReplayScreen(
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
                         chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
+                        spriteSize = spriteSize,
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 scene.fastMoveActions.forEach { action ->
@@ -397,6 +454,7 @@ private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidt
     Box(
         modifier = modifier
             .offset(x = travelHalfWidth * (movement * direction))
+            .graphicsLayer { translationY = if (action.side == "PLAYER") 25f else -25f }
             .size(34.dp)
             .background(indicatorColor.copy(alpha = 0.18f), CircleShape)
             .border(1.dp, indicatorColor, CircleShape),
@@ -414,24 +472,12 @@ private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidt
 
 private const val SCRUB_STEP_NANOS = 1_000_000_000L
 private const val LCD_SCRUB_WIDTH_PX = 600f
-private const val LCD_SCRUB_STEPS = 12
 
 private fun formatReplayTime(nanos: Long): String {
     val deciseconds = (nanos / 100_000_000L).coerceAtLeast(0L)
     val minutes = deciseconds / 600L
     val seconds = (deciseconds % 600L) / 10L
     return "%02d:%02d.%d".format(minutes, seconds, deciseconds % 10L)
-}
-
-private fun replayScrubBar(fraction: Float): String {
-    val cursor = (fraction * LCD_SCRUB_STEPS).toInt().coerceIn(0, LCD_SCRUB_STEPS - 1)
-    return buildString(LCD_SCRUB_STEPS + 2) {
-        append('[')
-        repeat(LCD_SCRUB_STEPS) { index ->
-            append(if (index == cursor) 'o' else if (index < cursor) '=' else '-')
-        }
-        append(']')
-    }
 }
 
 @Composable
@@ -443,9 +489,11 @@ private fun ReplayCombatantSlot(
     fastAction: ReplayFastMoveAction?,
     chargedAction: ReplayChargedMoveAction?,
     qteMilestone: String?,
+    spriteSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier.width(150.dp).size(150.dp),
+        modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
     ) {
         val qteLevel = when (qteMilestone) {
@@ -475,7 +523,7 @@ private fun ReplayCombatantSlot(
                 },
                 contentDescription = combatant.speciesName,
                 modifier = Modifier
-                    .size(130.dp)
+                    .requiredSize(spriteSize)
                     .alpha(if (combatant.isFainted) 0.35f else 1f)
                     // Pokémon GO places the player's back-facing combatant
                     // lower in the field. A small downward offset aligns its
@@ -484,7 +532,7 @@ private fun ReplayCombatantSlot(
                     .offset(y = if (useBackSprite) 24.dp else 0.dp)
                     .graphicsLayer {
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
-                        translationY = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
+                        val attackOffset = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
                             val fastMoveAmplitudePixels = if (useBackSprite) 16f else 8f
                             val amplitudePixels = fastMoveAmplitudePixels * 3f
                             if (progress <= CHARGED_MOVE_RISE_FRACTION) {
@@ -514,6 +562,8 @@ private fun ReplayCombatantSlot(
                                 }
                             }
                             ?: 0f
+                        // Fine positioning uses physical pixels, independent of display density.
+                        translationY = attackOffset + if (useBackSprite) 25f else 0f
                     },
                 contentScale = ContentScale.Fit,
                 colorFilter = if (combatant.isFainted) {

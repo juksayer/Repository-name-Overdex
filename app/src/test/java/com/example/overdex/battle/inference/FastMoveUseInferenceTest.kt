@@ -4,6 +4,8 @@ import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ApertureStatus
 import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
+import com.example.overdex.battle.custody.PlayerChargeMoveEnergyFillIncreased
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.AttackIncoming
@@ -153,6 +155,34 @@ class FastMoveUseInferenceTest {
 
         assertEquals(1, result.size)
         assertEquals("fast-move-use:resumed-fast", result.single().payload.useId)
+    }
+
+    @Test
+    fun `idle motion shading and unclassified effects alone cannot establish a use`() {
+        val inference = startedInference()
+        inference.accept(article("motion", 1_000_000_000, ActiveHpBarMotionCadenceMeasured(
+            ActivePokemonSide.PLAYER, 500_000_000, 8f, 4
+        )))
+        inference.accept(article("fill", 1_100_000_000, PlayerChargeMoveEnergyFillIncreased(
+            listOf(0f, 0f), listOf(0.9f, 0.2f), listOf(0, 1)
+        )))
+        inference.accept(article("effect", 1_200_000_000, visual(ActivePokemonSide.OPPONENT)))
+
+        assertTrue(inference.flush().isEmpty())
+    }
+
+    @Test
+    fun `supporting motion keeps its provenance but impact determines use time`() {
+        val inference = startedInference()
+        inference.accept(article("motion", 1_000_000_000, ActiveHpBarMotionCadenceMeasured(
+            ActivePokemonSide.PLAYER, 500_000_000, 8f, 4
+        )))
+        inference.accept(article("hit", 1_200_000_000, pulse(ActivePokemonSide.OPPONENT)))
+
+        val use = inference.flush().single()
+        assertEquals("hit", use.observedArticle.id.value)
+        assertEquals(listOf("motion", "hit"), use.predecessorIds.map { it.value })
+        assertEquals(ActivePokemonSide.PLAYER, use.payload.attackingSide)
     }
 
     @Test

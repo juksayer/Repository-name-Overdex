@@ -9,6 +9,7 @@ import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasur
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.observation.EntryAnnouncementSideTracker
+import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedMatchStarted
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
@@ -25,6 +26,8 @@ import com.example.overdex.battle.archive.ArchivedChargeMoveUsedAnnounced
 import com.example.overdex.battle.archive.ArchivedCountdownGlyphWitnessed
 import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
+import com.example.overdex.battle.archive.ArchivedAttackIncoming
+import com.example.overdex.battle.inference.FastMoveUseEvidence
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
@@ -60,7 +63,7 @@ class MatchReplayModel(
         .distinctBy { it.slot }
         .sortedBy { it.slot }
     private val configuredPlayerMovesBySpecies = configuredPlayerMembers.associate {
-        normalizeSpeciesName(it.speciesName) to it.fastMoveName
+        TeamRosterSpeciesAttributor.speciesKey(it.speciesName) to it.fastMoveName
     }
 
     // A replay receives a completed archive, not a live stream. Build the identity
@@ -106,8 +109,9 @@ class MatchReplayModel(
         battlePresentationStartNanos,
         matchStartNanos,
     )
-    private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER")
-    private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT")
+    private val hpEvidence = ReplayHpEvidence(timedArticles)
+    private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER", hpEvidence)
+    private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT", hpEvidence)
     private val identifiedFastMoves = timedArticles
         .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
         .filterNot { it.basis.startsWith(CHARGE_FILL_BASIS) }
@@ -475,7 +479,23 @@ class MatchReplayModel(
      * remain separate events.
      */
     private fun reconstructFastMoveUses(): List<ReplayFastMoveUse> {
+        val namedCharges = timedArticles.filter {
+            it.payload is ArchivedChargeMoveUsedAnnounced ||
+                (it.sourceId == "ANNOUNCEMENT_WITNESS" &&
+                    (it.payload as? ArchivedRawText)?.value?.let(MOVE_PATTERN::matches) == true)
+        }.map { it.monotonicTimeNanos!! }
+        val chargeWindows = timedArticles.mapNotNull { article ->
+            val at = article.monotonicTimeNanos!!
+            val maximumEnd = when (article.payload) {
+                ArchivedGetReadyWitnessed -> at + 8_000_000_000L
+                ArchivedAttackIncoming -> at + 12_000_000_000L
+                else -> return@mapNotNull null
+            }
+            at..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
+        } + namedCharges.map { it..(it + 750_000_000L) }
+        val matchEnd = timedArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
         val fusedUses = timedArticles.mapNotNull { article ->
+            if (!hpEvidence.accepts(article)) return@mapNotNull null
             val payload = article.payload as? ArchivedFastMoveUseObserved ?: return@mapNotNull null
             ReplayFastMoveUse(
                 side = payload.attackingSide,
@@ -487,6 +507,7 @@ class MatchReplayModel(
         }.filter { it.side.isBattleSide() }.sortedBy { it.observedAtNanos }
 
         val evidence = timedArticles.mapNotNull { article ->
+            if (!hpEvidence.accepts(article)) return@mapNotNull null
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             when (val payload = article.payload) {
                 is ArchivedHpBarBorderPulse -> payload
@@ -577,6 +598,9 @@ class MatchReplayModel(
                     current.observedAtNanos - previous.observedAtNanos <= FAST_MOVE_WITNESS_MERGE_NANOS
                 ) {
                     merged[merged.lastIndex] = previous.copy(
+                        observedAtNanos = if (!FastMoveUseEvidence.establishesUse(previous.evidenceKinds) &&
+                            FastMoveUseEvidence.establishesUse(current.evidenceKinds)) current.observedAtNanos
+                            else previous.observedAtNanos,
                         moveName = previous.moveName ?: current.moveName,
                         evidenceKinds = previous.evidenceKinds + current.evidenceKinds,
                         canonical = previous.canonical || current.canonical
@@ -586,6 +610,11 @@ class MatchReplayModel(
                 }
                 merged
             }
+        }.filter { use ->
+            FastMoveUseEvidence.establishesUse(use.evidenceKinds) &&
+                (matchStartNanos == null || use.observedAtNanos >= matchStartNanos) &&
+                (matchEnd == null || use.observedAtNanos < matchEnd) &&
+                chargeWindows.none { use.observedAtNanos in it }
         }.sortedBy { it.observedAtNanos }
     }
 
@@ -596,7 +625,7 @@ class MatchReplayModel(
             else -> null
         }
         if (side == "PLAYER" && speciesName != null) {
-            configuredPlayerMovesBySpecies[normalizeSpeciesName(speciesName)]?.let { return it }
+            configuredPlayerMovesBySpecies[TeamRosterSpeciesAttributor.speciesKey(speciesName)]?.let { return it }
         }
         return identifiedFastMoves
             .asSequence()
@@ -717,7 +746,7 @@ class MatchReplayModel(
                 is ArchivedPlayerTeamSlotConfigured -> payload.speciesName
                 else -> null
             }
-        }.map(::normalizeSpeciesName).toSet()
+        }.toSet()
         val player = mutableListOf<ReplayIdentityObservation>()
         val opponent = mutableListOf<ReplayIdentityObservation>()
         val entrySides = EntryAnnouncementSideTracker()
@@ -735,13 +764,7 @@ class MatchReplayModel(
                     roster
                 )?.side?.name ?: return@forEach
             } else {
-                entrySides.knownSide(species.key, roster)?.name ?: when {
-                    normalizeSpeciesName(species.key) in roster -> "PLAYER"
-                    roster.size >= 3 -> "OPPONENT"
-                    opponent.lastOrNull { it.atNanos <= atNanos }?.speciesName
-                        ?.let(::normalizeSpeciesName) != normalizeSpeciesName(species.key) -> "PLAYER"
-                    else -> "OPPONENT"
-                }
+                archivedNamedMoveSide(species.key, atNanos, timedArticles) ?: return@forEach
             }
             val observation = ReplayIdentityObservation(
                 side = side,
@@ -820,13 +843,19 @@ private class ReplayIdentityTrack private constructor(
         ): ReplayIdentityTrack {
             val observed = articles.mapNotNull { article ->
                 val species = article.payload as? ArchivedActivePokemonSpeciesWitnessed ?: return@mapNotNull null
-                if (species.side != side) return@mapNotNull null
+                // Older archives have roster-attributed Gourgeist announcements
+                // on the wrong side because the roster called it (Average).
+                // Repair only the unsided announcement inference, never a badge.
+                val attributedSide = if (article.sourceId == "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS") {
+                    archivedNamedMoveSide(species.speciesName, article.monotonicTimeNanos ?: return@mapNotNull null, articles)
+                } else species.side
+                if (attributedSide != side) return@mapNotNull null
                 ReplayIdentityObservation(
                     side,
                     species.speciesName,
                     species.speciesId,
                     article.monotonicTimeNanos ?: return@mapNotNull null,
-                    "OBSERVED SPECIES",
+                    if (attributedSide == species.side) "OBSERVED SPECIES" else "RECONSTRUCTED ANNOUNCEMENT SIDE / ACTIVE BADGE AND ROSTER",
                     sourceId = article.sourceId,
                     confidence = article.confidence,
                     articleId = article.articleId,
@@ -935,6 +964,29 @@ private class ReplayIdentityTrack private constructor(
         private const val CRY_CONTRADICTION_WINDOW_NANOS = 4_000_000_000L
         private const val IMMEDIATE_OPENING_SWITCH_WINDOW_NANOS = 10_000_000_000L
     }
+}
+
+/** Current side-located badges outrank a roster inference; mirrors stay unsided. */
+private fun archivedNamedMoveSide(speciesName: String, atNanos: Long, articles: List<ArchivedRealityArticle>): String? {
+    val key = TeamRosterSpeciesAttributor.speciesKey(speciesName)
+    val activeBadges = articles.asSequence()
+        .filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= atNanos }
+        .filter { it.sourceId.contains("SPECIES_OVERLAY_PIPELINE") }
+        .mapNotNull { it.payload as? ArchivedActivePokemonSpeciesWitnessed }
+        .associateBy { it.side }
+    val matchingSides = activeBadges.filterValues {
+        TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == key
+    }.keys
+    if (matchingSides.size > 1) return null
+    matchingSides.singleOrNull()?.let { return it }
+    val roster = articles.mapNotNull {
+        when (val payload = it.payload) {
+            is ArchivedPlayerTeamSlotConfigured -> payload.speciesName
+            is ArchivedPlayerTeamRosterSlotWitnessed -> payload.speciesName
+            else -> null
+        }
+    }
+    return TeamRosterSpeciesAttributor.sideFor(speciesName, roster)?.name
 }
 
 data class ReplayIdentityObservation(

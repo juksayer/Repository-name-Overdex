@@ -48,6 +48,21 @@ class ChargedMoveAnnouncementInferenceTest {
         assertNull(mirrorInference.accept(announcement("move", "Turtonator used Dragon Pulse!"), ::noRosterSide))
     }
 
+    @Test fun `opponent announcement resolves the exact legal move and performer for HUD confirmation`() = runBlocking {
+        val sneasel = pokemon.copy(
+            id = 215, name = "Sneasel", types = listOf(PokemonType.DARK, PokemonType.ICE),
+            chargedMoves = listOf(Move("Foul Play", PokemonType.DARK, 70, 45, isFast = false)),
+        )
+        val resolver = ChargedMoveAnnouncementInference(SinglePokemonKnowledge(sneasel))
+        resolver.accept(article("opponent", SourceId("SPECIES"), ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)), ::noRosterSide)
+        val result = resolver.accept(announcement("foul-play", "Sneasel used Foul Play!"), ::noRosterSide)
+        assertEquals(ActivePokemonSide.OPPONENT, result?.payload?.side)
+        assertEquals("Sneasel", result?.payload?.speciesName)
+        assertEquals("Foul Play", result?.payload?.moveName)
+        assertEquals(listOf(ArticleId("foul-play")), result?.predecessorIds)
+        assertNull(resolver.accept(announcement("impossible", "Sneasel used Dragon Pulse!"), ::noRosterSide))
+    }
+
     private fun noRosterSide(@Suppress("UNUSED_PARAMETER") name: String): ActivePokemonSide? = null
 
     private fun species(id: String, side: ActivePokemonSide) = article(

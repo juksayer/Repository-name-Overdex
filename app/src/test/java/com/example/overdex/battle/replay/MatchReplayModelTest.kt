@@ -92,6 +92,34 @@ class MatchReplayModelTest {
         assertEquals("Sealeo", model.sceneAt(11_500_000_000L).opponent?.speciesName)
     }
 
+    @Test fun `matching active badges keep a mirror charged announcement unsided`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Gourgeist (Average)", 711, "Incinerate", emptyList()), 1),
+            article("player", "PLAYER", "Gourgeist", 711, 100)
+                .copy(sourceId = "PLAYER_SPECIES_OVERLAY_PIPELINE"),
+            article("opponent", "OPPONENT", "Gourgeist", 711, 100)
+                .copy(sourceId = "OPPONENT_SPECIES_OVERLAY_PIPELINE"),
+            article("ambiguous-charge", "OPPONENT", "Gourgeist", 711, 200)
+                .copy(sourceId = "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS")
+        )))
+        assertEquals(100L, model.sceneAt(300).player?.identityEstablishedAtNanos)
+        assertEquals(100L, model.sceneAt(300).opponent?.identityEstablishedAtNanos)
+    }
+
+    @Test fun `opponent active badge outranks player roster membership for a named move`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Gourgeist (Average)", 711, "Incinerate", emptyList()), 1),
+            article("player", "PLAYER", "Camerupt", 323, 100)
+                .copy(sourceId = "PLAYER_SPECIES_OVERLAY_PIPELINE"),
+            article("opponent", "OPPONENT", "Gourgeist", 711, 100)
+                .copy(sourceId = "OPPONENT_SPECIES_OVERLAY_PIPELINE"),
+            article("charge", "PLAYER", "Gourgeist", 711, 200)
+                .copy(sourceId = "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS")
+        )))
+        assertEquals("Camerupt", model.sceneAt(300).player?.speciesName)
+        assertEquals("Gourgeist", model.sceneAt(300).opponent?.speciesName)
+    }
+
     @Test fun `late badge confirmation backdates immediate opening player switch to first hit`() {
         val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
             timed("team", ArchivedPlayerTeamSlotConfigured(1, "Turtonator", 776, "Incinerate", emptyList()), 1L),
@@ -243,9 +271,10 @@ class MatchReplayModelTest {
         assertEquals(false, model.sceneAt(30).opponent?.isFainted)
     }
 
-    @Test fun `replay projects confirmed fast move type and derived generation`() {
+    @Test fun `replay projects confirmed fast move type onto an observed hit`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("identified", ArchivedFastMoveIdentified("OPPONENT", "Sneasel", "Ice Shard", 1_000_000_000L, 1_000_000_000L, 3, "TEST"), 100),
+            timed("hit", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 200),
             timed("energy", ArchivedFastMoveEnergyDerived("OPPONENT", "Ice Shard", 1, 10, 10, "TEST"), 200)
         ))
         val model = MatchReplayModel(archive, fastMoveTypesByName = mapOf("ICESHARD" to PokemonType.ICE))
@@ -419,6 +448,8 @@ class MatchReplayModelTest {
 
     @Test fun `both sides animate at original evidence times and scrubbing is repeatable`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("player-hit", ArchivedActiveHpBarBorderPulseObserved("OPPONENT", 0.4f, 8, 0.3f, 0.8f), 1_000_000_000L),
+            timed("opponent-hit", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 1_100_000_000L),
             timed("player", ArchivedFastMoveEnergyDerived("PLAYER", "Incinerate", 1, 20, 20, "TEST"), 1_000_000_000L),
             timed("opponent", ArchivedFastMoveEnergyDerived("OPPONENT", "Ice Shard", 1, 10, 10, "TEST"), 1_100_000_000L)
         ))
@@ -429,6 +460,32 @@ class MatchReplayModelTest {
         assertTrue(overlap[0].progress > overlap[1].progress)
         assertTrue(model.sceneAt(1_600_000_000L).fastMoveActions.isEmpty())
         assertEquals(overlap, model.sceneAt(1_200_000_000L).fastMoveActions)
+    }
+
+    @Test fun `energy derived without a witnessed impact does not prove an attack happened`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("energy", ArchivedFastMoveEnergyDerived("PLAYER", "Incinerate", 1, 20, 20, "TEST"), 100)
+        ))
+        assertTrue(MatchReplayModel(archive).sceneAt(100).fastMoveActions.isEmpty())
+    }
+
+    @Test fun `replay excludes pre-start charged and post-match hits from fast moves`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("prestart", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 500_000_000L),
+            timed("start", ArchivedMatchStarted, 1_000_000_000L),
+            timed("ready", ArchivedGetReadyWitnessed, 2_000_000_000L),
+            timed("qte", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 3_000_000_000L),
+            timed("charged", ArchivedChargeMoveUsedAnnounced, 5_000_000_000L),
+            timed("charged-hit", ArchivedActiveHpBarDamageTickMeasured("PLAYER", 0.8f, 0.3f, 0.5f), 5_100_000_000L),
+            timed("fast", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 6_000_000_000L),
+            timed("end", ArchivedMatchEnded("WIN"), 7_000_000_000L),
+            timed("postend", ArchivedActiveHpBarBorderPulseObserved("PLAYER", 0.4f, 8, 0.3f, 0.8f), 8_000_000_000L),
+        ))
+        val model = MatchReplayModel(archive)
+        for (at in listOf(600_000_000L, 3_100_000_000L, 5_200_000_000L, 8_100_000_000L)) {
+            assertTrue("False attack at $at", model.sceneAt(at).fastMoveActions.isEmpty())
+        }
+        assertEquals("OPPONENT", model.sceneAt(6_100_000_000L).fastMoveActions.single().side)
     }
 
     @Test fun `player hp border pulse animates an opponent fast move without requiring identification`() {
@@ -474,6 +531,7 @@ class MatchReplayModelTest {
     @Test fun `completed replay resolves a noisy hp motion cluster and backfills its type icon`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             article("species", "PLAYER", "Samurott", 503, 100_000_000L),
+            timed("hit", ArchivedActiveHpBarBorderPulseObserved("OPPONENT", 0.4f, 8, 0.3f, 0.8f), 1_000_000_000L),
             timed("f1", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 463_000_000L, 20f, 5), 1_000_000_000L),
             timed("noise", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 1_962_000_000L, 20f, 5), 3_000_000_000L),
             timed("f2", ArchivedActiveHpBarMotionCadenceMeasured("PLAYER", 367_000_000L, 20f, 5), 3_500_000_000L),
@@ -612,7 +670,7 @@ class MatchReplayModelTest {
         assertEquals(PokemonType.ICE, action.type)
     }
 
-    @Test fun `hp motion and charge fill each create their side's attack`() {
+    @Test fun `idle hp motion and charge shading do not create attacks`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("opponent-motion", ArchivedActiveHpBarMotionCadenceMeasured("OPPONENT", 500_000_000L, 25f, 5), 1_000_000_000L),
             timed(
@@ -623,17 +681,13 @@ class MatchReplayModelTest {
         ))
         val model = MatchReplayModel(archive)
 
-        assertEquals("OPPONENT", model.sceneAt(1_100_000_000L).fastMoveActions.single().side)
-        assertEquals("PLAYER", model.sceneAt(1_700_000_000L).fastMoveActions.single().side)
-        assertEquals(
-            setOf("PLAYER_CHARGE_FILL_INCREASE"),
-            model.sceneAt(1_700_000_000L).fastMoveActions.single().evidenceKinds
-        )
+        assertTrue(model.sceneAt(1_100_000_000L).fastMoveActions.isEmpty())
+        assertTrue(model.sceneAt(1_700_000_000L).fastMoveActions.isEmpty())
     }
 
     @Test fun `configured player fast move overrides a false archived charge fill conclusion`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
-            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb")), 10),
+            timed("team", ArchivedPlayerTeamSlotConfigured(1, "Gourgeist (Average)", 711, "Incinerate", listOf("Seed Bomb")), 10),
             article("species", "PLAYER", "Gourgeist", 711, 20),
             timed(
                 "false-identity",

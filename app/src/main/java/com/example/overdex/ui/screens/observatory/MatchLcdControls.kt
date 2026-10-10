@@ -7,6 +7,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -54,5 +57,22 @@ internal fun MatchLcdButton(
         colors = ButtonDefaults.outlinedButtonColors(contentColor = TerminalGreen,
             containerColor = TerminalGreen.copy(alpha = if (selected) 0.15f else 0f))) {
         Text(label, fontSize = 10.sp, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
+    }
+}
+
+/** Compact LCD control: padded text, with the entire allocated cell tappable. */
+@Composable
+internal fun MatchLcdTextButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+) {
+    Box(modifier.clickable(role = Role.Button, onClick = onClick)
+        .padding(horizontal = 4.dp, vertical = 4.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center) {
+        Text(label, color = TerminalGreen, fontSize = 10.sp, lineHeight = 12.sp, fontFamily = FontFamily.Monospace,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1, softWrap = false)
     }
 }

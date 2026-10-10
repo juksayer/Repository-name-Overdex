@@ -636,7 +636,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 isEnabled = {
                     battleEvidenceLive() && teamResourceSnapshotGate.isEnabled(contract.crop.cropName)
                 },
-                captureIntervalNanos = 0L,
+                captureIntervalNanos = 200_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = name,

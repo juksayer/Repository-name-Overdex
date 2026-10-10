@@ -154,7 +154,7 @@ class FastMoveUseInference {
 
     fun flush(): List<FastMoveUseDerivation> = pending.values
         .sortedBy { it.anchorNanos }
-        .map(::finalize)
+        .flatMap(::finalize)
         .also { pending.clear() }
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {
@@ -162,7 +162,7 @@ class FastMoveUseInference {
             .filter { atNanos - it.anchorNanos > USE_CLUSTER_WINDOW_NANOS }
             .sortedBy { it.anchorNanos }
         ready.forEach { pending.remove(it.attackingSide) }
-        return ready.map(::finalize)
+        return ready.flatMap(::finalize)
     }
 
     private fun newPending(attackingSide: ActivePokemonSide, evidence: UseEvidence) = PendingUse(
@@ -199,17 +199,17 @@ class FastMoveUseInference {
         else -> null
     }
 
-    private fun finalize(use: PendingUse): FastMoveUseDerivation {
+    private fun finalize(use: PendingUse): List<FastMoveUseDerivation> {
         val ordered = use.evidence.sortedWith(compareBy(
             { it.article.monotonicTimeNanos ?: Long.MAX_VALUE },
             { it.article.id.value }
         ))
-        val anchor = ordered.first()
+        val anchor = ordered.firstOrNull { FastMoveUseEvidence.isImpact(it.kind) } ?: return emptyList()
         val evidenceKinds = ordered.map { it.kind }.distinct().sortedBy { EVIDENCE_ORDER.indexOf(it) }
         val confidence = (1.0 - ordered.fold(1.0) { remaining, item ->
             remaining * (1.0 - (item.article.confidence ?: item.defaultConfidence).coerceIn(0f, 0.99f))
         }).toFloat().coerceIn(0f, 0.99f)
-        return FastMoveUseDerivation(
+        return listOf(FastMoveUseDerivation(
             payload = FastMoveUseObserved(
                 useId = "fast-move-use:${anchor.article.id.value}",
                 attackingSide = use.attackingSide,
@@ -221,7 +221,7 @@ class FastMoveUseInference {
             predecessorIds = ordered.map { it.article.id },
             confidence = confidence,
             observedArticle = anchor.article
-        )
+        ))
     }
 
     private fun ActivePokemonSide.opposite(): ActivePokemonSide = when (this) {

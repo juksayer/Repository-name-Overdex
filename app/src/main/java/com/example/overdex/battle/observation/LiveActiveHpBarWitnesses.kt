@@ -489,18 +489,16 @@ internal class ActiveHpBarDamageTickDetector {
         measurementConfidence: Float,
         monotonicTimeNanos: Long
     ): ActiveHpBarDamageTickMeasurement? {
-        val current = filledFraction.coerceIn(0f, 1f)
+        if (!filledFraction.isFinite() || filledFraction !in 0f..1f) return null
+        val current = filledFraction
         val baseline = baselineFraction
         if (baseline == null) {
             baselineFraction = current
             return null
         }
-        if (current > baseline + REACQUIRE_INCREASE) {
-            baselineFraction = current
-            pendingAfterFraction = null
-            pendingChangedAtNanos = null
-            return null
-        }
+        // The same active combatant cannot heal. An orange hit frame or a
+        // tracking jump must not reset its baseline and manufacture another hit
+        // when the real fill becomes visible again. Entry/species cues reset it.
         if (baseline - current < MIN_DAMAGE_FRACTION) {
             pendingAfterFraction = null
             pendingChangedAtNanos = null
@@ -508,7 +506,7 @@ internal class ActiveHpBarDamageTickDetector {
         }
 
         val pending = pendingAfterFraction
-        if (pending == null || current < pending - UPDATE_EPSILON) {
+        if (pending == null || kotlin.math.abs(current - pending) > UPDATE_EPSILON) {
             pendingAfterFraction = current
             pendingChangedAtNanos = monotonicTimeNanos
             pendingConfidence = measurementConfidence
@@ -533,7 +531,6 @@ internal class ActiveHpBarDamageTickDetector {
     private companion object {
         const val MIN_DAMAGE_FRACTION = 0.006f
         const val UPDATE_EPSILON = 0.003f
-        const val REACQUIRE_INCREASE = 0.08f
         const val SETTLE_NANOS = 90_000_000L
     }
 }

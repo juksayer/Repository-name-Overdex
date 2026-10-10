@@ -134,7 +134,7 @@ class Match(
     private var vsCueSeen = false
     private var lastEntryText: String? = null
     private var lastEntryAt = Long.MIN_VALUE
-    private val activeSpeciesBySide = mutableMapOf<ActivePokemonSide, String>()
+    private val activeSpeciesBySide = ConcurrentHashMap<ActivePokemonSide, String>()
     @Volatile var observationAttemptStartedAtNanos: Long = System.nanoTime()
         private set
 
@@ -197,6 +197,19 @@ class Match(
      */
     fun sideForRosterKnownSpecies(speciesName: String): ActivePokemonSide? =
         TeamRosterSpeciesAttributor.sideFor(speciesName, playerRosterBySlot.values)
+
+    /** An unsided move announcement cannot select a trainer in an established mirror. */
+    fun sideForNamedMovePerformer(speciesName: String): ActivePokemonSide? {
+        val key = TeamRosterSpeciesAttributor.speciesKey(speciesName)
+        val activeSides = activeSpeciesBySide.filterValues {
+            TeamRosterSpeciesAttributor.speciesKey(it) == key
+        }.keys
+        return when (activeSides.size) {
+            0 -> sideForRosterKnownSpecies(speciesName)
+            1 -> activeSides.single()
+            else -> null
+        }
+    }
 
     fun playerRosterSpecies(): Collection<String> = playerRosterBySlot.values.toList()
 
@@ -339,6 +352,11 @@ class Match(
                         DroidballOverlayPresentation.markOpponentFainted(witnessed.speciesName)
                     }
                 }
+                (article.payload as? com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured)?.let { measured ->
+                    if (measured.resource == com.example.overdex.battle.custody.OpponentBattleResource.POKE_BALLS && measured.visibleCount == 0) {
+                        DroidballOverlayPresentation.markOpponentTeamFainted()
+                    }
+                }
                 (article.payload as? PlayerTeamSlotConfigured)
                     ?.takeIf { it.slot == 1 }
                     ?.let { configuredLead ->
@@ -437,6 +455,12 @@ class Match(
                         realityTimeline.append(derivedArticle)
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
+                        if (derivation.payload.side == ActivePokemonSide.OPPONENT) {
+                            DroidballOverlayPresentation.recordOpponentChargedMove(
+                                derivation.payload.speciesName,
+                                derivation.payload.moveName,
+                            )
+                        }
                     }
 
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->

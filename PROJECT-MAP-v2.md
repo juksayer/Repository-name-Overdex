@@ -97,6 +97,7 @@ The decisive implementation files are:
 
 - [CapturedVisualFrame.kt](app/src/main/java/com/example/overdex/model/observation/CapturedVisualFrame.kt) preserves capture time and frame geometry.
 - [BattleCalibration.kt](app/src/main/java/com/example/overdex/data/BattleCalibration.kt) owns runtime calibrated Battle Regions.
+- [MatchCalibrationProfileStore.kt](app/src/main/java/com/example/overdex/data/MatchCalibrationProfileStore.kt) owns named device profiles. Calibration stores update the selected profile before reporting a successful save; profile replacement is atomic. Loading preserves saved coordinates exactly, including positions that resemble historical defaults.
 - [BattleCropContract.kt](app/src/main/java/com/example/overdex/battle/observation/BattleCropContract.kt) resolves normalized regions into validated pixel rectangles and crop provenance.
 - [BattleObservationContracts.kt](app/src/main/java/com/example/overdex/battle/observation/BattleObservationContracts.kt) names configured regions, crops, and single-output Witness contracts.
 - [CropCaptureWitness.kt](app/src/main/java/com/example/overdex/battle/observation/CropCaptureWitness.kt) persists the crop before submitting `CropCaptured` testimony.
@@ -176,6 +177,24 @@ to react quickly, but it is not the historical authority.
 The HUD can show known species and possible moves before a specific move has
 been identified. Hazard emphasis is derived from reference knowledge and the
 player's active typing. Presentation decisions never alter captured testimony.
+
+Resolved opponent charged-move announcements also confirm the named move in
+`DroidballOverlayPresentation`; two distinct confirmations leave only those two
+charged moves visible, and confirmations survive switches within the Match.
+Poké Ball counts require visible badge/slot pixels. A covered or blank crop is
+unavailable evidence, not a zero-survivor count. Entry and faint cues open a brief
+ball-check window so the first hidden frames do not exhaust the check.
+
+## Owned cards and editing
+
+[EditSpecimenScreen.kt](app/src/main/java/com/example/overdex/ui/screens/EditSpecimenScreen.kt)
+edits the persistent owned card, including multiple named team memberships.
+These names can be searched in the owned binder; they do not select or replace
+the active three-member battle team. Database migration 9 → 10 adds `teamsJson`
+without recreating owned cards. [NicknameTokens.kt](app/src/main/java/com/example/overdex/model/NicknameTokens.kt)
+keeps type symbols as portable text tokens, while `TypeIconText` renders them as
+icons in the editor, binder LCD, and specimen detail view. The LCD keyboard and
+instrument A button share the same number/type-page switch.
 
 ## Archive and replay
 

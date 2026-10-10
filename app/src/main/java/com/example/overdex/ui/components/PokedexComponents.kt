@@ -224,7 +224,7 @@ fun InstrumentLCD(
                 ) {
             if (keyboardController?.isVisible == true) {
                 if (keyboardPrompt != null) {
-                    Text(
+                    TypeIconText(
                         text = keyboardPrompt,
                         modifier = Modifier.fillMaxWidth(),
                         color = TerminalGreen,
@@ -239,7 +239,7 @@ fun InstrumentLCD(
                     layout = keyboardController.layout,
                     currentRow = keyboardController.currentRow,
                     currentColumn = keyboardController.currentCol,
-                    onKeyActivated = onKeyActivated,
+                    onKeyActivated = { key -> keyboardController.activateKey(key) { onKeyActivated?.invoke(it) } },
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 )
             } else if (lcdContent != null) {

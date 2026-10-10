@@ -7,13 +7,14 @@ object TeamRosterSpeciesAttributor {
     private const val REQUIRED_ROSTER_SLOTS = 3
 
     fun sideFor(speciesName: String, playerRoster: Collection<String>): ActivePokemonSide? {
-        val normalizedRoster = playerRoster.asSequence().map(::normalize).filter(String::isNotBlank).toSet()
-        if (normalize(speciesName) in normalizedRoster) return ActivePokemonSide.PLAYER
+        val normalizedRoster = playerRoster.asSequence().map(::speciesKey).filter(String::isNotBlank).toSet()
+        if (speciesKey(speciesName) in normalizedRoster) return ActivePokemonSide.PLAYER
         return ActivePokemonSide.OPPONENT.takeIf { normalizedRoster.size >= REQUIRED_ROSTER_SLOTS }
     }
 
-    private fun normalize(value: String): String =
-        value.uppercase().filter(Char::isLetterOrDigit)
+    /** GO's announcement omits catalogue form labels such as Gourgeist (Average). */
+    fun speciesKey(value: String): String =
+        value.replace(Regex("\\s*\\([^)]*\\)\\s*$"), "").uppercase().filter(Char::isLetterOrDigit)
 }
 
 data class EntrySpeciesAttribution(
@@ -96,4 +97,4 @@ class EntryAnnouncementSideTracker {
 }
 
 private fun normalizeEntrySpecies(value: String): String =
-    value.uppercase().filter(Char::isLetterOrDigit)
+    TeamRosterSpeciesAttributor.speciesKey(value)

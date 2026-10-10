@@ -88,9 +88,11 @@ class TeamSelectCalibrationStore(context: Context) {
     private val appContext = context.applicationContext
     private val prefs = context.getSharedPreferences("team_select_calibration", Context.MODE_PRIVATE)
 
-    fun hasSavedProfile(): Boolean = prefs.contains(SAVED_AT)
+    fun hasSavedProfile(): Boolean =
+        MatchCalibrationProfileStore(appContext).activeProfile() != null || prefs.contains(SAVED_AT)
 
     fun save(calibration: TeamSelectCalibration, publishedWidth: Int = 1080, publishedHeight: Int = 2400): Boolean {
+        if (!MatchCalibrationProfileStore(appContext).updateTeamSelectCalibration(calibration)) return false
         val editor = prefs.edit()
         fields(calibration).forEach { (name, region) ->
             editor.putFloat("${name}_x", region.x)
