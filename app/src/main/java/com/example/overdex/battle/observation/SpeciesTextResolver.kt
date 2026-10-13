@@ -44,5 +44,5 @@ object SpeciesTextResolver {
     }
 
     private fun normalize(value: String): String =
-        value.uppercase().filter(Char::isLetterOrDigit)
+        SpeciesOcrTypography.normalizeLabel(value)
 }

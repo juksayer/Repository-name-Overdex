@@ -606,6 +606,9 @@ class Match(
         DroidballOverlayPresentation.showBattleHud()
         DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
         fastMoveUseInference.accept(leadArticle)
+        // This identity is derived locally rather than received through custody.
+        // Charged-move attribution needs the same lead that Fast Move inference sees.
+        chargedMoveAnnouncementInference.accept(leadArticle, ::sideForRosterKnownSpecies)
         appendFastMoveEnergyDerivations(leadArticle)
         appendFastMoveCadenceDerivations(leadArticle)
     }

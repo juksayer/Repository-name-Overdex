@@ -391,7 +391,8 @@ class MatchReplayModelTest {
 
         assertEquals("PLAYER", action.side)
         assertEquals(null, action.moveName)
-        assertEquals(setOf("QTE_VIBRATION_PATTERN"), action.evidenceKinds)
+        assertEquals(setOf("QTE_VIBRATION_PATTERN", "OPEN_CHARGE_SEQUENCE"), action.evidenceKinds)
+        assertEquals(ReplayChargePhase.CHARGING, action.phase)
     }
 
     @Test fun `forward replay crosses preserved vibration pattern exactly once`() {

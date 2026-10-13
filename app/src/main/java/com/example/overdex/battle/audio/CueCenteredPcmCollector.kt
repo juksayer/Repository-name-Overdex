@@ -22,7 +22,9 @@ enum class BattleCryCueKind {
     /** A visual HP-bar cadence measurement requests a short independent audio sample. */
     FAST_MOVE_IMPACT,
     /** Detected directly in the live PCM stream, with no inferred Pokemon side. */
-    STAT_CHANGE_SOUND
+    STAT_CHANGE_SOUND,
+    /** A bounded charged-move window, whether or not a stat cue is subsequently recognized. */
+    CHARGED_MOVE_EFFECT
 }
 
 data class AudioCaptureCue(val articleId: String, val kind: BattleCryCueKind)

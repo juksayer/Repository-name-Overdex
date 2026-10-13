@@ -277,6 +277,7 @@ private fun ArchiveArticleRow(
         }
 
         val payloadText = when (val p = article.payload) {
+            is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, move=${p.moveName ?: "unresolved"}, basis=${p.basis}]"
             is ArchivedRawText -> p.value
@@ -389,6 +390,7 @@ private fun ArticleDetailsOverlay(
             DetailField(label = "SOURCE ID", value = article.sourceId)
             
             val payloadText = when (val p = article.payload) {
+                is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}, reference=${p.referenceSha256}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, nominal stages=${p.stages ?: "unknown"}, move=${p.moveName ?: "unresolved"}, sound=${p.soundArticleId}, basis=${p.basis}]"
                 is ArchivedRawText -> p.value

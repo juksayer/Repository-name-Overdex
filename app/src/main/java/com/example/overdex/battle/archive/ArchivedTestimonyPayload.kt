@@ -148,6 +148,12 @@ data class ArchivedStatChangeObserved(
     val stages: Int?, val moveName: String?, val soundArticleId: String, val basis: String,
 ) : ArchivedTestimonyPayload
 
+@Serializable @SerialName("stat_change_sound_checked")
+data class ArchivedStatChangeSoundChecked(
+    val status: String, val candidateCue: String? = null,
+    val similarity: Float? = null, val runnerUpSimilarity: Float? = null,
+) : ArchivedTestimonyPayload
+
 @Serializable
 @SerialName("witness_operating")
 data class ArchivedWitnessOperating(

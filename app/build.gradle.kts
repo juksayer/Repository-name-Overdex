@@ -1,7 +1,3 @@
-import java.util.Properties
-
-val apiProperties = Properties()
-apiProperties.load(rootProject.file("apikeys.properties").inputStream())
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -23,11 +19,6 @@ android {
         minSdk = 30
         targetSdk = 36
 
-        buildConfigField(
-            "String",
-            "OPENAI_API_KEY",
-            "\"${apiProperties.getProperty("OPENAI_API_KEY")}\""
-        )
         versionCode = 1
         versionName = "1.0"
 

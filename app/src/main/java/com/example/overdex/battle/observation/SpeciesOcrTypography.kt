@@ -4,14 +4,35 @@ package com.example.overdex.battle.observation
 internal object SpeciesOcrTypography {
     private val confusionGroups = listOf(
         setOf('O', '0', 'Q'),
-        setOf('I', '1', 'L'),
-        setOf('S', '5', 'Z'),
-        setOf('A', '4'),
+        setOf('I', '1', 'L', '|', '!'),
+        setOf('S', '5', 'Z', '$'),
+        setOf('A', '4', '@'),
         setOf('B', '8'),
         setOf('G', '6'),
         setOf('Z', '2'),
-        setOf('E', '3')
+        setOf('E', '3', '€')
     )
+
+    /**
+     * Only for species/move vocabulary matching, never nickname storage. Keep
+     * suspicious glyphs in the comparison: silently deleting them could turn
+     * a damaged reading into a falsely exact legal name. Formatting punctuation
+     * is ignored equally in the reading and reference name.
+     */
+    fun normalizeLabel(value: String): String = value.trim().trimEnd('!', '.', '?')
+        .uppercase().filterNot { it.isWhitespace() || it in "-.,:'’()♀♂" }
+
+    /** At most two familiar lookalikes, with no missing letters or arbitrary edits. */
+    fun glyphRepairCost(reading: String, canonical: String): Int? {
+        if (reading.length != canonical.length) return null
+        var differences = 0
+        for (index in reading.indices) {
+            if (reading[index] == canonical[index]) continue
+            if (substitutionCost(reading[index], canonical[index]) != CONFUSION_COST) return null
+            differences++
+        }
+        return differences.takeIf { it in 1..2 }
+    }
 
     fun weightedDistance(left: String, right: String): Int {
         var previous = IntArray(right.length + 1) { it * ORDINARY_EDIT_COST }

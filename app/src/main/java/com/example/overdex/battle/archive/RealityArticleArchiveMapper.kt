@@ -150,6 +150,8 @@ object RealityArticleArchiveMapper {
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )
+            is com.example.overdex.battle.custody.StatChangeSoundChecked -> ArchivedStatChangeSoundChecked(
+                p.status, p.candidateCue, p.similarity, p.runnerUpSimilarity)
             is com.example.overdex.battle.custody.StatChangeSoundMeasured -> ArchivedStatChangeSoundMeasured(
                 p.cue, p.referenceSha256, p.similarity, p.runnerUpSimilarity, p.durationNanos
             )

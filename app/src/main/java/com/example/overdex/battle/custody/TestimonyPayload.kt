@@ -122,6 +122,12 @@ data class StatChangeSoundMeasured(
     val runnerUpSimilarity: Float, val durationNanos: Long,
 ) : TestimonyPayload
 
+/** A checked window or explicit capture failure; a candidate is never proof of a stat change. */
+data class StatChangeSoundChecked(
+    val status: String, val candidateCue: String? = null,
+    val similarity: Float? = null, val runnerUpSimilarity: Float? = null,
+) : TestimonyPayload
+
 /** Sound occurrence plus a compatible, side-attributed charged move and reference effect. */
 data class StatChangeObserved(
     val affectedSide: ActivePokemonSide?, val stat: String, val direction: Int,

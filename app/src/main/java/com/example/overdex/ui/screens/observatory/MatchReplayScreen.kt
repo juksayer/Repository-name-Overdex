@@ -72,6 +72,8 @@ import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
 import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
+import com.example.overdex.battle.replay.ReplayChargePhase
+import com.example.overdex.battle.replay.ReplayChargePose
 import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
@@ -385,6 +387,17 @@ fun MatchReplayScreen(
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
                 }
+                scene.chargedMoveActions.lastOrNull()?.let { action ->
+                    val charging = action.phase == ReplayChargePhase.CHARGING
+                    Text(
+                        text = if (charging) "CHARGING" else action.moveName?.uppercase() ?: "CHARGED ATTACK",
+                        color = Color(0xFFFFD54F), fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
+                    )
+                    if (action.side == "UNKNOWN") {
+                        ReplayChargeHalo(action, false, Modifier.align(Alignment.Center))
+                    }
+                }
                 scene.countdownGlyph?.let { glyph ->
                     Text(
                         text = glyph,
@@ -409,7 +422,7 @@ fun MatchReplayScreen(
                 scene.outcome?.let { outcome ->
                     Box(
                         modifier = Modifier
-                            .align(Alignment.Center)
+                            .align(Alignment.BottomCenter)
                             .background(Color(0xE6102418))
                             .border(2.dp, TerminalGreen)
                             .padding(horizontal = 24.dp, vertical = 12.dp),
@@ -514,14 +527,16 @@ internal fun ReplayCombatantSlot(
     modifier: Modifier = Modifier,
     statChanges: List<com.example.overdex.battle.replay.ReplayStatChangeAction> = emptyList(),
 ) {
-    val faintPose = combatant?.takeIf { it.isFainted }?.let {
-        ReplayFaintPose.at(it.faintedAtNanos, cursorNanos, useBackSprite)
+    val down = combatant?.let { it.isFainted || it.defeatedAtNanos != null } == true
+    val faintPose = combatant?.takeIf { down }?.let {
+        ReplayFaintPose.at(it.faintedAtNanos ?: it.defeatedAtNanos, cursorNanos, useBackSprite)
     }
     Box(
         modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
     ) {
-        val qteLevel = when (qteMilestone.takeUnless { combatant?.isFainted == true }) {
+        if (chargedAction != null && !down) ReplayChargeHalo(chargedAction, useBackSprite)
+        val qteLevel = when (qteMilestone.takeUnless { down }) {
             "NICE" -> 1
             "GREAT" -> 2
             "EXCELLENT" -> 3
@@ -546,7 +561,8 @@ internal fun ReplayCombatantSlot(
                 model = LocalSpriteProvider(context.assets).let { sprites ->
                     if (useBackSprite) sprites.getBackSpriteUrl(speciesId) else sprites.getSpriteUrl(speciesId)
                 },
-                contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted" else combatant.speciesName,
+                contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted"
+                    else if (down) "${combatant.speciesName}, defeated" else combatant.speciesName,
                 modifier = Modifier
                     .requiredSize(spriteSize)
                     // Pokémon GO places the player's back-facing combatant
@@ -561,24 +577,10 @@ internal fun ReplayCombatantSlot(
                         scaleX = if (speciesId == 776) -1f else 1f
                         // Keep fading on the transformed layer so a separate
                         // opacity layer cannot clip the falling sprite.
-                        alpha = faintPose?.opacity ?: if (combatant.isFainted) 0.6f else 1f
+                        alpha = faintPose?.opacity ?: if (down) 0.6f else 1f
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
-                        val attackOffset = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
-                            val fastMoveAmplitudePixels = if (useBackSprite) 16f else 8f
-                            val amplitudePixels = fastMoveAmplitudePixels * 3f
-                            if (progress <= CHARGED_MOVE_RISE_FRACTION) {
-                                val rise = progress / CHARGED_MOVE_RISE_FRACTION
-                                val easedRise = rise * rise * (3f - 2f * rise)
-                                -amplitudePixels * easedRise
-                            } else {
-                                val drop = (progress - CHARGED_MOVE_RISE_FRACTION) /
-                                    (1f - CHARGED_MOVE_RISE_FRACTION)
-                                // Spend most of the gesture rising, then cover
-                                // the return distance immediately so landing
-                                // reads as an impact instead of a float.
-                                -amplitudePixels * (1f - drop).pow(3)
-                            }
-                        } ?: fastAction?.progress
+                        val attackOffset = chargedAction?.let { ReplayChargePose.at(it, useBackSprite).risePixels }
+                            ?: fastAction?.progress
                             ?.div(REPLAY_BOB_DURATION_FRACTION)
                             ?.coerceIn(0f, 1f)
                             ?.let { quickProgress ->
@@ -596,11 +598,11 @@ internal fun ReplayCombatantSlot(
                         // Fine positioning uses physical pixels, independent of display density.
                         translationX = faintPose?.shakePixels ?: 0f
                         rotationZ = faintPose?.rotationDegrees ?: 0f
-                        translationY = (if (combatant.isFainted) faintPose?.dropPixels ?: 0f else attackOffset) +
+                        translationY = (if (down) faintPose?.dropPixels ?: 0f else attackOffset) +
                             if (useBackSprite) 25f else 0f
                     },
                 contentScale = ContentScale.Fit,
-                colorFilter = if (combatant.isFainted) {
+                colorFilter = if (down) {
                     ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                 } else null
             )
@@ -627,6 +629,24 @@ internal fun ReplayCombatantSlot(
                 }
             }
         }
+    }
+}
+
+@Composable
+internal fun ReplayChargeHalo(action: ReplayChargedMoveAction, player: Boolean, modifier: Modifier = Modifier) {
+    val pose = ReplayChargePose.at(action, player)
+    Canvas(modifier.size(146.dp).semantics {
+        contentDescription = if (action.phase == ReplayChargePhase.CHARGING) "Charging move" else "Charged move impact"
+    }) {
+        val radius = size.minDimension * 0.43f * pose.haloScale
+        val gold = Color(0xFFFFD54F)
+        drawCircle(gold.copy(alpha = pose.haloAlpha * 0.3f), radius)
+        drawCircle(gold.copy(alpha = pose.haloAlpha), radius, style = Stroke(3.dp.toPx()))
+        drawArc(gold.copy(alpha = pose.haloAlpha),
+            startAngle = (action.elapsedNanos % 1_500_000_000L) / 1_500_000_000f * 360f,
+            sweepAngle = 100f, useCenter = false,
+            topLeft = center - Offset(radius, radius), size = Size(radius * 2, radius * 2),
+            style = Stroke(5.dp.toPx()))
     }
 }
 
@@ -673,4 +693,3 @@ private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = M
 
 private const val REPLAY_BOB_DURATION_FRACTION = 0.6f
 private const val FAST_MOVE_RISE_FRACTION = 0.72f
-private const val CHARGED_MOVE_RISE_FRACTION = 0.78f
