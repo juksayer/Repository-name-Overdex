@@ -40,6 +40,10 @@ class FastMoveCadenceInferenceTest {
             ActivePokemonSide.OPPONENT, "Vaporeon", 134, "BALL_COUNT_DECREASE"
         )).copy(monotonicTimeNanos = 3_000_000_000L))
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertTrue(engine.accept(article("lingering-badge", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Vaporeon", 134
+        )).copy(monotonicTimeNanos = 3_400_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
     }
 
     @Test

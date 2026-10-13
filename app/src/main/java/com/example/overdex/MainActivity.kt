@@ -1396,6 +1396,9 @@ fun PokedexApp(
                                         moveName.uppercase().filter(Char::isLetterOrDigit)
                                 }?.type
                             },
+                            resolveChargedMoves = { speciesName ->
+                                viewModel.getPokemonByName(speciesName)?.chargedMoves.orEmpty()
+                            },
                             resolveArchivedSpeciesCrops = { selectedArchive, progress ->
                                 val uri = openedArchiveUri.value
                                 if (uri == null) emptyList() else {

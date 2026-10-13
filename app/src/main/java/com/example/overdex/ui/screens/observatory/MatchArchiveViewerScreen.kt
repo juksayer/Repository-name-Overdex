@@ -24,6 +24,7 @@ import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.replay.ReplayExcerptStore
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.model.PokemonType
+import com.example.overdex.model.Move
 import com.example.overdex.ui.components.TerminalHeader
 import com.example.overdex.ui.components.TerminalPathIndicator
 import com.example.overdex.ui.components.TerminalScreen
@@ -69,6 +70,7 @@ fun MatchArchiveViewerScreen(
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
@@ -129,6 +131,7 @@ fun MatchArchiveViewerScreen(
             resolveSpeciesId = resolveSpeciesId,
             resolveFastMoveType = resolveFastMoveType,
             resolveChargedMoveType = resolveChargedMoveType,
+            resolveChargedMoves = resolveChargedMoves,
             resolveFastMoves = resolveFastMoves,
             resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
         )

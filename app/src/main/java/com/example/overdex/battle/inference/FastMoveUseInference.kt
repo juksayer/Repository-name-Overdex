@@ -53,6 +53,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     }
 
     private val appearances = EnumMap<ActivePokemonSide, Appearance>(ActivePokemonSide::class.java)
+    private val fainted = FaintedCombatants()
     private val pending = mutableListOf<PendingUse>()
     private val knownDurations = mutableMapOf<Pair<ActivePokemonSide, String>, Long>()
     private var watermarkNanos = Long.MIN_VALUE
@@ -73,6 +74,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
 
     fun accept(article: RealityArticle): List<FastMoveUseDerivation> {
         val atNanos = article.monotonicTimeNanos ?: return emptyList()
+        fainted.observe(article)
         watermarkNanos = max(watermarkNanos, atNanos)
         if (article.payload is MatchStarted) {
             pending.clear()
@@ -108,6 +110,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 }
             }
             is ActivePokemonSpeciesWitnessed -> {
+                if (fainted.contains(payload.side, payload.speciesName)) return flushExpired(watermarkNanos)
                 val earlier = appearances[payload.side]
                 if (atNanos >= (earlier?.atNanos ?: Long.MIN_VALUE) &&
                     !payload.speciesName.equals(earlier?.speciesName, ignoreCase = true)) {

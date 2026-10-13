@@ -104,6 +104,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
+    private val fainted = FaintedCombatants()
     // A switch changes the active appearance, not the combatant's learned move.
     // Include side and form name: mirror opponents never inherit our configured move.
     private val combatants = mutableMapOf<Pair<ActivePokemonSide, String>, SideState>()
@@ -117,6 +118,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
 
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        fainted.observe(article)
         val chargeGuard = when (article.payload) {
             AttackIncoming -> 12_000_000_000L
             GetReadyWitnessed -> 8_000_000_000L
@@ -204,6 +206,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         }
         val species = article.payload as? ActivePokemonSpeciesWitnessed
         if (species != null) {
+            if (fainted.contains(species.side, species.speciesName)) return emptyList()
             // Reconfirming an unchanged badge must not reset timing or recount energy.
             val priorState = states[species.side]
             if (priorState?.speciesName?.let(::normalize) == normalize(species.speciesName)) return emptyList()

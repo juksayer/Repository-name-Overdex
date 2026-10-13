@@ -20,6 +20,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveEnergyInferenceTest {
+    @Test fun `post faint badge and move identity cannot award energy to the fainted pokemon`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity("move", "Sealeo", "Water Gun"))
+        engine.accept(article("faint", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, "BALLS"
+        ), 2_000_000_000L))
+        engine.accept(species("stale", "Sealeo", 2_400_000_000L))
+        engine.accept(identity("stale-move", "Sealeo", "Water Gun", 2_400_000_000L))
+        assertTrue(engine.accept(use("after-ko", monotonicNanos = 3_000_000_000L)).isEmpty())
+        // A delayed but correctly timed pre-KO hit still has valid historical energy.
+        assertEquals(3, engine.accept(use("before-ko", monotonicNanos = 1_000_000_000L))
+            .single().payload.totalEnergyGenerated)
+    }
+
     private val waterGun = Move("Water Gun", PokemonType.WATER, 3, 3, true, 1)
     private val powderSnow = Move("Powder Snow", PokemonType.ICE, 5, 8, true, 2)
     private val sealeo = Pokemon(
@@ -110,8 +125,8 @@ class FastMoveEnergyInferenceTest {
         engine.accept(species("species-2", "Sealeo", 2_600_000_000L))
         val resolved = engine.accept(identity("identity-2", "Sealeo", "Powder Snow", 3_000_000_000L))
 
-        assertEquals(8, resolved.single().payload.totalEnergyGenerated)
-        assertEquals("new-use", resolved.single().observedArticle.id.value)
+        // A lingering badge is not another Sealeo returning from a KO.
+        assertTrue(resolved.isEmpty())
     }
 
     @Test

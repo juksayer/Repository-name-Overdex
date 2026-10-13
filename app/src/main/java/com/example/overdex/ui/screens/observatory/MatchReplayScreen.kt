@@ -113,6 +113,7 @@ fun MatchReplayScreen(
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
+    resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     initialCursorNanos: Long? = null,
 ) {
@@ -142,6 +143,9 @@ fun MatchReplayScreen(
     val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
         value = referencedNames.associateWith { resolveFastMoves(it) }
     }
+    val chargedMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
+        value = referencedNames.associateWith { resolveChargedMoves(it) }
+    }
     val chargedMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
         value = archive.articles.mapNotNull { it.payload as? ArchivedChargedMoveEnergySpent }
             .distinctBy { it.speciesName to it.moveName }.mapNotNull { move ->
@@ -150,7 +154,7 @@ fun MatchReplayScreen(
                 }
             }.toMap()
     }
-    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies, chargedMoveTypes) {
+    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies) {
         MatchReplayModel(
             archive,
             speciesIds,
@@ -158,6 +162,7 @@ fun MatchReplayScreen(
             fastMoveTypes,
             fastMovesBySpecies,
             chargedMoveTypes,
+            chargedMovesBySpecies,
         )
     }
     var cursor by remember(archive, initialCursorNanos) {
@@ -168,7 +173,9 @@ fun MatchReplayScreen(
     val currentModel by rememberUpdatedState(model)
     val scene = model.sceneAt(cursor)
     val duration = (model.endNanos - model.startNanos).coerceAtLeast(1L)
-    val matchStartFraction = model.matchStartNanos?.let { matchStartNanos ->
+    val displayedMatchStart = model.matchStartNanos ?: model.countdown?.goAtNanos
+        ?.takeUnless { model.countdown?.timingBasis == com.example.overdex.battle.replay.ReplayCountdownTiming.PRESENTATION_ONLY }
+    val matchStartFraction = displayedMatchStart?.let { matchStartNanos ->
         ((matchStartNanos - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
     }
     val context = LocalContext.current
@@ -316,6 +323,7 @@ fun MatchReplayScreen(
                 else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
             }
             cropError?.let { MatchLcdText(it) }
+            scene.countdownFrame?.let { MatchLcdText(it.lcdLabel) }
             MatchLcdText("RECORDED ENERGY\nP ${energyLedger(scene.playerEnergy)}  O ${energyLedger(scene.opponentEnergy)}")
             scene.statChanges.filter { it.side == null }.forEach {
                 MatchLcdText("${it.label} · SIDE UNCONFIRMED")

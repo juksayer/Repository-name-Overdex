@@ -25,6 +25,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `lingering badge after faint cannot attribute replacement attacks to the corpse`() {
+        val inference = startedInference()
+        val side = ActivePokemonSide.PLAYER
+        inference.accept(article("camerupt", 1_000_000_000L, ActivePokemonSpeciesWitnessed(side, "Camerupt", 323)))
+        inference.accept(article("ko", 2_000_000_000L,
+            com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(side, "Camerupt", 323, "BALLS")))
+        inference.accept(article("stale-badge", 2_400_000_000L, ActivePokemonSpeciesWitnessed(side, "Camerupt", 323)))
+        inference.accept(article("hit", 3_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertEquals(null, inference.flush().single().payload.attackerSpeciesName)
+        inference.accept(article("replacement", 4_000_000_000L, ActivePokemonSpeciesWitnessed(side, "Galvantula", 596)))
+        inference.accept(article("hit2", 5_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertEquals("Galvantula", inference.flush().single().payload.attackerSpeciesName)
+    }
+
     @Test
     fun `audio cue fires at first impact before fusion and is not repeated for corroboration`() {
         val cues = mutableListOf<RealityArticle>()

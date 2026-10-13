@@ -33,6 +33,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
     )
 
     private val activeSpecies = EnumMap<ActivePokemonSide, String>(ActivePokemonSide::class.java)
+    private val fainted = FaintedCombatants()
     private val identities = EnumMap<ActivePokemonSide, Identity>(ActivePokemonSide::class.java)
     private val pendingUses = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val attributedUseIds = mutableSetOf<String>()
@@ -40,6 +41,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val learnedIdentities = mutableMapOf<Pair<ActivePokemonSide, String>, Identity>()
 
     suspend fun accept(article: RealityArticle): List<FastMoveEnergyDerivation> {
+        fainted.observe(article)
         when (val payload = article.payload) {
             is ActivePokemonFaintedWitnessed -> {
                 val active = activeSpecies[payload.side]
@@ -66,6 +68,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
 
             is ActivePokemonSpeciesWitnessed -> {
+                if (fainted.contains(payload.side, payload.speciesName)) return emptyList()
                 if (activeSpecies[payload.side]?.let(::normalize) != normalize(payload.speciesName)) {
                     val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
                     if (at < (appearanceStarts[payload.side] ?: Long.MIN_VALUE)) return emptyList()
@@ -93,9 +96,9 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
                 val identity = Identity(article, payload, move.energy)
                 learnedIdentities[payload.side to normalize(payload.speciesName)] = identity
                 val active = activeSpecies[payload.side]
-                if ((active == null && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >=
+                if (!fainted.contains(payload.side, payload.speciesName) && ((active == null && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >=
                         (appearanceStarts[payload.side] ?: Long.MIN_VALUE)) ||
-                    (active != null && normalize(active) == normalize(payload.speciesName))) {
+                    (active != null && normalize(active) == normalize(payload.speciesName)))) {
                     identities[payload.side] = identity
                 }
                 val waiting = pendingUses[payload.side] ?: return emptyList()
@@ -137,6 +140,8 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     private fun derive(useArticle: RealityArticle, identity: Identity): FastMoveEnergyDerivation? {
         val use = useArticle.payload as? FastMoveUseObserved ?: return null
+        if (fainted.at(use.attackingSide, identity.payload.speciesName,
+                useArticle.monotonicTimeNanos ?: return null)) return null
         if (use.attackingSide != identity.payload.side) return null
         if (use.attackerSpeciesName != null &&
             normalize(use.attackerSpeciesName) != normalize(identity.payload.speciesName)
