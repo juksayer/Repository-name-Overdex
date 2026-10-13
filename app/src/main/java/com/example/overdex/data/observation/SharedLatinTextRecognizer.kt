@@ -2,128 +2,70 @@ package com.example.overdex.data.observation
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
-/**
- * One process-wide ML Kit Latin recognizer.
- *
- * Creating a client for every visual worker creates another TFLite interpreter
- * and competes for the same CPU pool. A single serial lane keeps the model warm
- * and bounds both interpreter count and concurrent OCR pressure.
- */
+/** One warm Latin model, with admission priority before ML Kit's shared queue. */
 object SharedLatinTextRecognizer {
     private val recognizer by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
-    private val lane = Mutex()
+    private val lane = OcrWorkScheduler()
     @Volatile private var warmed = false
 
-    suspend fun read(bitmap: Bitmap): Text = lane.withLock {
-        warmed = true
-        recognizer.read(bitmap)
+    suspend fun read(bitmap: Bitmap): Text = read(bitmap, OcrPriority.NORMAL)
+
+    internal suspend fun read(bitmap: Bitmap, priority: OcrPriority): Text {
+        val queuedAt = System.nanoTime()
+        return lane.run(priority) {
+            val startedAt = System.nanoTime()
+            val result = recognizer.read(bitmap)
+            warmed = true
+            val finishedAt = System.nanoTime()
+            if (finishedAt - queuedAt >= 1_000_000_000L) {
+                Log.d("OCR_SCHEDULER", "priority=$priority size=${bitmap.width}x${bitmap.height} " +
+                    "waitMs=${(startedAt - queuedAt) / 1_000_000} readMs=${(finishedAt - startedAt) / 1_000_000}")
+            }
+            result
+        }
     }
 
     suspend fun readText(bitmap: Bitmap): String = read(bitmap).text
 
-    /** Optional readers must not queue a live boundary behind background OCR. */
-    suspend fun readTextIfIdle(bitmap: Bitmap): String? {
-        if (!lane.tryLock()) return null
-        return try {
-            warmed = true
-            recognizer.read(bitmap).text
-        } finally {
-            lane.unlock()
-        }
+    /** Optional checks cannot queue ahead of a pending species/result read. */
+    suspend fun readTextIfIdle(bitmap: Bitmap): String? = lane.runIfIdle {
+        recognizer.read(bitmap).text.also { warmed = true }
     }
 
     suspend fun warmUp() {
         if (warmed) return
-        lane.withLock {
-            if (warmed) return@withLock
-            val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
-            blank.eraseColor(Color.WHITE)
-            try {
-                recognizer.read(blank)
-                warmed = true
-            } finally {
-                blank.recycle()
+        lane.run(OcrPriority.NORMAL) {
+            if (!warmed) {
+                val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
+                blank.eraseColor(Color.WHITE)
+                try {
+                    recognizer.read(blank)
+                    warmed = true
+                } finally {
+                    blank.recycle()
+                }
             }
         }
     }
 }
 
-/**
- * One reserved ML Kit client for the two active-species badge strips.
- *
- * Full-width announcement and result OCR can remain continuously busy during a
- * battle. Species identity has a 1.5 second delivery target, so it must not wait
- * in that general queue. This creates one additional, process-wide interpreter,
- * rather than one client per witness or frame.
- */
+/** Active species have priority over routine button/effectiveness text checks. */
 object PrioritySpeciesTextRecognizer {
-    private val recognizer by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    }
-    private val lane = Mutex()
-    @Volatile private var warmed = false
-
-    suspend fun readText(bitmap: Bitmap): String = lane.withLock {
-        warmed = true
-        recognizer.read(bitmap).text
-    }
-
-    suspend fun warmUp() {
-        if (warmed) return
-        lane.withLock {
-            if (warmed) return@withLock
-            val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
-            blank.eraseColor(Color.WHITE)
-            try {
-                recognizer.read(blank)
-                warmed = true
-            } finally {
-                blank.recycle()
-            }
-        }
-    }
+    suspend fun readText(bitmap: Bitmap): String =
+        SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text
+    suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
 }
 
-/**
- * One reserved result-screen reader.
- *
- * Result text is brief, but it must never jump ahead of a species-name read or
- * wait behind the full-width announcement queue. A third process-wide client
- * keeps those latency domains independent while still creating only one model
- * interpreter for this entire witness family.
- */
+/** Result frames retain source order; routine OCR cannot overtake the next one. */
 object OutcomeTextRecognizer {
-    private val recognizer by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    }
-    private val lane = Mutex()
-    @Volatile private var warmed = false
-
-    suspend fun readText(bitmap: Bitmap): String = lane.withLock {
-        warmed = true
-        recognizer.read(bitmap).text
-    }
-
-    suspend fun warmUp() {
-        if (warmed) return
-        lane.withLock {
-            if (warmed) return@withLock
-            val blank = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
-            blank.eraseColor(Color.WHITE)
-            try {
-                recognizer.read(blank)
-                warmed = true
-            } finally {
-                blank.recycle()
-            }
-        }
-    }
+    suspend fun readText(bitmap: Bitmap): String =
+        SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text
+    suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
 }

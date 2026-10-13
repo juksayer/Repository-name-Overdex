@@ -6,6 +6,7 @@ import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.MatchResultMusicMeasured
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.OpponentBattleResource
 import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
@@ -268,6 +269,15 @@ class MatchOutcomeCaptureGate(
         ended = true
     }
 
+    /** A matched result track opens OCR even if the final team badges were hidden.
+     * Use the end of the measured clip, not publication time, to bound stale evidence.
+     */
+    @Synchronized internal fun observeResultMusic(at: Long) {
+        val start = battleStartedAt ?: return
+        if (ended || at < start || at > now()) return
+        probeUntil = maxOf(probeUntil, at + FINAL_TEAM_PROBE_NANOS)
+    }
+
     override fun start(match: Match) {
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
@@ -282,6 +292,9 @@ class MatchOutcomeCaptureGate(
                             observeOpponentBallCount(at, payload.visibleCount)
                         }
                         is MatchEnded -> observeMatchEnded()
+                        is MatchResultMusicMeasured -> if (payload.theme == "WIN" || payload.theme == "LOSS") {
+                            observeResultMusic(at + payload.durationNanos)
+                        }
                     }
                 }
             }

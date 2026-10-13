@@ -103,7 +103,7 @@ import com.example.overdex.ui.screens.SignalObservatoryScreen
 import com.example.overdex.ui.screens.SharedTimelineScreen
 import com.example.overdex.ui.screens.SpecimenDetailScreen
 import com.example.overdex.ui.screens.TrainerProfileScreen
-import com.example.overdex.ui.screens.observatory.TimelineViewerScreen
+import com.example.overdex.ui.screens.observatory.MatchSummaryRoute
 import com.example.overdex.ui.theme.OverdexTheme
 import kotlinx.coroutines.launch
 
@@ -1206,77 +1206,13 @@ fun PokedexApp(
             }
             composable("timeline_viewer") {
                 var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-                val archiveSourceState = viewModel.latestMatchArchiveSource.collectAsState()
-                val archiveExportSelected = remember { mutableStateOf(false) }
-                val archiveOpenSelected = remember { mutableStateOf(false) }
-                val archiveExportMode = remember { mutableStateOf<MatchArchiveExportMode?>(null) }
-                val archiveExportInProgress = remember { mutableStateOf(false) }
-                val archiveExportStatus = remember { mutableStateOf<String?>(null) }
-                val scope = rememberCoroutineScope()
-                val context = androidx.compose.ui.platform.LocalContext.current
-
-                val requestArchiveExport: (MatchArchiveExportMode) -> Unit = { mode ->
-                    val source = archiveSourceState.value
-                    if (source != null && !archiveExportInProgress.value) {
-                        archiveOpenSelected.value = false
-                        archiveExportSelected.value = true
-                        archiveExportMode.value = mode
-                        archiveExportInProgress.value = true
-                        archiveExportStatus.value = "PREPARING ${if (mode == MatchArchiveExportMode.FULL_FORENSIC) "FULL FORENSIC" else "COMPACT"} ARCHIVE…"
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                val uri = archiveDirectoryManager.exportMatchToDownloads(
-                                    source.matchId,
-                                    source.realityTimeline,
-                                    mode
-                                ) { completed, total ->
-                                    scope.launch(Dispatchers.Main) {
-                                        archiveExportStatus.value = if (total == 0) {
-                                            "VERIFYING PRESERVED EVIDENCE…"
-                                        } else {
-                                            "VERIFYING PRESERVED EVIDENCE $completed / $total"
-                                        }
-                                    }
-                                }
-                                withContext(Dispatchers.Main) {
-                                    if (uri != null) {
-                                        archiveExportStatus.value = if (mode == MatchArchiveExportMode.FULL_FORENSIC) {
-                                            "FULL FORENSIC ARCHIVE SAVED"
-                                        } else {
-                                            "COMPACT ARCHIVE SAVED"
-                                        }
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "Saved to Downloads/Odxmatches",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    } else {
-                                        archiveExportStatus.value = "SAVE FAILED"
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "Export failed.",
-                                            android.widget.Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.e("MATCH_EXPORT", "Archive save failed", e)
-                                withContext(Dispatchers.Main) {
-                                    archiveExportStatus.value = "SAVE FAILED: ${e.message}"
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        "Save failed: ${e.message}",
-                                        android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            } finally {
-                                withContext(Dispatchers.Main) {
-                                    archiveExportInProgress.value = false
-                                }
-                            }
-                        }
-                    }
-                }
+                val archiveSource by viewModel.latestMatchArchiveSource.collectAsState()
+                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
                 ODXFiShell(
                     lcdContent = matchLcdContent,
@@ -1290,79 +1226,29 @@ fun PokedexApp(
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
-                    onUp = {
-                        if (!archiveOpenSelected.value && !archiveExportSelected.value) {
-                            if (archiveSourceState.value != null) {
-                                archiveExportSelected.value = true
-                                archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
-                            } else {
-                                archiveOpenSelected.value = true
-                            }
-                        } else if (archiveExportSelected.value) {
-                            if (archiveExportMode.value == MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) {
-                                archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
-                            } else {
-                                archiveExportSelected.value = false
-                                archiveExportMode.value = null
-                                archiveOpenSelected.value = true
-                            }
-                        }
-                    },
-                    onDown = {
-                        if (archiveOpenSelected.value) {
-                            archiveOpenSelected.value = false
-                            if (archiveSourceState.value != null) {
-                                archiveExportSelected.value = true
-                                archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
-                            }
-                        } else if (archiveExportSelected.value) {
-                            if (archiveExportMode.value == MatchArchiveExportMode.FULL_FORENSIC) {
-                                archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
-                            } else {
-                                archiveExportSelected.value = false
-                                archiveExportMode.value = null
-                            }
-                        }
-                    },
-                    onLeft = {
-                        if (archiveExportSelected.value) {
-                            archiveExportMode.value = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
-                        }
-                    },
-                    onRight = {
-                        if (archiveExportSelected.value) {
-                            archiveExportMode.value = MatchArchiveExportMode.FULL_FORENSIC
-                        }
-                    },
-                    onA = {
-                        if (archiveOpenSelected.value) {
-                            navController.navigate("match_archive_directory")
-                        } else if (archiveExportSelected.value && archiveSourceState.value != null) {
-                            requestArchiveExport(archiveExportMode.value ?: MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
-                        } else {
-                            navController.debugPopBackStack()
-                        }
-                    },
-                    onB = { navController.debugPopBackStack() }
+                    onUp = { upHandler?.invoke() },
+                    onDown = { downHandler?.invoke() },
+                    onLeft = { leftHandler?.invoke() },
+                    onRight = { rightHandler?.invoke() },
+                    onA = { aHandler?.invoke() },
+                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
                 ) {
-                    TimelineViewerScreen(
+                    MatchSummaryRoute(
+                        source = archiveSource,
+                        directory = archiveDirectoryManager,
                         onLcdContentUpdate = { matchLcdContent = it },
                         onBack = { navController.debugPopBackStack() },
-                        exportMatchId = archiveSourceState.value?.matchId?.value,
-                        compactExportSelected = archiveExportSelected.value &&
-                                archiveExportMode.value == MatchArchiveExportMode.COMPACT_CITED_EVIDENCE &&
-                                archiveSourceState.value != null,
-                        fullExportSelected = archiveExportSelected.value &&
-                                archiveExportMode.value == MatchArchiveExportMode.FULL_FORENSIC &&
-                                archiveSourceState.value != null,
-                        exportInProgress = archiveExportInProgress.value,
-                        exportStatus = archiveExportStatus.value,
-                        onExportCompact = { requestArchiveExport(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) },
-                        onExportFull = { requestArchiveExport(MatchArchiveExportMode.FULL_FORENSIC) },
-                        onOpenMatch = {
-                            navController.navigate("match_archive_directory")
+                        onOpenMatches = { navController.navigate("match_archive_directory") },
+                        onInspect = { archive, uri ->
+                            openedArchiveUri.value = uri
+                            openedArchive.value = archive
                         },
-                        openSelected = archiveOpenSelected.value
+                        onUp = { upHandler = it },
+                        onDown = { downHandler = it },
+                        onLeft = { leftHandler = it },
+                        onRight = { rightHandler = it },
+                        onA = { aHandler = it },
+                        onB = { bHandler = it }
                     )
                 }
             }
@@ -1503,6 +1389,12 @@ fun PokedexApp(
                             },
                             resolveFastMoves = { speciesName ->
                                 viewModel.getPokemonByName(speciesName)?.fastMoves.orEmpty()
+                            },
+                            resolveChargedMoveType = { speciesName, moveName ->
+                                viewModel.getPokemonByName(speciesName)?.chargedMoves?.firstOrNull {
+                                    it.name.uppercase().filter(Char::isLetterOrDigit) ==
+                                        moveName.uppercase().filter(Char::isLetterOrDigit)
+                                }?.type
                             },
                             resolveArchivedSpeciesCrops = { selectedArchive, progress ->
                                 val uri = openedArchiveUri.value

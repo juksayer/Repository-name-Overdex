@@ -158,14 +158,7 @@ class ArchiveDirectoryManager(private val context: Context) {
             val destination = File(internalArchiveDirectory, fileName)
             val staged = File(internalArchiveDirectory, ".$fileName.tmp")
             temporary.copyTo(staged, overwrite = true)
-            if (destination.exists() && !destination.delete()) {
-                staged.delete()
-                throw java.io.IOException("Unable to replace internal match checkpoint.")
-            }
-            if (!staged.renameTo(destination)) {
-                staged.delete()
-                throw java.io.IOException("Unable to publish internal match checkpoint.")
-            }
+            publishStagedMatchArchive(staged, destination)
             return FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.archive-files",
@@ -186,6 +179,16 @@ class ArchiveDirectoryManager(private val context: Context) {
         realityTimeline: RealityTimeline,
         mode: MatchArchiveExportMode,
         onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
+    ): Uri? = exportArchiveToDownloads(
+        RealityArticleArchiveMapper.createArchive(matchId, realityTimeline.getArticles().filter { it.matchId == matchId }),
+        mode, onArtifactVerified
+    )
+
+    /** Exports an already loaded snapshot, including after process recreation. */
+    fun exportArchiveToDownloads(
+        archive: MatchArchive,
+        mode: MatchArchiveExportMode,
+        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS", Locale.ROOT)
         val archiveKind = if (mode == MatchArchiveExportMode.FULL_FORENSIC) "full" else "compact"
@@ -195,12 +198,10 @@ class ArchiveDirectoryManager(private val context: Context) {
         var publishedUri: Uri? = null
         try {
             FileOutputStream(temporary).use {
-                MatchArchiveExporter.export(
-                    realityTimeline,
-                    matchId,
+                MatchArchivePackageWriter.write(
+                    archive.copy(articles = MatchArchiveArticleSelector.select(archive.articles, mode)),
                     it,
                     context.filesDir,
-                    mode,
                     onArtifactVerified
                 )
             }

@@ -10,6 +10,17 @@ import kotlinx.serialization.Serializable
 sealed interface ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_charge_button_touch_witnessed")
+data class ArchivedPlayerChargeButtonTouchWitnessed(
+    val slot: Int, val x: Float, val y: Float,
+    val displayWidth: Int, val displayHeight: Int, val rawText: String,
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_charge_move_label_read")
+data class ArchivedPlayerChargeMoveLabelRead(val slot: Int, val text: String) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("raw_text")
 data class ArchivedRawText(
     val value: String
@@ -140,6 +151,20 @@ data class ArchivedAudioCaptured(
 data class ArchivedStatChangeSoundMeasured(
     val cue: String, val referenceSha256: String, val similarity: Float,
     val runnerUpSimilarity: Float, val durationNanos: Long,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("match_result_music_measured")
+data class ArchivedMatchResultMusicMeasured(
+    val theme: String, val referenceSha256: String,
+    val similarity: Float, val runnerUpSimilarity: Float,
+    val referenceOffsetNanos: Long, val durationNanos: Long, val confirmingWindows: Int = 2,
+    val followingWindowSimilarity: Float? = null, val followingWindowRunnerUpSimilarity: Float? = null,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("match_result_music_compared")
+data class ArchivedMatchResultMusicCompared(
+    val musicTheme: String, val recordedResult: String, val agrees: Boolean,
+    val musicArticleId: String, val resultArticleId: String,
 ) : ArchivedTestimonyPayload
 
 @Serializable @SerialName("stat_change_observed")

@@ -243,6 +243,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private var activeCheckpointJob: Job? = null
     /** A Match record is retained once, whether it ends by a result or capture stops early. */
     private val retainedMatchIds = Collections.synchronizedSet(mutableSetOf<String>())
+    // Accessed on the UI collector; only waiting refresh jobs are cancelled, never a write.
+    private val resultMusicArchiveRefreshes = mutableMapOf<String, Job>()
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
@@ -456,6 +458,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             match.articles.collect { article ->
                 if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed")
+                // Result music and OCR can arrive seconds apart. Preserve late comparisons
+                // in the same completed archive instead of losing them after the first save.
+                if ((article.payload is com.example.overdex.battle.custody.MatchResultMusicMeasured ||
+                    article.payload is com.example.overdex.battle.custody.MatchResultMusicCompared) &&
+                    retainedMatchIds.contains(match.matchId)) {
+                    resultMusicArchiveRefreshes.remove(match.matchId)?.cancel()
+                    resultMusicArchiveRefreshes[match.matchId] = viewModelScope.launch {
+                        delay(300)
+                        resultMusicArchiveRefreshes.remove(match.matchId)
+                        archiveCompletedMatch(MatchArchiveSource(MatchId(match.matchId), match.realityTimeline),
+                            "result music evidence")
+                    }
+                }
             }
         }
         _activeMatch.value = match
@@ -663,8 +678,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ) },
             ))
             observationDispatcher.register(com.example.overdex.battle.observation.StatChangeAttributionWitness(getApplication()))
+            observationDispatcher.register(com.example.overdex.battle.audio.ResultMusicWitness(
+                getApplication(), audioArtifactStore, isEnabled = { battleEvidenceLive() },
+            ))
         } else {
             // Coverage is itself evidence: no cry could have been heard without the microphone.
+            match.custody.submitAvailability(
+                SourceId("RESULT_MUSIC_WITNESS"), false, System.currentTimeMillis()
+            )
             match.custody.submitAvailability(
                 sourceId = SourceId("BATTLE_CRY_AUDIO_CAPTURE"),
                 available = false,
@@ -830,6 +851,21 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             LivePlayerChargeMoveEnergyFillWitness(input, calibration, battleEvidenceLive)
         )
         observationDispatcher.register(PersistedPlayerChargeMoveEnergyFillCadenceWitness())
+        // Optional visual input evidence. Android continues receiving all gameplay
+        // input normally; only the developer coordinate strip's pixels are read.
+        val pointerStripEnabled = android.provider.Settings.System.getInt(
+            getApplication<android.app.Application>().contentResolver, "pointer_location", 0
+        ) == 1
+        (0..2).forEach { slot ->
+            observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
+                input, calibration, cropArtifactStore,
+                isEnabled = {
+                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE &&
+                        (slot != 0 || pointerStripEnabled)
+                },
+                slot = slot,
+            ))
+        }
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
             BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture Witness",
@@ -1150,13 +1186,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val source = MatchArchiveSource(MatchId(match.matchId), match.realityTimeline)
         fieldMatchLedger.complete(source)
         _latestMatchArchiveSource.value = source
+        archiveCompletedMatch(source, reason)
+    }
+
+    private fun archiveCompletedMatch(source: MatchArchiveSource, reason: String) {
         archiveScope.launch {
             runCatching {
                 archiveMutex.withLock {
                     archiveDirectoryManager.exportMatch(
                         source.matchId,
                         source.realityTimeline,
-                        MatchArchiveExportMode.COMPACT_CITED_EVIDENCE
+                        MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
+                        requestedFileName = com.example.overdex.battle.archive.completedMatchArchiveName(
+                            source.matchId, source.realityTimeline.getArticles().firstOrNull()?.perceivedAt ?: 0L)
                     )
                 }
             }.onSuccess { uri ->

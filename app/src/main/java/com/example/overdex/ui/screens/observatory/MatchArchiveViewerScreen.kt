@@ -42,7 +42,9 @@ import java.util.Locale
 private enum class ArchiveViewerAction {
     OPEN_REPLAY,
     MARK_START,
-    MARK_END_AND_SAVE;
+    MARK_END_AND_SAVE,
+    DETAILS,
+    BACK;
 
     fun move(delta: Int): ArchiveViewerAction {
         val values = entries
@@ -66,6 +68,7 @@ fun MatchArchiveViewerScreen(
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
 ) {
@@ -125,6 +128,7 @@ fun MatchArchiveViewerScreen(
             onLcdContentUpdate = onLcdContentUpdate,
             resolveSpeciesId = resolveSpeciesId,
             resolveFastMoveType = resolveFastMoveType,
+            resolveChargedMoveType = resolveChargedMoveType,
             resolveFastMoves = resolveFastMoves,
             resolveArchivedSpeciesCrops = resolveArchivedSpeciesCrops
         )
@@ -171,6 +175,8 @@ fun MatchArchiveViewerScreen(
                     ArchiveViewerAction.MARK_START -> markStart()
                     ArchiveViewerAction.MARK_END_AND_SAVE -> markEndAndSave()
                     ArchiveViewerAction.OPEN_REPLAY -> showReplay = true
+                    ArchiveViewerAction.DETAILS -> showDetails = selectedArticle != null
+                    ArchiveViewerAction.BACK -> onBack()
                 }
             }
         }
@@ -195,8 +201,11 @@ fun MatchArchiveViewerScreen(
                 selected = selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE,
                 enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null)
             excerptStatus?.let { MatchLcdText(it) }
-            MatchLcdButton(if (showDetails) "CLOSE DETAILS" else "ARTICLE DETAILS", { showDetails = !showDetails }, enabled = selectedArticle != null)
-            MatchLcdButton("BACK", onBack)
+            MatchLcdButton(if (showDetails) "CLOSE DETAILS" else "ARTICLE DETAILS", {
+                selectedAction = ArchiveViewerAction.DETAILS
+                showDetails = !showDetails
+            }, selected = selectedAction == ArchiveViewerAction.DETAILS, enabled = selectedArticle != null)
+            MatchLcdButton("BACK", onBack, selected = selectedAction == ArchiveViewerAction.BACK)
             MatchLcdText("←/→ ACTION   ↑/↓ ARTICLE   A SELECT")
         }
     }
@@ -277,10 +286,14 @@ private fun ArchiveArticleRow(
         }
 
         val payloadText = when (val p = article.payload) {
+            is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}]"
+            is com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (p.agrees) "AGREES" else "CONFLICTS"} [music=${p.musicTheme}; recorded=${p.recordedResult}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, move=${p.moveName ?: "unresolved"}, basis=${p.basis}]"
-            is ArchivedRawText -> p.value
+            is com.example.overdex.battle.archive.ArchivedPlayerChargeButtonTouchWitnessed -> "PLAYER BUTTON CONTACT [slot=${p.slot}, X=${p.x}, Y=${p.y}, display=${p.displayWidth}×${p.displayHeight}; intent only]"
+                is com.example.overdex.battle.archive.ArchivedPlayerChargeMoveLabelRead -> "PLAYER MOVE LABEL [slot=${p.slot}]: ${p.text}"
+                is ArchivedRawText -> p.value
             is ArchivedRawInt -> p.value.toString()
             is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
             is ArchivedBattleOverlayOpened -> "BATTLE OVERLAY OPENED [reason=${p.reason}]"
@@ -390,9 +403,13 @@ private fun ArticleDetailsOverlay(
             DetailField(label = "SOURCE ID", value = article.sourceId)
             
             val payloadText = when (val p = article.payload) {
+                is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}; reference=${p.referenceSha256}; reference offset=${p.referenceOffsetNanos}; duration=${p.durationNanos}]"
+                is com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (p.agrees) "AGREES" else "CONFLICTS"} [music=${p.musicTheme}; recorded=${p.recordedResult}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}, reference=${p.referenceSha256}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, nominal stages=${p.stages ?: "unknown"}, move=${p.moveName ?: "unresolved"}, sound=${p.soundArticleId}, basis=${p.basis}]"
+                is com.example.overdex.battle.archive.ArchivedPlayerChargeButtonTouchWitnessed -> "PLAYER BUTTON CONTACT [slot=${p.slot}, X=${p.x}, Y=${p.y}, display=${p.displayWidth}×${p.displayHeight}; intent only]"
+                is com.example.overdex.battle.archive.ArchivedPlayerChargeMoveLabelRead -> "PLAYER MOVE LABEL [slot=${p.slot}]: ${p.text}"
                 is ArchivedRawText -> p.value
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"

@@ -187,6 +187,21 @@ class CalibrationManager(context: Context) {
             .putFloat("trainer_charge_move_controls_w", calibration.trainerChargeMoveControlsRegion.width)
             .putFloat("trainer_charge_move_controls_h", calibration.trainerChargeMoveControlsRegion.height)
 
+            .putFloat("pointer_coordinates_x", calibration.pointerCoordinatesRegion.x)
+            .putFloat("pointer_coordinates_y", calibration.pointerCoordinatesRegion.y)
+            .putFloat("pointer_coordinates_w", calibration.pointerCoordinatesRegion.width)
+            .putFloat("pointer_coordinates_h", calibration.pointerCoordinatesRegion.height)
+
+            .putFloat("player_charge_move_name_left_x", calibration.playerChargeMoveNameLeftRegion.x)
+            .putFloat("player_charge_move_name_left_y", calibration.playerChargeMoveNameLeftRegion.y)
+            .putFloat("player_charge_move_name_left_w", calibration.playerChargeMoveNameLeftRegion.width)
+            .putFloat("player_charge_move_name_left_h", calibration.playerChargeMoveNameLeftRegion.height)
+
+            .putFloat("player_charge_move_name_right_x", calibration.playerChargeMoveNameRightRegion.x)
+            .putFloat("player_charge_move_name_right_y", calibration.playerChargeMoveNameRightRegion.y)
+            .putFloat("player_charge_move_name_right_w", calibration.playerChargeMoveNameRightRegion.width)
+            .putFloat("player_charge_move_name_right_h", calibration.playerChargeMoveNameRightRegion.height)
+
             .putFloat("trainer_inactive_pokemon_x", calibration.trainerInactivePokemonRegion.x)
             .putFloat("trainer_inactive_pokemon_y", calibration.trainerInactivePokemonRegion.y)
             .putFloat("trainer_inactive_pokemon_w", calibration.trainerInactivePokemonRegion.width)
@@ -599,6 +614,12 @@ class CalibrationManager(context: Context) {
             )
         }
 
+        fun loadExtraRegion(key: String, fallback: AnchorRegion) = AnchorRegion(
+            x = prefs.getFloat("${key}_x", fallback.x),
+            y = prefs.getFloat("${key}_y", fallback.y),
+            width = prefs.getFloat("${key}_w", fallback.width),
+            height = prefs.getFloat("${key}_h", fallback.height)
+        )
         return BattleCalibration(
             enemyNameRegion = enemyRegion,
             hpBarRegion = hpRegion,
@@ -623,6 +644,9 @@ class CalibrationManager(context: Context) {
             opponentHpRegion = opponentHpRegion,
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
+            pointerCoordinatesRegion = loadExtraRegion("pointer_coordinates", BattleCalibration().pointerCoordinatesRegion),
+            playerChargeMoveNameLeftRegion = loadExtraRegion("player_charge_move_name_left", BattleCalibration().playerChargeMoveNameLeftRegion),
+            playerChargeMoveNameRightRegion = loadExtraRegion("player_charge_move_name_right", BattleCalibration().playerChargeMoveNameRightRegion),
             trainerInactivePokemonRegion = trainerInactivePokemonRegion,
             battlePartyTabsRegion = battlePartyTabsRegion,
             outOfBattleMenuRegion = outOfBattleMenuRegion,

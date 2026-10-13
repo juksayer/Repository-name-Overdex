@@ -10,5 +10,8 @@ import android.graphics.Bitmap
 data class CapturedVisualFrame(
     val bitmap: Bitmap,
     val capturedAtWallTimeMillis: Long,
-    val capturedAtMonotonicTimeNanos: Long
+    val capturedAtMonotonicTimeNanos: Long,
+    /** Full-display coordinate space used by Android's Pointer Location overlay. */
+    val displayWidth: Int? = null,
+    val displayHeight: Int? = null
 )

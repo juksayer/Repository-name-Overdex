@@ -5,6 +5,10 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognizer
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * The sole bitmap entry point for ML Kit text recognition.
@@ -18,7 +22,11 @@ import kotlinx.coroutines.tasks.await
 suspend fun TextRecognizer.read(bitmap: Bitmap): Text {
     val scaled = bitmap.scaledForMlKitText()
     return try {
-        process(InputImage.fromBitmap(scaled, 0)).await()
+        // Task.await cancellation does not cancel ML Kit's native work. Keep
+        // ownership of the bitmap and admission slot until that work finishes.
+        val result = withContext(NonCancellable) { process(InputImage.fromBitmap(scaled, 0)).await() }
+        currentCoroutineContext().ensureActive()
+        result
     } finally {
         if (scaled !== bitmap) scaled.recycle()
     }

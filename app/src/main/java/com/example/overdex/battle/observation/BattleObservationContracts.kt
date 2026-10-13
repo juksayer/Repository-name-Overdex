@@ -37,6 +37,9 @@ enum class BattleRegionId {
     OPPONENT_HP,
     CHARGE_MOVE_EXECUTION,
     PLAYER_CHARGE_MOVE_CONTROLS,
+    POINTER_COORDINATES,
+    PLAYER_CHARGE_MOVE_NAME_LEFT,
+    PLAYER_CHARGE_MOVE_NAME_RIGHT,
     PLAYER_INACTIVE_POKEMON,
     COUNTDOWN,
     VS_SCREEN,
@@ -60,6 +63,9 @@ enum class BattleRegionId {
         OPPONENT_HP -> calibration.opponentHpRegion
         CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
         PLAYER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
+        POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
+        PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
+        PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
         PLAYER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         COUNTDOWN -> calibration.countdownRegion
         VS_SCREEN -> calibration.vsScreenRegion
@@ -156,6 +162,9 @@ object BattleCropContracts {
     val opponentTeamStatus = BattleCropContract("OpponentTeamStatusCrop", BattleRegionId.OPPONENT_TEAM_INFO)
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
     val playerChargeMoveControls = BattleCropContract("PlayerChargeMoveControlsCrop", BattleRegionId.PLAYER_CHARGE_MOVE_CONTROLS)
+    val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
+    val playerChargeMoveNameLeft = BattleCropContract("PlayerChargeMoveNameLeftCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_LEFT)
+    val playerChargeMoveNameRight = BattleCropContract("PlayerChargeMoveNameRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT)
     val announcement = BattleCropContract("AnnouncementCrop", BattleRegionId.ANNOUNCEMENT, minimumSize = 32)
     val matchOutcome = BattleCropContract("MatchOutcomeCrop", BattleRegionId.MATCH_OUTCOME, minimumSize = 32)
     val outOfBattleMenu = BattleCropContract("OutOfBattleMenuCrop", BattleRegionId.OUT_OF_BATTLE_MENU, minimumSize = 32)

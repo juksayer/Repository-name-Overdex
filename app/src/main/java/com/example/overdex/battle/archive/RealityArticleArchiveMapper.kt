@@ -64,6 +64,10 @@ object RealityArticleArchiveMapper {
         val mId = article.matchId ?: throw IllegalArgumentException("RealityArticle ${article.id.value} has a null matchId and cannot be archived.")
 
         val archivedPayload: ArchivedTestimonyPayload = when (val p = article.payload) {
+            is com.example.overdex.battle.custody.PlayerChargeButtonTouchWitnessed -> ArchivedPlayerChargeButtonTouchWitnessed(
+                p.slot, p.x, p.y, p.displayWidth, p.displayHeight, p.rawText
+            )
+            is com.example.overdex.battle.custody.PlayerChargeMoveLabelRead -> ArchivedPlayerChargeMoveLabelRead(p.slot, p.text)
             is RawTestimony -> {
                 when (val data = p.data) {
                     is String -> ArchivedRawText(data)
@@ -154,6 +158,13 @@ object RealityArticleArchiveMapper {
                 p.status, p.candidateCue, p.similarity, p.runnerUpSimilarity)
             is com.example.overdex.battle.custody.StatChangeSoundMeasured -> ArchivedStatChangeSoundMeasured(
                 p.cue, p.referenceSha256, p.similarity, p.runnerUpSimilarity, p.durationNanos
+            )
+            is com.example.overdex.battle.custody.MatchResultMusicMeasured -> ArchivedMatchResultMusicMeasured(
+                p.theme, p.referenceSha256, p.similarity, p.runnerUpSimilarity, p.referenceOffsetNanos,
+                p.durationNanos, p.confirmingWindows, p.followingWindowSimilarity, p.followingWindowRunnerUpSimilarity
+            )
+            is com.example.overdex.battle.custody.MatchResultMusicCompared -> ArchivedMatchResultMusicCompared(
+                p.musicTheme, p.recordedResult, p.agrees, p.musicArticleId, p.resultArticleId
             )
             is com.example.overdex.battle.custody.StatChangeObserved -> ArchivedStatChangeObserved(
                 p.affectedSide?.name, p.stat, p.direction, p.stages, p.moveName, p.soundArticleId, p.basis

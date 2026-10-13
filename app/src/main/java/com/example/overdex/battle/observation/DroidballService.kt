@@ -537,7 +537,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     val frame = CapturedVisualFrame(
                         bitmap = bitmap,
                         capturedAtWallTimeMillis = capturedAtWallTimeMillis,
-                        capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos
+                        capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos,
+                        displayWidth = width,
+                        displayHeight = height
                     )
                     publicationAttempts++
                     val emitSucceeded = _frames.tryEmit(frame)

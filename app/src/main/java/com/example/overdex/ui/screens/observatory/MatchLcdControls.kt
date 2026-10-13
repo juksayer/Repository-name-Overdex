@@ -8,7 +8,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -50,8 +54,11 @@ internal fun MatchLcdButton(
     selected: Boolean = false,
     enabled: Boolean = true
 ) {
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(selected) { if (selected) requester.bringIntoView() }
     OutlinedButton(onClick = onClick, enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = 40.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 40.dp)
+            .bringIntoViewRequester(requester).semantics { this.selected = selected },
         contentPadding = PaddingValues(horizontal = 5.dp, vertical = 4.dp),
         border = BorderStroke(1.dp, TerminalGreen.copy(alpha = if (selected) 1f else 0.35f)),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = TerminalGreen,

@@ -6,6 +6,32 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MatchOutcomeCaptureGateTest {
+    @Test fun `result music opens a bounded OCR probe without requiring missing badge counts`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeResultMusic(now)
+        assertFalse("Menu music before a battle cannot arm result OCR", gate.isEnabled())
+        gate.observeMatchStarted(1_000_000_000)
+        gate.observeResultMusic(now)
+        assertTrue(gate.isEnabled())
+        now += 10_000_000_001
+        assertFalse(gate.isEnabled())
+        gate.observeMatchEnded()
+        gate.observeResultMusic(now)
+        assertFalse("A result is never reopened by its soundtrack", gate.isEnabled())
+    }
+
+    @Test fun `stale and future music timestamps do not open result OCR`() {
+        val gate = MatchOutcomeCaptureGate { 100_000_000_000 }
+        gate.observeMatchStarted(20_000_000_000)
+        gate.observeResultMusic(10_000_000_000)
+        assertFalse(gate.isEnabled())
+        gate.observeResultMusic(50_000_000_000)
+        assertFalse(gate.isEnabled())
+        gate.observeResultMusic(110_000_000_000)
+        assertFalse(gate.isEnabled())
+    }
+
     @Test fun `red hp stays dormant for teams with reserves`() {
         var now = 1_000_000_000L
         val gate = MatchOutcomeCaptureGate { now }

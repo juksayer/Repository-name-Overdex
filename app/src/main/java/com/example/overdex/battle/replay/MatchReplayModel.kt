@@ -14,6 +14,8 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.observation.EntryAnnouncementSideTracker
 import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
 import com.example.overdex.battle.archive.ArchivedMatchEnded
+import com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured
+import com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared
 import com.example.overdex.battle.archive.ArchivedMatchStarted
 import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
 import com.example.overdex.battle.archive.ArchivedFastMoveEffectivenessWitnessed
@@ -49,7 +51,8 @@ class MatchReplayModel(
     speciesIdsByName: Map<String, Int> = emptyMap(),
     archivedCropIdentities: List<ReplayIdentityObservation> = emptyList(),
     private val fastMoveTypesByName: Map<String, PokemonType> = emptyMap(),
-    fastMovesBySpeciesName: Map<String, List<Move>> = emptyMap()
+    fastMovesBySpeciesName: Map<String, List<Move>> = emptyMap(),
+    private val chargedMoveTypesByName: Map<String, PokemonType> = emptyMap(),
 ) {
     val timedArticles: List<ArchivedRealityArticle> = archive.articles
         .filter { it.monotonicTimeNanos != null }
@@ -247,6 +250,11 @@ class MatchReplayModel(
             if (!preparing && "OPEN_CHARGE_SEQUENCE" in use.evidenceKinds) return@mapNotNull null
             if (!preparing && ageNanos !in 0 until CHARGE_MOVE_VISUAL_NANOS) return@mapNotNull null
             if (articles.any { it.payload is ArchivedMatchEnded }) return@mapNotNull null
+            // The grade's brief text may expire, but its growth lasts through
+            // this charge's release. Cursor lookup also restores reverse scrubs.
+            val milestone = replayQteMilestones.lastOrNull {
+                it.side == use.side && it.atNanos in use.preparationAtNanos..minOf(monotonicTimeNanos, use.animationAtNanos)
+            }
             ReplayChargedMoveAction(
                 side = use.side,
                 moveName = use.moveName,
@@ -256,6 +264,11 @@ class MatchReplayModel(
                 evidenceKinds = use.evidenceKinds,
                 phase = if (preparing) ReplayChargePhase.CHARGING else ReplayChargePhase.STRIKING,
                 elapsedNanos = monotonicTimeNanos - use.preparationAtNanos,
+                type = use.moveName?.let { chargedMoveTypesByName[normalizeSpeciesName(it)] },
+                qteLevel = milestone?.let { QTE_MILESTONE_LABELS.indexOf(it.label) + 1 } ?: 0,
+                qteLevelProgress = milestone?.let {
+                    ((monotonicTimeNanos - it.atNanos).toFloat() / 180_000_000L).coerceIn(0f, 1f)
+                } ?: 1f,
             )
         }
 
@@ -399,6 +412,8 @@ class MatchReplayModel(
 
 
     private fun payloadLabel(payload: Any): String = when (payload) {
+        is ArchivedMatchResultMusicMeasured -> "RESULT MUSIC: ${payload.theme}"
+        is ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (payload.agrees) "AGREES" else "CONFLICTS"}: ${payload.recordedResult}"
         is ArchivedStatChangeSoundMeasured -> "STAT SOUND: ${payload.cue.replace('_', ' ')}"
         is ArchivedStatChangeObserved -> "STAT CHANGE: ${payload.affectedSide ?: "SIDE UNCONFIRMED"} ${payload.stat} ${if (payload.direction > 0) "↑" else "↓"}"
         is ArchivedPokemonIdentified -> "SPECIES: ${payload.species}"
@@ -1153,6 +1168,9 @@ data class ReplayChargedMoveAction(
     val evidenceKinds: Set<String> = emptySet(),
     val phase: ReplayChargePhase = ReplayChargePhase.STRIKING,
     val elapsedNanos: Long = 0L,
+    val type: PokemonType? = null,
+    val qteLevel: Int = 0,
+    val qteLevelProgress: Float = 1f,
 )
 
 enum class ReplayChargePhase { CHARGING, STRIKING }

@@ -56,7 +56,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
@@ -70,10 +69,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.archive.ArchivedFastMoveIdentified
+import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.replay.ReplayFastMoveAction
 import com.example.overdex.battle.replay.ReplayChargedMoveAction
 import com.example.overdex.battle.replay.ReplayChargePhase
 import com.example.overdex.battle.replay.ReplayChargePose
+import com.example.overdex.battle.replay.ReplayScene
 import com.example.overdex.battle.replay.ReplayCropProgress
 import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
@@ -110,6 +111,7 @@ fun MatchReplayScreen(
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
+    resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     initialCursorNanos: Long? = null,
@@ -140,13 +142,22 @@ fun MatchReplayScreen(
     val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
         value = referencedNames.associateWith { resolveFastMoves(it) }
     }
-    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies) {
+    val chargedMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
+        value = archive.articles.mapNotNull { it.payload as? ArchivedChargedMoveEnergySpent }
+            .distinctBy { it.speciesName to it.moveName }.mapNotNull { move ->
+                resolveChargedMoveType(move.speciesName, move.moveName)?.let {
+                    move.moveName.uppercase().filter(Char::isLetterOrDigit) to it
+                }
+            }.toMap()
+    }
+    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies, chargedMoveTypes) {
         MatchReplayModel(
             archive,
             speciesIds,
             archivedCropIdentities.orEmpty(),
             fastMoveTypes,
-            fastMovesBySpecies
+            fastMovesBySpecies,
+            chargedMoveTypes,
         )
     }
     var cursor by remember(archive, initialCursorNanos) {
@@ -332,6 +343,11 @@ fun MatchReplayScreen(
         }
     }
 
+    ReplayBattlefield(scene, cursor, context)
+}
+
+@Composable
+internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Context) {
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -344,6 +360,13 @@ fun MatchReplayScreen(
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val travelHalfWidth = (maxWidth / 4).coerceAtLeast(0.dp)
                 val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
+                // Build the same icon below the sprite, then draw it above the
+                // scene while in flight. It never becomes a separate spinner.
+                scene.chargedMoveActions.filter { ReplayChargePose.at(it, it.side == "PLAYER").projectileProgress == 0f }
+                    .forEach { action ->
+                        ChargedMoveReplayIndicator(action, travelHalfWidth, spriteSize * 1.15f,
+                            spriteSize * 0.9f, Modifier.align(Alignment.Center))
+                    }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).align(Alignment.Center),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -387,17 +410,11 @@ fun MatchReplayScreen(
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
                 }
-                scene.chargedMoveActions.lastOrNull()?.let { action ->
-                    val charging = action.phase == ReplayChargePhase.CHARGING
-                    Text(
-                        text = if (charging) "CHARGING" else action.moveName?.uppercase() ?: "CHARGED ATTACK",
-                        color = Color(0xFFFFD54F), fontSize = 22.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
-                    )
-                    if (action.side == "UNKNOWN") {
-                        ReplayChargeHalo(action, false, Modifier.align(Alignment.Center))
+                scene.chargedMoveActions.filter { ReplayChargePose.at(it, it.side == "PLAYER").projectileProgress > 0f }
+                    .forEach { action ->
+                        ChargedMoveReplayIndicator(action, travelHalfWidth, spriteSize * 1.15f,
+                            spriteSize * 0.9f, Modifier.align(Alignment.Center))
                     }
-                }
                 scene.countdownGlyph?.let { glyph ->
                     Text(
                         text = glyph,
@@ -535,27 +552,6 @@ internal fun ReplayCombatantSlot(
         modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (chargedAction != null && !down) ReplayChargeHalo(chargedAction, useBackSprite)
-        val qteLevel = when (qteMilestone.takeUnless { down }) {
-            "NICE" -> 1
-            "GREAT" -> 2
-            "EXCELLENT" -> 3
-            else -> 0
-        }
-        if (qteLevel > 0) {
-            val glowColor = when (qteLevel) {
-                1 -> Color.White
-                2 -> Color(0xFFFFD54F)
-                else -> Color(0xFFFF8A65)
-            }
-            Box(
-                Modifier
-                    .size((132 + qteLevel * 8).dp)
-                    .alpha(0.18f + qteLevel * 0.08f)
-                    .background(glowColor.copy(alpha = 0.22f), CircleShape)
-                    .border(qteLevel.dp, glowColor.copy(alpha = 0.72f), CircleShape)
-            )
-        }
         combatant?.speciesId?.let { speciesId ->
             AsyncImage(
                 model = LocalSpriteProvider(context.assets).let { sprites ->
@@ -633,20 +629,46 @@ internal fun ReplayCombatantSlot(
 }
 
 @Composable
-internal fun ReplayChargeHalo(action: ReplayChargedMoveAction, player: Boolean, modifier: Modifier = Modifier) {
+internal fun ChargedMoveReplayIndicator(
+    action: ReplayChargedMoveAction,
+    travelHalfWidth: androidx.compose.ui.unit.Dp,
+    playerSpriteSize: androidx.compose.ui.unit.Dp,
+    opponentSpriteSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
+) {
+    val player = action.side == "PLAYER"
+    val attributed = action.side == "PLAYER" || action.side == "OPPONENT"
     val pose = ReplayChargePose.at(action, player)
-    Canvas(modifier.size(146.dp).semantics {
-        contentDescription = if (action.phase == ReplayChargePhase.CHARGING) "Charging move" else "Charged move impact"
-    }) {
-        val radius = size.minDimension * 0.43f * pose.haloScale
-        val gold = Color(0xFFFFD54F)
-        drawCircle(gold.copy(alpha = pose.haloAlpha * 0.3f), radius)
-        drawCircle(gold.copy(alpha = pose.haloAlpha), radius, style = Stroke(3.dp.toPx()))
-        drawArc(gold.copy(alpha = pose.haloAlpha),
-            startAngle = (action.elapsedNanos % 1_500_000_000L) / 1_500_000_000f * 360f,
-            sweepAngle = 100f, useCenter = false,
-            topLeft = center - Offset(radius, radius), size = Size(radius * 2, radius * 2),
-            style = Stroke(5.dp.toPx()))
+    val flight = pose.projectileProgress
+    val direction = if (player) 1f else -1f
+    val footY = (if (player) playerSpriteSize else opponentSpriteSize) * 0.37f +
+        if (player) 24.dp else 0.dp
+    val targetY = if (player) 0.dp else 24.dp
+    val color = action.type?.color ?: Color(0xFF88AFA0)
+    Box(modifier
+        .offset(x = if (attributed) travelHalfWidth * direction * (2f * flight - 1f) else 0.dp,
+            y = if (attributed) footY * (1f - flight) + targetY * flight else 0.dp)
+        .graphicsLayer {
+            translationY = if (attributed) {
+                (pose.risePixels + if (player) 25f else 0f) * (1f - flight) +
+                    (if (player) 0f else 25f) * flight - 18f * sin(flight * Math.PI).toFloat()
+            } else 0f
+            alpha = pose.iconAlpha
+            scaleX = pose.iconScale
+            scaleY = pose.iconScale
+        }
+        .size(54.dp)
+        .semantics(mergeDescendants = true) {
+            contentDescription = if (flight > 0f) "Charged move projectile" else "Charging move"
+            stateDescription = "${action.side}: ${action.moveName ?: "Move unconfirmed"}; " +
+                "${action.type?.name ?: "type unconfirmed"}; QTE level ${action.qteLevel}"
+        }, contentAlignment = Alignment.Center) {
+        if (action.type != null) {
+            PokemonTypeIcon(action.type, modifier = Modifier.fillMaxSize(), style = TypeIconStyle.OVERDEX)
+        } else {
+            // Missing identity never borrows the combatant's own type.
+            Box(Modifier.size(42.dp).border(2.dp, color, CircleShape))
+        }
     }
 }
 

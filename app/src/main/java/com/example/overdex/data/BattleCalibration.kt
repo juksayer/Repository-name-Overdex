@@ -119,6 +119,15 @@ data class BattleCalibration(
         width = (980f - 100f) / 1080f,
         height = (2245f - 1940f) / 2400f
     ),
+    val pointerCoordinatesRegion: AnchorRegion = AnchorRegion(
+        x = 0f, y = 82f / 2400f, width = 3f / 7f, height = 44f / 2400f
+    ),
+    val playerChargeMoveNameLeftRegion: AnchorRegion = AnchorRegion(
+        x = 70f / 1080f, y = 2240f / 2400f, width = 460f / 1080f, height = 65f / 2400f
+    ),
+    val playerChargeMoveNameRightRegion: AnchorRegion = AnchorRegion(
+        x = 550f / 1080f, y = 2240f / 2400f, width = 460f / 1080f, height = 65f / 2400f
+    ),
     val trainerInactivePokemonRegion: AnchorRegion = AnchorRegion(
         x = 890f / 1080f,
         y = 1370f / 2400f,
