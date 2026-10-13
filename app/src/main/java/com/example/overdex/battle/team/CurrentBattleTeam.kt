@@ -14,7 +14,8 @@ data class CurrentBattleTeamMember(
     val speciesId: Int,
     val speciesName: String,
     val fastMoveName: String,
-    val chargedMoveNames: List<String>
+    val chargedMoveNames: List<String>,
+    val ownedPokemonId: String? = null,
 ) {
     init {
         require(slot in 1..3)
@@ -39,12 +40,31 @@ data class CurrentBattleTeam(val members: List<CurrentBattleTeamMember> = emptyL
     )
 }
 
-/** Small durable store for the one team currently armed for battle. */
-class CurrentBattleTeamStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+@Serializable
+data class SavedBattleTeam(val id: String, val name: String, val team: CurrentBattleTeam)
+
+/** Active lineup plus reusable named snapshots; older active teams remain readable. */
+class CurrentBattleTeamStore(context: Context, preferencesName: String = PREFERENCES_NAME) {
+    private val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val _team = MutableStateFlow(load())
     val team = _team.asStateFlow()
+    private val _savedTeams = MutableStateFlow(preferences.getString("saved_teams", null)?.let {
+        json.decodeFromString<List<SavedBattleTeam>>(it)
+    }.orEmpty())
+    val savedTeams = _savedTeams.asStateFlow()
+
+    @Synchronized fun saveNamed(name: String, team: CurrentBattleTeam, id: String? = null): SavedBattleTeam {
+        val cleanName = name.trim()
+        require(cleanName.isNotEmpty()) { "Enter a team name." }
+        require(team.members.size == 3) { "A saved battle team needs three Pokémon and their moves." }
+        require(_savedTeams.value.none { it.id != id && it.name.equals(cleanName, true) }) { "That team name is already in use." }
+        val saved = SavedBattleTeam(id ?: java.util.UUID.randomUUID().toString(), cleanName, team.normalized())
+        val updated = _savedTeams.value.filterNot { it.id == saved.id } + saved
+        check(preferences.edit().putString("saved_teams", json.encodeToString(updated)).commit()) { "Unable to save the team." }
+        _savedTeams.value = updated
+        return saved
+    }
 
     fun replace(team: CurrentBattleTeam) {
         val normalized = team.normalized()

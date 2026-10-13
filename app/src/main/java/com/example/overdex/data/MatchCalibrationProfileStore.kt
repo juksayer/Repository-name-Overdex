@@ -192,6 +192,9 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         vsScreenRegion = battleRegions.region("vs_screen", battleDefaults.vsScreenRegion),
         youWinRegion = battleRegions.region("you_win", battleDefaults.youWinRegion),
         goodEffortRegion = battleRegions.region("good_effort", battleDefaults.goodEffortRegion),
+        playerShieldsRegion = battleRegions.region("player_shields", battleRegions.region("opponent_shields", battleDefaults.opponentShieldsRegion).let {
+            it.copy(x = (1f - it.x - it.width).coerceAtLeast(0f))
+        }),
         opponentShieldsRegion = battleRegions.region("opponent_shields", battleDefaults.opponentShieldsRegion),
         playerTeamInfoRegion = battleRegions.region("player_team_info", battleDefaults.playerTeamInfoRegion),
         announcementRegion = battleRegions.region("announcement", battleDefaults.announcementRegion),
@@ -245,6 +248,7 @@ private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedM
     "vs_screen" to vsScreenRegion.stored(),
     "you_win" to youWinRegion.stored(),
     "good_effort" to goodEffortRegion.stored(),
+    "player_shields" to playerShieldsRegion.stored(),
     "opponent_shields" to opponentShieldsRegion.stored(),
     "player_team_info" to playerTeamInfoRegion.stored(),
     "announcement" to announcementRegion.stored(),

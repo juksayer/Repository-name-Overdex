@@ -107,6 +107,7 @@ internal data class ActiveHpBarCadenceMeasurement(
  */
 internal class ActiveHpBarCadenceDetector {
     private var baselineY: Float? = null
+    private var baselineX: Float? = null
     private var baselineHeight: Float = 0f
     private var excursion: Excursion? = null
     private var previousCompletionNanos: Long? = null
@@ -122,6 +123,7 @@ internal class ActiveHpBarCadenceDetector {
     @Synchronized
     fun reset() {
         baselineY = null
+        baselineX = null
         baselineHeight = 0f
         excursion = null
         previousCompletionNanos = null
@@ -134,6 +136,12 @@ internal class ActiveHpBarCadenceDetector {
         monotonicTimeNanos: Long
     ): ActiveHpBarCadenceMeasurement? {
         val centerY = (hp.barTop + hp.barBottom) / 2f
+        val centerX = (hp.barLeft + hp.barRight) / 2f
+        if (baselineX?.let { abs(centerX - it) > (hp.barRight - hp.barLeft) * .10f } == true) {
+            // A lateral camera move must not complete a vertical Fast Move hop.
+            reset()
+        }
+        if (baselineX == null) baselineX = centerX
         val barHeight = (hp.barBottom - hp.barTop).toFloat()
         val baseline = baselineY
         if (baseline == null) {

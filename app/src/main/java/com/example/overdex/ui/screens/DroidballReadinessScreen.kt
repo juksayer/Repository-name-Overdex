@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,17 +34,34 @@ fun DroidballReadinessScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onLaunch: () -> Unit,
     onConfigureTeam: () -> Unit,
+    onChooseTeam: () -> Unit,
     onBack: () -> Unit,
 ) {
     val team by viewModel.currentBattleTeam.collectAsState()
+    val savedTeams by viewModel.selectableBattleTeams.collectAsState()
+    val labels = listOf("LAUNCH POKÉMON GO", "EDIT CURRENT TEAM", "ALL SAVED TEAMS") +
+        savedTeams.map { "USE ${it.name}" }
     var selectedIndex by remember(team.members.size) {
         mutableIntStateOf(if (team.members.size == 3) 0 else 1)
     }
 
     fun activate() {
-        if (selectedIndex == 0) onLaunch() else onConfigureTeam()
+        when (selectedIndex) {
+            0 -> onLaunch()
+            1 -> onConfigureTeam()
+            2 -> onChooseTeam()
+            else -> savedTeams.getOrNull(selectedIndex - 3)?.let {
+                viewModel.saveCurrentBattleTeam(it.team)
+                selectedIndex = 0
+            }
+        }
     }
 
+    val lcdScroll = rememberLazyListState()
+    LaunchedEffect(selectedIndex, labels.size) {
+        selectedIndex = selectedIndex.coerceIn(0, labels.lastIndex)
+        lcdScroll.animateScrollToItem(selectedIndex)
+    }
     ODXFiShell(
         viewModel = viewModel,
         showBattleOverlay = false,
@@ -52,9 +73,18 @@ fun DroidballReadinessScreen(
             "[A] SELECT  [B] BACK",
         ),
         onUp = { selectedIndex = (selectedIndex - 1).coerceAtLeast(0) },
-        onDown = { selectedIndex = (selectedIndex + 1).coerceAtMost(1) },
+        onDown = { selectedIndex = (selectedIndex + 1).coerceAtMost(labels.lastIndex) },
         onA = ::activate,
         onB = onBack,
+        lcdContent = {
+            LazyColumn(Modifier.fillMaxSize().padding(4.dp), state = lcdScroll) {
+                itemsIndexed(labels) { index, label ->
+                    TerminalMenuOption(label, selected = selectedIndex == index, onClick = {
+                        selectedIndex = index; activate()
+                    })
+                }
+            }
+        },
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -83,20 +113,21 @@ fun DroidballReadinessScreen(
                 }
             }
             TerminalMenuOption(
-                label = "YES — LAUNCH POKEMON GO",
+                label = "LAUNCH POKÉMON GO",
                 selected = selectedIndex == 0,
                 onClick = onLaunch,
             )
             TerminalMenuOption(
-                label = "NO — SET TEAM & MOVES",
+                label = "EDIT CURRENT TEAM & MOVES",
                 selected = selectedIndex == 1,
                 onClick = onConfigureTeam,
             )
+            TerminalMenuOption("CHOOSE SAVED TEAM", selected = selectedIndex == 2, onClick = onChooseTeam)
             Text(
                 if (team.members.size == 3) {
-                    "At Team Select, tap Droidball and start the Battle HUD."
+                    "Tap Droidball in GO to change your team, rescan Team Select, or edit moves before battle."
                 } else {
-                    "Complete all three slots before launching Droidball."
+                    "You can also launch now, then tap Droidball → Scan Team Select and choose moves there."
                 },
                 color = TerminalDimGreen,
                 fontSize = 10.sp,

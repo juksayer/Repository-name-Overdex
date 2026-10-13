@@ -33,10 +33,13 @@ class TeamResourceSnapshotGate(
     private val remainingByCrop = cropNames.associateWith { 0 }.toMutableMap()
     private val criticalHpSides = mutableSetOf<ActivePokemonSide>()
     private var faintWatchUntil = Long.MIN_VALUE
+    private var resourceWatchUntil = Long.MIN_VALUE
     private val speciesBySide = mutableMapOf<ActivePokemonSide, String>()
 
     @Synchronized fun isEnabled(cropName: String): Boolean =
-        remainingByCrop.getOrDefault(cropName, 0) > 0 || (cropName in pokeBallCropNames && now() < faintWatchUntil)
+        remainingByCrop.getOrDefault(cropName, 0) > 0 ||
+            (cropName in cropNames && now() < resourceWatchUntil) ||
+            (cropName in pokeBallCropNames && now() < faintWatchUntil)
 
     @Synchronized fun captured(cropName: String) {
         val remaining = remainingByCrop.getOrDefault(cropName, 0)
@@ -51,6 +54,12 @@ class TeamResourceSnapshotGate(
 
     @Synchronized internal fun requestPokeBallSnapshot() = requestSnapshot(pokeBallCropNames)
 
+    /** Give hidden/transitioning badges time to become readable before settling. */
+    @Synchronized internal fun requestResourceWatch() {
+        requestSnapshot()
+        resourceWatchUntil = now() + 3_000_000_000L
+    }
+
     /** Entry/faint animations can hide a badge for the first two frames. */
     @Synchronized internal fun requestFaintWatch() {
         requestPokeBallSnapshot()
@@ -60,7 +69,7 @@ class TeamResourceSnapshotGate(
     @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String) {
         val previous = speciesBySide.put(side, species)
         if (!species.equals(previous, ignoreCase = true)) {
-            requestSnapshot()
+            requestResourceWatch()
             requestFaintWatch()
         }
     }
@@ -95,8 +104,9 @@ class TeamResourceSnapshotGate(
                         is RawTestimony -> if (
                             article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                             (payload.data as? String)?.trim()?.startsWith("Go,", ignoreCase = true) == true
-                        ) { requestSnapshot(); requestFaintWatch() }
-                        is MatchStarted -> { requestSnapshot(); requestFaintWatch() }
+                        ) { requestResourceWatch(); requestFaintWatch() }
+                        is MatchStarted -> { requestResourceWatch(); requestFaintWatch() }
+                        com.example.overdex.battle.custody.ChargeMoveUsedAnnounced -> requestResourceWatch()
                         is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName)
                         is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction)
                         is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction)
@@ -106,7 +116,7 @@ class TeamResourceSnapshotGate(
                         is SpeciesCheckMeasured -> if (
                             payload.status == "OPENED" &&
                             payload.reason in setOf("ENTRY", "SWITCH", "FAINT")
-                        ) { requestSnapshot(); requestFaintWatch() }
+                        ) { requestResourceWatch(); requestFaintWatch() }
                         is MatchEnded -> clearPending()
                     }
                 }
@@ -125,6 +135,7 @@ class TeamResourceSnapshotGate(
         criticalHpSides.clear()
         speciesBySide.clear()
         faintWatchUntil = Long.MIN_VALUE
+        resourceWatchUntil = Long.MIN_VALUE
     }
 
     private companion object {
@@ -190,60 +201,68 @@ class MatchOutcomeCaptureGate(
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
     @Volatile private var battleStartedAt: Long? = null
-    @Volatile private var lastHpSeenAt: Long? = null
+    private val lastHpSeenAt = mutableMapOf<ActivePokemonSide, Long>()
     @Volatile private var probeUntil: Long = 0L
     @Volatile private var ended = false
     @Volatile private var playerBallCount: Int? = null
     @Volatile private var opponentBallCount: Int? = null
-    @Volatile private var finalCriticalHpSeen = false
+    private val finalCriticalHpSides = mutableSetOf<ActivePokemonSide>()
 
-    fun isEnabled(): Boolean {
+    @Synchronized fun isEnabled(): Boolean {
         if (ended) return false
         val current = now()
         if (current <= probeUntil) return true
         battleStartedAt ?: return false
-        if (!isFinalDuel()) return false
-        if (!finalCriticalHpSeen) return false
-        val lastHp = lastHpSeenAt ?: return false
-        return current - lastHp >= BATTLEFIELD_ABSENCE_NANOS
+        return ActivePokemonSide.entries.any { side ->
+            val lastHp = lastHpSeenAt[side] ?: return@any false
+            if (!isLastTeamMember(side)) return@any false
+            val age = current - lastHp
+            (side in finalCriticalHpSides && age in BATTLEFIELD_ABSENCE_NANOS..FINAL_TEAM_PROBE_NANOS) ||
+                age in FINAL_MEMBER_HP_LOST_NANOS..FINAL_MEMBER_RECOVERY_NANOS
+        }
     }
 
     internal fun observeMatchStarted(at: Long) {
         battleStartedAt = at
     }
 
-    internal fun observeActiveHp(at: Long, filledFraction: Float) {
-        lastHpSeenAt = at
+    @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, at: Long, filledFraction: Float) {
+        lastHpSeenAt[side] = at
         if (battleStartedAt == null) battleStartedAt = at
-        // Red HP is common earlier in a battle. It becomes result evidence only
-        // after both badges say that this is the final one-on-one matchup.
-        if (isFinalDuel() && filledFraction <= CRITICAL_HP_FRACTION) {
-            finalCriticalHpSeen = true
+        // Either team can lose its final member while the other still has a
+        // bench. Red HP on a side with reserves must not open this window.
+        if (isLastTeamMember(side) && filledFraction <= CRITICAL_HP_FRACTION) {
+            finalCriticalHpSides += side
             probeUntil = maxOf(probeUntil, at + FAINT_PROBE_NANOS)
+        } else if (filledFraction > CRITICAL_HP_FRACTION) {
+            finalCriticalHpSides -= side
         }
     }
 
-    internal fun observePlayerBallCount(at: Long, visibleCount: Int) {
+    @Synchronized internal fun observePlayerBallCount(at: Long, visibleCount: Int) {
         playerBallCount = visibleCount
         updateTeamState(at)
     }
 
-    internal fun observeOpponentBallCount(at: Long, visibleCount: Int) {
+    @Synchronized internal fun observeOpponentBallCount(at: Long, visibleCount: Int) {
         opponentBallCount = visibleCount
         updateTeamState(at)
     }
 
-    /** Two total means the final duel; one total means one winner remains. */
+    /** A team running out opens a result check; the result text still decides the outcome. */
     private fun updateTeamState(at: Long) {
         val player = playerBallCount ?: return
         val opponent = opponentBallCount ?: return
-        if (player + opponent > 2) finalCriticalHpSeen = false
-        if (player + opponent == 1 && (player == 1 || opponent == 1)) {
+        finalCriticalHpSides.removeAll { !isLastTeamMember(it) }
+        if ((player == 0 && opponent > 0) || (opponent == 0 && player > 0)) {
             probeUntil = maxOf(probeUntil, at + FINAL_TEAM_PROBE_NANOS)
         }
     }
 
-    private fun isFinalDuel(): Boolean = playerBallCount == 1 && opponentBallCount == 1
+    private fun isLastTeamMember(side: ActivePokemonSide): Boolean = when (side) {
+        ActivePokemonSide.PLAYER -> playerBallCount == 1 && (opponentBallCount ?: 0) > 0
+        ActivePokemonSide.OPPONENT -> opponentBallCount == 1 && (playerBallCount ?: 0) > 0
+    }
 
     internal fun observeMatchEnded() {
         ended = true
@@ -257,7 +276,7 @@ class MatchOutcomeCaptureGate(
                     val at = article.monotonicTimeNanos ?: now()
                     when (val payload = article.payload) {
                         is MatchStarted -> observeMatchStarted(at)
-                        is ActiveHpBarMeasured -> observeActiveHp(at, payload.filledFraction)
+                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, at, payload.filledFraction)
                         is PlayerPokeBallCountMeasured -> observePlayerBallCount(at, payload.visibleCount)
                         is OpponentBattleResourceCountMeasured -> if (payload.resource == OpponentBattleResource.POKE_BALLS) {
                             observeOpponentBallCount(at, payload.visibleCount)
@@ -269,22 +288,26 @@ class MatchOutcomeCaptureGate(
         }
     }
 
-    override fun stop() {
+    @Synchronized override fun stop() {
         scope?.cancel("Gate stopped")
         scope = null
         battleStartedAt = null
-        lastHpSeenAt = null
+        lastHpSeenAt.clear()
         probeUntil = 0L
         ended = false
         playerBallCount = null
         opponentBallCount = null
-        finalCriticalHpSeen = false
+        finalCriticalHpSides.clear()
     }
 
     private companion object {
         const val BATTLEFIELD_ABSENCE_NANOS = 250_000_000L
         const val FAINT_PROBE_NANOS = 8_000_000_000L
         const val FINAL_TEAM_PROBE_NANOS = 10_000_000_000L
+        // The final bar can vanish above red, before the last ball dims. This
+        // only opens a bounded OCR window; it never declares a winner itself.
+        const val FINAL_MEMBER_HP_LOST_NANOS = 2_000_000_000L
+        const val FINAL_MEMBER_RECOVERY_NANOS = 35_000_000_000L
         const val CRITICAL_HP_FRACTION = 0.20f
     }
 }

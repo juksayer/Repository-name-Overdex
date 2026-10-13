@@ -113,6 +113,10 @@ class CalibrationManager(context: Context) {
             .putFloat("good_effort_w", calibration.goodEffortRegion.width)
             .putFloat("good_effort_h", calibration.goodEffortRegion.height)
 
+            .putFloat("player_shield_x", calibration.playerShieldsRegion.x)
+            .putFloat("player_shield_y", calibration.playerShieldsRegion.y)
+            .putFloat("player_shield_w", calibration.playerShieldsRegion.width)
+            .putFloat("player_shield_h", calibration.playerShieldsRegion.height)
             .putFloat("opponent_shield_x", calibration.opponentShieldsRegion.x)
             .putFloat("opponent_shield_y", calibration.opponentShieldsRegion.y)
             .putFloat("opponent_shield_w", calibration.opponentShieldsRegion.width)
@@ -410,6 +414,15 @@ class CalibrationManager(context: Context) {
         } else null
         val opponentSpeciesNameRegion = persistedOpponentSpeciesNameRegion ?: BattleCalibration().opponentSpeciesNameRegion
 
+        val defaultPlayerShields = opponentShieldsRegion.copy(
+            x = (1f - opponentShieldsRegion.x - opponentShieldsRegion.width).coerceAtLeast(0f)
+        )
+        val playerShieldsRegion = AnchorRegion(
+            x = prefs.getFloat("player_shield_x", defaultPlayerShields.x),
+            y = prefs.getFloat("player_shield_y", defaultPlayerShields.y),
+            width = prefs.getFloat("player_shield_w", defaultPlayerShields.width),
+            height = prefs.getFloat("player_shield_h", defaultPlayerShields.height),
+        )
         val playerPokeBallsWidth = prefs.getFloat("player_poke_balls_w", 0f)
         val playerPokeBallsRegion = if (playerPokeBallsWidth > 0f && playerPokeBallsWidth <= 1f) {
             AnchorRegion(
@@ -596,6 +609,7 @@ class CalibrationManager(context: Context) {
             youWinRegion = youWinRegion,
             goodEffortRegion = goodEffortRegion,
             opponentShieldsRegion = opponentShieldsRegion,
+            playerShieldsRegion = playerShieldsRegion,
             playerTeamInfoRegion = playerTeamInfoRegion,
             announcementRegion = announcementRegion,
             opponentTeamInfoRegion = opponentTeamInfoRegion,

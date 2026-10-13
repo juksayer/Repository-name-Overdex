@@ -7,6 +7,24 @@ import org.junit.Test
 
 class ActiveHpBarMeasurerTest {
     @Test
+    fun `recorded player bar survives a tightly calibrated box`() {
+        val image = javax.imageio.ImageIO.read(javaClass.getResource("/battle/hp/player-tight.png"))
+        val bars = ActiveHpBarMeasurer.measureAll(image.width, image.height, image::getRGB)
+        assertTrue("No bar found in the recorded player crop", bars.isNotEmpty())
+        val bar = bars.first()
+        assertTrue(bar.width > image.width * 0.9f)
+        assertEquals(0.71f, bar.filledFraction, 0.04f)
+    }
+
+    @Test
+    fun `recorded opponent bar is found among attack effects`() {
+        val image = javax.imageio.ImageIO.read(javaClass.getResource("/battle/hp/opponent.png"))
+        val bars = ActiveHpBarMeasurer.measureAll(image.width, image.height, image::getRGB)
+        assertTrue("No bar found in the recorded opponent crop", bars.isNotEmpty())
+        assertEquals(0.72f, bars.first().filledFraction, 0.05f)
+    }
+
+    @Test
     fun `active bar size does not jump to a smaller card or thin effect`() {
         assertTrue(ActiveHpBarGeometry.matchesSize(191, 18, 193, 17))
         assertTrue(!ActiveHpBarGeometry.matchesSize(144, 8, 193, 17))

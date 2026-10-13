@@ -277,6 +277,8 @@ private fun ArchiveArticleRow(
         }
 
         val payloadText = when (val p = article.payload) {
+            is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}]"
+            is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, move=${p.moveName ?: "unresolved"}, basis=${p.basis}]"
             is ArchivedRawText -> p.value
             is ArchivedRawInt -> p.value.toString()
             is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
@@ -311,6 +313,7 @@ private fun ArchiveArticleRow(
             is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE [${p.durationNanos / 1_000_000} ms, peak=${String.format(Locale.ROOT, "%.3f", p.peakLinearAccelerationMetersPerSecondSquared)} m/s², samples=${p.sampleCount}]"
             is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE VIBRATION [side=${p.side}, pulses=${p.pulseCount}, window=${String.format(Locale.ROOT, "%.2f", p.windowNanos / 1_000_000_000.0)}s]"
             is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
+            is com.example.overdex.battle.archive.ArchivedPlayerShieldCountMeasured -> "PLAYER SHIELDS [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
@@ -386,6 +389,8 @@ private fun ArticleDetailsOverlay(
             DetailField(label = "SOURCE ID", value = article.sourceId)
             
             val payloadText = when (val p = article.payload) {
+                is com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured -> "STAT SOUND [${p.cue}, similarity=${p.similarity}, runner-up=${p.runnerUpSimilarity}, reference=${p.referenceSha256}]"
+                is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, nominal stages=${p.stages ?: "unknown"}, move=${p.moveName ?: "unresolved"}, sound=${p.soundArticleId}, basis=${p.basis}]"
                 is ArchivedRawText -> p.value
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
@@ -420,6 +425,7 @@ private fun ArticleDetailsOverlay(
                 is ArchivedDeviceMotionPulseMeasured -> "DEVICE MOTION PULSE [duration=${p.durationNanos} ns, peak=${p.peakLinearAccelerationMetersPerSecondSquared} m/s², rms=${p.rmsLinearAccelerationMetersPerSecondSquared} m/s², samples=${p.sampleCount}, sensor=${p.sensorType}]"
                 is ArchivedChargeMoveQteVibrationPatternInferred -> "CHARGE MOVE QTE VIBRATION [side=${p.side}, pulses=${p.pulseCount}, window=${p.windowNanos} ns, basis=${p.basis}]"
                 is ArchivedPlayerInactiveHpBarMeasured -> "INACTIVE HP [slot=${p.slot}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%]"
+                is com.example.overdex.battle.archive.ArchivedPlayerShieldCountMeasured -> "PLAYER SHIELDS [${p.visibleCount}/${p.maximumCount} visible]"
                 is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
                 is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"

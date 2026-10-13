@@ -50,6 +50,7 @@ import com.example.overdex.battle.replay.ArchivedSpeciesCropRecognizer
 import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
+import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.data.ChatRepository
 import com.example.overdex.data.ChatTransportFactory
 import com.example.overdex.data.PartnerRepository
@@ -354,11 +355,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        pokedexViewModel.isOverdexVisible = true
+        DroidballService.setInstrumentVisible(true)
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStart()")
     }
 
     override fun onResume() {
         super.onResume()
+        pokedexViewModel.isOverdexVisible = true
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onResume()")
     }
 
@@ -369,6 +373,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
+        pokedexViewModel.isOverdexVisible = false
+        DroidballService.setInstrumentVisible(false)
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStop()")
     }
 
@@ -376,6 +382,11 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onDestroy()")
         mediaManager.release()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("open_guided_registration", false)) pokedexViewModel.openGuidedRegistration()
     }
 
     private companion object {
@@ -423,6 +434,14 @@ fun PokedexApp(
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    LaunchedEffect(Unit) {
+        val activity = context as? android.app.Activity
+        if (activity?.intent?.getBooleanExtra("open_guided_registration", false) == true) {
+            activity.intent.removeExtra("open_guided_registration")
+            navController.navigate("guided_registration") { launchSingleTop = true }
+        }
+    }
+
     LaunchedEffect(openedArchive.value) {
         if (openedArchive.value != null) {
             navController.navigate("match_archive_viewer")
@@ -443,13 +462,14 @@ fun PokedexApp(
                 is InstrumentCommand.OpenOwnedBinder -> {
                     navController.navigate("specimens/collection?binder=${command.binder.routeKey}")
                 }
+                InstrumentCommand.ManageBinders -> navController.navigate("binders")
                 InstrumentCommand.OpenCurrentTeam -> navController.navigate("current_battle_team")
-                InstrumentCommand.AddSpecimen -> navController.navigate("add_pokemon_wizard")
+                InstrumentCommand.AddSpecimen -> navController.navigate("guided_registration")
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
-                InstrumentCommand.OpenBattleLogs -> navController.navigate("battle_log")
+                InstrumentCommand.OpenBattleRecords -> navController.navigate("battle_records")
+                InstrumentCommand.OpenBattleLogs -> navController.navigate("timeline_viewer")
 
-                // Temporary redirect while the registration workspace is removed.
-                InstrumentCommand.OpenCapture -> navController.navigate("calibration")
+                InstrumentCommand.OpenCapture -> navController.navigate("guided_registration") { launchSingleTop = true }
                 InstrumentCommand.OpenCalibration -> navController.navigate("calibration")
 
                 InstrumentCommand.OpenProfile -> navController.navigate("trainer_profile")
@@ -543,6 +563,10 @@ fun PokedexApp(
                 }
             }
             
+            composable("battle_records?ownedId={ownedId}", arguments = listOf(navArgument("ownedId") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
+                com.example.overdex.ui.screens.BattleRecordsScreen(viewModel,
+                    ownedId = entry.arguments?.getString("ownedId"), onBack = { navController.debugPopBackStack() })
+            }
             composable("battle_history") {
                 ODXFiShell(
                     showBattleOverlay = false,
@@ -902,9 +926,10 @@ fun PokedexApp(
             ) { backStackEntry ->
                 val collectionViewModel: MyCollectionViewModel = viewModel()
                 val keyboardController = rememberTerminalKeyboardController()
-                val binder = OwnedPokemonBinder.fromRouteKey(
-                    backStackEntry.arguments?.getString("binder"),
-                )
+                val customBinders by viewModel.customBinders.collectAsState()
+                val binderKey = backStackEntry.arguments?.getString("binder")
+                val binder = customBinders.firstOrNull { it.routeKey == binderKey }
+                    ?: OwnedPokemonBinder.fromRouteKey(binderKey)
                 val ownedSearchQuery by collectionViewModel.searchQuery.collectAsState()
 
                 var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -956,7 +981,7 @@ fun PokedexApp(
                         pokedexViewModel = viewModel,
                         collectionViewModel = collectionViewModel,
                         binder = binder,
-                        onAddClick = { navController.navigate("add_pokemon_wizard") },
+                        onAddClick = { navController.navigate("guided_registration") },
                         onBack = { navController.debugPopBackStack() },
                         onItemClick = { id ->
                             navController.navigate("specimens/detail/$id")
@@ -990,6 +1015,7 @@ fun PokedexApp(
                     pokedexViewModel = viewModel,
                     collectionViewModel = collectionViewModel,
                     onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
+                    onRecords = { ownedId -> navController.navigate("battle_records?ownedId=${android.net.Uri.encode(ownedId)}") },
                     onBack = { navController.debugPopBackStack() }
                 )
             }
@@ -1007,6 +1033,27 @@ fun PokedexApp(
                     onCancel = { navController.debugPopBackStack() }
                 )
             }
+            composable("binders") {
+                com.example.overdex.ui.screens.BinderLibraryScreen(
+                    viewModel, filterSettings, { filterSettings = it },
+                    onOpen = { navController.navigate("specimens/collection?binder=${it.routeKey}") },
+                    onBack = { navController.debugPopBackStack() },
+                )
+            }
+            composable("guided_registration") {
+                com.example.overdex.ui.screens.GuidedRegistrationScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    onManual = { navController.navigate("add_pokemon_wizard") },
+                    onCalibration = { navController.navigate("registration_calibration") },
+                    onCard = { id ->
+                        viewModel.stopGuidedRegistration()
+                        navController.navigate("specimens/detail/$id")
+                    },
+                    onBack = { viewModel.stopGuidedRegistration(); navController.debugPopBackStack() },
+                )
+            }
             composable("add_pokemon_wizard") {
                 val collectionViewModel: MyCollectionViewModel = viewModel()
                 AddOwnedPokemonWizard(
@@ -1018,12 +1065,29 @@ fun PokedexApp(
                     onCancel = { navController.debugPopBackStack() }
                 )
             }
+            composable("registration_calibration") {
+                com.example.overdex.ui.screens.RegistrationCalibrationScreen(
+                    viewModel, filterSettings, { filterSettings = it },
+                    onReview = { navController.popBackStack("guided_registration", inclusive = false) },
+                    onBack = { navController.debugPopBackStack() },
+                )
+            }
             composable("current_battle_team") {
                 CurrentBattleTeamScreen(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onBack = { navController.debugPopBackStack() }
+                    onBack = { navController.debugPopBackStack() },
+                    onTeamLibrary = { navController.navigate("team_library") },
+                )
+            }
+            composable("team_library") {
+                com.example.overdex.ui.screens.BattleTeamLibraryScreen(
+                    viewModel, filterSettings, { filterSettings = it },
+                    onChosen = { navController.debugPopBackStack() },
+                    onEditTeam = { navController.navigate("droidball_team_setup") },
+                    onEditCard = { navController.navigate("specimens/edit/$it") },
+                    onBack = { navController.debugPopBackStack() },
                 )
             }
             composable("droidball_readiness") {
@@ -1036,6 +1100,7 @@ fun PokedexApp(
                         viewModel.startObservation()
                     },
                     onConfigureTeam = { navController.navigate("droidball_team_setup") },
+                    onChooseTeam = { navController.navigate("team_library") },
                     onBack = { navController.debugPopBackStack() },
                 )
             }
@@ -1049,6 +1114,7 @@ fun PokedexApp(
                         navController.popBackStack("main_menu", inclusive = false)
                         viewModel.startObservation()
                     },
+                    onTeamLibrary = { navController.navigate("team_library") },
                 )
             }
             composable("accessibility_probe") {
@@ -1508,7 +1574,8 @@ fun PokedexApp(
                 ODXFiShell(
                     showBattleOverlay = false,
                     viewModel = viewModel,
-                    filterSettings = filterSettings,
+                    // Preserve source geometry for precision calibration; GlassShield still applies.
+                    filterSettings = filterSettings.copy(isEnabled = false),
                     onFilterSettingsChange = { filterSettings = it },
                     onUp = { upHandler?.invoke() },
                     onUpLong = { upLongHandler?.invoke() },

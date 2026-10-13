@@ -23,6 +23,15 @@ interface PokemonDao {
     fun searchPokemon(query: String): PagingSource<Int, PokemonEntity>
 
     @Query("""
+        SELECT * FROM pokemon
+        WHERE id BETWEEN :firstDex AND :lastDex
+          AND (name LIKE :query OR CAST(id AS TEXT) LIKE :query OR region LIKE :query)
+          AND (:type IS NULL OR typesJson LIKE :type)
+        ORDER BY id ASC
+    """)
+    fun searchPokemonInDexRange(query: String, firstDex: Int, lastDex: Int, type: String?): PagingSource<Int, PokemonEntity>
+
+    @Query("""
     SELECT * FROM pokemon
     WHERE typesJson LIKE :type
     ORDER BY id ASC
@@ -40,6 +49,9 @@ interface PokemonDao {
 
     @Query("SELECT name FROM pokemon")
     suspend fun getAllPokemonNames(): List<String>
+
+    @Query("SELECT * FROM pokemon ORDER BY id ASC")
+    suspend fun getRegistrationCatalogue(): List<PokemonEntity>
 
     @Query("SELECT COUNT(*) FROM pokemon")
     suspend fun getCount(): Int

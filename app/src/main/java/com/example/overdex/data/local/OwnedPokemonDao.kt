@@ -16,6 +16,10 @@ interface OwnedPokemonDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addOwnedPokemon(owned: OwnedPokemonEntity)
 
+    /** A recovered scan reuses its card ID without replacing an already edited card. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addScannedPokemon(owned: OwnedPokemonEntity): Long
+
     @Update
     suspend fun updateOwnedPokemon(owned: OwnedPokemonEntity)
 

@@ -2,6 +2,9 @@ package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ChargeMoveQteVibrationPatternInferred
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
+import com.example.overdex.battle.custody.ChargedMoveEnergySpent
+import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.DeviceMotionPulseMeasured
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.reality.ArticleId
@@ -26,6 +29,7 @@ class ChargeMoveQteVibrationInference {
     private val chargeMoveCues = ArrayDeque<RealityArticle>()
     private val usedPulseIds = mutableSetOf<ArticleId>()
     private val completedCueIds = mutableSetOf<ArticleId>()
+    private val opponentCues = ArrayDeque<RealityArticle>()
 
     fun accept(article: RealityArticle): ChargeMoveQteVibrationDerivation? {
         when (val payload = article.payload) {
@@ -44,6 +48,22 @@ class ChargeMoveQteVibrationInference {
                 chargeMoveCues.addUnique(article)
                 chargeMoveCues.trimHistory()
                 return deriveForChargeMoveCue(article)
+            }
+            is ChargedMoveEnergySpent -> {
+                if (payload.side == ActivePokemonSide.OPPONENT) {
+                    opponentCues.addUnique(article)
+                    opponentCues.trimHistory()
+                    return null
+                }
+                chargeMoveCues.addUnique(article)
+                chargeMoveCues.trimHistory()
+                return deriveForChargeMoveCue(article)
+            }
+            AttackIncoming -> {
+                // Get Ready belongs to the player; Attack Incoming closes that
+                // opportunity. Accelerometer pulses during shielding are not a QTE.
+                getReadyCues.forEach { completedCueIds += it.id }
+                return null
             }
             else -> return null
         }
@@ -86,6 +106,9 @@ class ChargeMoveQteVibrationInference {
                 closingAt >= readyAt && closingAt - readyAt <= QTE_WINDOW_NANOS
             }
             .maxByOrNull { it.monotonicTimeNanos ?: Long.MIN_VALUE }
+        // A generic "used" cue does not identify the performer. Only a player
+        // Get Ready or a resolved player announcement can attribute these pulses.
+        if (cue == null && (closingCue.payload as? ChargedMoveEnergySpent)?.side != ActivePokemonSide.PLAYER) return null
         return derive(
             cue = cue,
             closingCue = closingCue,
@@ -105,6 +128,7 @@ class ChargeMoveQteVibrationInference {
         val closingAt = closingCue?.monotonicTimeNanos
         val start = cueAt ?: (closingAt?.minus(QTE_WINDOW_NANOS) ?: return null)
         val end = closingAt ?: (cueAt?.plus(QTE_WINDOW_NANOS) ?: return null)
+        if (opponentCues.any { it.monotonicTimeNanos?.let { at -> at in start..end } == true }) return null
         val candidates = pulses
             .filterNot { it.id in usedPulseIds }
             .filter { pulse -> pulse.monotonicTimeNanos?.let { it in start..end } == true }

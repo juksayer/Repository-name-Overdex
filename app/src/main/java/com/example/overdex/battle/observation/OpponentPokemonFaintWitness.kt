@@ -17,28 +17,29 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Derives an opponent faint from the opponent team's visible Poké Ball count.
+ * Derives one side's faint from its own visible Poké Ball count.
  *
  * Pokémon GO removes a depleted HP bar with its combatant, so an empty-bar
  * confirmation would usually ask for a frame that cannot exist. A stable drop
- * in the opponent Poké Ball count is the durable faint observation. The active
- * opponent immediately before that drop is the Pokémon that fainted. A recent
+ * in the side's Poké Ball count is the durable faint observation. The active
+ * combatant immediately before that drop is the Pokémon that fainted. A recent
  * battle-cry candidate is cited when available, while the following species
  * identity naturally confirms which replacement entered the field.
  */
-class OpponentPokemonFaintWitness(
+class PokemonFaintWitness(
+    private val side: ActivePokemonSide = ActivePokemonSide.OPPONENT,
     override val observerId: ObserverId = ObserverId(
-        "OPPONENT_POKEMON_FAINT_WITNESS",
+        "${side.name}_POKEMON_FAINT_WITNESS",
         ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Opponent Pokémon Faint Witness"
+    override val name: String = "${side.name} Pokémon Faint Witness"
 ) : Observer {
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {
         if (scope != null) return
         val sourceId = SourceId(observerId.id)
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker(side)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
@@ -46,7 +47,7 @@ class OpponentPokemonFaintWitness(
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = ActivePokemonFaintedWitnessed(
-                            side = ActivePokemonSide.OPPONENT,
+                            side = side,
                             speciesName = faint.speciesName,
                             speciesId = faint.speciesId,
                             basis = faint.basis
@@ -62,12 +63,12 @@ class OpponentPokemonFaintWitness(
     }
 
     override fun stop() {
-        scope?.cancel("Opponent faint witness stopped")
+        scope?.cancel("${side.name} faint witness stopped")
         scope = null
     }
 }
 
-internal data class OpponentFaintDecision(
+internal data class TeamFaintDecision(
     val speciesName: String?,
     val speciesId: Int?,
     val evidenceReferences: List<String>,
@@ -76,46 +77,62 @@ internal data class OpponentFaintDecision(
 )
 
 /** Deterministic state machine kept separate so resource transitions are unit-testable. */
-internal class OpponentFaintTracker {
-    private data class ActiveOpponent(val name: String, val id: Int?, val appearanceArticleId: String)
-    private data class BallCount(val count: Int, val articleId: String)
+internal class TeamFaintTracker(private val side: ActivePokemonSide = ActivePokemonSide.OPPONENT) {
+    private data class ActiveCombatant(val name: String, val id: Int?, val appearanceArticleId: String, val atNanos: Long)
+    private data class BallCount(val count: Int, val articleId: String, val atNanos: Long)
     private data class CryCandidate(val articleId: String, val atNanos: Long)
 
-    private var activeOpponent: ActiveOpponent? = null
-    private var opponentBeforeLatestEntry: ActiveOpponent? = null
+    private var activeCombatant: ActiveCombatant? = null
+    private var combatantBeforeLatestEntry: ActiveCombatant? = null
     private var previousBallCount: BallCount? = null
     private var recentCry: CryCandidate? = null
     private var lastFaintedAppearanceId: String? = null
 
-    fun accept(article: RealityArticle): OpponentFaintDecision? {
+    fun accept(article: RealityArticle): TeamFaintDecision? {
         when (val payload = article.payload) {
-            is ActivePokemonSpeciesWitnessed -> if (payload.side == ActivePokemonSide.OPPONENT) {
-                val current = activeOpponent
+            is ActivePokemonSpeciesWitnessed -> if (payload.side == side) {
+                val current = activeCombatant
+                val at = article.monotonicTimeNanos ?: return null
+                if (current != null && at < current.atNanos) return null
                 if (current == null || !current.name.equals(payload.speciesName, ignoreCase = true)) {
-                    opponentBeforeLatestEntry = current?.takeUnless {
+                    combatantBeforeLatestEntry = current?.takeUnless {
                         it.appearanceArticleId == lastFaintedAppearanceId
                     }
-                    activeOpponent = ActiveOpponent(payload.speciesName, payload.speciesId, article.id.value)
+                    activeCombatant = ActiveCombatant(payload.speciesName, payload.speciesId, article.id.value, at)
                     lastFaintedAppearanceId = null
                 } else if (current.id == null && payload.speciesId != null) {
-                    activeOpponent = current.copy(id = payload.speciesId)
+                    activeCombatant = current.copy(id = payload.speciesId)
                 }
             }
-            is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty()) {
+            is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty() && payload.cueKind != "FAST_MOVE_IMPACT") {
                 recentCry = CryCandidate(
                     articleId = article.id.value,
                     atNanos = article.monotonicTimeNanos ?: Long.MIN_VALUE
                 )
             }
-            is OpponentBattleResourceCountMeasured -> if (payload.resource == OpponentBattleResource.POKE_BALLS) {
+            is OpponentBattleResourceCountMeasured, is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> {
+                val count = when (payload) {
+                    is OpponentBattleResourceCountMeasured -> payload.visibleCount.takeIf {
+                        side == ActivePokemonSide.OPPONENT && payload.resource == OpponentBattleResource.POKE_BALLS
+                    }
+                    is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> payload.visibleCount.takeIf { side == ActivePokemonSide.PLAYER }
+                    else -> null
+                } ?: return null
+                val at = article.monotonicTimeNanos ?: return null
                 val earlier = previousBallCount
-                val current = BallCount(payload.visibleCount, article.id.value)
+                if (earlier != null && at <= earlier.atNanos) return null
+                // Team members cannot revive within a Match. A brighter later
+                // crop must not manufacture a second decrease/faint afterwards.
+                if (earlier != null && count > earlier.count) return null
+                val current = BallCount(count, article.id.value, at)
                 previousBallCount = current
                 if (earlier == null) return null
                 if (current.count >= earlier.count) {
                     // Two agreeing resource crops have now shown that the latest
                     // species change preserved the team count: it was a switch.
-                    opponentBeforeLatestEntry = null
+                    // A delayed count from before the new entry cannot prove
+                    // the replacement kept the same number of survivors.
+                    if (at >= (activeCombatant?.atNanos ?: Long.MIN_VALUE)) combatantBeforeLatestEntry = null
                     return null
                 }
 
@@ -123,8 +140,8 @@ internal class OpponentFaintTracker {
                 // two Poké Ball crops are still being processed. In that order,
                 // the Pokémon active before the replacement is the one that
                 // belongs to the observed count decrease.
-                val active = opponentBeforeLatestEntry ?: activeOpponent
-                opponentBeforeLatestEntry = null
+                val active = combatantBeforeLatestEntry ?: activeCombatant
+                combatantBeforeLatestEntry = null
                 if (active != null && active.appearanceArticleId == lastFaintedAppearanceId) return null
                 lastFaintedAppearanceId = active?.appearanceArticleId
 
@@ -133,7 +150,7 @@ internal class OpponentFaintTracker {
                     candidate.atNanos != Long.MIN_VALUE &&
                         now >= candidate.atNanos && now - candidate.atNanos <= CRY_CORROBORATION_WINDOW_NANOS
                 }
-                return OpponentFaintDecision(
+                return TeamFaintDecision(
                     speciesName = active?.name,
                     speciesId = active?.id,
                     evidenceReferences = listOfNotNull(
@@ -144,9 +161,9 @@ internal class OpponentFaintTracker {
                     ).distinct(),
                     cryCorroborated = cry != null,
                     basis = if (cry != null) {
-                        "OPPONENT_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+                        "${side.name}_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
                     } else {
-                        "OPPONENT_POKE_BALL_COUNT_DECREASE"
+                        "${side.name}_POKE_BALL_COUNT_DECREASE"
                     }
                 )
             }

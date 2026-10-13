@@ -24,7 +24,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/** A durable species crop delivered immediately after Custody accepts CropCaptured. */
+/** A durable species crop delivered after its CropCaptured Timeline article exists. */
 internal data class PreservedSpeciesCrop(
     val crop: CropCaptured,
     val bitmap: android.graphics.Bitmap,
@@ -147,7 +147,10 @@ internal class LiveOverlaySpeciesPipeline(
                     }
                     val searchIndex = cropSearchIndex
                     val calibratedRegion = cropContract.crop.region.regionIn(calibration)
-                    val searchRegion = SpeciesCropSearchPlan.region(calibratedRegion, searchIndex)
+                    // Locate the name's ink before spending an OCR pass on an
+                    // empty row. This temporary geometry never rewrites calibration.
+                    val locatedRegion = SpeciesBadgeTextLocator.locate(frame.bitmap, calibratedRegion)
+                    val searchRegion = SpeciesCropSearchPlan.region(locatedRegion, searchIndex)
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
@@ -187,10 +190,8 @@ internal class LiveOverlaySpeciesPipeline(
                             article.sequenceNumber == accepted.sequenceNumber &&
                                 article.payload is CropCaptured
                         }
-                        // Custody has accepted the immutable raw crop before OCR
-                        // sees it. Queue it directly from that acceptance rather
-                        // than waiting for the general Match article consumer,
-                        // which can be busy deriving combat evidence.
+                        // The immutable raw crop is already on the Timeline.
+                        // OCR does not wait for downstream inference consumers.
                         handedToOcr = crops.trySend(
                             PreservedSpeciesCrop(
                                 crop = crop,
@@ -217,6 +218,11 @@ internal class LiveOverlaySpeciesPipeline(
             }
             pipelineScope.launch {
                 match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
+                // Deploying Droidball normally precedes the first battle badge.
+                // Initialize the reader during that time instead of on the first name.
+                try { SpeciesNameRecognizer.warmUp() }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { Log.w("FAST_OVERLAY_SPECIES", "OCR warm-up failed; will retry on a crop", error) }
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
                 for (sample in crops) {
                     val readings = try {
@@ -232,10 +238,17 @@ internal class LiveOverlaySpeciesPipeline(
                         sample.bitmap.recycle()
                     }
 
-                    val readingSignature = readings.map { "${it.treatment}:${it.text}" }
+                    // Keep one empty-read diagnostic per searched position. Compact
+                    // archives otherwise discard every failed strip, making a bad
+                    // calibration indistinguishable from a capture lane that never ran.
+                    val readingSignature = listOf("search=${sample.searchIndex}") +
+                        readings.map { "${it.treatment}:${it.text}" }
                     if (readingSignature != lastRawReadings) {
                         lastRawReadings = readingSignature
-                        readings.forEach { reading ->
+                        val reportedReadings = readings.ifEmpty {
+                            listOf(SpeciesNameRecognizer.Candidate("", "EMPTY"))
+                        }
+                        reportedReadings.forEach { reading ->
                             match.custody.submitTestimony(
                                 sourceId = SourceId("${rawSourceId.id}_${reading.treatment}"),
                                 payload = RawTestimony(reading.text),
@@ -376,7 +389,10 @@ internal class LiveOverlaySpeciesPipeline(
  * Every attempted crop retains its real bounds in [BattleCropProvenance].
  */
 internal object SpeciesCropSearchPlan {
-    private val rowOffsets = intArrayOf(0, -1, 1, -2, 2)
+    // Overlapping strips avoid jumping from a crop that clips the top of a
+    // name directly to one that clips its bottom. Search never changes the
+    // user's saved region or borrows the other side's assignment.
+    private val rowOffsets = floatArrayOf(0f, -0.5f, 0.5f, -1f, 1f, -1.5f, 1.5f, -2f, 2f)
 
     fun region(calibrated: AnchorRegion, searchIndex: Int): AnchorRegion {
         val rowOffset = rowOffsets[searchIndex.coerceIn(rowOffsets.indices)]

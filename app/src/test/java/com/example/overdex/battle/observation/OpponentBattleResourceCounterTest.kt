@@ -7,6 +7,16 @@ import java.io.File
 import javax.imageio.ImageIO
 
 class OpponentBattleResourceCounterTest {
+    @Test fun `player shields are counted from an actual badge strip`() {
+        val frame = ImageIO.read(File("src/androidTest/assets/species/oct10/lead_frame.png"))
+        val crop = frame.getSubimage(145, 125, 60, 30)
+        assertEquals(2, OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, crop::getRGB))
+    }
+
+    @Test fun `covered shield badge is unknown instead of zero`() {
+        assertNull(OpponentBattleResourceCounter.shieldCount(60, 30) { _, _ -> 0xff000000.toInt() })
+    }
+
     @Test
     fun countsThreeSeparatedBrightPokeBalls() {
         val width = 90
@@ -83,6 +93,30 @@ class OpponentBattleResourceCounterTest {
             if (y in 6..17 && listOf(8..20, 35..47, 62..74).any { x in it }) rgb(65, 65, 65) else WHITE
         })
     }
+    @Test fun `October 12 hidden sky strips are unavailable and returning badge retains two shields`() {
+        for ((name, expected) in listOf("player-shields-74.png" to null, "opponent-shields-75.png" to null, "player-shields-79.png" to 2)) {
+            val crop = ImageIO.read(File("../docs/verification/evidence/2026-10-12-1546/$name"))
+            assertEquals(name, expected, OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, crop::getRGB))
+        }
+    }
+
+    @Test fun `two visible shield glyphs allow zero one and two remaining`() {
+        for (remaining in 0..2) {
+            assertEquals(remaining, OpponentBattleResourceCounter.shieldCount(64, 24) { x, y ->
+                val slot = if (x in 7..24) 0 else if (x in 39..56) 1 else -1
+                if (y !in 5..18 || slot < 0) WHITE
+                else if (slot < remaining) rgb(225, 110, 235) else rgb(80, 65, 85)
+            })
+        }
+        assertNull(OpponentBattleResourceCounter.shieldCount(64, 24) { _, _ -> WHITE })
+    }
+
+    @Test fun `recorded dark player shields are visible zero rather than unavailable`() {
+        val source = ImageIO.read(File("../docs/verification/evidence/2026-10-12-1546/frame-156.png"))
+        val crop = source.getSubimage(146, 124, 57, 35)
+        assertEquals(0, OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, crop::getRGB))
+    }
+
     private fun rgb(red: Int, green: Int, blue: Int): Int =
         (0xff shl 24) or (red shl 16) or (green shl 8) or blue
 

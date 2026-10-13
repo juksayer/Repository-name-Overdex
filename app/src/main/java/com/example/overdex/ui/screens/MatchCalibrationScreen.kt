@@ -47,6 +47,8 @@ import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
 import com.example.overdex.ui.theme.TerminalBlack
 import android.os.Build
+import java.io.File
+import com.example.overdex.data.BattleCalibrationReferenceStore
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -125,9 +127,16 @@ fun MatchCalibrationScreen(
     val bundledSamples = remember {
         context.assets.list("battle_samples")?.toList() ?: listOf("celluloid-shot0001.jpg")
     }
-    val samples: List<Any> = if (userSamples.isNotEmpty()) userSamples else bundledSamples
-    val screenshotSourceName = remember(userSamples) { screenshotDirectory.displayName() }
+    val capturedSample by produceState<File?>(initialValue = null, context) {
+        value = withContext(Dispatchers.IO) { BattleCalibrationReferenceStore(context.filesDir).latest() }
+    }
+    val samples: List<Any> = if (userSamples.isNotEmpty()) userSamples else listOfNotNull(capturedSample) + bundledSamples
     var currentImageIndex by remember { mutableIntStateOf(0) }
+    val screenshotSourceName = when (samples.getOrNull(currentImageIndex)) {
+        is File -> "DEVICE CAPTURE"
+        is Uri -> "YOUR SCREENSHOT"
+        else -> "BUNDLED REFERENCE"
+    }
     var sourceFrameSize by remember { mutableStateOf(IntSize.Zero) }
     val screenshotFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -158,6 +167,7 @@ fun MatchCalibrationScreen(
                 when (sample) {
                     is String -> context.assets.open("battle_samples/$sample").use { BitmapFactory.decodeStream(it, null, options) }
                     is Uri -> context.contentResolver.openInputStream(sample)?.use { BitmapFactory.decodeStream(it, null, options) }
+                    is File -> BitmapFactory.decodeFile(sample.absolutePath, options)
                 }
                 IntSize(options.outWidth.coerceAtLeast(0), options.outHeight.coerceAtLeast(0))
             }.getOrDefault(IntSize.Zero)
@@ -183,6 +193,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_TEAM_INFO,
             CalibrationRegion.PLAYER_SPECIES_NAME,
             CalibrationRegion.OPPONENT_SPECIES_NAME,
+            CalibrationRegion.PLAYER_SHIELDS,
             CalibrationRegion.OPPONENT_SHIELDS,
             CalibrationRegion.PLAYER_POKE_BALLS,
             CalibrationRegion.OPPONENT_POKE_BALLS,
@@ -203,6 +214,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.HP_BAR -> "HP Bar"
             CalibrationRegion.TEAM_ICONS -> "Team Icons"
             CalibrationRegion.MOVE_BANNER -> "Move Banner"
+            CalibrationRegion.PLAYER_SHIELDS -> "Player Shields"
             CalibrationRegion.OPPONENT_SHIELDS -> "Opponent Shields"
             CalibrationRegion.YOU_WIN -> "You Win"
             CalibrationRegion.GOOD_EFFORT -> "Good Effort"
@@ -246,6 +258,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.HP_BAR -> calibration.hpBarRegion
         CalibrationRegion.TEAM_ICONS -> calibration.teamIconsRegion
         CalibrationRegion.MOVE_BANNER -> calibration.moveBannerRegion
+        CalibrationRegion.PLAYER_SHIELDS -> calibration.playerShieldsRegion
         CalibrationRegion.OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
         CalibrationRegion.YOU_WIN -> calibration.youWinRegion
         CalibrationRegion.GOOD_EFFORT -> calibration.goodEffortRegion
@@ -311,6 +324,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.HP_BAR -> calibration.copy(hpBarRegion = updated)
             CalibrationRegion.TEAM_ICONS -> calibration.copy(teamIconsRegion = updated)
             CalibrationRegion.MOVE_BANNER -> calibration.copy(moveBannerRegion = updated)
+            CalibrationRegion.PLAYER_SHIELDS -> calibration.copy(playerShieldsRegion = updated)
             CalibrationRegion.OPPONENT_SHIELDS -> calibration.copy(opponentShieldsRegion = updated)
             CalibrationRegion.YOU_WIN -> calibration.copy(youWinRegion = updated)
             CalibrationRegion.GOOD_EFFORT -> calibration.copy(goodEffortRegion = updated)
@@ -502,7 +516,7 @@ fun MatchCalibrationScreen(
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
-            "W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
+            "$screenshotSourceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
         )
     }
 

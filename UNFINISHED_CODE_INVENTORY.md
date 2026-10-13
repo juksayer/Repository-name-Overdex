@@ -4,6 +4,10 @@
 
 **Last validated against the working tree:** September 28, 2026
 
+**Focused updates:** October 11, 2026 — pre-battle team editing and replay HP
+were rechecked; October 10 registration and species checks remain listed below.
+Other entries retain their earlier review date.
+
 This document records cleanup candidates, intentional legacy systems, and known
 feature gaps. It is evidence for a later decision, not an instruction to delete
 files. Runtime ownership is documented in [PROJECT-MAP-v2.md](PROJECT-MAP-v2.md).
@@ -26,7 +30,6 @@ files. Runtime ownership is documented in [PROJECT-MAP-v2.md](PROJECT-MAP-v2.md)
 | [`GoodEffortWitness/kt.java`](app/src/main/java/com/example/overdex/battle/witness/GoodEffortWitness/kt.java) | Tracked, empty, zero-byte Java file inside a directory named for a Kotlin class. | Remove after confirming no external tooling expects the path. |
 | [`witnessSpeciesName_logcat.logcat`](app/src/main/java/com/example/overdex/battle/witness/witnessSpeciesName_logcat.logcat) | Tracked 15,970-line, approximately 584 KiB diagnostic dump inside a production package. It is not compiled or referenced. | Preserve outside `app/src/main/java` if it still has forensic value, then remove it from the source tree. |
 | [`ObservationPipelineDemo.kt`](app/src/main/java/com/example/overdex/battle/debug/ObservationPipelineDemo.kt) | The object and its `run` method have no call site. It assembles the older `BattleTimelineBuilder` path. | Move to a sample/validation source set or remove after its historical value is captured. |
-| [`CaptureTemplateManager.kt`](app/src/main/java/com/example/overdex/CaptureTemplateManager.kt) | No production, unit-test, or instrumentation-test constructor call was found. Its only known external reference is an archived excavation validator. `getSummaryTemplate` and `getMovesTemplate` are deprecated. | Verify that no reflection or external automation loads it, then archive or remove the class as one unit rather than deleting only the two deprecated methods. |
 
 ## Legacy-active architecture requiring migration decisions
 
@@ -38,7 +41,15 @@ files. Runtime ownership is documented in [PROJECT-MAP-v2.md](PROJECT-MAP-v2.md)
 | Debug observation recording | `ObservationRecorder`, `MatchRecording`, and `MatchSummaryCard` still have active callers in recognition, `PokedexViewModel`, and `TimelineViewerScreen`. | Decide whether this remains a supported diagnostic recorder or should be replaced completely by `.odxmatch` archive inspection. It is not orphaned today. |
 | Older battle Witnesses | Classes under [`battle/witness/`](app/src/main/java/com/example/overdex/battle/witness/) use the general observation-input model; several are exercised only by tests while persisted-crop Witnesses carry the current Match record. | Audit each Witness against `PokedexViewModel` registration before moving or deleting it. Preserve one-Witness/one-signal behavior during migration. |
 | Droidball session scope | `PokedexViewModel.startFreshMatch` constructs a new `DroidballSession` with every `Match`; the running capture service/deployment state spans consecutive Matches. | Introduce or rename the longer-lived assistance-session owner so the code expresses the established Droidball-session-versus-Match boundary. |
-| Fast overlay ordering | `CropCaptureWitness` invokes `LiveOverlaySpeciesPipeline` after artifact preservation and Custody acceptance, while `Match` publishes the corresponding `RealityArticle` from a separate collector. | Feed the fast presentation lane from the published species-crop Article stream if strict Timeline-before-presentation ordering is required for every consumer. |
+
+## Rechecked boundaries
+
+| Area | Current behavior |
+| --- | --- |
+| Pre-battle team editing | Droidball exposes manual Team Select rescanning and a field editor for species and moves. Saved lineups are selectable directly from pre-flight. Explicit team revisions are preserved as configured-slot articles; replay and move inference use the revised lineup. Fresh Team Select OCR on a live screen still requires device acceptance. |
+| Replay HP | First entrants start visually full until a valid measurement; this is a presentation assumption, not new testimony. Returning species retain their earlier HP. Countdown samples and short, thick false-bar detections are rejected in replay. Live tracking quality still needs improvement when sparse measurements leave the bar assumed full. |
+| Registration templates | `CaptureTemplateManager` is active in screenshot calibration, screenshot reading, and Droidball registration alignment. These callers now share one normalized field layout with explicit box reads and `SAVE CARD`; legacy keys are retained and the duplicate fast-move alias is read only for migration. Automatic layout learning and icon classification remain unimplemented. It is no longer a cleanup candidate. |
+| Live species ordering | `LiveOverlaySpeciesPipeline` preserves the crop and waits for its Timeline article before OCR testimony. Accepted species pass through Custody to the Timeline; `Match` updates the HUD from that same testimony. A recorded-frame device test verifies both sides, referenced source articles, the opponent HUD species, and its move lists. Fresh live-match latency remains a separate acceptance check. |
 
 ## Intentional fallback
 

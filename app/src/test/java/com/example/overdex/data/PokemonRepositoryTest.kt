@@ -32,7 +32,9 @@ class PokemonRepositoryTest {
     }
 
     private class FakePokemonDao : PokemonDao {
+        override suspend fun getRegistrationCatalogue(): List<PokemonEntity> = emptyList()
         override fun searchPokemon(query: String): PagingSource<Int, PokemonEntity> = TODO()
+        override fun searchPokemonInDexRange(query: String, firstDex: Int, lastDex: Int, type: String?): PagingSource<Int, PokemonEntity> = TODO()
         override fun getPokemonByType(type: String): PagingSource<Int, PokemonEntity> = TODO()
         override fun getAllPokemon(): PagingSource<Int, PokemonEntity> = TODO()
 

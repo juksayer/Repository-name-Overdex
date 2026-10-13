@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -76,6 +77,7 @@ import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayHpState
+import com.example.overdex.battle.replay.ReplayFaintPose
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.battle.replay.ReplayPlaybackClock
 import com.example.overdex.data.LocalSpriteProvider
@@ -107,7 +109,8 @@ fun MatchReplayScreen(
     resolveSpeciesId: suspend (String) -> Int? = { null },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
+    resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
+    initialCursorNanos: Long? = null,
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
     val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
@@ -144,7 +147,9 @@ fun MatchReplayScreen(
             fastMovesBySpecies
         )
     }
-    var cursor by remember(archive) { mutableLongStateOf(model.startNanos) }
+    var cursor by remember(archive, initialCursorNanos) {
+        mutableLongStateOf((initialCursorNanos ?: model.startNanos).coerceIn(model.startNanos, model.endNanos))
+    }
     var playing by remember(archive) { mutableStateOf(false) }
     var playbackSpeed by remember(archive) { mutableFloatStateOf(1f) }
     val currentModel by rememberUpdatedState(model)
@@ -298,7 +303,10 @@ fun MatchReplayScreen(
                 else androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = TerminalGreen)
             }
             cropError?.let { MatchLcdText(it) }
-            MatchLcdText("P ${energyLedger(scene.playerGeneratedEnergy, scene.playerSpentEnergy)}\nO ${energyLedger(scene.opponentGeneratedEnergy, scene.opponentSpentEnergy)}")
+            MatchLcdText("RECORDED ENERGY\nP ${energyLedger(scene.playerEnergy)}  O ${energyLedger(scene.opponentEnergy)}")
+            scene.statChanges.filter { it.side == null }.forEach {
+                MatchLcdText("${it.label} · SIDE UNCONFIRMED")
+            }
         }
     }
 
@@ -332,35 +340,47 @@ fun MatchReplayScreen(
             contentAlignment = Alignment.Center
         ) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val travelHalfWidth = ((maxWidth - 36.dp) / 4).coerceAtLeast(0.dp)
+                val travelHalfWidth = (maxWidth / 4).coerceAtLeast(0.dp)
                 val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).align(Alignment.Center),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).align(Alignment.Center),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ReplayCombatantSlot(
                         combatant = scene.player,
+                        cursorNanos = cursor,
                         hp = scene.playerHp,
                         context = context,
                         useBackSprite = true,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "PLAYER" },
                         chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "PLAYER" },
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "PLAYER" },
+                        statChanges = scene.statChanges.filter { it.side == "PLAYER" },
                         spriteSize = spriteSize * 1.15f,
                         modifier = Modifier.weight(1f),
                     )
                     ReplayCombatantSlot(
                         combatant = scene.opponent,
+                        cursorNanos = cursor,
                         hp = scene.opponentHp,
                         context = context,
                         useBackSprite = false,
                         fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
                         chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
-                        spriteSize = spriteSize,
+                        statChanges = scene.statChanges.filter { it.side == "OPPONENT" },
+                        spriteSize = spriteSize * 0.9f,
                         modifier = Modifier.weight(1f),
                     )
+                }
+                Row(
+                    Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 12.dp, vertical = 18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player")
+                    else Box(Modifier.width(114.dp))
+                    if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent")
                 }
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
@@ -434,8 +454,8 @@ private class ReplayHaptics(context: Context) {
     }
 }
 
-private fun energyLedger(generated: Int, spent: Int): String =
-    "E ${generated - spent} (+$generated/-$spent)"
+private fun energyLedger(state: com.example.overdex.battle.replay.ReplayEnergyState?): String =
+    state?.let { "~${it.recordedEnergy}/100" } ?: "—"
 
 private fun replayOutcomeLabel(outcome: String): String = when (
     outcome.uppercase().filter(Char::isLetterOrDigit)
@@ -481,8 +501,9 @@ private fun formatReplayTime(nanos: Long): String {
 }
 
 @Composable
-private fun ReplayCombatantSlot(
+internal fun ReplayCombatantSlot(
     combatant: ReplayCombatant?,
+    cursorNanos: Long,
     hp: ReplayHpState?,
     context: android.content.Context,
     useBackSprite: Boolean,
@@ -491,12 +512,16 @@ private fun ReplayCombatantSlot(
     qteMilestone: String?,
     spriteSize: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
+    statChanges: List<com.example.overdex.battle.replay.ReplayStatChangeAction> = emptyList(),
 ) {
+    val faintPose = combatant?.takeIf { it.isFainted }?.let {
+        ReplayFaintPose.at(it.faintedAtNanos, cursorNanos, useBackSprite)
+    }
     Box(
         modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
     ) {
-        val qteLevel = when (qteMilestone) {
+        val qteLevel = when (qteMilestone.takeUnless { combatant?.isFainted == true }) {
             "NICE" -> 1
             "GREAT" -> 2
             "EXCELLENT" -> 3
@@ -521,16 +546,22 @@ private fun ReplayCombatantSlot(
                 model = LocalSpriteProvider(context.assets).let { sprites ->
                     if (useBackSprite) sprites.getBackSpriteUrl(speciesId) else sprites.getSpriteUrl(speciesId)
                 },
-                contentDescription = combatant.speciesName,
+                contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted" else combatant.speciesName,
                 modifier = Modifier
                     .requiredSize(spriteSize)
-                    .alpha(if (combatant.isFainted) 0.35f else 1f)
                     // Pokémon GO places the player's back-facing combatant
                     // lower in the field. A small downward offset aligns its
                     // head with the opponent while preserving the left/right
                     // battle orientation.
                     .offset(y = if (useBackSprite) 24.dp else 0.dp)
                     .graphicsLayer {
+                        // The bundled Turtonator front/rear art faces opposite
+                        // to the other battle sprites. Face the other combatant
+                        // before applying the KO rotation; keep the PNG intact.
+                        scaleX = if (speciesId == 776) -1f else 1f
+                        // Keep fading on the transformed layer so a separate
+                        // opacity layer cannot clip the falling sprite.
+                        alpha = faintPose?.opacity ?: if (combatant.isFainted) 0.6f else 1f
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
                         val attackOffset = chargedAction?.progress?.coerceIn(0f, 1f)?.let { progress ->
                             val fastMoveAmplitudePixels = if (useBackSprite) 16f else 8f
@@ -563,16 +594,16 @@ private fun ReplayCombatantSlot(
                             }
                             ?: 0f
                         // Fine positioning uses physical pixels, independent of display density.
-                        translationY = attackOffset + if (useBackSprite) 25f else 0f
+                        translationX = faintPose?.shakePixels ?: 0f
+                        rotationZ = faintPose?.rotationDegrees ?: 0f
+                        translationY = (if (combatant.isFainted) faintPose?.dropPixels ?: 0f else attackOffset) +
+                            if (useBackSprite) 25f else 0f
                     },
                 contentScale = ContentScale.Fit,
                 colorFilter = if (combatant.isFainted) {
                     ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
                 } else null
             )
-            if (combatant.isFainted) {
-                Text("×", color = Color(0xFFD32F2F), fontSize = 72.sp)
-            }
         }
         if (combatant != null && hp != null) {
             ReplayHpBar(
@@ -580,6 +611,21 @@ private fun ReplayCombatantSlot(
                 "${if (useBackSprite) "Player" else "Opponent"} ${combatant.speciesName} HP",
                 Modifier.align(Alignment.TopCenter).offset(y = if (useBackSprite) 4.dp else (-20).dp),
             )
+        }
+        if (combatant != null) {
+            Column(Modifier.align(Alignment.TopCenter).offset(y = if (useBackSprite) 20.dp else (-4).dp)) {
+                statChanges.forEach { change ->
+                    Text(change.label,
+                        color = if (change.direction > 0) Color(0xFF9AFFCC) else Color(0xFFFFB27C),
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.graphicsLayer {
+                            translationY = -change.direction * change.progress * 24f
+                            alpha = ((1f - change.progress) * 3f).coerceIn(0f, 1f)
+                        }.background(Color(0xD0163721), RoundedCornerShape(5.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -596,7 +642,8 @@ private fun ReplayHpBar(hp: ReplayHpState, label: String, modifier: Modifier = M
     val orange = Color(0xFFFFA000)
     Canvas(modifier.width(132.dp).height(11.dp).semantics {
         contentDescription = label
-        stateDescription = fraction?.let { "${(it * 100).toInt()} percent" } ?: "HP not recorded"
+        stateDescription = if (hp.assumedInitialFull) "Full HP assumed on first entry"
+            else fraction?.let { "${(it * 100).toInt()} percent" } ?: "HP not recorded"
     }) {
         val inset = 2.dp.toPx()
         val innerWidth = (size.width - inset * 2).coerceAtLeast(0f)

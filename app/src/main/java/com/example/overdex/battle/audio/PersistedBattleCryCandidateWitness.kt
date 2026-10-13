@@ -31,7 +31,8 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
             }
             match.articles.collect { article ->
                 val audio = article.payload as? AudioCaptured ?: return@collect
-                if (audio.cueKind == BattleCryCueKind.FAST_MOVE_IMPACT.name) return@collect
+                if (audio.cueKind == BattleCryCueKind.FAST_MOVE_IMPACT.name ||
+                    audio.cueKind == BattleCryCueKind.STAT_CHANGE_SOUND.name) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect
                 val query = WavPcm16.decode(bytes) ?: return@collect

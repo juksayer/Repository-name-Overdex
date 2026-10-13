@@ -20,6 +20,7 @@ class PokemonRepository(
 ) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
+    suspend fun getRegistrationCatalogue(): List<Pokemon> = pokemonDao.getRegistrationCatalogue().map { it.toDomain() }
     override suspend fun getPokemonById(id: Int): Pokemon? =
         pokemonDao.getPokemonById(id)?.toDomain() ?: gameMasterLoader?.getPokemonByDex(id)?.toDomain()
 
@@ -79,9 +80,10 @@ class PokemonRepository(
 
     fun search(
         query: String,
-        type: PokemonType?
+        type: PokemonType?,
+        dexRange: IntRange? = null,
     ): PagingSource<Int, Pokemon> {
-        val source = searchRepository.search(query, type)
+        val source = searchRepository.search(query, type, dexRange)
 
         return object : PagingSource<Int, Pokemon>() {
 

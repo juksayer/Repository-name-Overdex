@@ -13,7 +13,6 @@ import com.example.overdex.battle.custody.SpeciesCheckMeasured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
-import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +33,9 @@ internal data class LiveActiveHpBarSample(
     val appearance: ActiveHpBarBorderAppearance?,
     val recipientVisual: FastMoveRecipientVisualSample?,
     val capturedAtWallTimeMillis: Long,
-    val capturedAtMonotonicTimeNanos: Long
+    val capturedAtMonotonicTimeNanos: Long,
+    val sourceWidth: Int? = null,
+    val sourceHeight: Int? = null,
 )
 
 /** A small color grid sampled below the tracked HP bar; it owns no Bitmap. */
@@ -73,51 +74,50 @@ internal class LiveActiveHpBarFrameHub {
  */
 internal class LiveActiveHpBarWitness(
     private val input: ObservationInput,
-    private val calibration: BattleCalibration,
-    private val crop: BattleCropContract,
-    private val side: ActivePokemonSide,
+    private val tracker: LiveBattlefieldHpTracker,
     private val isEnabled: () -> Boolean,
-    private val frameHub: LiveActiveHpBarFrameHub,
-    override val observerId: ObserverId,
-    override val name: String
+    private val playerFrameHub: LiveActiveHpBarFrameHub,
+    private val opponentFrameHub: LiveActiveHpBarFrameHub,
 ) : Observer {
+    override val observerId = ObserverId("ACTIVE_HP_BARS_FRAME_WITNESS", ObserverSource.SCREEN_CAPTURE)
+    override val name = "Active HP Bars Frame Witness"
+    override val managesAvailability = true
+
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
     private var lastEnabled: Boolean? = null
-    private var lastSpeciesName: String? = null
+    private val lastSpeciesNames = mutableMapOf<ActivePokemonSide, String>()
     private val stateLock = Any()
-    private val tracker = ActiveHpBarTracker()
+    private val sources = mapOf(
+        ActivePokemonSide.PLAYER to SourceId(BattleWitnessContracts.playerActiveHpBar.witnessId),
+        ActivePokemonSide.OPPONENT to SourceId(BattleWitnessContracts.opponentActiveHpBar.witnessId),
+    )
 
-    override val managesAvailability: Boolean = true
+    private fun availability(match: Match, enabled: Boolean, at: Long) {
+        sources.values.forEach { match.custody.submitAvailability(it, enabled, at) }
+        lastEnabled = enabled
+    }
 
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
         lastEnabled = null
-        lastSpeciesName = null
-        val sourceId = SourceId(observerId.id)
+        lastSpeciesNames.clear()
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 match.articles.collect { article ->
                     when (val payload = article.payload) {
-                        is ActivePokemonSpeciesWitnessed -> if (payload.side == side) {
-                            synchronized(stateLock) {
-                                // A fast single-frame identity and its later formal
-                                // confirmation describe the same combatant. Do not
-                                // throw away HP lock and cadence merely because the
-                                // confirmation has a different article id.
-                                if (payload.speciesName != lastSpeciesName) {
-                                    tracker.resetForNextCombatant()
-                                    lastSpeciesName = payload.speciesName
-                                }
+                        is ActivePokemonSpeciesWitnessed -> synchronized(stateLock) {
+                            if (lastSpeciesNames[payload.side] != payload.speciesName) {
+                                tracker.observeSpecies(payload.side, payload.speciesName,
+                                    article.monotonicTimeNanos ?: return@collect)
+                                lastSpeciesNames[payload.side] = payload.speciesName
                             }
                         }
-                        is SpeciesCheckMeasured -> if (
-                            payload.side == side && payload.status == "OPENED" && payload.reason == "EMPTY_HP"
-                        ) {
+                        is SpeciesCheckMeasured -> if (payload.status == "OPENED" && payload.reason == "EMPTY_HP") {
                             synchronized(stateLock) {
-                                tracker.resetForNextCombatant()
-                                lastSpeciesName = null
+                                tracker.reset(payload.side)
+                                lastSpeciesNames.remove(payload.side)
                             }
                         }
                     }
@@ -125,114 +125,59 @@ internal class LiveActiveHpBarWitness(
             }
             witnessScope.launch {
                 try {
-                    match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
-                    lastEnabled = true
+                    // One collector consumes each source frame once and fans out
+                    // two independent measurements. Separate collectors could let
+                    // one side advance the tracker while the other still needed
+                    // the preceding frame, silently losing that side's sample.
                     input.supplyFrames { frame ->
                         val enabled = isEnabled()
-                        if (lastEnabled != enabled) {
-                            match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
-                            lastEnabled = enabled
-                        }
+                        if (lastEnabled != enabled) availability(match, enabled, frame.capturedAtWallTimeMillis)
                         if (!enabled) return@supplyFrames
-                        val resolved = crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
-                        try {
-                            val measurement = synchronized(stateLock) {
-                                tracker.measure(resolved.bitmap)
-                            } ?: return@supplyFrames
-                            val appearance = ActiveHpBarBorderAppearanceMeasurer.measure(
-                                resolved.bitmap,
-                                measurement
-                            )
-                            val recipientVisual = FastMoveRecipientVisualSampler.sample(
-                                resolved.bitmap,
-                                measurement
-                            )
+                        tracker.measureFrame(frame).forEach { (side, measurement) ->
+                            val appearance = ActiveHpBarBorderAppearanceMeasurer.measure(frame.bitmap, measurement)
+                            val recipientVisual = FastMoveRecipientVisualSampler.sample(frame.bitmap, measurement)
                             match.custody.submitTestimony(
-                                sourceId = sourceId,
+                                sourceId = sources.getValue(side),
                                 payload = ActiveHpBarMeasured(
                                     side = side,
                                     barLeft = measurement.left,
                                     barTop = measurement.top,
                                     barRight = measurement.right,
                                     barBottom = measurement.bottom,
-                                    filledFraction = measurement.filledFraction
+                                    filledFraction = measurement.filledFraction,
+                                    sourceWidth = frame.bitmap.width,
+                                    sourceHeight = frame.bitmap.height,
                                 ),
                                 timestamp = frame.capturedAtWallTimeMillis,
                                 confidence = measurement.confidence,
                                 evidenceReferences = emptyList(),
                                 monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                             )
-                            frameHub.publish(
-                                LiveActiveHpBarSample(
-                                    measurement = measurement,
-                                    appearance = appearance,
-                                    recipientVisual = recipientVisual,
-                                    capturedAtWallTimeMillis = frame.capturedAtWallTimeMillis,
-                                    capturedAtMonotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
-                                )
-                            )
-                        } finally {
-                            resolved.bitmap.recycle()
+                            val hub = if (side == ActivePokemonSide.PLAYER) playerFrameHub else opponentFrameHub
+                            hub.publish(LiveActiveHpBarSample(
+                                measurement, appearance, recipientVisual,
+                                frame.capturedAtWallTimeMillis, frame.capturedAtMonotonicTimeNanos,
+                                frame.bitmap.width, frame.bitmap.height,
+                            ))
                         }
                     }
                 } finally {
-                    if (lastEnabled == true) {
-                        match.custody.submitAvailability(sourceId, false, System.currentTimeMillis())
-                    }
-                    lastEnabled = false
+                    if (lastEnabled == true) availability(match, false, System.currentTimeMillis())
                 }
             }
         }
     }
 
     override fun stop() {
-        if (lastEnabled == true) {
-            activeMatch?.custody?.submitAvailability(SourceId(observerId.id), false, System.currentTimeMillis())
-        }
+        if (lastEnabled == true) activeMatch?.let { availability(it, false, System.currentTimeMillis()) }
         activeMatch = null
-        scope?.cancel("Live active HP bar witness stopped")
+        scope?.cancel("Live active HP bars witness stopped")
         scope = null
         synchronized(stateLock) {
-            tracker.resetForNextCombatant()
-            lastSpeciesName = null
+            ActivePokemonSide.entries.forEach(tracker::reset)
+            lastSpeciesNames.clear()
         }
         lastEnabled = false
-    }
-
-    companion object {
-        fun player(
-            input: ObservationInput,
-            calibration: BattleCalibration,
-            isEnabled: () -> Boolean,
-            frameHub: LiveActiveHpBarFrameHub
-        ) =
-            LiveActiveHpBarWitness(
-                input = input,
-                calibration = calibration,
-                crop = BattleCropContracts.playerHpEvidence,
-                side = ActivePokemonSide.PLAYER,
-                isEnabled = isEnabled,
-                frameHub = frameHub,
-                observerId = ObserverId(BattleWitnessContracts.playerActiveHpBar.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Player Active HP Bar Witness"
-            )
-
-        fun opponent(
-            input: ObservationInput,
-            calibration: BattleCalibration,
-            isEnabled: () -> Boolean,
-            frameHub: LiveActiveHpBarFrameHub
-        ) =
-            LiveActiveHpBarWitness(
-                input = input,
-                calibration = calibration,
-                crop = BattleCropContracts.opponentHpEvidence,
-                side = ActivePokemonSide.OPPONENT,
-                isEnabled = isEnabled,
-                frameHub = frameHub,
-                observerId = ObserverId(BattleWitnessContracts.opponentActiveHpBar.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Opponent Active HP Bar Witness"
-            )
     }
 }
 
@@ -569,7 +514,7 @@ internal class LiveActiveHpBarDamageTickWitness(
                         }
                         is SpeciesCheckMeasured -> if (
                             payload.side == damagedSide && payload.status == "OPENED" &&
-                            payload.reason in setOf("ENTRY", "EMPTY_HP")
+                            payload.reason == "EMPTY_HP"
                         ) {
                             synchronized(stateLock) {
                                 detector.reset()
@@ -929,7 +874,7 @@ internal class LiveFastMoveRecipientVisualCadenceWitness(
                             is SpeciesCheckMeasured -> if (
                                 payload.side == damagedSide &&
                                 payload.status == "OPENED" &&
-                                payload.reason in setOf("ENTRY", "EMPTY_HP")
+                                payload.reason == "EMPTY_HP"
                             ) {
                                 resetCadence()
                                 lastSpeciesName = null

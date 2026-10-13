@@ -12,59 +12,18 @@ import com.example.overdex.model.ObservationType
  * screens. This manager handles loading these defaults and applying persistent
  * user calibrations.
  */
-class CaptureTemplateManager(private val context: Context) {
-    private val prefs = context.getSharedPreferences("capture_templates", Context.MODE_PRIVATE)
+class CaptureTemplateManager(private val context: Context, preferencesName: String = "capture_templates") {
+    private val prefs = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
 
     @Deprecated("Use getPokemonDetailTemplate instead", ReplaceWith("getPokemonDetailTemplate()"))
-    fun getSummaryTemplate(): CaptureTemplate {
-        val base = CaptureTemplate(
-            name = "PokemonGoSummaryTemplate",
-            regions = listOf(
-                CaptureRegion("SpeciesName", 0.1f, 0.43f, 0.8f, 0.05f, ObservationType.OCR_TEXT),
-                CaptureRegion("CombatPower", 0.35f, 0.06f, 0.3f, 0.06f, ObservationType.OCR_TEXT),
-                CaptureRegion("TypeIcons", 0.35f, 0.62f, 0.3f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("CandyPanel", 0.05f, 0.68f, 0.9f, 0.12f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("SummaryFastMove", 0.05f, 0.85f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ShinyIndicator", 0.8f, 0.1f, 0.1f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("Gender", 0.85f, 0.43f, 0.05f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("FavoriteStar", 0.88f, 0.06f, 0.08f, 0.06f, ObservationType.IMAGE_MATCH)
-            )
-        )
-        return loadAdjustedTemplate(base)
-    }
+    fun getSummaryTemplate(): CaptureTemplate = getPokemonDetailTemplate()
 
     @Deprecated("Use getPokemonDetailTemplate instead", ReplaceWith("getPokemonDetailTemplate()"))
-    fun getMovesTemplate(): CaptureTemplate {
-        val base = CaptureTemplate(
-            name = "PokemonGoMovesTemplate",
-            regions = listOf(
-                CaptureRegion("FastMoveRow", 0.05f, 0.73f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ChargedMoveRowA", 0.05f, 0.79f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ChargedMoveRowB", 0.05f, 0.85f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH)
-            )
-        )
-        return loadAdjustedTemplate(base)
-    }
+    fun getMovesTemplate(): CaptureTemplate = getPokemonDetailTemplate()
 
-    fun getPokemonDetailTemplate(): CaptureTemplate {
-        val base = CaptureTemplate(
-            name = "PokemonGoDetailTemplate",
-            regions = listOf(
-                CaptureRegion("SpeciesName", 0.1f, 0.43f, 0.8f, 0.05f, ObservationType.OCR_TEXT),
-                CaptureRegion("CombatPower", 0.35f, 0.06f, 0.3f, 0.06f, ObservationType.OCR_TEXT),
-                CaptureRegion("TypeIcons", 0.35f, 0.62f, 0.3f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("CandyPanel", 0.05f, 0.68f, 0.9f, 0.12f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("SummaryFastMove", 0.05f, 0.85f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ShinyIndicator", 0.8f, 0.1f, 0.1f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("Gender", 0.85f, 0.43f, 0.05f, 0.05f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("FavoriteStar", 0.88f, 0.06f, 0.08f, 0.06f, ObservationType.IMAGE_MATCH),
-                CaptureRegion("FastMoveRow", 0.05f, 0.73f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ChargedMoveRowA", 0.05f, 0.79f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH),
-                CaptureRegion("ChargedMoveRowB", 0.05f, 0.85f, 0.9f, 0.06f, ObservationType.TEMPLATE_MATCH)
-            )
-        )
-        return loadAdjustedTemplate(base)
-    }
+    fun getPokemonDetailTemplate(): CaptureTemplate = loadAdjustedTemplate(
+        CaptureTemplate("PokemonGoDetailTemplate", com.example.overdex.data.registration.RegistrationFields.regions)
+    )
 
     fun saveAdjustment(templateName: String, region: CaptureRegion) {
         prefs.edit().apply {
@@ -76,42 +35,34 @@ class CaptureTemplateManager(private val context: Context) {
         }
     }
 
+    /** Publish all screenshot adjustments together, keeping every other template intact. */
+    fun saveTemplate(template: CaptureTemplate, sourceWidth: Int, sourceHeight: Int) {
+        val editor = prefs.edit()
+        template.regions.forEach { region ->
+            editor.putFloat("${template.name}_${region.id}_x", region.x)
+                .putFloat("${template.name}_${region.id}_y", region.y)
+                .putFloat("${template.name}_${region.id}_w", region.width)
+                .putFloat("${template.name}_${region.id}_h", region.height)
+        }
+        editor.putInt("${template.name}_source_width", sourceWidth)
+            .putInt("${template.name}_source_height", sourceHeight)
+            .putString("${template.name}_device", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+        check(editor.commit()) { "Unable to save registration boxes." }
+    }
+
     private fun loadAdjustedTemplate(base: CaptureTemplate): CaptureTemplate {
         val adjustedRegions = base.regions.map { region ->
-            var x = region.x
-            var y = region.y
-            var w = region.width
-            var h = region.height
-            var found = false
-
-            // 1. Check current template first
-            if (prefs.contains("${base.name}_${region.id}_x")) {
-                x = prefs.getFloat("${base.name}_${region.id}_x", region.x)
-                y = prefs.getFloat("${base.name}_${region.id}_y", region.y)
-                w = prefs.getFloat("${base.name}_${region.id}_w", region.width)
-                h = prefs.getFloat("${base.name}_${region.id}_h", region.height)
-                found = true
-            } 
-            // 2. Compatibility Fallback for the canonical Detail template
-            else if (base.name == "PokemonGoDetailTemplate") {
-                val legacyTemplates = listOf("PokemonGoSummaryTemplate", "PokemonGoMovesTemplate")
-                for (legacy in legacyTemplates) {
-                    if (prefs.contains("${legacy}_${region.id}_x")) {
-                        x = prefs.getFloat("${legacy}_${region.id}_x", region.x)
-                        y = prefs.getFloat("${legacy}_${region.id}_y", region.y)
-                        w = prefs.getFloat("${legacy}_${region.id}_w", region.width)
-                        h = prefs.getFloat("${legacy}_${region.id}_h", region.height)
-                        found = true
-                        break
-                    }
-                }
+            // Preserve an explicitly calibrated Fast Move Row ahead of its obsolete alias.
+            // Read old keys without removing them, so installing never destroys calibration.
+            val ids = if (region.id == "FastMoveRow") listOf("FastMoveRow", "SummaryFastMove") else listOf(region.id)
+            val keys = ids.flatMap { id ->
+                listOf(base.name, "PokemonGoMovesTemplate", "PokemonGoSummaryTemplate").map { "${it}_${id}" }
             }
-
-            if (found) {
-                region.copy(x = x, y = y, width = w, height = h)
-            } else {
-                region
-            }
+            val key = keys.firstOrNull { prefs.contains("${it}_x") } ?: return@map region
+            region.copy(
+                x = prefs.getFloat("${key}_x", region.x), y = prefs.getFloat("${key}_y", region.y),
+                width = prefs.getFloat("${key}_w", region.width), height = prefs.getFloat("${key}_h", region.height),
+            )
         }
         return base.copy(regions = adjustedRegions)
     }

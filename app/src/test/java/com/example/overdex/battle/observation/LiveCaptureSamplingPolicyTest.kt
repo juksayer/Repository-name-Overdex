@@ -23,4 +23,19 @@ class LiveCaptureSamplingPolicyTest {
         assertFalse(LiveCaptureSamplingPolicy.shouldPublish(1_000_000_000L, 1_029_999_999L))
         assertTrue(LiveCaptureSamplingPolicy.shouldPublish(1_000_000_000L, 1_030_000_000L))
     }
+
+    @Test
+    fun `instrument and queued transition frames never become battle evidence`() {
+        val gate = LiveCaptureVisibilityGate()
+        assertFalse(gate.permits(0L))
+        gate.instrumentVisible(false, 1_000_000_000L)
+        assertFalse(gate.permits(1_249_999_999L))
+        assertTrue(gate.permits(1_250_000_000L))
+        gate.instrumentVisible(true, 2_000_000_000L)
+        assertFalse(gate.permits(1_999_999_999L))
+        assertFalse(gate.permits(2_100_000_000L))
+        gate.instrumentVisible(false, 3_000_000_000L)
+        assertFalse(gate.permits(2_100_000_000L))
+        assertTrue(gate.permits(3_250_000_000L))
+    }
 }

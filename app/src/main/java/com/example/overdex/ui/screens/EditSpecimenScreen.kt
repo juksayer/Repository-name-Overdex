@@ -23,8 +23,9 @@ import com.example.overdex.ui.theme.*
 import kotlinx.coroutines.launch
 
 private const val TEAMS_INDEX = 8
-private const val FIELD_COUNT = 10
-private const val SAVE_BUTTON_INDEX = 9
+private const val SIZE_INDEX = 9
+private const val FIELD_COUNT = 11
+private const val SAVE_BUTTON_INDEX = 10
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -127,6 +128,9 @@ fun EditSpecimenScreen(
             2 -> editedState = specimen.copy(isShadow = !specimen.isShadow, isPurified = false)
             3 -> editedState = specimen.copy(isPurified = !specimen.isPurified, isShadow = false)
             4 -> editedState = specimen.copy(isShiny = !specimen.isShiny)
+            SIZE_INDEX -> editedState = specimen.copy(size = com.example.overdex.model.PokemonSize.entries.let {
+                it[(it.indexOf(specimen.size) + 1) % it.size]
+            })
             SAVE_BUTTON_INDEX -> handleSave()
         }
     }
@@ -228,7 +232,8 @@ fun EditSpecimenScreen(
                         TerminalText(teamsDraft.ifBlank { "No teams assigned" }, modifier = Modifier.padding(start = 24.dp, bottom = 8.dp))
                     }
 
-                    // TODO: Notes will be introduced in a future commit.
+                    TerminalMenuOption(label = "SIZE LABEL", modifier = Modifier.bringIntoViewRequester(fieldRequesters[SIZE_INDEX]),
+                        selected = selectedIndex == SIZE_INDEX, status = specimen.size.label) { activateField(SIZE_INDEX) }
 
                     Spacer(modifier = Modifier.height(24.dp))
                     

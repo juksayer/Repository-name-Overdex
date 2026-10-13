@@ -239,6 +239,7 @@ fun InstrumentLCD(
                     layout = keyboardController.layout,
                     currentRow = keyboardController.currentRow,
                     currentColumn = keyboardController.currentCol,
+                    isFocused = keyboardController.isFocused,
                     onKeyActivated = { key -> keyboardController.activateKey(key) { onKeyActivated?.invoke(it) } },
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 )

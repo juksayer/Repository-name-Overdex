@@ -46,6 +46,7 @@ fun CurrentBattleTeamScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onBack: () -> Unit,
     onReadyToLaunch: (() -> Unit)? = null,
+    onTeamLibrary: (() -> Unit)? = null,
 ) {
     val savedTeam by viewModel.currentBattleTeam.collectAsState()
     var step by remember { mutableStateOf(CurrentTeamStep.TEAM) }
@@ -65,7 +66,7 @@ fun CurrentBattleTeamScreen(
             CurrentTeamStep.TEAM -> savedTeam.members.size +
                 (if (savedTeam.members.size < 3) 1 else 0) +
                 (if (savedTeam.members.size == 3 && onReadyToLaunch != null) 1 else 0) +
-                (if (savedTeam.members.isNotEmpty()) 1 else 0)
+                (if (savedTeam.members.isNotEmpty()) 1 else 0) + (if (onTeamLibrary != null) 1 else 0)
             CurrentTeamStep.SPECIES -> pokemonItems.itemCount + 1
             CurrentTeamStep.FAST_MOVE -> selectedSpecies?.fastMoves?.size ?: 0
             CurrentTeamStep.CHARGED_MOVES -> (selectedSpecies?.chargedMoves?.size ?: 0) + 1
@@ -92,7 +93,8 @@ fun CurrentBattleTeamScreen(
             speciesId = species.id,
             speciesName = species.name,
             fastMoveName = fastMove,
-            chargedMoveNames = selectedChargedMoves.toList()
+            chargedMoveNames = selectedChargedMoves.toList(),
+            ownedPokemonId = savedTeam.members.firstOrNull { it.slot == slot && it.speciesId == species.id }?.ownedPokemonId,
         )
         viewModel.saveCurrentBattleTeam(
             CurrentBattleTeam((savedTeam.members.filterNot { it.slot == slot } + member).sortedBy { it.slot })
@@ -126,7 +128,10 @@ fun CurrentBattleTeamScreen(
                 if (savedTeam.members.isNotEmpty() && index == actionIndex) {
                     viewModel.clearCurrentBattleTeam()
                     nav.setIndex(0)
+                    return
                 }
+                if (savedTeam.members.isNotEmpty()) actionIndex++
+                if (index == actionIndex) onTeamLibrary?.invoke()
             }
             CurrentTeamStep.SPECIES -> {
                 if (index == 0) keyboard.open()
@@ -228,6 +233,7 @@ fun CurrentBattleTeamScreen(
                     savedTeam,
                     nav.selectedIndex,
                     showLaunch = onReadyToLaunch != null,
+                    showLibrary = onTeamLibrary != null,
                 )
                 CurrentTeamStep.SPECIES -> SpeciesSearchStep(query, pokemonItems, nav.selectedIndex) { }
                 CurrentTeamStep.FAST_MOVE -> MoveSelectionStep(
@@ -254,6 +260,7 @@ private fun CurrentTeamOverview(
     team: CurrentBattleTeam,
     selectedIndex: Int,
     showLaunch: Boolean = false,
+    showLibrary: Boolean = false,
 ) {
     val addActionIndex = team.members.size.takeIf { team.members.size < 3 }
     val launchActionIndex = if (team.members.size == 3 && showLaunch) team.members.size else null
@@ -297,6 +304,9 @@ private fun CurrentTeamOverview(
         }
         if (clearActionIndex != null) {
             item { TerminalMenuOption("CLEAR TEAM", selected = selectedIndex == clearActionIndex) }
+        }
+        if (showLibrary) {
+            item { TerminalMenuOption("SAVED TEAMS / SAVE THIS TEAM", selected = selectedIndex == team.members.size + (if (addActionIndex != null) 1 else 0) + (if (launchActionIndex != null) 1 else 0) + (if (clearActionIndex != null) 1 else 0)) }
         }
     }
 }

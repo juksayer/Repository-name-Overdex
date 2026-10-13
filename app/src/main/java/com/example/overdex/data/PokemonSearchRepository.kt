@@ -19,10 +19,14 @@ class PokemonSearchRepository(
      */
     fun search(
         query: String,
-        type: PokemonType?
+        type: PokemonType?,
+        dexRange: IntRange? = null,
     ): PagingSource<Int, PokemonEntity> {
 
         return when {
+            dexRange != null -> pokemonDao.searchPokemonInDexRange(
+                "%${query.trim()}%", dexRange.first, dexRange.last, type?.let { "%${it.name}%" }
+            )
             type != null ->
                 pokemonDao.getPokemonByType("%${type.name}%")
 

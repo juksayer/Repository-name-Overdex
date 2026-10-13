@@ -126,19 +126,16 @@ internal class LiveHpEffectivenessTextWitness(
                     if (abs(capturedAt - barSample.capturedAtMonotonicTimeNanos) > MAX_BAR_LOCK_AGE_NANOS) {
                         return@supplyFrames
                     }
-                    val hpRegionBounds = crop.resolveRect(
-                        calibration,
-                        frame.bitmap.width,
-                        frame.bitmap.height,
-                    ) ?: return@supplyFrames
+                    val hpRegionBounds = if (barSample.sourceWidth != null) {
+                        if (barSample.sourceWidth != frame.bitmap.width || barSample.sourceHeight != frame.bitmap.height) return@supplyFrames
+                        BattleCropBounds(0, 0, frame.bitmap.width, frame.bitmap.height)
+                    } else {
+                        val rect = crop.resolveRect(calibration, frame.bitmap.width, frame.bitmap.height) ?: return@supplyFrames
+                        BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom)
+                    }
                     val resolved = HpEffectivenessTextCropper.crop(
                         sourceFrame = frame.bitmap,
-                        hpRegionBounds = BattleCropBounds(
-                            left = hpRegionBounds.left,
-                            top = hpRegionBounds.top,
-                            right = hpRegionBounds.right,
-                            bottom = hpRegionBounds.bottom,
-                        ),
+                        hpRegionBounds = hpRegionBounds,
                         measurement = barSample.measurement,
                         cropName = if (damagedSide == ActivePokemonSide.PLAYER) {
                             "PlayerHpEffectivenessTextCrop"

@@ -15,8 +15,39 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OpponentFaintTrackerTest {
+    @Test fun `resource increase noise cannot create an extra faint on its return`() {
+        val tracker = TeamFaintTracker()
+        tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
+        tracker.accept(article("balls-3", 2, balls(3)))
+        tracker.accept(article("balls-2", 3, balls(2)))
+        tracker.accept(article("sealeo", 4, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        assertNull(tracker.accept(article("noise-3", 5, balls(3))))
+        assertNull(tracker.accept(article("back-2", 6, balls(2))))
+    }
+
+    @Test fun `player ball decrease faints player without consuming opponent resources`() {
+        val tracker = TeamFaintTracker(ActivePokemonSide.PLAYER)
+        tracker.accept(article("camerupt", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Camerupt", 323)))
+        tracker.accept(article("player-3", 2, com.example.overdex.battle.custody.PlayerPokeBallCountMeasured(3)))
+        assertNull(tracker.accept(article("opponent-1", 3, balls(1))))
+        val faint = tracker.accept(article("player-2", 4, com.example.overdex.battle.custody.PlayerPokeBallCountMeasured(2)))
+        assertEquals("Camerupt", faint?.speciesName)
+        assertEquals("PLAYER_POKE_BALL_COUNT_DECREASE", faint?.basis)
+    }
+
+    @Test fun `delayed pre-entry count does not clear the departing faint candidate`() {
+        val tracker = TeamFaintTracker()
+        tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
+        tracker.accept(article("balls-3", 2, balls(3)))
+        tracker.accept(article("sealeo", 5, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        tracker.accept(article("delayed-still-3", 4, balls(3)))
+        assertEquals("Sneasel", tracker.accept(article("balls-2", 6, balls(2)))?.speciesName)
+        assertNull(tracker.accept(article("even-older", 3, balls(3))))
+        assertNull(tracker.accept(article("still-2", 7, balls(2))))
+    }
+
     @Test fun `poke ball decrease faints opponent active before the decrease`() {
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker()
         tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
         assertNull(tracker.accept(article("balls-3", 2, balls(3))))
         tracker.accept(article(
@@ -34,7 +65,7 @@ class OpponentFaintTrackerTest {
     }
 
     @Test fun `same count and increases do not manufacture a faint`() {
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker()
         tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
         assertNull(tracker.accept(article("balls-2a", 2, balls(2))))
         assertNull(tracker.accept(article("balls-2b", 3, balls(2))))
@@ -42,7 +73,7 @@ class OpponentFaintTrackerTest {
     }
 
     @Test fun `replacement species becomes the active pokemon for the next decrease`() {
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker()
         tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
         tracker.accept(article("balls-3", 2, balls(3)))
         assertEquals("Sneasel", tracker.accept(article("balls-2", 3, balls(2)))?.speciesName)
@@ -52,7 +83,7 @@ class OpponentFaintTrackerTest {
     }
 
     @Test fun `late poke ball result still faints species active before replacement OCR`() {
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker()
         tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
         tracker.accept(article("balls-3", 2, balls(3)))
         tracker.accept(article("sealeo", 3, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
@@ -63,7 +94,7 @@ class OpponentFaintTrackerTest {
     }
 
     @Test fun `repeated count after a switch prevents fainting the previous occupant`() {
-        val tracker = OpponentFaintTracker()
+        val tracker = TeamFaintTracker()
         tracker.accept(article("sneasel", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sneasel", 215)))
         tracker.accept(article("balls-3", 2, balls(3)))
         tracker.accept(article("sealeo", 3, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))

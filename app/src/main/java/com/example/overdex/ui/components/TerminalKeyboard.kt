@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalGreen
 
@@ -33,10 +35,13 @@ fun TerminalKeyboard(
     currentRow: Int,
     currentColumn: Int,
     modifier: Modifier = Modifier,
+    isFocused: Boolean = true,
     onKeyActivated: ((String) -> Unit)? = null
 ) {
     val rowRequesters = remember(layout) { List(layout.size) { BringIntoViewRequester() } }
-    LaunchedEffect(layout, currentRow) { rowRequesters.getOrNull(currentRow)?.bringIntoView() }
+    LaunchedEffect(layout, currentRow, isFocused) {
+        if (isFocused) rowRequesters.getOrNull(currentRow)?.bringIntoView()
+    }
     BoxWithConstraints(modifier) {
         val rowGap = 6.dp
         val keyHeight = if (layout.size in 1..4 && maxHeight != Dp.Infinity) {
@@ -52,7 +57,7 @@ fun TerminalKeyboard(
                     modifier = Modifier.fillMaxWidth().bringIntoViewRequester(rowRequesters[rowIndex])
                 ) {
                     row.forEachIndexed { colIndex, key ->
-                        val isSelected = currentRow == rowIndex && currentColumn == colIndex
+                        val isSelected = isFocused && currentRow == rowIndex && currentColumn == colIndex
 
                         KeyboardKey(
                             key = key,
@@ -90,7 +95,8 @@ private fun KeyboardKey(
                 color = if (isSelected) TerminalGreen else Color.Transparent,
                 shape = RoundedCornerShape(2.dp)
             )
-            .clickable(enabled = !isBlank, onClick = onClick),
+            .clickable(enabled = !isBlank, onClick = onClick)
+            .semantics { if (key == "END") contentDescription = "End typing" },
         contentAlignment = Alignment.Center
     ) {
         if (!isBlank) {
@@ -108,6 +114,21 @@ private fun KeyboardKey(
                         style = TypeIconStyle.OVERDEX,
                         modifier = Modifier.size(16.dp)
                     )
+                }
+            } else if (key == "END") {
+                // The stepped letters echo the compact END key on the handheld games.
+                Box(Modifier.size(25.dp, 22.dp)) {
+                    "END".forEachIndexed { index, letter ->
+                        Text(
+                            text = letter.toString(),
+                            color = if (isSelected) TerminalBlack else TerminalGreen,
+                            fontSize = 10.sp,
+                            lineHeight = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.offset(x = (index * 8).dp, y = (index * 4).dp),
+                        )
+                    }
                 }
             } else {
                 val displayKey = when (key) {
@@ -135,7 +156,7 @@ val LettersLayout = listOf(
     listOf("A", "B", "C", "D", "E", "F", "G", "H"),
     listOf("I", "J", "K", "L", "M", "N", "O", "P"),
     listOf("Q", "R", "S", "T", "U", "V", "W", "X"),
-    listOf("Y", "Z", "SPACE", "DELETE", "#", ",")
+    listOf("Y", "Z", "SPACE", "DELETE", "#", "END")
 )
 
 /**
@@ -146,7 +167,7 @@ val TokenLayout = listOf(
     listOf("1", "2", "3", "4", "5", "6", "7", "8"),
     listOf("9", "0", "TYPE:NORMAL", "TYPE:FIRE", "TYPE:WATER", "TYPE:ELECTRIC", "TYPE:GRASS", "TYPE:ICE"),
     listOf("TYPE:FIGHTING", "TYPE:POISON", "TYPE:GROUND", "TYPE:FLYING", "TYPE:PSYCHIC", "TYPE:BUG", "TYPE:ROCK", "TYPE:GHOST"),
-    listOf("TYPE:DRAGON", "TYPE:STEEL", "TYPE:FAIRY", "TYPE:DARK", "SPACE", "DELETE", "#", "")
+    listOf("TYPE:DRAGON", "TYPE:STEEL", "TYPE:FAIRY", "TYPE:DARK", "SPACE", "DELETE", "#", ",")
 )
 
 /**

@@ -25,6 +25,8 @@ class ChargedMoveAnnouncementInference(
 ) {
     private val activeSpeciesBySide = mutableMapOf<ActivePokemonSide, String>()
     private var knownSpeciesNames: Set<String>? = null
+    private data class Spend(val side: ActivePokemonSide, val species: String, val move: String, val at: Long)
+    private val recentSpends = ArrayDeque<Spend>()
 
     suspend fun accept(
         article: RealityArticle,
@@ -53,6 +55,16 @@ class ChargedMoveAnnouncementInference(
             activeSides.isNotEmpty() -> null // e.g. mirror match: do not invent a side.
             else -> rosterSideForSpecies(speciesName)
         } ?: return null
+        // OCR can publish the same on-screen announcement with and without
+        // punctuation. Preserve both raw readings, but debit this use only once.
+        val at = article.monotonicTimeNanos ?: return null
+        val spend = Spend(side, normalize(pokemon.name), normalize(move.name), at)
+        if (recentSpends.any {
+                it.side == spend.side && it.species == spend.species && it.move == spend.move &&
+                    kotlin.math.abs(it.at - at) <= ANNOUNCEMENT_EPISODE_NANOS
+            }) return null
+        recentSpends.addLast(spend)
+        while (recentSpends.size > 64) recentSpends.removeFirst()
         return ChargedMoveAnnouncementDerivation(
             payload = ChargedMoveEnergySpent(
                 side = side,
@@ -70,6 +82,7 @@ class ChargedMoveAnnouncementInference(
 
     private companion object {
         const val ANNOUNCEMENT_SOURCE = "ANNOUNCEMENT_WITNESS"
+        const val ANNOUNCEMENT_EPISODE_NANOS = 4_000_000_000L
         val USED_MOVE_PATTERN = Regex("^\\s*(.+?)\\s+used\\s+(.+?)[!.]*\\s*$", RegexOption.IGNORE_CASE)
     }
 }

@@ -61,6 +61,19 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         )
     }
 
+    /** Refresh a library without collapsing the user's current directory. */
+    fun replaceChildren(path: String, children: List<TreeNode>) {
+        fun replace(nodes: List<TreeNode>, parent: String): List<TreeNode> = nodes.map { node ->
+            val nodePath = "$parent/${node.name}"
+            if (node is DirectoryNode) {
+                if (nodePath == path) node.copy(children = children)
+                else node.copy(children = replace(node.children, nodePath))
+            } else node
+        }
+        rootNodes = replace(rootNodes, "")
+        if (project().none { it.path == selectedPath }) selectedPath = path
+    }
+
     fun moveSelection(delta: Int) {
         val projection = project()
         var currentIndex = projection.indexOfFirst { it.path == selectedPath }

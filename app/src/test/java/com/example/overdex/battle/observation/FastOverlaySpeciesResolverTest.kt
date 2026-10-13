@@ -33,15 +33,16 @@ class FastOverlaySpeciesResolverTest {
         assertNull(FastOverlaySpeciesResolver.resolve("MewtO", names + setOf("Mew", "Mewtwo")))
     }
 
-    @Test fun `species crop recovery checks the calibrated row then adjacent rows`() {
+    @Test fun `species recovery overlaps strips so text cannot fall between adjacent searches`() {
         val calibrated = AnchorRegion(x = 0.7f, y = 0.1f, width = 0.25f, height = 0.025f)
 
         assertEquals(0.1f, SpeciesCropSearchPlan.region(calibrated, 0).y)
-        assertEquals(0.075f, SpeciesCropSearchPlan.region(calibrated, 1).y)
-        assertEquals(0.125f, SpeciesCropSearchPlan.region(calibrated, 2).y)
-        assertEquals(0.05f, SpeciesCropSearchPlan.region(calibrated, 3).y)
-        assertEquals(0.15f, SpeciesCropSearchPlan.region(calibrated, 4).y)
-        assertEquals(0, SpeciesCropSearchPlan.next(4))
+        assertEquals(0.0875f, SpeciesCropSearchPlan.region(calibrated, 1).y, .000001f)
+        assertEquals(0.1125f, SpeciesCropSearchPlan.region(calibrated, 2).y, .000001f)
+        assertEquals(0.075f, SpeciesCropSearchPlan.region(calibrated, 3).y)
+        assertEquals(0.125f, SpeciesCropSearchPlan.region(calibrated, 4).y)
+        assertEquals(0.05f, SpeciesCropSearchPlan.region(calibrated, 7).y)
+        assertEquals(0, SpeciesCropSearchPlan.next(8))
     }
 
     @Test fun `species crop recovery never leaves the captured frame`() {

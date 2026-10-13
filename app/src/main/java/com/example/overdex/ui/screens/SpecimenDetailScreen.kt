@@ -32,6 +32,7 @@ fun SpecimenDetailScreen(
     pokedexViewModel: PokedexViewModel,
     collectionViewModel: MyCollectionViewModel,
     onEdit: (String) -> Unit,
+    onRecords: (String) -> Unit = {},
     onBack: () -> Unit
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
@@ -60,9 +61,16 @@ fun SpecimenDetailScreen(
             }
         },
         onStart = { onEdit(ownedId) },
+        onA = { onRecords(ownedId) },
         onB = onBack,
         viewModel = pokedexViewModel,
-        showBattleOverlay = false
+        showBattleOverlay = false,
+        lcdContent = {
+            Column(Modifier.fillMaxWidth()) {
+                TerminalButton(text = "BATTLE RECORDS", onClick = { onRecords(ownedId) })
+                TerminalText("[A] RECORDS · [START] EDIT · [B] BACK", fontSize = 11.sp)
+            }
+        },
     ) { _ ->
         val owned = ownedPokemon
         if (owned == null) {
@@ -150,6 +158,7 @@ fun SpecimenDetailScreen(
                     if (owned.isPurified) {
                         StatusBadge(text = "PURIFIED", color = Color(0xFF00E5FF))
                     }
+                    if (owned.size != com.example.overdex.model.PokemonSize.UNKNOWN) StatusBadge(text = owned.size.label, color = TerminalGreen)
                 }
             }
 
@@ -170,7 +179,7 @@ fun SpecimenDetailScreen(
 
             // Reserved Sections (Placeholders)
             BinderSectionTitle("BATTLE HISTORY")
-            PlaceholderContent()
+            TerminalText("[A] Open this card's recorded moves, faints and supported knockouts.")
 
             BinderSectionTitle("TIMELINE")
             PlaceholderContent()

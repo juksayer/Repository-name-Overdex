@@ -49,6 +49,34 @@ class RealityArticleArchiveMapperTest {
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 
+    @Test fun `global HP coordinates preserve source dimensions and old archives remain crop relative`() {
+        val payload = ActiveHpBarMeasured(ActivePokemonSide.OPPONENT, 395, 600, 587, 617, .9f, 672, 1493)
+        val archived = RealityArticleArchiveMapper.map(article(id = "source-hp", payload = payload)).payload as ArchivedActiveHpBarMeasured
+        assertEquals(672, archived.sourceWidth)
+        assertEquals(1493, archived.sourceHeight)
+        val legacy = kotlinx.serialization.json.Json.decodeFromString<ArchivedActiveHpBarMeasured>(
+            """{"side":"OPPONENT","barLeft":10,"barTop":20,"barRight":200,"barBottom":37,"filledFraction":0.9}"""
+        )
+        assertEquals(null, legacy.sourceWidth)
+        assertEquals(null, legacy.sourceHeight)
+    }
+
+    @Test
+    fun `player shield measurement survives archive serialization with provenance`() {
+        val archived = RealityArticleArchiveMapper.map(article(
+            id = "player-shield",
+            payload = com.example.overdex.battle.custody.PlayerShieldCountMeasured(1),
+            evidenceReferences = listOf("shield-crop-1", "shield-crop-2"),
+            monotonicTimeNanos = 1_000_000_000L,
+        ))
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val encoded = json.encodeToString(ArchivedRealityArticle.serializer(), archived)
+        val decoded = json.decodeFromString(ArchivedRealityArticle.serializer(), encoded)
+        assertEquals(ArchivedPlayerShieldCountMeasured(1), decoded.payload)
+        assertEquals(listOf("shield-crop-1", "shield-crop-2"), decoded.evidenceReferences)
+        assertEquals(1_000_000_000L, decoded.monotonicTimeNanos)
+    }
+
     @Test
     fun `maps raw text while preserving article provenance`() {
         val article = article(

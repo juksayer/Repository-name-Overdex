@@ -2,6 +2,7 @@ package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.FastMoveEnergyDerived
 import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.FastMoveUseObserved
@@ -35,21 +36,41 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val identities = EnumMap<ActivePokemonSide, Identity>(ActivePokemonSide::class.java)
     private val pendingUses = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val attributedUseIds = mutableSetOf<String>()
+    private val appearanceStarts = EnumMap<ActivePokemonSide, Long>(ActivePokemonSide::class.java)
+    private val learnedIdentities = mutableMapOf<Pair<ActivePokemonSide, String>, Identity>()
 
     suspend fun accept(article: RealityArticle): List<FastMoveEnergyDerivation> {
         when (val payload = article.payload) {
+            is ActivePokemonFaintedWitnessed -> {
+                val active = activeSpecies[payload.side]
+                val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
+                if (at >= (appearanceStarts[payload.side] ?: Long.MIN_VALUE) &&
+                    (payload.speciesName == null || active == null || normalize(payload.speciesName) == normalize(active))) {
+                    identities.remove(payload.side)
+                    activeSpecies.remove(payload.side)
+                    appearanceStarts[payload.side] = at
+                }
+                return emptyList()
+            }
             is SpeciesCheckMeasured -> if (
-                payload.status == "OPENED" && payload.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH")
+                payload.status == "OPENED" && payload.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH") &&
+                activeSpecies[payload.side] == null &&
+                payload.triggerMonotonicNanos > (appearanceStarts[payload.side] ?: Long.MIN_VALUE)
             ) {
                 identities.remove(payload.side)
                 activeSpecies.remove(payload.side)
-                pendingUses.remove(payload.side)
+                // A later identity may still resolve named uses from the departed
+                // combatant. Keep those uses; an entry only closes unsided context.
+                appearanceStarts[payload.side] = payload.triggerMonotonicNanos
                 return emptyList()
             }
 
             is ActivePokemonSpeciesWitnessed -> {
-                if (activeSpecies[payload.side] != payload.speciesName) {
+                if (activeSpecies[payload.side]?.let(::normalize) != normalize(payload.speciesName)) {
+                    val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
+                    if (at < (appearanceStarts[payload.side] ?: Long.MIN_VALUE)) return emptyList()
                     identities.remove(payload.side)
+                    if (activeSpecies.containsKey(payload.side)) appearanceStarts[payload.side] = at
                     activeSpecies[payload.side] = payload.speciesName
                 }
                 return emptyList()
@@ -70,9 +91,25 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
                     normalize(it.name) == normalize(payload.moveName)
                 } ?: return emptyList()
                 val identity = Identity(article, payload, move.energy)
-                identities[payload.side] = identity
-                val waiting = pendingUses.remove(payload.side).orEmpty()
-                return waiting.mapNotNull { derive(it, identity) }
+                learnedIdentities[payload.side to normalize(payload.speciesName)] = identity
+                val active = activeSpecies[payload.side]
+                if ((active == null && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >=
+                        (appearanceStarts[payload.side] ?: Long.MIN_VALUE)) ||
+                    (active != null && normalize(active) == normalize(payload.speciesName))) {
+                    identities[payload.side] = identity
+                }
+                val waiting = pendingUses[payload.side] ?: return emptyList()
+                val resolved = waiting.mapNotNull { useArticle ->
+                    val use = useArticle.payload as FastMoveUseObserved
+                    // Unknown older uses cannot inherit a replacement's species.
+                    if (use.attackerSpeciesName == null &&
+                        (useArticle.monotonicTimeNanos ?: Long.MIN_VALUE) <
+                        (appearanceStarts[payload.side] ?: Long.MIN_VALUE)
+                    ) null else derive(useArticle, identity)
+                }
+                val resolvedIds = resolved.map { it.observedArticle.id }.toSet()
+                waiting.removeAll { it.id in resolvedIds }
+                return resolved
             }
 
             is FastMoveUseObserved -> {
@@ -80,14 +117,17 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
                 // during one move, and also changes during the countdown. It is
                 // supporting evidence, not a trustworthy one-use counter by
                 // itself. Exact energy requires a battlefield hit/use witness.
-                if (payload.evidenceKinds.none(COUNTABLE_USE_EVIDENCE::contains)) return emptyList()
+                if (!FastMoveUseEvidence.establishesUse(payload.evidenceKinds)) return emptyList()
                 if (!attributedUseIds.add(payload.useId)) return emptyList()
-                val identity = identities[payload.attackingSide]
-                if (identity == null) {
-                    pendingUses.getOrPut(payload.attackingSide) { mutableListOf() } += article
-                    return emptyList()
-                }
-                return listOfNotNull(derive(article, identity))
+                val historical = (article.monotonicTimeNanos ?: Long.MAX_VALUE) <
+                    (appearanceStarts[payload.attackingSide] ?: Long.MIN_VALUE)
+                val identity = if (historical) payload.attackerSpeciesName?.let {
+                    learnedIdentities[payload.attackingSide to normalize(it)]
+                } else identities[payload.attackingSide]
+                val derived = identity?.let { derive(article, it) }
+                if (derived != null) return listOf(derived)
+                pendingUses.getOrPut(payload.attackingSide) { mutableListOf() } += article
+                return emptyList()
             }
 
             else -> return emptyList()
@@ -133,13 +173,5 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
         const val DEFAULT_USE_CONFIDENCE = 0.75f
         const val DEFAULT_IDENTITY_CONFIDENCE = 0.70f
         const val HIGHER_ENERGY_TIE_BREAK_ASSUMPTION = "HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
-        val COUNTABLE_USE_EVIDENCE = setOf(
-            "HP_BORDER_PULSE",
-            "HP_DAMAGE_TICK",
-            "RECIPIENT_VISUAL_ARTIFACT",
-            "HP_BORDER_CADENCE",
-            "HP_BAR_MOTION_COMPLETION",
-            "RECIPIENT_VISUAL_CADENCE",
-        )
     }
 }

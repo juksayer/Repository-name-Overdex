@@ -28,6 +28,43 @@ class FastMoveEnergyInferenceTest {
     )
 
     @Test
+    fun `species scan requests preserve known fast move energy`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity("identity", "Sealeo", "Water Gun"))
+        listOf("ENTRY", "SWITCH", "CRY").forEach { reason ->
+            engine.accept(article("scan-$reason", SpeciesCheckMeasured(
+                ActivePokemonSide.OPPONENT, 1, "OPENED", reason, 1_000_000_000L, 0, 1_500_000_000L
+            ), 2_000_000_000L))
+        }
+        assertEquals(3, engine.accept(use("after-scan", monotonicNanos = 2_100_000_000L)).single().payload.totalEnergyGenerated)
+    }
+
+    @Test
+    fun `a named pending use survives a switch until its own species move is identified`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(use("old-use", monotonicNanos = 1_000_000_000L))
+        engine.accept(article("entry", SpeciesCheckMeasured(
+            ActivePokemonSide.OPPONENT, 2, "OPENED", "ENTRY", 2_000_000_000L, 0, 1_500_000_000L
+        ), 2_000_000_000L))
+        engine.accept(species("replacement", "Vaporeon", 2_200_000_000L))
+
+        val resolved = engine.accept(identity("late-proof", "Sealeo", "Water Gun", 1_800_000_000L))
+        assertEquals("old-use", resolved.single().observedArticle.id.value)
+        assertEquals(1_000_000_000L, resolved.single().observedArticle.monotonicTimeNanos)
+        assertEquals(3, resolved.single().payload.totalEnergyGenerated)
+    }
+
+    @Test
+    fun `motion or unclassified visual effects alone never award energy`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        engine.accept(identity("identity", "Sealeo", "Water Gun"))
+        assertTrue(engine.accept(use("motion", listOf("HP_BAR_MOTION_COMPLETION", "RECIPIENT_VISUAL_ARTIFACT"))).isEmpty())
+    }
+
+    @Test
     fun `one fused use generates energy once even when it cites several witnesses`() = runBlocking {
         val engine = FastMoveEnergyInference(Knowledge(sealeo))
         engine.accept(species("species", "Sealeo"))
@@ -61,13 +98,12 @@ class FastMoveEnergyInferenceTest {
     }
 
     @Test
-    fun `entry clears the former combatant identity`() = runBlocking {
+    fun `confirmed faint clears the former combatant identity`() = runBlocking {
         val engine = FastMoveEnergyInference(Knowledge(sealeo))
         engine.accept(species("species", "Sealeo"))
         engine.accept(identity("identity", "Sealeo", "Water Gun"))
-        engine.accept(article("entry", SpeciesCheckMeasured(
-            ActivePokemonSide.OPPONENT, 2, "OPENED", "ENTRY",
-            2_000_000_000L, 0, 1_500_000_000L
+        engine.accept(article("faint", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, "BALL_COUNT_DECREASE"
         ), 2_000_000_000L))
 
         assertTrue(engine.accept(use("new-use", monotonicNanos = 2_500_000_000L)).isEmpty())

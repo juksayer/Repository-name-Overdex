@@ -116,6 +116,19 @@ data class AudioCaptured(
     }
 }
 
+/** A matched sound alone reports a stat and direction, never its recipient or stage count. */
+data class StatChangeSoundMeasured(
+    val cue: String, val referenceSha256: String, val similarity: Float,
+    val runnerUpSimilarity: Float, val durationNanos: Long,
+) : TestimonyPayload
+
+/** Sound occurrence plus a compatible, side-attributed charged move and reference effect. */
+data class StatChangeObserved(
+    val affectedSide: ActivePokemonSide?, val stat: String, val direction: Int,
+    val stages: Int?, val moveName: String?, val soundArticleId: String,
+    val basis: String = "AUDIO_CUE_AND_NAMED_CHARGED_MOVE",
+) : TestimonyPayload
+
 /**
  * An immutable report that a named witness began or ceased operating.
  *
@@ -179,7 +192,8 @@ data class PlayerTeamSlotConfigured(
     val speciesName: String,
     val speciesId: Int,
     val fastMoveName: String,
-    val chargedMoveNames: List<String>
+    val chargedMoveNames: List<String>,
+    val ownedPokemon: com.example.overdex.battle.team.OwnedPokemonBattleSnapshot? = null,
 ) : TestimonyPayload {
     init {
         require(slot in 1..3)
@@ -262,6 +276,14 @@ data class PlayerPokeBallCountMeasured(
     }
 }
 
+/** A stable count from the player's independent shield strip. */
+data class PlayerShieldCountMeasured(val visibleCount: Int, val maximumCount: Int = 2) : TestimonyPayload {
+    init {
+        require(maximumCount > 0)
+        require(visibleCount in 0..maximumCount)
+    }
+}
+
 /** A count read from one purpose-specific opponent badge crop. */
 data class OpponentBattleResourceCountMeasured(
     val resource: OpponentBattleResource,
@@ -276,19 +298,24 @@ data class OpponentBattleResourceCountMeasured(
 
 enum class OpponentBattleResource { POKE_BALLS, SHIELDS }
 
-/** One visible active HP bar, measured within the cited active-HP crop. */
+/** One visible active HP bar. Source dimensions distinguish global from legacy crop coordinates. */
 data class ActiveHpBarMeasured(
     val side: ActivePokemonSide,
     val barLeft: Int,
     val barTop: Int,
     val barRight: Int,
     val barBottom: Int,
-    val filledFraction: Float
+    val filledFraction: Float,
+    // Present for source-frame coordinates; absent in older crop-relative measurements.
+    val sourceWidth: Int? = null,
+    val sourceHeight: Int? = null
 ) : TestimonyPayload {
     init {
         require(barLeft >= 0 && barTop >= 0)
         require(barRight > barLeft && barBottom > barTop)
         require(filledFraction in 0f..1f)
+        require((sourceWidth == null) == (sourceHeight == null))
+        sourceWidth?.let { require(it >= barRight && requireNotNull(sourceHeight) >= barBottom) }
     }
 }
 
@@ -569,7 +596,10 @@ data class PlayerInactiveSpeciesSpriteFingerprintMeasured(
     val sampleBottom: Int
 ) : TestimonyPayload
 
-/** A derived match boundary whose predecessor is the accepted GO glyph article. */
+/**
+ * A derived match boundary citing accepted GO, or a countdown prediction
+ * confirmed by later combat. Source, predecessors and confidence retain its basis.
+ */
 data object MatchStarted : TestimonyPayload
 
 /** Derived immutable boundary from accepted win or loss testimony. */

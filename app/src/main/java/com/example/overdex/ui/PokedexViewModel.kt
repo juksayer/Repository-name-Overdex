@@ -76,7 +76,7 @@ import com.example.overdex.battle.observation.PersistedTrainerInactiveTimerOverl
 import com.example.overdex.battle.observation.PersistedOpponentBattleResourceWitness
 import com.example.overdex.battle.observation.PersistedPlayerPokeBallWitness
 import com.example.overdex.battle.observation.TeamResourceSnapshotGate
-import com.example.overdex.battle.observation.OpponentPokemonFaintWitness
+import com.example.overdex.battle.observation.PokemonFaintWitness
 import com.example.overdex.battle.observation.InactiveBenchSnapshotGate
 import com.example.overdex.battle.observation.MatchOutcomeCaptureGate
 import com.example.overdex.battle.observation.PokemonGoTypeIconMatcher
@@ -114,6 +114,7 @@ import com.example.overdex.data.PokemonJsonLoader
 import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.SpriteProvider
+import com.example.overdex.data.local.toDomain
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.PokemonEntity
 import com.example.overdex.data.observation.DroidballObservationInput
@@ -134,6 +135,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -169,6 +171,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         cryProvider = cryProvider,
     )
     private val pokemonLoader = PokemonJsonLoader(application)
+    @Volatile var isOverdexVisible: Boolean = true
+    val guidedRegistration by lazy {
+        com.example.overdex.data.registration.GuidedRegistrationController(
+            application, viewModelScope, pokemonRepository, gameMasterLoader, { isOverdexVisible }
+        )
+    }
+    private var registrationRequested = false
+
+    fun startGuidedRegistration() {
+        if (DroidballService.isRunning() || _deploymentState.value != InstrumentDeploymentState.IDLE ||
+            !guidedRegistration.readyToScan || guidedRegistration.state.value.draft?.saved == true) return
+        registrationRequested = true
+        _deploymentState.value = InstrumentDeploymentState.REQUESTING_PERMISSIONS
+    }
+
+    fun openGuidedRegistration() { _pendingCommand.tryEmit(InstrumentCommand.OpenCapture) }
+    fun stopGuidedRegistration() { if (registrationRequested) stopObservation() }
     private val fieldNoteRepository = FieldNoteRepository(application)
     
     private val _searchQuery = MutableStateFlow("")
@@ -193,6 +212,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private var observationDispatcher = ObservationDispatcher()
     private var droidballSignalJob: kotlinx.coroutines.Job? = null
+    private var teamConfigurationJob: Job? = null
     private var nextMatchVsWatcher: NextMatchVsWatcher? = null
     private val fieldMatchLedger = DroidballMatchLedger()
     private val archiveDirectoryManager = ArchiveDirectoryManager(application)
@@ -200,6 +220,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val cropArtifactStore = FileCropArtifactStore(application.filesDir)
     private val currentBattleTeamStore = CurrentBattleTeamStore(application)
     val currentBattleTeam = currentBattleTeamStore.team
+    val savedBattleTeams = currentBattleTeamStore.savedTeams
+    private val binderStore = com.example.overdex.data.OwnedBinderStore(application)
+    val customBinders = binderStore.binders
+    val ownedTeamChoices = db.ownedPokemonDao().getAllOwnedPokemonWithSpecies().map { rows ->
+        com.example.overdex.battle.team.OwnedBattleTeamChoice.fromCards(rows.map { it.owned.toDomain() })
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    /** Ready lineups from both named snapshots and the trainer's owned-card teams. */
+    val selectableBattleTeams = combine(savedBattleTeams, ownedTeamChoices) { saved, owned ->
+        val species = owned.flatMap { it.members }.map { it.speciesId }.distinct().mapNotNull { id ->
+            pokemonRepository.getPokemonById(id)?.let { id to it }
+        }.toMap()
+        saved + owned.mapNotNull { choice ->
+            choice.resolve(species)?.let { team ->
+                com.example.overdex.battle.team.SavedBattleTeam("owned:${choice.name}", "CARDS: ${choice.name}", team)
+            }
+        }
+    }.flowOn(Dispatchers.IO).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     /** Export work survives an Activity/ViewModel recreation while the process remains alive. */
     private val archiveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val archiveMutex = Mutex()
@@ -211,6 +248,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     val activeMatch = _activeMatch.asStateFlow()
     private val _droidballSession = MutableStateFlow<DroidballSession?>(null)
     val droidballSession = _droidballSession.asStateFlow()
+    val fieldTeamEditor by lazy {
+        com.example.overdex.battle.team.FieldTeamEditor(
+            pokemonRepository, viewModelScope,
+            canEdit = { _droidballSession.value?.canEditTeam == true },
+            save = ::saveCurrentBattleTeam,
+        )
+    }
     private val _latestMatchArchiveSource =
         MutableStateFlow<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
     val latestMatchArchiveSource = _latestMatchArchiveSource.asStateFlow()
@@ -255,6 +299,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 DirectoryNode("Match", listOf(
                     ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs)
                 )),
+                ActionNode("Records", InstrumentCommand.OpenBattleRecords),
                 ActionNode("History", InstrumentCommand.OpenBattleHistory)
             )),
             DirectoryNode("INTUEOR", listOf(
@@ -267,6 +312,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private val _treeState = MutableStateFlow(instrumentTree.getState())
     val treeState = _treeState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            customBinders.collect { custom ->
+                instrumentTree.replaceChildren("/BATTLE/BINDERS",
+                    listOf(ActionNode("Add or Edit Binders", InstrumentCommand.ManageBinders)) +
+                        (com.example.overdex.model.OwnedPokemonBinder.entries + custom).map {
+                            ActionNode(it.displayName, InstrumentCommand.OpenOwnedBinder(it), TreeNodeIcon.BINDER)
+                        })
+                _treeState.value = instrumentTree.getState()
+            }
+        }
+    }
 
     // Command handling
     private val _pendingCommand = MutableSharedFlow<InstrumentCommand>(extraBufferCapacity = 1)
@@ -340,6 +398,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun deployInstrument(resultCode: Int, data: android.content.Intent) {
+        if (registrationRequested) {
+            droidballSignalJob?.cancel()
+            guidedRegistration.start()
+            _deploymentState.value = InstrumentDeploymentState.DEPLOYING
+            DroidballService.start(getApplication(), resultCode, data, registration = true)
+            return
+        }
         startFreshMatch(resultCode, data, startCaptureService = true)
     }
 
@@ -383,7 +448,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
-            session.phase.collect(DroidballOverlayPresentation::showSessionPhase)
+            session.phase.collect { phase ->
+                DroidballOverlayPresentation.showSessionPhase(phase)
+                if (!session.canEditTeam) fieldTeamEditor.close()
+            }
         }
         viewModelScope.launch {
             match.articles.collect { article ->
@@ -401,27 +469,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             evidenceReferences = emptyList(),
             monotonicTimeNanos = System.nanoTime()
         )
-        fun submitCurrentTeamConfiguration() {
-            val configuredMembers = currentBattleTeam.value.members.sortedBy { it.slot }
-            DroidballOverlayPresentation.setConfiguredPlayerTeam(configuredMembers.map { it.speciesName })
-            configuredMembers.forEach { member ->
-                match.custody.submitTestimony(
-                    sourceId = SourceId("CURRENT_TEAM_CONFIGURATION"),
-                    payload = PlayerTeamSlotConfigured(
-                        slot = member.slot,
-                        speciesName = member.speciesName,
-                        speciesId = member.speciesId,
-                        fastMoveName = member.fastMoveName,
-                        chargedMoveNames = member.chargedMoveNames
-                    ),
-                    timestamp = System.currentTimeMillis(),
-                    confidence = null,
-                    evidenceReferences = emptyList(),
-                    monotonicTimeNanos = System.nanoTime()
-                )
-            }
-        }
-        submitCurrentTeamConfiguration()
+        submitCurrentTeamConfiguration(match)
         _latestMatchArchiveSource.value =
             com.example.overdex.battle.archive.MatchArchiveSource(
                 matchId = com.example.overdex.battle.observation.MatchId(match.matchId),
@@ -455,6 +503,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val inactiveTimerIntervalNanos = 100_000_000L // 10 fps
         val playerHpFrameHub = LiveActiveHpBarFrameHub()
         val opponentHpFrameHub = LiveActiveHpBarFrameHub()
+        val calibrationReferenceStore = com.example.overdex.data.BattleCalibrationReferenceStore(getApplication<Application>().filesDir)
+        var calibrationReferenceSaved = false
         val inactiveBenchCrops = setOf(
             BattleWitnessContracts.playerInactiveUpperSpeciesSpriteCapture.crop.cropName,
             BattleWitnessContracts.playerInactiveLowerSpeciesSpriteCapture.crop.cropName,
@@ -465,6 +515,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val teamResourceCrops = setOf(
             BattleWitnessContracts.playerPokeBallsCapture.crop.cropName,
             BattleWitnessContracts.opponentPokeBallsCapture.crop.cropName,
+            BattleWitnessContracts.playerShieldsCapture.crop.cropName,
             BattleWitnessContracts.opponentShieldsCapture.crop.cropName
         )
         val teamResourceSnapshotGate = TeamResourceSnapshotGate(
@@ -603,6 +654,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
             observationDispatcher.register(PersistedFastMoveSoundWitness(getApplication<Application>().filesDir))
+            observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(
+                getApplication(), audioArtifactStore, getApplication<Application>().filesDir,
+                isEnabled = { battleEvidenceLive() && session.phase.value !in setOf(
+                    com.example.overdex.battle.observation.DroidballSessionPhase.RESULT,
+                    com.example.overdex.battle.observation.DroidballSessionPhase.ENDED,
+                    com.example.overdex.battle.observation.DroidballSessionPhase.NAVIGATION_IDLE,
+                ) },
+            ))
+            observationDispatcher.register(com.example.overdex.battle.observation.StatChangeAttributionWitness(getApplication()))
         } else {
             // Coverage is itself evidence: no cry could have been heard without the microphone.
             match.custody.submitAvailability(
@@ -626,6 +686,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             BattleWitnessContracts.playerPokeBallsCapture to "Player Poké Balls Capture Witness",
             BattleWitnessContracts.opponentPokeBallsCapture to "Opponent Poké Balls Capture Witness",
+            BattleWitnessContracts.playerShieldsCapture to "Player Shields Capture Witness",
             BattleWitnessContracts.opponentShieldsCapture to "Opponent Shields Capture Witness"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(
@@ -649,6 +710,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedPlayerPokeBallWitness(cropArtifactStore))
         observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore))
         observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore))
+        observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore))
         observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore))
         observationDispatcher.register(PersistedActivePokemonTypeWitness.opponent(cropArtifactStore))
         observationDispatcher.register(
@@ -721,13 +783,27 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 // faster witnesses retain only their truthful crop bytes.
                 preserveCompleteFrame = true,
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Opponent HP Evidence Capture Witness"
+                name = "Opponent HP Evidence Capture Witness",
+                onCaptured = { crop, _, at ->
+                    // Keep one actual battlefield frame per match for Draggy Boxes.
+                    // Both HP bars must have been visible close to this frame, after
+                    // match start, so loading screens and result screens do not replace it.
+                    val bothBarsVisible = listOf(playerHpFrameHub, opponentHpFrameHub).all { hub ->
+                        hub.latestSample()?.let { kotlin.math.abs(at - it.capturedAtMonotonicTimeNanos) <= 500_000_000L } == true
+                    }
+                    if (!calibrationReferenceSaved && bothBarsVisible && match.matchStarted.replayCache.isNotEmpty()) {
+                        calibrationReferenceSaved = calibrationReferenceStore.remember(crop.artifact)
+                    }
+                }
             )
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
-        observationDispatcher.register(LiveActiveHpBarWitness.player(input, calibration, activeHpEvidenceLive, playerHpFrameHub))
-        observationDispatcher.register(LiveActiveHpBarWitness.opponent(input, calibration, activeHpEvidenceLive, opponentHpFrameHub))
-        observationDispatcher.register(OpponentPokemonFaintWitness())
+        val battlefieldHpTracker = com.example.overdex.battle.observation.LiveBattlefieldHpTracker(calibration)
+        observationDispatcher.register(LiveActiveHpBarWitness(
+            input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub
+        ))
+        observationDispatcher.register(PokemonFaintWitness())
+        observationDispatcher.register(PokemonFaintWitness(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER))
         observationDispatcher.register(PersistedActiveHpBarCadenceWitness.player())
         observationDispatcher.register(PersistedActiveHpBarCadenceWitness.opponent())
         observationDispatcher.register(LiveActiveHpBarBorderCadenceWitness.player(playerHpFrameHub))
@@ -916,10 +992,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
             DroidballOverlayPresentation.clearInferredPlayerTeam()
             DroidballOverlayPresentation.clearOpponentSpecies()
+            DroidballOverlayPresentation.showTeamSelectScan()
             observationDispatcher.restartWhere(match) { it.name.startsWith("Team Select") }
             // The attempt reset clears tentative roster conclusions. Restore
             // deliberate user configuration as fresh reference input.
-            submitCurrentTeamConfiguration()
+            submitCurrentTeamConfiguration(match)
         }
 
         // Listen for signals
@@ -977,8 +1054,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         openBattleHud(BattleOverlayOpenReason.USER_REQUEST)
                         session.armCountdown()
                     }
+                    is DroidballSignal.EditTeamRequested -> {
+                        if (session.canEditTeam) {
+                            val scanned = DroidballOverlayPresentation.inferredPlayerTeam.value
+                            val configured = currentBattleTeam.value.members.sortedBy { it.slot }.map { it.speciesName }
+                            if (scanned.any { it != null } &&
+                                (!DroidballOverlayPresentation.playerTeamConfirmed.value || scanned != configured)) {
+                                fieldTeamEditor.openScan(scanned)
+                            } else fieldTeamEditor.open(currentBattleTeam.value)
+                        }
+                    }
                     is DroidballSignal.ScanTeamSelectRequested -> {
-                        session.beginTeamSelectScan()
+                        if (!session.canEditTeam) return@collect
+                        fieldTeamEditor.close()
+                        restartObservationAttempt()
                         match.custody.submitTestimony(SourceId("DROIDBALL_USER_CONTROL"), TeamSelectScanStartedByUser, System.currentTimeMillis(), 1f, emptyList(), System.nanoTime())
                     }
                     is DroidballSignal.IgnoreCurrentScreenRequested -> {
@@ -988,9 +1077,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     }
                     is DroidballSignal.ConfirmInferredPlayerTeamRequested -> {
                         val team = DroidballOverlayPresentation.inferredPlayerTeam.value
-                        if (team.all { it != null }) {
+                        if (session.canEditTeam && team.all { it != null }) {
                             match.custody.submitTestimony(SourceId("DROIDBALL_USER_CONTROL"), PlayerTeamRosterConfirmation(true, team), System.currentTimeMillis(), 1f, emptyList(), System.nanoTime())
                             DroidballOverlayPresentation.confirmInferredPlayerTeam()
+                            fieldTeamEditor.openScan(team)
                         }
                     }
                     is DroidballSignal.RejectInferredPlayerTeamRequested -> {
@@ -1072,6 +1162,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             }.onSuccess { uri ->
                 if (uri != null) {
                     archiveDirectoryManager.deleteMatchCheckpoint(source.matchId)
+                    runCatching {
+                        val entry = archiveDirectoryManager.listArchives().firstOrNull { it.uri == uri }
+                        if (entry != null) {
+                            val records = com.example.overdex.battle.history.BattleRecordStore(getApplication())
+                            records.save(records.readArchive(uri), entry)
+                        }
+                    }.onFailure { error -> Log.w("BATTLE_RECORDS", "Match saved; records will be rebuilt when opened", error) }
                     Log.i("MATCH_ARCHIVE", "Auto-saved $reason match ${source.matchId.value}: $uri")
                 } else {
                     Log.w("MATCH_ARCHIVE", "$reason match ${source.matchId.value} remains in the field ledger; archive publication returned no location.")
@@ -1083,6 +1180,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun stopObservation() {
+        if (registrationRequested) {
+            guidedRegistration.stop()
+            registrationRequested = false
+            DroidballService.stop(getApplication())
+            _observationSessionState.value = ObservationSessionState.IDLE
+            _deploymentState.value = InstrumentDeploymentState.IDLE
+            return
+        }
         _deploymentState.value = InstrumentDeploymentState.RETURNING
         _activeMatch.value?.let { retainAndArchiveMatch(it, "Droidball stopped") }
         nextMatchVsWatcher?.stop()
@@ -1149,24 +1254,82 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
      */
     //Design Note: PokedexViewModel provides a reusable mechanism for constructing independent search sessions. Individual workflows, such as Register Specimen, own their transient search state while sharing the same repository and paging infrastructure.
     @OptIn(ExperimentalCoroutinesApi::class)
+    private fun submitCurrentTeamConfiguration(match: Match) {
+        val configuredMembers = currentBattleTeam.value.members.sortedBy { it.slot }
+        DroidballOverlayPresentation.setConfiguredPlayerTeam(configuredMembers.map { it.speciesName })
+        val configuredAt = System.currentTimeMillis()
+        val configuredAtNanos = System.nanoTime()
+        val previous = teamConfigurationJob
+        teamConfigurationJob = viewModelScope.launch(Dispatchers.IO) {
+            // A slow owned-card lookup from an older selection cannot arrive last
+            // and replace the team the user just confirmed.
+            previous?.join()
+            configuredMembers.forEach { member ->
+                val card = try {
+                    member.ownedPokemonId?.let { id ->
+                        db.ownedPokemonDao().getOwnedPokemonById(id).first()?.toDomain()
+                    }?.takeIf { it.speciesId == member.speciesId }
+                } catch (error: Exception) {
+                    if (error is kotlinx.coroutines.CancellationException) throw error
+                    // A missing card snapshot must not discard the configured
+                    // species and moves, or the other members of this team.
+                    Log.w("CURRENT_TEAM", "Unable to snapshot owned card for slot ${member.slot}", error)
+                    null
+                }
+                match.custody.submitTestimony(
+                    sourceId = SourceId("CURRENT_TEAM_CONFIGURATION"),
+                    payload = PlayerTeamSlotConfigured(
+                        slot = member.slot,
+                        speciesName = member.speciesName,
+                        speciesId = member.speciesId,
+                        fastMoveName = member.fastMoveName,
+                        chargedMoveNames = member.chargedMoveNames,
+                        ownedPokemon = card?.let(com.example.overdex.battle.team.OwnedPokemonBattleSnapshot::from),
+                    ),
+                    timestamp = configuredAt,
+                    confidence = null,
+                    evidenceReferences = emptyList(),
+                    monotonicTimeNanos = configuredAtNanos,
+                )
+            }
+        }
+    }
+
     fun saveCurrentBattleTeam(team: CurrentBattleTeam) {
+        val session = _droidballSession.value
+        check(session == null || session.canEditTeam || session.hasCompletedMatch) {
+            "This match has already started. Change the team before the next match."
+        }
         currentBattleTeamStore.replace(team)
+        if (session?.canEditTeam == true) submitCurrentTeamConfiguration(session.match)
     }
 
     fun clearCurrentBattleTeam() {
         currentBattleTeamStore.clear()
     }
 
+    suspend fun saveNamedBattleTeam(name: String, id: String? = null) = withContext(Dispatchers.IO) {
+        currentBattleTeamStore.saveNamed(name, currentBattleTeam.value, id)
+    }
+
+    suspend fun saveBinder(binder: com.example.overdex.model.OwnedPokemonBinder) = withContext(Dispatchers.IO) {
+        binderStore.save(binder)
+    }
+
+    suspend fun removeBinder(id: String) = withContext(Dispatchers.IO) { binderStore.remove(id) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun createSearchFlow(
         queryFlow: Flow<String>,
-        typeFlow: Flow<PokemonType?> = flowOf(null)
+        typeFlow: Flow<PokemonType?> = flowOf(null),
+        dexRangeFlow: Flow<IntRange?> = flowOf(null),
     ): Flow<PagingData<Pokemon>> {
-        return combine(queryFlow, typeFlow) { q, t -> q to t }
-            .flatMapLatest { (q, t) ->
+        return combine(queryFlow, typeFlow, dexRangeFlow) { q, t, r -> Triple(q, t, r) }
+            .flatMapLatest { (q, t, r) ->
                 Pager(
                     config = PagingConfig(pageSize = 50, enablePlaceholders = false),
                 ) {
-                    pokemonRepository.search(query = q, type = t)
+                    pokemonRepository.search(query = q, type = t, dexRange = r)
                 }.flow
             }
 
@@ -1185,6 +1348,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                     DroidballRuntimeState.ACTIVE -> {
+                        if (registrationRequested) {
+                            _deploymentState.value = InstrumentDeploymentState.OBSERVING
+                            _observationSessionState.value = ObservationSessionState.SERVICE_ACTIVE
+                            previous = runtime
+                            return@collect
+                        }
                         if (_deploymentState.value == InstrumentDeploymentState.IDLE ||
                             _deploymentState.value == InstrumentDeploymentState.REQUESTING_PERMISSIONS
                         ) {
@@ -1195,6 +1364,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                     DroidballRuntimeState.STOPPED -> {
+                        if (registrationRequested && previous != DroidballRuntimeState.STOPPED) {
+                            guidedRegistration.stop()
+                            registrationRequested = false
+                            _observationSessionState.value = ObservationSessionState.IDLE
+                        }
                         if (previous != DroidballRuntimeState.STOPPED &&
                             _deploymentState.value != InstrumentDeploymentState.REQUESTING_PERMISSIONS
                         ) {

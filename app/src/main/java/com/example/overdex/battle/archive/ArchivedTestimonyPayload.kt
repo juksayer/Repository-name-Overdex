@@ -76,7 +76,8 @@ data class ArchivedPlayerTeamSlotConfigured(
     val speciesName: String,
     val speciesId: Int,
     val fastMoveName: String,
-    val chargedMoveNames: List<String>
+    val chargedMoveNames: List<String>,
+    val ownedPokemon: com.example.overdex.battle.team.OwnedPokemonBattleSnapshot? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -135,6 +136,18 @@ data class ArchivedAudioCaptured(
     val peakAmplitude: Float? = null
 ) : ArchivedTestimonyPayload
 
+@Serializable @SerialName("stat_change_sound_measured")
+data class ArchivedStatChangeSoundMeasured(
+    val cue: String, val referenceSha256: String, val similarity: Float,
+    val runnerUpSimilarity: Float, val durationNanos: Long,
+) : ArchivedTestimonyPayload
+
+@Serializable @SerialName("stat_change_observed")
+data class ArchivedStatChangeObserved(
+    val affectedSide: String?, val stat: String, val direction: Int,
+    val stages: Int?, val moveName: String?, val soundArticleId: String, val basis: String,
+) : ArchivedTestimonyPayload
+
 @Serializable
 @SerialName("witness_operating")
 data class ArchivedWitnessOperating(
@@ -187,6 +200,10 @@ data class ArchivedPlayerPokeBallCountMeasured(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_shield_count_measured")
+data class ArchivedPlayerShieldCountMeasured(val visibleCount: Int, val maximumCount: Int = 2) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("opponent_battle_resource_count_measured")
 data class ArchivedOpponentBattleResourceCountMeasured(
     val resource: String,
@@ -202,7 +219,10 @@ data class ArchivedActiveHpBarMeasured(
     val barTop: Int,
     val barRight: Int,
     val barBottom: Int,
-    val filledFraction: Float
+    val filledFraction: Float,
+    // Present for source-frame coordinates; absent in older crop-relative measurements.
+    val sourceWidth: Int? = null,
+    val sourceHeight: Int? = null
 ) : ArchivedTestimonyPayload
 
 @Serializable

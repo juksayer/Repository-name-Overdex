@@ -1,5 +1,11 @@
 package com.example.overdex.battle.audio
 
+import com.example.overdex.battle.custody.ApertureStatus
+import com.example.overdex.battle.custody.HpBarBorderPulse
+import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.AudioCaptured
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
@@ -42,18 +48,18 @@ class PersistedFastMoveSoundWitness(private val root: File) : Observer {
                     if (sha256(bytes) != audio.artifact.sha256) return@collect
                     val pcm = WavPcm16.decode(bytes) ?: return@collect
                     val measured = FastMoveSoundAnalyzer.measure(pcm)
-                    val cueUse = article.evidenceReferences
+                    val cueSide = article.evidenceReferences
                         ?.asSequence()
                         ?.mapNotNull { cueId ->
                             match.realityTimeline.getArticles().asReversed()
                                 .firstOrNull { it.id.value == cueId }
                         }
-                        ?.mapNotNull { it.payload as? FastMoveUseObserved }
+                        ?.mapNotNull { fastMoveCueAttackingSide(it.payload) }
                         ?.firstOrNull()
                     match.custody.submitTestimony(
                         sourceId = SourceId(observerId.id),
                         payload = measured.copy(
-                            attackingSide = cueUse?.attackingSide,
+                            attackingSide = cueSide,
                             soundOnsetMonotonicNanos = if (measured.audible) {
                                 article.monotonicTimeNanos?.plus(requireNotNull(measured.onsetOffsetNanos))
                             } else null,
@@ -136,4 +142,19 @@ internal object FastMoveSoundAnalyzer {
         }
         return if (total == 0.0) 0f else (weighted / total).toFloat()
     }
+}
+
+/** A recipient-bar cue belongs to the opposite attacker, including mirror matches. */
+internal fun fastMoveCueAttackingSide(payload: TestimonyPayload):
+    ActivePokemonSide? {
+    val damaged = when (payload) {
+        is FastMoveUseObserved -> return payload.attackingSide
+        is ActiveHpBarDamageTickMeasured -> payload.damagedSide
+        is ActiveHpBarBorderPulseObserved -> payload.damagedBarSide
+        is HpBarBorderPulse -> if (payload.status == ApertureStatus.PRESENT)
+            payload.barSide else return null
+        else -> return null
+    }
+    return if (damaged == ActivePokemonSide.PLAYER)
+        ActivePokemonSide.OPPONENT else ActivePokemonSide.PLAYER
 }

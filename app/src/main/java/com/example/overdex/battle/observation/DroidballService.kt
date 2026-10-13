@@ -32,6 +32,10 @@ import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -115,11 +119,29 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // floor while reducing each transient source bitmap by roughly 30%.
         private const val CAPTURE_SCALE = 0.625f
         @Volatile private var activeService: DroidballService? = null
+        private val captureVisibility = LiveCaptureVisibilityGate()
+        private val instrumentVisible = MutableStateFlow(true)
+
+        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+        fun setInstrumentVisible(visible: Boolean) {
+            captureVisibility.instrumentVisible(visible, System.nanoTime())
+            instrumentVisible.value = visible
+            if (visible) activeService?.takeIf { it.registrationMode }?.registrationController?.dismissField()
+            if (visible) _frames.resetReplayCache()
+        }
 
         private val _runtimeState = MutableStateFlow(DroidballRuntimeState.STOPPED)
         val runtimeState = _runtimeState.asStateFlow()
 
         fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
+        suspend fun captureRegistrationCry(): com.example.overdex.battle.audio.Pcm16Audio {
+            val service = activeService?.takeIf { it.registrationMode } ?: error("Start a registration scan first.")
+            check(service.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                "Allow audio recording for Overdex, then restart the scan."
+            }
+            val projection = service.mediaProjection ?: error("Screen sharing has stopped.")
+            return com.example.overdex.data.registration.RegistrationCryCapture.record(service, projection)
+        }
         
         private val _signals = MutableSharedFlow<DroidballSignal>(extraBufferCapacity = 64)
         val signals = _signals.asSharedFlow()
@@ -145,6 +167,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         /** Raw audio snippets, published independently from captured visual frames. */
         val audioFrames = _audioFrames.asSharedFlow()
 
+        private val _livePcm = MutableSharedFlow<com.example.overdex.battle.audio.LivePcmChunk>(
+            replay = 0, extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+        /** Bounded, volatile samples for short sound-cue recognition; no full-match audio file. */
+        val livePcm = _livePcm.asSharedFlow()
+
         private val _motionPulses = MutableSharedFlow<CapturedDeviceMotionPulse>(
             replay = 0,
             extraBufferCapacity = 16,
@@ -166,11 +194,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private val _captureDiagnostics = MutableStateFlow(CaptureDiagnostics(state = "NOT OBSERVED"))
         val captureDiagnostics = _captureDiagnostics.asStateFlow()
 
-        fun start(context: Context, resultCode: Int, data: Intent) {
+        fun start(context: Context, resultCode: Int, data: Intent, registration: Boolean = false) {
             _runtimeState.value = DroidballRuntimeState.STARTING
             val intent = Intent(context, DroidballService::class.java).apply {
                 putExtra("resultCode", resultCode)
                 putExtra("data", data)
+                putExtra("registration", registration)
             }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -213,6 +242,25 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private lateinit var windowManager: WindowManager
+    private var registrationMode = false
+    private var registrationBoxes: com.example.overdex.ui.components.RegistrationAlignmentWindows? = null
+    private val registrationPanelExpanded = androidx.compose.runtime.mutableStateOf(false)
+    private val registrationController by lazy {
+        androidx.lifecycle.ViewModelProvider(
+            application as com.example.overdex.OverdexApplication,
+            androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[com.example.overdex.ui.PokedexViewModel::class.java].guidedRegistration
+    }
+    private val fieldViewModel by lazy {
+        androidx.lifecycle.ViewModelProvider(
+            application as com.example.overdex.OverdexApplication,
+            androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[com.example.overdex.ui.PokedexViewModel::class.java]
+    }
+    @Volatile private var fieldEditorResumeAtNanos = 0L
+    private var fieldEditorOriginalPosition: Pair<Int, Int>? = null
+    private fun fieldEditorBlocksCapture(now: Long): Boolean = !registrationMode &&
+        (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
     private var overlayView: ComposeView? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
@@ -284,11 +332,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onStartCommand()")
         val resultCode = intent?.getIntExtra("resultCode", Activity.RESULT_CANCELED) ?: Activity.RESULT_CANCELED
         val data = intent?.getParcelableExtra<Intent>("data")
+        registrationMode = intent?.getBooleanExtra("registration", false) == true
 
         if (resultCode == Activity.RESULT_OK && data != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val serviceTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
-                    if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    if (!registrationMode && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
                     } else {
                         0
@@ -300,14 +349,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             runCatching {
                 setupMediaProjection(resultCode, data)
                 setupOverlay()
-                startAudioCapture()
-                runCatching { startMotionPulseCapture() }.onFailure { error ->
+                if (!registrationMode) startAudioCapture()
+                if (!registrationMode) runCatching { startMotionPulseCapture() }.onFailure { error ->
                     _motionPulseCaptureAvailable.value = false
                     Log.w("DEVICE_MOTION", "Unable to start optional motion-pulse capture", error)
                 }
                 _captureDiagnostics.value = CaptureDiagnostics(state = "READY", width = null, height = null, publicationNanoTime = null)
                 _runtimeState.value = DroidballRuntimeState.ACTIVE
-                DroidballRuntimeMarker.markActive(this)
+                if (!registrationMode) DroidballRuntimeMarker.markActive(this)
                 _signals.tryEmit(DroidballSignal.Started)
             }.onFailure { error ->
                 Log.e("DROIDBALL_LAUNCH", "Unable to initialize Droidball service", error)
@@ -430,6 +479,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     // but the session has no observing consumers (for example during
                     // an Android activity recreation).
                     if (_frames.subscriptionCount.value == 0) return@setOnImageAvailableListener
+                    if (!captureVisibility.permits(receivedAtNanos) || fieldEditorBlocksCapture(receivedAtNanos)) return@setOnImageAvailableListener
+                    if (registrationMode && !registrationController.wantsFrames) return@setOnImageAvailableListener
+                    if (registrationMode && lastPublishedFrameNanos?.let { receivedAtNanos - it < 500_000_000L } == true) {
+                        return@setOnImageAvailableListener
+                    }
                     if (!LiveCaptureSamplingPolicy.shouldPublish(lastPublishedFrameNanos, receivedAtNanos)) {
                         return@setOnImageAvailableListener
                     }
@@ -463,6 +517,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         cleanBitmap
                     }
 
+                    // The activity can become visible while the pixels are copied.
+                    if (!captureVisibility.permits(receivedAtNanos) || fieldEditorBlocksCapture(receivedAtNanos)) {
+                        bitmap.recycle()
+                        return@setOnImageAvailableListener
+                    }
                     if (!firstFrameLogged) {
                         Log.d("ODX_CAPTURE_GEOMETRY", "└── Final Published Bitmap: ${bitmap.width}x${bitmap.height}")
                         firstFrameLogged = true
@@ -584,12 +643,23 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             val readBuffer = ByteArray(sampleRateHz / 50 * 2) // 20 ms
             var lastSignalAt = System.nanoTime()
             var lastState = "RUNNING_AWAITING_SIGNAL"
+            var pcmSequence = 0L
             try {
                 while (kotlinx.coroutines.currentCoroutineContext().isActive) {
                     val count = record.read(readBuffer, 0, readBuffer.size)
                     if (count <= 0) { status(source, "READ_FAILED"); break }
                     val peak = com.example.overdex.battle.audio.PcmSignalLevel.peak(readBuffer, count)
                     val now = System.nanoTime()
+                    if (_livePcm.subscriptionCount.value > 0) {
+                        val samples = ShortArray(count / 2) { index ->
+                            ((readBuffer[index * 2].toInt() and 0xff) or
+                                (readBuffer[index * 2 + 1].toInt() shl 8)).toShort()
+                        }
+                        _livePcm.tryEmit(com.example.overdex.battle.audio.LivePcmChunk(
+                            com.example.overdex.battle.audio.Pcm16Audio(sampleRateHz, 1, samples),
+                            pcmSequence++, now, System.currentTimeMillis(), source
+                        ))
+                    }
                     if (peak >= 0.001f) lastSignalAt = now
                     val state = when {
                         peak >= 0.001f -> "SIGNAL_PRESENT"
@@ -650,7 +720,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (bounds.width() - collapsedSizePx).coerceAtLeast(0)
+            x = (bounds.width() - if (registrationMode) (184 * resources.displayMetrics.density).roundToInt() else collapsedSizePx).coerceAtLeast(0)
             y = 350
         }
         freeOverlayX = params.x
@@ -659,7 +729,28 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
         overlayView = ComposeView(this).apply {
             setContent {
-                BattleOverlay(
+                if (registrationMode) {
+                    com.example.overdex.ui.components.RegistrationScanOverlay(
+                        controller = registrationController,
+                        expanded = registrationPanelExpanded.value,
+                        onExpandedChange = { registrationPanelExpanded.value = it },
+                        onDrag = ::moveOverlayBy,
+                        onReview = {
+                            startActivity(Intent(this@DroidballService, com.example.overdex.MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                .putExtra("open_guided_registration", true))
+                        },
+                    )
+                } else {
+                    val draft by fieldViewModel.fieldTeamEditor.draft.collectAsState()
+                    val savedTeams by fieldViewModel.selectableBattleTeams.collectAsState()
+                    LaunchedEffect(draft != null) { setFieldEditorWindow(draft != null) }
+                    if (draft != null) com.example.overdex.ui.components.FieldTeamEditorOverlay(
+                        editor = fieldViewModel.fieldTeamEditor,
+                        savedTeams = savedTeams,
+                        width = minOf(330f, bounds.width() / resources.displayMetrics.density - 16f).dp,
+                        onRescan = { emitSignal(DroidballSignal.ScanTeamSelectRequested) },
+                    ) else BattleOverlay(
                     panelWidthPx = panelWidthPx,
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
@@ -669,7 +760,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onResetBattleHudLayout = ::resetBattleHudLayout,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
-                )
+                    )
+                }
             }
         }
         
@@ -682,6 +774,59 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        if (registrationMode) {
+            registrationBoxes = com.example.overdex.ui.components.RegistrationAlignmentWindows(
+                this, windowManager, this, this, this, registrationController.alignment, registrationController::readField)
+            val screen = displayBounds()
+            registrationController.alignment.begin(screen.width(), screen.height())
+            serviceScope.launch(Dispatchers.Main) {
+                kotlinx.coroutines.flow.combine(registrationController.alignment.state, instrumentVisible, registrationController.fieldReview) { state, visible, review ->
+                    Triple(state, visible, review != null)
+                }.collect { (state, visible, reviewing) ->
+                    // Guide windows must not cover or intercept the panel's controls.
+                    val addedGuides = registrationBoxes?.render(if (visible || reviewing) state.copy(hiddenForRead = true) else state) == true
+                    val panel = overlayView
+                    val panelParams = overlayParams
+                    if (addedGuides && panel != null && panelParams != null && panel.isAttachedToWindow) {
+                        // WindowManager stacks new windows on top. Reattach above the guides;
+                        // recreate the window composition and retain expansion in service state.
+                        windowManager.removeViewImmediate(panel)
+                        windowManager.addView(panel, panelParams)
+                    }
+                    panel?.visibility = if (visible || state.hiddenForRead) android.view.View.INVISIBLE else android.view.View.VISIBLE
+                    if (!visible && state.hiddenForRead) registrationController.onGuidesHidden()
+                }
+            }
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun setFieldEditorWindow(open: Boolean) {
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
+        _frames.resetReplayCache()
+        if (open) {
+            if (fieldEditorOriginalPosition == null) fieldEditorOriginalPosition = params.x to params.y
+            // Keep GO's start button behind the editor while visual capture is
+            // paused. USE THIS TEAM or CLOSE returns touch input to the game.
+            params.flags = params.flags and
+                (WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL).inv()
+            params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            params.x = (displayBounds().width() * .04f).roundToInt()
+            params.y = (displayBounds().height() * .12f).roundToInt()
+        } else {
+            fieldEditorOriginalPosition?.let { (x, y) -> params.x = x; params.y = y }
+            fieldEditorOriginalPosition = null
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                ?.hideSoftInputFromWindow(view.windowToken, 0)
+            updateOverlayLayoutState(
+                DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD,
+                DroidballOverlayPresentation.expanded.value,
+            )
+        }
+        if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
 
     private fun moveOverlayBy(deltaX: Float, deltaY: Float) {
@@ -863,7 +1008,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("ODX-FI Active")
-            .setContentText("Continuous observation in progress.")
+            .setContentText(if (registrationMode) "Reading one Pokémon into an owned card." else "Continuous observation in progress.")
             .setSmallIcon(R.drawable.ic_launcher_foreground) // Placeholder
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
@@ -874,6 +1019,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         if (activeService === this) activeService = null
         Log.d("DroidballService", "onDestroy: Releasing resources")
         markStopped()
+        if (registrationMode) registrationController.stop()
+        else fieldViewModel.fieldTeamEditor.close()
+        registrationBoxes?.close()
+        registrationBoxes = null
         _signals.tryEmit(DroidballSignal.Stopped)
         
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
@@ -965,6 +1114,7 @@ sealed class DroidballSignal {
     /** User explicitly opens the field HUD when visual recognition has not arrived yet. */
     data object OpenBattleHudRequested : DroidballSignal()
     data object ScanTeamSelectRequested : DroidballSignal()
+    data object EditTeamRequested : DroidballSignal()
     data object RestartObservationRequested : DroidballSignal()
     data object IgnoreCurrentScreenRequested : DroidballSignal()
     data object StopSessionRequested : DroidballSignal()

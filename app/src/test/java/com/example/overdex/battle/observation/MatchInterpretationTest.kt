@@ -13,10 +13,46 @@ import com.example.overdex.model.BattleActor
 import com.example.overdex.model.BattleEventType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchInterpretationTest {
+
+    @Test
+    fun `missing GO is confirmed by post-countdown damage and starts the session once`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match(
+            matchId = "MISSED_GO",
+            custody = custody,
+            realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge()
+        )
+        val session = DroidballSession(match)
+        val at = System.nanoTime()
+        try {
+            custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId),
+                CountdownGlyphWitnessed("3", .986f, 1), 1_000L, null, emptyList(), at)
+            custody.submitTestimony(SourceId("PLAYER_ACTIVE_HP_DAMAGE_WITNESS"),
+                com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured(
+                    com.example.overdex.battle.custody.ActivePokemonSide.PLAYER, 1f, .95f, .05f),
+                4_100L, null, emptyList(), at + 3_100_000_000L)
+            withTimeout(4_000) {
+                while (session.phase.value != DroidballSessionPhase.BATTLE_ACTIVE) delay(10)
+            }
+            // A later OCR delivery of GO remains testimony without duplicating start.
+            custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId),
+                CountdownGlyphWitnessed("GO", .95f, 2), 4_000L, null, emptyList(), at + 3_000_000_000L)
+            withTimeout(4_000) {
+                while (timeline.getArticles().count { it.payload is CountdownGlyphWitnessed } < 2) delay(10)
+            }
+            val starts = timeline.getArticles().filter { it.payload is MatchStarted }
+            assertEquals(1, starts.size)
+            assertEquals(at + 3_000_000_000L, starts.single().monotonicTimeNanos)
+            assertEquals(2, starts.single().predecessorIds.size)
+        } finally { session.end(); match.release() }
+    }
 
     @Test
     fun `explicit HUD start arms countdown observation without starting the Match clock`() = runBlocking {
@@ -56,7 +92,12 @@ class MatchInterpretationTest {
         custody.submitTestimony(SourceId("TRAINER_INACTIVE_TIMER_OVERLAY"), SupportingMatchStart(2, 0.1f, 0.2f), 1100L)
         custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("GO", 0.9f, 3), 1200L)
         custody.submitTestimony(SourceId(BattleWitnessContracts.countdownGlyph.witnessId), CountdownGlyphWitnessed("GO", 0.95f, 4), 1300L)
-        delay(150)
+        // Match delivers on its own serial executor. Wait for that delivery,
+        // rather than treating a busy test machine's 150 ms scheduling delay as a lost GO.
+        withTimeout(4_000) {
+            while (timeline.getArticles().count { it.payload is CountdownGlyphWitnessed } < 3 ||
+                session.phase.value != DroidballSessionPhase.BATTLE_ACTIVE) delay(10)
+        }
 
         val articles = timeline.getArticles()
         val starts = articles.filter { it.payload is MatchStarted }

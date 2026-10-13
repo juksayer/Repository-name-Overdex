@@ -22,7 +22,8 @@ data class OwnedPokemonEntity(
     val chargedMove2: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    @ColumnInfo(defaultValue = "'[]'") val teamsJson: String = "[]"
+    @ColumnInfo(defaultValue = "'[]'") val teamsJson: String = "[]",
+    @ColumnInfo(defaultValue = "'UNKNOWN'") val size: String = "UNKNOWN",
 )
 
 fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
@@ -39,7 +40,9 @@ fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
     chargedMove2 = chargedMove2,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    teams = Json.decodeFromString<List<String>>(teamsJson)
+    teams = Json.decodeFromString<List<String>>(teamsJson),
+    size = com.example.overdex.model.PokemonSize.entries.firstOrNull { it.name == size }
+        ?: com.example.overdex.model.PokemonSize.UNKNOWN,
 )
 
 fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
@@ -56,7 +59,8 @@ fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
     chargedMove2 = chargedMove2,
     createdAt = createdAt,
     updatedAt = updatedAt,
-    teamsJson = Json.encodeToString(teams)
+    teamsJson = Json.encodeToString(teams),
+    size = size.name,
 )
 
 data class OwnedPokemonWithSpecies(

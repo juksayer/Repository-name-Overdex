@@ -7,12 +7,17 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [PokemonEntity::class, OwnedPokemonEntity::class], version = 10, exportSchema = false)
+@Database(entities = [PokemonEntity::class, OwnedPokemonEntity::class], version = 11, exportSchema = false)
 abstract class PokedexDatabase : RoomDatabase() {
     abstract fun pokemonDao(): PokemonDao
     abstract fun ownedPokemonDao(): OwnedPokemonDao
 
     companion object {
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE owned_pokemon ADD COLUMN size TEXT NOT NULL DEFAULT 'UNKNOWN'")
+            }
+        }
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE owned_pokemon ADD COLUMN teamsJson TEXT NOT NULL DEFAULT '[]'")
@@ -28,7 +33,7 @@ abstract class PokedexDatabase : RoomDatabase() {
                     PokedexDatabase::class.java,
                     "pokedex_database",
                 )
-                    .addMigrations(MIGRATION_9_10)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

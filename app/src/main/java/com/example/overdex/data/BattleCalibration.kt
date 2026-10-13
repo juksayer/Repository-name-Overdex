@@ -41,6 +41,9 @@ data class BattleCalibration(
         width = 0.0787f,
         height = 0.0167f
     ),
+    val playerShieldsRegion: AnchorRegion = opponentShieldsRegion.copy(
+        x = 1f - opponentShieldsRegion.x - opponentShieldsRegion.width
+    ),
     val playerTeamInfoRegion: AnchorRegion = AnchorRegion(
         x = 20f / 1080f,
         y = 225f / 2400f,

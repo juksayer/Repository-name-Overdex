@@ -100,7 +100,7 @@ object RealityArticleArchiveMapper {
             is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
             is PlayerTeamRosterConfirmation -> ArchivedPlayerTeamRosterConfirmation(p.confirmed, p.speciesBySlot)
             is PlayerTeamSlotConfigured -> ArchivedPlayerTeamSlotConfigured(
-                p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames
+                p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames, p.ownedPokemon
             )
             is SupportingMatchStart -> ArchivedSupportingMatchStart(
                 frameIndex = p.frameIndex,
@@ -150,6 +150,12 @@ object RealityArticleArchiveMapper {
             is BattleCryCandidatesMeasured -> ArchivedBattleCryCandidatesMeasured(
                 p.cueKind, p.candidates.map { ArchivedBattleCryCandidateMeasurement(it.speciesId, it.referenceSha256, it.similarity) }
             )
+            is com.example.overdex.battle.custody.StatChangeSoundMeasured -> ArchivedStatChangeSoundMeasured(
+                p.cue, p.referenceSha256, p.similarity, p.runnerUpSimilarity, p.durationNanos
+            )
+            is com.example.overdex.battle.custody.StatChangeObserved -> ArchivedStatChangeObserved(
+                p.affectedSide?.name, p.stat, p.direction, p.stages, p.moveName, p.soundArticleId, p.basis
+            )
             is OutOfBattleMenuWitnessed -> ArchivedOutOfBattleMenuWitnessed
             is VisualCaptureGapObserved -> ArchivedVisualCaptureGapObserved(p.durationNanos)
             is WitnessOperating -> ArchivedWitnessOperating(p.operating)
@@ -182,6 +188,7 @@ object RealityArticleArchiveMapper {
                 visibleCount = p.visibleCount,
                 maximumCount = p.maximumCount
             )
+            is com.example.overdex.battle.custody.PlayerShieldCountMeasured -> ArchivedPlayerShieldCountMeasured(p.visibleCount, p.maximumCount)
             is OpponentBattleResourceCountMeasured -> ArchivedOpponentBattleResourceCountMeasured(
                 resource = p.resource.name,
                 visibleCount = p.visibleCount,
@@ -193,7 +200,9 @@ object RealityArticleArchiveMapper {
                 barTop = p.barTop,
                 barRight = p.barRight,
                 barBottom = p.barBottom,
-                filledFraction = p.filledFraction
+                filledFraction = p.filledFraction,
+                sourceWidth = p.sourceWidth,
+                sourceHeight = p.sourceHeight
             )
             is ActiveHpBarMotionCadenceMeasured -> ArchivedActiveHpBarMotionCadenceMeasured(
                 movingSide = p.movingSide.name,

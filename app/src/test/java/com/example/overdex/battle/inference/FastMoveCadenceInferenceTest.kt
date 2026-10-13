@@ -29,6 +29,20 @@ class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
 
     @Test
+    fun `identity remains available throughout a badge recheck`() = runBlocking {
+        val pokemon = Pokemon(134, "Vaporeon", listOf(PokemonType.WATER), "Kanto",
+            fastMoves = listOf(move("Water Gun", 1, 3)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134)))
+        engine.accept(entry("scan", ActivePokemonSide.OPPONENT, 2_000_000_000L))
+        assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        engine.accept(article("faint", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Vaporeon", 134, "BALL_COUNT_DECREASE"
+        )).copy(monotonicTimeNanos = 3_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+    }
+
+    @Test
     fun `two measured intervals resolve one uniquely timed fast move`() {
         val incinerate = move("Incinerate", turns = 3, energy = 20)
         val ember = move("Ember", turns = 1, energy = 6)
@@ -384,6 +398,19 @@ class FastMoveCadenceInferenceTest {
         val result = engine.accept(energyFillCadence("e2", 1_500_000_000L))
 
         assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `prebattle move edits replace a previously identified configured move`() = runBlocking {
+        val pokemon = Pokemon(711, "Gourgeist", listOf(PokemonType.GHOST), "Kalos",
+            fastMoves = listOf(move("Razor Leaf", 2, 4), move("Incinerate", 5, 20)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
+        engine.accept(article("old", PlayerTeamSlotConfigured(1, "Gourgeist", 711, "Razor Leaf", listOf("Seed Bomb"))))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Gourgeist", 711)))
+        val result = engine.accept(article("edit", PlayerTeamSlotConfigured(1, "Gourgeist", 711, "Incinerate", listOf("Seed Bomb"))))
+        assertEquals("Incinerate", (result.single().payload as FastMoveIdentified).moveName)
+        engine.accept(article("another-slot", PlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Surf"))))
+        assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
     }
 
     @Test

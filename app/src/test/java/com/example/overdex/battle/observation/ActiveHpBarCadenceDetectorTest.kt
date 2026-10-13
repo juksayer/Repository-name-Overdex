@@ -54,6 +54,15 @@ class ActiveHpBarCadenceDetectorTest {
         assertTrue(cadence.verticalExcursionPixels >= 6f)
     }
 
+    @Test fun `camera slides do not complete fast move hops`() {
+        val detector = ActiveHpBarCadenceDetector()
+        val positions = listOf(10 to 100, 10 to 70, 10 to 100, 70 to 70, 10 to 100)
+        positions.forEachIndexed { i, (x, y) ->
+            val measured = hp(y).copy(barLeft = x, barRight = x + 300)
+            assertNull(detector.accept(article("camera-$i", i * 300_000_000L, y).copy(payload = measured), measured, i * 300_000_000L))
+        }
+    }
+
     private fun hp(top: Int) = ActiveHpBarMeasured(
         side = ActivePokemonSide.OPPONENT,
         barLeft = 10,

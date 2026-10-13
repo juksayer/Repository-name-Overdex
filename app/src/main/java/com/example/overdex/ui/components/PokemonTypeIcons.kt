@@ -238,15 +238,29 @@ private val IconBug = typeIcon("Bug") {
 
 private val IconRock = typeIcon("Rock") {
     path(stroke = SolidColor(Color.White), strokeLineWidth = 2f) {
-        moveTo(12f, 4f)
-        lineTo(20f, 8f)
-        lineTo(20f, 16f)
-        lineTo(12f, 20f)
-        lineTo(4f, 16f)
-        lineTo(4f, 8f)
+        moveTo(9f, 3f)
+        lineTo(17f, 4f)
+        lineTo(21f, 11f)
+        lineTo(18f, 19f)
+        lineTo(8f, 21f)
+        lineTo(3f, 14f)
+        lineTo(4f, 7f)
         close()
-        moveTo(12f, 4f)
-        lineTo(12f, 20f)
+    }
+    path(stroke = SolidColor(Color.White), strokeLineWidth = 1.4f) {
+        // Broad, unequal facets stay legible in the small monochrome keyboard icons.
+        moveTo(4f, 7f)
+        lineTo(10f, 9f)
+        lineTo(17f, 4f)
+        moveTo(10f, 9f)
+        lineTo(14f, 15f)
+        lineTo(21f, 11f)
+        moveTo(14f, 15f)
+        lineTo(18f, 19f)
+        moveTo(14f, 15f)
+        lineTo(8f, 21f)
+        moveTo(10f, 9f)
+        lineTo(3f, 14f)
     }
 }
 

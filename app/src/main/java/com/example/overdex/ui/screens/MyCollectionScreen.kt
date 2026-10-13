@@ -110,7 +110,7 @@ fun MyCollectionScreen(
 
     val cards = remember(allOwnedPokemon, speciesById, binder) {
         allOwnedPokemon
-            .filter(binder::contains)
+            .filter { binder.contains(it, speciesById[it.speciesId]) }
             .map { owned ->
                 OwnedBinderCardData(
                     owned = owned,

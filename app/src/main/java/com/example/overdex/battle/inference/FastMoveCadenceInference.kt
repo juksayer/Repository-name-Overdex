@@ -4,6 +4,7 @@ import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
@@ -109,6 +110,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val pending = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val appearanceStarts = EnumMap<ActivePokemonSide, Long>(ActivePokemonSide::class.java)
     private val configuredPlayerMoves = mutableMapOf<String, ConfiguredPlayerMove>()
+    private val configuredPlayerSlots = mutableMapOf<Int, Pair<String, ConfiguredPlayerMove>>()
     private val pendingEffectiveness = mutableListOf<RealityArticle>()
     private val recentUses = mutableListOf<RealityArticle>()
     private var cadenceFloorNanos = Long.MIN_VALUE
@@ -136,16 +138,63 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         }
         val configured = article.payload as? PlayerTeamSlotConfigured
         if (configured != null) {
-            configuredPlayerMoves[normalize(configured.speciesName)] = ConfiguredPlayerMove(
+            val oldName = configuredPlayerSlots[configured.slot]?.first
+            configuredPlayerSlots[configured.slot] = normalize(configured.speciesName) to ConfiguredPlayerMove(
                 speciesId = configured.speciesId,
                 moveName = configured.fastMoveName,
                 articleId = article.id,
                 confidence = article.confidence ?: 1f
             )
+            configuredPlayerMoves.clear()
+            configuredPlayerMoves.putAll(configuredPlayerSlots.values)
+            val name = normalize(configured.speciesName)
+            combatants.keys.removeAll { it.first == ActivePokemonSide.PLAYER && it.second in setOf(oldName, name) }
+            val active = states[ActivePokemonSide.PLAYER] ?: return emptyList()
+            if (normalize(active.speciesName) != name) {
+                if (normalize(active.speciesName) == oldName && oldName !in configuredPlayerMoves) {
+                    states.remove(ActivePokemonSide.PLAYER)
+                    pending.remove(ActivePokemonSide.PLAYER)
+                }
+                return emptyList()
+            }
+            // Changing a move before GO must not wait for a second species read.
+            // Another slot's edit leaves this active combatant untouched.
+            val pokemon = pokemonKnowledge.getPokemonByName(configured.speciesName)
+            val moves = pokemon?.fastMoves.orEmpty().filter {
+                it.isFast && it.turns != null && normalize(it.name) == normalize(configured.fastMoveName)
+            }.distinctBy { normalize(it.name) }
+            val updated = active.copy(
+                possibleMoves = moves, identifiedMove = moves.singleOrNull(),
+                cadenceEvidence = mutableListOf(), selectedBasis = null,
+                identificationEvidence = listOf(active.speciesArticleId, article.id),
+                identityBasis = "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES",
+                identityConfidence = article.confidence ?: 1f,
+                assumedHigherEnergyTieBreak = false,
+            )
+            states[ActivePokemonSide.PLAYER] = updated
+            combatants[ActivePokemonSide.PLAYER to normalize(active.speciesName)] = updated
+            return referenceIdentity(updated, ActivePokemonSide.PLAYER, article)
+        }
+        val faint = article.payload as? ActivePokemonFaintedWitnessed
+        if (faint != null) {
+            val active = states[faint.side]
+            val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
+            if (at >= (active?.activeSinceNanos ?: Long.MIN_VALUE) &&
+                (faint.speciesName == null || active == null || normalize(faint.speciesName) == normalize(active.speciesName))) {
+                states.remove(faint.side)
+                pending.remove(faint.side)
+                pendingEffectiveness.clear()
+                recentUses.removeAll { (it.payload as FastMoveUseObserved).attackingSide == faint.side }
+                appearanceStarts[faint.side] = at
+            }
             return emptyList()
         }
         val check = article.payload as? com.example.overdex.battle.custody.SpeciesCheckMeasured
-        if (check?.status == "OPENED" && check.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH")) {
+        // Scan requests do not invalidate an accepted combatant. They can scope
+        // still-unidentified evidence, but only an actual faint or new identity
+        // closes a known appearance.
+        if (check?.status == "OPENED" && check.reason in setOf("ENTRY", "EMPTY_HP", "FAINT", "SWITCH") &&
+            states[check.side] == null && check.triggerMonotonicNanos > (appearanceStarts[check.side] ?: Long.MIN_VALUE)) {
             states.remove(check.side)
             pending.remove(check.side)
             pendingEffectiveness.clear()
@@ -231,23 +280,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             val effectiveness = if (states.size == ActivePokemonSide.entries.size) {
                 pendingEffectiveness.toList().also { pendingEffectiveness.clear() }
             } else emptyList()
-            val initialIdentity = state.identifiedMove
-            val referenceResult = if (initialIdentity != null) {
-                listOf(FastMoveCadenceDerivation(
-                    payload = FastMoveIdentified(
-                        side = species.side,
-                        speciesName = species.speciesName,
-                        moveName = initialIdentity.name,
-                        moveDurationNanos = initialIdentity.turns!! * TURN_NANOS,
-                        observedMedianIntervalNanos = null,
-                        cadenceSampleCount = 0,
-                        basis = state.identityBasis,
-                    ),
-                    predecessorIds = state.identificationEvidence,
-                    confidence = state.identityConfidence,
-                    observedArticle = article
-                ))
-            } else emptyList()
+            val referenceResult = referenceIdentity(state, species.side, article)
             val recoveredResults = (effectiveness + early + earlyUses)
                 .distinctBy { it.id }
                 .sortedBy { it.monotonicTimeNanos }
@@ -324,6 +357,16 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
      * requested the clip. Reference-sound matching remains a later, separately
      * cited conclusion.
      */
+    private fun referenceIdentity(state: SideState, side: ActivePokemonSide, article: RealityArticle): List<FastMoveCadenceDerivation> {
+        val move = state.identifiedMove ?: return emptyList()
+        return listOf(FastMoveCadenceDerivation(
+            payload = FastMoveIdentified(side = side, speciesName = state.speciesName, moveName = move.name,
+                moveDurationNanos = move.turns!! * TURN_NANOS, observedMedianIntervalNanos = null,
+                cadenceSampleCount = 0, basis = state.identityBasis),
+            predecessorIds = state.identificationEvidence, confidence = state.identityConfidence, observedArticle = article,
+        ))
+    }
+
     private fun acceptSoundCadence(
         article: RealityArticle,
         sound: FastMoveSoundMeasured,

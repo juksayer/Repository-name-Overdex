@@ -7,19 +7,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
  * Controller for the hardware-driven TerminalKeyboard firmware module.
  */
 class TerminalKeyboardController(
-    initialLayout: List<List<String>> = TestKeyboardLayout
+    initialLayout: List<List<String>> = TestKeyboardLayout,
+    private val keepVisibleAfterInput: Boolean = false,
 ) {
     var layout by mutableStateOf(initialLayout)
     var isVisible by mutableStateOf(false)
+    var isFocused by mutableStateOf(false)
+        private set
     var currentRow by mutableIntStateOf(0)
     var currentCol by mutableIntStateOf(0)
 
     fun open() {
         isVisible = true
+        isFocused = true
     }
 
     fun close() {
         isVisible = false
+        isFocused = false
+    }
+
+    /** Return the instrument controls to the results while leaving the keys available. */
+    fun releaseFocus() {
+        isFocused = false
     }
 
     fun updateLayout(newLayout: List<List<String>>) {
@@ -77,7 +87,11 @@ class TerminalKeyboardController(
 
     /** Touch and instrument buttons use exactly the same page-switch behavior. */
     fun activateKey(key: String, onKeyActivated: (String) -> Unit) {
-        if (key == "#") {
+        if (key.isEmpty()) return
+        open()
+        if (key == "END") {
+            handleStart()
+        } else if (key == "#") {
             handleModeSwitch()
         } else if (key.isNotEmpty()) {
             onKeyActivated(key)
@@ -115,11 +129,11 @@ class TerminalKeyboardController(
 
     /**
      * Maps to hardware 'START'.
-     * Commits the input and closes the keyboard.
+     * Finishes keyboard input. Search workflows may keep the keys on the LCD.
      */
     fun handleStart(): Boolean {
         if (isVisible) {
-            close()
+            if (keepVisibleAfterInput) releaseFocus() else close()
             return true
         }
         return false
@@ -127,7 +141,7 @@ class TerminalKeyboardController(
 }
 
 @Composable
-fun rememberTerminalKeyboardController(): TerminalKeyboardController {
+fun rememberTerminalKeyboardController(keepVisibleAfterInput: Boolean = false): TerminalKeyboardController {
     // Simple state holder for now, could add saver if needed for rotation
-    return remember { TerminalKeyboardController() }
+    return remember(keepVisibleAfterInput) { TerminalKeyboardController(keepVisibleAfterInput = keepVisibleAfterInput) }
 }

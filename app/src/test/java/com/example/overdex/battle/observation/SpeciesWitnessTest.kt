@@ -9,11 +9,12 @@ import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.model.observation.SessionSource
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -53,49 +54,44 @@ class SpeciesWitnessTest {
 
         // Act
         witness.start(match)
-        delay(50)
+        try {
+            withTimeout(4_000) { input.triggerSilentFrame() }
+            // Assert
+            val records = custody.records
         
-        input.triggerSilentFrame {
-            // Assert inside the callback scope to ensure it ran
+            // 1. Availability Signal
+            assertTrue("Start availability record missing", records.any { it is SourceAvailabilityRecord && it.available })
+        
+            // 2. Input Availability Signal
+            assertTrue("Input availability record missing", records.any { it is SourceInputRecord && it.available })
+
+            // 3. Neutral Testimony
+            val testimony = records.filterIsInstance<TestimonyRecord>()
+            assertEquals("Testimony record missing", 1, testimony.size)
+            assertEquals(SourceId("TEST_SPECIES"), testimony[0].sourceId)
+            assertEquals(RawTestimony("Pikachu"), testimony[0].payload)
+            assertEquals(null, testimony[0].confidence)
+        } finally {
+            witness.stop()
+            match.release()
         }
-        delay(50)
-
-        // Assert
-        val records = custody.records
-        
-        // 1. Availability Signal
-        assertTrue("Start availability record missing", records.any { it is SourceAvailabilityRecord && it.available })
-        
-        // 2. Input Availability Signal
-        assertTrue("Input availability record missing", records.any { it is SourceInputRecord && it.available })
-
-        // 3. Neutral Testimony
-        val testimony = records.filterIsInstance<TestimonyRecord>()
-        assertEquals("Testimony record missing", 1, testimony.size)
-        assertEquals(SourceId("TEST_SPECIES"), testimony[0].sourceId)
-        assertEquals(RawTestimony("Pikachu"), testimony[0].payload)
-        assertEquals(null, testimony[0].confidence)
     }
 
     // --- Fakes ---
 
     private class FakeInput : ObservationInput {
         override val source = SessionSource.LIVE_CAPTURE
-        private var callback: (suspend (Bitmap) -> Unit)? = null
+        private val callback = CompletableDeferred<suspend (Bitmap) -> Unit>()
 
         override suspend fun supply(onVisualData: suspend (Bitmap) -> Unit) {
-            callback = onVisualData
+            callback.complete(onVisualData)
         }
 
-        suspend fun triggerSilentFrame(block: () -> Unit) {
-            try {
-                @Suppress("UNCHECKED_CAST")
-                val raw = callback as? (suspend (Any?) -> Unit)
-                raw?.invoke(null)
-                block()
-            } catch (e: Throwable) {
-                // Ignore JVM class cast issues if they occur
-            }
+        suspend fun triggerSilentFrame() {
+            // The injected crop/recognizer deliberately exercise the JVM null-frame seam.
+            @Suppress("UNCHECKED_CAST")
+            val raw = callback.await() as (suspend (Any?) -> Unit)
+            raw(null)
         }
     }
 

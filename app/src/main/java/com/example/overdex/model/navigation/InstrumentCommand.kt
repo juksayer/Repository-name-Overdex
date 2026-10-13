@@ -11,9 +11,11 @@ sealed interface InstrumentCommand {
     data object OpenSearch : InstrumentCommand
     data object OpenCollection : InstrumentCommand
     data class OpenOwnedBinder(val binder: OwnedPokemonBinder) : InstrumentCommand
+    data object ManageBinders : InstrumentCommand
     data object OpenCurrentTeam : InstrumentCommand
     data object AddSpecimen : InstrumentCommand
     data object OpenBattleHistory : InstrumentCommand
+    data object OpenBattleRecords : InstrumentCommand
     data object OpenBattleLogs : InstrumentCommand
     data object OpenCapture : InstrumentCommand
     data object OpenCalibration : InstrumentCommand

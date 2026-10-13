@@ -23,6 +23,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
     private val resource: OpponentBattleResource,
     private val maximumCount: Int,
     private val acceptsPixel: (Int) -> Boolean,
+    private val playerShields: Boolean = false,
     override val observerId: ObserverId,
     override val name: String
 ) : Observer {
@@ -34,7 +35,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 var candidate: Int? = null
-                var candidateReference: String? = null
+                var candidateArticle: com.example.overdex.battle.reality.RealityArticle? = null
                 var delivered: Int? = null
                 match.articles
                     .filter { (it.payload as? CropCaptured)?.cropProvenance?.cropName == cropName }
@@ -44,28 +45,31 @@ class PersistedOpponentBattleResourceWitness private constructor(
                             ?: return@collect
                         val count = try {
                             if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap)
-                            else OpponentBattleResourceCounter.count(bitmap, maximumCount, acceptsPixel)
+                            else OpponentBattleResourceCounter.shieldCount(bitmap)
                         } finally {
                             bitmap.recycle()
                         }
-                        if (count == null) { candidate = null; candidateReference = null; return@collect }
+                        if (count == null) { candidate = null; candidateArticle = null; return@collect }
                         if (candidate != count) {
                             candidate = count
-                            candidateReference = article.id.value
+                            candidateArticle = article
                             return@collect
                         }
                         // Repeated ball snapshots also prove that an intervening
                         // species change was a switch, rather than a faint.
                         if (resource != OpponentBattleResource.POKE_BALLS && delivered == count) return@collect
+                        val observed = if (delivered != count) candidateArticle ?: article else article
                         match.custody.submitTestimony(
                             sourceId = sourceId,
-                            payload = OpponentBattleResourceCountMeasured(resource, count, maximumCount),
-                            timestamp = article.perceivedAt,
+                            payload = if (playerShields) com.example.overdex.battle.custody.PlayerShieldCountMeasured(count, maximumCount)
+                                else OpponentBattleResourceCountMeasured(resource, count, maximumCount),
+                            timestamp = observed.perceivedAt,
                             confidence = null,
-                            evidenceReferences = listOfNotNull(candidateReference, article.id.value).distinct(),
-                            monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
+                            evidenceReferences = listOfNotNull(candidateArticle?.id?.value, article.id.value).distinct(),
+                            monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
                         )
                         delivered = count
+                        candidateArticle = article
                     }
             }
         }
@@ -85,6 +89,17 @@ class PersistedOpponentBattleResourceWitness private constructor(
             acceptsPixel = OpponentBattleResourceCounter::isBrightPokeBallRed,
             observerId = ObserverId("OPPONENT_POKE_BALLS_WITNESS", ObservationSource.SCREEN_CAPTURE),
             name = "Opponent Poké Balls Witness"
+        )
+
+        fun playerShields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
+            artifactStore = artifactStore,
+            cropName = BattleCropContracts.playerShields.cropName,
+            resource = OpponentBattleResource.SHIELDS,
+            maximumCount = 2,
+            acceptsPixel = OpponentBattleResourceCounter::isShieldColor,
+            playerShields = true,
+            observerId = ObserverId("PLAYER_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
+            name = "Player Shields Witness"
         )
 
         fun shields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
@@ -116,7 +131,7 @@ class PersistedPlayerPokeBallWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 var candidate: Int? = null
-                var candidateReference: String? = null
+                var candidateArticle: com.example.overdex.battle.reality.RealityArticle? = null
                 var delivered: Int? = null
                 match.articles
                     .filter {
@@ -132,22 +147,23 @@ class PersistedPlayerPokeBallWitness(
                         } finally {
                             bitmap.recycle()
                         }
-                        if (count == null) { candidate = null; candidateReference = null; return@collect }
+                        if (count == null) { candidate = null; candidateArticle = null; return@collect }
                         if (candidate != count) {
                             candidate = count
-                            candidateReference = article.id.value
+                            candidateArticle = article
                             return@collect
                         }
-                        if (delivered == count) return@collect
+                        val observed = if (delivered != count) candidateArticle ?: article else article
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = PlayerPokeBallCountMeasured(count),
-                            timestamp = article.perceivedAt,
+                            timestamp = observed.perceivedAt,
                             confidence = null,
-                            evidenceReferences = listOfNotNull(candidateReference, article.id.value).distinct(),
-                            monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
+                            evidenceReferences = listOfNotNull(candidateArticle?.id?.value, article.id.value).distinct(),
+                            monotonicTimeNanos = observed.monotonicTimeNanos ?: return@collect
                         )
                         delivered = count
+                        candidateArticle = article
                     }
             }
         }
@@ -160,6 +176,27 @@ class PersistedPlayerPokeBallWitness(
 }
 
 internal object OpponentBattleResourceCounter {
+    fun shieldCount(bitmap: Bitmap): Int? = shieldCount(bitmap.width, bitmap.height, bitmap::getPixel)
+
+    internal fun shieldCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? {
+        if (width < 8 || height < 4) return null
+        // A covered/disappeared badge is unavailable, not two shields spent.
+        var badgePixels = 0
+        val glyphPixels = IntArray(2)
+        for (y in 0 until height) for (x in 0 until width) {
+            val c = pixelAt(x, y)
+            val r = c ushr 16 and 255; val g = c ushr 8 and 255; val b = c and 255
+            if (minOf(r, g, b) >= 180 && maxOf(r, g, b) - minOf(r, g, b) <= 50) badgePixels++
+            // Spent shields keep their dark purple silhouette. Require a
+            // silhouette in both slots before interpreting absent bright color.
+            if (isShieldColor(c) || (r >= g + 6 && b >= g + 6 && maxOf(r, g, b) in 40..180)) {
+                glyphPixels[(x * 2 / width).coerceAtMost(1)]++
+            }
+        }
+        if (badgePixels < width * height / 4 || glyphPixels.any { it < maxOf(3, width * height / 100) }) return null
+        return count(width, height, pixelAt, 2, ::isShieldColor)
+    }
+
     fun pokeBallCount(bitmap: Bitmap): Int? = pokeBallCount(bitmap.width, bitmap.height, bitmap::getPixel)
 
     /** Missing/covered badge pixels are unavailable evidence, never zero survivors. */

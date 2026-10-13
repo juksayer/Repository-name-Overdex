@@ -63,6 +63,16 @@ class ChargedMoveAnnouncementInferenceTest {
         assertNull(resolver.accept(announcement("impossible", "Sneasel used Dragon Pulse!"), ::noRosterSide))
     }
 
+    @Test fun `one visible Dragon Pulse announcement debits once despite OCR punctuation and delivery order`() = runBlocking {
+        inference.accept(species("active", ActivePokemonSide.PLAYER), ::noRosterSide)
+        val first = announcement("first", "Turtonator used Dragon Pulse").copy(monotonicTimeNanos = 154_943_000_000L)
+        val second = announcement("second", "Turtonator used Dragon Pulse!").copy(monotonicTimeNanos = 155_439_000_000L)
+        assertEquals("first", inference.accept(first, ::noRosterSide)?.observedArticle?.id?.value)
+        assertNull(inference.accept(second, ::noRosterSide))
+        assertNull(inference.accept(first.copy(id = ArticleId("late-read")), ::noRosterSide))
+        assertEquals("next-use", inference.accept(second.copy(id = ArticleId("next-use"), monotonicTimeNanos = 170_000_000_000L), ::noRosterSide)?.observedArticle?.id?.value)
+    }
+
     private fun noRosterSide(@Suppress("UNUSED_PARAMETER") name: String): ActivePokemonSide? = null
 
     private fun species(id: String, side: ActivePokemonSide) = article(

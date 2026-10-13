@@ -313,6 +313,7 @@ private fun OverlayPanel(
     onBattleHudDragFinished: () -> Unit,
     onResetBattleHudLayout: () -> Unit,
 ) {
+    val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val heading = when (mode) {
         DroidballOverlayMode.PRE_BATTLE -> "NAVIGATION IDLE"
@@ -362,6 +363,16 @@ private fun OverlayPanel(
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
+        if (teamEditingAllowed) {
+            Text("TEAM / MOVES", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.EditTeamRequested)
+                }.padding(vertical = 5.dp))
+            Text("SCAN TEAM SELECT", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
+                }.padding(vertical = 5.dp))
+        }
         if (!isBattleHud) {
             Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
         }
@@ -415,7 +426,7 @@ private fun OverlayPanel(
             val configuredTeamReady = configuredPlayerTeam.size == 3
             val message = when (mode) {
                 DroidballOverlayMode.PRE_BATTLE -> if (configuredTeamReady) {
-                    "Team and moves confirmed. At Team Select, start the Battle HUD."
+                    "Team and moves ready. You can change them or rescan before battle."
                 } else {
                     "Navigate freely. Start scanning when Team Select is visible."
                 }
@@ -433,14 +444,8 @@ private fun OverlayPanel(
                 color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
             )
             if (mode == DroidballOverlayMode.PRE_BATTLE) {
-                if (configuredTeamReady) {
-                    OverlayControl("START BATTLE HUD") {
-                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
-                    }
-                } else {
-                    OverlayControl("SCAN TEAM SELECT") {
-                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
-                    }
+                OverlayControl("START BATTLE HUD") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
                 }
             }
             if (mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {

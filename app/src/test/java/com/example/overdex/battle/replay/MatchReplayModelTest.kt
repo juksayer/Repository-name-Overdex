@@ -33,6 +33,39 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchReplayModelTest {
+    @Test fun `separate canonical one-turn hits survive frame jitter in replay`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("one", canonicalHit("one"), 1_000_000_000L),
+            timed("two", canonicalHit("two"), 1_420_000_000L),
+        ))
+        assertEquals(2, MatchReplayModel(archive).sceneAt(1_440_000_000L).fastMoveActions.size)
+    }
+
+    @Test fun `cited delayed flash never replays as another attack`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("tick", ArchivedActiveHpBarDamageTickMeasured("PLAYER", .8f, .7f, .1f), 1_000_000_000L),
+            timed("flash", ArchivedHpBarBorderPulse("PLAYER", "PRESENT"), 1_686_000_000L),
+            timed("canonical", canonicalHit("one"), 1_000_000_000L)
+                .copy(predecessorIds = listOf("tick", "flash")),
+        ))
+        val model = MatchReplayModel(archive)
+        assertEquals(1, model.sceneAt(1_200_000_000L).fastMoveActions.size)
+        assertTrue(model.sceneAt(1_750_000_000L).fastMoveActions.isEmpty())
+    }
+
+    @Test fun `unfused separate HP losses 420 ms apart remain two replay hits`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("one", ArchivedActiveHpBarDamageTickMeasured("PLAYER", .8f, .7f, .1f), 1_000_000_000L),
+            timed("two", ArchivedActiveHpBarDamageTickMeasured("PLAYER", .7f, .6f, .1f), 1_420_000_000L),
+        ))
+        assertEquals(2, MatchReplayModel(archive).sceneAt(1_440_000_000L).fastMoveActions.size)
+    }
+
+    private fun canonicalHit(id: String) = ArchivedFastMoveUseObserved(
+        id, "OPPONENT", "PLAYER", "sealeo", "Sealeo", listOf("HP_DAMAGE_TICK", "HP_BORDER_PULSE"),
+        "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+    )
+
     @Test fun `replay exposes the witnessed match start separately from recording start`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("recording", com.example.overdex.battle.archive.ArchivedMatchRecordStarted, 1_000_000_000L),
@@ -266,9 +299,29 @@ class MatchReplayModelTest {
         val model = MatchReplayModel(archive)
 
         assertEquals(true, model.sceneAt(20).opponent?.isFainted)
+        assertEquals(20L, model.sceneAt(20).opponent?.faintedAtNanos)
         assertEquals(true, model.sceneAt(25).opponent?.isFainted)
+        assertEquals(20L, model.sceneAt(25).opponent?.faintedAtNanos)
         assertEquals("Sealeo", model.sceneAt(30).opponent?.speciesName)
         assertEquals(false, model.sceneAt(30).opponent?.isFainted)
+        assertEquals(null, model.sceneAt(30).opponent?.faintedAtNanos)
+        assertEquals(false, model.sceneAt(19).opponent?.isFainted)
+        assertEquals(null, model.sceneAt(19).opponent?.faintedAtNanos)
+    }
+
+    @Test fun `repeated faint evidence keeps first KO time and never affects mirror opponent`() {
+        val archive = MatchArchive(matchId = "mirror", articles = listOf(
+            article("player", "PLAYER", "Sneasel", 215, 10),
+            article("opponent", "OPPONENT", "Sneasel", 215, 10),
+            timed("faint", ArchivedActivePokemonFaintedWitnessed("PLAYER", "Sneasel", 215, "POKE_BALLS"), 20),
+            timed("repeat", ArchivedActivePokemonFaintedWitnessed("PLAYER", "Sneasel", 215, "POKE_BALLS"), 25),
+        ))
+        val model = MatchReplayModel(archive)
+        assertEquals(20L, model.sceneAt(26).player?.faintedAtNanos)
+        assertEquals(false, model.sceneAt(26).opponent?.isFainted)
+        assertEquals(null, model.sceneAt(26).opponent?.faintedAtNanos)
+        assertEquals(null, model.sceneAt(19).player?.faintedAtNanos)
+        assertEquals(20L, model.sceneAt(26).player?.faintedAtNanos)
     }
 
     @Test fun `replay projects confirmed fast move type onto an observed hit`() {
@@ -726,7 +779,7 @@ class MatchReplayModelTest {
         assertEquals(0.48f, model.sceneAt(30).playerHp?.filledFraction)
         assertEquals(0.19f, model.sceneAt(30).opponentHp?.filledFraction)
         assertEquals(1f, model.sceneAt(20).playerHp?.filledFraction)
-        assertEquals(null, model.sceneAt(10).playerHp?.filledFraction)
+        assertEquals(1f, model.sceneAt(10).playerHp?.filledFraction)
     }
 
     @Test fun `hp persists across repeated names but never leaks across switches`() {
@@ -740,9 +793,9 @@ class MatchReplayModelTest {
         )))
 
         assertEquals(0.1f, model.sceneAt(25).opponentHp?.filledFraction)
-        assertEquals(null, model.sceneAt(30).opponentHp?.filledFraction)
+        assertEquals(1f, model.sceneAt(30).opponentHp?.filledFraction)
         assertEquals(0.95f, model.sceneAt(40).opponentHp?.filledFraction)
-        assertEquals(null, model.sceneAt(50).opponentHp?.filledFraction)
+        assertEquals(0.1f, model.sceneAt(50).opponentHp?.filledFraction)
         assertEquals(0.1f, model.sceneAt(20).opponentHp?.filledFraction)
     }
 
@@ -792,7 +845,7 @@ class MatchReplayModelTest {
         )))
 
         assertEquals(true, model.sceneAt(1_025_000_000L).opponentHp?.borderPulse)
-        assertEquals(ReplayHpState(null), model.sceneAt(1_100_000_000L).opponentHp)
+        assertEquals(ReplayHpState(1f, assumedInitialFull = true), model.sceneAt(1_100_000_000L).opponentHp)
     }
 
     @Test fun `invalid hp and unavailable pulse records cannot fabricate a hit`() {
@@ -821,8 +874,40 @@ class MatchReplayModelTest {
         )))
 
         assertEquals(0f, model.sceneAt(35).opponentHp?.filledFraction)
-        assertEquals(null, model.sceneAt(40).opponentHp?.filledFraction)
+        assertEquals(1f, model.sceneAt(40).opponentHp?.filledFraction)
         assertEquals(0.06f, model.sceneAt(20).opponentHp?.filledFraction)
+    }
+
+    @Test fun `opening hp ignores countdown tracking errors then follows battle measurements`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("vs", ArchivedVsScreenWitnessed, 0),
+            hp("countdown-shape", "OPPONENT", 0.15f, 10),
+            timed("go", ArchivedMatchStarted, 20),
+            article("name", "OPPONENT", "Sneasel", 215, 21),
+            hp("real-hp", "OPPONENT", 0.85f, 30),
+        )))
+        assertEquals(ReplayHpState(1f, assumedInitialFull = true), model.sceneAt(20).opponentHp)
+        assertEquals(0.85f, model.sceneAt(30).opponentHp?.filledFraction)
+    }
+
+    @Test fun `short thick false bar cannot poison the initial hp or later geometry anchor`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            article("name", "PLAYER", "Raichu", 26, 0),
+            timed("false-shape", ArchivedActiveHpBarMeasured("PLAYER", 32, 473, 166, 499, 0.03f), 10),
+            timed("real-bar", ArchivedActiveHpBarMeasured("PLAYER", 10, 500, 203, 517, 0.9f), 20),
+        )))
+        assertEquals(1f, model.sceneAt(10).playerHp?.filledFraction)
+        assertEquals(0.9f, model.sceneAt(20).playerHp?.filledFraction)
+    }
+
+    @Test fun `revised team supplies the opening player and configured fast move`() {
+        val model = MatchReplayModel(MatchArchive(matchId = "match", articles = listOf(
+            timed("old-team", ArchivedPlayerTeamSlotConfigured(1, "Turtonator", 776, "Incinerate", listOf("Dragon Pulse")), 0),
+            timed("new-team", ArchivedPlayerTeamSlotConfigured(1, "Raichu", 26, "Volt Switch", listOf("Thunder Punch")), 5),
+            timed("go", ArchivedMatchStarted, 20),
+        )))
+        assertEquals("Raichu", model.sceneAt(20).player?.speciesName)
+        assertEquals(1f, model.sceneAt(20).playerHp?.filledFraction)
     }
 
     private fun hp(id: String, side: String, fraction: Float, nanos: Long) =

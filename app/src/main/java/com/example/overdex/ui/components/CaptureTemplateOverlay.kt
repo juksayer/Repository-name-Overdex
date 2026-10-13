@@ -189,11 +189,11 @@ fun CaptureTemplateOverlay(
                 color = if (isSelected) TerminalPurple else TerminalGreen,
                 topLeft = Offset(left, top),
                 size = Size(rectWidth, rectHeight),
-                style = Stroke(width = if (isSelected) 3.dp.toPx() else 2.dp.toPx())
+                style = Stroke(width = if (isSelected) 0.8.dp.toPx() else 0.5.dp.toPx())
             )
 
             if (isSelected) {
-                val handleRadius = 6.dp.toPx()
+                val handleRadius = 2.dp.toPx()
                 drawCircle(color = TerminalPurple, radius = handleRadius, center = Offset(left, top))
                 drawCircle(color = TerminalPurple, radius = handleRadius, center = Offset(left + rectWidth, top))
                 drawCircle(color = TerminalPurple, radius = handleRadius, center = Offset(left, top + rectHeight))

@@ -8,6 +8,18 @@ import kotlin.math.sin
 
 class FastMoveSoundAnalyzerTest {
     @Test
+    fun `early sound cue keeps the attacker opposite the damaged bar`() {
+        val player = com.example.overdex.battle.custody.ActivePokemonSide.PLAYER
+        val opponent = com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
+        org.junit.Assert.assertEquals(opponent, fastMoveCueAttackingSide(
+            com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured(player, 1f, .9f, .1f)))
+        org.junit.Assert.assertEquals(player, fastMoveCueAttackingSide(
+            com.example.overdex.battle.custody.HpBarBorderPulse(opponent, com.example.overdex.battle.custody.ApertureStatus.PRESENT, .4f, 8)))
+        org.junit.Assert.assertNull(fastMoveCueAttackingSide(
+            com.example.overdex.battle.custody.HpBarBorderPulse(player, com.example.overdex.battle.custody.ApertureStatus.ABSENT)))
+    }
+
+    @Test
     fun `measures a distinct sound after silent preroll`() {
         val sampleRate = 16_000
         val samples = ShortArray(sampleRate) { index ->

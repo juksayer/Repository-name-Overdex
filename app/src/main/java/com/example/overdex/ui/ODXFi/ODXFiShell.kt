@@ -39,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,19 +99,24 @@ fun InstrumentButton(
     labelRotationDegrees: Float = 0f,
     contentDescription: String? = label
 ) {
+    val click = rememberUpdatedState(onClick)
+    val longClick = rememberUpdatedState(onLongClick)
+    val pressChanged = rememberUpdatedState(onPressChanged)
     val interactionModifier = if (onPressChanged != null && enabled) {
-        Modifier.pointerInput(onClick, onLongClick, onPressChanged) {
+        // A repeated action recomposes its screen. Callback identity must not
+        // cancel the still-held pointer or synthesize an early release.
+        Modifier.pointerInput(enabled) {
             detectTapGestures(
                 onPress = {
-                    onPressChanged(true)
+                    pressChanged.value?.invoke(true)
                     try {
                         tryAwaitRelease()
                     } finally {
-                        onPressChanged(false)
+                        pressChanged.value?.invoke(false)
                     }
                 },
-                onTap = { onClick() },
-                onLongPress = onLongClick?.let { callback -> { callback() } }
+                onTap = { click.value() },
+                onLongPress = { longClick.value?.invoke() }
             )
         }
     } else {
@@ -300,8 +306,10 @@ private fun RotatedInstrumentViewport(
 fun ODXFiShell(
     onUp: () -> Unit = {},
     onUpLong: () -> Unit = {},
+    onUpPressChanged: ((Boolean) -> Unit)? = null,
     onDown: () -> Unit = {},
     onDownLong: () -> Unit = {},
+    onDownPressChanged: ((Boolean) -> Unit)? = null,
     onLeft: () -> Unit = {},
     onLeftLong: () -> Unit = {},
     onLeftPressChanged: (Boolean) -> Unit = {},
@@ -721,7 +729,8 @@ fun ODXFiShell(
                     },
                     onLongClick = {
                         if (!showResearcherSettings && !showSettings) onUpLong()
-                    }
+                    },
+                    onPressChanged = onUpPressChanged,
                 )
                 InstrumentButton(
                     icon = Icons.Default.ArrowDropDown,
@@ -734,7 +743,8 @@ fun ODXFiShell(
                     },
                     onLongClick = {
                         if (!showResearcherSettings && !showSettings) onDownLong()
-                    }
+                    },
+                    onPressChanged = onDownPressChanged,
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowLeft,

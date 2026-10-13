@@ -33,5 +33,6 @@ data class OwnedPokemon(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     /** Named memberships belong to this specimen; one card can serve several teams. */
-    val teams: List<String> = emptyList()
+    val teams: List<String> = emptyList(),
+    val size: PokemonSize = PokemonSize.UNKNOWN,
 )

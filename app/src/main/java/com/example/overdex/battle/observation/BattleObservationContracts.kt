@@ -46,6 +46,7 @@ enum class BattleRegionId {
     OPPONENT_SPECIES_NAME,
     PLAYER_POKE_BALLS,
     OPPONENT_POKE_BALLS,
+    PLAYER_SHIELDS,
     OPPONENT_SHIELDS;
 
     fun regionIn(calibration: BattleCalibration): AnchorRegion = when (this) {
@@ -68,6 +69,7 @@ enum class BattleRegionId {
         OPPONENT_SPECIES_NAME -> calibration.opponentSpeciesNameRegion
         PLAYER_POKE_BALLS -> calibration.playerPokeBallsRegion
         OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
+        PLAYER_SHIELDS -> calibration.playerShieldsRegion
         OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
     }
 }
@@ -112,6 +114,9 @@ object BattleCropContracts {
     )
     val opponentPokeBalls = BattleCropContract(
         "OpponentPokeBallsCrop", BattleRegionId.OPPONENT_POKE_BALLS, minimumSize = 16
+    )
+    val playerShields = BattleCropContract(
+        "PlayerShieldsCrop", BattleRegionId.PLAYER_SHIELDS, minimumSize = 16
     )
     val opponentShields = BattleCropContract(
         "OpponentShieldsCrop", BattleRegionId.OPPONENT_SHIELDS, minimumSize = 16
@@ -203,6 +208,11 @@ object BattleWitnessContracts {
     val opponentPokeBallsCapture = BattleWitnessContract(
         witnessId = "OPPONENT_POKE_BALLS_CAPTURE",
         crop = BattleCropContracts.opponentPokeBalls,
+        testimonyType = CropCaptured::class
+    )
+    val playerShieldsCapture = BattleWitnessContract(
+        witnessId = "PLAYER_SHIELDS_CAPTURE",
+        crop = BattleCropContracts.playerShields,
         testimonyType = CropCaptured::class
     )
     val opponentShieldsCapture = BattleWitnessContract(

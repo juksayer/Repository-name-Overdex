@@ -58,6 +58,8 @@ object DroidballOverlayPresentation {
     private val _configuredPlayerTeam = MutableStateFlow<List<String>>(emptyList())
     /** Deliberate pre-flight configuration; kept separate from visual Team Select testimony. */
     val configuredPlayerTeam = _configuredPlayerTeam.asStateFlow()
+    private val _teamEditingAllowed = MutableStateFlow(false)
+    val teamEditingAllowed = _teamEditingAllowed.asStateFlow()
     private val _activeOpponentMovePossibilities = MutableStateFlow<OpponentMovePossibilities?>(null)
     val activeOpponentMovePossibilities = _activeOpponentMovePossibilities.asStateFlow()
     private var activePlayerTypes: List<PokemonType> = emptyList()
@@ -70,6 +72,7 @@ object DroidballOverlayPresentation {
     private val faintedSpeciesNames = mutableSetOf<String>()
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
+        _teamEditingAllowed.value = phase !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
         // Session state is delivered asynchronously. A prebattle emission can
         // arrive after VS/countdown has already opened the HUD; it must not erase
         // the field presentation that the accepted witness just requested.
@@ -95,6 +98,12 @@ object DroidballOverlayPresentation {
 
     private fun preserveBattleHudOr(requested: DroidballOverlayMode): DroidballOverlayMode =
         if (_mode.value == DroidballOverlayMode.BATTLE_HUD) DroidballOverlayMode.BATTLE_HUD else requested
+
+    /** An explicit rescan returns to the scanner even if the HUD was already opened. */
+    fun showTeamSelectScan() {
+        _mode.value = DroidballOverlayMode.SEEKING_TEAM_SELECT
+        _expanded.value = true
+    }
 
     /** Opens the field HUD as soon as VS is witnessed, independent of GO. */
     fun showBattleHud() {
@@ -304,6 +313,7 @@ object DroidballOverlayPresentation {
     }
 
     fun reset() {
+        _teamEditingAllowed.value = false
         _mode.value = DroidballOverlayMode.PRE_BATTLE
         _expanded.value = false
         clearOpponentSpecies()

@@ -35,7 +35,15 @@ data class GameMasterPokemon(
     val types: List<String> = emptyList(),
     val fastMoves: List<String> = emptyList(),
     val chargedMoves: List<String> = emptyList(),
-    val baseStats: BaseStats? = null
+    val baseStats: BaseStats? = null,
+    val family: GameMasterFamily? = null,
+)
+
+@Serializable
+data class GameMasterFamily(
+    val id: String,
+    val parent: String? = null,
+    val evolutions: List<String> = emptyList(),
 )
 
 /**

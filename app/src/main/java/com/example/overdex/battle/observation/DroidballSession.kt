@@ -37,6 +37,8 @@ class DroidballSession(val match: Match) {
     private val _firstLiveCombatArticle = MutableStateFlow<RealityArticle?>(null)
     /** The first preserved in-battle HUD evidence. Countdown can still follow it. */
     val firstLiveCombatArticle = _firstLiveCombatArticle.asStateFlow()
+    val canEditTeam: Boolean get() = !hasCompletedMatch && match.matchStarted.replayCache.isEmpty() &&
+        _phase.value !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
     @Volatile private var countdownCaptureDeadlineNanos = Long.MIN_VALUE
     @Volatile private var countdownCaptureFinished = false
 
@@ -87,7 +89,7 @@ class DroidballSession(val match: Match) {
     }
 
     fun beginTeamSelectScan() {
-        if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return
+        if (!canEditTeam) return
         battleSurfaceConfirmation.reset()
         _battleSurfaceEstablished.value = false
         _phase.value = DroidballSessionPhase.SEEKING_TEAM_SELECT
@@ -103,7 +105,7 @@ class DroidballSession(val match: Match) {
 
     /** Starts another pre-battle attempt without replacing this Match record. */
     fun restartObservation(): Boolean {
-        if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return false
+        if (!canEditTeam) return false
         battleSurfaceConfirmation.reset()
         _battleSurfaceEstablished.value = false
         _firstLiveCombatArticle.value = null
@@ -132,7 +134,7 @@ class DroidballSession(val match: Match) {
 
     private fun beginBattle(article: RealityArticle) {
         requireNotNull(article.monotonicTimeNanos) {
-            "MatchStarted article must preserve GO monotonic time"
+            "MatchStarted article must preserve its observed or inferred monotonic boundary"
         }
         countdownCaptureFinished = true
         _phase.value = DroidballSessionPhase.BATTLE_ACTIVE

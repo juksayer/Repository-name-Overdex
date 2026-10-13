@@ -79,11 +79,12 @@ class TeamResourceSnapshotGateTest {
         gate.observeSpecies(ActivePokemonSide.OPPONENT, "Sneasel")
         repeat(2) { gate.captured(balls); gate.captured(shields) }
         assertTrue(gate.isEnabled(balls))
-        assertFalse(gate.isEnabled(shields))
+        assertTrue(gate.isEnabled(shields))
         now = 2_500_000_000L
         gate.observeSpecies(ActivePokemonSide.OPPONENT, "sneasel")
         now = 3_000_000_000L
         assertFalse(gate.isEnabled(balls))
+        assertFalse(gate.isEnabled(shields))
 
         gate.observeSpecies(ActivePokemonSide.OPPONENT, "Sealeo")
         assertTrue(gate.isEnabled(balls))

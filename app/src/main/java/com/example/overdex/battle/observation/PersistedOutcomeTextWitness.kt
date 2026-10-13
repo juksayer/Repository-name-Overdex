@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import android.util.Log
 import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.RawTestimony
@@ -8,6 +9,7 @@ import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.data.observation.OutcomeTextRecognizer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -37,14 +39,20 @@ class PersistedOutcomeTextWitness(
                     .collect { article ->
                         val crop = article.payload as CropCaptured
                         val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
-                        // Result text has its own warm, serial lane. Never make a
-                        // brief first YOU WIN wait behind species or announcement
-                        // OCR, and never drop an already-preserved result crop in
-                        // favor of a later summary-card crop.
+                        // Keep even blank frames on the reserved result lane.
+                        // Retrying them via AnnouncementRecognizer queues the
+                        // whole result stream behind unrelated battlefield OCR:
+                        // October 12 evidence arrived 30-35 seconds late that way.
+                        // Never skip a preserved result crop for a newer summary.
                         val text = try {
                             OutcomeTextRecognizer.readText(bitmap).trim()
-                                .takeIf { it.isNotBlank() }
-                                ?: AnnouncementRecognizer.recognize(bitmap).value?.trim()
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            // A failed frame must not terminate the result reader
+                            // for the remainder of this Match.
+                            Log.e("OutcomeTextWitness", "Result OCR failed for ${article.id.value}", error)
+                            null
                         } finally {
                             bitmap.recycle()
                         }?.takeIf { it.isNotBlank() } ?: return@collect

@@ -69,17 +69,24 @@ class Match(
     val battleMemory: BattleMemory = BattleMemory()
 ) {
     private val interpreter = BattleInterpreter(pokemonKnowledge)
+    private val countdownMatchStartInference = com.example.overdex.battle.inference.CountdownMatchStartInference()
     private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
     private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge)
-    private val fastMoveUseInference = FastMoveUseInference()
+    private val fastMoveUseInference = FastMoveUseInference { impact ->
+        // Capture the sound when the first raw impact arrives, without waiting
+        // for the bounded corroboration buffer to publish the fused use.
+        DroidballService.requestCueCenteredAudio(
+            impact.id.value, com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT
+        )
+    }
     private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(pokemonKnowledge)
     private val chargeMoveQteVibrationInference = ChargeMoveQteVibrationInference()
 
-    /** Owned by this match and baselined by the enclosing Droidball session at GO. */
+    /** Owned by this match and baselined by the session at the accepted start boundary. */
     val clock = MatchClock()
 
     private val _matchStarted = MutableSharedFlow<RealityArticle>(replay = 1, extraBufferCapacity = 1)
-    /** The derived GO boundary for the owning Droidball session to act upon. */
+    /** The observed GO or combat-confirmed countdown boundary for the owning session. */
     val matchStarted = _matchStarted.asSharedFlow()
 
     // Crop capture can publish several independent witness articles per frame while
@@ -162,7 +169,16 @@ class Match(
             payload is CountdownGlyphWitnessed -> "COUNTDOWN"
             payload is MatchStarted -> "MATCH_START"
             article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true -> "ENTRY"
-            payload is ActivePokemonFaintedWitnessed -> "FAINT"
+            payload is ActivePokemonFaintedWitnessed -> {
+                // A delayed resource count can correctly faint the departed
+                // combatant after its replacement has already been identified.
+                // Do not erase the replacement's move identity in that case.
+                val active = activeSpeciesBySide[payload.side]
+                if (payload.speciesName != null && active != null &&
+                    !active.equals(payload.speciesName, ignoreCase = true)
+                ) return
+                "FAINT"
+            }
             switchedSide != null -> "SWITCH"
             payload is com.example.overdex.battle.custody.BattleCryCandidatesMeasured &&
                 payload.cueKind != "FAST_MOVE_IMPACT" -> "CRY"
@@ -218,6 +234,7 @@ class Match(
     /** Clears only mutable conclusions from an abandoned pre-battle attempt. */
     fun restartPreBattleObservationAttempt() {
         observationAttemptStartedAtNanos = System.nanoTime()
+        countdownMatchStartInference.reset()
         speciesChecks.restartObservationAttempt()
         playerRosterBySlot.clear()
         playerRosterIdBySlot.clear()
@@ -377,11 +394,14 @@ class Match(
 
                 battleMemory.timeline.record(article)
 
-                // Establish the GO boundary before any inference sees this
-                // source article. Countdown shading in the charged-move controls
-                // must remain raw evidence without becoming a Fast Move use.
+                // Prefer witnessed GO. If it was missed, a countdown prediction
+                // needs later combat to confirm it before use/energy inference runs.
+                // Countdown shading alone must never become a Fast Move use.
                 if (!matchStartRecorded) {
-                    interpreter.interpretMatchStart(article)?.let { derivedArticle ->
+                    val started = interpreter.interpretMatchStart(article) ?: article
+                        .takeIf { (it.monotonicTimeNanos ?: Long.MIN_VALUE) >= observationAttemptStartedAtNanos }
+                        ?.let(countdownMatchStartInference::accept)
+                    started?.let { derivedArticle ->
                         realityTimeline.append(derivedArticle)
                         cueSpeciesChecks(derivedArticle)
                         _articles.tryEmit(derivedArticle)
@@ -396,46 +416,10 @@ class Match(
                     }
                 }
 
-                chargeMoveQteVibrationInference.accept(article)?.let { derivation ->
-                    val derivedArticle = RealityArticle(
-                        id = ArticleId(UUID.randomUUID().toString()),
-                        perceivedAt = derivation.observedArticle.perceivedAt,
-                        recordedAt = System.currentTimeMillis(),
-                        sourceId = SourceId("CHARGE_MOVE_QTE_VIBRATION_INTERPRETER"),
-                        payload = derivation.payload,
-                        predecessorIds = derivation.predecessorIds,
-                        confidence = derivation.confidence,
-                        matchId = MatchId(matchId),
-                        monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
-                    )
-                    realityTimeline.append(derivedArticle)
-                    _articles.tryEmit(derivedArticle)
-                    battleMemory.timeline.record(derivedArticle)
-                }
+                appendChargeMoveQteDerivation(article)
                 appendFastMoveEnergyDerivations(article)
 
-                fastMoveUseInference.accept(article).forEach { derivation ->
-                    val derivedArticle = RealityArticle(
-                        id = ArticleId(UUID.randomUUID().toString()),
-                        perceivedAt = derivation.observedArticle.perceivedAt,
-                        recordedAt = System.currentTimeMillis(),
-                        sourceId = SourceId("FAST_MOVE_USE_INTERPRETER"),
-                        payload = derivation.payload,
-                        predecessorIds = derivation.predecessorIds,
-                        confidence = derivation.confidence,
-                        matchId = MatchId(matchId),
-                        monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
-                    )
-                    realityTimeline.append(derivedArticle)
-                    _articles.tryEmit(derivedArticle)
-                    battleMemory.timeline.record(derivedArticle)
-                    appendFastMoveEnergyDerivations(derivedArticle)
-                    appendFastMoveCadenceDerivations(derivedArticle)
-                    DroidballService.requestCueCenteredAudio(
-                        derivedArticle.id.value,
-                        com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT
-                    )
-                }
+                appendFastMoveUseDerivations(article)
 
                 appendFastMoveCadenceDerivations(article)
 
@@ -455,6 +439,7 @@ class Match(
                         realityTimeline.append(derivedArticle)
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
+                        appendChargeMoveQteDerivation(derivedArticle)
                         if (derivation.payload.side == ActivePokemonSide.OPPONENT) {
                             DroidballOverlayPresentation.recordOpponentChargedMove(
                                 derivation.payload.speciesName,
@@ -466,6 +451,7 @@ class Match(
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
                     battleMemory.timeline.record(derivedArticle)
+                    appendChargeMoveQteDerivation(derivedArticle)
                     Log.d("ATTACK_SLICE", "Derived AttackIncoming article appended: articleId=${derivedArticle.id.value}, predecessor=${derivedArticle.predecessorIds.firstOrNull()?.value}")
                 }
 
@@ -511,12 +497,55 @@ class Match(
                             monotonicTimeNanos = article.monotonicTimeNanos
                         )
                         realityTimeline.append(derivedArticle)
-                        if (derivedArticle.payload is MatchEnded) speciesChecks.stop()
+                        if (derivedArticle.payload is MatchEnded) {
+                            speciesChecks.stop()
+                            appendFastMoveUseDerivations(derivedArticle)
+                        }
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun appendFastMoveUseDerivations(article: RealityArticle) {
+        fastMoveUseInference.accept(article).forEach { derivation ->
+            val derivedArticle = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = derivation.observedArticle.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("FAST_MOVE_USE_INTERPRETER"),
+                payload = derivation.payload,
+                predecessorIds = derivation.predecessorIds,
+                confidence = derivation.confidence,
+                matchId = MatchId(matchId),
+                monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+            )
+            realityTimeline.append(derivedArticle)
+            _articles.tryEmit(derivedArticle)
+            battleMemory.timeline.record(derivedArticle)
+            appendFastMoveEnergyDerivations(derivedArticle)
+            appendFastMoveCadenceDerivations(derivedArticle)
+        }
+    }
+
+    private fun appendChargeMoveQteDerivation(article: RealityArticle) {
+        chargeMoveQteVibrationInference.accept(article)?.let { derivation ->
+            val derivedArticle = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = derivation.observedArticle.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("CHARGE_MOVE_QTE_VIBRATION_INTERPRETER"),
+                payload = derivation.payload,
+                predecessorIds = derivation.predecessorIds,
+                confidence = derivation.confidence,
+                matchId = MatchId(matchId),
+                monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+            )
+            realityTimeline.append(derivedArticle)
+            _articles.tryEmit(derivedArticle)
+            battleMemory.timeline.record(derivedArticle)
         }
     }
 
@@ -591,6 +620,7 @@ class Match(
         }
         derivations.forEach { derivation ->
             (derivation.payload as? FastMoveIdentified)?.let { identified ->
+                fastMoveUseInference.observeIdentity(identified)
                 if (identified.side == ActivePokemonSide.OPPONENT) {
                     DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)
                 }

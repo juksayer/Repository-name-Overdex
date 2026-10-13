@@ -15,3 +15,14 @@ internal object LiveCaptureSamplingPolicy {
         lastPublishedNanos == null ||
             receivedAtNanos - lastPublishedNanos >= MIN_CAPTURE_INTERVAL_NANOS
 }
+
+/** Reject our instrument and any queued transition frames before they become evidence. */
+internal class LiveCaptureVisibilityGate {
+    @Volatile private var resumeAfterNanos: Long = Long.MAX_VALUE
+
+    fun instrumentVisible(visible: Boolean, nowNanos: Long) {
+        resumeAfterNanos = if (visible) Long.MAX_VALUE else nowNanos + 250_000_000L
+    }
+
+    fun permits(receivedAtNanos: Long): Boolean = receivedAtNanos >= resumeAfterNanos
+}
