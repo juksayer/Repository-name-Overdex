@@ -26,6 +26,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.R
@@ -76,6 +79,13 @@ internal object BattleHudOverlayGeometry {
 
     fun panelWidthPx(displayWidth: Int): Int =
         (displayWidth * OPPONENT_BADGE_WIDTH / REFERENCE_WIDTH).roundToInt()
+
+    fun jointDepthPx(displayWidth: Int): Int =
+        BattleHudBadgeStyle.cornerPx(panelWidthPx(displayWidth).toFloat()).roundToInt()
+
+    /** Existing saved Y is the flat seam; only the new corner tips extend above it. */
+    fun windowTopForSavedSeam(savedSeamY: Int, displayWidth: Int): Int = savedSeamY - jointDepthPx(displayWidth)
+    fun savedSeamForWindowTop(windowTopY: Int, displayWidth: Int): Int = windowTopY + jointDepthPx(displayWidth)
 }
 
 /**
@@ -325,10 +335,9 @@ private fun OverlayPanel(
     }
     // Match the calibrated opponent badge exactly at every display width.
     val teamInfoWidth = with(LocalDensity.current) { panelWidthPx.toDp() }
-    // Pokémon GO's team badge is a translucent white card with blue-teal ink.
-    // Continuing the same material below its flat lower edge makes this panel
-    // read as one attached piece of battle UI.
-    val background = if (isBattleHud) Color.White.copy(alpha = 0.90f) else Color(0xE810231F)
+    val jointDepth = with(LocalDensity.current) { BattleHudBadgeStyle.cornerPx(panelWidthPx.toFloat()).toDp() }
+    val panelShape = if (isBattleHud) BattleHudBadgeShape else RoundedCornerShape(9.dp)
+    val background = if (isBattleHud) BattleHudBadgeStyle.background else Color(0xE810231F)
     val foreground = if (isBattleHud) Color(0xFF275F6D) else Color(0xFFD7FFF4)
     val muted = if (isBattleHud) Color(0xFF397786) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
 
@@ -347,20 +356,16 @@ private fun OverlayPanel(
     Column(
         modifier = panelDragModifier
             .width(teamInfoWidth)
-            .background(
-                background,
-                // The GO team-info badge uses square upper corners at the seam
-                // and a shallow 27 px lower curve on a 480 dpi phone.
-                RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 9.dp, bottomEnd = 9.dp)
-            )
+            .background(background, panelShape)
             .then(
                 if (layoutEditing) Modifier.border(
                     1.dp,
                     Color(0xFFB000FF),
-                    RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 9.dp, bottomEnd = 9.dp),
+                    panelShape,
                 ) else Modifier
             )
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(start = 8.dp, end = 8.dp, bottom = 6.dp,
+                top = 6.dp + if (isBattleHud) jointDepth else 0.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         if (teamEditingAllowed) {
@@ -385,10 +390,10 @@ private fun OverlayPanel(
             }
             if (opponentMoves != null) {
                 if (opponentMoves.fastMoves.isNotEmpty()) {
-                    MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves, muted)
+                    MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves)
                 }
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine(if (opponentMoves.chargedMoves.all { it.isConfirmed }) "CHARGED" else "POSSIBLE CHARGED", opponentMoves.chargedMoves, muted)
+                    MovePossibilityLine(if (opponentMoves.chargedMoves.all { it.isConfirmed }) "CHARGED" else "POSSIBLE CHARGED", opponentMoves.chargedMoves)
                 }
             }
             if (layoutEditing) {
@@ -562,14 +567,19 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 }
 
 @Composable
-private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>, muted: Color) {
+private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>) {
     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(label, color = muted, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
+        Text(label, color = BattleHudBadgeStyle.moveInk, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
         moves.forEach { move ->
             Text(
-                text = (if (move.isConfirmed) "✓ " else "") +
-                    (if (move.hazardous) "⚠ +${move.damageIncreasePercent}% ${move.name}" else move.name),
-                color = if (move.hazardous) Color(0xFFC62828) else if (move.isConfirmed) Color(0xFF005E5B) else muted,
+                text = buildAnnotatedString {
+                    if (move.isConfirmed) append("✓ ")
+                    if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
+                        append("⚠ +${move.damageIncreasePercent}% ")
+                    }
+                    append(move.name)
+                },
+                color = BattleHudBadgeStyle.moveInk,
                 fontSize = 8.sp,
                 fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
                 fontFamily = FontFamily.Monospace

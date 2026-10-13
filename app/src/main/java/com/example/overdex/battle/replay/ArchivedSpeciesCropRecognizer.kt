@@ -7,6 +7,9 @@ import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.battle.observation.BattleCropContracts
 import com.example.overdex.battle.observation.SpeciesTextResolver
 import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.OcrField
+import com.example.overdex.data.observation.OcrHeightProfile
+import com.example.overdex.data.observation.OcrSourceContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -45,6 +48,8 @@ object ArchivedSpeciesCropRecognizer {
         }
         Log.d("REPLAY_SPECIES", "selected=${targets.size} artifacts=${encodedArtifacts.size}")
         val recognizedByTarget = linkedMapOf<Target, String?>()
+        val heightProfiles = mapOf("PLAYER" to OcrHeightProfile(OcrField.SPECIES),
+            "OPPONENT" to OcrHeightProfile(OcrField.SPECIES))
         var completed = 0
         onProgress(ReplayCropProgress("VERIFYING CROPS", 0, targets.size))
         targets.forEach { target ->
@@ -55,7 +60,11 @@ object ArchivedSpeciesCropRecognizer {
             } else {
                 val bitmap = decodeTargetCrop(bytes, target.payload)
                 if (bitmap == null) null else try {
-                    SpeciesNameRecognizer.recognizeCandidates(bitmap)
+                    // New recordings retain the HUD footprint from capture time.
+                    // Never use today's HUD position to classify an archived word.
+                    SpeciesNameRecognizer.recognizeCandidates(bitmap,
+                        OcrSourceContext(target.payload.sourceWidth, target.payload.overlayBounds),
+                        heightProfiles.getValue(target.side))
                         .firstNotNullOfOrNull { SpeciesTextResolver.resolve(it.text, knownSpeciesNames) }
                 } finally {
                     bitmap.recycle()

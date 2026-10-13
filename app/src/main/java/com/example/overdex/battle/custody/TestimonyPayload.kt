@@ -31,7 +31,11 @@ interface ApertureOutput : TestimonyPayload {
 /**
  * A simple, neutral implementation of [TestimonyPayload] used for generic data.
  */
-data class RawTestimony(val data: Any) : TestimonyPayload
+data class RawTestimony(
+    val data: Any,
+    /** Original reading, crop-local geometry and filtering decisions, when measured. */
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence? = null,
+) : TestimonyPayload
 
 /**
  * Droidball began preserving the record for a possible battle. This precedes
@@ -96,7 +100,9 @@ data class CountdownGlyphWitnessed(
 /** A durably written crop artifact, before any recognizer interprets it. */
 data class CropCaptured(
     val artifact: CropArtifactReference,
-    val cropProvenance: BattleCropProvenance
+    val cropProvenance: BattleCropProvenance,
+    /** Capture-time HUD bounds in crop pixels; null when absent or unavailable in legacy records. */
+    val overlayBounds: com.example.overdex.model.observation.OcrBox? = null,
 ) : TestimonyPayload
 
 /** A durably preserved microphone snippet, before cry recognition or interpretation. */

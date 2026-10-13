@@ -4,8 +4,26 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.data.observation.SharedLatinTextRecognizer
 import com.example.overdex.model.observation.RecognitionResult
+import com.example.overdex.model.observation.OcrTextEvidence
+import com.example.overdex.data.observation.OcrWordGeometry
+import com.example.overdex.data.observation.OcrSourceContext
+import com.example.overdex.data.observation.OcrHeightProfile
 
 object AnnouncementRecognizer {
+
+    /** Live announcement path: same warm recognizer, with auditable source filtering. */
+    suspend fun recognizeEvidence(
+        bitmap: Bitmap, context: OcrSourceContext, profile: OcrHeightProfile,
+    ): List<OcrTextEvidence> {
+        val direct = OcrWordGeometry.read(bitmap, bitmap, 0, "RAW", context, profile)
+        // No extra OCR pass just because our own text was rejected. Native pixels
+        // remain available for future treatments; this avoids growing the OCR queue.
+        if (direct.rawText.isNotBlank()) return listOf(direct)
+        val prepared = highContrastInput(bitmap)
+        return try {
+            listOf(direct, OcrWordGeometry.read(bitmap, prepared, 0, "THRESHOLD_185_2X", context, profile))
+        } finally { prepared.recycle() }
+    }
 
     suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
         return try {
@@ -45,6 +63,12 @@ object AnnouncementRecognizer {
     }
 
     private suspend fun recognizeHighContrast(bitmap: Bitmap): String {
+        val enlarged = highContrastInput(bitmap)
+        return try { SharedLatinTextRecognizer.readText(enlarged) }
+        finally { enlarged.recycle() }
+    }
+
+    private fun highContrastInput(bitmap: Bitmap): Bitmap {
         val thresholded = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         for (y in 0 until bitmap.height) {
             for (x in 0 until bitmap.width) {
@@ -57,11 +81,7 @@ object AnnouncementRecognizer {
         }
         val enlarged = Bitmap.createScaledBitmap(thresholded, bitmap.width * 2, bitmap.height * 2, false)
         thresholded.recycle()
-        return try {
-            SharedLatinTextRecognizer.readText(enlarged)
-        } finally {
-            enlarged.recycle()
-        }
+        return enlarged
     }
 
 }

@@ -10,4 +10,10 @@ import com.example.overdex.battle.reality.RealityTimeline
 data class MatchArchiveSource(
     val matchId: MatchId,
     val realityTimeline: RealityTimeline
-)
+) {
+    /** Session-level and other-match articles stay in the ledger, outside this snapshot. */
+    fun snapshot(): MatchArchive = RealityArticleArchiveMapper.createArchive(
+        matchId,
+        realityTimeline.getArticles().filter { it.matchId == matchId },
+    )
+}

@@ -180,7 +180,7 @@ class ArchiveDirectoryManager(private val context: Context) {
         mode: MatchArchiveExportMode,
         onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? = exportArchiveToDownloads(
-        RealityArticleArchiveMapper.createArchive(matchId, realityTimeline.getArticles().filter { it.matchId == matchId }),
+        MatchArchiveSource(matchId, realityTimeline).snapshot(),
         mode, onArtifactVerified
     )
 

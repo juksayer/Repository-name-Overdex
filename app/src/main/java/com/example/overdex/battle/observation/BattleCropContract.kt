@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.example.overdex.model.AnchorRegion
+import com.example.overdex.model.observation.OcrBox
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -22,6 +23,16 @@ data class BattleCropProvenance(
     val bounds: BattleCropBounds
 )
 data class ResolvedBattleCrop(val provenance: BattleCropProvenance, val bitmap: Bitmap)
+
+/** Keep the presentation's capture-time footprint without changing the source crop. */
+fun BattleCropProvenance.overlayBounds(region: AnchorRegion?): OcrBox? {
+    if (region == null) return null
+    val box = OcrBox(region.x * sourceWidth - bounds.left, region.y * sourceHeight - bounds.top,
+        (region.x + region.width) * sourceWidth - bounds.left,
+        (region.y + region.height) * sourceHeight - bounds.top)
+    val crop = OcrBox(0f, 0f, (bounds.right - bounds.left).toFloat(), (bounds.bottom - bounds.top).toFloat())
+    return box.takeIf { crop.overlapFraction(it) > 0f }
+}
 
 /** A crop may inspect a measured subsection of its calibrated Battle Region. */
 data class CropAreaInRegion(

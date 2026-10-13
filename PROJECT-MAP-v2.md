@@ -217,6 +217,41 @@ The HUD can show known species and possible moves before a specific move has
 been identified. Hazard emphasis is derived from reference knowledge and the
 player's active typing. Presentation decisions never alter captured testimony.
 
+The battle HUD uses an 80%-opaque white surface with complementary upper corners
+and the same width-scaled 27/415 corner radius at its lower edge. Saved HUD Y
+continues to mean the badge's flat bottom seam; the corner tips extend above it
+without rewriting the profile. The battle window is capturable rather than
+`FLAG_SECURE` (which created a black rectangle in whole-screen recordings).
+Registration/team editing retain their private-window/capture-pause behavior.
+`CapturedVisualFrame.overlayRegion` describes the visible presentation footprint;
+the active-species lane refuses name crops intersecting it so our own sprite-card
+labels cannot confirm identity. Announcement inference still requires game phrases,
+not isolated species/move names from the HUD. On-device tests can read retained
+species/announcement pixels through the 80% background, but overlapping HUD ink
+still obscures them; this is not proof of reliable live read-through.
+Move labels use distinct violet ink while retaining full names, confirmation
+checks, and red danger markers/percentages. The device probe also tries removing
+violet from a derived OCR copy. It improved one overlap but still lost letters in
+another, so color removal is an experiment, not a live evidence treatment. Raw
+captures remain intact.
+The October 13 geometry probe measured word bounding boxes in a common 672-pixel
+capture space: GO announcement 28 px high, GO species 21 px, HUD moves 10–13 px,
+and HUD species 13 px. These sampled heights seed the bounded, per-witness
+[OcrHeightProfile](app/src/main/java/com/example/overdex/data/observation/OcrSourceFilter.kt).
+The live badge/announcement readers retain word geometry and source-pixel color
+measurements through [OcrWordGeometry](app/src/main/java/com/example/overdex/data/observation/OcrWordGeometry.kt),
+undoing padding, threshold enlargement, and ML Kit's minimum input scaling.
+Height alone never rejects a word: a rejection requires a smaller-than-expected
+word, HUD-colored pixels, and intersection with the HUD footprint captured with
+that frame. Profiles learn only from clear, catalogue-confirmed native-color readings and do
+not rewrite calibration. The existing live species crop-overlap guard remains.
+Original OCR text, word measurements, rejection reasons, and capture-time HUD
+bounds survive archive serialization. Announcement consumers receive filtered
+text citing its original reading and crop. Replay crop recognition applies the
+same filter when footprint metadata exists; older archives remain readable.
+No font-family classifier or letter reconstruction is claimed: a large partial
+word is still partial, and HUD ink can still cover the needed game strokes.
+
 Resolved opponent charged-move announcements also confirm the named move in
 `DroidballOverlayPresentation`; two distinct confirmations leave only those two
 charged moves visible, and confirmations survive switches within the Match.
@@ -382,6 +417,19 @@ search and automatic stitched compilations remain future consumers of this index
 
 Each Match has its own ID, Timeline, archive source, and replay projection.
 
+`MatchSummaryRoute` / `MatchSummaryScreen` now summarize this same canonical ledger.
+The screen uses the current in-process Match when present and loads the newest
+internal archive after process recreation, using references-only archive reads.
+`MatchArchiveSource.snapshot()` selects only that Match ID from the shared ledger;
+unassigned session articles and other Matches remain in the ledger without entering
+the summary/export or weakening the strict archive mapper.
+Its CRT content scrolls with Up/Down; Left/Right select LCD actions and A activates
+them. Compact export remains available for loaded saved matches; full forensic
+export is offered when the complete in-process ledger is available.
+The old `ObservationRecorder` / `MatchRecording` summary is no longer this route's
+data source. Archive Article Details is also in the physical action cycle.
+
+
 ## Parallel and legacy systems
 
 These names overlap with the canonical Match pipeline but do not mean the same
@@ -396,7 +444,7 @@ thing:
 | `model.Observation` | **Legacy-active** | Raw crop object used by `ObservationExtractor`; not a Battle Region or current RealityArticle. |
 | `model.observation.Observation` | **Legacy-active/supporting** | Used by registration, general observation inputs, and older Witnesses. |
 | `battle.observation.Observation` | **Supporting/debug** | Used by the battle workspace, debug factories, and verification paths. |
-| `battle.debug.observatory.MatchRecording` | **Debug/legacy-active** | Flight-recorder UI still has callers. It is not an `.odxmatch` archive. |
+| `battle.debug.observatory.MatchRecording` | **Debug/legacy-active** | Debug recorder and legacy components remain; Match Summary no longer reads this model. It is not an `.odxmatch` archive. |
 | `CaptureRegion` and `ObservationRegion` | **Non-battle legacy-active** | Existing callers may remain, but new battle geography uses `BattleCalibration`, `BattleRegionId`, and `BattleCropContract`. |
 
 Do not remove a legacy-active system merely because a canonical replacement

@@ -12,6 +12,9 @@ import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.data.BattleCalibration
 import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.OcrField
+import com.example.overdex.data.observation.OcrHeightProfile
+import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
@@ -38,6 +41,7 @@ internal data class PreservedSpeciesCrop(
 /** A private bitmap copy made immediately while the published live frame is current. */
 private data class LiveSpeciesCrop(
     val resolved: ResolvedBattleCrop,
+    val overlayBounds: com.example.overdex.model.observation.OcrBox?,
     val searchIndex: Int,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
@@ -99,6 +103,7 @@ internal class LiveOverlaySpeciesPipeline(
             ActivePokemonSide.OPPONENT -> BattleWitnessContracts.opponentActiveSpeciesTextCapture
         }
         val cropSourceId = SourceId(cropContract.witnessId)
+        val heightProfile = OcrHeightProfile(OcrField.SPECIES)
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { pipelineScope ->
             pipelineScope.launch {
                 match.articles.collect { article ->
@@ -123,7 +128,9 @@ internal class LiveOverlaySpeciesPipeline(
                     // the battle surface is visible. Short-circuiting here on the
                     // previous successful recognition prevented recovery windows
                     // from ever opening when a switch cue was missed.
-                    val enabled = captureAllowed() && match.speciesChecks.captureEnabled(side)
+                    val calibratedRegion = cropContract.crop.region.regionIn(calibration)
+                    val enabled = captureAllowed() && match.speciesChecks.captureEnabled(side) &&
+                        SpeciesCaptureVisibility.canRead(calibratedRegion, frame.overlayRegion)
                     if (captureOperating != enabled) {
                         match.custody.submitAvailability(
                             cropSourceId,
@@ -146,11 +153,11 @@ internal class LiveOverlaySpeciesPipeline(
                         cropSearchIndex = 0
                     }
                     val searchIndex = cropSearchIndex
-                    val calibratedRegion = cropContract.crop.region.regionIn(calibration)
                     // Locate the name's ink before spending an OCR pass on an
                     // empty row. This temporary geometry never rewrites calibration.
                     val locatedRegion = SpeciesBadgeTextLocator.locate(frame.bitmap, calibratedRegion)
                     val searchRegion = SpeciesCropSearchPlan.region(locatedRegion, searchIndex)
+                    if (!SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion)) return@supplyFrames
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
@@ -163,6 +170,7 @@ internal class LiveOverlaySpeciesPipeline(
                     liveCrops.trySend(
                         LiveSpeciesCrop(
                             resolved,
+                            resolved.provenance.overlayBounds(frame.overlayRegion),
                             searchIndex,
                             window.id,
                             frame.capturedAtWallTimeMillis,
@@ -177,7 +185,7 @@ internal class LiveOverlaySpeciesPipeline(
                     try {
                         val artifact = artifactStore.preservePng(sample.resolved.bitmap)
                             ?: continue
-                        val crop = CropCaptured(artifact, sample.resolved.provenance)
+                        val crop = CropCaptured(artifact, sample.resolved.provenance, sample.overlayBounds)
                         val accepted = match.custody.submitTestimony(
                             sourceId = cropSourceId,
                             payload = crop,
@@ -225,8 +233,9 @@ internal class LiveOverlaySpeciesPipeline(
                 catch (error: Exception) { Log.w("FAST_OVERLAY_SPECIES", "OCR warm-up failed; will retry on a crop", error) }
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
                 for (sample in crops) {
+                    val sourceContext = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
                     val readings = try {
-                        SpeciesNameRecognizer.recognizeCandidates(sample.bitmap) { rawText ->
+                        SpeciesNameRecognizer.recognizeCandidates(sample.bitmap, sourceContext, heightProfile) { rawText ->
                             FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
                         }
                     } catch (cancelled: CancellationException) {
@@ -242,7 +251,7 @@ internal class LiveOverlaySpeciesPipeline(
                     // archives otherwise discard every failed strip, making a bad
                     // calibration indistinguishable from a capture lane that never ran.
                     val readingSignature = listOf("search=${sample.searchIndex}") +
-                        readings.map { "${it.treatment}:${it.text}" }
+                        readings.map { "${it.treatment}:${it.evidence?.rawText}:${it.text}" }
                     if (readingSignature != lastRawReadings) {
                         lastRawReadings = readingSignature
                         val reportedReadings = readings.ifEmpty {
@@ -251,7 +260,7 @@ internal class LiveOverlaySpeciesPipeline(
                         reportedReadings.forEach { reading ->
                             match.custody.submitTestimony(
                                 sourceId = SourceId("${rawSourceId.id}_${reading.treatment}"),
-                                payload = RawTestimony(reading.text),
+                                payload = RawTestimony(reading.evidence?.rawText ?: reading.text, reading.evidence),
                                 timestamp = sample.capturedAtWallTimeMillis,
                                 confidence = null,
                                 evidenceReferences = listOf(sample.cropEvidenceId),
@@ -273,6 +282,10 @@ internal class LiveOverlaySpeciesPipeline(
                         continue
                     }
                     val (reading, resolution) = resolvedReading
+                    reading.evidence?.let { evidence ->
+                        heightProfile.learn(evidence, sourceContext,
+                            knownNames.any { it.equals(reading.text.trim(), ignoreCase = true) })
+                    }
                     if (resolution.speciesName.equals(lastSubmittedSpecies, ignoreCase = true)) {
                         // A recovery read that confirms the current combatant still
                         // completes its window. Leaving it open made OCR chase the

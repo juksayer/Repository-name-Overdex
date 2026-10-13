@@ -6,6 +6,8 @@ import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CancellationException
+import com.example.overdex.model.observation.OcrTextEvidence
 
 /**
  * Reads the small Pokémon GO badge-name strip.
@@ -31,7 +33,8 @@ object SpeciesNameRecognizer {
 
     data class Candidate(
         val text: String,
-        val treatment: String
+        val treatment: String,
+        val evidence: OcrTextEvidence? = null,
     )
 
     /**
@@ -41,6 +44,8 @@ object SpeciesNameRecognizer {
      */
     suspend fun recognizeCandidates(
         bitmap: Bitmap,
+        sourceContext: OcrSourceContext? = null,
+        heightProfile: OcrHeightProfile? = null,
         accepts: (String) -> Boolean = { false }
     ): List<Candidate> = recognitionMutex.withLock {
         val candidates = linkedSetOf<Candidate>()
@@ -51,9 +56,9 @@ object SpeciesNameRecognizer {
         for (treatment in treatments) {
             val prepared = if (treatment == "RAW") rawInput(bitmap)
                 else threshold(bitmap, cutoff = 190, padding = 12)
-            recognize(treatment, prepared)?.let {
-                candidates += Candidate(it, treatment)
-                if (accepts(it)) return@withLock candidates.toList()
+            recognize(treatment, bitmap, prepared, sourceContext, heightProfile)?.let {
+                candidates += Candidate(it.acceptedText, treatment, it)
+                if (accepts(it.acceptedText)) return@withLock candidates.toList()
             }
         }
         candidates.toList()
@@ -69,13 +74,19 @@ object SpeciesNameRecognizer {
         )
     }
 
-    private suspend fun recognize(treatment: String, prepared: Bitmap): String? = try {
-        val text = PrioritySpeciesTextRecognizer.readText(prepared).trim()
+    private suspend fun recognize(
+        treatment: String, original: Bitmap, prepared: Bitmap,
+        context: OcrSourceContext?, profile: OcrHeightProfile?,
+    ): OcrTextEvidence? = try {
+        val reading = OcrWordGeometry.read(original, prepared,
+            if (treatment == "RAW") 0 else 12, treatment, context, profile, urgent = true)
         Log.d(
             "SPECIES_NAME_RECOGNIZER",
-            "source=${prepared.width}x${prepared.height} treatment=$treatment text=\"${text.replace("\n", "\\n")}\""
+            "source=${original.width}x${original.height} treatment=$treatment text=\"${reading.acceptedText.replace("\n", "\\n")}\" rejected=${reading.words.count { it.decision != "RETAINED" }}"
         )
-        text.takeIf(String::isNotBlank)
+        reading.takeIf { it.rawText.isNotBlank() }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
     } catch (error: Exception) {
         Log.e("SPECIES_RECOGNIZER", "Recognition failed treatment=$treatment", error)
         null

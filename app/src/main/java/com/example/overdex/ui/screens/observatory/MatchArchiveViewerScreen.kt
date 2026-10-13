@@ -170,7 +170,9 @@ fun MatchArchiveViewerScreen(
             if (!showDetails) selectedAction = selectedAction.move(1)
         }
         onA {
-            if (!showDetails) {
+            if (showDetails) {
+                showDetails = false
+            } else {
                 when (selectedAction) {
                     ArchiveViewerAction.MARK_START -> markStart()
                     ArchiveViewerAction.MARK_END_AND_SAVE -> markEndAndSave()

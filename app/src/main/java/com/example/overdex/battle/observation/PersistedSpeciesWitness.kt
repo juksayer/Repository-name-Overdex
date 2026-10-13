@@ -10,6 +10,9 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.data.observation.SpeciesNameRecognizer
+import com.example.overdex.data.observation.OcrField
+import com.example.overdex.data.observation.OcrHeightProfile
+import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +49,7 @@ class PersistedSpeciesWitness(
         if (scope != null) return
         activeMatch = match
         val sourceId = SourceId(observerId.id)
+        val heightProfile = OcrHeightProfile(OcrField.SPECIES)
         // The raw OCR output is evidence even when it cannot yet be resolved to
         // a known species. Keep it out of the legacy BattleInterpreter source
         // IDs so an uncertain OCR string can never become an identity by itself.
@@ -97,19 +101,19 @@ class PersistedSpeciesWitness(
 
                 for (article in scheduledCrops) {
                     val window = match.speciesChecks.windowFor(side, article.monotonicTimeNanos ?: continue) ?: continue
-                    val recognition = recognize(article, match, knownSpeciesNames)
+                    val recognition = recognize(article, match, knownSpeciesNames, heightProfile)
                     if (recognition == null) {
                         match.speciesChecks.read(side, window.id, null, article.id.value)
                         continue
                     }
                     knownSpeciesNames = recognition.knownNames
-                    val readingSignature = recognition.rawReadings.map { "${it.treatment}:${it.text}" }
+                    val readingSignature = recognition.rawReadings.map { "${it.treatment}:${it.evidence?.rawText}:${it.text}" }
                     if (readingSignature != lastRawOcrReadings) {
                         lastRawOcrReadings = readingSignature
                         recognition.rawReadings.forEach { reading ->
                             match.custody.submitTestimony(
                                 sourceId = SourceId("${rawOcrSourceId.id}_${reading.treatment}"),
-                                payload = RawTestimony(reading.text),
+                                payload = RawTestimony(reading.evidence?.rawText ?: reading.text, reading.evidence),
                                 timestamp = article.perceivedAt,
                                 confidence = recognition.confidence,
                                 evidenceReferences = listOf(article.id.value),
@@ -146,7 +150,8 @@ class PersistedSpeciesWitness(
     private suspend fun recognize(
         article: RealityArticle,
         match: Match,
-        cachedNames: Set<String>?
+        cachedNames: Set<String>?,
+        heightProfile: OcrHeightProfile,
     ): SpeciesRecognition? {
         val captured = article.payload as? CropCaptured ?: return null
         val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: run {
@@ -155,7 +160,8 @@ class PersistedSpeciesWitness(
         }
         return try {
             val names = cachedNames ?: match.pokemonKnowledge.getAllSpeciesNames()
-            val rawReadings = SpeciesNameRecognizer.recognizeCandidates(bitmap) {
+            val context = OcrSourceContext(captured.cropProvenance.sourceWidth, captured.overlayBounds)
+            val rawReadings = SpeciesNameRecognizer.recognizeCandidates(bitmap, context, heightProfile) {
                 SpeciesTextResolver.resolve(it, names) != null
             }
             if (rawReadings.isEmpty()) return null
@@ -164,6 +170,9 @@ class PersistedSpeciesWitness(
             }
             val rawText = resolved?.first?.text ?: rawReadings.first().text
             val speciesName = resolved?.second
+            resolved?.first?.let { reading -> reading.evidence?.let {
+                heightProfile.learn(it, context, names.any { name -> name.equals(reading.text.trim(), true) })
+            } }
             Log.d(
                 "ACTIVE_SPECIES",
                 "side=$side reads=${rawReadings.joinToString { "${it.treatment}:${it.text}" }} " +

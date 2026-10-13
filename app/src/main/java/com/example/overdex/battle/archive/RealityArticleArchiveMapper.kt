@@ -70,7 +70,7 @@ object RealityArticleArchiveMapper {
             is com.example.overdex.battle.custody.PlayerChargeMoveLabelRead -> ArchivedPlayerChargeMoveLabelRead(p.slot, p.text)
             is RawTestimony -> {
                 when (val data = p.data) {
-                    is String -> ArchivedRawText(data)
+                    is String -> ArchivedRawText(data, p.ocr)
                     is Int -> ArchivedRawInt(data)
                     else -> throw IllegalArgumentException("Unsupported RawTestimony data type: ${data::class.java.name}")
                 }
@@ -136,7 +136,8 @@ object RealityArticleArchiveMapper {
                 cropLeft = p.cropProvenance.bounds.left,
                 cropTop = p.cropProvenance.bounds.top,
                 cropRight = p.cropProvenance.bounds.right,
-                cropBottom = p.cropProvenance.bounds.bottom
+                cropBottom = p.cropProvenance.bounds.bottom,
+                overlayBounds = p.overlayBounds,
             )
             is com.example.overdex.battle.custody.AudioInputStatus -> ArchivedAudioInputStatus(p.captureSource, p.state)
             is AudioCaptured -> ArchivedAudioCaptured(

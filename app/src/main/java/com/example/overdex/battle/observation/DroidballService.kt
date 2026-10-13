@@ -262,6 +262,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun fieldEditorBlocksCapture(now: Long): Boolean = !registrationMode &&
         (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
     private var overlayView: ComposeView? = null
+    @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
     private var freeOverlayX: Int? = null
@@ -539,7 +540,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         capturedAtWallTimeMillis = capturedAtWallTimeMillis,
                         capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos,
                         displayWidth = width,
-                        displayHeight = height
+                        displayHeight = height,
+                        overlayRegion = capturedOverlayRegion,
                     )
                     publicationAttempts++
                     val emitSucceeded = _frames.tryEmit(frame)
@@ -714,11 +716,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY 
             else 
                 WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                // Keep Overdex's own field UI out of screen captures even if an
-                // OEM compositor includes overlay windows in a projection.
-                WindowManager.LayoutParams.FLAG_SECURE,
+            droidballOverlayWindowFlags(registrationMode),
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -771,6 +769,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         overlayView!!.setViewTreeLifecycleOwner(this)
         overlayView!!.setViewTreeViewModelStoreOwner(this)
         overlayView!!.setViewTreeSavedStateRegistryOwner(this)
+
+        // Read geometry on the UI thread. Capture workers retain this immutable
+        // screen-space footprint alongside each frame, without repainting it.
+        overlayView!!.viewTreeObserver.addOnPreDrawListener {
+            val view = overlayView
+            capturedOverlayRegion = if (view != null && view.isShown && !registrationMode) {
+                val location = IntArray(2)
+                view.getLocationOnScreen(location)
+                com.example.overdex.model.AnchorRegion(location[0].toFloat() / bounds.width(),
+                    location[1].toFloat() / bounds.height(), view.width.toFloat() / bounds.width(),
+                    view.height.toFloat() / bounds.height())
+            } else null
+            true
+        }
         
         windowManager.addView(overlayView, params)
 
@@ -809,6 +821,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
         _frames.resetReplayCache()
         if (open) {
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_SECURE
             if (fieldEditorOriginalPosition == null) fieldEditorOriginalPosition = params.x to params.y
             // Keep GO's start button behind the editor while visual capture is
             // paused. USE THIS TEAM or CLOSE returns touch input to the game.
@@ -818,13 +831,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.x = (displayBounds().width() * .04f).roundToInt()
             params.y = (displayBounds().height() * .12f).roundToInt()
         } else {
+            if (!registrationMode) params.flags = params.flags and WindowManager.LayoutParams.FLAG_SECURE.inv()
             fieldEditorOriginalPosition?.let { (x, y) -> params.x = x; params.y = y }
             fieldEditorOriginalPosition = null
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
             getSystemService(android.view.inputmethod.InputMethodManager::class.java)
                 ?.hideSoftInputFromWindow(view.windowToken, 0)
             updateOverlayLayoutState(
-                DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD,
+                DroidballOverlayPresentation.mode.value in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE),
                 DroidballOverlayPresentation.expanded.value,
             )
         }
@@ -878,7 +892,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         if (!overlayAnchoredToBattleHud) return
         val params = overlayParams ?: return
         val bounds = displayBounds()
-        battleHudLayoutStore.saveWindow(bounds.width(), bounds.height(), params.x, params.y)
+        // Keep persisted Y as the flat badge seam used by existing profiles.
+        battleHudLayoutStore.saveWindow(bounds.width(), bounds.height(), params.x,
+            BattleHudOverlayGeometry.savedSeamForWindowTop(params.y, bounds.width()))
     }
 
     private fun saveBattleHudHalfPositions(
@@ -925,7 +941,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             .coerceAtLeast(minimumWindowTop)
         val savedY = layout.windowY
         params.x = layout.windowX ?: BattleHudOverlayGeometry.panelLeftPx(bounds.width())
-        params.y = (savedY ?: attachedWindowTop).coerceIn(minimumWindowTop, maximumWindowTop)
+        params.y = BattleHudOverlayGeometry.windowTopForSavedSeam(savedY ?: attachedWindowTop, bounds.width())
+            .coerceIn(minimumWindowTop, maximumWindowTop)
     }
 
     /**
@@ -1041,6 +1058,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             Log.e("DroidballService", "Error removing overlayView", e)
         } finally {
             overlayView = null
+            capturedOverlayRegion = null
         }
 
         try {

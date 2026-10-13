@@ -78,7 +78,8 @@ class CropCaptureWitness(
                         } else {
                             artifactStore.preservePng(resolved.bitmap)
                         } ?: return@supplyFrames
-                        val testimony = CropCaptured(artifact, resolved.provenance)
+                        val testimony = CropCaptured(artifact, resolved.provenance,
+                            resolved.provenance.overlayBounds(frame.overlayRegion))
                         match.custody.submitTestimony(
                             sourceId = sourceId,
                             payload = testimony,

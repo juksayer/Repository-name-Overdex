@@ -23,7 +23,8 @@ data class ArchivedPlayerChargeMoveLabelRead(val slot: Int, val text: String) : 
 @Serializable
 @SerialName("raw_text")
 data class ArchivedRawText(
-    val value: String
+    val value: String,
+    val ocr: com.example.overdex.model.observation.OcrTextEvidence? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable
@@ -129,7 +130,8 @@ data class ArchivedCropCaptured(
     val cropLeft: Int,
     val cropTop: Int,
     val cropRight: Int,
-    val cropBottom: Int
+    val cropBottom: Int,
+    val overlayBounds: com.example.overdex.model.observation.OcrBox? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable

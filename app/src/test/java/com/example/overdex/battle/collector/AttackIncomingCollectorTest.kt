@@ -10,7 +10,8 @@ import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.SessionSource
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -63,25 +64,24 @@ class AttackIncomingCollectorTest {
         )
 
         collector.start()
-        delay(50)
-        
-        // We trigger a "silent" frame that bypasses type checks in the fake input
-        input.triggerSilentFrame()
-        delay(50)
-
-        val inputRecord = custody.records.find { it is SourceInputRecord } as SourceInputRecord
-        assertTrue(inputRecord.available)
-        assertEquals(testSourceId, inputRecord.sourceId)
+        try {
+            // Wait for the actual subscription, not an arbitrary delay that
+            // races the worker when the build machine is under load.
+            withTimeout(5_000) { input.triggerSilentFrame() }
+            val inputRecord = custody.records.find { it is SourceInputRecord } as SourceInputRecord
+            assertTrue(inputRecord.available)
+            assertEquals(testSourceId, inputRecord.sourceId)
+        } finally { collector.stop() }
     }
 
     // --- Fakes ---
 
     private class FakeInput : ObservationInput {
         override val source = SessionSource.LIVE_CAPTURE
-        private var callback: (suspend (Bitmap) -> Unit)? = null
+        private val callback = CompletableDeferred<suspend (Bitmap) -> Unit>()
 
         override suspend fun supply(onVisualData: suspend (Bitmap) -> Unit) {
-            callback = onVisualData
+            callback.complete(onVisualData)
         }
 
         /**
@@ -89,10 +89,11 @@ class AttackIncomingCollectorTest {
          * In a real JVM test, any non-Bitmap object will cause a ClassCastException.
          */
         suspend fun triggerSilentFrame() {
+            val subscribed = callback.await()
             try {
                 // This will likely fail in JVM but we catch it to verify the signal was sent
                 @Suppress("UNCHECKED_CAST")
-                val raw = callback as? (suspend (Bitmap?) -> Unit)
+                val raw = subscribed as? (suspend (Bitmap?) -> Unit)
                 raw?.invoke(null)
             } catch (e: Throwable) {
                 // Ignore cast exceptions in JVM test

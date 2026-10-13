@@ -49,6 +49,50 @@ class RealityArticleArchiveMapperTest {
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 
+    @Test fun `OCR filtering preserves raw words crop footprint and source time through compact export`() {
+        val footprint = com.example.overdex.model.observation.OcrBox(20f, -50f, 300f, 400f)
+        val word = com.example.overdex.model.observation.OcrWordEvidence("Foul", 0,
+            com.example.overdex.model.observation.OcrBox(30f, 1f, 60f, 14f), violetFraction = .2f,
+            decision = "HUD_SIZE_COLOR_POSITION")
+        val evidence = com.example.overdex.model.observation.OcrTextEvidence(
+            "RAW", "Foul", "", listOf(word), 672, 20.16f)
+        val crop = article("crop", com.example.overdex.battle.custody.CropCaptured(
+            com.example.overdex.battle.artifact.CropArtifactReference("artifacts/crops/test.png", "hash", 100L),
+            com.example.overdex.battle.observation.BattleCropProvenance("AnnouncementCrop", 672, 1493,
+                com.example.overdex.battle.observation.BattleCropBounds(50, 453, 622, 509)), footprint),
+            monotonicTimeNanos = 500L)
+        val raw = article("raw", RawTestimony(evidence.rawText, evidence),
+            evidenceReferences = listOf("crop"), monotonicTimeNanos = 500L)
+        val accepted = article("accepted", RawTestimony(""), evidenceReferences = listOf("raw", "crop"),
+            monotonicTimeNanos = 500L)
+        val mapped = listOf(crop, raw, accepted).map(RealityArticleArchiveMapper::map)
+        val compact = MatchArchiveArticleSelector.select(mapped, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val decoded = compact.map {
+            json.decodeFromString(ArchivedRealityArticle.serializer(),
+                json.encodeToString(ArchivedRealityArticle.serializer(), it))
+        }
+        assertEquals(mapped, decoded)
+        assertEquals(footprint, (decoded.first().payload as ArchivedCropCaptured).overlayBounds)
+        assertEquals(ArchivedRawText("Foul", evidence), decoded[1].payload)
+        assertEquals(500L, decoded[2].monotonicTimeNanos)
+        assertEquals(listOf("raw", "crop"), decoded[2].evidenceReferences)
+    }
+
+    @Test fun `old OCR and crop archives need no size or overlay metadata`() {
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val raw = json.decodeFromString(ArchivedTestimonyPayload.serializer(),
+            """{"kind":"raw_text","value":"Sneasel"}""") as ArchivedRawText
+        val crop = json.decodeFromString(ArchivedTestimonyPayload.serializer(), """{
+            "kind":"crop_captured","artifactPath":"artifacts/crops/a.png","sha256":"hash",
+            "byteCount":100,"mediaType":"image/png","cropName":"species","sourceWidth":672,
+            "sourceHeight":1493,"cropLeft":493,"cropTop":96,"cropRight":650,"cropBottom":128
+        }""") as ArchivedCropCaptured
+        assertEquals(null, raw.ocr)
+        assertEquals(null, crop.overlayBounds)
+        assertEquals("Sneasel", raw.value)
+    }
+
     @Test fun `global HP coordinates preserve source dimensions and old archives remain crop relative`() {
         val payload = ActiveHpBarMeasured(ActivePokemonSide.OPPONENT, 395, 600, 587, 617, .9f, 672, 1493)
         val archived = RealityArticleArchiveMapper.map(article(id = "source-hp", payload = payload)).payload as ArchivedActiveHpBarMeasured

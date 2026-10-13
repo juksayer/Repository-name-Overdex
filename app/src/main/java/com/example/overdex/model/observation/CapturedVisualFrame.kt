@@ -13,5 +13,7 @@ data class CapturedVisualFrame(
     val capturedAtMonotonicTimeNanos: Long,
     /** Full-display coordinate space used by Android's Pointer Location overlay. */
     val displayWidth: Int? = null,
-    val displayHeight: Int? = null
+    val displayHeight: Int? = null,
+    /** Normalized captured-screen footprint of our visible presentation, never game identity evidence. */
+    val overlayRegion: com.example.overdex.model.AnchorRegion? = null,
 )

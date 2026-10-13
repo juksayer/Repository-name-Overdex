@@ -27,4 +27,17 @@ class BattleHudOverlayGeometryTest {
         assertEquals(0, BattleHudOverlayGeometry.minimumEditableWindowTopPx(100))
         assertEquals(100, BattleHudOverlayGeometry.minimumEditableWindowTopPx(-100))
     }
+
+    @Test fun `complementary corners preserve saved seam through repeated editing and reloads`() {
+        assertEquals(27, BattleHudOverlayGeometry.jointDepthPx(1080))
+        assertEquals(54, BattleHudOverlayGeometry.jointDepthPx(2160))
+        for (width in listOf(720, 1080, 1440, 2160)) {
+            var saved = 259 // An already adjusted phone profile; not the default anchor.
+            repeat(10) {
+                val windowY = BattleHudOverlayGeometry.windowTopForSavedSeam(saved, width)
+                saved = BattleHudOverlayGeometry.savedSeamForWindowTop(windowY, width)
+                assertEquals(259, saved)
+            }
+        }
+    }
 }
