@@ -511,6 +511,10 @@ private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidt
     val indicatorColor = action.type?.color ?: Color(0xFF88AFA0)
     Box(
         modifier = modifier
+            .semantics {
+                contentDescription = "${action.side} ${action.moveName ?: "Fast Move"} projectile"
+                stateDescription = if (action.progress >= 1f) "Impact" else "In flight"
+            }
             .offset(x = travelHalfWidth * (movement * direction))
             .graphicsLayer { translationY = if (action.side == "PLAYER") 25f else -25f }
             .size(34.dp)
@@ -552,10 +556,11 @@ internal fun ReplayCombatantSlot(
     modifier: Modifier = Modifier,
     statChanges: List<com.example.overdex.battle.replay.ReplayStatChangeAction> = emptyList(),
 ) {
-    val down = combatant?.let { it.isFainted || it.defeatedAtNanos != null } == true
-    val faintPose = combatant?.takeIf { down }?.let {
-        ReplayFaintPose.at(it.faintedAtNanos ?: it.defeatedAtNanos, cursorNanos, useBackSprite)
+    val faintPose = combatant?.let {
+        ReplayFaintPose.at(it.knockoutPresentationAtNanos ?: it.faintedAtNanos ?: it.defeatedAtNanos,
+            cursorNanos, useBackSprite)
     }
+    val down = faintPose != null
     Box(
         modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
@@ -584,8 +589,11 @@ internal fun ReplayCombatantSlot(
                         alpha = faintPose?.opacity ?: if (down) 0.6f else 1f
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
                         val attackOffset = chargedAction?.let { ReplayChargePose.at(it, useBackSprite).risePixels }
-                            ?: fastAction?.progress
-                            ?.div(REPLAY_BOB_DURATION_FRACTION)
+                            ?: fastAction?.let {
+                                // Keep the short, sharp sprite bounce while the
+                                // complete attack cycle uses its reference duration.
+                                it.progress * it.durationNanos / (450_000_000L * REPLAY_BOB_DURATION_FRACTION)
+                            }
                             ?.coerceIn(0f, 1f)
                             ?.let { quickProgress ->
                                 val amplitudePixels = if (useBackSprite) 16f else 8f
@@ -607,7 +615,7 @@ internal fun ReplayCombatantSlot(
                     },
                 contentScale = ContentScale.Fit,
                 colorFilter = if (down) {
-                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(faintPose?.saturation ?: 1f) })
                 } else null
             )
         }

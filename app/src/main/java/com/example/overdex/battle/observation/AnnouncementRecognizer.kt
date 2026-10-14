@@ -8,6 +8,7 @@ import com.example.overdex.model.observation.OcrTextEvidence
 import com.example.overdex.data.observation.OcrWordGeometry
 import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.data.observation.OcrHeightProfile
+import com.example.overdex.data.observation.OcrPriority
 
 object AnnouncementRecognizer {
 
@@ -15,13 +16,15 @@ object AnnouncementRecognizer {
     suspend fun recognizeEvidence(
         bitmap: Bitmap, context: OcrSourceContext, profile: OcrHeightProfile,
     ): List<OcrTextEvidence> {
-        val direct = OcrWordGeometry.read(bitmap, bitmap, 0, "RAW", context, profile)
+        val direct = OcrWordGeometry.read(bitmap, bitmap, 0, "RAW", context, profile,
+            priority = OcrPriority.TRANSIENT)
         // No extra OCR pass just because our own text was rejected. Native pixels
         // remain available for future treatments; this avoids growing the OCR queue.
         if (direct.rawText.isNotBlank()) return listOf(direct)
         val prepared = highContrastInput(bitmap)
         return try {
-            listOf(direct, OcrWordGeometry.read(bitmap, prepared, 0, "THRESHOLD_185_2X", context, profile))
+            listOf(direct, OcrWordGeometry.read(bitmap, prepared, 0, "THRESHOLD_185_2X", context, profile,
+                priority = OcrPriority.TRANSIENT))
         } finally { prepared.recycle() }
     }
 

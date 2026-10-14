@@ -695,12 +695,35 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(DeviceMotionPulseWitness(battleEvidenceLive))
         observationDispatcher.register(inactiveBenchSnapshotGate)
         observationDispatcher.register(matchOutcomeCaptureGate)
+        // Cache the setting briefly, but notice changes made during a session.
+        // Reading PointerLocation pixels is optional; never mistake its ink for
+        // a Pokémon type glyph, including at the right-hand end of the strip.
+        var pointerSettingCheckedAt = Long.MIN_VALUE
+        var pointerStripEnabled = false
+        val pointerSettingLock = Any()
+        val pointerStripVisible = {
+            synchronized(pointerSettingLock) {
+                val now = System.nanoTime()
+                if (pointerSettingCheckedAt == Long.MIN_VALUE || now - pointerSettingCheckedAt >= 500_000_000L) {
+                    pointerStripEnabled = android.provider.Settings.System.getInt(
+                        getApplication<android.app.Application>().contentResolver, "pointer_location", 0
+                    ) == 1
+                    pointerSettingCheckedAt = now
+                }
+                pointerStripEnabled
+            }
+        }
         listOf(
             BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture Witness",
             BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(
-                input, calibration, contract, cropArtifactStore, battleEvidenceLive,
+                input, calibration, contract, cropArtifactStore, {
+                    battleEvidenceLive() && !com.example.overdex.battle.observation.PointerStripOcclusion.covers(
+                        contract.crop.region.regionIn(calibration), calibration.pointerCoordinatesRegion,
+                        pointerStripVisible()
+                    )
+                },
                 ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name
             ))
         }
@@ -853,15 +876,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedPlayerChargeMoveEnergyFillCadenceWitness())
         // Optional visual input evidence. Android continues receiving all gameplay
         // input normally; only the developer coordinate strip's pixels are read.
-        val pointerStripEnabled = android.provider.Settings.System.getInt(
-            getApplication<android.app.Application>().contentResolver, "pointer_location", 0
-        ) == 1
         (0..2).forEach { slot ->
             observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
                 input, calibration, cropArtifactStore,
                 isEnabled = {
                     session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE &&
-                        (slot != 0 || pointerStripEnabled)
+                        (slot != 0 || pointerStripVisible())
                 },
                 slot = slot,
             ))
