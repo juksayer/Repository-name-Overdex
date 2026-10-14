@@ -439,12 +439,13 @@ class MatchReplayModelTest {
         assertEquals(1, model.hapticEventsBetween(2_200_000_000L, 2_300_000_000L).single().pulseCount)
     }
 
-    @Test fun `old archive reconstructs QTE milestones from short pulses before charge announcement`() {
+    @Test fun `old archive reconstructs QTE milestones from short pulses before a known player charge`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("nice", motionPulse(116_000_000L), 1_000_000_000L),
             timed("great", motionPulse(209_000_000L), 2_194_000_000L),
             timed("excellent", motionPulse(243_000_000L), 4_731_000_000L),
             timed("charge-used", ArchivedChargeMoveUsedAnnounced, 5_000_000_000L),
+            timed("spent", ArchivedChargedMoveEnergySpent("PLAYER", "Example", "Example move", 35, "ANNOUNCEMENT"), 5_000_000_000L),
         ))
         val model = MatchReplayModel(archive)
 
@@ -453,6 +454,17 @@ class MatchReplayModelTest {
         assertEquals("EXCELLENT", model.sceneAt(4_800_000_000L).qteMilestone)
         assertEquals("PLAYER", model.sceneAt(4_800_000_000L).qteMilestoneSide)
         assertEquals(3, model.hapticEventsBetween(0L, 5_000_000_000L).size)
+    }
+
+    @Test fun `three motion pulses and an unattributed charge do not invent player QTE grades`() {
+        val archive = MatchArchive(matchId = "match", articles = listOf(
+            timed("one", motionPulse(), 1_000_000_000L),
+            timed("two", motionPulse(), 2_000_000_000L),
+            timed("three", motionPulse(), 3_000_000_000L),
+            timed("charge-used", ArchivedChargeMoveUsedAnnounced, 4_000_000_000L)))
+        val model = MatchReplayModel(archive)
+        assertEquals(null, model.sceneAt(3_100_000_000L).qteMilestone)
+        assertTrue(model.hapticEventsBetween(0L, 4_000_000_000L).isEmpty())
     }
 
     @Test fun `clipped get ready cue permits replay of a partial Great result`() {

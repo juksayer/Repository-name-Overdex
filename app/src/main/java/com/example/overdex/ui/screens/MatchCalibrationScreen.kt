@@ -202,6 +202,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP,
             CalibrationRegion.OPPONENT_HP,
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
+            CalibrationRegion.QTE_TYPE_ICONS,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
             CalibrationRegion.POINTER_COORDINATES,
             CalibrationRegion.DECISION_TIMER,
@@ -238,6 +239,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP -> "Trainer HP"
             CalibrationRegion.OPPONENT_HP -> "Opponent HP"
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> "Charge-Move Execution"
+            CalibrationRegion.QTE_TYPE_ICONS -> "QTE Type Icons"
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Inactive Cards: Upper / Lower"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
@@ -282,6 +284,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.TRAINER_HP -> calibration.trainerHpRegion
         CalibrationRegion.OPPONENT_HP -> calibration.opponentHpRegion
         CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
+        CalibrationRegion.QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         CalibrationRegion.DECISION_TIMER -> calibration.decisionTimerRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
@@ -352,6 +355,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP -> calibration.copy(trainerHpRegion = updated)
             CalibrationRegion.OPPONENT_HP -> calibration.copy(opponentHpRegion = updated)
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.copy(chargeMoveExecutionRegion = updated)
+            CalibrationRegion.QTE_TYPE_ICONS -> calibration.copy(qteTypeIconsRegion = updated)
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)
             CalibrationRegion.DECISION_TIMER -> calibration.copy(decisionTimerRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.copy(playerChargeMoveNameLeftRegion = updated)

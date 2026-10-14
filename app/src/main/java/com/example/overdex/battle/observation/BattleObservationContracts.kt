@@ -36,6 +36,7 @@ enum class BattleRegionId {
     PLAYER_HP,
     OPPONENT_HP,
     CHARGE_MOVE_EXECUTION,
+    QTE_TYPE_ICONS,
     PLAYER_CHARGE_MOVE_CONTROLS,
     POINTER_COORDINATES,
     DECISION_TIMER,
@@ -63,6 +64,7 @@ enum class BattleRegionId {
         PLAYER_HP -> calibration.trainerHpRegion
         OPPONENT_HP -> calibration.opponentHpRegion
         CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
+        QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
         PLAYER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         DECISION_TIMER -> calibration.decisionTimerRegion
@@ -163,6 +165,8 @@ object BattleCropContracts {
     val playerTeamStatus = BattleCropContract("PlayerTeamStatusCrop", BattleRegionId.PLAYER_TEAM_INFO)
     val opponentTeamStatus = BattleCropContract("OpponentTeamStatusCrop", BattleRegionId.OPPONENT_TEAM_INFO)
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
+    // Calibration-only until moving QTE glyphs have been measured against the catalogue.
+    val qteTypeIcons = BattleCropContract("QteTypeIconsCrop", BattleRegionId.QTE_TYPE_ICONS)
     val playerChargeMoveControls = BattleCropContract("PlayerChargeMoveControlsCrop", BattleRegionId.PLAYER_CHARGE_MOVE_CONTROLS)
     val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
     val decisionTimer = BattleCropContract("DecisionTimerCrop", BattleRegionId.DECISION_TIMER, minimumSize = 16)

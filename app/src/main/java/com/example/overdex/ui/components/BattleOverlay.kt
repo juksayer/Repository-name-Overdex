@@ -108,6 +108,7 @@ fun BattleOverlay(
     onResetBattleHudLayout: () -> Unit = {},
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
     onHudEditingChanged: (Boolean) -> Unit = {},
+    onOpenQteCalibration: (() -> Unit)? = null,
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -194,6 +195,7 @@ fun BattleOverlay(
                 onLayoutEditingChanged = { layoutEditing = it },
                 onBattleHudDrag = onBattleHudDrag,
                 onBattleHudDragFinished = onBattleHudDragFinished,
+                onOpenQteCalibration = onOpenQteCalibration,
                 onResetBattleHudLayout = {
                     topHalfOffsetX = 0f
                     topHalfOffsetY = 0f
@@ -327,6 +329,7 @@ private fun OverlayPanel(
     onBattleHudDrag: (Float, Float) -> Unit,
     onBattleHudDragFinished: () -> Unit,
     onResetBattleHudLayout: () -> Unit,
+    onOpenQteCalibration: (() -> Unit)?,
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
@@ -430,6 +433,11 @@ private fun OverlayPanel(
                 Box(Modifier.align(Alignment.End)) {
                     HudPositionControl { onLayoutEditingChanged(true) }
                 }
+            }
+            if (onOpenQteCalibration != null) {
+                Text("QTE BOX", color = foreground, fontSize = 9.sp,
+                    modifier = Modifier.align(Alignment.End)
+                        .clickable(onClick = onOpenQteCalibration).padding(horizontal = 4.dp, vertical = 7.dp))
             }
         } else {
             val configuredTeamReady = configuredPlayerTeam.size == 3

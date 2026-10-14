@@ -250,6 +250,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private lateinit var windowManager: WindowManager
     private var registrationMode = false
     private var registrationBoxes: com.example.overdex.ui.components.RegistrationAlignmentWindows? = null
+    private var qteCalibrationWindow: com.example.overdex.ui.components.LiveQteCalibrationWindow? = null
     private val registrationPanelExpanded = androidx.compose.runtime.mutableStateOf(false)
     private val registrationController by lazy {
         androidx.lifecycle.ViewModelProvider(
@@ -767,6 +768,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     onBattleHudDragFinished = ::saveBattleHudPosition,
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onResetBattleHudLayout = ::resetBattleHudLayout,
+                    onOpenQteCalibration = ::openQteCalibration,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
                     onHudEditingChanged = { editing ->
                         hudPositionEditing = editing
@@ -804,6 +806,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        serviceScope.launch(Dispatchers.Main) {
+            instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
+        }
         if (registrationMode) {
             registrationBoxes = com.example.overdex.ui.components.RegistrationAlignmentWindows(
                 this, windowManager, this, this, this, registrationController.alignment, registrationController::readField)
@@ -827,6 +832,28 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     if (!visible && state.hiddenForRead) registrationController.onGuidesHidden()
                 }
             }
+        }
+    }
+
+    private fun openQteCalibration() {
+        if (registrationMode || qteCalibrationWindow != null) return
+        val bounds = displayBounds()
+        val calibration = com.example.overdex.CalibrationManager(this)
+        val window = com.example.overdex.ui.components.LiveQteCalibrationWindow(
+            this, windowManager, this, this, this, serviceScope,
+            bounds.width(), bounds.height(), calibration.load().qteTypeIconsRegion,
+            saveRegion = { region ->
+                // Load at save time: a live adjustment owns only this box, never
+                // a stale copy of species, HP, shields or another user's edits.
+                calibration.save(calibration.load().copy(qteTypeIconsRegion = region))
+            },
+            onClosed = { qteCalibrationWindow = null },
+        )
+        qteCalibrationWindow = window
+        try { window.show(); window.setVisible(!instrumentVisible.value) }
+        catch (error: Exception) {
+            window.close()
+            Log.e("QTE_CALIBRATION", "Unable to open calibration guide", error)
         }
     }
 
@@ -1097,6 +1124,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         else fieldViewModel.fieldTeamEditor.close()
         registrationBoxes?.close()
         registrationBoxes = null
+        qteCalibrationWindow?.close()
+        qteCalibrationWindow = null
         _signals.tryEmit(DroidballSignal.Stopped)
         
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)

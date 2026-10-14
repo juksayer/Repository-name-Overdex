@@ -88,6 +88,28 @@ class OpponentBattleResourceCounterTest {
         assertNull(OpponentBattleResourceCounter.pokeBallCount(116, 38) { _, _ -> WHITE })
     }
 
+    @Test fun `October 14 disappearing badge does not faint Vaporeon`() {
+        val expected = listOf(
+            "before.png" to 1,
+            "hidden-first.png" to null,
+            "hidden-second.png" to null,
+            "returned.png" to 1
+        )
+        for ((name, remaining) in expected) {
+            val crop = ImageIO.read(File("src/test/resources/battle/balls-20261014/$name"))
+            assertEquals(name, remaining, OpponentBattleResourceCounter.pokeBallCount(crop.width, crop.height, crop::getRGB))
+        }
+    }
+
+    @Test fun `partial white badge against a dark background is unavailable on either side`() {
+        for (mirror in listOf(false, true)) {
+            assertNull(OpponentBattleResourceCounter.pokeBallCount(90, 24) { x, y ->
+                val position = if (mirror) 89 - x else x
+                if (position < 60 && y < 18) WHITE else rgb(0, 0, 0)
+            })
+        }
+    }
+
     @Test fun `three visible darkened balls can establish zero survivors`() {
         assertEquals(0, OpponentBattleResourceCounter.pokeBallCount(90, 24) { x, y ->
             if (y in 6..17 && listOf(8..20, 35..47, 62..74).any { x in it }) rgb(65, 65, 65) else WHITE

@@ -203,7 +203,7 @@ internal object OpponentBattleResourceCounter {
     internal fun pokeBallCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? {
         if (width < 3 || height < 3) return null
         var badgePixels = 0
-        val outlinePixels = IntArray(3)
+        val outline = BooleanArray(width * height)
         for (y in 0 until height) for (x in 0 until width) {
             val pixel = pixelAt(x, y)
             val r = pixel ushr 16 and 255
@@ -212,12 +212,67 @@ internal object OpponentBattleResourceCounter {
             val high = maxOf(r, g, b)
             val low = minOf(r, g, b)
             if (low >= 180 && high - low <= 50) badgePixels++
-            if (high <= 180 && high - low <= 45) outlinePixels[(x * 3 / width).coerceAtMost(2)]++
+            outline[y * width + x] = high <= 180 && high - low <= 45
+        }
+        if (badgePixels < width * height / 4) return null
+
+        // A sliding/covered badge can leave a white corner against black. The
+        // black area spans all three slots, but is not three spent balls. Only
+        // count ball-sized silhouettes, not an edge-connected background. A
+        // real ball may touch one crop edge when calibration is tight.
+        removeEdgeBackground(outline, width, height)
+        val outlinePixels = IntArray(3)
+        for (y in 0 until height) for (x in 0 until width) {
+            if (outline[y * width + x]) outlinePixels[(x * 3 / width).coerceAtMost(2)]++
         }
         // Each of the three fixed slots retains an outline even when its ball
         // darkens. Requiring the badge and slots rejects black masks and sky.
-        if (badgePixels < width * height / 4 || outlinePixels.any { it < maxOf(2, width * height / 400) }) return null
+        if (outlinePixels.any { it < maxOf(2, width * height / 400) }) return null
         return count(width, height, pixelAt, 3, ::isBrightPokeBallRed)
+    }
+
+    private fun removeEdgeBackground(pixels: BooleanArray, width: Int, height: Int) {
+        val pending = IntArray(pixels.size)
+        val visited = BooleanArray(pixels.size)
+        fun inspectComponent(start: Int) {
+            if (!pixels[start] || visited[start]) return
+            var head = 0
+            var tail = 0
+            var left = width
+            var right = 0
+            var top = height
+            var bottom = 0
+            fun enqueue(index: Int) {
+                if (!pixels[index] || visited[index]) return
+                visited[index] = true
+                pending[tail++] = index
+            }
+            enqueue(start)
+            while (head < tail) {
+                val index = pending[head++]
+                val x = index % width
+                val y = index / width
+                left = minOf(left, x)
+                right = maxOf(right, x)
+                top = minOf(top, y)
+                bottom = maxOf(bottom, y)
+                if (x > 0) enqueue(index - 1)
+                if (x < width - 1) enqueue(index + 1)
+                if (y > 0) enqueue(index - width)
+                if (y < height - 1) enqueue(index + width)
+            }
+            if (right - left + 1 > (width + 2) / 3 || (top == 0 && bottom == height - 1)) {
+                for (i in 0 until tail) pixels[pending[i]] = false
+            }
+        }
+        for (x in 0 until width) {
+            inspectComponent(x)
+            inspectComponent((height - 1) * width + x)
+        }
+        for (y in 0 until height) {
+            inspectComponent(y * width)
+            inspectComponent(y * width + width - 1)
+        }
     }
 
     fun count(bitmap: Bitmap, maximumCount: Int, acceptsPixel: (Int) -> Boolean): Int {

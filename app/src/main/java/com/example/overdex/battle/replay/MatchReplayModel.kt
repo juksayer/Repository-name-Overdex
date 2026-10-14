@@ -67,13 +67,14 @@ class MatchReplayModel(
     /** Recreated display beats retain their original witnesses separately. */
     val countdown: ReplayCountdown? = ReplayCountdown.from(timedArticles)
     val recordingStartNanos: Long = timedArticles.firstOrNull()?.monotonicTimeNanos ?: 0L
+    private val recordingEndNanos: Long = timedArticles.lastOrNull()?.monotonicTimeNanos ?: recordingStartNanos
     // A recording that begins at GO still needs room to display 3, 2, 1.
     // This is presentation pre-roll; no archived timestamp is changed.
     val startNanos: Long = minOf(recordingStartNanos, countdown?.startNanos ?: recordingStartNanos)
     // Leave enough presentation time for an ending pose even when the result
     // is the final article. This does not append a fictional Timeline event.
     val endNanos: Long by lazy { maxOf(
-        timedArticles.lastOrNull()?.monotonicTimeNanos ?: startNanos,
+        recordingEndNanos,
         timedArticles.filter { it.payload is ArchivedMatchEnded || it.payload is ArchivedActivePokemonFaintedWitnessed }
             .maxOfOrNull { article ->
                 val at = article.monotonicTimeNanos!!
@@ -387,15 +388,25 @@ class MatchReplayModel(
 
         val getReadyCues = timedArticles.filter(::isReplayGetReadyCue)
         val chargeMoveCues = timedArticles.filter { it.payload is ArchivedChargeMoveUsedAnnounced }
+        val namedAnnouncements = reconstructNamedChargedMoveAnnouncements()
         chargeMoveCues.forEach { closingCue ->
             val closingAt = closingCue.monotonicTimeNanos ?: return@forEach
             val alreadyCovered = sequences.values.flatten().any { milestone ->
                 milestone.atNanos in (closingAt - REPLAY_QTE_CLOSE_ASSOCIATION_NANOS)..closingAt
             }
             if (alreadyCovered) return@forEach
-            val getReady = getReadyCues
-                .filter { cue -> cue.monotonicTimeNanos?.let { it in (closingAt - REPLAY_QTE_WINDOW_NANOS)..closingAt } == true }
-                .maxByOrNull { it.monotonicTimeNanos ?: Long.MIN_VALUE }
+            val getReady = timedArticles.lastOrNull { cue ->
+                cue.monotonicTimeNanos!! in (closingAt - REPLAY_QTE_WINDOW_NANOS)..closingAt &&
+                    (isReplayGetReadyCue(cue) || isReplayAttackIncomingCue(cue))
+            }?.takeIf(::isReplayGetReadyCue)
+            val namedSides = timedArticles.mapNotNull { article ->
+                (article.payload as? ArchivedChargedMoveEnergySpent)?.side?.takeIf {
+                    sameChargeAnnouncementEpisode(article.monotonicTimeNanos!!, closingAt)
+                }
+            } + namedAnnouncements.filter { sameChargeAnnouncementEpisode(it.animationAtNanos, closingAt) }.map { it.side }
+            // Accelerometer pulses alone cannot attribute a generic "used" cue
+            // to the player. An opponent's charge never contains our bubble QTE.
+            if ("OPPONENT" in namedSides || (getReady == null && namedSides.distinct() != listOf("PLAYER"))) return@forEach
             val start = getReady?.monotonicTimeNanos ?: (closingAt - REPLAY_QTE_WINDOW_NANOS)
             val selected = latestPlausibleQteRun(
                 shortReplayMotionPulses(usedPulseIds).filter { pulse ->
@@ -412,13 +423,15 @@ class MatchReplayModel(
         // if the closing announcement witness did not survive in an old archive.
         getReadyCues.forEach { cue ->
             val cueAt = cue.monotonicTimeNanos ?: return@forEach
+            val end = timedArticles.firstOrNull { it.monotonicTimeNanos!! > cueAt && isReplayAttackIncomingCue(it) }
+                ?.monotonicTimeNanos?.coerceAtMost(cueAt + REPLAY_QTE_WINDOW_NANOS) ?: (cueAt + REPLAY_QTE_WINDOW_NANOS)
             val alreadyCovered = sequences.values.flatten().any { milestone ->
                 milestone.atNanos in cueAt..(cueAt + REPLAY_QTE_WINDOW_NANOS)
             }
             if (alreadyCovered) return@forEach
             val selected = latestPlausibleQteRun(
                 shortReplayMotionPulses(usedPulseIds).filter { pulse ->
-                    pulse.monotonicTimeNanos?.let { it in cueAt..(cueAt + REPLAY_QTE_WINDOW_NANOS) } == true
+                    pulse.monotonicTimeNanos?.let { it in cueAt until end } == true
                 }
             ).takeLast(QTE_MILESTONE_LABELS.size)
             if (selected.size < QTE_MILESTONE_LABELS.size) return@forEach
@@ -459,13 +472,6 @@ class MatchReplayModel(
                 side = side,
             )
         }
-
-    private fun isReplayGetReadyCue(article: ArchivedRealityArticle): Boolean {
-        if (article.payload is ArchivedGetReadyWitnessed) return true
-        if (article.sourceId != "ANNOUNCEMENT_WITNESS") return false
-        val raw = (article.payload as? ArchivedRawText)?.value ?: return false
-        return raw.uppercase().filter(Char::isLetterOrDigit).contains("GETREA")
-    }
 
 
     private fun payloadLabel(payload: Any): String = when (payload) {
@@ -543,8 +549,8 @@ class MatchReplayModel(
                     setOf("GET_READY") + if (selected != null) setOf("PLAYER_BUTTON_LABEL_AND_TOUCH") else emptySet()
                 )
             }
-            when (val payload = article.payload) {
-                ArchivedAttackIncoming -> ReplayChargedMoveUse(
+            if (isReplayAttackIncomingCue(article)) {
+                return@mapNotNull ReplayChargedMoveUse(
                     side = "OPPONENT",
                     animationAtNanos = atNanos,
                     lastEvidenceAtNanos = atNanos,
@@ -552,6 +558,8 @@ class MatchReplayModel(
                     anchorPriority = 1,
                     evidenceKinds = setOf("ATTACK_INCOMING")
                 )
+            }
+            when (val payload = article.payload) {
                 is ArchivedChargeMoveQteVibrationPatternInferred -> ReplayChargedMoveUse(
                     side = payload.side,
                     animationAtNanos = atNanos,
@@ -578,8 +586,8 @@ class MatchReplayModel(
                         }) null else ReplayChargedMoveUse(
                         timedArticles.lastOrNull {
                             it.monotonicTimeNanos!! in (atNanos - CHARGE_MOVE_PREPARATION_MAX_NANOS) until atNanos &&
-                                (isReplayGetReadyCue(it) || it.payload is ArchivedAttackIncoming)
-                        }?.let { if (it.payload is ArchivedAttackIncoming) "OPPONENT" else "PLAYER" } ?: "UNKNOWN",
+                                (isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it))
+                        }?.let { if (isReplayAttackIncomingCue(it)) "OPPONENT" else "PLAYER" } ?: "UNKNOWN",
                         atNanos, atNanos, null, 3, setOf("CHARGED_MOVE_ANNOUNCEMENT")
                     )
                 }
@@ -643,7 +651,7 @@ class MatchReplayModel(
         val to = maxOf(firstAt, secondAt)
         return timedArticles.none {
             it.monotonicTimeNanos!! > from && it.monotonicTimeNanos!! <= to &&
-                (isReplayGetReadyCue(it) || it.payload is ArchivedAttackIncoming)
+                (isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it))
         }
     }
 
@@ -703,7 +711,7 @@ class MatchReplayModel(
         val touch = contact.payload as ArchivedPlayerChargeButtonTouchWitnessed
         val contactAt = contact.monotonicTimeNanos!!
         if (!canPerformReplayAction("PLAYER", contactAt, readyAt)) return null
-        if (timedArticles.any { it.payload is ArchivedAttackIncoming &&
+        if (timedArticles.any { isReplayAttackIncomingCue(it) &&
                 it.monotonicTimeNanos!! in contactAt..readyAt }) return null
         val species = combatantFor("PLAYER", contactAt)?.speciesName ?: return null
         val label = timedArticles.lastOrNull {
@@ -736,9 +744,9 @@ class MatchReplayModel(
         }.map { it.monotonicTimeNanos!! }
         return timedArticles.mapNotNull { article ->
             val at = article.monotonicTimeNanos!!
-            val maximumEnd = when (article.payload) {
-                ArchivedGetReadyWitnessed -> at + 8_000_000_000L
-                ArchivedAttackIncoming -> at + 12_000_000_000L
+            val maximumEnd = when {
+                isReplayGetReadyCue(article) -> at + 8_000_000_000L
+                isReplayAttackIncomingCue(article) -> at + 12_000_000_000L
                 else -> return@mapNotNull null
             }
             at..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
@@ -1105,7 +1113,10 @@ class MatchReplayModel(
      */
     private fun reconstructAnnouncementTracks(): Pair<List<ReplayIdentityObservation>, List<ReplayIdentityObservation>> {
         if (canonicalSpecies.isEmpty()) return emptyList<ReplayIdentityObservation>() to emptyList()
-        val roster = latestArchivedPlayerRoster(timedArticles, matchStartNanos ?: endNanos).toSet()
+        // Identity recovery precedes charge reconstruction. Use the recorded
+        // boundary here; the presentation end also depends on those charges
+        // and cannot be evaluated while their identity tracks are being built.
+        val roster = latestArchivedPlayerRoster(timedArticles, matchStartNanos ?: recordingEndNanos).toSet()
         val player = mutableListOf<ReplayIdentityObservation>()
         val opponent = mutableListOf<ReplayIdentityObservation>()
         val entrySides = EntryAnnouncementSideTracker()

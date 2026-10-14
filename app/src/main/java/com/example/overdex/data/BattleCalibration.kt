@@ -113,6 +113,11 @@ data class BattleCalibration(
         width = (1075f - 5f) / 1080f,
         height = (1940f - 500f) / 2400f
     ),
+    // Experimental QTE glyph territory, shared by the live guide and CRT editor.
+    // This starting box is for measurement, not a claim that all 18 types fit it.
+    val qteTypeIconsRegion: AnchorRegion = AnchorRegion(
+        x = 0.375f, y = 0.45f, width = 0.25f, height = 0.15f
+    ),
     val trainerChargeMoveControlsRegion: AnchorRegion = AnchorRegion(
         x = 100f / 1080f,
         y = 1940f / 2400f,
@@ -122,9 +127,10 @@ data class BattleCalibration(
     val pointerCoordinatesRegion: AnchorRegion = AnchorRegion(
         x = 0f, y = 82f / 2400f, width = 3f / 7f, height = 44f / 2400f
     ),
-    // Central shield/replacement countdown, measured in the supplied GO video.
+    // Include the dial in both the supplied video and the Moondrop's edge-to-edge
+    // battlefield. Its detector finds the vertical position inside this territory.
     val decisionTimerRegion: AnchorRegion = AnchorRegion(
-        x = 440f / 1080f, y = 170f / 2400f, width = 200f / 1080f, height = 220f / 2400f
+        x = 440f / 1080f, y = 80f / 2400f, width = 200f / 1080f, height = 310f / 2400f
     ),
     val playerChargeMoveNameLeftRegion: AnchorRegion = AnchorRegion(
         x = 70f / 1080f, y = 2240f / 2400f, width = 460f / 1080f, height = 65f / 2400f

@@ -368,7 +368,8 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val travelHalfWidth = (maxWidth / 4).coerceAtLeast(0.dp)
                 val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
-                // Build the same icon below the sprite, then draw it above the
+                // Build the icon toward the opponent, partly behind its performer,
+                // then draw it above the
                 // scene while in flight. It never becomes a separate spinner.
                 scene.chargedMoveActions.filter { ReplayChargePose.at(it, it.side == "PLAYER").projectileProgress == 0f }
                     .forEach { action ->
@@ -671,13 +672,16 @@ internal fun ChargedMoveReplayIndicator(
     val pose = ReplayChargePose.at(action, player)
     val flight = pose.projectileProgress
     val direction = if (player) 1f else -1f
-    val footY = (if (player) playerSpriteSize else opponentSpriteSize) * 0.37f +
-        if (player) 24.dp else 0.dp
+    val spriteSize = if (player) playerSpriteSize else opponentSpriteSize
+    // Place the growing glyph at the performer's forward shoulder. The sprite
+    // is drawn afterward, masking the part of the glyph that overlaps its body.
+    val originX = -travelHalfWidth * direction + spriteSize * 0.28f * direction
+    val originY = (if (player) 24.dp else 0.dp) - spriteSize * 0.12f
     val targetY = if (player) 0.dp else 24.dp
     val color = action.type?.color ?: Color(0xFF88AFA0)
     Box(modifier
-        .offset(x = if (attributed) travelHalfWidth * direction * (2f * flight - 1f) else 0.dp,
-            y = if (attributed) footY * (1f - flight) + targetY * flight else 0.dp)
+        .offset(x = if (attributed) originX * (1f - flight) + travelHalfWidth * direction * flight else 0.dp,
+            y = if (attributed) originY * (1f - flight) + targetY * flight else 0.dp)
         .graphicsLayer {
             translationY = if (attributed) {
                 (pose.risePixels + if (player) 25f else 0f) * (1f - flight) +
