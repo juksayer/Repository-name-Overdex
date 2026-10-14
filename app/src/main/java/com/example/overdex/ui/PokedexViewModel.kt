@@ -923,6 +923,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Announcement Crop Capture Witness")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        observationDispatcher.register(CropCaptureWitness(input, calibration,
+            BattleWitnessContracts.decisionTimerCapture, cropArtifactStore,
+            isEnabled = { battleEvidenceLive() && session.firstLiveCombatArticle.value != null },
+            captureIntervalNanos = 250_000_000L, captureDispatcher = auxiliaryCaptureDispatcher,
+            observerId = ObserverId("DECISION_TIMER_CAPTURE", ObserverSource.SCREEN_CAPTURE),
+            name = "Decision Timer Capture Witness"))
+        observationDispatcher.register(com.example.overdex.battle.observation.PersistedDecisionTimerWitness(cropArtifactStore))
         observationDispatcher.register(PersistedPlayerEntrySpeciesWitness())
         observationDispatcher.register(PersistedAnnouncementSpeciesWitness())
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))

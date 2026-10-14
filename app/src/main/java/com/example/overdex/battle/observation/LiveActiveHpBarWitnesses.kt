@@ -410,7 +410,8 @@ internal data class ActiveHpBarDamageTickMeasurement(
     val beforeFraction: Float,
     val afterFraction: Float,
     val lostFraction: Float,
-    val confidence: Float
+    val confidence: Float,
+    val observedAtNanos: Long,
 )
 
 /** Measures one persistent HP-fill decrease without naming its cause. */
@@ -419,6 +420,7 @@ internal class ActiveHpBarDamageTickDetector {
     private var pendingAfterFraction: Float? = null
     private var pendingChangedAtNanos: Long? = null
     private var pendingConfidence = 0f
+    private var lastSampleAtNanos: Long? = null
 
     @Synchronized
     fun reset() {
@@ -426,6 +428,7 @@ internal class ActiveHpBarDamageTickDetector {
         pendingAfterFraction = null
         pendingChangedAtNanos = null
         pendingConfidence = 0f
+        lastSampleAtNanos = null
     }
 
     @Synchronized
@@ -436,6 +439,17 @@ internal class ActiveHpBarDamageTickDetector {
     ): ActiveHpBarDamageTickMeasurement? {
         if (!filledFraction.isFinite() || filledFraction !in 0f..1f) return null
         val current = filledFraction
+        val lastAt = lastSampleAtNanos
+        if (lastAt != null && monotonicTimeNanos <= lastAt) return null
+        lastSampleAtNanos = monotonicTimeNanos
+        if (lastAt != null && monotonicTimeNanos - lastAt > MAX_SAMPLE_GAP_NANOS) {
+            // A gap may contain many fast/charged attacks or a camera cut.
+            // Reacquire HP without calling the whole unseen loss one new hit.
+            baselineFraction = current
+            pendingAfterFraction = null
+            pendingChangedAtNanos = null
+            return null
+        }
         val baseline = baselineFraction
         if (baseline == null) {
             baselineFraction = current
@@ -451,32 +465,52 @@ internal class ActiveHpBarDamageTickDetector {
         }
 
         val pending = pendingAfterFraction
+        val changedAt = pendingChangedAtNanos
+        if (pending != null && changedAt != null && current < pending - UPDATE_EPSILON &&
+            monotonicTimeNanos - changedAt >= SEPARATE_LOSS_NANOS) {
+            // A later, lower level confirms the earlier decrease even when
+            // capture missed its identical plateau frames. Keep both steps,
+            // instead of extending the pending loss until the Pokémon is dead.
+            val tick = settled(baseline, pending, changedAt)
+            pendingAfterFraction = current
+            pendingChangedAtNanos = monotonicTimeNanos
+            pendingConfidence = measurementConfidence
+            return tick
+        }
         if (pending == null || kotlin.math.abs(current - pending) > UPDATE_EPSILON) {
             pendingAfterFraction = current
             pendingChangedAtNanos = monotonicTimeNanos
             pendingConfidence = measurementConfidence
             return null
         }
-        val changedAt = pendingChangedAtNanos ?: return null
+        if (changedAt == null) return null
         if (monotonicTimeNanos - changedAt < SETTLE_NANOS) return null
 
         val after = minOf(pending, current)
-        val lost = (baseline - after).coerceIn(0f, 1f)
-        baselineFraction = after
         pendingAfterFraction = null
         pendingChangedAtNanos = null
+        return settled(baseline, after, changedAt)
+    }
+
+    private fun settled(before: Float, after: Float, observedAt: Long): ActiveHpBarDamageTickMeasurement {
+        val lost = (before - after).coerceIn(0f, 1f)
+        baselineFraction = after
         return ActiveHpBarDamageTickMeasurement(
-            beforeFraction = baseline,
+            beforeFraction = before,
             afterFraction = after,
             lostFraction = lost,
-            confidence = (pendingConfidence * (0.75f + lost.coerceAtMost(0.25f))).coerceIn(0f, 0.99f)
+            confidence = (pendingConfidence * (0.75f + lost.coerceAtMost(0.25f))).coerceIn(0f, 0.99f),
+            observedAtNanos = observedAt,
         )
     }
 
     private companion object {
         const val MIN_DAMAGE_FRACTION = 0.006f
-        const val UPDATE_EPSILON = 0.003f
+        // One fill pixel on the approximately 190 px captured bar is 0.0053.
+        const val UPDATE_EPSILON = 0.006f
         const val SETTLE_NANOS = 90_000_000L
+        const val SEPARATE_LOSS_NANOS = 350_000_000L
+        const val MAX_SAMPLE_GAP_NANOS = 1_250_000_000L
     }
 }
 
@@ -544,10 +578,11 @@ internal class LiveActiveHpBarDamageTickWitness(
                                 afterFraction = tick.afterFraction,
                                 lostFraction = tick.lostFraction
                             ),
-                            timestamp = sample.capturedAtWallTimeMillis,
+                            timestamp = sample.capturedAtWallTimeMillis -
+                                (sample.capturedAtMonotonicTimeNanos - tick.observedAtNanos) / 1_000_000L,
                             confidence = tick.confidence,
                             evidenceReferences = emptyList(),
-                            monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
+                            monotonicTimeNanos = tick.observedAtNanos
                         )
                     }
                 } finally {

@@ -67,6 +67,13 @@ data object VsScreenWitnessed : TestimonyPayload
  */
 data object AttackIncoming : TestimonyPayload
 
+/** The numeric timer between team badges; null records the dial's disappearance. */
+data class BattleDecisionTimerObserved(
+    val secondsRemaining: Int?,
+    val rawText: String,
+    val basis: String,
+) : TestimonyPayload
+
 /**
  * Testimony representing an identified Pokémon species.
  * 

@@ -55,6 +55,14 @@ data object ArchivedVsScreenWitnessed : ArchivedTestimonyPayload
 data object ArchivedAttackIncoming : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("battle_decision_timer_observed")
+data class ArchivedBattleDecisionTimerObserved(
+    val secondsRemaining: Int?,
+    val rawText: String,
+    val basis: String,
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("pokemon_identified")
 data class ArchivedPokemonIdentified(
     val species: String

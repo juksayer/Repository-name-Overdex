@@ -61,4 +61,35 @@ class ActiveHpBarDamageTickDetectorTest {
         assertNull(detector.accept(1f, 0.9f, 100_000_000L))
         assertNull(detector.accept(0.99f, 0.9f, 200_000_000L))
     }
+
+    @Test fun `successive sampled drops do not accumulate into a single enormous hit`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(1f, .9f, 0)
+        detector.accept(.96f, .9f, 1_000_000_000L)
+        val first = detector.accept(.92f, .9f, 2_000_000_000L)!!
+        val second = detector.accept(.88f, .9f, 3_000_000_000L)!!
+        assertEquals(.04f, first.lostFraction, .0001f)
+        assertEquals(.04f, second.lostFraction, .0001f)
+        assertEquals(1_000_000_000L, first.observedAtNanos)
+        assertEquals(2_000_000_000L, second.observedAtNanos)
+    }
+
+    @Test fun `one pixel edge jitter still permits a settled loss`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(.9524f, .9f, 0)
+        detector.accept(.8777f, .9f, 100_000_000L)
+        val tick = detector.accept(.8830f, .9f, 400_000_000L)!!
+        assertEquals(.8777f, tick.afterFraction, .0001f)
+        assertEquals(100_000_000L, tick.observedAtNanos)
+    }
+
+    @Test fun `reacquisition after a long gap is a new baseline and not one hit`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        detector.accept(.95f, .9f, 0)
+        detector.accept(.92f, .9f, 1_000_000_000L)
+        assertNull(detector.accept(.26f, .9f, 25_000_000_000L))
+        assertNull(detector.accept(.26f, .9f, 25_200_000_000L))
+        detector.accept(.22f, .9f, 25_500_000_000L)
+        assertEquals(.04f, detector.accept(.22f, .9f, 25_700_000_000L)!!.lostFraction, .0001f)
+    }
 }

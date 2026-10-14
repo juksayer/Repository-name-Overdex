@@ -308,6 +308,8 @@ private fun ArchiveArticleRow(
             is ArchivedObservationSessionStoppedByUser -> "OBSERVATION SESSION STOPPED BY USER"
             is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
             is ArchivedAttackIncoming -> "ATTACK INCOMING"
+            is com.example.overdex.battle.archive.ArchivedBattleDecisionTimerObserved ->
+                "DECISION TIMER [${p.secondsRemaining?.let { "$it seconds" } ?: "cleared"}; ${p.basis}]"
             is ArchivedPokemonIdentified -> "POKEMON: ${p.species}"
             is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
             is ArchivedActivePokemonFaintedWitnessed -> "FAINTED [side=${p.side}, species=${p.speciesName ?: "unresolved"}, basis=${p.basis}]"
@@ -425,6 +427,8 @@ private fun ArticleDetailsOverlay(
                 is ArchivedObservationSessionStoppedByUser -> "OBSERVATION SESSION STOPPED BY USER"
                 is ArchivedVsScreenWitnessed -> "VS SCREEN WITNESSED [central anchor available]"
                 is ArchivedAttackIncoming -> "ATTACK INCOMING"
+                is com.example.overdex.battle.archive.ArchivedBattleDecisionTimerObserved ->
+                    "DECISION TIMER [${p.secondsRemaining?.let { "$it seconds" } ?: "cleared"}; OCR=${p.rawText}; basis=${p.basis}]"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
                 is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
                 is ArchivedActivePokemonFaintedWitnessed -> "FAINTED [side=${p.side}, species=${p.speciesName ?: "unresolved"}, id=${p.speciesId ?: "unresolved"}, basis=${p.basis}]"

@@ -191,6 +191,10 @@ class CalibrationManager(context: Context) {
             .putFloat("pointer_coordinates_y", calibration.pointerCoordinatesRegion.y)
             .putFloat("pointer_coordinates_w", calibration.pointerCoordinatesRegion.width)
             .putFloat("pointer_coordinates_h", calibration.pointerCoordinatesRegion.height)
+            .putFloat("decision_timer_x", calibration.decisionTimerRegion.x)
+            .putFloat("decision_timer_y", calibration.decisionTimerRegion.y)
+            .putFloat("decision_timer_w", calibration.decisionTimerRegion.width)
+            .putFloat("decision_timer_h", calibration.decisionTimerRegion.height)
 
             .putFloat("player_charge_move_name_left_x", calibration.playerChargeMoveNameLeftRegion.x)
             .putFloat("player_charge_move_name_left_y", calibration.playerChargeMoveNameLeftRegion.y)
@@ -645,6 +649,7 @@ class CalibrationManager(context: Context) {
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
             pointerCoordinatesRegion = loadExtraRegion("pointer_coordinates", BattleCalibration().pointerCoordinatesRegion),
+            decisionTimerRegion = loadExtraRegion("decision_timer", BattleCalibration().decisionTimerRegion),
             playerChargeMoveNameLeftRegion = loadExtraRegion("player_charge_move_name_left", BattleCalibration().playerChargeMoveNameLeftRegion),
             playerChargeMoveNameRightRegion = loadExtraRegion("player_charge_move_name_right", BattleCalibration().playerChargeMoveNameRightRegion),
             trainerInactivePokemonRegion = trainerInactivePokemonRegion,

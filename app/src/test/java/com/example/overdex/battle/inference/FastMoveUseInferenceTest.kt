@@ -25,6 +25,31 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `decision timer blocks impacts including late delivery after its clearance`() {
+        val inference = startedInference()
+        fun timer(seconds: Int?) = com.example.overdex.battle.custody.BattleDecisionTimerObserved(
+            seconds, seconds?.toString().orEmpty(), "TEST")
+        // The dial may arrive after a noisy HP pulse with a later capture time.
+        inference.accept(article("early-noise", 1_100_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        inference.accept(article("dial", 1_000_000_000L, timer(4)))
+        inference.accept(article("paused", 2_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        inference.accept(article("clear", 3_000_000_000L, timer(null)))
+        inference.accept(article("late-noise", 2_500_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("real", 3_500_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals("fast-move-use:real", inference.flush().single().payload.useId)
+    }
+
+    @Test fun `decision timer cannot suppress the rest of a match if clearance is missed`() {
+        val inference = startedInference()
+        inference.accept(article("dial", 1_000_000_000L,
+            com.example.overdex.battle.custody.BattleDecisionTimerObserved(2, "2", "TEST")))
+        inference.accept(article("paused", 3_500_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("resumed", 4_500_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals("fast-move-use:resumed", inference.flush().single().payload.useId)
+    }
+
     @Test fun `lingering badge after faint cannot attribute replacement attacks to the corpse`() {
         val inference = startedInference()
         val side = ActivePokemonSide.PLAYER

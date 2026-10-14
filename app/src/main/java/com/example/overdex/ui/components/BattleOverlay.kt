@@ -24,11 +24,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.R
@@ -104,6 +107,7 @@ fun BattleOverlay(
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
     onResetBattleHudLayout: () -> Unit = {},
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
+    onHudEditingChanged: (Boolean) -> Unit = {},
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -114,6 +118,7 @@ fun BattleOverlay(
     val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
     val configuredPlayerTeam by DroidballOverlayPresentation.configuredPlayerTeam.collectAsState()
     var layoutEditing by remember { mutableStateOf(false) }
+    LaunchedEffect(layoutEditing) { onHudEditingChanged(layoutEditing) }
     var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
     var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
     var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
@@ -364,9 +369,9 @@ private fun OverlayPanel(
                     panelShape,
                 ) else Modifier
             )
-            .padding(start = 8.dp, end = 8.dp, bottom = 6.dp,
-                top = 6.dp + if (isBattleHud) jointDepth else 0.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+            .padding(start = 8.dp, end = 8.dp, bottom = if (isBattleHud) 3.dp else 6.dp,
+                top = (if (isBattleHud) 3.dp else 6.dp) + if (isBattleHud) jointDepth else 0.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 2.dp else 5.dp)
     ) {
         if (teamEditingAllowed) {
             Text("TEAM / MOVES", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
@@ -390,10 +395,13 @@ private fun OverlayPanel(
             }
             if (opponentMoves != null) {
                 if (opponentMoves.fastMoves.isNotEmpty()) {
-                    MovePossibilityLine("POSSIBLE FAST", opponentMoves.fastMoves)
+                    MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76))
                 }
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine(if (opponentMoves.chargedMoves.all { it.isConfirmed }) "CHARGED" else "POSSIBLE CHARGED", opponentMoves.chargedMoves)
+                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
+                        lastRowControl = if (layoutEditing) null else { {
+                            HudPositionControl { onLayoutEditingChanged(true) }
+                        } })
                 }
             }
             if (layoutEditing) {
@@ -418,14 +426,10 @@ private fun OverlayPanel(
                         fontWeight = FontWeight.Bold,
                     )
                 }
-            } else {
-                Text(
-                    "POSITION",
-                    modifier = Modifier.align(Alignment.End).clickable { onLayoutEditingChanged(true) },
-                    color = muted.copy(alpha = 0.68f),
-                    fontSize = 6.sp,
-                    fontFamily = FontFamily.Monospace,
-                )
+            } else if (opponentMoves?.chargedMoves.isNullOrEmpty()) {
+                Box(Modifier.align(Alignment.End)) {
+                    HudPositionControl { onLayoutEditingChanged(true) }
+                }
             }
         } else {
             val configuredTeamReady = configuredPlayerTeam.size == 3
@@ -523,7 +527,7 @@ private fun OverlayControl(label: String, action: () -> Unit) {
 @Composable
 private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
     Box(
-        modifier = Modifier.weight(1f).height(52.dp)
+        modifier = Modifier.weight(1f).height(48.dp)
             .background(Color(0x18005E5B), RoundedCornerShape(6.dp))
             .border(1.dp, Color(0x55005E5B), RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
@@ -567,23 +571,37 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 }
 
 @Composable
-private fun MovePossibilityLine(label: String, moves: List<OverlayMovePossibility>) {
-    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        Text(label, color = BattleHudBadgeStyle.moveInk, fontSize = 7.sp, fontFamily = FontFamily.Monospace)
-        moves.forEach { move ->
-            Text(
-                text = buildAnnotatedString {
-                    if (move.isConfirmed) append("✓ ")
-                    if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
-                        append("⚠ +${move.damageIncreasePercent}% ")
-                    }
-                    append(move.name)
-                },
-                color = BattleHudBadgeStyle.moveInk,
-                fontSize = 8.sp,
-                fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
-                fontFamily = FontFamily.Monospace
-            )
+private fun HudPositionControl(onClick: () -> Unit) {
+    // Keep the same position-editing target without drawing over GO's text.
+    Box(Modifier.semantics { contentDescription = "Move HUD" }
+        .clickable(onClick = onClick).size(14.dp))
+}
+
+@Composable
+private fun MovePossibilityLine(
+    moves: List<OverlayMovePossibility>, color: Color, lastRowControl: (@Composable () -> Unit)? = null,
+) {
+    Column {
+        moves.forEachIndexed { index, move ->
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                if (index == moves.lastIndex) lastRowControl?.invoke()
+                Text(
+                    text = buildAnnotatedString {
+                        if (move.isConfirmed) append("✓ ")
+                        if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
+                            append("⚠ +${move.damageIncreasePercent}% ")
+                        }
+                        append(move.name)
+                    },
+                    modifier = Modifier.weight(1f),
+                    color = color,
+                    fontSize = 8.sp,
+                    lineHeight = 10.sp,
+                    textAlign = TextAlign.End,
+                    fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
         }
     }
 }

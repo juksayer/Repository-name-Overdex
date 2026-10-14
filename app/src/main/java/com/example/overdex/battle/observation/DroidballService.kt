@@ -57,6 +57,7 @@ import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import com.example.overdex.ui.components.BattleHudOverlayGeometry
+import com.example.overdex.ui.components.HudCaptureWindow
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -134,6 +135,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val runtimeState = _runtimeState.asStateFlow()
 
         fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
+        internal suspend fun requestAnnouncementRead(
+            crop: BattleCropProvenance, text: String, observedAt: Long,
+        ): AnnouncementReadWindow? = kotlinx.coroutines.withContext(Dispatchers.Main) {
+            activeService?.clearHudForAnnouncement(crop, text, observedAt)
+        }
         suspend fun captureRegistrationCry(): com.example.overdex.battle.audio.Pcm16Audio {
             val service = activeService?.takeIf { it.registrationMode } ?: error("Start a registration scan first.")
             check(service.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -261,7 +267,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var fieldEditorOriginalPosition: Pair<Int, Int>? = null
     private fun fieldEditorBlocksCapture(now: Long): Boolean = !registrationMode &&
         (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
-    private var overlayView: ComposeView? = null
+    private var overlayView: HudCaptureWindow? = null
+    private val announcementReadRetry = AnnouncementReadRetry()
+    private var hudPositionEditing = false
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
@@ -727,7 +735,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         freeOverlayY = params.y
         overlayParams = params
 
-        overlayView = ComposeView(this).apply {
+        val overlayContent = ComposeView(this).apply {
             setContent {
                 if (registrationMode) {
                     com.example.overdex.ui.components.RegistrationScanOverlay(
@@ -760,9 +768,17 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onResetBattleHudLayout = ::resetBattleHudLayout,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
+                    onHudEditingChanged = { editing ->
+                        hudPositionEditing = editing
+                        if (editing) overlayView?.restoreForRead()
+                    },
                     )
                 }
             }
+        }
+        overlayView = HudCaptureWindow(this).apply {
+            addView(overlayContent, android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
         }
         
         // Essential for Compose in WindowManager
@@ -814,6 +830,43 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
     }
 
+    private suspend fun clearHudForAnnouncement(
+        crop: BattleCropProvenance, text: String, observedAt: Long,
+    ): AnnouncementReadWindow? {
+        val view = overlayView ?: return null
+        if (registrationMode || instrumentVisible.value || hudPositionEditing || !overlayAnchoredToBattleHud ||
+            !view.isAttachedToWindow || fieldEditorBlocksCapture(System.nanoTime())) return null
+        if (crop.sourceWidth <= 0 || crop.sourceHeight <= 0) return null
+        val display = displayBounds()
+        val location = IntArray(2)
+        view.getLocationOnScreen(location)
+        // Map source pixels directly to physical screen pixels. No saved
+        // calibration changes or guessed status-bar subtraction.
+        val sx = display.width().toFloat() / crop.sourceWidth
+        val sy = display.height().toFloat() / crop.sourceHeight
+        val area = android.graphics.Rect(
+            kotlin.math.floor(crop.bounds.left * sx).toInt() - location[0] - 2,
+            kotlin.math.floor(crop.bounds.top * sy).toInt() - location[1] - 2,
+            kotlin.math.ceil(crop.bounds.right * sx).toInt() - location[0] + 2,
+            kotlin.math.ceil(crop.bounds.bottom * sy).toInt() - location[1] + 2,
+        )
+        if (!area.intersect(0, 0, view.width, view.height)) return null
+        val requestedAt = System.nanoTime()
+        if (!announcementReadRetry.accept(text, observedAt, requestedAt)) return null
+        val firstDraw = kotlinx.coroutines.CompletableDeferred<Long>()
+        view.clearForRead(area, AnnouncementReadRetry.CLEAR_MILLIS) { firstDraw.complete(it) }
+        val drawnAt = kotlinx.coroutines.withTimeoutOrNull(AnnouncementReadRetry.CLEAR_MILLIS) {
+            firstDraw.await()
+        } ?: return null
+        // Allow two display frames for composition and stop before restoration.
+        // These are retry candidates, not a claim that previously hidden pixels
+        // were observed. Each selected crop keeps its own source timestamp.
+        val after = drawnAt + 35_000_000L
+        val before = requestedAt + AnnouncementReadRetry.CLEAR_MILLIS * 1_000_000L - 35_000_000L
+        Log.d("HUD_ANNOUNCEMENT_READ", "Cleared overlapping HUD pixels for ${AnnouncementReadRetry.CLEAR_MILLIS}ms")
+        return if (after < before) AnnouncementReadWindow(after, before) else null
+    }
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun setFieldEditorWindow(open: Boolean) {
         val view = overlayView ?: return
@@ -821,6 +874,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
         _frames.resetReplayCache()
         if (open) {
+            view.restoreForRead()
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_SECURE
             if (fieldEditorOriginalPosition == null) fieldEditorOriginalPosition = params.x to params.y
             // Keep GO's start button behind the editor while visual capture is
@@ -990,6 +1044,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         overlayAnchoredToBattleHud = false
+        view.restoreForRead()
         if (wasAnchored) {
             params.x = freeOverlayX ?: params.x
             params.y = freeOverlayY ?: params.y

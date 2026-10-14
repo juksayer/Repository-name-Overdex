@@ -122,6 +122,10 @@ data class BattleCalibration(
     val pointerCoordinatesRegion: AnchorRegion = AnchorRegion(
         x = 0f, y = 82f / 2400f, width = 3f / 7f, height = 44f / 2400f
     ),
+    // Central shield/replacement countdown, measured in the supplied GO video.
+    val decisionTimerRegion: AnchorRegion = AnchorRegion(
+        x = 440f / 1080f, y = 170f / 2400f, width = 200f / 1080f, height = 220f / 2400f
+    ),
     val playerChargeMoveNameLeftRegion: AnchorRegion = AnchorRegion(
         x = 70f / 1080f, y = 2240f / 2400f, width = 460f / 1080f, height = 65f / 2400f
     ),

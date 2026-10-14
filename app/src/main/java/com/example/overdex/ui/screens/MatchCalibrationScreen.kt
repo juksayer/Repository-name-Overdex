@@ -204,6 +204,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
             CalibrationRegion.POINTER_COORDINATES,
+            CalibrationRegion.DECISION_TIMER,
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT,
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT,
 
@@ -215,6 +216,7 @@ fun MatchCalibrationScreen(
     fun getReadableName(region: CalibrationRegion): String {
         return when (region) {
             CalibrationRegion.POINTER_COORDINATES -> "Touch Coordinates"
+            CalibrationRegion.DECISION_TIMER -> "Decision Timer"
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> "Player Charged Move Name - Left"
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> "Player Charged Move Name - Right"
             CalibrationRegion.ENEMY_NAME -> "Enemy Name"
@@ -281,6 +283,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.OPPONENT_HP -> calibration.opponentHpRegion
         CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
+        CalibrationRegion.DECISION_TIMER -> calibration.decisionTimerRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
         CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
@@ -350,6 +353,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.OPPONENT_HP -> calibration.copy(opponentHpRegion = updated)
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.copy(chargeMoveExecutionRegion = updated)
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)
+            CalibrationRegion.DECISION_TIMER -> calibration.copy(decisionTimerRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.copy(playerChargeMoveNameLeftRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.copy(playerChargeMoveNameRightRegion = updated)
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.copy(trainerChargeMoveControlsRegion = updated)

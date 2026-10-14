@@ -4,6 +4,7 @@ import com.example.overdex.battle.artifact.FileCropArtifactStore
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObserverId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,18 +35,12 @@ class PersistedAnnouncementWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 val speciesNames = match.pokemonKnowledge.getAllSpeciesNames()
-                match.articles
-                    .filter { article ->
-                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.announcement.cropName
-                    }
-                    // The raw crops remain on the Timeline. Text recognition only needs
-                    // the newest visible badge, rather than a backlog of identical frames.
-                    .conflate()
-                    .collect { article ->
+                var lastReadAt = Long.MIN_VALUE
+                suspend fun readAndPublish(article: RealityArticle): String? {
                     val crop = article.payload as CropCaptured
-                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
-                    try {
-                        val at = article.monotonicTimeNanos ?: return@collect
+                    val at = article.monotonicTimeNanos ?: return null
+                    val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return null
+                    return try {
                         val context = OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds)
                         val readings = AnnouncementRecognizer.recognizeEvidence(bitmap, context, heightProfile)
                         var acceptedText = ""
@@ -65,12 +60,33 @@ class PersistedAnnouncementWitness(
                         // the preceding raw articles retain everything ML Kit reported.
                         match.custody.submitTestimony(sourceId, RawTestimony(acceptedText), article.perceivedAt,
                             null, references, at)
+                        lastReadAt = maxOf(lastReadAt, at)
+                        acceptedText
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
                         android.util.Log.w("ANNOUNCEMENT_WITNESS", "Recognition failed", error)
+                        null
                     } finally { bitmap.recycle() }
                 }
+                match.articles
+                    .filter { article ->
+                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.announcement.cropName
+                    }
+                    // Ordinary OCR follows the newest frame. A requested retry
+                    // explicitly selects a preserved frame from the opening;
+                    // conflation must not replace it with an older or re-covered crop.
+                    .conflate()
+                    .collect { article ->
+                        val at = article.monotonicTimeNanos ?: return@collect
+                        if (at <= lastReadAt) return@collect
+                        val text = readAndPublish(article) ?: return@collect
+                        val crop = article.payload as CropCaptured
+                        if (crop.overlayBounds == null) return@collect
+                        val window = DroidballService.requestAnnouncementRead(crop.cropProvenance, text, at)
+                            ?: return@collect
+                        window.awaitCrop(match.articles)?.let { readAndPublish(it) }
+                    }
             }
         }
     }

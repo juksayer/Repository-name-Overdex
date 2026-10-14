@@ -431,6 +431,20 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
+                scene.decisionTimer?.let { timer ->
+                    Column(Modifier.align(Alignment.TopCenter).padding(top = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        timer.secondsRemaining?.let { seconds ->
+                            Box(Modifier.size(44.dp).background(Color(0xB84C5D61), CircleShape)
+                                .border(2.dp, Color.White, CircleShape)
+                                .semantics { contentDescription = "Decision timer: $seconds" },
+                                contentAlignment = Alignment.Center) {
+                                Text(seconds.toString(), color = Color.White, fontSize = 24.sp)
+                            }
+                        }
+                        timer.reason?.let { Text(it, color = Color.White, fontSize = 10.sp) }
+                    }
+                }
                 scene.qteMilestone?.let { milestone ->
                     Text(
                         text = milestone,

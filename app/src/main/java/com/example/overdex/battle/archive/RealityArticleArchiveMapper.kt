@@ -83,6 +83,8 @@ object RealityArticleArchiveMapper {
             is ObservationSessionStoppedByUser -> ArchivedObservationSessionStoppedByUser
             is VsScreenWitnessed -> ArchivedVsScreenWitnessed
             is AttackIncoming -> ArchivedAttackIncoming
+            is com.example.overdex.battle.custody.BattleDecisionTimerObserved ->
+                ArchivedBattleDecisionTimerObserved(p.secondsRemaining, p.rawText, p.basis)
             is PokemonIdentified -> ArchivedPokemonIdentified(p.species)
             is ActivePokemonSpeciesWitnessed -> ArchivedActivePokemonSpeciesWitnessed(
                 side = p.side.name,

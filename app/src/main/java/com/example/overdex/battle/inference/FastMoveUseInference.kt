@@ -60,6 +60,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private var suppressUntilNanos = Long.MIN_VALUE
     private var matchStarted = false
     private var matchStartedAtNanos = Long.MAX_VALUE
+    private data class DecisionPause(val start: Long, var end: Long)
+    private val decisionPauses = mutableListOf<DecisionPause>()
+    private var decisionObservedAtNanos = Long.MIN_VALUE
 
     /** A known move changes the allowed phase offset, never creates a use. */
     fun observeIdentity(identity: FastMoveIdentified) {
@@ -79,18 +82,36 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         if (article.payload is MatchStarted) {
             pending.clear()
             suppressUntilNanos = Long.MIN_VALUE
+            decisionPauses.clear()
+            decisionObservedAtNanos = Long.MIN_VALUE
             matchStarted = true
             matchStartedAtNanos = atNanos
             return emptyList()
         }
         val output = mutableListOf<FastMoveUseDerivation>()
         when (val payload = article.payload) {
+            is com.example.overdex.battle.custody.BattleDecisionTimerObserved -> {
+                if (atNanos >= decisionObservedAtNanos) {
+                    decisionObservedAtNanos = atNanos
+                    val seconds = payload.secondsRemaining
+                    val active = decisionPauses.lastOrNull()?.takeIf { atNanos < it.end }
+                    if (seconds == null) active?.end = atNanos
+                    else if (seconds in 0..15) {
+                        val end = atNanos + (seconds + 1L) * 1_000_000_000L
+                        if (active != null) active.end = end
+                        else decisionPauses += DecisionPause(atNanos, end)
+                    }
+                    pending.removeAll { isDecisionPaused(it.anchorNanos) }
+                }
+                return flushExpired(watermarkNanos)
+            }
             AttackIncoming, GetReadyWitnessed -> {
                 suppressUntilNanos = atNanos + if (payload == AttackIncoming)
                     ATTACK_INCOMING_MAX_PHASE_NANOS else GET_READY_MAX_PHASE_NANOS
                 return flush()
             }
             ChargeMoveUsedAnnounced -> {
+                decisionPauses.lastOrNull()?.let { if (atNanos in it.start until it.end) it.end = atNanos }
                 suppressUntilNanos = atNanos + CHARGED_IMPACT_TAIL_NANOS
                 pending.clear()
                 return emptyList()
@@ -130,7 +151,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 }
             }
             is FastMoveIdentified -> observeIdentity(payload)
-            else -> if (matchStarted && atNanos >= matchStartedAtNanos && atNanos > suppressUntilNanos) {
+            else -> if (matchStarted && atNanos >= matchStartedAtNanos &&
+                atNanos > suppressUntilNanos && !isDecisionPaused(atNanos)) {
                 evidenceFrom(article)?.let { (side, measured) ->
                     val appearance = appearances[side]
                     val matching = pending.filter { use ->
@@ -164,6 +186,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         }
         return output
     }
+
+    private fun isDecisionPaused(atNanos: Long) = decisionPauses.any { atNanos in it.start until it.end }
 
     fun flush(): List<FastMoveUseDerivation> = pending.sortedBy { it.anchorNanos }
         .flatMap(::finalize).also { pending.clear() }

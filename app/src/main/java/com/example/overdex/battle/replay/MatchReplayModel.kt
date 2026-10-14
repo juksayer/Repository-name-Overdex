@@ -7,6 +7,8 @@ import com.example.overdex.battle.archive.ArchivedBattleCryCandidatesMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.archive.ArchivedHpBarBorderPulse
 import com.example.overdex.battle.archive.ArchivedActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.archive.ArchivedActiveHpBarMeasured
+import com.example.overdex.battle.observation.ActiveHpBarDamageTickDetector
 import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
@@ -161,6 +163,7 @@ class MatchReplayModel(
         .flatten()
         .distinctBy { "${it.side}:${it.atNanos}:${it.label}" }
         .sortedBy { it.atNanos }
+    private val decisionTimers = ReplayDecisionTimers(timedArticles)
     private val fastMoveChargeWindows = fastMoveExclusionWindows()
     private val recordedFastMoveUses = reconstructFastMoveUses()
     private val recordedChargedMoveUses = reconstructChargedMoveUses().map { use ->
@@ -322,6 +325,7 @@ class MatchReplayModel(
             statChanges = statChanges.at(monotonicTimeNanos),
             countdownGlyph = countdownGlyph,
             countdownFrame = countdownFrame,
+            decisionTimer = decisionTimers.at(monotonicTimeNanos),
             qteMilestone = qteMilestone?.label,
             qteMilestoneSide = qteMilestone?.side,
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence",
@@ -738,7 +742,7 @@ class MatchReplayModel(
                 else -> return@mapNotNull null
             }
             at..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
-        } + namedCharges.map { it..(it + 750_000_000L) }
+        } + namedCharges.map { it..(it + 750_000_000L) } + decisionTimers.windows
     }
 
     /** Coalesce same-hit corroboration while retaining independently observed uses. */
@@ -750,11 +754,17 @@ class MatchReplayModel(
         val fusedUses = timedArticles.mapNotNull { article ->
             if (!hpEvidence.accepts(article)) return@mapNotNull null
             val payload = article.payload as? ArchivedFastMoveUseObserved ?: return@mapNotNull null
+            val damageSources = article.predecessorIds.mapNotNull(timedArticlesById::get)
+                .filter { it.payload is ArchivedActiveHpBarDamageTickMeasured }
+            val kinds = payload.evidenceKinds.toSet().let { kinds ->
+                if (damageSources.isNotEmpty() && damageSources.none(hpEvidence::acceptsSingleHit)) kinds - "HP_DAMAGE_TICK"
+                else kinds
+            }
             ReplayFastMoveUse(
                 side = payload.attackingSide,
                 observedAtNanos = article.monotonicTimeNanos ?: return@mapNotNull null,
                 moveName = null,
-                evidenceKinds = payload.evidenceKinds.toSet(),
+                evidenceKinds = kinds,
                 canonical = true,
                 articleIds = (article.predecessorIds + article.articleId).toSet(),
                 sourceTimesNanos = setOf(article.monotonicTimeNanos!!),
@@ -766,7 +776,7 @@ class MatchReplayModel(
                 (article.payload is ArchivedFastMoveEnergyDerived && article.predecessorIds.any { it in canonicalIds })) {
                 return@mapNotNull null
             }
-            if (!hpEvidence.accepts(article)) return@mapNotNull null
+            if (!hpEvidence.acceptsSingleHit(article)) return@mapNotNull null
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             when (val payload = article.payload) {
                 is ArchivedHpBarBorderPulse -> payload
@@ -842,7 +852,7 @@ class MatchReplayModel(
         // A canonical article suppresses only the raw witnesses that belong to
         // that same use. It must not erase an uncovered use elsewhere in the
         // match merely because at least one fused article survived archiving.
-        return (fusedUses + evidence)
+        return (fusedUses + evidence + recoverMeasuredHpSteps())
             .groupBy { it.side }
             .values
             .flatMap { sideEvidence ->
@@ -868,6 +878,7 @@ class MatchReplayModel(
                         canonical = previous.canonical || current.canonical,
                         articleIds = previous.articleIds + current.articleIds,
                         sourceTimesNanos = previous.sourceTimesNanos + current.sourceTimesNanos,
+                        damageTicks = previous.damageTicks + current.damageTicks,
                     )
                 } else {
                     merged += current
@@ -882,9 +893,49 @@ class MatchReplayModel(
         }.sortedBy { it.observedAtNanos }
     }
 
+    /** Reconstruct missed hit testimony from independently recorded, corroborated HP steps. */
+    private fun recoverMeasuredHpSteps(): List<ReplayFastMoveUse> {
+        val boundaries = (playerIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start } +
+            opponentIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start } +
+            fastMoveChargeWindows.flatMap { listOf(it.first, it.last + 1) } +
+            timedArticles.mapNotNull { article -> article.monotonicTimeNanos.takeIf {
+                article.payload is ArchivedActivePokemonFaintedWitnessed || article.payload is ArchivedMatchEnded
+            } }).distinct().sorted()
+        return listOf("PLAYER", "OPPONENT").flatMap { damagedSide ->
+            val detector = ActiveHpBarDamageTickDetector()
+            var window: Long? = null
+            val samples = mutableMapOf<Long, ArchivedRealityArticle>()
+            buildList {
+                for (article in timedArticles) {
+                    val hp = article.payload as? ArchivedActiveHpBarMeasured ?: continue
+                    val at = article.monotonicTimeNanos!!
+                    if (hp.side != damagedSide || !hpEvidence.accepts(article)) continue
+                    if (matchStartNanos != null && at < matchStartNanos) continue
+                    val start = boundaries.lastOrNull { it <= at }
+                    if (start != window || fastMoveChargeWindows.any { at in it }) {
+                        detector.reset()
+                        samples.clear()
+                        window = start
+                    }
+                    if (fastMoveChargeWindows.any { at in it }) continue
+                    samples[at] = article
+                    val tick = detector.accept(hp.filledFraction, article.confidence ?: 1f, at) ?: continue
+                    val source = samples[tick.observedAtNanos] ?: continue
+                    val side = oppositeSide(damagedSide)
+                    if (!canPerformReplayAction(side, tick.observedAtNanos, tick.observedAtNanos)) continue
+                    add(ReplayFastMoveUse(side, tick.observedAtNanos, null,
+                        setOf("HP_DAMAGE_TICK", "REPLAY_CORROBORATED_HP_STEP"),
+                        articleIds = setOf(source.articleId, article.articleId),
+                        sourceTimesNanos = setOf(tick.observedAtNanos),
+                        damageTicks = listOf(ReplayFastMoveDamage(tick.observedAtNanos, tick.beforeFraction, tick.afterFraction))))
+                }
+            }
+        }
+    }
+
     private fun scheduleFastMoves(): List<ReplayFastMoveCycle> {
         val damageById = timedArticles.filter {
-            it.payload is ArchivedActiveHpBarDamageTickMeasured && hpEvidence.accepts(it)
+            it.payload is ArchivedActiveHpBarDamageTickMeasured && hpEvidence.acceptsSingleHit(it)
         }.associateBy { it.articleId }
         val chargeWindows = fastMoveChargeWindows + recordedChargedMoveUses.map {
             it.preparationAtNanos..(it.animationAtNanos + 750_000_000L)
@@ -919,7 +970,7 @@ class MatchReplayModel(
                 boundaries.lastOrNull { it <= at } ?: at,
                 boundaries.firstOrNull { it > at } ?: Long.MAX_VALUE,
                 use.evidenceKinds, use.articleIds, use.sourceTimesNanos,
-                damageTicks = use.articleIds.mapNotNull damage@{ id ->
+                damageTicks = use.damageTicks + use.articleIds.mapNotNull damage@{ id ->
                     val article = damageById[id] ?: return@damage null
                     val damage = article.payload as ArchivedActiveHpBarDamageTickMeasured
                     if (damage.damagedSide != oppositeSide(use.side) ||
@@ -1378,6 +1429,7 @@ data class ReplayScene(
     val statChanges: List<ReplayStatChangeAction> = emptyList(),
     /** Presentation provenance; never presented as an original glyph witness. */
     val countdownFrame: ReplayCountdownFrame? = null,
+    val decisionTimer: ReplayDecisionTimerState? = null,
 )
 
 data class ReplayFastMoveAction(
@@ -1425,6 +1477,7 @@ private data class ReplayFastMoveUse(
     val canonical: Boolean = false,
     val articleIds: Set<String> = emptySet(),
     val sourceTimesNanos: Set<Long> = setOf(observedAtNanos),
+    val damageTicks: List<ReplayFastMoveDamage> = emptyList(),
 )
 
 private data class ReplayChargedMoveUse(

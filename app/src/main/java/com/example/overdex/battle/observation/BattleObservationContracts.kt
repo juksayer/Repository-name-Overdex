@@ -38,6 +38,7 @@ enum class BattleRegionId {
     CHARGE_MOVE_EXECUTION,
     PLAYER_CHARGE_MOVE_CONTROLS,
     POINTER_COORDINATES,
+    DECISION_TIMER,
     PLAYER_CHARGE_MOVE_NAME_LEFT,
     PLAYER_CHARGE_MOVE_NAME_RIGHT,
     PLAYER_INACTIVE_POKEMON,
@@ -64,6 +65,7 @@ enum class BattleRegionId {
         CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
         PLAYER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
+        DECISION_TIMER -> calibration.decisionTimerRegion
         PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
         PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
         PLAYER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
@@ -163,6 +165,7 @@ object BattleCropContracts {
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
     val playerChargeMoveControls = BattleCropContract("PlayerChargeMoveControlsCrop", BattleRegionId.PLAYER_CHARGE_MOVE_CONTROLS)
     val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
+    val decisionTimer = BattleCropContract("DecisionTimerCrop", BattleRegionId.DECISION_TIMER, minimumSize = 16)
     val playerChargeMoveNameLeft = BattleCropContract("PlayerChargeMoveNameLeftCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_LEFT)
     val playerChargeMoveNameRight = BattleCropContract("PlayerChargeMoveNameRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT)
     val announcement = BattleCropContract("AnnouncementCrop", BattleRegionId.ANNOUNCEMENT, minimumSize = 32)
@@ -179,6 +182,10 @@ data class BattleWitnessContract<T : TestimonyPayload>(
 )
 
 object BattleWitnessContracts {
+    val decisionTimerCapture = BattleWitnessContract(
+        witnessId = "DECISION_TIMER_CAPTURE", crop = BattleCropContracts.decisionTimer,
+        testimonyType = CropCaptured::class
+    )
     val playerActiveTypeIconsCapture = BattleWitnessContract(
         witnessId = "PLAYER_ACTIVE_TYPE_ICONS_CAPTURE",
         crop = BattleCropContracts.playerActiveTypeIcons,
