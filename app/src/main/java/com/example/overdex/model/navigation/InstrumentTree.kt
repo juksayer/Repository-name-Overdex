@@ -21,6 +21,7 @@ data class ActionNode(
     override val name: String,
     val command: InstrumentCommand,
     override val icon: TreeNodeIcon? = null,
+    val detail: String? = null,
 ) : TreeNode
 
 @Stable
@@ -131,6 +132,12 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         } else {
             false
         }
+    }
+
+    /** Finish an inline editor without losing the surrounding directory's place. */
+    fun collapse(path: String) {
+        expandedPaths.removeAll { it == path || it.startsWith("$path/") }
+        if (selectedPath == path || selectedPath.startsWith("$path/")) selectedPath = path
     }
 
     private fun toggle(path: String) {

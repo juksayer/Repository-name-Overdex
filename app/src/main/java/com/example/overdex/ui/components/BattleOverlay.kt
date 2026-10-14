@@ -356,7 +356,7 @@ private fun OverlayPanel(
     Column(
         modifier = panelDragModifier
             .width(teamInfoWidth)
-            .background(background, panelShape)
+            .then(if (isBattleHud) Modifier.battleHudBadgeBackground() else Modifier.background(background, panelShape))
             .then(
                 if (layoutEditing) Modifier.border(
                     1.dp,

@@ -13,6 +13,7 @@ import com.example.overdex.battle.archive.ArchivedActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.archive.ArchivedActivePokemonFaintedWitnessed
 import com.example.overdex.battle.observation.EntryAnnouncementSideTracker
 import com.example.overdex.battle.observation.TeamRosterSpeciesAttributor
+import com.example.overdex.battle.observation.MoveTextAliases
 import com.example.overdex.battle.archive.ArchivedMatchEnded
 import com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured
 import com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared
@@ -162,7 +163,19 @@ class MatchReplayModel(
         .sortedBy { it.atNanos }
     private val fastMoveChargeWindows = fastMoveExclusionWindows()
     private val recordedFastMoveUses = reconstructFastMoveUses()
-    private val recordedChargedMoveUses = reconstructChargedMoveUses()
+    private val recordedChargedMoveUses = reconstructChargedMoveUses().map { use ->
+        // The recorded battlefield can change before our decorative wind-up
+        // finishes. Fit the slam/flight before that change rather than dropping
+        // the throw or attaching the old move to the incoming Pokémon.
+        val nextEntry = listOfNotNull(
+            playerIdentityTrack.nextAppearanceAfter(use.animationAtNanos),
+            opponentIdentityTrack.nextAppearanceAfter(use.animationAtNanos),
+        ).minOrNull()
+        if (use.isCompleted && nextEntry != null && nextEntry < use.impactAtNanos) {
+            use.copy(visualDurationNanos = nextEntry - use.animationAtNanos,
+                evidenceKinds = use.evidenceKinds + "PRESENTATION_FIT_BEFORE_SPECIES_CHANGE")
+        } else use
+    }
     private val fastMoveCycles = scheduleFastMoves()
     private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER", hpEvidence, fastMoveCycles)
     private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT", hpEvidence, fastMoveCycles)
@@ -260,7 +273,8 @@ class MatchReplayModel(
             val ageNanos = monotonicTimeNanos - use.animationAtNanos
             val preparing = monotonicTimeNanos in use.preparationAtNanos until use.animationAtNanos
             if (!preparing && "OPEN_CHARGE_SEQUENCE" in use.evidenceKinds) return@mapNotNull null
-            if (!preparing && ageNanos !in 0 until (CHARGE_MOVE_VISUAL_NANOS + 120_000_000L)) return@mapNotNull null
+            val impactHoldNanos = if (use.visualDurationNanos < CHARGE_MOVE_VISUAL_NANOS) 0L else 120_000_000L
+            if (!preparing && ageNanos !in 0 until (use.visualDurationNanos + impactHoldNanos)) return@mapNotNull null
             // A result closes new actions; it must not erase an already
             // witnessed finishing move while its projectile is in flight.
             val endedAt = timedArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
@@ -276,7 +290,7 @@ class MatchReplayModel(
                 moveName = use.moveName,
                 startedAtNanos = use.animationAtNanos,
                 progress = if (preparing) (monotonicTimeNanos - use.preparationAtNanos).toFloat() /
-                    (use.animationAtNanos - use.preparationAtNanos) else (ageNanos.toFloat() / CHARGE_MOVE_VISUAL_NANOS).coerceIn(0f, 1f),
+                    (use.animationAtNanos - use.preparationAtNanos) else (ageNanos.toFloat() / use.visualDurationNanos).coerceIn(0f, 1f),
                 evidenceKinds = use.evidenceKinds,
                 phase = if (preparing) ReplayChargePhase.CHARGING else ReplayChargePhase.STRIKING,
                 elapsedNanos = monotonicTimeNanos - use.preparationAtNanos,
@@ -642,7 +656,7 @@ class MatchReplayModel(
             val candidates = listOf("PLAYER", "OPPONENT").mapNotNull { side ->
                 val combatant = combatantFor(side, at) ?: return@mapNotNull null
                 val move = possibleChargedMoves[normalizeSpeciesName(combatant.speciesName)]
-                    ?.singleOrNull { normalizeSpeciesName(it.name) == reading } ?: return@mapNotNull null
+                    ?.singleOrNull { MoveTextAliases.matches(reading, it.name) } ?: return@mapNotNull null
                 Triple(side, combatant, move)
             }
             val exactPerformers = candidates.filter {
@@ -661,7 +675,7 @@ class MatchReplayModel(
             if (timedArticles.any {
                     val spent = it.payload as? ArchivedChargedMoveEnergySpent ?: return@any false
                     spent.side == candidate.first &&
-                        normalizeSpeciesName(spent.moveName) == normalizeSpeciesName(candidate.third.name) &&
+                        MoveTextAliases.matches(spent.moveName, candidate.third.name) &&
                         sameChargeAnnouncementEpisode(it.monotonicTimeNanos!!, at)
                 }) continue
             if (recovered.any { it.side == candidate.first && it.moveName == candidate.third.name &&
@@ -675,7 +689,7 @@ class MatchReplayModel(
     private fun chargedMoveType(side: String, at: Long, name: String): PokemonType? =
         chargedMoveTypesByName[normalizeSpeciesName(name)] ?: combatantFor(side, at)?.speciesName?.let { species ->
             possibleChargedMoves[normalizeSpeciesName(species)]
-                ?.firstOrNull { normalizeSpeciesName(it.name) == normalizeSpeciesName(name) }?.type
+                ?.singleOrNull { MoveTextAliases.matches(name, it.name) }?.type
         }
 
     /** A label and contact followed by Get Ready identify the preparation, not a completed impact. */
@@ -695,7 +709,7 @@ class MatchReplayModel(
         if (!canPerformReplayAction("PLAYER", label.monotonicTimeNanos!!, contactAt)) return null
         val name = normalizeSpeciesName((label.payload as ArchivedPlayerChargeMoveLabelRead).text)
         return possibleChargedMoves[normalizeSpeciesName(species)]
-            ?.singleOrNull { normalizeSpeciesName(it.name) == name }?.name
+            ?.singleOrNull { MoveTextAliases.matches(name, it.name) }?.name
     }
 
     private fun canPerformReplayAction(side: String, startedAt: Long, cursor: Long): Boolean {
@@ -1116,6 +1130,8 @@ private class ReplayIdentityTrack private constructor(
     fun hpAppearancesAt(cursorNanos: Long): List<ReplayHpAppearance> =
         hpAppearances.takeWhile { it.start <= cursorNanos }
 
+    fun nextAppearanceAfter(cursorNanos: Long): Long? = hpAppearances.firstOrNull { it.start > cursorNanos }?.start
+
     fun appearanceStartAt(cursorNanos: Long): Long {
         var index = observations.indexOfLast { it.atNanos <= cursorNanos }.coerceAtLeast(0)
         while (index > 0 && normalize(observations[index - 1].speciesName) == normalize(observations[index].speciesName)) {
@@ -1419,9 +1435,10 @@ private data class ReplayChargedMoveUse(
     val anchorPriority: Int,
     val evidenceKinds: Set<String>,
     val preparationAtNanos: Long = animationAtNanos,
+    val visualDurationNanos: Long = CHARGE_MOVE_VISUAL_NANOS,
 ) {
     val isCompleted get() = "OPEN_CHARGE_SEQUENCE" !in evidenceKinds
-    val impactAtNanos get() = animationAtNanos + CHARGE_MOVE_VISUAL_NANOS
+    val impactAtNanos get() = animationAtNanos + visualDurationNanos
 }
 
 private data class ReplayCadence(val side: String, val intervalNanos: Long, val basis: String)

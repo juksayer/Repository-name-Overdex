@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -508,13 +509,32 @@ fun PokedexApp(
                 val instrumentState by viewModel.observationSessionState.collectAsState()
                 val deploymentState by viewModel.deploymentState.collectAsState()
                 val frameCount by viewModel.frameCount.collectAsState()
+                val directoryCollection: MyCollectionViewModel = viewModel()
+                val registration = com.example.overdex.ui.screens.rememberDirectoryOwnedPokemonEditor(
+                    tree = treeState,
+                    searchSpecies = { query, regions -> viewModel.createSearchFlow(query, dexRangeFlow = regions) },
+                    loadSpecies = viewModel::getPokemonById,
+                    savePokemon = directoryCollection::createOwnedPokemon,
+                    onFinished = viewModel::finishDirectoryRegistration,
+                )
+                val currentRegistration by rememberUpdatedState(registration)
+                LaunchedEffect(viewModel) {
+                    viewModel.pendingCommand.collect { command ->
+                        if (command is InstrumentCommand.EditNewOwnedPokemon) {
+                            currentRegistration.activate(command.field)
+                        }
+                    }
+                }
                 ODXFiShell(
 
                     instrumentState = instrumentState,
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     showBattleOverlay = false,
-                    lcdLines = interruptedObservationNotice?.let { notice ->
+                    keyboardController = registration.keyboard,
+                    keyboardPrompt = registration.keyboardPrompt,
+                    onKeyActivated = registration.key,
+                    lcdLines = registration.lcdLines.takeIf { it.isNotEmpty() } ?: interruptedObservationNotice?.let { notice ->
                         buildList {
                             add("OBSERVATION INTERRUPTED")
                             if (notice.recoveredMatchCount > 0) {
@@ -531,12 +551,18 @@ fun PokedexApp(
 
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onUp = { if (phase == MainMenuPhase.READY) viewModel.handleUp() },
-                    onDown = { if (phase == MainMenuPhase.READY) viewModel.handleDown() },
-                    onA = { if (phase == MainMenuPhase.READY) viewModel.handleA() },
-                    onB = { if (phase == MainMenuPhase.READY) viewModel.handleB() },
+                    onUp = { if (phase == MainMenuPhase.READY && !registration.up()) viewModel.handleUp() },
+                    onDown = { if (phase == MainMenuPhase.READY && !registration.down()) viewModel.handleDown() },
+                    onUpLong = { registration.hold(-1) },
+                    onDownLong = { registration.hold(1) },
+                    onUpPressChanged = { if (!it) registration.hold(0) },
+                    onDownPressChanged = { if (!it) registration.hold(0) },
+                    onLeft = { if (phase == MainMenuPhase.READY) registration.left() },
+                    onRight = { if (phase == MainMenuPhase.READY) registration.right() },
+                    onA = { if (phase == MainMenuPhase.READY && !registration.confirm()) viewModel.handleA() },
+                    onB = { if (phase == MainMenuPhase.READY && !registration.back()) viewModel.handleB() },
                     onStart = {
-                        if (phase == MainMenuPhase.READY) {
+                        if (phase == MainMenuPhase.READY && !registration.start()) {
                             if (deploymentState == InstrumentDeploymentState.IDLE) {
                                 navController.navigate("droidball_readiness")
                             } else {
@@ -544,7 +570,7 @@ fun PokedexApp(
                             }
                         }
                     },
-                    onSelect = { /* Reserved */ },
+                    onSelect = { if (phase == MainMenuPhase.READY) registration.select() },
                     onLaunchProbe = { navController.navigate("accessibility_probe") },
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchSight = { navController.navigate("match_sight") },
@@ -554,11 +580,11 @@ fun PokedexApp(
                     MainMenuScreen(
                         hasBootedInSession = hasBootedInSession,
                         onBootComplete = { viewModel.markBooted() },
-                        visibleNodes = treeState.visibleNodes,
-                        selectedPath = treeState.selectedPath,
+                        visibleNodes = registration.nodes,
+                        selectedPath = registration.selectedPath,
                         trainerIdentity = trainerIdentity,
                         onPhaseChange = { phase = it },
-                        onNodeSelected = { node -> viewModel.handleTreeNode(node.path) }
+                        onNodeSelected = { node -> if (!registration.chooseNode(node)) viewModel.handleTreeNode(node.path) }
                     )
                 }
             }

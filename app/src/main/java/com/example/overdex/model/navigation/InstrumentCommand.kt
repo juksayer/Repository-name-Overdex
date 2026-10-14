@@ -14,6 +14,7 @@ sealed interface InstrumentCommand {
     data object ManageBinders : InstrumentCommand
     data object OpenCurrentTeam : InstrumentCommand
     data object AddSpecimen : InstrumentCommand
+    data class EditNewOwnedPokemon(val field: com.example.overdex.model.OwnedPokemonField) : InstrumentCommand
     data object OpenBattleHistory : InstrumentCommand
     data object OpenBattleRecords : InstrumentCommand
     data object OpenBattleLogs : InstrumentCommand

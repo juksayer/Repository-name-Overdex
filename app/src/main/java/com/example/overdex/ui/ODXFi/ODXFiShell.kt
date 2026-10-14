@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -358,7 +359,12 @@ fun ODXFiShell(
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
 
     val currentRoute = com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute.current
-    val owningRoute = remember { currentRoute }
+    var owningRoute by remember { mutableStateOf(currentRoute) }
+    SideEffect {
+        // NavHost can compose its first screen before the back-stack route is
+        // available. Latch that first real route while retaining the stale-input guard.
+        if (owningRoute == null && currentRoute != null) owningRoute = currentRoute
+    }
     val instanceId = remember { UUID.randomUUID().toString().take(8) }
 
     DisposableEffect(instanceId) {
@@ -720,6 +726,7 @@ fun ODXFiShell(
             ) {
                 InstrumentButton(
                     icon = Icons.Default.ArrowDropUp,
+                    contentDescription = "Up",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
                         handleInput("UP")
@@ -734,6 +741,7 @@ fun ODXFiShell(
                 )
                 InstrumentButton(
                     icon = Icons.Default.ArrowDropDown,
+                    contentDescription = "Down",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
                         handleInput("DOWN")
@@ -748,6 +756,7 @@ fun ODXFiShell(
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowLeft,
+                    contentDescription = "Left",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
                         handleInput("LEFT")
@@ -761,6 +770,7 @@ fun ODXFiShell(
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowRight,
+                    contentDescription = "Right",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
                         handleInput("RIGHT")

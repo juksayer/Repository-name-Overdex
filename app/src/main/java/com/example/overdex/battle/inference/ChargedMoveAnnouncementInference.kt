@@ -13,6 +13,7 @@ import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.observation.SpeciesTextResolver
 import com.example.overdex.battle.observation.SpeciesOcrTypography
+import com.example.overdex.battle.observation.MoveTextAliases
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.Move
@@ -158,7 +159,8 @@ class ChargedMoveAnnouncementInference(
                 basis = basis + when {
                     basis.contains("VISIBLE_TOUCH") -> ""
                     moveName == normalize(move.name) -> ""
-                    SpeciesOcrTypography.glyphRepairCost(moveName, normalize(move.name)) != null -> "_OCR_LEGAL_GLYPH_REPAIR"
+                    MoveTextAliases.matches(moveName, move.name) -> "_VISIBLE_MOVE_NAME_ALIAS"
+                    MoveTextAliases.normalizedNames(move.name).any { SpeciesOcrTypography.glyphRepairCost(moveName, it) != null } -> "_OCR_LEGAL_GLYPH_REPAIR"
                     else -> "_OCR_SINGLE_CHARACTER_REPAIR"
                 }
             ),
@@ -211,8 +213,7 @@ class ChargedMoveAnnouncementInference(
             // The latest blank/ambiguous read deliberately blocks stale labels during QTE.
             val label = labelArticle.payload as PlayerChargeMoveLabelRead
             val move = bestMoveMatches(normalize(label.text), pokemon.chargedMoves).singleOrNull()?.move ?: continue
-            val normalizedMove = normalize(move.name)
-            if (reading != normalizedMove && !normalizedMove.startsWith(reading) &&
+            if (MoveTextAliases.normalizedNames(move.name).none { reading == it || it.startsWith(reading) } &&
                 bestMoveMatches(reading, listOf(move)).isEmpty()) continue
             val ready = controlEvidence.filter { it.payload is GetReadyWitnessed &&
                 it.monotonicTimeNanos?.let { t -> t in contactAt..minOf(at, contactAt + 2_000_000_000L) } == true
@@ -230,15 +231,16 @@ class ChargedMoveAnnouncementInference(
     /** Compare the entire reading only with legal moves; clipped prefixes never select a move. */
     private fun bestMoveMatches(reading: String, moves: List<Move>): List<MoveMatch> {
         val matches = moves.distinctBy { normalize(it.name) }.mapNotNull { move ->
-            val name = normalize(move.name)
-            when {
-                reading == name -> MoveMatch(move, 0)
-                reading.length < 6 || name.length < 6 -> null
-                reading.startsWith(name) || name.startsWith(reading) -> null
-                SpeciesOcrTypography.glyphRepairCost(reading, name) != null -> MoveMatch(move, 1)
-                singleCharacterDifference(reading, name) -> MoveMatch(move, 1)
-                else -> null
-            }
+            MoveTextAliases.normalizedNames(move.name).mapNotNull { name ->
+                when {
+                    reading == name -> MoveMatch(move, 0)
+                    reading.length < 6 || name.length < 6 -> null
+                    reading.startsWith(name) || name.startsWith(reading) -> null
+                    SpeciesOcrTypography.glyphRepairCost(reading, name) != null -> MoveMatch(move, 1)
+                    singleCharacterDifference(reading, name) -> MoveMatch(move, 1)
+                    else -> null
+                }
+            }.minByOrNull { it.edits }
         }
         val best = matches.minOfOrNull { it.edits } ?: return emptyList()
         return matches.filter { it.edits == best }

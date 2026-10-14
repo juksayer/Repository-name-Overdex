@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,38 +72,49 @@ fun DirectoryTree(
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         visibleNodes.forEach { flattened ->
-            val isSelected = selectedPath == flattened.path
-            val label = when (val node = flattened.node) {
-                is DirectoryNode -> {
-                    val prefix = if (flattened.isExpanded) "- " else "+ "
-                    "$prefix${node.name}/"
-                }
-                is ActionNode -> node.name
-            }
-
-            val requester = remember { BringIntoViewRequester() }
-            
-            // Behavioral trigger: Bring into view when selection status or the tree structure changes
-            LaunchedEffect(isSelected, visibleNodes) {
-                if (isSelected) {
-                    requester.bringIntoView()
-                }
-            }
-
-            TerminalMenuOption(
-                label = label,
-                selected = isSelected,
-                leadingIcon = when (flattened.node.icon) {
-                    TreeNodeIcon.BINDER -> {
-                        { BinderDirectoryIcon(color = if (isSelected) TerminalGreen else TerminalDimGreen) }
+            key(flattened.path) {
+                val isSelected = selectedPath == flattened.path
+                val label = when (val node = flattened.node) {
+                    is DirectoryNode -> {
+                        val prefix = if (flattened.isExpanded) "- " else "+ "
+                        "$prefix${node.name}/"
                     }
-                    null -> null
-                },
-                modifier = Modifier
-                    .padding(start = (flattened.depth * 16).dp)
-                    .bringIntoViewRequester(requester),
-                onClick = { onNodeSelected(flattened) }
-            )
+                    is ActionNode -> node.name
+                }
+
+                val requester = remember { BringIntoViewRequester() }
+
+                // Behavioral trigger: Bring into view when selection status or the tree structure changes
+                LaunchedEffect(isSelected, visibleNodes) {
+                    if (isSelected) {
+                        requester.bringIntoView()
+                    }
+                }
+
+                Column(Modifier.bringIntoViewRequester(requester)) {
+                    TerminalMenuOption(
+                        label = label,
+                        selected = isSelected,
+                        leadingIcon = when (flattened.node.icon) {
+                            TreeNodeIcon.BINDER -> {
+                                { BinderDirectoryIcon(color = if (isSelected) TerminalGreen else TerminalDimGreen) }
+                            }
+                            null -> null
+                        },
+                        modifier = Modifier
+                            .padding(start = (flattened.depth * 16).dp),
+                        onClick = { onNodeSelected(flattened) }
+                    )
+                    (flattened.node as? ActionNode)?.detail?.let { detail ->
+                        TypeIconText(
+                            text = detail,
+                            color = if (isSelected) TerminalGreen else TerminalDimGreen,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(start = (flattened.depth * 16 + 28).dp, bottom = 4.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -271,6 +271,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ActionNode("Launch Droidball", InstrumentCommand.LaunchDroidball),
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
             DirectoryNode("BATTLE", listOf(
+                DirectoryNode("Add Pokémon", com.example.overdex.model.OwnedPokemonField.entries.map { field ->
+                    ActionNode(field.label, InstrumentCommand.EditNewOwnedPokemon(field))
+                }),
                 ActionNode("Current Team", InstrumentCommand.OpenCurrentTeam),
                 DirectoryNode(
                     "BINDERS",
@@ -360,6 +363,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         if (!instrumentTree.navigateBack()) {
             // Root back action if needed, or ignore
         }
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun finishDirectoryRegistration() {
+        instrumentTree.collapse("/BATTLE/Add Pokémon")
         _treeState.value = instrumentTree.getState()
     }
 

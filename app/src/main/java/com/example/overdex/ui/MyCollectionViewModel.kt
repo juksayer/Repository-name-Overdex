@@ -90,8 +90,13 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
 
     fun addOwnedPokemon(pokemon: OwnedPokemon) {
         viewModelScope.launch {
-            ownedPokemonDao.addOwnedPokemon(pokemon.toEntity())
+            createOwnedPokemon(pokemon)
         }
+    }
+
+    /** Completion means the card is in storage, so editors can safely clear their draft. */
+    suspend fun createOwnedPokemon(pokemon: OwnedPokemon) {
+        ownedPokemonDao.addOwnedPokemon(pokemon.toEntity())
     }
 
     fun updateOwnedPokemon(pokemon: OwnedPokemon) {
