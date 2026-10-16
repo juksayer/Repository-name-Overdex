@@ -78,7 +78,7 @@ class CountdownObserver(
                     if (!calibration.isCalibrated()) {
                         Log.d("COUNTDOWN_TIMING", "seq=$receiptSequence | intervalMs=$intervalMs | Attempt prevented: not calibrated")
                     } else {
-                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, bitmap)
+                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, frame)
 
                         if (resolvedCountdown == null) {
                             Log.w("CountdownObserver", "Countdown glyph crop is unavailable or smaller than 32px")
@@ -184,7 +184,7 @@ class CountdownObserver(
                     .sample(33.milliseconds)
                     .collect { frame ->
                         val bitmap = frame.bitmap
-                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, bitmap)
+                        val resolvedCountdown = BattleCropContracts.countdownGlyph.resolve(calibration, frame)
 
                         if (resolvedCountdown != null) {
                             val tempCrop = resolvedCountdown.bitmap

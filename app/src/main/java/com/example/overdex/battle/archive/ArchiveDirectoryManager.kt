@@ -20,6 +20,7 @@ import java.nio.file.StandardCopyOption
 
 class ArchiveDirectoryManager(private val context: Context) {
     private val internalArchiveDirectory = File(context.filesDir, "match_archives")
+    private val checkpointWriters = mutableMapOf<MatchId, MatchCheckpointJournal>()
 
     init {
         releaseRetiredArchiveFolderPermission()
@@ -37,21 +38,24 @@ class ArchiveDirectoryManager(private val context: Context) {
         val failures: Map<String, String>
     )
 
-    /**
-     * Makes valid checkpoints from an interrupted process visible as ordinary
-     * archives without decoding or rewriting their evidence. Invalid files are
-     * retained under their active name so recovery never destroys evidence.
-     */
-    fun recoverInterruptedMatchCheckpoints(): InterruptedMatchRecovery {
-        val checkpoints = internalArchiveDirectory.listFiles()
-            .orEmpty()
-            .filter { it.isFile && it.name.startsWith("active-") && it.name.endsWith(".odxmatch.zip") }
-            .sortedBy { it.name }
+    /** Snapshot at process startup, before any new session can create a checkpoint. */
+    fun interruptedCheckpointFiles(): List<File> = internalArchiveDirectory.listFiles().orEmpty()
+        .filter { it.isFile && it.name.startsWith("active-") &&
+            (it.name.endsWith(".odxmatch.zip") || it.name.endsWith(".odxjournal")) }
+        .sortedBy { it.name }
+
+    /** Run on I/O. Invalid files and any incomplete journal tail remain available for diagnosis. */
+    fun recoverInterruptedMatchCheckpoints(
+        checkpoints: List<File> = interruptedCheckpointFiles()
+    ): InterruptedMatchRecovery {
         val recovered = mutableListOf<String>()
         val failures = linkedMapOf<String, String>()
 
         checkpoints.forEach { checkpoint ->
             runCatching {
+                if (checkpoint.name.endsWith(".odxjournal")) {
+                    return@runCatching recoverJournal(checkpoint)
+                }
                 val archive = checkpoint.inputStream().use { input ->
                     MatchArchivePackageReader.read(
                         input = input,
@@ -72,6 +76,34 @@ class ArchiveDirectoryManager(private val context: Context) {
             }
         }
         return InterruptedMatchRecovery(recovered, failures)
+    }
+
+    private fun recoverJournal(checkpoint: File): File {
+        val recovery = MatchCheckpointJournal.read(checkpoint)
+        val archive = recovery.archive
+        require(archive.matchId.matches(Regex("[A-Za-z0-9_-]+")))
+        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
+            .format(Date(archive.articles.minOf { it.perceivedAt }))
+        val destination = File(internalArchiveDirectory, "${timestamp}_${archive.matchId}_recovered.odxmatch.zip")
+        val compact = archive.copy(articles = MatchArchiveArticleSelector.select(
+            archive.articles, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE))
+        // A crash after publication but before retiring the journal must not duplicate the match.
+        if (destination.exists()) {
+            val existing = destination.inputStream().use { MatchArchivePackageReader.read(it,
+                artifactPolicy = MatchArchivePackageReader.ArtifactPolicy.REFERENCES_ONLY) }
+            require(existing == compact) { "Recovered archive differs from checkpoint" }
+        } else {
+            val staged = File(internalArchiveDirectory, ".${destination.name}.tmp")
+            try {
+                FileOutputStream(staged).use { MatchArchivePackageWriter.write(compact, it, context.filesDir) }
+                java.io.RandomAccessFile(staged, "rw").use { it.fd.sync() }
+                publishStagedMatchArchive(staged, destination)
+            } finally { staged.delete() }
+        }
+        // Retain a torn tail, rather than treating the unrecovered bytes as valid testimony.
+        if (recovery.incompleteTail) moveCheckpoint(checkpoint, File(checkpoint.path + ".recovered"))
+        else check(checkpoint.delete()) { "Could not retire recovered checkpoint" }
+        return destination
     }
 
     private fun nextRecoveredDestination(timestamp: String): File {
@@ -237,27 +269,25 @@ class ArchiveDirectoryManager(private val context: Context) {
         }
     }
 
-    /**
-     * Writes the latest accepted portion of an active match under a stable name.
-     * Checkpoints are compact and replaceable; the completed result export keeps
-     * the normal timestamped filename.
-     */
+    /** Append and fsync only new testimony; already durable artifacts stay in their store. */
+    @Synchronized
     fun exportMatchCheckpoint(
         matchId: MatchId,
-        realityTimeline: RealityTimeline,
-        onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
-    ): Uri? = exportMatch(
-        matchId = matchId,
-        realityTimeline = realityTimeline,
-        mode = MatchArchiveExportMode.COMPACT_CITED_EVIDENCE,
-        onArtifactVerified = onArtifactVerified,
-        requestedFileName = "active-${matchId.value}.odxmatch.zip"
-    )
+        realityTimeline: RealityTimeline
+    ): Int {
+        require(matchId.value.matches(Regex("[A-Za-z0-9_-]+")))
+        return checkpointWriters.getOrPut(matchId) {
+            MatchCheckpointJournal(File(internalArchiveDirectory, "active-${matchId.value}.odxjournal"), matchId)
+        }.append(realityTimeline)
+    }
 
+    @Synchronized
     fun deleteMatchCheckpoint(matchId: MatchId): Boolean {
-        val name = "active-${matchId.value}.odxmatch.zip"
-        val internalFile = File(internalArchiveDirectory, name)
-        return !internalFile.exists() || internalFile.delete()
+        checkpointWriters.remove(matchId)
+        return listOf(".odxmatch.zip", ".odxjournal").map { suffix ->
+            val file = File(internalArchiveDirectory, "active-${matchId.value}$suffix")
+            !file.exists() || file.delete()
+        }.all { it }
     }
 
     /** Releases the old Archive Directory tree grant once after this storage migration. */

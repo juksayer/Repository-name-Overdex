@@ -7,6 +7,24 @@ import org.junit.Test
 import kotlin.math.sin
 
 class FastMoveSoundAnalyzerTest {
+    @Test fun `a loud preexisting sound does not set an impossible threshold for a later pulse`() {
+        val samples = ShortArray(8_000) { i ->
+            val level = when (i) { in 0..1599 -> .7; in 4000..5599 -> .45; else -> .08 }
+            (32767 * level * sin(2 * Math.PI * 900 * i / 8000)).toInt().toShort()
+        }
+        val result = FastMoveSoundAnalyzer.measure(Pcm16Audio(8_000, 1, samples))
+        assertTrue(result.audible)
+        org.junit.Assert.assertEquals(500_000_000L, result.onsetOffsetNanos)
+    }
+
+    @Test fun `steady sound has no pulse and stereo timing is not doubled`() {
+        val constant = ShortArray(8_000) { i -> (12_000 * sin(2 * Math.PI * 900 * i / 8000)).toInt().toShort() }
+        assertFalse(FastMoveSoundAnalyzer.measure(Pcm16Audio(8_000, 1, constant)).audible)
+        val stereo = ShortArray(16_000) { i -> if (i / 2 in 4000..5599) constant[i / 2] else 0 }
+        val result = FastMoveSoundAnalyzer.measure(Pcm16Audio(8_000, 2, stereo))
+        org.junit.Assert.assertEquals(500_000_000L, result.onsetOffsetNanos)
+    }
+
     @Test
     fun `early sound cue keeps the attacker opposite the damaged bar`() {
         val player = com.example.overdex.battle.custody.ActivePokemonSide.PLAYER

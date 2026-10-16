@@ -4,10 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
 import com.example.overdex.model.observation.RecognitionResult
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CancellationException
 import com.example.overdex.model.observation.OcrTextEvidence
+import com.google.mlkit.vision.text.Text
 
 /**
  * Reads the small Pokémon GO badge-name strip.
@@ -17,17 +16,33 @@ import com.example.overdex.model.observation.OcrTextEvidence
  * catalogue; this recognizer never turns a partial string into a Pokémon identity.
  */
 object SpeciesNameRecognizer {
-    // ML Kit's TextRecognizer is stateful. One serial lane prevents simultaneous
-    // player/opponent reads from stalling behind each other; each side's caller
-    // keeps only its latest durable badge crop while it waits.
-    private val recognitionMutex = Mutex()
-    private var warmed = false
-
     /** Initialize ML Kit during deployment, before an entry cue starts the latency budget. */
-    suspend fun warmUp() = recognitionMutex.withLock {
-        if (warmed) return@withLock
-        PrioritySpeciesTextRecognizer.warmUp()
-        warmed = true
+    suspend fun warmUp() = PrioritySpeciesTextRecognizer.warmUp()
+
+    /** One urgent turn, with no outer species mutex hiding work from the scheduler. */
+    internal suspend fun <T> withReadingTurn(block: suspend ReadingTurn.() -> T): T =
+        SharedLatinTextRecognizer.withReadingTurn(OcrPriority.URGENT) { read ->
+            ReadingTurn(read).block()
+        }
+
+    internal class ReadingTurn(private val read: suspend (Bitmap) -> Text) {
+        var nativeReadNanos: Long = 0L
+            private set
+        var readCount: Int = 0
+            private set
+
+        suspend fun recognizeCandidates(
+            bitmap: Bitmap,
+            sourceContext: OcrSourceContext? = null,
+            heightProfile: OcrHeightProfile? = null,
+            accepts: (String) -> Boolean = { false },
+        ): List<Candidate> = recognizeInTurn(bitmap, sourceContext, heightProfile, accepts) { input ->
+            val startedAt = System.nanoTime()
+            try { read(input) } finally {
+                nativeReadNanos += System.nanoTime() - startedAt
+                readCount++
+            }
+        }
     }
 
 
@@ -47,7 +62,17 @@ object SpeciesNameRecognizer {
         sourceContext: OcrSourceContext? = null,
         heightProfile: OcrHeightProfile? = null,
         accepts: (String) -> Boolean = { false }
-    ): List<Candidate> = recognitionMutex.withLock {
+    ): List<Candidate> = withReadingTurn {
+        recognizeCandidates(bitmap, sourceContext, heightProfile, accepts)
+    }
+
+    private suspend fun recognizeInTurn(
+        bitmap: Bitmap,
+        sourceContext: OcrSourceContext?,
+        heightProfile: OcrHeightProfile?,
+        accepts: (String) -> Boolean,
+        read: suspend (Bitmap) -> Text,
+    ): List<Candidate> {
         val candidates = linkedSetOf<Candidate>()
         // The measured phone badges are under 32 px and their raw reads are truncated.
         // Start with the successful padded treatment; retain raw as an independent fallback.
@@ -56,12 +81,12 @@ object SpeciesNameRecognizer {
         for (treatment in treatments) {
             val prepared = if (treatment == "RAW") rawInput(bitmap)
                 else threshold(bitmap, cutoff = 190, padding = 12)
-            recognize(treatment, bitmap, prepared, sourceContext, heightProfile)?.let {
+            recognize(treatment, bitmap, prepared, sourceContext, heightProfile, read)?.let {
                 candidates += Candidate(it.acceptedText, treatment, it)
-                if (accepts(it.acceptedText)) return@withLock candidates.toList()
+                if (accepts(it.acceptedText)) return candidates.toList()
             }
         }
-        candidates.toList()
+        return candidates.toList()
     }
 
     /** Legacy one-value entry point for callers that do not yet resolve candidates. */
@@ -77,9 +102,10 @@ object SpeciesNameRecognizer {
     private suspend fun recognize(
         treatment: String, original: Bitmap, prepared: Bitmap,
         context: OcrSourceContext?, profile: OcrHeightProfile?,
+        read: suspend (Bitmap) -> Text,
     ): OcrTextEvidence? = try {
         val reading = OcrWordGeometry.read(original, prepared,
-            if (treatment == "RAW") 0 else 12, treatment, context, profile, urgent = true)
+            if (treatment == "RAW") 0 else 12, treatment, context, profile, urgent = true, read = read)
         Log.d(
             "SPECIES_NAME_RECOGNIZER",
             "source=${original.width}x${original.height} treatment=$treatment text=\"${reading.acceptedText.replace("\n", "\\n")}\" rejected=${reading.words.count { it.decision != "RETAINED" }}"

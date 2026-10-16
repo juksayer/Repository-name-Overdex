@@ -73,19 +73,13 @@ class PersistedAnnouncementWitness(
                     .filter { article ->
                         (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.announcement.cropName
                     }
-                    // Ordinary OCR follows the newest frame. A requested retry
-                    // explicitly selects a preserved frame from the opening;
-                    // conflation must not replace it with an older or re-covered crop.
+                    // Keep reading current frames. The HUD permanently leaves
+                    // the calibrated announcement band clear; OCR never blinks it.
                     .conflate()
                     .collect { article ->
                         val at = article.monotonicTimeNanos ?: return@collect
                         if (at <= lastReadAt) return@collect
-                        val text = readAndPublish(article) ?: return@collect
-                        val crop = article.payload as CropCaptured
-                        if (crop.overlayBounds == null) return@collect
-                        val window = DroidballService.requestAnnouncementRead(crop.cropProvenance, text, at)
-                            ?: return@collect
-                        window.awaitCrop(match.articles)?.let { readAndPublish(it) }
+                        readAndPublish(article)
                     }
             }
         }

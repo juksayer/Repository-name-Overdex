@@ -21,7 +21,8 @@ class FieldNoteRepository(private val context: Context) {
      * Retrieves all field notes for a given Pokemon species ID.
      */
     suspend fun getFieldNotesForPokemon(pokemonId: Int): List<FieldNote> {
-        val notes = loadHaikus()[pokemonId]?.fieldNote ?: emptyList()
+        val sourceId = if (pokemonId == DroidballDexEntry.ID) DroidballDexEntry.FIELD_NOTE_SOURCE_ID else pokemonId
+        val notes = loadHaikus()[sourceId]?.fieldNote ?: emptyList()
         Log.d("FieldNoteRepo", "Lookup ID $pokemonId: found ${notes.size} notes")
         return notes
     }

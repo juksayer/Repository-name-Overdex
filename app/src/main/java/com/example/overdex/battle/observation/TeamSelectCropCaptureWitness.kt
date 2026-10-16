@@ -54,7 +54,10 @@ class TeamSelectSnapshotCaptureWitness(
                     ) return@supplyFrames
 
                     val resolved = contracts.mapNotNull { contract ->
-                        contract.resolve(calibration, frame.bitmap)?.let { contract to it }
+                        contract.resolve(calibration, frame.bitmap)?.let {
+                            if (frame.canObserve(it.provenance.bounds)) contract to it
+                            else { it.bitmap.recycle(); null }
+                        }
                     }
                     if (resolved.isEmpty()) return@supplyFrames
                     try {

@@ -20,6 +20,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveEnergyInferenceTest {
+    @Test fun `reference identity enables energy only for separately observed uses`() = runBlocking {
+        val engine = FastMoveEnergyInference(Knowledge(sealeo))
+        engine.accept(species("species", "Sealeo"))
+        val proof = identity("sound-proof", "Sealeo", "Water Gun")
+        assertTrue(engine.accept(proof.copy(payload = (proof.payload as FastMoveIdentified).copy(
+            basis = "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"))).isEmpty())
+        // Naming the sound generated no use and no energy. A later canonical hit does.
+        val result = engine.accept(use("hit", monotonicNanos = 3_000_000_000L)).single()
+        assertEquals(3, result.payload.energyPerUse)
+        assertEquals(1, result.payload.observedCompletedUses)
+        assertTrue(engine.accept(use("hit", monotonicNanos = 3_000_000_000L)).isEmpty())
+    }
     @Test fun `post faint badge and move identity cannot award energy to the fainted pokemon`() = runBlocking {
         val engine = FastMoveEnergyInference(Knowledge(sealeo))
         engine.accept(species("species", "Sealeo"))

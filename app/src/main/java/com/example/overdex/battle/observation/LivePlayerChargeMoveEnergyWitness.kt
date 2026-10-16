@@ -83,7 +83,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                         }
                         if (!enabled) return@supplyFrames
                         val crop = BattleCropContracts.playerChargeMoveControls
-                            .resolve(calibration, frame.bitmap) ?: return@supplyFrames
+                            .resolve(calibration, frame) ?: return@supplyFrames
                         try {
                             val levels = PlayerChargeMoveEnergyFillSampler.measure(crop.bitmap)
                             val measurement = synchronized(stateLock) {

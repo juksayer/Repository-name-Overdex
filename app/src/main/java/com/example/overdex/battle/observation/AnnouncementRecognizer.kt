@@ -73,15 +73,16 @@ object AnnouncementRecognizer {
 
     private fun highContrastInput(bitmap: Bitmap): Bitmap {
         val thresholded = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-        for (y in 0 until bitmap.height) {
-            for (x in 0 until bitmap.width) {
-                val color = bitmap.getPixel(x, y)
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        for (i in pixels.indices) {
+                val color = pixels[i]
                 val luma = (android.graphics.Color.red(color) * 299 +
                     android.graphics.Color.green(color) * 587 +
                     android.graphics.Color.blue(color) * 114) / 1000
-                thresholded.setPixel(x, y, if (luma < 185) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
-            }
+                pixels[i] = if (luma < 185) android.graphics.Color.BLACK else android.graphics.Color.WHITE
         }
+        thresholded.setPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         val enlarged = Bitmap.createScaledBitmap(thresholded, bitmap.width * 2, bitmap.height * 2, false)
         thresholded.recycle()
         return enlarged

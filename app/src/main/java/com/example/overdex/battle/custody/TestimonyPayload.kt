@@ -595,6 +595,11 @@ data class FastMoveSoundMeasured(
     val attackingSide: ActivePokemonSide? = null,
     /** Absolute onset inside the cue-centered capture, when measurable. */
     val soundOnsetMonotonicNanos: Long? = null,
+    /** New measurements keep the requesting visual side separate from acoustic ownership. */
+    val cueAttackingSide: ActivePokemonSide? = null,
+    val analysisVersion: String? = null,
+    val referenceCandidates: List<FastMoveSoundCandidate> = emptyList(),
+    val referenceMatchAccepted: Boolean = false,
 ) : TestimonyPayload {
     init {
         require(peakAmplitude in 0f..1f)
@@ -602,8 +607,20 @@ data class FastMoveSoundMeasured(
         require(soundDurationNanos == null || soundDurationNanos > 0L)
         require(spectralCentroidHz == null || spectralCentroidHz >= 0f)
         require(soundOnsetMonotonicNanos == null || audible)
+        require(!referenceMatchAccepted || referenceCandidates.size >= 2)
     }
 }
+
+/** Ranked spectral evidence, still unassigned to a combatant. Offsets are within the two clips. */
+data class FastMoveSoundCandidate(
+    val moveName: String,
+    val referenceSha256: String,
+    val similarity: Float,
+    val changingSimilarity: Float,
+    val matchingOffsetNanos: Long,
+    val referenceOffsetNanos: Long,
+    val matchedDurationNanos: Long,
+)
 
 /** Reproducible visual measurement of one inactive species-sprite area. */
 data class PlayerInactiveSpeciesSpriteFingerprintMeasured(

@@ -15,8 +15,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.channels.Channel
+import com.example.overdex.battle.reality.RealityArticle
 
-/** Reads each visible Match Outcome crop once; typed outcome witnesses consume its text article. */
+/** Reads preserved result candidates promptly; typed outcome witnesses consume the source-timed text. */
 class PersistedOutcomeTextWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("MATCH_OUTCOME_TEXT_WITNESS", ObservationSource.SCREEN_CAPTURE),
@@ -28,22 +31,29 @@ class PersistedOutcomeTextWitness(
         if (scope != null) return
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
+            // Queue only immutable artifact references, never decoded bitmaps. The most
+            // recent frame alternates with the oldest so a brief result is not discarded.
+            val pending = FreshEvidenceQueue<RealityArticle>()
+            val wake = Channel<Unit>(Channel.CONFLATED)
+            witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                match.articles.filter { article ->
+                    (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
+                }.collect { article -> pending.offer(article); wake.trySend(Unit) }
+            }
             // Pay the one-time model startup cost while the battle is underway,
             // not during the first short-lived result screen.
             witnessScope.launch { OutcomeTextRecognizer.warmUp() }
             witnessScope.launch {
-                match.articles
-                    .filter { article ->
-                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
-                    }
-                    .collect { article ->
+                for (signal in wake) {
+                    while (true) {
+                        val article = pending.poll() ?: break
                         val crop = article.payload as CropCaptured
-                        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
+                        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: continue
                         // Keep even blank frames on the reserved result lane.
                         // Retrying them via AnnouncementRecognizer queues the
                         // whole result stream behind unrelated battlefield OCR:
                         // October 12 evidence arrived 30-35 seconds late that way.
-                        // Never skip a preserved result crop for a newer summary.
+                        // Older crops stay queued even when a newer frame is tried first.
                         val text = try {
                             OutcomeTextRecognizer.readText(bitmap).trim()
                         } catch (cancelled: CancellationException) {
@@ -55,12 +65,16 @@ class PersistedOutcomeTextWitness(
                             null
                         } finally {
                             bitmap.recycle()
-                        }?.takeIf { it.isNotBlank() } ?: return@collect
+                        }?.takeIf { it.isNotBlank() } ?: continue
                         match.custody.submitTestimony(
                             sourceId, RawTestimony(text), article.perceivedAt, null,
-                            listOf(article.id.value), article.monotonicTimeNanos ?: return@collect
+                            listOf(article.id.value), article.monotonicTimeNanos ?: continue
                         )
+                        // One decisive result is sufficient. The unused source crops are
+                        // still in the immutable Timeline, available to forensic review.
+                        if (MatchOutcomeTextResolver.resolve(text) != null) return@launch
                     }
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.overdex.CalibrationManager
 import com.example.overdex.OverdexApplication
+import com.example.overdex.data.DroidballDexEntry
 import com.example.overdex.battle.custody.InMemoryTestimonyCustody
 import com.example.overdex.battle.custody.MatchRecordStarted
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
@@ -676,7 +677,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
-            observationDispatcher.register(PersistedFastMoveSoundWitness(getApplication<Application>().filesDir))
+            observationDispatcher.register(PersistedFastMoveSoundWitness(getApplication<Application>().filesDir, getApplication()))
             observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(
                 getApplication(), audioArtifactStore, getApplication<Application>().filesDir,
                 isEnabled = { battleEvidenceLive() && session.phase.value !in setOf(
@@ -721,10 +722,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 pointerStripEnabled
             }
         }
+        val activeTypeSampling = com.example.overdex.battle.observation.ActiveTypeSamplingGate()
+        observationDispatcher.register(activeTypeSampling)
         listOf(
             BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture Witness",
             BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness"
         ).forEach { (contract, name) ->
+            val side = if (contract == BattleWitnessContracts.playerActiveTypeIconsCapture)
+                com.example.overdex.battle.custody.ActivePokemonSide.PLAYER else com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
             observationDispatcher.register(CropCaptureWitness(
                 input, calibration, contract, cropArtifactStore, {
                     battleEvidenceLive() && !com.example.overdex.battle.observation.PointerStripOcclusion.covers(
@@ -732,7 +737,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         pointerStripVisible()
                     )
                 },
-                ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name
+                ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE), name,
+                captureDispatcher = auxiliaryCaptureDispatcher,
+                acceptsFrame = { activeTypeSampling.accepts(side, it) },
+                onCaptured = { _, _, at -> activeTypeSampling.captured(side, at) }
             ))
         }
         listOf(
@@ -923,6 +931,24 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Announcement Crop Capture Witness")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        val qteSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
+            savedRegion = { DroidballService.qteCalibrationRegion ?: calibrationManager.load().qteTypeIconsRegion }
+        )
+        DroidballService.qteTypeIconSampling.value = qteSampling
+        observationDispatcher.register(qteSampling)
+        observationDispatcher.register(CropCaptureWitness(input, calibration,
+            BattleWitnessContracts.qteTypeIconsCapture, cropArtifactStore,
+            isEnabled = qteSampling::isEnabled,
+            acceptsFrame = qteSampling::acceptsFrame,
+            calibrationProvider = {
+                calibration.copy(qteTypeIconsRegion = qteSampling.region ?: calibration.qteTypeIconsRegion)
+            },
+            captureIntervalNanos = com.example.overdex.battle.observation.QteTypeIconSampling.CAPTURE_INTERVAL_NANOS,
+            captureDispatcher = auxiliaryCaptureDispatcher,
+            observerId = ObserverId("QTE_TYPE_ICONS_CAPTURE", ObserverSource.SCREEN_CAPTURE),
+            name = "QTE Type Icons Capture Witness",
+            onCaptured = { _, _, at -> qteSampling.captured(at) }
+        ))
         observationDispatcher.register(CropCaptureWitness(input, calibration,
             BattleWitnessContracts.decisionTimerCapture, cropArtifactStore,
             isEnabled = { battleEvidenceLive() && session.firstLiveCombatArticle.value != null },
@@ -1460,7 +1486,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             Log.d("STARTUP", "1: ViewModel init [BUILD AUG27_B]")
 
-            val currentCount = pokemonDao.getCount()
+            val currentCount = pokemonDao.getCount() -
+                if (pokemonDao.getPokemonById(DroidballDexEntry.ID) != null) 1 else 0
             Log.d("STARTUP", "Current Pokemon count in DB: $currentCount")
 
             if (currentCount < 1025) {
@@ -1470,6 +1497,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 Log.d("STARTUP", "2: Database already populated. Skipping import.")
             }
 
+            DroidballDexEntry.install(pokemonDao)
             Log.d("STARTUP", "3: Initialization complete")
         }
     }

@@ -11,6 +11,9 @@ interface RealityTimeline {
 
     /** Retrieves all preserved records in the order they were appended. */
     fun getArticles(): List<RealityArticle>
+
+    /** Only the newly appended tail is needed by an incremental checkpoint. */
+    fun getArticlesFrom(index: Int): List<RealityArticle> = getArticles().drop(index)
 }
 
 /**
@@ -31,5 +34,10 @@ class InMemoryRealityTimeline : RealityTimeline {
 
     override fun getArticles(): List<RealityArticle> = synchronized(lock) {
         articles.toList()
+    }
+
+    override fun getArticlesFrom(index: Int): List<RealityArticle> = synchronized(lock) {
+        require(index in 0..articles.size)
+        articles.subList(index, articles.size).toList()
     }
 }

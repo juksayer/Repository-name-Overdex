@@ -15,7 +15,21 @@ object SharedLatinTextRecognizer {
     private val lane = OcrWorkScheduler()
     @Volatile private var warmed = false
 
+    internal fun waitingCount(priority: OcrPriority): Int = lane.waitingCount(priority)
+
     suspend fun read(bitmap: Bitmap): Text = read(bitmap, OcrPriority.NORMAL)
+
+    /**
+     * Reserve one backend turn before selecting pixels. The caller may replace
+     * its waiting crop with a newer preserved crop here, without a second queue
+     * between selection and ML Kit. The supplied reader is valid only in this block.
+     */
+    internal suspend fun <T> withReadingTurn(
+        priority: OcrPriority,
+        block: suspend (suspend (Bitmap) -> Text) -> T,
+    ): T = lane.run(priority) {
+        block { bitmap -> recognizer.read(bitmap).also { warmed = true } }
+    }
 
     internal suspend fun read(bitmap: Bitmap, priority: OcrPriority): Text {
         val queuedAt = System.nanoTime()
@@ -33,6 +47,11 @@ object SharedLatinTextRecognizer {
     }
 
     suspend fun readText(bitmap: Bitmap): String = read(bitmap).text
+
+    internal suspend fun readTextFresh(bitmap: Bitmap, isFresh: () -> Boolean): String? =
+        lane.runFresh(OcrPriority.NORMAL, isFresh) {
+            recognizer.read(bitmap).text.also { warmed = true }
+        }
 
     /** Optional checks cannot queue ahead of a pending species/result read. */
     suspend fun readTextIfIdle(bitmap: Bitmap): String? = lane.runIfIdle {
@@ -63,7 +82,7 @@ object PrioritySpeciesTextRecognizer {
     suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
 }
 
-/** Result frames retain source order; routine OCR cannot overtake the next one. */
+/** Result reads share the urgent lane; routine OCR cannot overtake the next result candidate. */
 object OutcomeTextRecognizer {
     suspend fun readText(bitmap: Bitmap): String =
         SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text

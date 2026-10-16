@@ -15,7 +15,6 @@ import com.example.overdex.data.observation.SpeciesNameRecognizer
 import com.example.overdex.data.observation.OcrField
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrSourceContext
-import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -32,7 +31,6 @@ internal data class PreservedSpeciesCrop(
     val crop: CropCaptured,
     val bitmap: android.graphics.Bitmap,
     val cropEvidenceId: String,
-    val searchIndex: Int,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long
@@ -42,7 +40,6 @@ internal data class PreservedSpeciesCrop(
 private data class LiveSpeciesCrop(
     val resolved: ResolvedBattleCrop,
     val overlayBounds: com.example.overdex.model.observation.OcrBox?,
-    val searchIndex: Int,
     val speciesCheckWindowId: Long,
     val capturedAtWallTimeMillis: Long,
     val capturedAtMonotonicTimeNanos: Long
@@ -84,8 +81,6 @@ internal class LiveOverlaySpeciesPipeline(
     private var lastRawReadings: List<String> = emptyList()
     private var lastCaptureQueuedAtNanos = 0L
     private var captureOperating: Boolean? = null
-    @Volatile private var activeSearchWindowId = Long.MIN_VALUE
-    @Volatile private var cropSearchIndex = 0
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -94,8 +89,6 @@ internal class LiveOverlaySpeciesPipeline(
         lastRawReadings = emptyList()
         lastCaptureQueuedAtNanos = 0L
         captureOperating = null
-        activeSearchWindowId = Long.MIN_VALUE
-        cropSearchIndex = 0
         val sourceId = SourceId(observerId.id)
         val rawSourceId = SourceId("${observerId.id}_OCR")
         val cropContract = when (side) {
@@ -109,8 +102,6 @@ internal class LiveOverlaySpeciesPipeline(
                 match.articles.collect { article ->
                     val check = article.payload as? SpeciesCheckMeasured ?: return@collect
                     if (check.side == side && check.status == "OPENED") {
-                        activeSearchWindowId = check.windowId
-                        cropSearchIndex = 0
                         // Permit the same species to produce a new identity article
                         // after it leaves and later returns to this side.
                         if (check.reason in setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START")) {
@@ -130,7 +121,7 @@ internal class LiveOverlaySpeciesPipeline(
                     // from ever opening when a switch cue was missed.
                     val calibratedRegion = cropContract.crop.region.regionIn(calibration)
                     val enabled = captureAllowed() && match.speciesChecks.captureEnabled(side) &&
-                        SpeciesCaptureVisibility.canRead(calibratedRegion, frame.overlayRegion)
+                        SpeciesCaptureVisibility.canRead(calibratedRegion, frame.overlayRegion) && frame.canObserve(calibratedRegion)
                     if (captureOperating != enabled) {
                         match.custody.submitAvailability(
                             cropSourceId,
@@ -148,16 +139,13 @@ internal class LiveOverlaySpeciesPipeline(
                         side,
                         frame.capturedAtMonotonicTimeNanos
                     ) ?: return@supplyFrames
-                    if (activeSearchWindowId != window.id) {
-                        activeSearchWindowId = window.id
-                        cropSearchIndex = 0
-                    }
-                    val searchIndex = cropSearchIndex
                     // Locate the name's ink before spending an OCR pass on an
                     // empty row. This temporary geometry never rewrites calibration.
-                    val locatedRegion = SpeciesBadgeTextLocator.locate(frame.bitmap, calibratedRegion)
-                    val searchRegion = SpeciesCropSearchPlan.region(locatedRegion, searchIndex)
-                    if (!SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion)) return@supplyFrames
+                    // Do not add a blind row offset after locating it: a failed
+                    // pre-battle read otherwise walks a correct strip into the
+                    // status bar and keeps displacing subsequent valid names.
+                    val searchRegion = SpeciesBadgeTextLocator.locate(frame.bitmap, calibratedRegion)
+                    if (!SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion) || !frame.canObserve(searchRegion)) return@supplyFrames
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
@@ -171,7 +159,6 @@ internal class LiveOverlaySpeciesPipeline(
                         LiveSpeciesCrop(
                             resolved,
                             resolved.provenance.overlayBounds(frame.overlayRegion),
-                            searchIndex,
                             window.id,
                             frame.capturedAtWallTimeMillis,
                             frame.capturedAtMonotonicTimeNanos
@@ -205,7 +192,6 @@ internal class LiveOverlaySpeciesPipeline(
                                 crop = crop,
                                 bitmap = sample.resolved.bitmap,
                                 cropEvidenceId = cropArticle.id.value,
-                                searchIndex = sample.searchIndex,
                                 speciesCheckWindowId = sample.speciesCheckWindowId,
                                 capturedAtWallTimeMillis = sample.capturedAtWallTimeMillis,
                                 capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
@@ -232,11 +218,34 @@ internal class LiveOverlaySpeciesPipeline(
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) { Log.w("FAST_OVERLAY_SPECIES", "OCR warm-up failed; will retry on a crop", error) }
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
-                for (sample in crops) {
-                    val sourceContext = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
+                for (firstWaitingCrop in crops) {
+                    var sample = firstWaitingCrop
+                    val queuedAt = System.nanoTime()
+                    var admittedAt = queuedAt
+                    var nativeReadNanos = 0L
+                    var passes = 0
+                    var replacedCrops = 0
                     val readings = try {
-                        SpeciesNameRecognizer.recognizeCandidates(sample.bitmap, sourceContext, heightProfile) { rawText ->
-                            FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                        SpeciesNameRecognizer.withReadingTurn {
+                            admittedAt = System.nanoTime()
+                            // Choose pixels after admission, not before waiting
+                            // behind another reader. Preserve all raw crop articles;
+                            // only the obsolete pending OCR work is superseded.
+                            while (true) {
+                                val newer = crops.tryReceive().getOrNull() ?: break
+                                sample.bitmap.recycle()
+                                sample = newer
+                                replacedCrops++
+                            }
+                            if (!match.speciesChecks.needsReading(side, sample.speciesCheckWindowId,
+                                    sample.capturedAtMonotonicTimeNanos)) return@withReadingTurn null
+                            val context = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
+                            recognizeCandidates(sample.bitmap, context, heightProfile) { rawText ->
+                                FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                            }.also {
+                                nativeReadNanos = this.nativeReadNanos
+                                passes = readCount
+                            }
                         }
                     } catch (cancelled: CancellationException) {
                         throw cancelled
@@ -246,11 +255,28 @@ internal class LiveOverlaySpeciesPipeline(
                     } finally {
                         sample.bitmap.recycle()
                     }
+                    readings ?: continue
+                    val completedAt = System.nanoTime()
+                    val sourceContext = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
+                    // Record where time was spent. These are diagnostics, not
+                    // additional species votes or a replacement source timestamp.
+                    match.custody.submitTestimony(
+                        sourceId = SourceId("${observerId.id}_LATENCY"),
+                        payload = RawTestimony("side=$side queueMs=${(admittedAt - queuedAt) / 1_000_000} " +
+                            "captureToAdmissionMs=${(admittedAt - sample.capturedAtMonotonicTimeNanos) / 1_000_000} " +
+                            "nativeReadMs=${nativeReadNanos / 1_000_000} processingMs=${(completedAt - admittedAt) / 1_000_000} " +
+                            "totalMs=${(completedAt - sample.capturedAtMonotonicTimeNanos) / 1_000_000} " +
+                            "passes=$passes replacedCrops=$replacedCrops"),
+                        timestamp = sample.capturedAtWallTimeMillis,
+                        confidence = null,
+                        evidenceReferences = listOf(sample.cropEvidenceId),
+                        monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
+                    )
 
-                    // Keep one empty-read diagnostic per searched position. Compact
+                    // Keep one empty-read diagnostic per measured position. Compact
                     // archives otherwise discard every failed strip, making a bad
                     // calibration indistinguishable from a capture lane that never ran.
-                    val readingSignature = listOf("search=${sample.searchIndex}") +
+                    val readingSignature = listOf("crop=${sample.crop.cropProvenance}") +
                         readings.map { "${it.treatment}:${it.evidence?.rawText}:${it.text}" }
                     if (readingSignature != lastRawReadings) {
                         lastRawReadings = readingSignature
@@ -277,10 +303,7 @@ internal class LiveOverlaySpeciesPipeline(
                         FastOverlaySpeciesResolver.resolveDetailed(reading.text, knownNames)
                             ?.let { resolution -> reading to resolution }
                     }
-                    if (resolvedReading == null) {
-                        advanceCropSearch(sample.speciesCheckWindowId, sample.searchIndex)
-                        continue
-                    }
+                    if (resolvedReading == null) continue
                     val (reading, resolution) = resolvedReading
                     reading.evidence?.let { evidence ->
                         heightProfile.learn(evidence, sourceContext,
@@ -297,7 +320,6 @@ internal class LiveOverlaySpeciesPipeline(
                             cropId = sample.cropEvidenceId,
                             capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos,
                         )
-                        resetCropSearch(sample.speciesCheckWindowId)
                         continue
                     }
                     val species = match.pokemonKnowledge.getPokemonByName(resolution.speciesName) ?: continue
@@ -309,7 +331,6 @@ internal class LiveOverlaySpeciesPipeline(
                         capturedAtMonotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                     ) ?: continue
                     lastSubmittedSpecies = species.name
-                    resetCropSearch(sample.speciesCheckWindowId)
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = ActivePokemonSpeciesWitnessed(side, species.name, species.id),
@@ -351,18 +372,6 @@ internal class LiveOverlaySpeciesPipeline(
         scope = null
     }
 
-    @Synchronized
-    private fun advanceCropSearch(windowId: Long, completedIndex: Int) {
-        if (activeSearchWindowId == windowId && cropSearchIndex == completedIndex) {
-            cropSearchIndex = SpeciesCropSearchPlan.next(completedIndex)
-        }
-    }
-
-    @Synchronized
-    private fun resetCropSearch(windowId: Long) {
-        if (activeSearchWindowId == windowId) cropSearchIndex = 0
-    }
-
     companion object {
         fun player(
             input: ObservationInput,
@@ -394,28 +403,6 @@ internal class LiveOverlaySpeciesPipeline(
             "Opponent Species Overlay Pipeline"
         )
     }
-}
-
-/**
- * Keeps a species worker on its single assignment while recovering from a
- * calibrated strip that has drifted by one text row in the live capture.
- * Every attempted crop retains its real bounds in [BattleCropProvenance].
- */
-internal object SpeciesCropSearchPlan {
-    // Overlapping strips avoid jumping from a crop that clips the top of a
-    // name directly to one that clips its bottom. Search never changes the
-    // user's saved region or borrows the other side's assignment.
-    private val rowOffsets = floatArrayOf(0f, -0.5f, 0.5f, -1f, 1f, -1.5f, 1.5f, -2f, 2f)
-
-    fun region(calibrated: AnchorRegion, searchIndex: Int): AnchorRegion {
-        val rowOffset = rowOffsets[searchIndex.coerceIn(rowOffsets.indices)]
-        return calibrated.copy(
-            y = (calibrated.y + calibrated.height * rowOffset)
-                .coerceIn(0f, 1f - calibrated.height)
-        )
-    }
-
-    fun next(searchIndex: Int): Int = (searchIndex + 1) % rowOffsets.size
 }
 
 internal data class FastOverlaySpeciesResolution(

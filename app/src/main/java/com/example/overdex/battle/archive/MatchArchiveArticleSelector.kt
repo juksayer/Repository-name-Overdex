@@ -13,8 +13,10 @@ object MatchArchiveArticleSelector {
         val pendingIds = ArrayDeque<String>()
 
         // The timeline remains intact. Raw artifact records join it only when a
-        // retained observation explicitly cites them as evidence.
-        articles.filterNot(::isRawArtifact).forEach { article ->
+        // retained observation explicitly cites them as evidence. The bounded,
+        // explicitly named QTE calibration samples are also retained for inspection;
+        // they do not yet have a type classifier to cite them.
+        articles.filter { !isRawArtifact(it) || isQteCalibrationSample(it) }.forEach { article ->
             retainedIds += article.articleId
             article.referencedArticleIds().forEach(pendingIds::addLast)
         }
@@ -30,6 +32,10 @@ object MatchArchiveArticleSelector {
 
     private fun isRawArtifact(article: ArchivedRealityArticle): Boolean =
         article.payload is ArchivedCropCaptured || article.payload is ArchivedAudioCaptured
+
+    private fun isQteCalibrationSample(article: ArchivedRealityArticle): Boolean =
+        article.sourceId == "QTE_TYPE_ICONS_CAPTURE" &&
+            (article.payload as? ArchivedCropCaptured)?.cropName == "QteTypeIconsCrop"
 
     private fun ArchivedRealityArticle.referencedArticleIds(): Sequence<String> = sequence {
         yieldAll(predecessorIds)

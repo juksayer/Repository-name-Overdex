@@ -490,6 +490,26 @@ class RealityArticleArchiveMapperTest {
         )
     }
 
+    @Test fun `reference sound rankings round trip and old recordings default to no reference proof`() {
+        val candidate = com.example.overdex.battle.custody.FastMoveSoundCandidate("Spark", "sha", .98f, .92f,
+            100_000_000L, 200_000_000L, 416_000_000L)
+        val payload = FastMoveSoundMeasured(false, null, null, null, .3f,
+            cueAttackingSide = ActivePokemonSide.PLAYER, analysisVersion = "spectral-sequence-v1",
+            referenceCandidates = listOf(candidate, candidate.copy(moveName = "Tackle", similarity = .7f)), referenceMatchAccepted = true)
+        val archived = RealityArticleArchiveMapper.map(article("reference", payload))
+        val p = archived.payload as ArchivedFastMoveSoundMeasured
+        assertEquals(null, p.attackingSide)
+        assertEquals("PLAYER", p.cueAttackingSide)
+        assertEquals("Spark", p.referenceCandidates.first().moveName)
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        assertEquals(archived, json.decodeFromString(ArchivedRealityArticle.serializer(),
+            json.encodeToString(ArchivedRealityArticle.serializer(), archived)))
+        val old = json.decodeFromString(ArchivedTestimonyPayload.serializer(),
+            """{"kind":"fast_move_sound_measured","audible":false,"peakAmplitude":0.1}""") as ArchivedFastMoveSoundMeasured
+        assertEquals(false, old.referenceMatchAccepted)
+        assertEquals(emptyList<ArchivedFastMoveSoundCandidate>(), old.referenceCandidates)
+    }
+
     @Test
     fun `creates archive only from articles belonging to requested match`() {
         val first = article(id = "first", payload = RawTestimony("One"))

@@ -1,6 +1,9 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.model.PokemonType
+import com.example.overdex.battle.custody.OpponentBattleResource
+import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
+import com.example.overdex.battle.forecast.OpponentEnergyEstimate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -31,6 +34,9 @@ data class OpponentMovePossibilities(
     val chargedMoves: List<OverlayMovePossibility>
 )
 
+/** Last witnessed counts, retained while the game's own badge is absent. */
+data class HudOpponentResources(val pokeBalls: Int? = null, val shields: Int? = null)
+
 data class OverlayMovePossibility(
     val name: String,
     val type: PokemonType,
@@ -44,6 +50,37 @@ data class OverlayMovePossibility(
 }
 
 object DroidballOverlayPresentation {
+    private val _opponentResources = MutableStateFlow(HudOpponentResources())
+    val opponentResources = _opponentResources.asStateFlow()
+    private val resourceTimes = mutableMapOf<OpponentBattleResource, Long>()
+    private val _opponentEnergyEstimate = MutableStateFlow<OpponentEnergyEstimate?>(null)
+    val opponentEnergyEstimate = _opponentEnergyEstimate.asStateFlow()
+    private var energyForecastMatchId: String? = null
+    private val _battleBadgeSeen = MutableStateFlow(false)
+    val battleBadgeSeen = _battleBadgeSeen.asStateFlow()
+
+    @Synchronized fun beginEnergyForecast(matchId: String) {
+        energyForecastMatchId = matchId
+        _opponentEnergyEstimate.value = null
+    }
+
+    @Synchronized fun setOpponentEnergyEstimate(matchId: String, estimate: OpponentEnergyEstimate?) {
+        if (energyForecastMatchId == matchId) _opponentEnergyEstimate.value = estimate
+    }
+
+    /** Capture-only presence, never a species/count witness or a Timeline event. */
+    fun recordBattleBadgePresent() { _battleBadgeSeen.value = true }
+
+    @Synchronized fun recordOpponentResources(count: OpponentBattleResourceCountMeasured, at: Long) {
+        if (at < (resourceTimes[count.resource] ?: Long.MIN_VALUE)) return
+        resourceTimes[count.resource] = at
+        val old = _opponentResources.value
+        _opponentResources.value = when (count.resource) {
+            OpponentBattleResource.POKE_BALLS -> old.copy(pokeBalls = count.visibleCount)
+            OpponentBattleResource.SHIELDS -> old.copy(shields = count.visibleCount)
+        }
+        recordBattleBadgePresent()
+    }
     private val _mode = MutableStateFlow(DroidballOverlayMode.PRE_BATTLE)
     val mode = _mode.asStateFlow()
     private val _expanded = MutableStateFlow(false)
@@ -114,6 +151,10 @@ object DroidballOverlayPresentation {
     }
 
     @Synchronized fun clearOpponentSpecies() {
+        _opponentResources.value = HudOpponentResources()
+        resourceTimes.clear()
+        _opponentEnergyEstimate.value = null
+        _battleBadgeSeen.value = false
         _opponentSpecies.value = emptyList()
         _activeOpponentMovePossibilities.value = null
         activePlayerTypes = emptyList()
@@ -313,6 +354,7 @@ object DroidballOverlayPresentation {
     }
 
     fun reset() {
+        energyForecastMatchId = null
         _teamEditingAllowed.value = false
         _mode.value = DroidballOverlayMode.PRE_BATTLE
         _expanded.value = false

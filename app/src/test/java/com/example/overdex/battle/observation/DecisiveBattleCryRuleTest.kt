@@ -22,6 +22,13 @@ class DecisiveBattleCryRuleTest {
         assertNull(DecisiveBattleCryRule.match(candidates(0.98f, 0.80f, "FAST_MOVE_IMPACT")))
     }
 
+    @Test fun `result music and charged effects cannot become species even with a separated ranking`() {
+        listOf("MATCH_RESULT_MUSIC", "CHARGE_MOVE_QTE_ENTERED", "CHARGE_MOVE_QTE_COMPLETED",
+            "STAT_CHANGE_SOUND", "CHARGED_MOVE_EFFECT", "UNRECOGNIZED_CUE").forEach { cue ->
+            assertNull(cue, DecisiveBattleCryRule.match(candidates(0.99f, 0.70f, cue)))
+        }
+    }
+
     @Test fun `countdown shaped cue late in combat cannot become species identity`() {
         assertNull(DecisiveBattleCryRule.match(
             candidates(0.94f, 0.88f, "COUNTDOWN_GO"),

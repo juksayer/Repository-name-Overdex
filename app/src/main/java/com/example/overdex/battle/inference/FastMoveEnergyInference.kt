@@ -171,6 +171,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
         !basis.contains(HIGHER_ENERGY_TIE_BREAK_ASSUMPTION) &&
             (basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
                 basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
+                basis.startsWith("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE") ||
                 basis.contains("EFFECTIVENESS_TEXT") ||
                 basis.contains("_CORROBORATED_BY_"))
 

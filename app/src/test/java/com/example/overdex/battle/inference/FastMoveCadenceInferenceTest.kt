@@ -28,6 +28,106 @@ import kotlinx.coroutines.runBlocking
 class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
 
+    @Test fun `repeated Spark spectra correct Tackle and ignore the requesting player cue`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(borderCadence("tackle1", 500_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
+        engine.accept(borderCadence("tackle2", 500_000_000L).copy(monotonicTimeNanos = 2_500_000_000L))
+        assertEquals("Tackle", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertTrue(engine.accept(referenceSound("sound1", "Spark", 3_000_000_000L)).isEmpty())
+        // Another capture, shifted 400 ms, contains the same reference-aligned occurrence.
+        val first = referenceSound("overlap", "Spark", 3_400_000_000L)
+        val p = first.payload as FastMoveSoundMeasured
+        assertTrue(engine.accept(first.copy(payload = p.copy(referenceCandidates = p.referenceCandidates.map {
+            it.copy(referenceOffsetNanos = it.referenceOffsetNanos + 400_000_000L)
+        }))).isEmpty())
+        val confirmed = engine.accept(referenceSound("sound2", "Spark", 4_000_000_000L)).single()
+        assertEquals("Spark", (confirmed.payload as FastMoveIdentified).moveName)
+        assertEquals(ActivePokemonSide.OPPONENT, confirmed.payload.side)
+        assertTrue(confirmed.predecessorIds.containsAll(listOf(ArticleId("sound1"), ArticleId("sound2"), ArticleId("player"), ArticleId("opponent"))))
+        engine.accept(borderCadence("fragment1", 500_000_000L).copy(monotonicTimeNanos = 5_000_000_000L))
+        engine.accept(borderCadence("fragment2", 500_000_000L).copy(monotonicTimeNanos = 5_500_000_000L))
+        assertEquals("Spark", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertEquals(listOf("Spark"), engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.remainingMoveNames)
+    }
+
+    @Test fun `mirror shared sound is retained without awarding both sides a move`() = runBlocking {
+        val engine = audioEngine(mirror = true)
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        assertTrue(engine.accept(referenceSound("one", "Spark", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("two", "Spark", 3_000_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+    }
+
+    @Test fun `unknown player move pool cannot be treated as proof that only opponent can make sound`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(article("unresolved-player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Uncatalogued", null))
+            .copy(monotonicTimeNanos = 2_000_000_000L))
+        assertTrue(engine.accept(referenceSound("first", "Spark", 3_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("second", "Spark", 4_000_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `music before GO QTE sound and departed fighter clips cannot establish fast move identity`() = runBlocking {
+        val engine = audioEngine()
+        assertTrue(engine.accept(referenceSound("before1", "Spark", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("before2", "Spark", 3_000_000_000L)).isEmpty())
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(article("qte", com.example.overdex.battle.custody.GetReadyWitnessed).copy(monotonicTimeNanos = 4_000_000_000L))
+        assertTrue(engine.accept(referenceSound("during1", "Spark", 5_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("during2", "Spark", 6_000_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        engine.accept(article("end", com.example.overdex.battle.custody.MatchEnded(com.example.overdex.model.BattleResult.WIN)))
+        assertTrue(engine.accept(referenceSound("after", "Spark", 20_000_000_000L)).isEmpty())
+    }
+
+    private suspend fun audioEngine(mirror: Boolean = false): FastMoveCadenceInference {
+        val opponent = Pokemon(101, "Electrode", listOf(PokemonType.ELECTRIC), "Kanto",
+            fastMoves = listOf(move("Spark", 2, 8, PokemonType.ELECTRIC), move("Tackle", 1, 3)), chargedMoves = emptyList())
+        val player = Pokemon(460, "Abomasnow", listOf(PokemonType.ICE), "Sinnoh",
+            fastMoves = if (mirror) opponent.fastMoves else listOf(move("Powder Snow", 2, 8, PokemonType.ICE)), chargedMoves = emptyList())
+        return FastMoveCadenceInference(MapPokemonKnowledge(player, opponent)).also {
+            it.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, player.name, player.id)))
+            it.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, opponent.name, opponent.id)))
+        }
+    }
+
+    private fun referenceSound(id: String, name: String, at: Long): RealityArticle {
+        val candidate = com.example.overdex.battle.custody.FastMoveSoundCandidate(name, "reference-hash", .98f, .94f,
+            100_000_000L, 0, 416_000_000L)
+        return article(id, FastMoveSoundMeasured(false, null, null, null, .3f,
+            cueAttackingSide = ActivePokemonSide.PLAYER,
+            analysisVersion = com.example.overdex.battle.audio.FastMoveReferenceMatcher.VERSION,
+            referenceMatchAccepted = true,
+            referenceCandidates = listOf(candidate, candidate.copy(moveName = "Other", similarity = .8f, changingSimilarity = .7f))))
+            .copy(monotonicTimeNanos = at)
+    }
+
+    @Test fun `Seed Bomb aftermath cannot replace Gourgeist Incinerate with Razor Leaf`() = runBlocking {
+        val gourgeist = Pokemon(711, "Gourgeist", listOf(PokemonType.GHOST, PokemonType.GRASS), "Kalos",
+            fastMoves = listOf(move("Incinerate", 5, 20), move("Razor Leaf", 2, 4, PokemonType.GRASS)),
+            chargedMoves = emptyList())
+        val sealeo = Pokemon(364, "Sealeo", listOf(PokemonType.WATER, PokemonType.ICE), "Hoenn",
+            fastMoves = listOf(move("Powder Snow", 2, 8, PokemonType.ICE)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(gourgeist, sealeo))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Gourgeist", 711)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(cadence("bob1", 2_500_000_000L).copy(monotonicTimeNanos = 50_000_000_000L))
+        engine.accept(cadence("bob2", 2_500_000_000L).copy(monotonicTimeNanos = 52_500_000_000L))
+        assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        engine.accept(article("seed", com.example.overdex.battle.custody.RawTestimony("Gourgeist used Seed Bomb!"))
+            .copy(sourceId = SourceId("ANNOUNCEMENT_WITNESS"), monotonicTimeNanos = 63_270_000_000L))
+        val lingering = article("seed-effect", FastMoveEffectivenessWitnessed(
+            FastMoveEffectiveness.SUPER_EFFECTIVE, ActivePokemonSide.OPPONENT, "SUPER EFFECTIVE!"
+        )).copy(monotonicTimeNanos = 65_190_000_000L)
+        assertTrue(engine.accept(lingering).isEmpty())
+        assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        // Future non-charge text is still eligible. The guard does not ban the witness.
+        assertTrue(engine.accept(lingering.copy(id = ArticleId("later-fast-text"), monotonicTimeNanos = 70_000_000_000L)).isNotEmpty())
+    }
+
     @Test
     fun `identity remains available throughout a badge recheck`() = runBlocking {
         val pokemon = Pokemon(134, "Vaporeon", listOf(PokemonType.WATER), "Kanto",
@@ -848,6 +948,57 @@ class FastMoveCadenceInferenceTest {
             .copy(monotonicTimeNanos = 14_000_000_000L))
         assertTrue(engine.accept(fastUseAt("first-after-charge", 15_000_000_000L)).isEmpty())
         assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test
+    fun `missed half second hits cannot turn Water Gun into Powder Snow after a charge`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(borderCadence("fast1", 500_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
+        engine.accept(borderCadence("fast2", 500_000_000L).copy(monotonicTimeNanos = 2_500_000_000L))
+        engine.accept(article("charge", com.example.overdex.battle.custody.ChargeMoveUsedAnnounced)
+            .copy(monotonicTimeNanos = 3_000_000_000L))
+        val later = (1..5).flatMap { index ->
+            engine.accept(borderCadence("missed-$index", 1_000_000_000L)
+                .copy(monotonicTimeNanos = 5_000_000_000L + index * 1_000_000_000L))
+        }
+        assertTrue(later.none { (it.payload as? FastMoveIdentified)?.moveName == "Powder Snow" })
+        assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test
+    fun `pulse and fused hit are not independent proof of a slower move`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(borderCadence("fast1", 500_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
+        engine.accept(borderCadence("fast2", 500_000_000L).copy(monotonicTimeNanos = 2_500_000_000L))
+        repeat(5) { index ->
+            val at = 20_000_000_000L + index * 1_000_000_000L
+            engine.accept(borderCadence("pulse-$index", 1_000_000_000L).copy(monotonicTimeNanos = at))
+            engine.accept(fastUseAt("hit-$index", at))
+        }
+        assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test
+    fun `repeated independent slower motion and impact can correct a noisy fast identification`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(borderCadence("fast1", 500_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
+        engine.accept(borderCadence("fast2", 500_000_000L).copy(monotonicTimeNanos = 2_500_000_000L))
+        repeat(2) { index ->
+            engine.accept(borderCadence("slow-$index", 1_000_000_000L)
+                .copy(monotonicTimeNanos = 20_000_000_000L + index * 1_000_000_000L))
+        }
+        engine.accept(article("motion1", ActiveHpBarMotionCadenceMeasured(
+            ActivePokemonSide.OPPONENT, 1_000_000_000L, 20f, 6))
+            .copy(monotonicTimeNanos = 21_000_000_000L))
+        assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        val corrected = engine.accept(article("motion2", ActiveHpBarMotionCadenceMeasured(
+            ActivePokemonSide.OPPONENT, 1_000_000_000L, 20f, 6))
+            .copy(monotonicTimeNanos = 22_000_000_000L))
+        assertEquals("Powder Snow", (corrected.single().payload as FastMoveIdentified).moveName)
+        assertTrue(corrected.single().predecessorIds.containsAll(listOf(ArticleId("motion1"), ArticleId("motion2"))))
     }
 
     @Test

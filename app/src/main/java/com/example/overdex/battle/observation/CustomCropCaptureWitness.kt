@@ -32,6 +32,7 @@ class CustomCropCaptureWitness(
             witnessScope.launch {
                 input.supplyFrames { frame ->
                     if (!definition.enabled || !isEnabled()) return@supplyFrames
+                    if (!frame.canObserve(definition.region)) return@supplyFrames
                     if (frame.capturedAtMonotonicTimeNanos - lastCaptureNanos < CAPTURE_INTERVAL_NANOS) {
                         return@supplyFrames
                     }

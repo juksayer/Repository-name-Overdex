@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.pointerInput
@@ -102,13 +103,8 @@ fun BattleOverlay(
     initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
-    onBattleHudDrag: (Float, Float) -> Unit = { _, _ -> },
-    onBattleHudDragFinished: () -> Unit = {},
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
-    onResetBattleHudLayout: () -> Unit = {},
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
-    onHudEditingChanged: (Boolean) -> Unit = {},
-    onOpenQteCalibration: (() -> Unit)? = null,
 ) {
     val mode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -118,8 +114,8 @@ fun BattleOverlay(
     val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
     val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
     val configuredPlayerTeam by DroidballOverlayPresentation.configuredPlayerTeam.collectAsState()
-    var layoutEditing by remember { mutableStateOf(false) }
-    LaunchedEffect(layoutEditing) { onHudEditingChanged(layoutEditing) }
+    val layoutEditing = false
+    val badgeSeen by DroidballOverlayPresentation.battleBadgeSeen.collectAsState()
     var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
     var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
     var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
@@ -138,9 +134,6 @@ fun BattleOverlay(
     val anchoredToBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val panelIsVisible = expanded || anchoredToBattleHud
     val mayMove = !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
-    LaunchedEffect(anchoredToBattleHud) {
-        if (!anchoredToBattleHud) layoutEditing = false
-    }
     LaunchedEffect(anchoredToBattleHud, panelIsVisible) {
         onLayoutStateChanged(anchoredToBattleHud, panelIsVisible)
     }
@@ -157,9 +150,10 @@ fun BattleOverlay(
     } else Modifier
     Column(
         modifier = interactionModifier
-            .offset(x = arrivalOffset)
+            .offset(x = if (anchoredToBattleHud) 0.dp else arrivalOffset)
+            .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f)
             .then(
-                if (!layoutEditing) Modifier.clickable { DroidballOverlayPresentation.toggleExpanded() }
+                if (!anchoredToBattleHud) Modifier.clickable { DroidballOverlayPresentation.toggleExpanded() }
                 else Modifier
             ),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -191,18 +185,6 @@ fun BattleOverlay(
                 playerTeamConfirmed,
                 configuredPlayerTeam,
                 panelWidthPx,
-                layoutEditing = layoutEditing,
-                onLayoutEditingChanged = { layoutEditing = it },
-                onBattleHudDrag = onBattleHudDrag,
-                onBattleHudDragFinished = onBattleHudDragFinished,
-                onOpenQteCalibration = onOpenQteCalibration,
-                onResetBattleHudLayout = {
-                    topHalfOffsetX = 0f
-                    topHalfOffsetY = 0f
-                    bottomHalfOffsetX = 0f
-                    bottomHalfOffsetY = 0f
-                    onResetBattleHudLayout()
-                },
             )
             if (!anchoredToBattleHud) {
                 DroidballHalf(
@@ -324,12 +306,7 @@ private fun OverlayPanel(
     playerTeamConfirmed: Boolean,
     configuredPlayerTeam: List<String>,
     panelWidthPx: Int,
-    layoutEditing: Boolean,
-    onLayoutEditingChanged: (Boolean) -> Unit,
-    onBattleHudDrag: (Float, Float) -> Unit,
-    onBattleHudDragFinished: () -> Unit,
-    onResetBattleHudLayout: () -> Unit,
-    onOpenQteCalibration: (() -> Unit)?,
+
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
@@ -349,34 +326,15 @@ private fun OverlayPanel(
     val foreground = if (isBattleHud) Color(0xFF275F6D) else Color(0xFFD7FFF4)
     val muted = if (isBattleHud) Color(0xFF397786) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
 
-    val panelDragModifier = if (layoutEditing) {
-        Modifier.pointerInput(layoutEditing) {
-            detectDragGestures(
-                onDragEnd = onBattleHudDragFinished,
-                onDragCancel = onBattleHudDragFinished,
-                onDrag = { change, amount ->
-                    change.consume()
-                    onBattleHudDrag(amount.x, amount.y)
-                },
-            )
-        }
-    } else Modifier
     Column(
-        modifier = panelDragModifier
-            .width(teamInfoWidth)
+        modifier = Modifier.width(teamInfoWidth)
             .then(if (isBattleHud) Modifier.battleHudBadgeBackground() else Modifier.background(background, panelShape))
-            .then(
-                if (layoutEditing) Modifier.border(
-                    1.dp,
-                    Color(0xFFB000FF),
-                    panelShape,
-                ) else Modifier
-            )
-            .padding(start = 8.dp, end = 8.dp, bottom = if (isBattleHud) 3.dp else 6.dp,
-                top = (if (isBattleHud) 3.dp else 6.dp) + if (isBattleHud) jointDepth else 0.dp),
-        verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 2.dp else 5.dp)
+            .padding(start = 8.dp, end = 8.dp, bottom = if (isBattleHud) 2.dp else 6.dp,
+                top = (if (isBattleHud) 2.dp else 6.dp) + if (isBattleHud) jointDepth else 0.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 0.dp else 5.dp),
+        horizontalAlignment = if (isBattleHud) Alignment.End else Alignment.Start,
     ) {
-        if (teamEditingAllowed) {
+        if (teamEditingAllowed && !isBattleHud) {
             Text("TEAM / MOVES", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.EditTeamRequested)
@@ -390,6 +348,8 @@ private fun OverlayPanel(
             Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
         }
         if (isBattleHud) {
+            val forecast by DroidballOverlayPresentation.opponentEnergyEstimate.collectAsState()
+            val estimate = forecast?.takeIf { it.speciesName.equals(opponentMoves?.speciesName, ignoreCase = true) }
             // Preserve only the panel's outside padding. The three stock-like
             // inactive cards share their edges so every available pixel can
             // belong to the sprites.
@@ -398,47 +358,15 @@ private fun OverlayPanel(
             }
             if (opponentMoves != null) {
                 if (opponentMoves.fastMoves.isNotEmpty()) {
-                    MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76))
+                    MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76),
+                        assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
                 }
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
-                        lastRowControl = if (layoutEditing) null else { {
-                            HudPositionControl { onLayoutEditingChanged(true) }
-                        } })
+                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk)
                 }
             }
-            if (layoutEditing) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("DRAG HUD / SHELLS", color = Color(0xFF7B1FA2), fontSize = 7.sp, fontWeight = FontWeight.Bold)
-                    Text(
-                        "RESET",
-                        modifier = Modifier.clickable(onClick = onResetBattleHudLayout),
-                        color = Color(0xFFC62828),
-                        fontSize = 7.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        "DONE",
-                        modifier = Modifier.clickable { onBattleHudDragFinished(); onLayoutEditingChanged(false) },
-                        color = foreground,
-                        fontSize = 7.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            } else if (opponentMoves?.chargedMoves.isNullOrEmpty()) {
-                Box(Modifier.align(Alignment.End)) {
-                    HudPositionControl { onLayoutEditingChanged(true) }
-                }
-            }
-            if (onOpenQteCalibration != null) {
-                Text("QTE BOX", color = foreground, fontSize = 9.sp,
-                    modifier = Modifier.align(Alignment.End)
-                        .clickable(onClick = onOpenQteCalibration).padding(horizontal = 4.dp, vertical = 7.dp))
-            }
+            OpponentHudStatus(estimate)
+
         } else {
             val configuredTeamReady = configuredPlayerTeam.size == 3
             val message = when (mode) {
@@ -579,37 +507,28 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 }
 
 @Composable
-private fun HudPositionControl(onClick: () -> Unit) {
-    // Keep the same position-editing target without drawing over GO's text.
-    Box(Modifier.semantics { contentDescription = "Move HUD" }
-        .clickable(onClick = onClick).size(14.dp))
-}
-
-@Composable
 private fun MovePossibilityLine(
-    moves: List<OverlayMovePossibility>, color: Color, lastRowControl: (@Composable () -> Unit)? = null,
+    moves: List<OverlayMovePossibility>, color: Color, assumedMove: String? = null,
 ) {
-    Column {
-        moves.forEachIndexed { index, move ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (index == moves.lastIndex) lastRowControl?.invoke()
-                Text(
-                    text = buildAnnotatedString {
-                        if (move.isConfirmed) append("✓ ")
-                        if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
-                            append("⚠ +${move.damageIncreasePercent}% ")
-                        }
-                        append(move.name)
-                    },
-                    modifier = Modifier.weight(1f),
-                    color = color,
-                    fontSize = 8.sp,
-                    lineHeight = 10.sp,
-                    textAlign = TextAlign.End,
-                    fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
+    moves.forEach { move ->
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = buildAnnotatedString {
+                    if (move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
+                    if (move.isConfirmed) append("✓ ")
+                    if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
+                        append("⚠ +${move.damageIncreasePercent}% ")
+                    }
+                    append(move.name)
+                },
+                modifier = Modifier.weight(1f),
+                color = color,
+                fontSize = 8.sp,
+                lineHeight = 10.sp,
+                textAlign = TextAlign.End,
+                fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
+                fontFamily = FontFamily.Monospace
+            )
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.overdex.battle.audio
 
-/** A visual Timeline article asks for a short, pre/post-roll microphone clip. */
 /**
  * The visual phenomenon that requested this audio window. Countdown is currently wired; the
  * other values reserve independent future cue routes, rather than treating every departure as a
@@ -27,57 +26,120 @@ enum class BattleCryCueKind {
     CHARGED_MOVE_EFFECT
 }
 
-data class AudioCaptureCue(val articleId: String, val kind: BattleCryCueKind)
-data class CueCenteredPcmCapture(val cue: AudioCaptureCue, val pcm16le: ByteArray)
+data class AudioCaptureCue(
+    val articleId: String,
+    val kind: BattleCryCueKind,
+    val observedAtMonotonicNanos: Long? = null,
+)
+
+sealed interface CueCenteredPcmResult { val cue: AudioCaptureCue }
+
+data class CueCenteredPcmCapture(
+    override val cue: AudioCaptureCue,
+    val pcm16le: ByteArray,
+    val startedAtMonotonicNanos: Long,
+    val startedAtWallTimeMillis: Long,
+) : CueCenteredPcmResult
+
+data class CueCenteredPcmUnavailable(
+    override val cue: AudioCaptureCue,
+    val reason: String,
+) : CueCenteredPcmResult
 
 /**
- * Holds only a small volatile pre-roll. It emits no audio until a visual cue arrives, then
- * produces one exact pre/post window that the caller must persist before testimony.
+ * Keeps bounded, volatile PCM history so a delayed visual reading can request the
+ * sound at its source time. Only the requested pre/post window is ever persisted.
+ * Callers serialize access and supply monotonic/wall timestamps for each read's end.
+ * Missing history or a discontinuity is unavailable evidence, never newer substitute audio.
  */
 class CueCenteredPcmCollector(
     private val preRollBytes: Int,
-    private val postRollBytes: Int
+    private val postRollBytes: Int,
+    private val bytesPerSecond: Int = 96_000, // 48 kHz mono PCM-16
+    historyBytes: Int = bytesPerSecond * 8,
 ) {
-    private val preRoll = ArrayDeque<ByteArray>()
-    private var preRollSize = 0
-    private val pending = mutableListOf<PendingCapture>()
+    private val history = ByteArray(historyBytes)
+    private var next = 0
+    private var size = 0
+    private var endNanos: Long? = null
+    private var endWallMillis = 0L
+    private val pending = ArrayDeque<AudioCaptureCue>()
 
-    fun cue(cue: AudioCaptureCue) {
-        pending += PendingCapture(cue, concatenate(preRoll), java.io.ByteArrayOutputStream(postRollBytes))
+    init {
+        require(bytesPerSecond > 0 && bytesPerSecond % 2 == 0)
+        require(preRollBytes >= 0 && postRollBytes > 0)
+        require(preRollBytes % 2 == 0 && postRollBytes % 2 == 0)
+        require(historyBytes >= preRollBytes + postRollBytes && historyBytes % 2 == 0)
     }
 
-    fun ingest(chunk: ByteArray): List<CueCenteredPcmCapture> {
-        val completed = mutableListOf<CueCenteredPcmCapture>()
-        pending.toList().forEach { capture ->
-            val remaining = postRollBytes - capture.postRoll.size()
-            if (remaining > 0) capture.postRoll.write(chunk, 0, minOf(remaining, chunk.size))
-            if (capture.postRoll.size() >= postRollBytes) {
-                completed += CueCenteredPcmCapture(capture.cue, capture.preRoll + capture.postRoll.toByteArray())
-                pending.remove(capture)
-            }
+    fun cue(cue: AudioCaptureCue): CueCenteredPcmUnavailable? {
+        if (cue.observedAtMonotonicNanos == null) return CueCenteredPcmUnavailable(cue, "MISSING_SOURCE_TIME")
+        if (pending.size >= MAX_PENDING) return CueCenteredPcmUnavailable(cue, "REQUEST_QUEUE_FULL")
+        pending += cue
+        return null
+    }
+
+    fun ingest(chunk: ByteArray, endedAtMonotonicNanos: Long, endedAtWallTimeMillis: Long): List<CueCenteredPcmResult> {
+        require(chunk.size % 2 == 0)
+        if (chunk.isEmpty()) return emptyList()
+        val completed = mutableListOf<CueCenteredPcmResult>()
+        val previousEnd = endNanos
+        if (previousEnd != null && (endedAtMonotonicNanos <= previousEnd ||
+                kotlin.math.abs(endedAtMonotonicNanos - previousEnd - duration(chunk.size)) > MAX_READ_GAP_NANOS)) {
+            completed += pending.map { CueCenteredPcmUnavailable(it, "INPUT_GAP") }
+            pending.clear()
+            next = 0
+            size = 0
         }
-        preRoll += chunk.copyOf()
-        preRollSize += chunk.size
-        while (preRollSize > preRollBytes && preRoll.isNotEmpty()) {
-            preRollSize -= preRoll.removeFirst().size
+
+        val count = minOf(chunk.size, history.size)
+        val sourceStart = chunk.size - count
+        val firstCopy = minOf(count, history.size - next)
+        chunk.copyInto(history, next, sourceStart, sourceStart + firstCopy)
+        if (firstCopy < count) chunk.copyInto(history, 0, sourceStart + firstCopy, chunk.size)
+        next = (next + count) % history.size
+        size = minOf(size + count, history.size)
+        endNanos = endedAtMonotonicNanos
+        endWallMillis = endedAtWallTimeMillis
+
+        val firstAt = endedAtMonotonicNanos - duration(size)
+        val oldest = (next - size + history.size) % history.size
+        val length = preRollBytes + postRollBytes
+        val requests = pending.iterator()
+        while (requests.hasNext()) {
+            val request = requests.next()
+            val startAt = requireNotNull(request.observedAtMonotonicNanos) - duration(preRollBytes)
+            if (startAt < firstAt) {
+                completed += CueCenteredPcmUnavailable(request, "REQUEST_OUTSIDE_RETAINED_AUDIO")
+                requests.remove()
+                continue
+            }
+            if (startAt + duration(length) > endedAtMonotonicNanos) continue
+            // Round down to a whole PCM-16 sample, never split its two bytes.
+            val from = ((startAt - firstAt) * bytesPerSecond / 1_000_000_000L / 2 * 2).toInt()
+            if (from + length > size) continue
+            val pcm = ByteArray(length)
+            val source = (oldest + from) % history.size
+            val head = minOf(length, history.size - source)
+            history.copyInto(pcm, 0, source, source + head)
+            if (head < length) history.copyInto(pcm, head, 0, length - head)
+            val actualStart = firstAt + duration(from)
+            completed += CueCenteredPcmCapture(request, pcm, actualStart,
+                endWallMillis - (endedAtMonotonicNanos - actualStart) / 1_000_000L)
+            requests.remove()
         }
         return completed
     }
 
-    private fun concatenate(parts: Collection<ByteArray>): ByteArray {
-        val size = parts.sumOf { it.size }
-        val result = ByteArray(size)
-        var offset = 0
-        parts.forEach { bytes ->
-            bytes.copyInto(result, offset)
-            offset += bytes.size
-        }
-        return if (result.size <= preRollBytes) result else result.copyOfRange(result.size - preRollBytes, result.size)
+    fun reset() {
+        next = 0; size = 0; endNanos = null
+        pending.clear()
     }
 
-    private data class PendingCapture(
-        val cue: AudioCaptureCue,
-        val preRoll: ByteArray,
-        val postRoll: java.io.ByteArrayOutputStream
-    )
+    private fun duration(bytes: Int) = bytes.toLong() * 1_000_000_000L / bytesPerSecond
+
+    private companion object {
+        const val MAX_PENDING = 32
+        const val MAX_READ_GAP_NANOS = 250_000_000L
+    }
 }

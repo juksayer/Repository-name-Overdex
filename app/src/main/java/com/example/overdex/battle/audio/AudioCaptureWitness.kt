@@ -46,7 +46,24 @@ class AudioCaptureWitness(
                 }
             }
             witnessScope.launch {
+                DroidballService.audioWindowFailures.collect { failed ->
+                    if (match.realityTimeline.getArticles().none { it.id.value == failed.cue.articleId }) return@collect
+                    // Keep the failed request and its original cue reference, without
+                    // publishing AudioCaptured for a missing or substituted window.
+                    match.custody.submitTestimony(
+                        SourceId("AUDIO_CAPTURE_WINDOW_STATUS"),
+                        com.example.overdex.battle.custody.RawTestimony(
+                            "${failed.reason}; cue=${failed.cue.kind}; sourceNanos=${failed.cue.observedAtMonotonicNanos}"
+                        ),
+                        System.currentTimeMillis(), null, listOf(failed.cue.articleId), System.nanoTime()
+                    )
+                }
+            }
+            witnessScope.launch {
                 DroidballService.audioFrames.collect { frame ->
+                    // A shared service can outlive a Match. A delayed cue from the
+                    // previous Match must not become evidence in its replacement.
+                    if (match.realityTimeline.getArticles().none { it.id.value == frame.cueArticleId }) return@collect
                     val wav = Pcm16WavEncoder.encode(frame.pcm16le, frame.sampleRateHz, frame.channelCount)
                     val artifact = artifactStore.preserveWav(wav) ?: return@collect
                     match.custody.submitTestimony(

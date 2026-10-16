@@ -6,6 +6,7 @@ import com.example.overdex.battle.custody.BattleCryCandidateMeasurement
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.audio.BattleCryListeningCue
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +35,7 @@ internal object DecisiveBattleCryRule {
         cueAtNanos: Long? = null,
         matchStartedAtNanos: Long? = null,
     ): DecisiveBattleCryMatch? {
-        if (payload.cueKind == "FAST_MOVE_IMPACT" || payload.candidates.isEmpty()) return null
+        if (!BattleCryListeningCue.accepts(payload.cueKind) || payload.candidates.isEmpty()) return null
         // Countdown-shaped false positives can occur throughout combat as a
         // moving Pokemon crosses that crop. A real opening cry may finish its
         // short post-roll just after GO; it cannot begin tens of seconds later.
@@ -82,18 +83,20 @@ class DecisiveBattleCrySpeciesWitness(
                         matchStartedAtNanos = matchStartedAtNanos,
                     ) ?: return@collect
                     val species = match.pokemonKnowledge.getPokemonById(decisive.speciesId) ?: return@collect
-                    val roster = match.playerRosterSpecies()
+                    val attribution = match.entrySpeciesAttribution(species.name)
                     val leadId = match.playerLeadSpeciesId()
                     val side = when {
-                        candidates.cueKind == "SPECIES_ENTRY" && decisive.speciesId == leadId ->
+                        candidates.cueKind == "SPECIES_ENTRY" && decisive.speciesId == leadId &&
+                            (matchStartedAtNanos == null || (article.monotonicTimeNanos ?: Long.MAX_VALUE) <=
+                                matchStartedAtNanos!! + 3_000_000_000L) ->
                             openingSideGate.sidesFor(
                                 candidates.candidates.map { it.speciesId to it.similarity },
                                 leadId,
                             ).singleOrNull()
-                        roster.size >= 3 && match.sideForRosterKnownSpecies(species.name) == ActivePokemonSide.OPPONENT ->
+                        attribution?.side == ActivePokemonSide.OPPONENT ->
                             ActivePokemonSide.OPPONENT
                         candidates.cueKind == "SPECIES_ENTRY" &&
-                            match.sideForRosterKnownSpecies(species.name) == ActivePokemonSide.PLAYER ->
+                            attribution?.side == ActivePokemonSide.PLAYER ->
                             ActivePokemonSide.PLAYER
                         else -> null
                     } ?: return@collect
@@ -103,7 +106,7 @@ class DecisiveBattleCrySpeciesWitness(
                         payload = ActivePokemonSpeciesWitnessed(side, species.name, species.id),
                         timestamp = article.perceivedAt,
                         confidence = decisive.similarity,
-                        evidenceReferences = listOf(article.id.value),
+                        evidenceReferences = (listOf(article.id.value) + attribution?.evidenceArticleIds.orEmpty()).distinct(),
                         monotonicTimeNanos = article.monotonicTimeNanos ?: System.nanoTime(),
                     )
                 }

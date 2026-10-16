@@ -84,6 +84,7 @@ class SpeciesCheckCoordinator(
         state.window = null
         state.nextRecoveryAt = now() + RECOVERY_INTERVAL_NANOS
         state.completed = window
+        state.latestAcceptedWindowOpenedAt = window.openedAt
         state.deliveredSpecies = species
         emit(side, window, "CONFIRMED", species, refs)
         return refs
@@ -125,6 +126,15 @@ class SpeciesCheckCoordinator(
     }
 
     @Synchronized fun isChecking(side: ActivePokemonSide): Boolean = states.getValue(side).window != null
+
+    /** Skip leftover crops from a confirmed/superseded check before native OCR starts. */
+    @Synchronized fun needsReading(side: ActivePokemonSide, windowId: Long, capturedAt: Long): Boolean {
+        if (stopped) return false
+        val state = states.getValue(side)
+        val window = state.recentWindows[windowId] ?: return false
+        return window.openedAt > state.latestAcceptedWindowOpenedAt &&
+            capturedAt - window.openedAt in 0..MAX_WINDOW_NANOS
+    }
 
     @Synchronized fun isStopped(): Boolean = stopped
 

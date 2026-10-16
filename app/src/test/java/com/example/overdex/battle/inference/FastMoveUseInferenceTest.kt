@@ -25,6 +25,95 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `measured combat enables counting when all countdown glyphs were missed`() {
+        val inference = FastMoveUseInference()
+        inference.accept(article("name", 20_000_000_000L,
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Abomasnow", 460)))
+        inference.accept(article("shade", 21_000_000_000L,
+            PlayerChargeMoveEnergyFillIncreased(listOf(.1f, 0f), listOf(.2f, 0f), listOf(0))))
+        inference.accept(article("opening-flash", 22_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("first-hit", 24_760_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .9893617f, .9526316f, .03673011f)))
+        val first = inference.flush().single()
+        assertEquals("fast-move-use:first-hit", first.payload.useId)
+        assertEquals(ActivePokemonSide.PLAYER, first.payload.attackingSide)
+        assertEquals("Abomasnow", first.payload.attackerSpeciesName)
+        assertEquals(24_760_000_000L, first.observedArticle.monotonicTimeNanos)
+        assertEquals(listOf("first-hit"), first.predecessorIds.map { it.value })
+        inference.accept(article("opponent-hit", 25_640_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .99f, .91f, .08f)))
+        assertEquals(ActivePokemonSide.OPPONENT, inference.flush().single().payload.attackingSide)
+    }
+
+    @Test fun `missing GO does not make charged damage a fast move or reopen an ended match`() {
+        val inference = FastMoveUseInference()
+        inference.accept(article("qte", 10_000_000_000L, com.example.overdex.battle.custody.GetReadyWitnessed))
+        inference.accept(article("impact", 17_000_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("charged-loss", 17_300_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .5f, .5f)))
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("resumed-hit", 19_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .5f, .4f, .1f)))
+        assertEquals(1, inference.flush().size)
+        inference.accept(article("end", 20_000_000_000L, MatchEnded(BattleResult.WIN)))
+        inference.accept(article("late-hit", 19_500_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .5f, .4f, .1f)))
+        assertTrue(inference.flush().isEmpty())
+    }
+
+    @Test fun `delayed GO retains pending combat and charge pauses`() {
+        val inference = FastMoveUseInference()
+        inference.accept(article("hit", 5_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .9f, .1f)))
+        inference.accept(article("delayed-go", 4_000_000_000L, MatchStarted))
+        assertEquals(1, inference.flush().size)
+        inference.accept(article("charge", 8_000_000_000L, AttackIncoming))
+        inference.accept(article("duplicate-go", 4_000_000_000L, MatchStarted))
+        inference.accept(article("charge-loss", 9_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, 1f, .5f, .5f)))
+        assertTrue(inference.flush().isEmpty())
+    }
+
+    @Test fun `late charge announcement discards charged damage but releases measured resumed hits`() {
+        val inference = startedInference()
+        inference.accept(article("qte", 30_815_000_000L, com.example.overdex.battle.custody.GetReadyWitnessed))
+        inference.accept(article("charged-loss", 38_914_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .4f, .4f)))
+        inference.accept(article("resumed-hit", 39_849_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        inference.accept(article("watermark", 41_500_000_000L, RawTestimony("later delivery")))
+        // Both readings wait for the charge boundary. No charged hit leaks out
+        // just because the usual eight-second QTE window has elapsed.
+        assertTrue(inference.flush().isEmpty())
+        val released = inference.accept(article("late-charge", 38_459_000_000L, ChargeMoveUsedAnnounced)) + inference.flush()
+        assertEquals(listOf("fast-move-use:resumed-hit"), released.map { it.payload.useId })
+        inference.accept(article("older-charged-loss", 38_800_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .4f, .4f)))
+        assertTrue(inference.flush().isEmpty())
+    }
+
+    @Test fun `missing charge announcement cannot suppress every later hit`() {
+        val inference = startedInference()
+        inference.accept(article("qte", 1_000_000_000L, com.example.overdex.battle.custody.GetReadyWitnessed))
+        inference.accept(article("inside", 8_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        inference.accept(article("later", 14_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertEquals(listOf("fast-move-use:later"), inference.flush().map { it.payload.useId })
+    }
+
+    @Test fun `ignored screen and older attempt damage cannot restart accounting`() {
+        val inference = FastMoveUseInference()
+        inference.accept(article("ignore", 10_000_000_000L, com.example.overdex.battle.custody.ScreenIgnoredByUser))
+        val hit = article("old-hit", 11_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, 1f, .9f, .1f))
+        inference.accept(hit)
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("restart", 12_000_000_000L, com.example.overdex.battle.custody.ObservationRestartedByUser))
+        inference.accept(hit)
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(hit.copy(id = ArticleId("new-hit"), monotonicTimeNanos = 13_000_000_000L))
+        assertEquals(1, inference.flush().size)
+    }
+
     @Test fun `decision timer blocks impacts including late delivery after its clearance`() {
         val inference = startedInference()
         fun timer(seconds: Int?) = com.example.overdex.battle.custody.BattleDecisionTimerObserved(

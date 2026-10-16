@@ -161,7 +161,8 @@ before the accepted start even if delivered later.
 ### Species
 
 - [PersistedSpeciesWitness.kt](app/src/main/java/com/example/overdex/battle/observation/PersistedSpeciesWitness.kt) is the formal persisted-crop species Witness. Its accepted result enters Custody and the Timeline.
-- [LiveOverlaySpeciesPipeline.kt](app/src/main/java/com/example/overdex/battle/observation/LiveOverlaySpeciesPipeline.kt) owns the live active-badge OCR lane. It preserves its crop, waits for the corresponding Timeline article, then submits raw readings and accepted species testimony through Custody. The HUD and replay consume that same identity evidence.
+- [LiveOverlaySpeciesPipeline.kt](app/src/main/java/com/example/overdex/battle/observation/LiveOverlaySpeciesPipeline.kt) owns the live active-badge OCR lane. It preserves its crop, waits for the corresponding Timeline article, then submits raw readings and accepted species testimony through Custody. At shared OCR admission it selects the newest preserved crop, skips already-confirmed checks, and records queue/native-read timing in `*_SPECIES_OVERLAY_PIPELINE_LATENCY` diagnostics. Superseded raw crop articles and source timestamps remain intact. The HUD and replay consume the same identity evidence.
+- [SpeciesNameRecognizer.kt](app/src/main/java/com/example/overdex/data/observation/SpeciesNameRecognizer.kt) uses one urgent turn in the shared Latin reader for its bounded treatments. There is no separate player/opponent mutex ahead of that queue; the backend still processes one read at a time and retains bitmap ownership through cancellation.
 - [PersistedAnnouncementSpeciesWitness.kt](app/src/main/java/com/example/overdex/battle/observation/PersistedAnnouncementSpeciesWitness.kt), team-roster testimony, and battle-cry candidates provide independent evidence that may support or refute identity.
 - [SpeciesCheckCoordinator.kt](app/src/main/java/com/example/overdex/battle/observation/SpeciesCheckCoordinator.kt) schedules burst checks around cues rather than treating species OCR as a permanent high-rate workload.
 
@@ -203,8 +204,10 @@ captured. See the [October 12 verification](docs/verification/2026-10-12-battle-
 
 ### Audio
 
-- [AudioCaptureWitness.kt](app/src/main/java/com/example/overdex/battle/audio/AudioCaptureWitness.kt) owns capture availability and PCM publication.
+- `DroidballService` captures PCM. [CueCenteredPcmCollector.kt](app/src/main/java/com/example/overdex/battle/audio/CueCenteredPcmCollector.kt) retains eight seconds in memory and selects a 500 ms pre / 700 ms post window around the visual Article's source timestamp, including requests delivered late. The window's original wall and monotonic start times accompany its samples.
+- [AudioCaptureWitness.kt](app/src/main/java/com/example/overdex/battle/audio/AudioCaptureWitness.kt) preserves requested WAV artifacts before publishing `AudioCaptured`, records unavailable-window diagnostics, and excludes cues from other Matches. Missing retained audio is not replaced by sound from delivery time.
 - [PersistedBattleCryCandidateWitness.kt](app/src/main/java/com/example/overdex/battle/audio/PersistedBattleCryCandidateWitness.kt) preserves ranked cry candidates as evidence rather than silently promoting the strongest candidate to fact.
+- [PreparedCryReferenceIndex.kt](app/src/main/java/com/example/overdex/battle/audio/PreparedCryReferenceIndex.kt) verifies and prepares bundled cry references once per app process, off the UI thread. Only reference features are reused; live audio is independently preserved and measured. `BattleCryListeningCue` excludes result music, QTE bubbles and attack effects from species matching and species-check triggers. `WavPcm16` decodes samples in bulk rather than allocating a buffer per sample. Its separate bundled-reference reader finalizes the known zero-length PCM export headers in a temporary copy, after asset verification; captured WAV testimony remains strict and source assets remain unchanged.
 - [FastMoveSoundMeasurement.kt](app/src/main/java/com/example/overdex/battle/audio/FastMoveSoundMeasurement.kt) measures sound timing/type features that can corroborate visual cadence.
 
 ## Presentation
@@ -416,6 +419,18 @@ search and automatic stitched compilations remain future consumers of this index
 - [ArchivedSpeciesCropRecognizer.kt](app/src/main/java/com/example/overdex/battle/replay/ArchivedSpeciesCropRecognizer.kt) can recover identity from preserved archive crops without modifying the archive.
 
 Each Match has its own ID, Timeline, archive source, and replay projection.
+
+Active recovery saves use [MatchCheckpointJournal.kt](app/src/main/java/com/example/overdex/battle/archive/MatchCheckpointJournal.kt):
+every 15 seconds only newly appended Articles are serialized, checksummed and
+synced to `files/match_archives/active-<match-id>.odxjournal`. Referenced source
+artifacts are already durable in the content-addressed store. On process restart,
+`OverdexApplication` snapshots the old checkpoints before a new session starts,
+then `ArchiveDirectoryManager` recovers them on an I/O worker into ordinary compact
+`.odxmatch.zip` files. Torn tails and corrupt journals are retained for diagnosis;
+older `active-*.odxmatch.zip` checkpoints still recover. Normal completed-match
+exports remain ZIPs. PNG entries avoid a second compression pass while retaining
+the same integrity checks. See the [October 15 performance validation](docs/verification/2026-10-15-performance-optimization.json)
+for measured device timings and the remaining live-battle boundary.
 
 `MatchSummaryRoute` / `MatchSummaryScreen` now summarize this same canonical ledger.
 The screen uses the current in-process Match when present and loads the newest

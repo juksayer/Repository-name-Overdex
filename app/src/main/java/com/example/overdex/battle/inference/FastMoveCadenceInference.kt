@@ -16,6 +16,9 @@ import com.example.overdex.battle.custody.FastMoveSoundMeasured
 import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.TestimonyPayload
+import com.example.overdex.battle.custody.MatchStarted
+import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.audio.FastMoveReferenceMatcher
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
@@ -101,6 +104,12 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var corroborationSignature: String = "",
         var identityBasis: String = "",
         var identityConfidence: Float = 0f,
+        val referenceSounds: MutableList<ReferenceSoundEvidence> = mutableListOf(),
+    )
+
+    private data class ReferenceSoundEvidence(
+        val article: RealityArticle, val moveName: String, val alignedStartNanos: Long,
+        val segmentStartNanos: Long, val predecessors: List<ArticleId>,
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
@@ -115,10 +124,27 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val pendingEffectiveness = mutableListOf<RealityArticle>()
     private val recentUses = mutableListOf<RealityArticle>()
     private var cadenceFloorNanos = Long.MIN_VALUE
+    private var audioBattleStartNanos: Long? = null
+    private val pendingReferenceSounds = mutableListOf<RealityArticle>()
+    private val chargedEffectivenessWindow = ChargedMoveEffectivenessWindow()
 
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        if (article.payload is MatchStarted) audioBattleStartNanos = article.monotonicTimeNanos
+        if (article.payload is MatchEnded || article.payload is com.example.overdex.battle.custody.ScreenIgnoredByUser ||
+            article.payload is com.example.overdex.battle.custody.ObservationRestartedByUser) {
+            audioBattleStartNanos = null
+            pendingReferenceSounds.clear()
+            states.values.forEach { it.referenceSounds.clear() }
+        }
         fainted.observe(article)
+        val announcedText = (article.payload as? com.example.overdex.battle.custody.RawTestimony)?.data as? String
+        if (article.payload is ChargeMoveUsedAnnounced ||
+            article.payload is com.example.overdex.battle.custody.ChargedMoveEnergySpent ||
+            (article.sourceId.id == "ANNOUNCEMENT_WITNESS" && announcedText != null &&
+                ChargedMoveEffectivenessWindow.isMoveAnnouncement(announcedText))) {
+            article.monotonicTimeNanos?.let(chargedEffectivenessWindow::observeImpact)
+        }
         val chargeGuard = when (article.payload) {
             AttackIncoming -> 12_000_000_000L
             GetReadyWitnessed -> 8_000_000_000L
@@ -132,10 +158,12 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 it.lastDirectUseArticle = null
                 it.lastSoundArticle = null
                 it.lastSoundOnsetNanos = null
+                it.referenceSounds.clear()
             }
             pending.clear()
             pendingEffectiveness.clear()
             recentUses.clear()
+            pendingReferenceSounds.clear()
             return emptyList()
         }
         val configured = article.payload as? PlayerTeamSlotConfigured
@@ -284,7 +312,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 pendingEffectiveness.toList().also { pendingEffectiveness.clear() }
             } else emptyList()
             val referenceResult = referenceIdentity(state, species.side, article)
-            val recoveredResults = (effectiveness + early + earlyUses)
+            val earlySounds = if (states.size == 2) pendingReferenceSounds.toList().also { pendingReferenceSounds.clear() }
+                else emptyList()
+            val recoveredResults = (effectiveness + early + earlyUses + earlySounds)
                 .distinctBy { it.id }
                 .sortedBy { it.monotonicTimeNanos }
                 .flatMap { accept(it) }
@@ -331,7 +361,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         }
 
         val sound = article.payload as? FastMoveSoundMeasured
-        if (sound != null) return acceptSoundCadence(article, sound)
+        if (sound != null) return if (sound.analysisVersion == FastMoveReferenceMatcher.VERSION)
+            acceptReferenceSound(article, sound) else acceptSoundCadence(article, sound)
 
         val cadence = when (val payload = article.payload) {
             is ActiveHpBarMotionCadenceMeasured -> CadenceInput(
@@ -367,6 +398,60 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 moveDurationNanos = move.turns!! * TURN_NANOS, observedMedianIntervalNanos = null,
                 cadenceSampleCount = 0, basis = state.identityBasis),
             predecessorIds = state.identificationEvidence, confidence = state.identityConfidence, observedArticle = article,
+        ))
+    }
+
+    /** The microphone contains BOTH attackers. The visual requester does not establish ownership. */
+    private fun acceptReferenceSound(article: RealityArticle, sound: FastMoveSoundMeasured): List<FastMoveCadenceDerivation> {
+        val go = audioBattleStartNanos ?: return emptyList()
+        if (!sound.referenceMatchAccepted || !FastMoveReferenceMatcher.accepts(sound.referenceCandidates)) return emptyList()
+        val candidate = sound.referenceCandidates.maxBy { it.similarity }
+        val clipAt = article.monotonicTimeNanos ?: return emptyList()
+        val segmentAt = clipAt + candidate.matchingOffsetNanos
+        val alignedStart = segmentAt - candidate.referenceOffsetNanos
+        if (segmentAt < maxOf(go, cadenceFloorNanos) || alignedStart < go) return emptyList()
+        if (states.size < 2) {
+            if (pendingReferenceSounds.none { it.id == article.id }) pendingReferenceSounds += article
+            if (pendingReferenceSounds.size > 24) pendingReferenceSounds.removeAt(0)
+            return emptyList()
+        }
+        // Delayed analysis cannot assign a previous fighter's tail to its replacement.
+        if (states.values.any { alignedStart < it.activeSinceNanos }) return emptyList()
+        if (states.values.any { it.possibleMoves.isEmpty() }) return emptyList()
+        val owners = states.entries.filter { (_, state) ->
+            state.possibleMoves.any { normalize(it.name) == normalize(candidate.moveName) }
+        }
+        // Mirrors and shared move pools keep the acoustic testimony unassigned, never discarded.
+        val owner = owners.singleOrNull() ?: return emptyList()
+        val state = owner.value
+        val move = state.possibleMoves.single { normalize(it.name) == normalize(candidate.moveName) }
+        val supportingContext = states.values.flatMap { listOf(it.speciesArticleId) } +
+            configuredPlayerSlots.values.map { it.second.articleId }
+        val history = state.referenceSounds
+        history.removeAll { segmentAt - it.segmentStartNanos > 12_000_000_000L }
+        val minimumDistinctStart = maxOf(300_000_000L, move.turns!! * TURN_NANOS * 85 / 100)
+        // Overlapping captures can contain the exact same sound, even with opposite visual cues.
+        if (history.any { normalize(it.moveName) == normalize(move.name) &&
+                (abs(it.alignedStartNanos - alignedStart) < minimumDistinctStart ||
+                    abs(it.segmentStartNanos - segmentAt) < 400_000_000L) }) return emptyList()
+        history += ReferenceSoundEvidence(article, move.name, alignedStart, segmentAt, supportingContext)
+        history.sortBy { it.segmentStartNanos }
+        if (history.size > 16) history.removeAt(0)
+        val agreeing = history.takeLast(2).takeIf { it.size == 2 && it.all { evidence ->
+            normalize(evidence.moveName) == normalize(move.name)
+        } } ?: return emptyList()
+        if (state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM")) return emptyList()
+        if (state.identifiedMove == move && state.identityBasis.startsWith("AUDIO_REFERENCE")) return emptyList()
+        state.identifiedMove = move
+        state.selectedBasis = null
+        state.corroborationSignature = ""
+        state.assumedHigherEnergyTieBreak = false
+        state.identificationEvidence = agreeing.flatMap { it.predecessors + it.article.id }.distinct()
+        state.identityBasis = "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
+        state.identityConfidence = .90f // A derived confidence, not a spectral-score probability.
+        return referenceIdentity(state, owner.key, article.copy(
+            perceivedAt = article.perceivedAt + candidate.matchingOffsetNanos / 1_000_000L,
+            monotonicTimeNanos = segmentAt,
         ))
     }
 
@@ -525,6 +610,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                         val authoritative = state.identityBasis.takeIf {
                             it.startsWith("CONFIGURED_PLAYER_TEAM") || it.contains("EFFECTIVENESS_TEXT") ||
                                 it.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE")
+                                || it.startsWith("AUDIO_REFERENCE")
                         }
                         if (authoritative != null) append(authoritative.substringBefore("_SUPPORTED_BY_") + "_SUPPORTED_BY_")
                         append("${selectedBasis.name}_CADENCE_AND_REFERENCE_KNOWLEDGE")
@@ -545,6 +631,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         witnessed: FastMoveEffectivenessWitnessed
     ): List<FastMoveCadenceDerivation> {
         if ((article.monotonicTimeNanos ?: Long.MAX_VALUE) < cadenceFloorNanos) return emptyList()
+        if (article.monotonicTimeNanos?.let(chargedEffectivenessWindow::contains) == true) return emptyList()
         val attackingSides = witnessed.damagedSide?.let { listOf(it.opposite()) }
             ?: alignedUses(article, witnessed)
                 .map { (it.payload as FastMoveUseObserved).attackingSide }
@@ -658,7 +745,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             eliminatedMoveNames = allMoves.filterNot { normalize(it.name) in remainingKeys }.map { it.name },
             evidenceKinds = buildList {
                 if (state.cadenceEvidence.isNotEmpty()) add("CADENCE")
-                if (state.cadenceEvidence.any { it.basis == CadenceBasis.AUDIO_PROFILE }) add("AUDIO")
+                if (state.cadenceEvidence.any { it.basis == CadenceBasis.AUDIO_PROFILE } ||
+                    state.identityBasis.startsWith("AUDIO_REFERENCE")) add("AUDIO")
                 if (state.effectivenessEvidence.isNotEmpty()) add("EFFECTIVENESS")
             },
             identifiedMoveName = identified?.name,
@@ -691,7 +779,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     /** Each measurement family gets one vote, even when a fused use repeats it. */
     private fun cadenceVotes(state: SideState): List<CadenceVote> {
-        val eligible = candidateMovesFromEffectiveness(state)
+        val eligible = candidateMovesForCadence(state)
         val latestAt = state.cadenceEvidence.maxOfOrNull { it.article.monotonicTimeNanos ?: 0L } ?: 0L
         val votes = state.cadenceEvidence.filter {
             latestAt - (it.article.monotonicTimeNanos ?: latestAt) <= CADENCE_WINDOW_NANOS
@@ -715,8 +803,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     }
 
     private fun rankedCadenceCandidates(state: SideState, votes: List<CadenceVote>): List<Move> {
-        if (votes.isEmpty()) return candidateMovesFromEffectiveness(state)
-        val scores = candidateMovesFromEffectiveness(state).associateWith { move ->
+        if (votes.isEmpty()) return candidateMovesForCadence(state)
+        val scores = candidateMovesForCadence(state).associateWith { move ->
             val families = votes.filter { move in it.candidates }.groupBy { it.family }
             // Counting the number of samples, then the independent families,
             // lets two different one-interval measurements resolve together.
@@ -742,6 +830,24 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             .groupBy { it.family }.values.map { group ->
                 group.maxWith(compareBy<CadenceVote> { it.evidence.size }.thenBy { -it.basis.ordinal })
             }
+        val establishedTurns = state.identifiedMove?.turns
+        val proposedTurns = chosen.move.turns
+        if (!state.assumedHigherEnergyTieBreak && establishedTurns != null && establishedTurns > 0 &&
+            proposedTurns != null && proposedTurns > establishedTurns && proposedTurns % establishedTurns == 0
+        ) {
+            // Missing every other Water Gun hit produces Powder Snow's spacing.
+            // Those larger gaps do not contradict the previously observed faster
+            // cadence, even after a charge clears the recent interval window.
+            // Require repeated positive evidence from independent families before
+            // changing to the slower harmonic. Raw pulses and their fused uses
+            // still count as one family; unvalidated visual effects cannot decide it.
+            // Reference audio and repeated effectiveness can also correct identity
+            // through their own paths, without manufacturing the missing attacks.
+            val repeatedFamilies = supporting.filter {
+                it.family != EvidenceFamily.VISUAL && it.evidence.size >= REQUIRED_INTERVALS
+            }.map { it.family }.distinct()
+            if (repeatedFamilies.size < 2) return null
+        }
         val primary = supporting.maxWithOrNull(
             compareBy<CadenceVote> { it.evidence.size }.thenBy { -it.basis.ordinal }
         ) ?: return null
@@ -750,6 +856,13 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     private fun candidateMovesFromEvidence(state: SideState): List<Move> =
         rankedCadenceCandidates(state, cadenceVotes(state))
+
+    /** Fragmented HP ticks cannot restore Tackle after repeated Spark spectra established identity. */
+    private fun candidateMovesForCadence(state: SideState): List<Move> {
+        val eligible = candidateMovesFromEffectiveness(state)
+        return if (state.identityBasis.startsWith("AUDIO_REFERENCE")) eligible.filter { it == state.identifiedMove }
+            else eligible
+    }
 
     /**
      * Keep compatible constraints across different defenders. Silence cannot

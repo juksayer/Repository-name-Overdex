@@ -67,7 +67,7 @@ object RealityArticleArchiveMapper {
             is com.example.overdex.battle.custody.PlayerChargeButtonTouchWitnessed -> ArchivedPlayerChargeButtonTouchWitnessed(
                 p.slot, p.x, p.y, p.displayWidth, p.displayHeight, p.rawText
             )
-            is com.example.overdex.battle.custody.PlayerChargeMoveLabelRead -> ArchivedPlayerChargeMoveLabelRead(p.slot, p.text)
+            is com.example.overdex.battle.custody.PlayerChargeMoveLabelRead -> ArchivedPlayerChargeMoveLabelRead(p.slot, p.text, p.basis)
             is RawTestimony -> {
                 when (val data = p.data) {
                     is String -> ArchivedRawText(data, p.ocr)
@@ -325,6 +325,13 @@ object RealityArticleArchiveMapper {
                 peakAmplitude = p.peakAmplitude,
                 attackingSide = p.attackingSide?.name,
                 soundOnsetMonotonicNanos = p.soundOnsetMonotonicNanos,
+                cueAttackingSide = p.cueAttackingSide?.name,
+                analysisVersion = p.analysisVersion,
+                referenceMatchAccepted = p.referenceMatchAccepted,
+                referenceCandidates = p.referenceCandidates.map {
+                    ArchivedFastMoveSoundCandidate(it.moveName, it.referenceSha256, it.similarity,
+                        it.changingSimilarity, it.matchingOffsetNanos, it.referenceOffsetNanos, it.matchedDurationNanos)
+                },
             )
             is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
                 slot = p.slot,

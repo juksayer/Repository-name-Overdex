@@ -2,9 +2,11 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
+import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
 import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObserverId
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -15,8 +17,8 @@ import kotlinx.coroutines.launch
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /**
- * Attributes entry announcements from their explicit species field. A complete
- * roster is strongest. A missed earlier announcement must never make a later
+ * Attributes entry announcements from their explicit species field and independent
+ * side evidence. A missed earlier announcement must never make a later
  * opponent switch inherit the player side by arrival order.
  */
 class PersistedPlayerEntrySpeciesWitness(
@@ -35,9 +37,47 @@ class PersistedPlayerEntrySpeciesWitness(
                 var lastAnnouncementAt = Long.MIN_VALUE
                 var lastWitnessed: Pair<ActivePokemonSide, String>? = null
                 var lastWitnessedAt = Long.MIN_VALUE
-                val sideTracker = EntryAnnouncementSideTracker()
+                val pending = ArrayDeque<Pair<RealityArticle, String>>()
+
+                suspend fun publish(article: RealityArticle, speciesName: String): Boolean {
+                    val atNanos = article.monotonicTimeNanos ?: return false
+                    val attribution = match.entrySpeciesAttribution(speciesName, atNanos) ?: return false
+                    val witnessed = attribution.side to speciesName
+                    if (witnessed == lastWitnessed && kotlin.math.abs(atNanos - lastWitnessedAt) < DUPLICATE_WINDOW_NANOS) {
+                        return true
+                    }
+                    lastWitnessed = witnessed
+                    lastWitnessedAt = atNanos
+                    val species = match.pokemonKnowledge.getPokemonByName(speciesName)
+                    match.custody.submitTestimony(
+                        sourceId = sourceId,
+                        payload = ActivePokemonSpeciesWitnessed(attribution.side, speciesName, species?.id),
+                        timestamp = article.perceivedAt,
+                        confidence = attribution.confidence,
+                        evidenceReferences = (listOf(article.id.value) + attribution.evidenceArticleIds).distinct(),
+                        monotonicTimeNanos = atNanos,
+                    )
+                    return true
+                }
 
                 match.articles.collect { article ->
+                    pending.removeAll { (entry, _) ->
+                        (entry.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos
+                    }
+                    if ((article.payload is ActivePokemonSpeciesWitnessed && isSideLocatedSpeciesSource(article.sourceId.id)) ||
+                        article.payload is ActivePokemonFaintedWitnessed) {
+                        // A name can arrive before its side-specific badge OCR
+                        // or the preceding faint. Resolve it from that evidence, while
+                        // retaining the entry's original timestamp and both links.
+                        for ((entry, speciesName) in pending.toList()) {
+                            val age = (article.monotonicTimeNanos ?: continue) - (entry.monotonicTimeNanos ?: continue)
+                            if (age > SIDE_CONFIRMATION_WINDOW_NANOS ||
+                                (age >= -DUPLICATE_WINDOW_NANOS && publish(entry, speciesName))) {
+                                pending.remove(entry to speciesName)
+                            }
+                        }
+                        return@collect
+                    }
                     if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
                     val rawText = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     // Pokémon GO's entry form explicitly reads “Go, <species>!”.
@@ -57,11 +97,7 @@ class PersistedPlayerEntrySpeciesWitness(
                     val speciesName = EntryAnnouncementSpeciesTextResolver.resolve(rawText, names)
                     Log.d("ENTRY_ANNOUNCEMENT_SPECIES", "announcement=$rawText resolved=${speciesName ?: "none"} catalogue=${names.size}")
                     speciesName ?: return@collect
-                    val attribution = sideTracker.attribute(
-                        speciesName,
-                        match.playerRosterSpecies()
-                    )
-                    if (attribution == null) {
+                    if (!publish(article, speciesName)) {
                         // The name itself remains useful testimony even when the
                         // announcement no longer establishes a trainer side.
                         match.custody.submitTestimony(
@@ -72,23 +108,9 @@ class PersistedPlayerEntrySpeciesWitness(
                             evidenceReferences = listOf(article.id.value),
                             monotonicTimeNanos = atNanos
                         )
-                        return@collect
+                        pending.addLast(article to speciesName)
+                        while (pending.size > 16) pending.removeFirst()
                     }
-                    val witnessed = attribution.side to speciesName
-                    if (witnessed == lastWitnessed && atNanos - lastWitnessedAt < DUPLICATE_WINDOW_NANOS) {
-                        return@collect
-                    }
-                    lastWitnessed = witnessed
-                    lastWitnessedAt = atNanos
-                    val species = match.pokemonKnowledge.getPokemonByName(speciesName)
-                    match.custody.submitTestimony(
-                        sourceId = sourceId,
-                        payload = ActivePokemonSpeciesWitnessed(attribution.side, speciesName, species?.id),
-                        timestamp = article.perceivedAt,
-                        confidence = attribution.confidence,
-                        evidenceReferences = listOf(article.id.value),
-                        monotonicTimeNanos = atNanos
-                    )
                 }
             }
         }
@@ -101,6 +123,7 @@ class PersistedPlayerEntrySpeciesWitness(
 
     private companion object {
         const val DUPLICATE_WINDOW_NANOS = 2_000_000_000L
+        const val SIDE_CONFIRMATION_WINDOW_NANOS = 8_000_000_000L
     }
 }
 

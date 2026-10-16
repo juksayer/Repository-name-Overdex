@@ -18,7 +18,7 @@ data class ArchivedPlayerChargeButtonTouchWitnessed(
 
 @Serializable
 @SerialName("player_charge_move_label_read")
-data class ArchivedPlayerChargeMoveLabelRead(val slot: Int, val text: String) : ArchivedTestimonyPayload
+data class ArchivedPlayerChargeMoveLabelRead(val slot: Int, val text: String, val basis: String = "OCR") : ArchivedTestimonyPayload
 
 @Serializable
 @SerialName("raw_text")
@@ -415,7 +415,22 @@ data class ArchivedFastMoveSoundMeasured(
     val peakAmplitude: Float,
     val attackingSide: String? = null,
     val soundOnsetMonotonicNanos: Long? = null,
+    val cueAttackingSide: String? = null,
+    val analysisVersion: String? = null,
+    val referenceCandidates: List<ArchivedFastMoveSoundCandidate> = emptyList(),
+    val referenceMatchAccepted: Boolean = false,
 ) : ArchivedTestimonyPayload
+
+@Serializable
+data class ArchivedFastMoveSoundCandidate(
+    val moveName: String,
+    val referenceSha256: String,
+    val similarity: Float,
+    val changingSimilarity: Float,
+    val matchingOffsetNanos: Long,
+    val referenceOffsetNanos: Long,
+    val matchedDurationNanos: Long,
+)
 
 @Serializable
 @SerialName("player_inactive_species_sprite_fingerprint_measured")

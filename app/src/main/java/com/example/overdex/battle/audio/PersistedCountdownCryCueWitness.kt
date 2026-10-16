@@ -43,7 +43,8 @@ class PersistedCountdownCryCueWitness(
                         cueRequested = true
                         DroidballService.requestCueCenteredAudio(
                             article.id.value,
-                            BattleCryCueKind.COUNTDOWN_VISUAL_PRESENCE
+                            BattleCryCueKind.COUNTDOWN_VISUAL_PRESENCE,
+                            article.monotonicTimeNanos
                         )
                     } finally {
                         bitmap.recycle()

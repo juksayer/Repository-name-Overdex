@@ -1,7 +1,6 @@
 package com.example.overdex.battle.audio
 
 import android.content.Context
-import com.example.overdex.battle.artifact.AudioArtifactReference
 import com.example.overdex.battle.custody.AudioCaptured
 import com.example.overdex.battle.custody.BattleCryCandidateMeasurement
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
@@ -21,19 +20,13 @@ class PersistedBattleCryCandidateWitness(private val context: Context, private v
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
         if (scope != null) return
-        val catalog = CryReferenceCatalog.load(context)
         scope = CoroutineScope(Dispatchers.IO + SupervisorJob()).also { scope -> scope.launch {
-            // Build the 1,025-reference acoustic index while the player is still
-            // choosing a team. The first entry cry must not pay this cost after
-            // its short visual cue has already disappeared.
-            val references = catalog.references.distinctBy { it.sha256 }.mapNotNull { ref ->
-                catalog.openVerified(context, ref)?.let(WavPcm16::decode)?.let { CryAcousticMatcher.prepare(ref, it) }
-            }
+            // Decode/hash the bundled corpus once per process, off the UI thread.
+            // Subsequent matches reuse the same reference features, never live evidence.
+            val references = PreparedCryReferenceIndex.get(context)
             match.articles.collect { article ->
                 val audio = article.payload as? AudioCaptured ?: return@collect
-                if (audio.cueKind == BattleCryCueKind.FAST_MOVE_IMPACT.name ||
-                    audio.cueKind == BattleCryCueKind.STAT_CHANGE_SOUND.name ||
-                    audio.cueKind == BattleCryCueKind.CHARGED_MOVE_EFFECT.name) return@collect
+                if (!BattleCryListeningCue.accepts(audio.cueKind)) return@collect
                 val bytes = File(root, audio.artifact.relativePath).takeIf { it.isFile }?.readBytes() ?: return@collect
                 if (sha(bytes) != audio.artifact.sha256) return@collect
                 val query = WavPcm16.decode(bytes) ?: return@collect

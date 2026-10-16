@@ -18,9 +18,9 @@ class NextMatchVsWatcher(
             DroidballObservationInput().supplyFrames { frame ->
                 if (!awaitingNextMatch() || frame.capturedAtMonotonicTimeNanos - lastAttempt < 400_000_000L) return@supplyFrames
                 lastAttempt = frame.capturedAtMonotonicTimeNanos
-                val crop = BattleCropContracts.countdownGlyph.resolve(calibration, frame.bitmap) ?: return@supplyFrames
+                val crop = BattleCropContracts.countdownGlyph.resolve(calibration, frame) ?: return@supplyFrames
                 val isVs = try { AnnouncementRecognizer.recognize(crop.bitmap).value?.uppercase()?.replace(" ", "")?.contains("VS") == true } finally { crop.bitmap.recycle() }
-                if (isVs) onVs(BattleCropContracts.countdownGlyph.resolve(calibration, frame.bitmap) ?: return@supplyFrames, frame)
+                if (isVs) onVs(BattleCropContracts.countdownGlyph.resolve(calibration, frame) ?: return@supplyFrames, frame)
             }
         }}
     }

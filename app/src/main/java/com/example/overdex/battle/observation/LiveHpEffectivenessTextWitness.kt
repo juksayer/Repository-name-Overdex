@@ -143,6 +143,10 @@ internal class LiveHpEffectivenessTextWitness(
                             "OpponentHpEffectivenessTextCrop"
                         },
                     ) ?: return@supplyFrames
+                    if (!frame.canObserve(resolved.provenance.bounds)) {
+                        resolved.bitmap.recycle()
+                        return@supplyFrames
+                    }
                     lastQueuedNanos.set(capturedAt)
                     val result = samples.trySend(
                         LiveHpEffectivenessCrop(

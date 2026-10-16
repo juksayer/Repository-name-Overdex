@@ -16,4 +16,6 @@ data class CapturedVisualFrame(
     val displayHeight: Int? = null,
     /** Normalized captured-screen footprint of our visible presentation, never game identity evidence. */
     val overlayRegion: com.example.overdex.model.AnchorRegion? = null,
+    /** A retained game badge is our own image; these pixels cannot become new testimony. */
+    val retainedBadgeRegion: com.example.overdex.model.AnchorRegion? = null,
 )

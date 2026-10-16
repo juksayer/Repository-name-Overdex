@@ -6,6 +6,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SpeciesCheckCoordinatorTest {
+    @Test fun `confirmed window leaves queued pixels unread but a new entry is eligible`() {
+        checks.request(side, "ENTRY", "sneasel")
+        val first = checks.windowFor(side, time)!!
+        assertTrue(checks.needsReading(side, first.id, time))
+        checks.acceptImmediate(side, first.id, "Sneasel", "read", time)
+        assertFalse(checks.needsReading(side, first.id, time + 10))
+        time += 1_000_000_000
+        checks.request(side, "ENTRY", "sealeo")
+        val next = checks.windowFor(side, time)!!
+        assertTrue(checks.needsReading(side, next.id, time))
+        assertFalse(checks.needsReading(side, first.id, time))
+    }
+
+    @Test fun `unconfirmed expired window may still yield its preserved evidence`() {
+        checks.request(side, "ENTRY", "entry")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS + 1
+        checks.tick()
+        assertTrue(checks.needsReading(side, first.id, capturedAt))
+        checks.stop()
+        assertFalse(checks.needsReading(side, first.id, capturedAt))
+    }
+
     private var time = 10_000_000_000L
     private val reports = mutableListOf<SpeciesCheckMeasured>()
     private val references = mutableListOf<List<String>>()

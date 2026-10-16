@@ -352,7 +352,7 @@ private fun ArchiveArticleRow(
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${p.observedMedianIntervalNanos?.let { String.format(Locale.ROOT, "%.2f", it / 1_000_000_000.0) + "s" } ?: "not yet measured"}]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}]"
-            is ArchivedFastMoveSoundMeasured -> if (p.audible) "FAST MOVE SOUND [onset=${p.onsetOffsetNanos?.div(1_000_000)} ms, duration=${p.soundDurationNanos?.div(1_000_000)} ms, centroid=${String.format(Locale.ROOT, "%.0f", p.spectralCentroidHz)} Hz]" else "FAST MOVE SOUND [no distinct acoustic pulse]"
+            is ArchivedFastMoveSoundMeasured -> fastMoveSoundDescription(p)
             is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}]"
             is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
             is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"
@@ -471,7 +471,7 @@ private fun ArticleDetailsOverlay(
             is ArchivedFastMoveIdentified -> "FAST MOVE [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cadence=${p.observedMedianIntervalNanos?.let { String.format(Locale.ROOT, "%.2f", it / 1_000_000_000.0) + "s" } ?: "not yet measured"}]"
             is ArchivedFastMoveEnergyDerived -> "ENERGY DERIVED [side=${p.side}, move=${p.moveName}, uses=${p.observedCompletedUses}, generated=${p.totalEnergyGenerated}]"
             is ArchivedChargedMoveEnergySpent -> "CHARGED ENERGY SPENT [side=${p.side}, species=${p.speciesName}, move=${p.moveName}, cost=${p.energyCost}, basis=${p.basis}]"
-            is ArchivedFastMoveSoundMeasured -> if (p.audible) "FAST MOVE SOUND [onset=${p.onsetOffsetNanos?.div(1_000_000)} ms, duration=${p.soundDurationNanos?.div(1_000_000)} ms, centroid=${String.format(Locale.ROOT, "%.0f", p.spectralCentroidHz)} Hz, peak=${String.format(Locale.ROOT, "%.3f", p.peakAmplitude)}]" else "FAST MOVE SOUND [no distinct acoustic pulse, peak=${String.format(Locale.ROOT, "%.3f", p.peakAmplitude)}]"
+            is ArchivedFastMoveSoundMeasured -> fastMoveSoundDescription(p)
                 is ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured -> "INACTIVE SPRITE [slot=${p.slot}, fingerprint=${p.fingerprint}, bounds=${p.sampleLeft},${p.sampleTop},${p.sampleRight},${p.sampleBottom}]"
                 is ArchivedMatchStarted -> "MATCH STARTED [basis=GO GLYPH]"
                 is ArchivedMatchEnded -> "MATCH ENDED [result=${p.result}]"
@@ -523,4 +523,15 @@ private fun DetailField(label: String, value: String) {
         TerminalText(text = label, color = TerminalDimGreen, fontSize = 9.sp)
         TerminalText(text = value, color = Color.White, fontSize = 11.sp)
     }
+}
+
+
+private fun fastMoveSoundDescription(sound: ArchivedFastMoveSoundMeasured): String {
+    val best = sound.referenceCandidates.firstOrNull()
+    if (best != null) return "FAST MOVE AUDIO [${best.moveName}: " +
+        (if (sound.referenceMatchAccepted) "reference match, side unassigned" else "ambiguous candidate") +
+        "; spectrum=${String.format(Locale.ROOT, "%.3f", best.similarity)}, " +
+        "changing=${String.format(Locale.ROOT, "%.3f", best.changingSimilarity)}]"
+    return if (sound.audible) "FAST MOVE SOUND [onset=${sound.onsetOffsetNanos?.div(1_000_000)} ms, " +
+        "duration=${sound.soundDurationNanos?.div(1_000_000)} ms]" else "FAST MOVE SOUND [no distinct acoustic pulse]"
 }

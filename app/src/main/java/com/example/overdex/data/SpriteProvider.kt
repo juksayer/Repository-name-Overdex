@@ -35,6 +35,7 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
         isShadow: Boolean,
         isPurified: Boolean
     ): String {
+        if (id == DroidballDexEntry.ID) return DroidballDexEntry.SPRITE_URI
         if (id <= 0 || !exists(id, isShiny)) {
             if (id > 0) Log.w("SpriteProvider", "Missing local sprite for ID: $id (shiny=$isShiny)")
             return getPlaceholderUrl()
@@ -44,6 +45,7 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
     }
 
     override fun exists(id: Int, isShiny: Boolean): Boolean {
+        if (id == DroidballDexEntry.ID) return true
         if (id <= 0) return false
         return try {
             val path = if (isShiny) "shiny/" else ""

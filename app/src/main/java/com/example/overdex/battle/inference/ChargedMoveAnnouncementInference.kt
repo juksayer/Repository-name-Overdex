@@ -52,7 +52,6 @@ class ChargedMoveAnnouncementInference(
         (article.payload as? ActivePokemonSpeciesWitnessed)?.let {
             activeSpeciesHistory.addLast(article)
             while (activeSpeciesHistory.size > 128) activeSpeciesHistory.removeFirst()
-            return null
         }
         if (updatesControls) {
             controlEvidence.addLast(article)
@@ -120,7 +119,7 @@ class ChargedMoveAnnouncementInference(
                 supportingIds = selection?.ids ?: return null
                 basis = "ANNOUNCEMENT_AND_PLAYER_BUTTON_LABEL_AND_VISIBLE_TOUCH"
             } else {
-                supportingIds = emptyList()
+                supportingIds = listOfNotNull(activeAtUse[side]?.id)
                 basis = "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
             }
         } else {

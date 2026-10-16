@@ -28,6 +28,16 @@ class ChargedMoveAnnouncementInferenceTest {
     )
     private val inference = ChargedMoveAnnouncementInference(SinglePokemonKnowledge(pokemon))
 
+    @Test fun `late publication of an earlier badge resolves a pending move with original time and both links`() = runBlocking {
+        val raw = announcement("pending", "Turtonator used Dragon Pulse!").copy(monotonicTimeNanos = 20L)
+        assertNull(inference.accept(raw, ::noRosterSide))
+        val result = inference.accept(species("delayed-badge", ActivePokemonSide.PLAYER)
+            .copy(monotonicTimeNanos = 10L), ::noRosterSide)
+        assertEquals(ActivePokemonSide.PLAYER, result?.payload?.side)
+        assertEquals(20L, result?.observedArticle?.monotonicTimeNanos)
+        assertEquals(listOf(ArticleId("pending"), ArticleId("delayed-badge")), result?.predecessorIds)
+    }
+
     @Test fun `named announced charged move cites its Pokedex energy cost`() = runBlocking {
         inference.accept(species("active", ActivePokemonSide.PLAYER), ::noRosterSide)
 
@@ -37,7 +47,7 @@ class ChargedMoveAnnouncementInferenceTest {
         assertEquals(ActivePokemonSide.PLAYER, result.payload.side)
         assertEquals("Dragon Pulse", result.payload.moveName)
         assertEquals(60, result.payload.energyCost)
-        assertEquals(listOf(ArticleId("move")), result.predecessorIds)
+        assertEquals(listOf(ArticleId("move"), ArticleId("active")), result.predecessorIds)
     }
 
     @Test fun `mirror active species does not invent the charged move performer`() = runBlocking {
@@ -59,7 +69,7 @@ class ChargedMoveAnnouncementInferenceTest {
         assertEquals(ActivePokemonSide.OPPONENT, result?.payload?.side)
         assertEquals("Sneasel", result?.payload?.speciesName)
         assertEquals("Foul Play", result?.payload?.moveName)
-        assertEquals(listOf(ArticleId("foul-play")), result?.predecessorIds)
+        assertEquals(listOf(ArticleId("foul-play"), ArticleId("opponent")), result?.predecessorIds)
         assertNull(resolver.accept(announcement("impossible", "Sneasel used Dragon Pulse!"), ::noRosterSide))
     }
 

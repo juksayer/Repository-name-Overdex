@@ -20,7 +20,8 @@ class PokemonRepository(
 ) : PokemonKnowledge {
 
     private val searchRepository = PokemonSearchRepository(pokemonDao)
-    suspend fun getRegistrationCatalogue(): List<Pokemon> = pokemonDao.getRegistrationCatalogue().map { it.toDomain() }
+    suspend fun getRegistrationCatalogue(): List<Pokemon> = pokemonDao.getRegistrationCatalogue()
+        .filterNot { it.id == DroidballDexEntry.ID }.map { it.toDomain() }
     override suspend fun getPokemonById(id: Int): Pokemon? =
         pokemonDao.getPokemonById(id)?.toDomain() ?: gameMasterLoader?.getPokemonByDex(id)?.toDomain()
 
@@ -35,7 +36,7 @@ class PokemonRepository(
     override suspend fun getAllSpeciesNames(): Set<String> {
         val imported = pokemonDao.getAllPokemonNames()
         val current = gameMasterLoader?.allPokemonNames().orEmpty()
-        return (imported + current).toSet()
+        return (imported + current).filterNot { it.equals(DroidballDexEntry.NAME, ignoreCase = true) }.toSet()
     }
 
     private fun gameMasterPokemonFor(name: String): com.example.overdex.model.GameMasterPokemon? {

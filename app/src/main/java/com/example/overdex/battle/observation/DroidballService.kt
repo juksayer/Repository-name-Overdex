@@ -36,7 +36,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -48,7 +47,6 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.example.overdex.R
 import com.example.overdex.battle.audio.AudioCaptureCue
 import com.example.overdex.battle.audio.CueCenteredPcmCollector
 import com.example.overdex.battle.audio.BattleCryCueKind
@@ -57,7 +55,7 @@ import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import com.example.overdex.ui.components.BattleHudOverlayGeometry
-import com.example.overdex.ui.components.HudCaptureWindow
+import android.widget.FrameLayout
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +68,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlin.math.roundToInt
 
 /**
@@ -120,6 +121,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // floor while reducing each transient source bitmap by roughly 30%.
         private const val CAPTURE_SCALE = 0.625f
         @Volatile private var activeService: DroidballService? = null
+        val qteTypeIconSampling = MutableStateFlow<QteTypeIconSampling?>(null)
+        @Volatile var qteCalibrationRegion: com.example.overdex.model.AnchorRegion? = null
         private val captureVisibility = LiveCaptureVisibilityGate()
         private val instrumentVisible = MutableStateFlow(true)
 
@@ -135,11 +138,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val runtimeState = _runtimeState.asStateFlow()
 
         fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
-        internal suspend fun requestAnnouncementRead(
-            crop: BattleCropProvenance, text: String, observedAt: Long,
-        ): AnnouncementReadWindow? = kotlinx.coroutines.withContext(Dispatchers.Main) {
-            activeService?.clearHudForAnnouncement(crop, text, observedAt)
-        }
         suspend fun captureRegistrationCry(): com.example.overdex.battle.audio.Pcm16Audio {
             val service = activeService?.takeIf { it.registrationMode } ?: error("Start a registration scan first.")
             check(service.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -172,6 +170,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         )
         /** Raw audio snippets, published independently from captured visual frames. */
         val audioFrames = _audioFrames.asSharedFlow()
+
+        private val _audioWindowFailures = MutableSharedFlow<com.example.overdex.battle.audio.CueCenteredPcmUnavailable>(
+            extraBufferCapacity = 32, onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+        val audioWindowFailures = _audioWindowFailures.asSharedFlow()
 
         private val _livePcm = MutableSharedFlow<com.example.overdex.battle.audio.LivePcmChunk>(
             replay = 0, extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST
@@ -233,9 +236,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             activeService?.snapOverlayToNearestEdge()
         }
 
-        /** Requests a short microphone artifact around an already-accepted visual article. */
-        fun requestCueCenteredAudio(articleId: String, cueKind: BattleCryCueKind) {
-            activeService?.requestCueCenteredAudio(AudioCaptureCue(articleId, cueKind))
+        /** Request the sound at the visual source time, even when its testimony arrives late. */
+        fun requestCueCenteredAudio(articleId: String, cueKind: BattleCryCueKind, observedAtMonotonicNanos: Long?) {
+            activeService?.requestCueCenteredAudio(AudioCaptureCue(articleId, cueKind, observedAtMonotonicNanos))
         }
 
         /**
@@ -268,9 +271,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var fieldEditorOriginalPosition: Pair<Int, Int>? = null
     private fun fieldEditorBlocksCapture(now: Long): Boolean = !registrationMode &&
         (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
-    private var overlayView: HudCaptureWindow? = null
-    private val announcementReadRetry = AnnouncementReadRetry()
-    private var hudPositionEditing = false
+    private var overlayView: FrameLayout? = null
+    private val badgeCalibration by lazy { com.example.overdex.CalibrationManager(this).load() }
+    private val retainedOpponentBadge by lazy { RetainedOpponentBadge(this, windowManager) }
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
@@ -289,7 +292,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var linearAccelerationSensor: Sensor? = null
     private val motionPulseDetector = DeviceMotionPulseDetector()
     private val audioCollectorLock = Any()
-    // 500 ms pre-roll and 700 ms post-roll at 48 kHz mono PCM-16.
+    // Retain eight seconds in RAM; only a 500 ms pre / 700 ms post cue window is saved.
     private val cueCenteredAudio = CueCenteredPcmCollector(preRollBytes = 48_000, postRollBytes = 67_200)
     private var firstFrameLogged = false
     private var lastPublishedFrameNanos: Long? = null
@@ -298,6 +301,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var successEmitCount = 0L
     private var rejectedEmitCount = 0L
     private var deliveryLoggingJob: kotlinx.coroutines.Job? = null
+    private var notificationStateJob: kotlinx.coroutines.Job? = null
 
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
@@ -356,6 +360,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             } else {
                 startForeground(NOTIFICATION_ID, createNotification())
             }
+            observeNotificationState()
             runCatching {
                 setupMediaProjection(resultCode, data)
                 setupOverlay()
@@ -538,6 +543,26 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     }
 
                     val capturedAtWallTimeMillis = System.currentTimeMillis()
+                    // Show the fixed HUD on the first battlefield badge frame,
+                    // without waiting for OCR. Once seen, keep it available when
+                    // GO hides its badges during camera cuts or charged moves.
+                    val badgeExclusionBefore = retainedOpponentBadge.exclusion(receivedAtNanos)
+                    val playerBadgePresent = !registrationMode && TeamBadgePresenceDetector.present(
+                        bitmap.width, bitmap.height, badgeCalibration.playerTeamInfoRegion, bitmap::getPixel)
+                    val opponentBadgePresent = !registrationMode && badgeExclusionBefore == null &&
+                        TeamBadgePresenceDetector.present(bitmap.width, bitmap.height,
+                            badgeCalibration.opponentTeamInfoRegion, bitmap::getPixel)
+                    if (!registrationMode && !DroidballOverlayPresentation.battleBadgeSeen.value &&
+                        playerBadgePresent && opponentBadgePresent) {
+                        DroidballOverlayPresentation.recordBattleBadgePresent()
+                        DroidballOverlayPresentation.showBattleHud()
+                        emitSignal(DroidballSignal.BattleHudWitnessed)
+                    }
+                    if (!registrationMode && DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
+                        DroidballOverlayPresentation.battleBadgeSeen.value) {
+                        retainedOpponentBadge.update(bitmap, receivedAtNanos, playerBadgePresent, opponentBadgePresent,
+                            badgeCalibration.opponentTeamInfoRegion, width, height)
+                    }
                     val capturedAtMonotonicTimeNanos = receivedAtNanos
                     lastPublishedFrameNanos?.let { previous ->
                         val gap = capturedAtMonotonicTimeNanos - previous
@@ -551,6 +576,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         displayWidth = width,
                         displayHeight = height,
                         overlayRegion = capturedOverlayRegion,
+                        retainedBadgeRegion = badgeExclusionBefore ?: retainedOpponentBadge.exclusion(receivedAtNanos),
                     )
                     publicationAttempts++
                     val emitSucceeded = _frames.tryEmit(frame)
@@ -584,7 +610,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun requestCueCenteredAudio(cue: AudioCaptureCue) {
+        if (audioRecord == null) return // AUDIO_INPUT_STATUS already reports unavailable input.
         synchronized(audioCollectorLock) { cueCenteredAudio.cue(cue) }
+            ?.let { _audioWindowFailures.tryEmit(it) }
     }
 
     /** Prefer game-only playback. A silent permitted stream stays explicitly silent. */
@@ -649,6 +677,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             return
         }
         audioRecord = record
+        synchronized(audioCollectorLock) { cueCenteredAudio.reset() }
         _audioCaptureAvailable.value = true
         status(source, "RUNNING_AWAITING_SIGNAL")
         audioCaptureJob = serviceScope.launch(Dispatchers.IO) {
@@ -663,6 +692,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     if (count <= 0) { status(source, "READ_FAILED"); break }
                     val peak = com.example.overdex.battle.audio.PcmSignalLevel.peak(readBuffer, count)
                     val now = System.nanoTime()
+                    val nowWallMillis = System.currentTimeMillis()
                     if (_livePcm.subscriptionCount.value > 0) {
                         val samples = ShortArray(count / 2) { index ->
                             ((readBuffer[index * 2].toInt() and 0xff) or
@@ -670,7 +700,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         }
                         _livePcm.tryEmit(com.example.overdex.battle.audio.LivePcmChunk(
                             com.example.overdex.battle.audio.Pcm16Audio(sampleRateHz, 1, samples),
-                            pcmSequence++, now, System.currentTimeMillis(), source
+                            pcmSequence++, now, nowWallMillis, source
                         ))
                     }
                     if (peak >= 0.001f) lastSignalAt = now
@@ -681,17 +711,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     }
                     if (state != lastState) { status(source, state); lastState = state }
                     val completed = synchronized(audioCollectorLock) {
-                        cueCenteredAudio.ingest(readBuffer.copyOf(count))
+                        cueCenteredAudio.ingest(readBuffer.copyOf(count), now, nowWallMillis)
                     }
-                    completed.forEach { capture ->
-                        val completedAtNanos = System.nanoTime()
-                        val durationNanos = capture.pcm16le.size.toLong() * 1_000_000_000L / (sampleRateHz * 2L)
+                    completed.forEach { result ->
+                        if (result is com.example.overdex.battle.audio.CueCenteredPcmUnavailable) {
+                            _audioWindowFailures.tryEmit(result)
+                            return@forEach
+                        }
+                        val capture = result as com.example.overdex.battle.audio.CueCenteredPcmCapture
                         _audioFrames.tryEmit(CapturedAudioFrame(
                             pcm16le = capture.pcm16le,
                             sampleRateHz = sampleRateHz,
                             channelCount = 1,
-                            capturedAtWallTimeMillis = System.currentTimeMillis() - durationNanos / 1_000_000L,
-                            capturedAtMonotonicTimeNanos = completedAtNanos - durationNanos,
+                            capturedAtWallTimeMillis = capture.startedAtWallTimeMillis,
+                            capturedAtMonotonicTimeNanos = capture.startedAtMonotonicNanos,
                             cueArticleId = capture.cue.articleId,
                             cueKind = capture.cue.kind,
                             captureSource = source,
@@ -764,21 +797,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
                     onDragFinished = ::snapOverlayToNearestEdge,
-                    onBattleHudDrag = ::moveBattleHudBy,
-                    onBattleHudDragFinished = ::saveBattleHudPosition,
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
-                    onResetBattleHudLayout = ::resetBattleHudLayout,
-                    onOpenQteCalibration = ::openQteCalibration,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
-                    onHudEditingChanged = { editing ->
-                        hudPositionEditing = editing
-                        if (editing) overlayView?.restoreForRead()
-                    },
                     )
                 }
             }
         }
-        overlayView = HudCaptureWindow(this).apply {
+        overlayView = FrameLayout(this).apply {
             addView(overlayContent, android.widget.FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT))
         }
@@ -792,13 +817,16 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // screen-space footprint alongside each frame, without repainting it.
         overlayView!!.viewTreeObserver.addOnPreDrawListener {
             val view = overlayView
-            capturedOverlayRegion = if (view != null && view.isShown && !registrationMode) {
+            capturedOverlayRegion = if (view != null && view.isShown && !registrationMode &&
+                (!overlayAnchoredToBattleHud || DroidballOverlayPresentation.battleBadgeSeen.value)) {
                 val location = IntArray(2)
                 view.getLocationOnScreen(location)
                 com.example.overdex.model.AnchorRegion(location[0].toFloat() / bounds.width(),
                     location[1].toFloat() / bounds.height(), view.width.toFloat() / bounds.width(),
                     view.height.toFloat() / bounds.height())
-            } else null
+            } else {
+                null
+            }
             true
         }
         
@@ -808,6 +836,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         serviceScope.launch(Dispatchers.Main) {
             instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
+        }
+        if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
+            combine(instrumentVisible, DroidballOverlayPresentation.mode, DroidballOverlayPresentation.battleBadgeSeen) {
+                visible, mode, seen -> !visible && seen && mode == DroidballOverlayMode.BATTLE_HUD
+            }.distinctUntilChanged().collect { allowed -> if (!allowed) retainedOpponentBadge.reset() }
         }
         if (registrationMode) {
             registrationBoxes = com.example.overdex.ui.components.RegistrationAlignmentWindows(
@@ -835,6 +868,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun openQteCalibration() {
         if (registrationMode || qteCalibrationWindow != null) return
         val bounds = displayBounds()
@@ -847,7 +881,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 // a stale copy of species, HP, shields or another user's edits.
                 calibration.save(calibration.load().copy(qteTypeIconsRegion = region))
             },
-            onClosed = { qteCalibrationWindow = null },
+            onClosed = { qteCalibrationWindow = null; qteCalibrationRegion = null },
+            sampleRegion = { qteTypeIconSampling.value?.sample(it) == true },
+            samplingStatus = qteTypeIconSampling.flatMapLatest { sampler ->
+                sampler?.status ?: kotlinx.coroutines.flow.flowOf(QteIconSamplingStatus())
+            },
+            onRegionChanged = { qteCalibrationRegion = it },
         )
         qteCalibrationWindow = window
         try { window.show(); window.setVisible(!instrumentVisible.value) }
@@ -857,51 +896,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
     }
 
-    private suspend fun clearHudForAnnouncement(
-        crop: BattleCropProvenance, text: String, observedAt: Long,
-    ): AnnouncementReadWindow? {
-        val view = overlayView ?: return null
-        if (registrationMode || instrumentVisible.value || hudPositionEditing || !overlayAnchoredToBattleHud ||
-            !view.isAttachedToWindow || fieldEditorBlocksCapture(System.nanoTime())) return null
-        if (crop.sourceWidth <= 0 || crop.sourceHeight <= 0) return null
-        val display = displayBounds()
-        val location = IntArray(2)
-        view.getLocationOnScreen(location)
-        // Map source pixels directly to physical screen pixels. No saved
-        // calibration changes or guessed status-bar subtraction.
-        val sx = display.width().toFloat() / crop.sourceWidth
-        val sy = display.height().toFloat() / crop.sourceHeight
-        val area = android.graphics.Rect(
-            kotlin.math.floor(crop.bounds.left * sx).toInt() - location[0] - 2,
-            kotlin.math.floor(crop.bounds.top * sy).toInt() - location[1] - 2,
-            kotlin.math.ceil(crop.bounds.right * sx).toInt() - location[0] + 2,
-            kotlin.math.ceil(crop.bounds.bottom * sy).toInt() - location[1] + 2,
-        )
-        if (!area.intersect(0, 0, view.width, view.height)) return null
-        val requestedAt = System.nanoTime()
-        if (!announcementReadRetry.accept(text, observedAt, requestedAt)) return null
-        val firstDraw = kotlinx.coroutines.CompletableDeferred<Long>()
-        view.clearForRead(area, AnnouncementReadRetry.CLEAR_MILLIS) { firstDraw.complete(it) }
-        val drawnAt = kotlinx.coroutines.withTimeoutOrNull(AnnouncementReadRetry.CLEAR_MILLIS) {
-            firstDraw.await()
-        } ?: return null
-        // Allow two display frames for composition and stop before restoration.
-        // These are retry candidates, not a claim that previously hidden pixels
-        // were observed. Each selected crop keeps its own source timestamp.
-        val after = drawnAt + 35_000_000L
-        val before = requestedAt + AnnouncementReadRetry.CLEAR_MILLIS * 1_000_000L - 35_000_000L
-        Log.d("HUD_ANNOUNCEMENT_READ", "Cleared overlapping HUD pixels for ${AnnouncementReadRetry.CLEAR_MILLIS}ms")
-        return if (after < before) AnnouncementReadWindow(after, before) else null
-    }
-
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun setFieldEditorWindow(open: Boolean) {
+        if (open) retainedOpponentBadge.reset()
         val view = overlayView ?: return
         val params = overlayParams ?: return
         fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
         _frames.resetReplayCache()
         if (open) {
-            view.restoreForRead()
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_SECURE
             if (fieldEditorOriginalPosition == null) fieldEditorOriginalPosition = params.x to params.y
             // Keep GO's start button behind the editor while visual capture is
@@ -1071,7 +1073,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         overlayAnchoredToBattleHud = false
-        view.restoreForRead()
         if (wasAnchored) {
             params.x = freeOverlayX ?: params.x
             params.y = freeOverlayY ?: params.y
@@ -1106,16 +1107,27 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
     }
 
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("ODX-FI Active")
-            .setContentText(if (registrationMode) "Reading one Pokémon into an owned card." else "Continuous observation in progress.")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Placeholder
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
+    private fun createNotification(state: DroidballNotificationState = DroidballNotificationState.IDLE): Notification =
+        buildDroidballNotification(this, CHANNEL_ID, state, registrationMode)
+
+    private fun observeNotificationState() {
+        notificationStateJob?.cancel()
+        notificationStateJob = serviceScope.launch {
+            combine(runtimeState, instrumentVisible, DroidballOverlayPresentation.mode) { runtime, visible, mode ->
+                droidballNotificationState(runtime, visible, mode, registrationMode)
+            }.distinctUntilChanged().collect { state ->
+                // Never recreate a foreground notification after capture has stopped.
+                if (_runtimeState.value != DroidballRuntimeState.STOPPED) {
+                    getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, createNotification(state))
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
+        notificationStateJob?.cancel()
+        qteTypeIconSampling.value?.stop()
+        qteTypeIconSampling.value = null
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onDestroy()")
         if (activeService === this) activeService = null
         Log.d("DroidballService", "onDestroy: Releasing resources")
@@ -1126,6 +1138,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         registrationBoxes = null
         qteCalibrationWindow?.close()
         qteCalibrationWindow = null
+        retainedOpponentBadge.close()
         _signals.tryEmit(DroidballSignal.Stopped)
         
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)

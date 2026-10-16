@@ -42,7 +42,10 @@ class CropCaptureWitness(
      */
     private val preserveCompleteFrame: Boolean = false,
     /** Optional post-custody delivery. The artifact and CropCaptured record already exist. */
-    private val onCaptured: ((CropCaptured, Long, Long) -> Unit)? = null
+    private val onCaptured: ((CropCaptured, Long, Long) -> Unit)? = null,
+    /** Live calibration may supply a current region without rebuilding the observation session. */
+    private val calibrationProvider: () -> BattleCalibration = { calibration },
+    private val acceptsFrame: (Long) -> Boolean = { true },
 ) : Observer {
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
@@ -57,16 +60,20 @@ class CropCaptureWitness(
         scope = CoroutineScope(captureDispatcher + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 input.supplyFrames { frame ->
-                    val enabled = isEnabled()
+                    val currentCalibration = calibrationProvider()
+                    val rect = contract.crop.resolveRect(currentCalibration, frame.bitmap.width, frame.bitmap.height)
+                    val enabled = isEnabled() && (rect == null ||
+                        frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom)))
                     if (lastEnabled != enabled) {
                         match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
                         lastEnabled = enabled
                     }
                     if (!enabled) return@supplyFrames
+                    if (!acceptsFrame(frame.capturedAtMonotonicTimeNanos)) return@supplyFrames
                     if (captureIntervalNanos > 0L && lastCapturedAtNanos > 0L &&
                         frame.capturedAtMonotonicTimeNanos - lastCapturedAtNanos < captureIntervalNanos
                     ) return@supplyFrames
-                    val resolved = contract.crop.resolve(calibration, frame.bitmap) ?: return@supplyFrames
+                    val resolved = contract.crop.resolve(currentCalibration, frame) ?: return@supplyFrames
                     try {
                         val artifact = if (preserveCompleteFrame) {
                             artifactStore.preserveFrameCrop(

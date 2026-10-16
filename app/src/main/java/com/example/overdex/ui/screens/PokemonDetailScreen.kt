@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.overdex.data.DroidballDexEntry
 import com.example.overdex.model.Move
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
@@ -70,13 +71,15 @@ fun PokemonDetailScreen(
     viewModel: PokedexViewModel,
 ) {
     val fieldNotes by remember(pokemon.id) { viewModel.getFieldNotes(pokemon.id) }.collectAsState(initial = emptyList())
+    val isDroidball = pokemon.id == DroidballDexEntry.ID
+    val hasCry = pokemon.cryUrl.isNotBlank()
 
     val navItems = remember(pokemon, fieldNotes) {
-        val header = listOf(
-            PokemonDetailNavItem.Back,
-            PokemonDetailNavItem.Audio,
-            PokemonDetailNavItem.Artwork
-        )
+        val header = buildList {
+            add(PokemonDetailNavItem.Back)
+            if (hasCry) add(PokemonDetailNavItem.Audio)
+            add(PokemonDetailNavItem.Artwork)
+        }
         
         val body = buildList {
             add(PokemonDetailNavItem.Region)
@@ -85,12 +88,12 @@ fun PokemonDetailScreen(
             pokemon.prevEvolutions.forEach { add(PokemonDetailNavItem.Evolution(it.num.toInt(), it.name)) }
             pokemon.nextEvolutions.forEach { add(PokemonDetailNavItem.Evolution(it.num.toInt(), it.name)) }
             
-            val weaknesses = pokemon.getWeaknesses().filter { it.value > 1.0 }
+            val weaknesses = if (isDroidball) emptyMap() else pokemon.getWeaknesses().filter { it.value > 1.0 }
             weaknesses.keys.sortedBy { it.ordinal }.forEach {
                 add(PokemonDetailNavItem.Weakness(it))
             }
             
-            val resistances = pokemon.getWeaknesses().filter { it.value < 1.0 }
+            val resistances = if (isDroidball) emptyMap() else pokemon.getWeaknesses().filter { it.value < 1.0 }
             resistances.keys.sortedBy { it.ordinal }.forEach {
                 add(PokemonDetailNavItem.Resistance(it))
             }
@@ -110,7 +113,7 @@ fun PokemonDetailScreen(
         onActivate = { index ->
             when (val item = navItems[index]) {
                 PokemonDetailNavItem.Back -> onBackClick()
-                PokemonDetailNavItem.Artwork -> onPlayCry(pokemon.cryUrl)
+                PokemonDetailNavItem.Artwork -> if (hasCry) onPlayCry(pokemon.cryUrl)
                 PokemonDetailNavItem.Audio -> onPlayCry(pokemon.cryUrl)
                 PokemonDetailNavItem.Region -> onRegionClick(pokemon.region)
                 is PokemonDetailNavItem.Type -> onTypeClick(item.type)
@@ -130,7 +133,7 @@ fun PokemonDetailScreen(
     HandheldFocusSync<PokemonDetailNavItem>(nav.selectedIndex, navItems, requesters)
 
     LaunchedEffect(pokemon.id) {
-        onWarmUpCry(pokemon.cryUrl)
+        if (hasCry) onWarmUpCry(pokemon.cryUrl)
     }
 
     val scrollState = rememberScrollState()
@@ -184,28 +187,30 @@ fun PokemonDetailScreen(
                 }
 
                 // Audio Navigation Target
-                val audioItem = PokemonDetailNavItem.Audio
-                val isAudioSelected = navItems[nav.selectedIndex] == audioItem
-                Box(
-                    modifier = Modifier
-                        .bringIntoViewRequester(requesters[audioItem]!!)
-                        .border(
-                            width = 2.dp,
-                            color = if (isAudioSelected) TerminalGreen else Color.Transparent,
-                            shape = RoundedCornerShape(4.dp)
+                if (hasCry) {
+                    val audioItem = PokemonDetailNavItem.Audio
+                    val isAudioSelected = navItems[nav.selectedIndex] == audioItem
+                    Box(
+                        modifier = Modifier
+                            .bringIntoViewRequester(requesters[audioItem]!!)
+                            .border(
+                                width = 2.dp,
+                                color = if (isAudioSelected) TerminalGreen else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .background(
+                                color = if (isAudioSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(4.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "Play Cry",
+                            tint = if (isAudioSelected) TerminalGreen else TerminalDimGreen,
+                            modifier = Modifier.size(32.dp)
                         )
-                        .background(
-                            color = if (isAudioSelected) TerminalGreen.copy(alpha = 0.1f) else Color.Transparent,
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .padding(4.dp)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = "Play Cry",
-                        tint = if (isAudioSelected) TerminalGreen else TerminalDimGreen,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    }
                 }
             }
             
@@ -293,19 +298,20 @@ fun PokemonDetailScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "ATK ${pokemon.baseAttack}  DEF ${pokemon.baseDefense}  STA ${pokemon.baseStamina}",
-                            color = TerminalGreen,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    if (!isDroidball) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .border(1.dp, TerminalGreen, RoundedCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "ATK ${pokemon.baseAttack}  DEF ${pokemon.baseDefense}  STA ${pokemon.baseStamina}",
+                                color = TerminalGreen,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -324,7 +330,14 @@ fun PokemonDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            Text(
+            if (isDroidball) {
+                Text(
+                    text = pokemon.description,
+                    color = TerminalGreen,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            } else Text(
                 text = "HT ${pokemon.height}  WT ${pokemon.weight}",
                 color = TerminalDimGreen,
                 fontSize = 14.sp,
@@ -393,52 +406,55 @@ fun PokemonDetailScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-// Effectiveness
-            SectionTitle("Weaknesses")
-            val weaknessItems = navItems.filterIsInstance<PokemonDetailNavItem.Weakness>()
-            EffectivenessRow(
-                multipliers = pokemon.getWeaknesses(),
-                items = weaknessItems,
-                nav = nav,
-                navItems = navItems,
-                requesters = requesters
-            )
-            
-            SectionTitle("Resistances")
-            val resistanceItems = navItems.filterIsInstance<PokemonDetailNavItem.Resistance>()
-            EffectivenessRow(
-                multipliers = pokemon.getWeaknesses(),
-                items = resistanceItems,
-                nav = nav,
-                navItems = navItems,
-                requesters = requesters
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Moves
-            SectionTitle("Fast Moves")
-            pokemon.fastMoves.forEach { move ->
-                val item = PokemonDetailNavItem.Move(move)
-                val isSelected = navItems[nav.selectedIndex] == item
-                MoveRow(
-                    move = move,
-                    modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
-                    selected = isSelected
+            // The mascot has no Pokémon GO battle statistics or move pool.
+            if (!isDroidball) {
+                // Effectiveness
+                SectionTitle("Weaknesses")
+                val weaknessItems = navItems.filterIsInstance<PokemonDetailNavItem.Weakness>()
+                EffectivenessRow(
+                    multipliers = pokemon.getWeaknesses(),
+                    items = weaknessItems,
+                    nav = nav,
+                    navItems = navItems,
+                    requesters = requesters
                 )
-            }
             
-            Spacer(modifier = Modifier.height(8.dp))
+                SectionTitle("Resistances")
+                val resistanceItems = navItems.filterIsInstance<PokemonDetailNavItem.Resistance>()
+                EffectivenessRow(
+                    multipliers = pokemon.getWeaknesses(),
+                    items = resistanceItems,
+                    nav = nav,
+                    navItems = navItems,
+                    requesters = requesters
+                )
+            
+                Spacer(modifier = Modifier.height(16.dp))
+            
+                // Moves
+                SectionTitle("Fast Moves")
+                pokemon.fastMoves.forEach { move ->
+                    val item = PokemonDetailNavItem.Move(move)
+                    val isSelected = navItems[nav.selectedIndex] == item
+                    MoveRow(
+                        move = move,
+                        modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
+                        selected = isSelected
+                    )
+                }
+            
+                Spacer(modifier = Modifier.height(8.dp))
 
-            SectionTitle("Charged Moves")
-            pokemon.chargedMoves.forEach { move ->
-                val item = PokemonDetailNavItem.Move(move)
-                val isSelected = navItems[nav.selectedIndex] == item
-                MoveRow(
-                    move = move,
-                    modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
-                    selected = isSelected
-                )
+                SectionTitle("Charged Moves")
+                pokemon.chargedMoves.forEach { move ->
+                    val item = PokemonDetailNavItem.Move(move)
+                    val isSelected = navItems[nav.selectedIndex] == item
+                    MoveRow(
+                        move = move,
+                        modifier = Modifier.bringIntoViewRequester(requesters[item]!!),
+                        selected = isSelected
+                    )
+                }
             }
 
             // Battle haikus close the detail page, replacing imported flavor text.

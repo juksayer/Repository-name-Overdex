@@ -7,9 +7,33 @@ data class Pcm16Audio(val sampleRateHz: Int, val channelCount: Int, val samples:
 
 /** Strict reader for the PCM-16 WAV artifacts and references used by Droidball. */
 object WavPcm16 {
+    /**
+     * Some verified bundled exports have an 18-byte PCM format header but leave
+     * both RIFF/data lengths at zero. Recover lengths from that known layout in
+     * a temporary copy. Captured match evidence still uses strict [decode].
+     */
+    internal fun decodeBundledReference(bytes: ByteArray): Pcm16Audio? {
+        decode(bytes)?.let { return it }
+        if (bytes.size <= 46 || String(bytes, 0, 4) != "RIFF" || String(bytes, 8, 4) != "WAVE" ||
+            String(bytes, 12, 4) != "fmt " || String(bytes, 38, 4) != "data") return null
+        val header = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        val channels = header.getShort(22).toInt()
+        if (header.getInt(4) != 0 || header.getInt(16) != 18 || header.getInt(42) != 0 ||
+            header.getShort(20).toInt() != 1 || header.getShort(34).toInt() != 16 ||
+            header.getShort(36).toInt() != 0 || channels !in 1..2 ||
+            header.getShort(32).toInt() != channels * 2 || (bytes.size - 46) % (channels * 2) != 0) return null
+        val finalized = bytes.copyOf()
+        ByteBuffer.wrap(finalized).order(ByteOrder.LITTLE_ENDIAN).apply {
+            putInt(4, finalized.size - 8)
+            putInt(42, finalized.size - 46)
+        }
+        return decode(finalized)
+    }
+
     fun decode(bytes: ByteArray): Pcm16Audio? {
         if (bytes.size < 44 || String(bytes, 0, 4) != "RIFF" || String(bytes, 8, 4) != "WAVE") return null
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        if (buffer.getInt(4) <= 0) return null // unfinished streams are not complete captured evidence
         var offset = 12
         var channels = 0
         var sampleRate = 0
@@ -18,7 +42,7 @@ object WavPcm16 {
             val id = String(bytes, offset, 4)
             val size = buffer.getInt(offset + 4)
             val dataStart = offset + 8
-            if (size < 0 || dataStart + size > bytes.size) return null
+            if (size < 0 || size > bytes.size - dataStart) return null
             when (id) {
                 "fmt " -> {
                     if (size < 16 || buffer.getShort(dataStart).toInt() != 1 || buffer.getShort(dataStart + 14).toInt() != 16) return null
@@ -31,7 +55,12 @@ object WavPcm16 {
         }
         val pcm = data ?: return null
         if (channels <= 0 || sampleRate <= 0 || pcm.size % 2 != 0) return null
-        return Pcm16Audio(sampleRate, channels, ShortArray(pcm.size / 2) { i -> ByteBuffer.wrap(pcm).order(ByteOrder.LITTLE_ENDIAN).getShort(i * 2) })
+        // A 1.2-second capture contains 57,600 samples. Wrapping a new buffer
+        // per sample produced that many temporary objects for every witness,
+        // plus millions while preparing the cry corpus at match startup.
+        val samples = ShortArray(pcm.size / 2)
+        ByteBuffer.wrap(pcm).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples)
+        return Pcm16Audio(sampleRate, channels, samples)
     }
 }
 

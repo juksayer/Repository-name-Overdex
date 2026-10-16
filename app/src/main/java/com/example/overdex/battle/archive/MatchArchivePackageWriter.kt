@@ -5,6 +5,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import java.util.zip.Deflater
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -66,6 +67,10 @@ object MatchArchivePackageWriter {
 
             onArtifactVerified?.invoke(0, artifacts.size)
             artifacts.forEachIndexed { index, artifact ->
+                // PNG has already compressed these pixels. Retain ZIP CRC/hash validation
+                // without spending another compression pass on incompressible bytes.
+                zipStream.setLevel(if (artifact.mediaType == "image/png") Deflater.NO_COMPRESSION
+                    else Deflater.DEFAULT_COMPRESSION)
                 zipStream.putNextEntry(ZipEntry(artifact.relativePath))
                 copyValidatedArtifact(artifact, artifactRepositoryRoot, zipStream)
                 zipStream.closeEntry()

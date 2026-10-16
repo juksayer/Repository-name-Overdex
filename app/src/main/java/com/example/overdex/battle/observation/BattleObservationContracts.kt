@@ -94,6 +94,13 @@ data class BattleCropContract(
     val minimumSize: Int = 1,
     val areaInRegion: CropAreaInRegion = CropAreaInRegion()
 ) {
+    /** Retained badge pixels belong to our presentation, not a live game observation. */
+    fun resolve(calibration: BattleCalibration, frame: com.example.overdex.model.observation.CapturedVisualFrame): ResolvedBattleCrop? {
+        val rect = resolveRect(calibration, frame.bitmap.width, frame.bitmap.height) ?: return null
+        if (!frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))) return null
+        return resolve(calibration, frame.bitmap)
+    }
+
     fun resolve(calibration: BattleCalibration, source: Bitmap): ResolvedBattleCrop? =
         BattleCropResolver.resolve(cropName, region.regionIn(calibration), source, minimumSize, areaInRegion)
 
@@ -165,7 +172,7 @@ object BattleCropContracts {
     val playerTeamStatus = BattleCropContract("PlayerTeamStatusCrop", BattleRegionId.PLAYER_TEAM_INFO)
     val opponentTeamStatus = BattleCropContract("OpponentTeamStatusCrop", BattleRegionId.OPPONENT_TEAM_INFO)
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
-    // Calibration-only until moving QTE glyphs have been measured against the catalogue.
+    // Raw calibration samples; moving glyph classification requires measured examples.
     val qteTypeIcons = BattleCropContract("QteTypeIconsCrop", BattleRegionId.QTE_TYPE_ICONS)
     val playerChargeMoveControls = BattleCropContract("PlayerChargeMoveControlsCrop", BattleRegionId.PLAYER_CHARGE_MOVE_CONTROLS)
     val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
@@ -186,6 +193,10 @@ data class BattleWitnessContract<T : TestimonyPayload>(
 )
 
 object BattleWitnessContracts {
+    val qteTypeIconsCapture = BattleWitnessContract(
+        witnessId = "QTE_TYPE_ICONS_CAPTURE", crop = BattleCropContracts.qteTypeIcons,
+        testimonyType = CropCaptured::class
+    )
     val decisionTimerCapture = BattleWitnessContract(
         witnessId = "DECISION_TIMER_CAPTURE", crop = BattleCropContracts.decisionTimer,
         testimonyType = CropCaptured::class

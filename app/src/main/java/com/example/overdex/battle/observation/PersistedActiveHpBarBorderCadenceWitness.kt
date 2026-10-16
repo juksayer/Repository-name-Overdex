@@ -133,8 +133,15 @@ internal data class ActiveHpBarBorderAppearance(
     val blue: Float,
     val brightness: Float,
     val orangeFraction: Float,
-    val whiteFraction: Float
-)
+    val whiteFraction: Float,
+    val blueFraction: Float = 0f,
+) {
+    val pulseFraction: Float get() = orangeFraction + blueFraction
+}
+
+/** Blue flashes are visible on Sneasel's bar in the Oct 14 Powder Snow recording. */
+internal fun isBlueHpBarBorder(red: Int, green: Int, blue: Int): Boolean =
+    blue >= 175 && green >= 90 && blue - red >= 35 && blue - green >= 10
 
 internal object ActiveHpBarBorderAppearanceMeasurer {
     fun measure(bitmap: Bitmap, bar: ActiveHpBarMeasurement): ActiveHpBarBorderAppearance? =
@@ -150,6 +157,7 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
         var green = 0L
         var blue = 0L
         var orange = 0
+        var blueOutline = 0
         var white = 0
         var count = 0
         fun sample(x: Int, y: Int) {
@@ -159,6 +167,7 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
             green += color ushr 8 and 0xff
             blue += color and 0xff
             if (isOrangeBorder(color)) orange++
+            if (isBlueHpBarBorder(color ushr 16 and 0xff, color ushr 8 and 0xff, color and 0xff)) blueOutline++
             if (isWhiteBorder(color)) white++
             count++
         }
@@ -183,7 +192,8 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
             blue = b,
             brightness = maxOf(r, g, b),
             orangeFraction = orange.toFloat() / count,
-            whiteFraction = white.toFloat() / count
+            whiteFraction = white.toFloat() / count,
+            blueFraction = blueOutline.toFloat() / count,
         )
     }
 
@@ -302,12 +312,12 @@ internal class ActiveHpBarBorderPulseDetector {
             }
             return null
         }
-        val signal = (appearance.orangeFraction - currentBaseline.orangeFraction).coerceAtLeast(0f)
+        val signal = (appearance.pulseFraction - currentBaseline.pulseFraction).coerceAtLeast(0f)
 
         if (pulsing) {
-            if (appearance.orangeFraction <= RETURN_ORANGE_FRACTION ||
+            if (appearance.pulseFraction <= RETURN_PULSE_FRACTION ||
                 (appearance.whiteFraction >= MIN_WHITE_BASELINE_FRACTION &&
-                    appearance.orangeFraction < MIN_ORANGE_FRACTION)
+                    appearance.pulseFraction < MIN_PULSE_FRACTION)
             ) {
                 pulsing = false
                 updateBaseline(appearance)
@@ -316,8 +326,8 @@ internal class ActiveHpBarBorderPulseDetector {
         }
 
         if (baselineSamples >= REQUIRED_BASELINE_SAMPLES &&
-            appearance.orangeFraction >= MIN_ORANGE_FRACTION &&
-            signal >= ONSET_ORANGE_DELTA
+            appearance.pulseFraction >= MIN_PULSE_FRACTION &&
+            signal >= ONSET_PULSE_DELTA
         ) {
             pulsing = true
             val previousNanos = previousPulseNanos
@@ -329,7 +339,7 @@ internal class ActiveHpBarBorderPulseDetector {
                 monotonicTimeNanos = monotonicTimeNanos,
                 colorDistanceAtOnset = signal,
                 baselineSampleCount = baselineSamples,
-                confidence = (0.55f + appearance.orangeFraction * 0.35f +
+                confidence = (0.55f + appearance.pulseFraction * 0.35f +
                     currentBaseline.whiteFraction * 0.10f).coerceIn(0f, 1f),
                 previousPulseNanos = previousNanos,
                 previousPulseArticleId = previousArticle,
@@ -350,7 +360,8 @@ internal class ActiveHpBarBorderPulseDetector {
             blue = old.blue * 0.9f + appearance.blue * 0.1f,
             brightness = old.brightness * 0.9f + appearance.brightness * 0.1f,
             orangeFraction = old.orangeFraction * 0.9f + appearance.orangeFraction * 0.1f,
-            whiteFraction = old.whiteFraction * 0.9f + appearance.whiteFraction * 0.1f
+            whiteFraction = old.whiteFraction * 0.9f + appearance.whiteFraction * 0.1f,
+            blueFraction = old.blueFraction * 0.9f + appearance.blueFraction * 0.1f,
         )
         baselineSamples++
     }
@@ -358,9 +369,9 @@ internal class ActiveHpBarBorderPulseDetector {
     private companion object {
         const val REQUIRED_BASELINE_SAMPLES = 3
         const val MIN_WHITE_BASELINE_FRACTION = 0.12f
-        const val MIN_ORANGE_FRACTION = 0.08f
-        const val ONSET_ORANGE_DELTA = 0.055f
-        const val RETURN_ORANGE_FRACTION = 0.035f
+        const val MIN_PULSE_FRACTION = 0.08f
+        const val ONSET_PULSE_DELTA = 0.055f
+        const val RETURN_PULSE_FRACTION = 0.035f
         const val MIN_CADENCE_NANOS = 350_000_000L
         const val MAX_CADENCE_NANOS = 3_250_000_000L
     }
