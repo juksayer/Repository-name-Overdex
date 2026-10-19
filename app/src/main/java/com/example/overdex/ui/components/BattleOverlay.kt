@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,10 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -134,16 +137,46 @@ fun BattleOverlay(
     val anchoredToBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val panelIsVisible = expanded || anchoredToBattleHud
     val mayMove = !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragFinished by rememberUpdatedState(onDragFinished)
+    val overlayView = LocalView.current
     LaunchedEffect(anchoredToBattleHud, panelIsVisible) {
         onLayoutStateChanged(anchoredToBattleHud, panelIsVisible)
     }
-    val interactionModifier = if (mayMove) {
-        Modifier.pointerInput(Unit) {
+    val interactionModifier = if (anchoredToBattleHud && badgeSeen) {
+        // The whole panel is the handle. Require a deliberate hold so a battle
+        // tap or short swipe cannot shift it, and keep the gesture alive while
+        // species, moves and energy update underneath the user's finger.
+        Modifier.pointerInput(anchoredToBattleHud, badgeSeen) {
+            val location = IntArray(2)
+            fun screenPosition(position: Offset): Offset {
+                overlayView.getLocationOnScreen(location)
+                return position + Offset(location[0].toFloat(), location[1].toFloat())
+            }
+            var lastScreenPosition = Offset.Zero
+            detectDragGesturesAfterLongPress(
+                onDragStart = { lastScreenPosition = screenPosition(it) },
+                onDragEnd = { currentOnDragFinished() },
+                onDragCancel = { currentOnDragFinished() },
+                onDrag = { change, _ ->
+                    change.consume()
+                    // Moving the WindowManager window changes local pointer
+                    // coordinates. Screen deltas avoid subtracting that move
+                    // again and making the HUD follow at half finger speed.
+                    val position = screenPosition(change.position)
+                    val amount = position - lastScreenPosition
+                    lastScreenPosition = position
+                    currentOnDrag(amount.x, amount.y)
+                },
+            )
+        }
+    } else if (mayMove) {
+        Modifier.pointerInput(anchoredToBattleHud) {
             detectDragGestures(
-                onDragEnd = onDragFinished,
+                onDragEnd = { currentOnDragFinished() },
                 onDrag = { change, amount ->
                     change.consume()
-                    onDrag(amount.x, amount.y)
+                    currentOnDrag(amount.x, amount.y)
                 }
             )
         }

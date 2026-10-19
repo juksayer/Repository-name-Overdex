@@ -52,6 +52,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         // the use earlier nor expire the impact's corroboration window early.
         val anchorNanos: Long get() = (evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
             .ifEmpty { evidence }).minOf { it.article.monotonicTimeNanos ?: Long.MAX_VALUE }
+        val firstImpactReceivedAt: Long get() = (evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
+            .ifEmpty { evidence }).minOf { it.article.recordedAt }
     }
 
     private val appearances = EnumMap<ActivePokemonSide, Appearance>(ActivePokemonSide::class.java)
@@ -60,6 +62,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private val pending = mutableListOf<PendingUse>()
     private val knownDurations = mutableMapOf<Pair<ActivePokemonSide, String>, Long>()
     private var watermarkNanos = Long.MIN_VALUE
+    private var receiptWatermarkMillis = Long.MIN_VALUE
     private data class HeldEvidence(
         val side: ActivePokemonSide, var appearance: Appearance?, val evidence: UseEvidence
     )
@@ -86,7 +89,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             (identity.basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
                 identity.basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
                 identity.basis.startsWith("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE") ||
-                identity.basis.contains("EFFECTIVENESS_TEXT") || identity.basis.contains("_CORROBORATED_BY_"))
+                identity.basis.contains("EFFECTIVENESS_TEXT") || identity.basis.contains("_CORROBORATED_BY_") ||
+                (identity.basis.startsWith("BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE") &&
+                    identity.cadenceSampleCount >= 2))
         if (trusted && identity.moveDurationNanos > 0) knownDurations[key] = identity.moveDurationNanos
         else knownDurations.remove(key)
     }
@@ -104,6 +109,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             decisionObservedAtNanos = Long.MIN_VALUE
             chargedPauses.clear()
             watermarkNanos = atNanos
+            receiptWatermarkMillis = article.recordedAt
             combatConfirmed = false
             accountingFromNanos = Long.MAX_VALUE
             attemptFromNanos = atNanos
@@ -113,6 +119,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         if (screenIgnored || atNanos < attemptFromNanos) return emptyList()
         fainted.observe(article)
         watermarkNanos = max(watermarkNanos, atNanos)
+        receiptWatermarkMillis = max(receiptWatermarkMillis, article.recordedAt)
         if (article.payload is MatchStarted) {
             // A delayed GO must not discard hits or charged-phase pauses that
             // were already established by independently witnessed combat.
@@ -309,14 +316,23 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
 
     private fun mergeWindow(use: PendingUse): Long {
         val duration = use.appearance?.speciesName?.let { knownDurations[use.attackingSide to it.lowercase()] }
-        // Incinerate's flash and settled HP loss can be farther apart than a
-        // whole Water Gun cycle. Never widen a window from a cadence hypothesis.
-        return duration?.let { (it * 45 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, 1_000_000_000L) } ?: USE_CLUSTER_WINDOW_NANOS
+        // Recorded Water Shuriken losses precede their border flashes by up to
+        // 792 ms, just over half its 1.5 s cycle. Allow this measured phase gap,
+        // still bounded below a full cycle and never from a cadence hypothesis.
+        // Distinct losses and distinct pulse onsets remain distinct uses.
+        return duration?.let { (it * 60 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, 1_000_000_000L) } ?: USE_CLUSTER_WINDOW_NANOS
     }
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {
         chargedPauses.filter { atNanos > it.end + DELIVERY_GRACE_NANOS }.forEach { it.held.clear() }
-        val ready = pending.filter { atNanos - it.anchorNanos > mergeWindow(it) + DELIVERY_GRACE_NANOS }
+        val ready = pending.filter {
+            atNanos - it.anchorNanos > mergeWindow(it) + DELIVERY_GRACE_NANOS &&
+                // A slow HP witness may publish an older capture after another
+                // lane has advanced the source watermark. Give that newly
+                // received impact the same bounded corroboration opportunity;
+                // otherwise it expires immediately and its flash is counted again.
+                receiptWatermarkMillis - it.firstImpactReceivedAt >= DELIVERY_GRACE_NANOS / 1_000_000L
+        }
             .sortedBy { it.anchorNanos }
         pending.removeAll(ready.toSet())
         return ready.flatMap(::finalize)

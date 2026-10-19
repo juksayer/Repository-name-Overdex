@@ -7,6 +7,33 @@ import org.junit.Test
 class TeamRosterSpeciesAttributorTest {
     private val roster = setOf("Chandelure", "Camerupt", "Gourgeist")
 
+    @Test fun `Obstagoon badge fills Lucario vacancy before opposing Camerupt enters`() {
+        val tracker = EntryAnnouncementSideTracker()
+        tracker.observeFaint(ActivePokemonSide.PLAYER, "Lucario", 123_152_000_000L, "lucario-ko")
+        tracker.observeBadge(ActivePokemonSide.PLAYER, "Obstagoon", "obstagoon-badge", 123_330_000_000L)
+        assertEquals(null, tracker.attribute("Camerupt", listOf("Greninja", "Lucario", "Obstagoon"),
+            entryAtNanos = 125_791_000_000L))
+        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Camerupt", "camerupt-badge", 126_839_000_000L)
+        assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Camerupt", emptyList())?.side)
+    }
+
+    @Test fun `delayed faint delivery cannot reopen a vacancy already filled in source time`() {
+        val tracker = EntryAnnouncementSideTracker()
+        tracker.observeBadge(ActivePokemonSide.PLAYER, "Obstagoon", "obstagoon-badge", 123_330_000_000L)
+        tracker.observeFaint(ActivePokemonSide.PLAYER, "Lucario", 123_152_000_000L, "lucario-ko")
+        assertEquals(null, tracker.attribute("Camerupt", emptyList(), entryAtNanos = 125_791_000_000L))
+    }
+
+    @Test fun `old badge or lingering fainted species does not fill a new vacancy`() {
+        val tracker = EntryAnnouncementSideTracker()
+        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Vaporeon", "earlier-appearance", 5_000_000_000L)
+        tracker.observeFaint(ActivePokemonSide.OPPONENT, "Sealeo", 10_000_000_000L, "sealeo-ko")
+        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Sealeo", "lingering-badge", 10_100_000_000L)
+        val entry = tracker.attribute("Sneasel", emptyList(), entryAtNanos = 11_000_000_000L)
+        assertEquals(ActivePokemonSide.OPPONENT, entry?.side)
+        assertEquals("ENTRY_AFTER_SINGLE_SIDE_FAINT", entry?.basis)
+    }
+
     @Test fun `Vaporeon entry following Sealeo faint uses that opponent vacancy without roster exclusion`() {
         val tracker = EntryAnnouncementSideTracker()
         tracker.observeFaint(ActivePokemonSide.OPPONENT, "Sealeo", 76_560_000_000L, "sealeo-ko")
@@ -40,7 +67,7 @@ class TeamRosterSpeciesAttributorTest {
         val tracker = EntryAnnouncementSideTracker()
         val stale = listOf("Samurott", "Ceruledge", "Machamp")
         assertEquals(null, tracker.attribute("Abomasnow", stale))
-        tracker.observeBadge(ActivePokemonSide.PLAYER, "Abomasnow", "player-badge")
+        tracker.observeBadge(ActivePokemonSide.PLAYER, "Abomasnow", "player-badge", 0L)
         val resolved = tracker.attribute("Abomasnow", stale)
         assertEquals(ActivePokemonSide.PLAYER, resolved?.side)
         assertEquals(listOf("player-badge"), resolved?.evidenceArticleIds)
@@ -49,16 +76,16 @@ class TeamRosterSpeciesAttributorTest {
     @Test fun `independent badges beat even a complete roster exclusion and preserve mirrors`() {
         val tracker = EntryAnnouncementSideTracker()
         val stale = listOf("Samurott", "Ceruledge", "Machamp")
-        tracker.observeBadge(ActivePokemonSide.PLAYER, "Gourgeist", "player")
+        tracker.observeBadge(ActivePokemonSide.PLAYER, "Gourgeist", "player", 0L)
         assertEquals(ActivePokemonSide.PLAYER, tracker.attribute("Gourgeist", stale, true)?.side)
-        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Gourgeist", "opponent")
+        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Gourgeist", "opponent", 0L)
         assertEquals(null, tracker.attribute("Gourgeist", stale, true))
     }
 
     @Test fun `opponent badge beats a saved player member without erasing the badge on reset of assumptions`() {
         val tracker = EntryAnnouncementSideTracker()
         tracker.attribute("Gourgeist", roster)
-        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Gourgeist", "opponent")
+        tracker.observeBadge(ActivePokemonSide.OPPONENT, "Gourgeist", "opponent", 0L)
         tracker.discardRosterAssumptions()
         assertEquals(ActivePokemonSide.OPPONENT, tracker.attribute("Gourgeist", roster)?.side)
         tracker.reset()

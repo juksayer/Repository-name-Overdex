@@ -1,7 +1,7 @@
 package com.example.overdex.model.observation
 
 /**
- * A microphone PCM-16 snippet at the moment it entered Overdex's evidence pipeline.
+ * A playback or microphone PCM-16 snippet, with interleaved channels in capture order.
  * The byte array is transient; AudioCaptureWitness must durably preserve it before testimony.
  */
 data class CapturedAudioFrame(

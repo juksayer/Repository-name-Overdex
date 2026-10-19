@@ -471,4 +471,7 @@ data class ArchivedSpeciesCheckMeasured(
 
 @Serializable
 @SerialName("audio_input_status")
-data class ArchivedAudioInputStatus(val captureSource: String, val state: String) : ArchivedTestimonyPayload
+data class ArchivedAudioInputStatus(
+    val captureSource: String, val state: String,
+    val sampleRateHz: Int? = null, val channelCount: Int? = null,
+) : ArchivedTestimonyPayload

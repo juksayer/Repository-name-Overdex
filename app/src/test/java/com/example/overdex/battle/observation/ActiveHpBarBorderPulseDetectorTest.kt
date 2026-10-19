@@ -24,6 +24,21 @@ class ActiveHpBarBorderPulseDetectorTest {
         whiteFraction = 0.08f
     )
 
+    @Test fun `small blue background patches do not become hits but broad blue flashes do`() {
+        val detector = ActiveHpBarBorderPulseDetector()
+        warm(detector)
+        for ((i, fraction) in listOf(.107f, .147f, .238f).withIndex()) {
+            val skyAtEdge = neutral.copy(blueFraction = fraction, whiteFraction = 1f - fraction)
+            assertNull(detector.acceptPulse("idle-blue-$i", 500_000_000L + i * 500_000_000L, skyAtEdge))
+            detector.acceptPulse("white-$i", 600_000_000L + i * 500_000_000L, neutral)
+        }
+        val powderSnow = ActiveHpBarBorderAppearance(.2f, .55f, 1f, 1f, 0f, 0f, blueFraction = 1f)
+        val pulse = detector.acceptPulse("powder-snow", 2_500_000_000L, powderSnow)
+        requireNotNull(pulse)
+        assertEquals(0f, pulse.orangeFractionAtOnset)
+        assertNull(pulse.previousPulseNanos)
+    }
+
     @Test
     fun `one prolonged border flash creates only one pulse edge`() {
         val detector = ActiveHpBarBorderPulseDetector()

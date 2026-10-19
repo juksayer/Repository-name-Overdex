@@ -429,6 +429,75 @@ class FastMoveUseInferenceTest {
         assertEquals(1, inference.flush().size)
     }
 
+    @Test fun `slow HP receipt gets a corroboration window even after other readers advance`() {
+        val inference = startedInference()
+        inference.accept(article("greninja", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Greninja", 658)))
+        inference.observeIdentity(com.example.overdex.battle.custody.FastMoveIdentified(
+            ActivePokemonSide.PLAYER, "Greninja", "Water Shuriken", 1_500_000_000L, null, 0,
+            "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"))
+        inference.accept(article("newer-frame", 3_200_000_000L, RawTestimony("other reader")))
+        assertTrue(inference.accept(article("late-loss", 1_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .7f, .1f))
+            .copy(recordedAt = 3_300L)).isEmpty())
+        assertTrue(inference.accept(article("newer-frame-2", 3_600_000_000L, RawTestimony("other reader"))).isEmpty())
+        inference.accept(article("late-flash", 1_790_000_000L, pulse(ActivePokemonSide.OPPONENT))
+            .copy(recordedAt = 3_700L))
+        val use = inference.flush().single()
+        assertEquals(setOf("late-loss", "late-flash"), use.predecessorIds.map { it.value }.toSet())
+        assertEquals(1_000_000_000L, use.observedArticle.monotonicTimeNanos)
+    }
+
+    @Test fun `known Water Gun keeps consecutive losses and flashes in their own half second cycles`() {
+        val inference = startedInference()
+        inference.accept(article("vaporeon", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134)))
+        inference.observeIdentity(com.example.overdex.battle.custody.FastMoveIdentified(
+            ActivePokemonSide.OPPONENT, "Vaporeon", "Water Gun", 500_000_000L, null, 0,
+            "ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE"))
+        repeat(3) { i ->
+            val at = 1_000_000_000L + i * 500_000_000L
+            inference.accept(article("loss-$i", at, ActiveHpBarDamageTickMeasured(
+                ActivePokemonSide.PLAYER, .9f - i * .1f, .8f - i * .1f, .1f)))
+            inference.accept(article("flash-$i", at + 100_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        }
+        val uses = inference.flush()
+        assertEquals(3, uses.size)
+        uses.forEachIndexed { i, use ->
+            assertEquals(setOf("loss-$i", "flash-$i"), use.predecessorIds.map { it.value }.toSet())
+        }
+    }
+
+    @Test fun `measured opponent Incinerate combines the recorded staggered damage and pulse pairs`() {
+        val inference = startedInference()
+        inference.accept(article("camerupt", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Camerupt", 323)))
+        inference.observeIdentity(com.example.overdex.battle.custody.FastMoveIdentified(
+            ActivePokemonSide.OPPONENT, "Camerupt", "Incinerate", 2_500_000_000L,
+            2_414_816_000L, 2, "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"))
+        // Original Moondrop source times from the paired 19:42 battle.
+        val uses = mutableListOf<FastMoveUseDerivation>()
+        uses += inference.accept(article("loss1", 72_798_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .5425532f, .3809524f, .1616008f)))
+        uses += inference.accept(article("flash1", 73_453_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        uses += inference.accept(article("loss2", 75_690_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .3809524f, .22751322f, .15343916f)))
+        uses += inference.accept(article("flash2", 76_296_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        uses += inference.flush()
+        assertEquals(2, uses.size)
+        assertEquals(listOf(setOf("loss1", "flash1"), setOf("loss2", "flash2")),
+            uses.map { it.predecessorIds.map { id -> id.value }.toSet() })
+    }
+
+    @Test fun `an energy preference alone does not widen opponent hit fusion`() {
+        val inference = startedInference()
+        inference.accept(article("camerupt", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Camerupt", 323)))
+        inference.observeIdentity(com.example.overdex.battle.custody.FastMoveIdentified(
+            ActivePokemonSide.OPPONENT, "Camerupt", "Incinerate", 2_500_000_000L,
+            2_400_000_000L, 2, "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"))
+        inference.accept(article("loss", 72_798_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .6f, .5f, .1f)))
+        inference.accept(article("flash", 73_453_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(2, inference.flush().size)
+    }
+
     @Test
     fun `two pulse onsets 420 ms apart remain separate even without a name`() {
         val inference = startedInference()

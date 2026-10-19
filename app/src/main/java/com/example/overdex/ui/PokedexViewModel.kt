@@ -308,10 +308,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ActionNode("Records", InstrumentCommand.OpenBattleRecords),
                 ActionNode("History", InstrumentCommand.OpenBattleHistory)
             )),
-            DirectoryNode("INTUEOR", listOf(
-                ActionNode("Calibration", InstrumentCommand.OpenCalibration),
-                ActionNode("Signal Observatory", InstrumentCommand.OpenSignalObservatory)
-            )),
+            ActionNode("INTUEOR", InstrumentCommand.OpenSignalObservatory),
             ActionNode("PROFILE", InstrumentCommand.OpenProfile)
         )
     )
@@ -846,12 +843,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Opponent HP Evidence Capture Witness",
                 onCaptured = { crop, _, at ->
                     // Keep one actual battlefield frame per match for Draggy Boxes.
-                    // Both HP bars must have been visible close to this frame, after
-                    // match start, so loading screens and result screens do not replace it.
+                    // Both HP bars must have been visible close to this frame.
+                    // A preserved battle surface also qualifies when GO was
+                    // missed; otherwise a new device stays on bundled samples
+                    // even after recording an entire real battle.
                     val bothBarsVisible = listOf(playerHpFrameHub, opponentHpFrameHub).all { hub ->
                         hub.latestSample()?.let { kotlin.math.abs(at - it.capturedAtMonotonicTimeNanos) <= 500_000_000L } == true
                     }
-                    if (!calibrationReferenceSaved && bothBarsVisible && match.matchStarted.replayCache.isNotEmpty()) {
+                    val battleSurfaceObserved = match.matchStarted.replayCache.isNotEmpty() ||
+                        session.firstLiveCombatArticle.value != null
+                    if (!calibrationReferenceSaved && bothBarsVisible && battleSurfaceObserved) {
                         calibrationReferenceSaved = calibrationReferenceStore.remember(crop.artifact)
                     }
                 }

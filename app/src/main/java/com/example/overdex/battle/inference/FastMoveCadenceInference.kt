@@ -104,6 +104,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var corroborationSignature: String = "",
         var identityBasis: String = "",
         var identityConfidence: Float = 0f,
+        // Established measurement families survive a QTE's interval reset.
+        var identityCadenceFamilies: Set<EvidenceFamily> = emptySet(),
         val referenceSounds: MutableList<ReferenceSoundEvidence> = mutableListOf(),
     )
 
@@ -199,6 +201,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 identificationEvidence = listOf(active.speciesArticleId, article.id),
                 identityBasis = "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES",
                 identityConfidence = article.confidence ?: 1f,
+                identityCadenceFamilies = emptySet(),
                 assumedHigherEnergyTieBreak = false,
             )
             states[ActivePokemonSide.PLAYER] = updated
@@ -296,6 +299,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                     ((article.confidence ?: 1f) * (configuredMove?.confidence ?: 1f)).coerceIn(0f, 1f)
                 } else remembered?.identityConfidence ?: 0f,
                 assumedHigherEnergyTieBreak = retainedMove != null && remembered.assumedHigherEnergyTieBreak,
+                identityCadenceFamilies = if (retainedMove != null) remembered.identityCadenceFamilies else emptySet(),
             )
             states[species.side] = state
             combatants[combatantKey] = state
@@ -574,7 +578,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             )
         val priorEvidence = if (state.identifiedMove == resolved?.move?.move) state.identificationEvidence else emptyList()
         if (newlyIdentified) {
-            state.identifiedMove = resolved!!.move.move
+            val sameMove = state.identifiedMove == resolved!!.move.move
+            state.identityCadenceFamilies =
+                (if (sameMove) state.identityCadenceFamilies else emptySet()) + resolved.evidence.map(::family)
+            state.identifiedMove = resolved.move.move
             state.selectedBasis = resolved.basis
             state.assumedHigherEnergyTieBreak = resolved.move.assumedHigherEnergyTieBreak
             state.corroborationSignature = corroborationSignature
@@ -832,6 +839,17 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
         val establishedTurns = state.identifiedMove?.turns
         val proposedTurns = chosen.move.turns
+        if (state.identifiedMove != chosen.move && !state.assumedHigherEnergyTieBreak &&
+            EvidenceFamily.IMPACT in state.identityCadenceFamilies &&
+            supporting.none { it.family == EvidenceFamily.IMPACT && it.evidence.size >= REQUIRED_INTERVALS } &&
+            supporting.count { it.family != EvidenceFamily.VISUAL } < 2
+        ) {
+            // A camera bob after Earth Power is not evidence that Camerupt's
+            // previously measured Incinerate became Ember. Keep the raw motion,
+            // but require renewed impact evidence or independent corroboration
+            // to replace an identity established from actual hit intervals.
+            return null
+        }
         if (!state.assumedHigherEnergyTieBreak && establishedTurns != null && establishedTurns > 0 &&
             proposedTurns != null && proposedTurns > establishedTurns && proposedTurns % establishedTurns == 0
         ) {

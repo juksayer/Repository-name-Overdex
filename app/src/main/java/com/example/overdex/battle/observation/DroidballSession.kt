@@ -48,6 +48,7 @@ class DroidballSession(val match: Match) {
         }
         scope.launch {
             match.articles.collect { article ->
+                if (article.payload.closesCountdownCapture()) countdownCaptureFinished = true
                 val announcement = (article.payload as? RawTestimony)?.data as? String
                 if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                     announcement?.trim()?.startsWith("Go,", ignoreCase = true) == true
@@ -167,6 +168,14 @@ class DroidballSession(val match: Match) {
         const val COUNTDOWN_ARM_WINDOW_NANOS = 20_000_000_000L
         const val COUNTDOWN_AFTER_ENTRY_NANOS = 12_000_000_000L
     }
+}
+
+/** Positive combat evidence retires countdown work without fabricating an observed GO. */
+internal fun TestimonyPayload.closesCountdownCapture(): Boolean = when (this) {
+    is com.example.overdex.battle.custody.FastMoveUseObserved,
+    com.example.overdex.battle.custody.AttackIncoming,
+    GetReadyWitnessed, ChargeMoveUsedAnnounced -> true
+    else -> false
 }
 
 enum class DroidballSessionPhase {

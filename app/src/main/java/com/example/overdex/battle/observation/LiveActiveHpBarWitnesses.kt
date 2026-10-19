@@ -435,7 +435,8 @@ internal class ActiveHpBarDamageTickDetector {
     fun accept(
         filledFraction: Float,
         measurementConfidence: Float,
-        monotonicTimeNanos: Long
+        monotonicTimeNanos: Long,
+        measuredBarWidth: Int? = null,
     ): ActiveHpBarDamageTickMeasurement? {
         if (!filledFraction.isFinite() || filledFraction !in 0f..1f) return null
         val current = filledFraction
@@ -458,7 +459,16 @@ internal class ActiveHpBarDamageTickDetector {
         // The same active combatant cannot heal. An orange hit frame or a
         // tracking jump must not reset its baseline and manufacture another hit
         // when the real fill becomes visible again. Entry/species cues reset it.
-        if (baseline - current < MIN_DAMAGE_FRACTION) {
+        // The locator searches three pixels around an end cap, and antialiasing
+        // can shift the chosen edge within that range. Such a change
+        // was counted as an attack on a full, undamaged Abomasnow in the paired
+        // idle test. Express this uncertainty in source pixels, not a fixed HP
+        // percentage. Border pulses remain independent evidence for tiny hits.
+        val minimumLoss = measuredBarWidth?.takeIf { it > 4 }?.let { width ->
+            val innerWidth = width - 2 * max(2, width / 80)
+            max(MIN_DAMAGE_FRACTION, EDGE_UNCERTAINTY_PIXELS / innerWidth)
+        } ?: MIN_DAMAGE_FRACTION
+        if (baseline - current < minimumLoss) {
             pendingAfterFraction = null
             pendingChangedAtNanos = null
             return null
@@ -506,6 +516,7 @@ internal class ActiveHpBarDamageTickDetector {
 
     private companion object {
         const val MIN_DAMAGE_FRACTION = 0.006f
+        const val EDGE_UNCERTAINTY_PIXELS = 3.5f
         // One fill pixel on the approximately 190 px captured bar is 0.0053.
         const val UPDATE_EPSILON = 0.006f
         const val SETTLE_NANOS = 90_000_000L
@@ -567,7 +578,8 @@ internal class LiveActiveHpBarDamageTickWitness(
                             detector.accept(
                                 sample.measurement.filledFraction,
                                 sample.measurement.confidence,
-                                sample.capturedAtMonotonicTimeNanos
+                                sample.capturedAtMonotonicTimeNanos,
+                                sample.measurement.width,
                             )
                         } ?: return@collect
                         match.custody.submitTestimony(

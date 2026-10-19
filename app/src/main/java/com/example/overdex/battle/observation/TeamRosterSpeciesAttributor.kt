@@ -65,21 +65,36 @@ class OpeningCrySideGate {
  */
 class EntryAnnouncementSideTracker {
     private data class Vacancy(val species: String?, val atNanos: Long, val articleId: String)
+    private data class Badge(val species: String, val atNanos: Long)
     private val sideBySpecies = linkedMapOf<String, ActivePokemonSide>()
     private val witnessedSides = linkedMapOf<String, MutableMap<ActivePokemonSide, String>>()
     private val vacancies = linkedMapOf<ActivePokemonSide, Vacancy>()
+    private val latestBadgeBySide = linkedMapOf<ActivePokemonSide, Badge>()
 
     @Synchronized
     fun observeFaint(side: ActivePokemonSide, speciesName: String?, atNanos: Long, articleId: String) {
+        val species = speciesName?.let(::normalizeEntrySpecies)
+        // Ball-count testimony may arrive after the replacement's badge. Source
+        // time, rather than publication order, decides whether a vacancy remains.
+        val badge = latestBadgeBySide[side]
+        if (species != null && badge != null && badge.atNanos >= atNanos && badge.species != species) return
         if (atNanos >= (vacancies[side]?.atNanos ?: Long.MIN_VALUE)) {
-            vacancies[side] = Vacancy(speciesName?.let(::normalizeEntrySpecies), atNanos, articleId)
+            vacancies[side] = Vacancy(species, atNanos, articleId)
         }
     }
 
     /** Only independent, side-located badge readings belong here, never our own inferences. */
     @Synchronized
-    fun observeBadge(side: ActivePokemonSide, speciesName: String, articleId: String) {
-        witnessedSides.getOrPut(normalizeEntrySpecies(speciesName)) { linkedMapOf() }[side] = articleId
+    fun observeBadge(side: ActivePokemonSide, speciesName: String, articleId: String, atNanos: Long) {
+        val species = normalizeEntrySpecies(speciesName)
+        witnessedSides.getOrPut(species) { linkedMapOf() }[side] = articleId
+        if (atNanos >= (latestBadgeBySide[side]?.atNanos ?: Long.MIN_VALUE)) {
+            latestBadgeBySide[side] = Badge(species, atNanos)
+        }
+        val vacancy = vacancies[side]
+        if (vacancy != null && atNanos >= vacancy.atNanos && species != vacancy.species) {
+            vacancies.remove(side)
+        }
     }
 
     @Synchronized
@@ -87,6 +102,7 @@ class EntryAnnouncementSideTracker {
         sideBySpecies.clear()
         witnessedSides.clear()
         vacancies.clear()
+        latestBadgeBySide.clear()
     }
 
     @Synchronized

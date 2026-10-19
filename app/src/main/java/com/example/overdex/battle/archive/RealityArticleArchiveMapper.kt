@@ -141,7 +141,8 @@ object RealityArticleArchiveMapper {
                 cropBottom = p.cropProvenance.bounds.bottom,
                 overlayBounds = p.overlayBounds,
             )
-            is com.example.overdex.battle.custody.AudioInputStatus -> ArchivedAudioInputStatus(p.captureSource, p.state)
+            is com.example.overdex.battle.custody.AudioInputStatus -> ArchivedAudioInputStatus(
+                p.captureSource, p.state, p.sampleRateHz, p.channelCount)
             is AudioCaptured -> ArchivedAudioCaptured(
                 artifactPath = p.artifact.relativePath,
                 sha256 = p.artifact.sha256,

@@ -57,7 +57,9 @@ class CueCenteredPcmCollector(
     private val postRollBytes: Int,
     private val bytesPerSecond: Int = 96_000, // 48 kHz mono PCM-16
     historyBytes: Int = bytesPerSecond * 8,
+    channelCount: Int = 1,
 ) {
+    private val bytesPerFrame = channelCount * 2
     private val history = ByteArray(historyBytes)
     private var next = 0
     private var size = 0
@@ -66,10 +68,11 @@ class CueCenteredPcmCollector(
     private val pending = ArrayDeque<AudioCaptureCue>()
 
     init {
-        require(bytesPerSecond > 0 && bytesPerSecond % 2 == 0)
+        require(channelCount in 1..2)
+        require(bytesPerSecond > 0 && bytesPerSecond % bytesPerFrame == 0)
         require(preRollBytes >= 0 && postRollBytes > 0)
-        require(preRollBytes % 2 == 0 && postRollBytes % 2 == 0)
-        require(historyBytes >= preRollBytes + postRollBytes && historyBytes % 2 == 0)
+        require(preRollBytes % bytesPerFrame == 0 && postRollBytes % bytesPerFrame == 0)
+        require(historyBytes >= preRollBytes + postRollBytes && historyBytes % bytesPerFrame == 0)
     }
 
     fun cue(cue: AudioCaptureCue): CueCenteredPcmUnavailable? {
@@ -80,7 +83,7 @@ class CueCenteredPcmCollector(
     }
 
     fun ingest(chunk: ByteArray, endedAtMonotonicNanos: Long, endedAtWallTimeMillis: Long): List<CueCenteredPcmResult> {
-        require(chunk.size % 2 == 0)
+        require(chunk.size % bytesPerFrame == 0)
         if (chunk.isEmpty()) return emptyList()
         val completed = mutableListOf<CueCenteredPcmResult>()
         val previousEnd = endNanos
@@ -115,8 +118,9 @@ class CueCenteredPcmCollector(
                 continue
             }
             if (startAt + duration(length) > endedAtMonotonicNanos) continue
-            // Round down to a whole PCM-16 sample, never split its two bytes.
-            val from = ((startAt - firstAt) * bytesPerSecond / 1_000_000_000L / 2 * 2).toInt()
+            // Keep the entire L/R frame together, including sub-frame visual cue times.
+            val from = ((startAt - firstAt) * bytesPerSecond / 1_000_000_000L /
+                bytesPerFrame * bytesPerFrame).toInt()
             if (from + length > size) continue
             val pcm = ByteArray(length)
             val source = (oldest + from) % history.size

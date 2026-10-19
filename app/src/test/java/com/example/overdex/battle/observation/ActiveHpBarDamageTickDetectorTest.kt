@@ -5,6 +5,33 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ActiveHpBarDamageTickDetectorTest {
+    @Test fun `paired idle alt cannot damage full Abomasnow on either device`() {
+        for (device in listOf("pixel", "moondrop")) {
+            val detector = ActiveHpBarDamageTickDetector()
+            val lines = requireNotNull(javaClass.getResource(
+                "/battle/hp/2026-10-18-idle-alt/$device-undamaged-abomasnow.tsv")).readText().lineSequence()
+            val ticks = lines.filter { it.firstOrNull()?.isDigit() == true }.mapNotNull { line ->
+                val row = line.split('\t')
+                detector.accept(row[1].toFloat(), row[3].toFloat(), row[0].toLong(), row[2].toInt())
+            }.toList()
+            assertEquals("$device undamaged HP must not establish attacks: $ticks", emptyList<Any>(), ticks)
+        }
+    }
+
+    @Test fun `pixel uncertainty scales with captured bar size and still accepts clear losses`() {
+        for (width in listOf(100, 200, 400)) {
+            val detector = ActiveHpBarDamageTickDetector()
+            val innerWidth = width - 2 * maxOf(2, width / 80)
+            detector.accept(1f, .9f, 0L, width)
+            val jitter = 1f - 3f / innerWidth
+            assertNull(detector.accept(jitter, .9f, 100_000_000L, width))
+            assertNull(detector.accept(jitter, .9f, 250_000_000L, width))
+            detector.accept(.95f, .9f, 500_000_000L, width)
+            val tick = detector.accept(.95f, .9f, 700_000_000L, width)!!
+            assertEquals(.05f, tick.lostFraction, .0001f)
+        }
+    }
+
     @Test
     fun `one settled decrease emits one measured damage tick`() {
         val detector = ActiveHpBarDamageTickDetector()

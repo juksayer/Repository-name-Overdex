@@ -28,6 +28,28 @@ import kotlinx.coroutines.runBlocking
 class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
 
+    @Test fun `post charge motion cannot replace measured Incinerate with Ember but repeated hits can`() = runBlocking {
+        val camerupt = Pokemon(323, "Camerupt", listOf(PokemonType.FIRE, PokemonType.GROUND), "Hoenn",
+            fastMoves = listOf(move("Incinerate", 5, 20), move("Ember", 2, 6)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(camerupt))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Camerupt", 323)))
+        engine.accept(borderCadence("hit1", 2_450_000_000L).copy(monotonicTimeNanos = 68_000_000_000L))
+        engine.accept(borderCadence("hit2", 2_414_816_000L).copy(monotonicTimeNanos = 70_810_000_000L))
+        assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        engine.accept(article("charge", com.example.overdex.battle.custody.ChargeMoveUsedAnnounced)
+            .copy(monotonicTimeNanos = 95_101_000_000L))
+        val noise = listOf(101_100_000_000L, 102_145_000_000L).flatMap { at ->
+            engine.accept(article("bob-$at", ActiveHpBarMotionCadenceMeasured(
+                ActivePokemonSide.OPPONENT, 1_027_627_884L, 20f, 6)).copy(monotonicTimeNanos = at))
+        }
+        assertTrue(noise.none { (it.payload as? FastMoveIdentified)?.moveName == "Ember" })
+        assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        // The established move remains refutable by fresh direct evidence.
+        engine.accept(borderCadence("new-hit1", 1_000_000_000L).copy(monotonicTimeNanos = 110_000_000_000L))
+        engine.accept(borderCadence("new-hit2", 1_000_000_000L).copy(monotonicTimeNanos = 111_000_000_000L))
+        assertEquals("Ember", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
     @Test fun `repeated Spark spectra correct Tackle and ignore the requesting player cue`() = runBlocking {
         val engine = audioEngine()
         engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))

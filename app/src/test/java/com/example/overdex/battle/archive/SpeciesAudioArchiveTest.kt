@@ -22,6 +22,19 @@ class SpeciesAudioArchiveTest {
         val archived = RealityArticleArchiveMapper.map(article(AudioInputStatus("PLAYBACK_POKEMON_GO", "QUIET_OR_UNAVAILABLE"))).payload
         assertEquals(archived, Json.decodeFromString<ArchivedTestimonyPayload>(Json.encodeToString(archived)))
     }
+    @Test fun `actual recorder format survives export while older statuses remain readable`() {
+        for (channels in 1..2) {
+            val archived = RealityArticleArchiveMapper.map(article(AudioInputStatus(
+                "PLAYBACK_POKEMON_GO", "SIGNAL_PRESENT", 48_000, channels))).payload
+            val restored = Json.decodeFromString<ArchivedTestimonyPayload>(Json.encodeToString(archived)) as ArchivedAudioInputStatus
+            assertEquals(channels, restored.channelCount)
+            assertEquals(48_000, restored.sampleRateHz)
+        }
+        val old = """{"type":"audio_input_status","captureSource":"PLAYBACK_POKEMON_GO","state":"SIGNAL_PRESENT"}"""
+        val restored = Json.decodeFromString<ArchivedTestimonyPayload>(old) as ArchivedAudioInputStatus
+        assertNull(restored.channelCount)
+        assertNull(restored.sampleRateHz)
+    }
     @Test fun `older microphone archives default their capture source without losing fields`() {
         val old = """{"type":"audio_captured","artifactPath":"audio.wav","sha256":"abc","byteCount":44,"mediaType":"audio/wav","sampleRateHz":16000,"channelCount":1,"durationNanos":1000000000,"cueKind":"COUNTDOWN_GO"}"""
         val restored = Json.decodeFromString<ArchivedTestimonyPayload>(old) as ArchivedAudioCaptured

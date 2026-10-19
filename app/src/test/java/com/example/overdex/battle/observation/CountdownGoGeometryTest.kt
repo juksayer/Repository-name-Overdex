@@ -5,6 +5,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CountdownGoGeometryTest {
+    @Test fun `Abomasnow QTE highlights are overlapping artwork not adjacent GO letters`() {
+        assertNull(CountdownGoGeometry.score(
+            CountdownComponentGeometry(12, 115, 280, 366, 21_552),
+            CountdownComponentGeometry(209, 163, 391, 366, 21_037),
+            404, 426,
+        ))
+    }
+
     @Test
     fun `scores the paired GO forms preserved in a real countdown crop`() {
         val score = CountdownGoGeometry.score(

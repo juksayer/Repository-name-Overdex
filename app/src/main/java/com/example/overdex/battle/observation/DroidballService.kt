@@ -48,8 +48,9 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.overdex.battle.audio.AudioCaptureCue
-import com.example.overdex.battle.audio.CueCenteredPcmCollector
+import com.example.overdex.battle.audio.BattleAudioCapturePlan
 import com.example.overdex.battle.audio.BattleCryCueKind
+import com.example.overdex.battle.audio.Pcm16CaptureFormat
 import com.example.overdex.model.observation.CapturedAudioFrame
 import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
@@ -293,7 +294,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private val motionPulseDetector = DeviceMotionPulseDetector()
     private val audioCollectorLock = Any()
     // Retain eight seconds in RAM; only a 500 ms pre / 700 ms post cue window is saved.
-    private val cueCenteredAudio = CueCenteredPcmCollector(preRollBytes = 48_000, postRollBytes = 67_200)
+    private var cueCenteredAudio = Pcm16CaptureFormat().cueCollector()
     private var firstFrameLogged = false
     private var lastPublishedFrameNanos: Long? = null
 
@@ -617,89 +618,89 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     /** Prefer game-only playback. A silent permitted stream stays explicitly silent. */
     private fun startAudioCapture() {
+        var captureFormat: Pcm16CaptureFormat? = null
         fun status(source: String, state: String) {
-            _audioInputStatus.value = com.example.overdex.battle.custody.AudioInputStatus(source, state)
-            Log.i("ODX_AUDIO_INPUT", "source=$source state=$state")
+            _audioInputStatus.value = com.example.overdex.battle.custody.AudioInputStatus(
+                source, state, captureFormat?.sampleRateHz, captureFormat?.channelCount)
+            Log.i("ODX_AUDIO_INPUT", "source=$source state=$state " +
+                "rate=${captureFormat?.sampleRateHz} channels=${captureFormat?.channelCount}")
         }
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             _audioCaptureAvailable.value = false
             status("NONE", "PERMISSION_UNAVAILABLE")
             return
         }
-        val sampleRateHz = 48_000
-        val channelConfig = AudioFormat.CHANNEL_IN_MONO
         val encoding = AudioFormat.ENCODING_PCM_16BIT
-        val minimumBuffer = AudioRecord.getMinBufferSize(sampleRateHz, channelConfig, encoding)
-        if (minimumBuffer <= 0) {
-            _audioCaptureAvailable.value = false
-            status("NONE", "FORMAT_UNAVAILABLE")
-            return
-        }
-        val bufferSize = maxOf(minimumBuffer, sampleRateHz / 5 * 2)
-        var source = "PLAYBACK_POKEMON_GO"
-        fun startRecord(create: () -> AudioRecord): AudioRecord? {
+        val started = BattleAudioCapturePlan.start { request ->
             var candidate: AudioRecord? = null
-            return try {
-                candidate = create()
+            try {
+                val format = request.format
+                val channelConfig = if (format.channelCount == 2) AudioFormat.CHANNEL_IN_STEREO
+                    else AudioFormat.CHANNEL_IN_MONO
+                val minimumBuffer = AudioRecord.getMinBufferSize(format.sampleRateHz, channelConfig, encoding)
+                check(minimumBuffer > 0) { "Unsupported PCM format: $format" }
+                val bufferSize = maxOf(minimumBuffer, format.bytesForMillis(200))
+                candidate = if (request.source == "PLAYBACK_POKEMON_GO") {
+                    val uid = packageManager.getApplicationInfo("com.nianticlabs.pokemongo", 0).uid
+                    val capture = AudioPlaybackCaptureConfiguration.Builder(requireNotNull(mediaProjection))
+                        .addMatchingUid(uid)
+                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                        .build()
+                    AudioRecord.Builder()
+                        .setAudioFormat(AudioFormat.Builder().setSampleRate(format.sampleRateHz)
+                            .setChannelMask(channelConfig).setEncoding(encoding).build())
+                        .setBufferSizeInBytes(bufferSize)
+                        .setAudioPlaybackCaptureConfig(capture)
+                        .build()
+                } else {
+                    AudioRecord(MediaRecorder.AudioSource.MIC, format.sampleRateHz, channelConfig, encoding, bufferSize)
+                }
                 check(candidate.state == AudioRecord.STATE_INITIALIZED)
+                check(candidate.channelCount == format.channelCount && candidate.sampleRate == format.sampleRateHz &&
+                    candidate.audioFormat == encoding) { "Recorder format differs from requested $format" }
                 candidate.startRecording()
                 check(candidate.recordingState == AudioRecord.RECORDSTATE_RECORDING)
                 candidate
             } catch (error: Exception) {
                 try { candidate?.release() } catch (_: Exception) { }
-                Log.w("ODX_AUDIO_INPUT", "Could not start $source", error)
+                Log.w("ODX_AUDIO_INPUT", "Could not start ${request.source} ${request.format}", error)
                 null
             }
         }
-        val playback = startRecord {
-            val uid = packageManager.getApplicationInfo("com.nianticlabs.pokemongo", 0).uid
-            val capture = AudioPlaybackCaptureConfiguration.Builder(requireNotNull(mediaProjection))
-                .addMatchingUid(uid)
-                .addMatchingUsage(AudioAttributes.USAGE_GAME)
-                .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-                .build()
-            AudioRecord.Builder()
-                .setAudioFormat(AudioFormat.Builder().setSampleRate(sampleRateHz)
-                    .setChannelMask(channelConfig).setEncoding(encoding).build())
-                .setBufferSizeInBytes(bufferSize)
-                .setAudioPlaybackCaptureConfig(capture)
-                .build()
-        }
-        val record = playback ?: run {
-            status(source, "START_FAILED")
-            source = "MICROPHONE"
-            startRecord { AudioRecord(MediaRecorder.AudioSource.MIC, sampleRateHz, channelConfig, encoding, bufferSize) }
-        }
-        if (record == null) {
+        if (started == null) {
             _audioCaptureAvailable.value = false
-            status(source, "START_FAILED")
+            status("NONE", "START_FAILED")
             return
         }
+        val (request, record) = started
+        val source = request.source
+        // Use the verified recorder format for every byte count, timestamp duration and WAV header.
+        val format = Pcm16CaptureFormat(record.sampleRate, record.channelCount)
+        captureFormat = format
+        synchronized(audioCollectorLock) { cueCenteredAudio = format.cueCollector() }
         audioRecord = record
-        synchronized(audioCollectorLock) { cueCenteredAudio.reset() }
         _audioCaptureAvailable.value = true
         status(source, "RUNNING_AWAITING_SIGNAL")
         audioCaptureJob = serviceScope.launch(Dispatchers.IO) {
             // A short read keeps the rolling buffer responsive to visual cues.
-            val readBuffer = ByteArray(sampleRateHz / 50 * 2) // 20 ms
+            val readBuffer = ByteArray(format.bytesForMillis(20))
             var lastSignalAt = System.nanoTime()
             var lastState = "RUNNING_AWAITING_SIGNAL"
             var pcmSequence = 0L
             try {
                 while (kotlinx.coroutines.currentCoroutineContext().isActive) {
-                    val count = record.read(readBuffer, 0, readBuffer.size)
+                    val count = record.read(readBuffer, 0, readBuffer.size, AudioRecord.READ_BLOCKING)
                     if (count <= 0) { status(source, "READ_FAILED"); break }
+                    if (count % format.bytesPerFrame != 0) { status(source, "UNALIGNED_READ"); break }
                     val peak = com.example.overdex.battle.audio.PcmSignalLevel.peak(readBuffer, count)
                     val now = System.nanoTime()
                     val nowWallMillis = System.currentTimeMillis()
                     if (_livePcm.subscriptionCount.value > 0) {
-                        val samples = ShortArray(count / 2) { index ->
-                            ((readBuffer[index * 2].toInt() and 0xff) or
-                                (readBuffer[index * 2 + 1].toInt() shl 8)).toShort()
-                        }
+                        // Readers make their own mono projection; keep the source channels intact.
                         _livePcm.tryEmit(com.example.overdex.battle.audio.LivePcmChunk(
-                            com.example.overdex.battle.audio.Pcm16Audio(sampleRateHz, 1, samples),
+                            format.decode(readBuffer, count),
                             pcmSequence++, now, nowWallMillis, source
                         ))
                     }
@@ -721,8 +722,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         val capture = result as com.example.overdex.battle.audio.CueCenteredPcmCapture
                         _audioFrames.tryEmit(CapturedAudioFrame(
                             pcm16le = capture.pcm16le,
-                            sampleRateHz = sampleRateHz,
-                            channelCount = 1,
+                            sampleRateHz = format.sampleRateHz,
+                            channelCount = format.channelCount,
                             capturedAtWallTimeMillis = capture.startedAtWallTimeMillis,
                             capturedAtMonotonicTimeNanos = capture.startedAtMonotonicNanos,
                             cueArticleId = capture.cue.articleId,
@@ -795,8 +796,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     ) else BattleOverlay(
                     panelWidthPx = panelWidthPx,
                     initialLayout = savedBattleHudLayout,
-                    onDrag = { deltaX, deltaY -> moveOverlayBy(deltaX, deltaY) },
-                    onDragFinished = ::snapOverlayToNearestEdge,
+                    onDrag = { deltaX, deltaY ->
+                        if (overlayAnchoredToBattleHud) moveBattleHudBy(deltaX, deltaY)
+                        else moveOverlayBy(deltaX, deltaY)
+                    },
+                    onDragFinished = {
+                        if (overlayAnchoredToBattleHud) saveBattleHudPosition()
+                        else snapOverlayToNearestEdge()
+                    },
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
                     )

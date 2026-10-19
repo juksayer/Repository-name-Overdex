@@ -143,6 +143,9 @@ class MatchReplayModel(
         battlePresentationStartNanos,
         matchStartNanos,
     )
+    private val knockoutTrack = ReplayKnockoutTrack(timedArticles, mapOf(
+        "PLAYER" to playerIdentityTrack.appearances(), "OPPONENT" to opponentIdentityTrack.appearances(),
+    ))
     private val playerResourceTrack = ReplayResourceTrack(timedArticles, "PLAYER")
     private val opponentResourceTrack = ReplayResourceTrack(timedArticles, "OPPONENT")
     private val energyTrack = ReplayEnergyTrack(timedArticles, ::combatantFor)
@@ -172,6 +175,7 @@ class MatchReplayModel(
     private val possibleChargedMoves = chargedMovesBySpeciesName.entries.associate {
         normalizeSpeciesName(it.key) to it.value.filterNot(Move::isFast)
     }
+    private val playerChargedMoveLoadout = ReplayChargedMoveLoadout(timedArticles, chargedMovesBySpeciesName, ::combatantFor)
     private val bufferedMoveCache = mutableMapOf<String, Move?>()
     private val timedArticlesById = timedArticles.associateBy(ArchivedRealityArticle::articleId)
     private val replayQteMilestonesByPatternId = reconstructQteMilestones()
@@ -179,7 +183,7 @@ class MatchReplayModel(
         .flatten()
         .distinctBy { "${it.side}:${it.atNanos}:${it.label}" }
         .sortedBy { it.atNanos }
-    private val decisionTimers = ReplayDecisionTimers(timedArticles)
+    private val decisionTimers = ReplayDecisionTimers(timedArticles, knockoutTrack.knockouts)
     private val fastMoveChargeWindows = fastMoveExclusionWindows()
     private val recordedFastMoveUses = reconstructFastMoveUses()
     private val recordedChargedMoveUses = reconstructChargedMoveUses().map { use ->
@@ -190,8 +194,14 @@ class MatchReplayModel(
             playerIdentityTrack.nextAppearanceAfter(use.animationAtNanos),
             opponentIdentityTrack.nextAppearanceAfter(use.animationAtNanos),
         ).minOrNull()
-        if (use.isCompleted && nextEntry != null && nextEntry < use.impactAtNanos) {
-            use.copy(visualDurationNanos = nextEntry - use.animationAtNanos,
+        val beforeKo = knockoutTrack.knockouts.firstOrNull {
+            nextEntry != null && it.side != use.side && it.replacementAtNanos == nextEntry &&
+                it.presentationAtNanos > use.preparationAtNanos
+        }?.presentationAtNanos
+        val deadline = listOfNotNull(nextEntry, beforeKo).minOrNull()
+        if (use.isCompleted && deadline != null && deadline < use.impactAtNanos) {
+            val release = minOf(use.animationAtNanos, deadline - 300_000_000L).coerceAtLeast(use.preparationAtNanos)
+            use.copy(animationAtNanos = release, visualDurationNanos = (deadline - release).coerceAtLeast(1),
                 evidenceKinds = use.evidenceKinds + "PRESENTATION_FIT_BEFORE_SPECIES_CHANGE")
         } else use
     }
@@ -253,8 +263,8 @@ class MatchReplayModel(
             monotonicTimeNanos - milestone.atNanos in 0 until QTE_MILESTONE_VISUAL_NANOS
         }
         // The prebuilt tracks choose the correct known identity interval.
-        val player = alignKnockoutPose("PLAYER", applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), articles))
-        val opponent = alignKnockoutPose("OPPONENT", applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), articles))
+        val player = alignKnockoutPose("PLAYER", applyFaintState("PLAYER", playerIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos))
+        val opponent = alignKnockoutPose("OPPONENT", applyFaintState("OPPONENT", opponentIdentityTrack.combatantAt(monotonicTimeNanos), monotonicTimeNanos))
         // A ranked cry candidate stays measurable evidence only. It cannot
         // create a replay combatant or sprite without an identity article.
 
@@ -332,6 +342,7 @@ class MatchReplayModel(
             opponentResources = opponentResourceTrack.stateAt(monotonicTimeNanos),
             playerEnergy = player?.let { energyTrack.stateAt("PLAYER", it.speciesName, monotonicTimeNanos) },
             opponentEnergy = opponent?.let { energyTrack.stateAt("OPPONENT", it.speciesName, monotonicTimeNanos) },
+            playerChargedMoves = playerChargedMoveLoadout.movesFor(player),
             playerGeneratedEnergy = playerGeneratedEnergy,
             opponentGeneratedEnergy = opponentGeneratedEnergy,
             playerSpentEnergy = playerSpentEnergy,
@@ -354,12 +365,14 @@ class MatchReplayModel(
     private fun alignKnockoutPose(side: String, combatant: ReplayCombatant?): ReplayCombatant? {
         combatant ?: return null
         val recordedAt = combatant.faintedAtNanos ?: combatant.defeatedAtNanos ?: return combatant
+        val presentationAt = combatant.knockoutPresentationAtNanos ?: recordedAt
         val incoming = recordedChargedMoveUses.lastOrNull { use ->
             use.side.isBattleSide() && use.side != side && use.isCompleted &&
-                recordedAt in use.animationAtNanos..use.impactAtNanos &&
+                presentationAt in use.animationAtNanos..use.impactAtNanos &&
                 combatantFor(side, use.animationAtNanos)?.speciesName == combatant.speciesName
         }
-        return combatant.copy(knockoutPresentationAtNanos = maxOf(recordedAt, incoming?.impactAtNanos ?: recordedAt))
+        val aligned = maxOf(presentationAt, incoming?.impactAtNanos ?: presentationAt)
+        return combatant.copy(knockoutPresentationAtNanos = aligned)
     }
 
     private fun replayHpAt(side: String, combatant: ReplayCombatant, cursor: Long): ReplayHpState? {
@@ -371,7 +384,8 @@ class MatchReplayModel(
         val sampleAt = if (waitingForImpact && recordedKo != null) minOf(cursor, recordedKo - 1) else cursor
         if (!waitingForImpact && combatant.defeatedAtNanos != null && !combatant.isFainted) return null
         if (!waitingForImpact && combatant.isFainted && poseAt != null && cursor - poseAt < 350_000_000L) {
-            val before = track.stateAt(recordedKo!! - 1, identities.hpAppearancesAt(recordedKo - 1), false, matchStartNanos)
+            val beforeAt = minOf(recordedKo!!, poseAt) - 1
+            val before = track.stateAt(beforeAt, identities.hpAppearancesAt(beforeAt), false, matchStartNanos)
             return ReplayHpState(0f, damageTrailFraction = before.filledFraction?.takeIf { it > 0f },
                 borderPulse = cursor - poseAt < 180_000_000L, damageTimingReconstructed = poseAt != recordedKo)
         }
@@ -519,17 +533,15 @@ class MatchReplayModel(
     private fun applyFaintState(
         side: String,
         combatant: ReplayCombatant?,
-        articles: List<ArchivedRealityArticle>
+        cursor: Long,
     ): ReplayCombatant? {
         combatant ?: return null
-        val faintArticle = articles.firstOrNull { article ->
-            val faint = article.payload as? ArchivedActivePokemonFaintedWitnessed ?: return@firstOrNull false
-            faint.side == side && faint.speciesName?.let {
-                TeamRosterSpeciesAttributor.speciesKey(it) == TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
-            } == true
+        val faint = knockoutTrack.at(side, cursor)?.takeIf {
+            TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(combatant.speciesName)
         }
-        if (faintArticle == null) {
-            val result = articles.firstOrNull { it.payload is ArchivedMatchEnded } ?: return combatant
+        if (faint == null) {
+            val result = timedArticles.firstOrNull { it.payload is ArchivedMatchEnded && it.monotonicTimeNanos!! <= cursor }
+                ?: return combatant
             val lost = when ((result.payload as ArchivedMatchEnded).result.uppercase()) {
                 "WIN" -> side == "OPPONENT"
                 "LOSS" -> side == "PLAYER"
@@ -545,7 +557,11 @@ class MatchReplayModel(
         // species is witnessed, sceneAt() selects that different combatant and
         // this species-specific faint no longer applies.
         // Repeated testimony/badge reads do not restart the KO gesture.
-        return combatant.copy(isFainted = true, faintedAtNanos = faintArticle.monotonicTimeNanos)
+        return combatant.copy(isFainted = true, faintedAtNanos = faint.recordedAtNanos,
+            knockoutPresentationAtNanos = faint.presentationAtNanos,
+            knockoutFinishByNanos = faint.finishByNanos,
+            knockoutBasis = if (faint.presentationAtNanos != faint.recordedAtNanos) "FAINT_FIT_BEFORE_REPLACEMENT" else "WITNESSED_FAINT",
+            knockoutSourceArticleIds = faint.sourceArticleIds)
     }
 
     /**
@@ -746,8 +762,7 @@ class MatchReplayModel(
         if (before?.speciesName != current?.speciesName) return false
         // An unresolved side can still have raw attacks. A fainted known actor
         // cannot perform them, even if stale OCR repeated its name after the KO.
-        return current == null || !applyFaintState(side, current,
-            timedArticles.takeWhile { it.monotonicTimeNanos!! <= cursor })!!.isFainted
+        return current == null || !applyFaintState(side, current, cursor)!!.isFainted
     }
 
     /** Exclude damage and flashes belonging to a charge sequence from Fast Moves. */
@@ -1190,6 +1205,13 @@ private class ReplayIdentityTrack private constructor(
     private val observations: List<ReplayIdentityObservation>,
     private val visibleFromNanos: Long,
 ) {
+    fun appearances(): List<ReplayIdentityObservation> = buildList {
+        observations.groupBy { it.atNanos }.values.map { it.last() }.forEach { observation ->
+            if (lastOrNull()?.speciesName?.let(::normalize) != normalize(observation.speciesName)) {
+                add(if (isEmpty()) observation.copy(atNanos = visibleFromNanos) else observation)
+            }
+        }
+    }
     private val hpAppearances = buildList<ReplayHpAppearance> {
         observations.forEach { observation ->
             val key = normalize(observation.speciesName)
@@ -1428,6 +1450,7 @@ data class ReplayScene(
     /** Presentation provenance; never presented as an original glyph witness. */
     val countdownFrame: ReplayCountdownFrame? = null,
     val decisionTimer: ReplayDecisionTimerState? = null,
+    val playerChargedMoves: List<ReplayChargedMoveSlot> = emptyList(),
 )
 
 data class ReplayFastMoveAction(
@@ -1506,6 +1529,10 @@ data class ReplayCombatant(
     val defeatedAtNanos: Long? = null,
     /** Display-only impact alignment. The original faint/result instant above is retained. */
     val knockoutPresentationAtNanos: Long? = null,
+    /** Fit the complete fall and colour drain before the next recorded identity. */
+    val knockoutFinishByNanos: Long? = null,
+    val knockoutBasis: String? = null,
+    val knockoutSourceArticleIds: List<String> = emptyList(),
 )
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L

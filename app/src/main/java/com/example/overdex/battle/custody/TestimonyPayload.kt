@@ -665,4 +665,7 @@ data class SpeciesCheckMeasured(
 ) : TestimonyPayload
 
 /** Availability and signal are separate: a running playback stream may contain silence. */
-data class AudioInputStatus(val captureSource: String, val state: String) : TestimonyPayload
+data class AudioInputStatus(
+    val captureSource: String, val state: String,
+    val sampleRateHz: Int? = null, val channelCount: Int? = null,
+) : TestimonyPayload

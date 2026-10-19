@@ -385,7 +385,9 @@ class Match(
                     ?.takeIf { isSideLocatedSpeciesSource(article.sourceId.id) }
                     ?.let { badge ->
                         DroidballOverlayPresentation.recordBattleBadgePresent()
-                        entrySideTracker.observeBadge(badge.side, badge.speciesName, article.id.value)
+                        article.monotonicTimeNanos?.let { at ->
+                            entrySideTracker.observeBadge(badge.side, badge.speciesName, article.id.value, at)
+                        }
                         if (badge.side == ActivePokemonSide.PLAYER && playerRosterBySlot.isNotEmpty() &&
                             playerRosterBySlot.values.none {
                                 TeamRosterSpeciesAttributor.speciesKey(it) == TeamRosterSpeciesAttributor.speciesKey(badge.speciesName)

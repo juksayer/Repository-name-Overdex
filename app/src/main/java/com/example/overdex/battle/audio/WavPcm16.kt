@@ -3,7 +3,18 @@ package com.example.overdex.battle.audio
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-data class Pcm16Audio(val sampleRateHz: Int, val channelCount: Int, val samples: ShortArray)
+data class Pcm16Audio(val sampleRateHz: Int, val channelCount: Int, val samples: ShortArray) {
+    /** Recognition projection only; the interleaved source samples are never changed. */
+    fun monoSamples(): ShortArray {
+        require(channelCount > 0 && samples.size % channelCount == 0)
+        if (channelCount == 1) return samples
+        return ShortArray(samples.size / channelCount) { frame ->
+            var sum = 0L
+            for (channel in 0 until channelCount) sum += samples[frame * channelCount + channel]
+            (sum / channelCount).toShort()
+        }
+    }
+}
 
 /** Strict reader for the PCM-16 WAV artifacts and references used by Droidball. */
 object WavPcm16 {
@@ -54,7 +65,7 @@ object WavPcm16 {
             offset = dataStart + size + (size and 1)
         }
         val pcm = data ?: return null
-        if (channels <= 0 || sampleRate <= 0 || pcm.size % 2 != 0) return null
+        if (channels <= 0 || sampleRate <= 0 || pcm.size % (channels * 2) != 0) return null
         // A 1.2-second capture contains 57,600 samples. Wrapping a new buffer
         // per sample produced that many temporary objects for every witness,
         // plus millions while preparing the cry corpus at match startup.
@@ -72,18 +83,18 @@ data class CryCandidate(val speciesId: Int, val referenceSha256: String, val sim
  */
 object CryAcousticMatcher {
     data class PreparedReference(val reference: CryReference, val envelope: FloatArray)
-    fun prepare(reference: CryReference, audio: Pcm16Audio) = PreparedReference(reference, envelope(audio.samples, 48))
+    fun prepare(reference: CryReference, audio: Pcm16Audio) = PreparedReference(reference, envelope(audio.monoSamples(), 48))
     fun rankPrepared(query: Pcm16Audio, references: List<PreparedReference>, limit: Int = 5): List<CryCandidate> {
-        val queryEnvelope = envelope(query.samples, 96)
+        val queryEnvelope = envelope(query.monoSamples(), 96)
         return references.map { (reference, referenceEnvelope) ->
             CryCandidate(reference.speciesId, reference.sha256, bestWindowSimilarity(queryEnvelope, referenceEnvelope))
         }.sortedByDescending { it.similarity }.take(limit)
     }
 
     fun rank(query: Pcm16Audio, references: List<Pair<CryReference, Pcm16Audio>>, limit: Int = 5): List<CryCandidate> {
-        val queryEnvelope = envelope(query.samples, 96)
+        val queryEnvelope = envelope(query.monoSamples(), 96)
         return references.map { (reference, audio) ->
-            val referenceEnvelope = envelope(audio.samples, 48)
+            val referenceEnvelope = envelope(audio.monoSamples(), 48)
             CryCandidate(reference.speciesId, reference.sha256, bestWindowSimilarity(queryEnvelope, referenceEnvelope))
         }.sortedByDescending { it.similarity }.take(limit)
     }

@@ -42,10 +42,11 @@ internal object CountdownGoGeometry {
         val averageHeight = (left.height + right.height) / 2f / sourceHeight
         val pairCenter = (pairLeft + pairRight) / 2f / sourceWidth
         val centerOffset = abs(pairCenter - 0.5f)
+        val horizontalOverlap = max(0, left.right - right.left).toFloat() / min(left.width, right.width)
 
         if (smallerCoverage < 0.08f || areaBalance < 0.55f || heightBalance < 0.78f ||
             verticalOverlap < 0.78f || pairSpan < 0.70f || averageHeight !in 0.40f..0.78f ||
-            centerOffset > 0.12f
+            centerOffset > 0.12f || horizontalOverlap > 0.20f
         ) return null
 
         return minOf(

@@ -369,7 +369,10 @@ internal class ActiveHpBarBorderPulseDetector {
     private companion object {
         const val REQUIRED_BASELINE_SAMPLES = 3
         const val MIN_WHITE_BASELINE_FRACTION = 0.12f
-        const val MIN_PULSE_FRACTION = 0.08f
+        // A small patch of blue sky beside a bobbing white outline is not a
+        // received hit. Require a broad border flash, including Powder Snow's
+        // blue flash; the Oct 18 idle-side false edges covered only 11-24%.
+        const val MIN_PULSE_FRACTION = 0.35f
         const val ONSET_PULSE_DELTA = 0.055f
         const val RETURN_PULSE_FRACTION = 0.035f
         const val MIN_CADENCE_NANOS = 350_000_000L

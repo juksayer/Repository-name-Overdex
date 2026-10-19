@@ -412,9 +412,14 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 12.dp, vertical = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player")
+                    if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player", scene.playerEnergy)
                     else Box(Modifier.width(114.dp))
-                    if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent")
+                    if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true)
+                }
+                if (scene.player != null && !scene.player.isFainted && scene.outcome == null &&
+                    scene.decisionTimer == null && scene.chargedMoveActions.isEmpty()) {
+                    ReplayChargeButtons(scene.playerChargedMoves, scene.playerEnergy,
+                        Modifier.align(Alignment.BottomCenter).padding(horizontal = 12.dp, vertical = 18.dp))
                 }
                 scene.fastMoveActions.forEach { action ->
                     FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
@@ -435,13 +440,18 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                 scene.decisionTimer?.let { timer ->
                     Column(Modifier.align(Alignment.TopCenter).padding(top = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally) {
-                        timer.secondsRemaining?.let { seconds ->
-                            Box(Modifier.size(44.dp).background(Color(0xB84C5D61), CircleShape)
-                                .border(2.dp, Color.White, CircleShape)
-                                .semantics { contentDescription = "Decision timer: $seconds" },
-                                contentAlignment = Alignment.Center) {
-                                Text(seconds.toString(), color = Color.White, fontSize = 24.sp)
+                        Box(Modifier.size(44.dp).background(Color(0xD0233545), CircleShape)
+                            .semantics {
+                                contentDescription = timer.secondsRemaining?.let { "Decision timer: $it" }
+                                    ?: "Decision timer: waiting for replacement"
+                                stateDescription = timer.basis
+                            }, contentAlignment = Alignment.Center) {
+                            Canvas(Modifier.fillMaxSize().padding(2.dp)) {
+                                drawCircle(Color.White.copy(alpha = .25f), style = Stroke(2.dp.toPx()))
+                                drawArc(Color.White, -90f, 360f * timer.remainingFraction,
+                                    useCenter = false, style = Stroke(2.dp.toPx()))
                             }
+                            Text(timer.secondsRemaining?.toString() ?: "…", color = Color.White, fontSize = 24.sp)
                         }
                         timer.reason?.let { Text(it, color = Color.White, fontSize = 10.sp) }
                     }
@@ -573,7 +583,7 @@ internal fun ReplayCombatantSlot(
 ) {
     val faintPose = combatant?.let {
         ReplayFaintPose.at(it.knockoutPresentationAtNanos ?: it.faintedAtNanos ?: it.defeatedAtNanos,
-            cursorNanos, useBackSprite)
+            cursorNanos, useBackSprite, it.knockoutFinishByNanos)
     }
     val down = faintPose != null
     Box(
