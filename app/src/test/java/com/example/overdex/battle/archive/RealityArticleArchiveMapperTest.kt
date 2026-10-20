@@ -49,6 +49,34 @@ class RealityArticleArchiveMapperTest {
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 
+    @Test fun `species repair keeps damaged text basis and original evidence through compact archive`() {
+        val raw = article("raw-species", RawTestimony("s armory"), monotonicTimeNanos = 500L)
+        val identity = article("species", com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Skarmory", 227,
+            ocrText = "s armory", ocrMatchBasis = "UNAMBIGUOUS_CATALOGUE_MISSING_LETTERS_1",
+        ), evidenceReferences = listOf(raw.id.value), monotonicTimeNanos = 500L)
+        val mapped = listOf(raw, identity).map(RealityArticleArchiveMapper::map)
+        val selected = MatchArchiveArticleSelector.select(mapped, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val decoded = selected.map {
+            json.decodeFromString(ArchivedRealityArticle.serializer(),
+                json.encodeToString(ArchivedRealityArticle.serializer(), it))
+        }
+        assertEquals(mapped, decoded)
+        assertEquals("s armory", (decoded.first().payload as ArchivedRawText).value)
+        val resolved = decoded.last().payload as ArchivedActivePokemonSpeciesWitnessed
+        assertEquals("Skarmory", resolved.speciesName)
+        assertEquals("s armory", resolved.ocrText)
+        assertEquals("UNAMBIGUOUS_CATALOGUE_MISSING_LETTERS_1", resolved.ocrMatchBasis)
+        assertEquals(listOf("raw-species"), decoded.last().evidenceReferences)
+        assertEquals(500L, decoded.last().monotonicTimeNanos)
+        val legacy = json.decodeFromString(ArchivedTestimonyPayload.serializer(),
+            """{"kind":"active_pokemon_species_witnessed","side":"OPPONENT","speciesName":"Sneasel","speciesId":215}""")
+            as ArchivedActivePokemonSpeciesWitnessed
+        assertEquals(null, legacy.ocrText)
+        assertEquals(null, legacy.ocrMatchBasis)
+    }
+
     @Test fun `OCR filtering preserves raw words crop footprint and source time through compact export`() {
         val footprint = com.example.overdex.model.observation.OcrBox(20f, -50f, 300f, 400f)
         val word = com.example.overdex.model.observation.OcrWordEvidence("Foul", 0,

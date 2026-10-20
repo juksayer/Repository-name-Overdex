@@ -7,6 +7,17 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FastMoveEffectivenessTextResolverTest {
+    @Test fun `one damaged letter is recoverable only with the complete distinguishing phrase`() {
+        for (text in listOf("WEATHER BALL\nNOT VERY EFFECTIIVE", "NOT VERY EFFEC7IVE", "NOT VERY EFFECTIV")) {
+            val reading = FastMoveEffectivenessTextResolver.resolve(text)
+            assertEquals(text, FastMoveEffectiveness.NOT_VERY_EFFECTIVE, reading?.effectiveness)
+        }
+        assertEquals(FastMoveEffectiveness.SUPER_EFFECTIVE,
+            FastMoveEffectivenessTextResolver.resolve("SUPER EFFECTIIVE")?.effectiveness)
+        for (text in listOf("VERY EFFECTIIVE", "NOT EFFECTIVE", "NOT VERY EFFECE", "SUPER EFFECT", "EFFECTIVE")) {
+            assertNull(text, FastMoveEffectivenessTextResolver.resolve(text))
+        }
+    }
     @Test
     fun `reads full super effective phrase`() {
         assertEquals(

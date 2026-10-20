@@ -37,7 +37,7 @@ fun EventInspectorPanel(
                     .padding(8.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     TerminalText(text = "SEQUENCE: #${String.format(Locale.ROOT, "%06d", event.sequenceNumber)}", color = TerminalPurple)
                     TerminalText(text = "+${event.relativeTimestamp}ms", color = TerminalDimGreen)
                 }
@@ -185,7 +185,7 @@ private fun RecognitionAttemptDetails(payload: RecognitionAttemptPayload) {
         val confidenceText = if (payload.confidence != null) {
             String.format(Locale.ROOT, "%.2f", payload.confidence)
         } else {
-            "Unknown"
+            "Not scored"
         }
         TerminalText(text = "CONFIDENCE: $confidenceText", color = statusColor)
     }

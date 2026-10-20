@@ -50,30 +50,41 @@ class CropCaptureWitness(
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
     private var lastEnabled: Boolean? = null
-    private var lastCapturedAtNanos = 0L
+    private var lastSampledAtNanos = 0L
     override val managesAvailability: Boolean = true
 
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
+        lastSampledAtNanos = 0L
         val sourceId = SourceId(contract.witnessId)
         scope = CoroutineScope(captureDispatcher + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 input.supplyFrames { frame ->
-                    val currentCalibration = calibrationProvider()
-                    val rect = contract.crop.resolveRect(currentCalibration, frame.bitmap.width, frame.bitmap.height)
-                    val enabled = isEnabled() && (rect == null ||
-                        frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom)))
-                    if (lastEnabled != enabled) {
-                        match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
-                        lastEnabled = enabled
+                    fun reportAvailability(enabled: Boolean) {
+                        if (lastEnabled != enabled) {
+                            match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
+                            lastEnabled = enabled
+                        }
                     }
-                    if (!enabled) return@supplyFrames
+                    if (!isEnabled()) {
+                        reportAvailability(false)
+                        return@supplyFrames
+                    }
                     if (!acceptsFrame(frame.capturedAtMonotonicTimeNanos)) return@supplyFrames
-                    if (captureIntervalNanos > 0L && lastCapturedAtNanos > 0L &&
-                        frame.capturedAtMonotonicTimeNanos - lastCapturedAtNanos < captureIntervalNanos
+                    if (captureIntervalNanos > 0L && lastSampledAtNanos > 0L &&
+                        frame.capturedAtMonotonicTimeNanos - lastSampledAtNanos < captureIntervalNanos
                     ) return@supplyFrames
-                    val resolved = contract.crop.resolve(currentCalibration, frame) ?: return@supplyFrames
+                    lastSampledAtNanos = frame.capturedAtMonotonicTimeNanos
+                    val crop = contract.crop
+                    val measuredRegion = TeamBadgeCropLocator.locate(crop.region, calibrationProvider(), frame)
+                    val rect = BattleCropResolver.resolveRect(measuredRegion, frame.bitmap.width, frame.bitmap.height,
+                        crop.minimumSize, crop.areaInRegion)
+                    val readable = rect != null && frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
+                    reportAvailability(readable)
+                    if (!readable) return@supplyFrames
+                    val resolved = BattleCropResolver.resolve(crop.cropName, measuredRegion, frame.bitmap,
+                        crop.minimumSize, crop.areaInRegion) ?: return@supplyFrames
                     try {
                         val artifact = if (preserveCompleteFrame) {
                             artifactStore.preserveFrameCrop(
@@ -95,7 +106,6 @@ class CropCaptureWitness(
                             evidenceReferences = emptyList(),
                             monotonicTimeNanos = frame.capturedAtMonotonicTimeNanos
                         )
-                        lastCapturedAtNanos = frame.capturedAtMonotonicTimeNanos
                         try {
                             onCaptured?.invoke(
                                 testimony,

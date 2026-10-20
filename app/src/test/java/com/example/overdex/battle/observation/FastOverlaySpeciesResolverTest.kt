@@ -28,7 +28,7 @@ class FastOverlaySpeciesResolverTest {
     }
 
     @Test fun `does not emit Mew from a truncated Mewtwo badge`() {
-        assertNull(FastOverlaySpeciesResolver.resolve("MewtO", names + setOf("Mew", "Mewtwo")))
+        assertEquals("Mewtwo", FastOverlaySpeciesResolver.resolve("MewtO", names + setOf("Mew", "Mewtwo")))
     }
 
 }

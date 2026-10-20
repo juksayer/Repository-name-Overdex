@@ -31,6 +31,16 @@ internal object FastMoveEffectivenessTextResolver {
                 FastMoveEffectiveness.SUPER_EFFECTIVE,
                 0.98f
             )
+            // Keep the distinguishing words intact. Real charged-button OCR
+            // reads NOT VERY EFFECTIIVE where the gesture bar crosses the text.
+            // One damaged letter in EFFECTIVE is recoverable; a missing NOT,
+            // VERY, or SUPER is not a license to guess the opposite matchup.
+            hasRepairedEnding(normalized, "NOTVERY") -> EffectivenessTextReading(
+                FastMoveEffectiveness.NOT_VERY_EFFECTIVE, 0.92f
+            )
+            hasRepairedEnding(normalized, "SUPER") -> EffectivenessTextReading(
+                FastMoveEffectiveness.SUPER_EFFECTIVE, 0.92f
+            )
             // ML Kit sometimes loses the first three letters while the phrase
             // fades. This fragment cannot be produced by "NOT VERY EFFECTIVE".
             normalized.endsWith("EREFFECTIVE") && "VERY" !in normalized -> EffectivenessTextReading(
@@ -38,6 +48,18 @@ internal object FastMoveEffectivenessTextResolver {
                 0.72f
             )
             else -> null
+        }
+    }
+
+    private fun hasRepairedEnding(text: String, prefix: String): Boolean {
+        val start = text.lastIndexOf(prefix).takeIf { it >= 0 } ?: return false
+        val word = text.substring(start + prefix.length)
+        val expected = "EFFECTIVE"
+        return when (word.length - expected.length) {
+            0 -> word.indices.count { word[it] != expected[it] } == 1
+            1 -> word.indices.any { word.removeRange(it, it + 1) == expected }
+            -1 -> expected.indices.any { expected.removeRange(it, it + 1) == word }
+            else -> false
         }
     }
 }

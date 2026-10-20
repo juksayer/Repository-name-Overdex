@@ -12,7 +12,9 @@ data class MatchArchiveManifest(
     val matchId: String,
     val timelineEntry: String = "timeline.json",
     val articleCount: Int,
-    val artifacts: List<ArchivedArtifactEntry> = emptyList()
+    val artifacts: List<ArchivedArtifactEntry> = emptyList(),
+    /** Format 3 can explicitly omit media without erasing the original capture references. */
+    val mediaIncluded: Boolean = true
 )
 
 @Serializable

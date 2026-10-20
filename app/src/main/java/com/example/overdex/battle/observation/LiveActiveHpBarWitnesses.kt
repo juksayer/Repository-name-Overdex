@@ -132,8 +132,14 @@ internal class LiveActiveHpBarWitness(
                     input.supplyFrames { frame ->
                         val enabled = isEnabled()
                         if (lastEnabled != enabled) availability(match, enabled, frame.capturedAtWallTimeMillis)
-                        if (!enabled) return@supplyFrames
-                        tracker.measureFrame(frame).forEach { (side, measurement) ->
+                        if (!enabled) {
+                            match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos, false)
+                            return@supplyFrames
+                        }
+                        val measurements = tracker.measureFrame(frame)
+                        match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos,
+                            measurements.keys.containsAll(ActivePokemonSide.entries))
+                        measurements.forEach { (side, measurement) ->
                             val appearance = ActiveHpBarBorderAppearanceMeasurer.measure(frame.bitmap, measurement)
                             val recipientVisual = FastMoveRecipientVisualSampler.sample(frame.bitmap, measurement)
                             match.custody.submitTestimony(

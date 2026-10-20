@@ -44,6 +44,7 @@ private enum class ArchiveViewerAction {
     OPEN_REPLAY,
     MARK_START,
     MARK_END_AND_SAVE,
+    CLIP_LIBRARY,
     DETAILS,
     BACK;
 
@@ -68,11 +69,13 @@ fun MatchArchiveViewerScreen(
     onLcdUpdate: (String, String) -> Unit = { _, _ -> },
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
+    resolveSpeciesTypes: suspend (String) -> List<PokemonType> = { emptyList() },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveFastMoves: suspend (speciesName: String) -> List<com.example.overdex.model.Move> = { emptyList() },
-    resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() }
+    resolveArchivedSpeciesCrops: suspend (MatchArchive, (com.example.overdex.battle.replay.ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
+    onOpenEditor: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -80,6 +83,8 @@ fun MatchArchiveViewerScreen(
     var showReplay by remember { mutableStateOf(false) }
     var excerptStart by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
     var excerptStatus by remember { mutableStateOf<String?>(null) }
+    var excerptEnd by remember { mutableStateOf<ArchivedRealityArticle?>(null) }
+    var savingExcerpt by remember { mutableStateOf(false) }
     var selectedAction by remember { mutableStateOf(ArchiveViewerAction.OPEN_REPLAY) }
     
     val listState = rememberLazyListState()
@@ -89,6 +94,7 @@ fun MatchArchiveViewerScreen(
     val selectedArticle = archive.articles.getOrNull(selectedIndex)
 
     fun markStart() {
+        if (savingExcerpt || excerptEnd != null) return
         val article = selectedArticle
         if (article?.monotonicTimeNanos == null) {
             excerptStatus = "SELECT A TIMED ARTICLE FIRST"
@@ -99,6 +105,7 @@ fun MatchArchiveViewerScreen(
     }
 
     fun markEndAndSave() {
+        if (savingExcerpt || excerptEnd != null) return
         val start = excerptStart
         val end = selectedArticle
         if (start == null) {
@@ -109,12 +116,33 @@ fun MatchArchiveViewerScreen(
             excerptStatus = "SELECT A TIMED END ARTICLE"
             return
         }
-        excerptStatus = runCatching {
-            val excerpt = ReplayExcerptStore(context.filesDir).save(archive, start, end)
-            excerptStart = null
-            "EXCERPT SAVED: ${excerpt.excerptId.take(8)}"
-        }.getOrElse { "EXCERPT NOT SAVED: ${it.message}" }
+        if (end.monotonicTimeNanos == start.monotonicTimeNanos) {
+            excerptStatus = "SELECT A DIFFERENT END ARTICLE"
+            return
+        }
+        excerptEnd = end
     }
+
+    if (excerptEnd != null) ReplayNameDialog("Save replay clip", "Clip", "",
+        onDismiss = { excerptEnd = null },
+        onSave = { title, notes ->
+            val start = excerptStart!!.monotonicTimeNanos!!
+            val end = excerptEnd!!.monotonicTimeNanos!!
+            excerptEnd = null
+            savingExcerpt = true
+            scope.launch {
+                try {
+                    val clip = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        ReplayExcerptStore(context.filesDir).saveRange(archive, minOf(start, end), maxOf(start, end), title, notes)
+                    }
+                    excerptStart = null
+                    excerptStatus = "CLIP SAVED: ${clip.title}"
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    excerptStatus = "CLIP NOT SAVED: ${e.message}"
+                } finally { savingExcerpt = false }
+            }
+        })
 
     if (showReplay) {
         MatchReplayScreen(
@@ -124,11 +152,15 @@ fun MatchArchiveViewerScreen(
             onDown = onDown,
             onA = onA,
             onB = onB,
+            onLeft = onLeft,
+            onRight = onRight,
+            onOpenEditor = onOpenEditor,
             onLcdDrag = onLcdDrag,
             onLcdTap = onLcdTap,
             onLcdUpdate = onLcdUpdate,
             onLcdContentUpdate = onLcdContentUpdate,
             resolveSpeciesId = resolveSpeciesId,
+            resolveSpeciesTypes = resolveSpeciesTypes,
             resolveFastMoveType = resolveFastMoveType,
             resolveChargedMoveType = resolveChargedMoveType,
             resolveChargedMoves = resolveChargedMoves,
@@ -173,12 +205,15 @@ fun MatchArchiveViewerScreen(
             if (!showDetails) selectedAction = selectedAction.move(1)
         }
         onA {
-            if (showDetails) {
+            if (savingExcerpt || excerptEnd != null) {
+                // A save commits the source snapshot before publishing the clip.
+            } else if (showDetails) {
                 showDetails = false
             } else {
                 when (selectedAction) {
                     ArchiveViewerAction.MARK_START -> markStart()
                     ArchiveViewerAction.MARK_END_AND_SAVE -> markEndAndSave()
+                    ArchiveViewerAction.CLIP_LIBRARY -> onOpenEditor?.invoke()
                     ArchiveViewerAction.OPEN_REPLAY -> showReplay = true
                     ArchiveViewerAction.DETAILS -> showDetails = selectedArticle != null
                     ArchiveViewerAction.BACK -> onBack()
@@ -199,18 +234,23 @@ fun MatchArchiveViewerScreen(
             MatchLcdText("ID: ${archive.matchId}")
             MatchLcdText("ARTICLES: ${archive.articles.size}   SELECTED: ${selectedIndex + 1}")
             MatchLcdButton("OPEN REPLAY", { selectedAction = ArchiveViewerAction.OPEN_REPLAY; showReplay = true },
-                selected = selectedAction == ArchiveViewerAction.OPEN_REPLAY)
+                selected = selectedAction == ArchiveViewerAction.OPEN_REPLAY, enabled = !savingExcerpt)
             MatchLcdButton("MARK START", { selectedAction = ArchiveViewerAction.MARK_START; markStart() },
                 selected = selectedAction == ArchiveViewerAction.MARK_START, enabled = selectedArticle?.monotonicTimeNanos != null)
             MatchLcdButton("MARK END + SAVE", { selectedAction = ArchiveViewerAction.MARK_END_AND_SAVE; markEndAndSave() },
                 selected = selectedAction == ArchiveViewerAction.MARK_END_AND_SAVE,
                 enabled = excerptStart != null && selectedArticle?.monotonicTimeNanos != null)
             excerptStatus?.let { MatchLcdText(it) }
+            if (savingExcerpt) MatchLcdText("SAVING CLIP…")
+            onOpenEditor?.let { open ->
+                MatchLcdButton("CLIP LIBRARY", open, selected = selectedAction == ArchiveViewerAction.CLIP_LIBRARY,
+                    enabled = !savingExcerpt)
+            }
             MatchLcdButton(if (showDetails) "CLOSE DETAILS" else "ARTICLE DETAILS", {
                 selectedAction = ArchiveViewerAction.DETAILS
                 showDetails = !showDetails
             }, selected = selectedAction == ArchiveViewerAction.DETAILS, enabled = selectedArticle != null)
-            MatchLcdButton("BACK", onBack, selected = selectedAction == ArchiveViewerAction.BACK)
+            MatchLcdButton("BACK", onBack, selected = selectedAction == ArchiveViewerAction.BACK, enabled = !savingExcerpt)
             MatchLcdText("←/→ ACTION   ↑/↓ ARTICLE   A SELECT")
         }
     }
@@ -273,20 +313,22 @@ private fun ArchiveArticleRow(
             )
             .padding(4.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             TerminalText(
                 text = article.sourceId,
                 color = if (isSelected) TerminalGreen else TerminalPurple,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
             )
             TerminalText(
-                text = "Conf: ${article.confidence ?: "Unknown"}",
+                text = articleConfidenceLabel(article.confidence),
                 color = TerminalDimGreen,
-                fontSize = 9.sp
+                fontSize = 9.sp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
@@ -298,6 +340,8 @@ private fun ArchiveArticleRow(
             is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, move=${p.moveName ?: "unresolved"}, basis=${p.basis}]"
             is com.example.overdex.battle.archive.ArchivedPlayerChargeButtonTouchWitnessed -> "PLAYER BUTTON CONTACT [slot=${p.slot}, X=${p.x}, Y=${p.y}, display=${p.displayWidth}×${p.displayHeight}; intent only]"
                 is com.example.overdex.battle.archive.ArchivedPlayerChargeMoveLabelRead -> "PLAYER MOVE LABEL [slot=${p.slot}]: ${p.text}"
+                is com.example.overdex.battle.archive.ArchivedPlayerChargedMoveEffectivenessObserved -> "PLAYER CHARGED BUTTON ${p.slot}: ${p.recognizedText} [matchup hint; no attack]"
+                is com.example.overdex.battle.archive.ArchivedPlayerBattleInformationChecked -> "PLAYER CHECK ${p.speciesName} ${p.field}: ${p.observedValue} [${p.status}; saved=${p.configuredValue ?: "none"}; ${p.basis}]"
                 is ArchivedRawText -> p.value
             is ArchivedRawInt -> p.value.toString()
             is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
@@ -417,6 +461,8 @@ private fun ArticleDetailsOverlay(
                 is com.example.overdex.battle.archive.ArchivedStatChangeObserved -> "STAT CHANGE [${p.affectedSide ?: "SIDE UNCONFIRMED"}, ${p.stat}, ${if (p.direction > 0) "UP" else "DOWN"}, nominal stages=${p.stages ?: "unknown"}, move=${p.moveName ?: "unresolved"}, sound=${p.soundArticleId}, basis=${p.basis}]"
                 is com.example.overdex.battle.archive.ArchivedPlayerChargeButtonTouchWitnessed -> "PLAYER BUTTON CONTACT [slot=${p.slot}, X=${p.x}, Y=${p.y}, display=${p.displayWidth}×${p.displayHeight}; intent only]"
                 is com.example.overdex.battle.archive.ArchivedPlayerChargeMoveLabelRead -> "PLAYER MOVE LABEL [slot=${p.slot}]: ${p.text}"
+                is com.example.overdex.battle.archive.ArchivedPlayerChargedMoveEffectivenessObserved -> "PLAYER CHARGED BUTTON ${p.slot}: ${p.recognizedText} [matchup hint; no attack]"
+                is com.example.overdex.battle.archive.ArchivedPlayerBattleInformationChecked -> "PLAYER CHECK ${p.speciesName} ${p.field}: ${p.observedValue} [${p.status}; saved=${p.configuredValue ?: "none"}; ${p.basis}]"
                 is ArchivedRawText -> p.value
                 is ArchivedRawInt -> p.value.toString()
                 is ArchivedMatchRecordStarted -> "MATCH RECORD STARTED [basis=DROIDBALL DEPLOYED]"
@@ -430,7 +476,7 @@ private fun ArticleDetailsOverlay(
                 is com.example.overdex.battle.archive.ArchivedBattleDecisionTimerObserved ->
                     "DECISION TIMER [${p.secondsRemaining?.let { "$it seconds" } ?: "cleared"}; OCR=${p.rawText}; basis=${p.basis}]"
                 is ArchivedPokemonIdentified -> "POKEMON IDENTIFIED: ${p.species}"
-                is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}]"
+                is ArchivedActivePokemonSpeciesWitnessed -> "ACTIVE SPECIES [side=${p.side}, species=${p.speciesName}, id=${p.speciesId ?: "unresolved"}, OCR=${p.ocrText ?: "not recorded"}, match basis=${p.ocrMatchBasis ?: "not recorded"}]"
                 is ArchivedActivePokemonFaintedWitnessed -> "FAINTED [side=${p.side}, species=${p.speciesName ?: "unresolved"}, id=${p.speciesId ?: "unresolved"}, basis=${p.basis}]"
                 is ArchivedTeamSelectPartyWitnessed -> "TEAM SELECT PARTY WITNESSED"
                 is ArchivedTeamSelectLeagueWitnessed -> "LEAGUE [${p.league.replace('_', ' ')}; ${p.basis}]"
@@ -478,7 +524,18 @@ private fun ArticleDetailsOverlay(
             }
             DetailField(label = "PAYLOAD CONTENT", value = payloadText)
             
-            DetailField(label = "CONFIDENCE SCORE", value = article.confidence?.toString() ?: "Unknown")
+            DetailField(label = "CONFIDENCE SCORE",
+                value = article.confidence?.let { String.format(Locale.ROOT, "%.3f / 1.000", it) } ?: "Not scored")
+            TerminalText(
+                text = if (article.confidence == null) {
+                    "This witness supplied no confidence score. Missing does not mean zero or false."
+                } else {
+                    "Score supplied by this witness or inference. It is not a calibrated probability of correctness."
+                },
+                color = TerminalDimGreen,
+                fontSize = 10.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
             
             DetailField(label = "PERCEIVED TIME", value = fullTimeFormatter.format(Instant.ofEpochMilli(article.perceivedAt)))
             DetailField(label = "RECORDED TIME", value = fullTimeFormatter.format(Instant.ofEpochMilli(article.recordedAt)))
@@ -519,11 +576,15 @@ private fun ArticleDetailsOverlay(
 
 @Composable
 private fun DetailField(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 2.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         TerminalText(text = label, color = TerminalDimGreen, fontSize = 9.sp)
         TerminalText(text = value, color = Color.White, fontSize = 11.sp)
     }
 }
+
+private fun articleConfidenceLabel(confidence: Float?): String =
+    confidence?.let { String.format(Locale.ROOT, "Confidence score: %.2f / 1.00", it) }
+        ?: "Confidence: Not scored"
 
 
 private fun fastMoveSoundDescription(sound: ArchivedFastMoveSoundMeasured): String {

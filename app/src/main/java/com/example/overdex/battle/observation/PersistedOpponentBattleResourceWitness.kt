@@ -9,6 +9,7 @@ import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
+import com.example.overdex.model.observation.OcrBox
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,8 +45,8 @@ class PersistedOpponentBattleResourceWitness private constructor(
                         val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
                             ?: return@collect
                         val count = try {
-                            if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap)
-                            else OpponentBattleResourceCounter.shieldCount(bitmap)
+                            if (resource == OpponentBattleResource.POKE_BALLS) OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
+                            else OpponentBattleResourceCounter.shieldCount(bitmap, captured.overlayBounds)
                         } finally {
                             bitmap.recycle()
                         }
@@ -143,7 +144,7 @@ class PersistedPlayerPokeBallWitness(
                         val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance)
                             ?: return@collect
                         val count = try {
-                            OpponentBattleResourceCounter.pokeBallCount(bitmap)
+                            OpponentBattleResourceCounter.pokeBallCount(bitmap, captured.overlayBounds)
                         } finally {
                             bitmap.recycle()
                         }
@@ -176,14 +177,21 @@ class PersistedPlayerPokeBallWitness(
 }
 
 internal object OpponentBattleResourceCounter {
-    fun shieldCount(bitmap: Bitmap): Int? = shieldCount(bitmap.width, bitmap.height, bitmap::getPixel)
+    fun shieldCount(bitmap: Bitmap, overlayBounds: OcrBox? = null): Int? =
+        shieldCount(bitmap.width, bitmap.height, overlayBounds, bitmap::getPixel)
 
-    internal fun shieldCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? {
-        if (width < 8 || height < 4) return null
+    internal fun shieldCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? =
+        shieldCount(width, height, null, pixelAt)
+
+    internal fun shieldCount(width: Int, height: Int, overlayBounds: OcrBox?, pixelAt: (Int, Int) -> Int): Int? {
+        if (width < 8 || height < 4 || !hasUncoveredCaps(width, height, overlayBounds)) return null
         // A covered/disappeared badge is unavailable, not two shields spent.
         var badgePixels = 0
+        var visiblePixels = 0
         val glyphPixels = IntArray(2)
         for (y in 0 until height) for (x in 0 until width) {
+            if (covered(x, y, overlayBounds)) continue
+            visiblePixels++
             val c = pixelAt(x, y)
             val r = c ushr 16 and 255; val g = c ushr 8 and 255; val b = c and 255
             if (minOf(r, g, b) >= 180 && maxOf(r, g, b) - minOf(r, g, b) <= 50) badgePixels++
@@ -193,18 +201,28 @@ internal object OpponentBattleResourceCounter {
                 glyphPixels[(x * 2 / width).coerceAtMost(1)]++
             }
         }
-        if (badgePixels < width * height / 4 || glyphPixels.any { it < maxOf(3, width * height / 100) }) return null
-        return count(width, height, pixelAt, 2, ::isShieldColor)
+        if (badgePixels < visiblePixels / 4 || glyphPixels.any { it < maxOf(3, width * height / 100) }) return null
+        return count(width, height, { x, y -> if (covered(x, y, overlayBounds)) 0 else pixelAt(x, y) }, 2, ::isShieldColor)
     }
 
-    fun pokeBallCount(bitmap: Bitmap): Int? = pokeBallCount(bitmap.width, bitmap.height, bitmap::getPixel)
+    fun pokeBallCount(bitmap: Bitmap, overlayBounds: OcrBox? = null): Int? =
+        pokeBallCount(bitmap.width, bitmap.height, overlayBounds, bitmap::getPixel)
 
     /** Missing/covered badge pixels are unavailable evidence, never zero survivors. */
-    internal fun pokeBallCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? {
-        if (width < 3 || height < 3) return null
+    internal fun pokeBallCount(width: Int, height: Int, pixelAt: (Int, Int) -> Int): Int? =
+        pokeBallCount(width, height, null, pixelAt)
+
+    internal fun pokeBallCount(width: Int, height: Int, overlayBounds: OcrBox?, pixelAt: (Int, Int) -> Int): Int? {
+        if (width < 3 || height < 3 || !hasUncoveredCaps(width, height, overlayBounds)) return null
         var badgePixels = 0
+        var visiblePixels = 0
         val outline = BooleanArray(width * height)
         for (y in 0 until height) for (x in 0 until width) {
+            // Our sprite cards also have pale backgrounds and dark outlines.
+            // Their question marks must never become three spent Poké Balls.
+            // Use the bounds from THIS captured frame, not the current HUD.
+            if (covered(x, y, overlayBounds)) continue
+            visiblePixels++
             val pixel = pixelAt(x, y)
             val r = pixel ushr 16 and 255
             val g = pixel ushr 8 and 255
@@ -212,9 +230,11 @@ internal object OpponentBattleResourceCounter {
             val high = maxOf(r, g, b)
             val low = minOf(r, g, b)
             if (low >= 180 && high - low <= 50) badgePixels++
-            outline[y * width + x] = high <= 180 && high - low <= 45
+            // The red cap can remain visible while the HUD covers its lower
+            // black rim. A spent ball has a dark cap instead.
+            outline[y * width + x] = (high <= 180 && high - low <= 45) || isBrightPokeBallRed(pixel)
         }
-        if (badgePixels < width * height / 4) return null
+        if (badgePixels < visiblePixels / 4) return null
 
         // A sliding/covered badge can leave a white corner against black. The
         // black area spans all three slots, but is not three spent balls. Only
@@ -228,7 +248,22 @@ internal object OpponentBattleResourceCounter {
         // Each of the three fixed slots retains an outline even when its ball
         // darkens. Requiring the badge and slots rejects black masks and sky.
         if (outlinePixels.any { it < maxOf(2, width * height / 400) }) return null
-        return count(width, height, pixelAt, 3, ::isBrightPokeBallRed)
+        return count(width, height, { x, y -> if (covered(x, y, overlayBounds)) 0 else pixelAt(x, y) }, 3, ::isBrightPokeBallRed)
+    }
+
+    private fun covered(x: Int, y: Int, bounds: OcrBox?): Boolean = bounds != null &&
+        x + .5f >= bounds.left && x + .5f < bounds.right && y + .5f >= bounds.top && y + .5f < bounds.bottom
+
+    private fun hasUncoveredCaps(width: Int, height: Int, bounds: OcrBox?): Boolean {
+        if (bounds == null) return true
+        // The upper 40% contains the bright caps in a calibrated badge strip.
+        // Reading only lower rims could turn an obscured live ball into a KO.
+        // A HUD below this band may hide the rims while leaving all caps usable.
+        val capRows = kotlin.math.ceil(height * .4).toInt()
+        for (y in 0 until capRows) for (x in 0 until width) {
+            if (covered(x, y, bounds)) return false
+        }
+        return true
     }
 
     private fun removeEdgeBackground(pixels: BooleanArray, width: Int, height: Int) {

@@ -68,6 +68,10 @@ object RealityArticleArchiveMapper {
                 p.slot, p.x, p.y, p.displayWidth, p.displayHeight, p.rawText
             )
             is com.example.overdex.battle.custody.PlayerChargeMoveLabelRead -> ArchivedPlayerChargeMoveLabelRead(p.slot, p.text, p.basis)
+            is com.example.overdex.battle.custody.PlayerChargedMoveEffectivenessObserved ->
+                ArchivedPlayerChargedMoveEffectivenessObserved(p.slot, p.effectiveness.name, p.recognizedText, p.basis)
+            is com.example.overdex.battle.custody.PlayerBattleInformationChecked ->
+                ArchivedPlayerBattleInformationChecked(p.speciesName, p.field, p.configuredValue, p.observedValue, p.status, p.basis)
             is RawTestimony -> {
                 when (val data = p.data) {
                     is String -> ArchivedRawText(data, p.ocr)
@@ -89,7 +93,9 @@ object RealityArticleArchiveMapper {
             is ActivePokemonSpeciesWitnessed -> ArchivedActivePokemonSpeciesWitnessed(
                 side = p.side.name,
                 speciesName = p.speciesName,
-                speciesId = p.speciesId
+                speciesId = p.speciesId,
+                ocrText = p.ocrText,
+                ocrMatchBasis = p.ocrMatchBasis,
             )
             is ActivePokemonFaintedWitnessed -> ArchivedActivePokemonFaintedWitnessed(
                 side = p.side.name,

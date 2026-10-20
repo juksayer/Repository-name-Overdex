@@ -48,10 +48,12 @@ object MatchArchivePackageWriter {
         }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         // Build the manifest before writing. Artifact bytes themselves stay on disk until streamed.
         val manifest = MatchArchiveManifest(
+            archiveFormatVersion = if (archive.mediaIncluded) 2 else 3,
             matchId = archive.matchId,
             articleCount = archive.articles.size,
             timelineEntry = TIMELINE_ENTRY_NAME,
-            artifacts = artifacts
+            artifacts = artifacts,
+            mediaIncluded = archive.mediaIncluded
         )
         val manifestJson = json.encodeToString(manifest)
 
@@ -65,8 +67,12 @@ object MatchArchivePackageWriter {
             MatchArchiveSerializer.serializeTo(archive, zipStream)
             zipStream.closeEntry()
 
-            onArtifactVerified?.invoke(0, artifacts.size)
-            artifacts.forEachIndexed { index, artifact ->
+            val includedArtifacts = if (archive.mediaIncluded) artifacts else emptyList()
+            // Validate the references in media-free exports too; omission does not
+            // make an invalid path or hash valid.
+            artifacts.forEach(::requireValidArtifactPath)
+            onArtifactVerified?.invoke(0, includedArtifacts.size)
+            includedArtifacts.forEachIndexed { index, artifact ->
                 // PNG has already compressed these pixels. Retain ZIP CRC/hash validation
                 // without spending another compression pass on incompressible bytes.
                 zipStream.setLevel(if (artifact.mediaType == "image/png") Deflater.NO_COMPRESSION
@@ -74,7 +80,7 @@ object MatchArchivePackageWriter {
                 zipStream.putNextEntry(ZipEntry(artifact.relativePath))
                 copyValidatedArtifact(artifact, artifactRepositoryRoot, zipStream)
                 zipStream.closeEntry()
-                onArtifactVerified?.invoke(index + 1, artifacts.size)
+                onArtifactVerified?.invoke(index + 1, includedArtifacts.size)
             }
         }
 

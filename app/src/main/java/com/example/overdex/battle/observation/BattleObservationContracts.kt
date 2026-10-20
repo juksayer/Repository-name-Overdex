@@ -42,6 +42,8 @@ enum class BattleRegionId {
     DECISION_TIMER,
     PLAYER_CHARGE_MOVE_NAME_LEFT,
     PLAYER_CHARGE_MOVE_NAME_RIGHT,
+    PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT,
+    PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT,
     PLAYER_INACTIVE_POKEMON,
     COUNTDOWN,
     VS_SCREEN,
@@ -69,7 +71,9 @@ enum class BattleRegionId {
         POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         DECISION_TIMER -> calibration.decisionTimerRegion
         PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
+        PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT -> calibration.playerChargeMoveEffectivenessLeftRegion
         PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
+        PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT -> calibration.playerChargeMoveEffectivenessRightRegion
         PLAYER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         COUNTDOWN -> calibration.countdownRegion
         VS_SCREEN -> calibration.vsScreenRegion
@@ -96,9 +100,16 @@ data class BattleCropContract(
 ) {
     /** Retained badge pixels belong to our presentation, not a live game observation. */
     fun resolve(calibration: BattleCalibration, frame: com.example.overdex.model.observation.CapturedVisualFrame): ResolvedBattleCrop? {
-        val rect = resolveRect(calibration, frame.bitmap.width, frame.bitmap.height) ?: return null
-        if (!frame.canObserve(BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))) return null
-        return resolve(calibration, frame.bitmap)
+        val located = TeamBadgeCropLocator.locate(region, calibration, frame)
+        // Ready buttons grow and push their names down. Retain a bounded lower
+        // margin in the reading, with its actual geometry in crop provenance.
+        // Saved coordinates and the calibration preview are never rewritten.
+        val measuredRegion = if (region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_LEFT ||
+            region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT) {
+            located.copy(height = minOf(1f - located.y, located.height + minOf(located.height, 65f / 2400f)))
+        } else located
+        if (!frame.canObserve(measuredRegion)) return null
+        return BattleCropResolver.resolve(cropName, measuredRegion, frame.bitmap, minimumSize, areaInRegion)
     }
 
     fun resolve(calibration: BattleCalibration, source: Bitmap): ResolvedBattleCrop? =
@@ -178,7 +189,9 @@ object BattleCropContracts {
     val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
     val decisionTimer = BattleCropContract("DecisionTimerCrop", BattleRegionId.DECISION_TIMER, minimumSize = 16)
     val playerChargeMoveNameLeft = BattleCropContract("PlayerChargeMoveNameLeftCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_LEFT)
+    val playerChargeMoveEffectivenessLeft = BattleCropContract("PlayerChargeMoveEffectivenessLeftCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT)
     val playerChargeMoveNameRight = BattleCropContract("PlayerChargeMoveNameRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT)
+    val playerChargeMoveEffectivenessRight = BattleCropContract("PlayerChargeMoveEffectivenessRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT)
     val announcement = BattleCropContract("AnnouncementCrop", BattleRegionId.ANNOUNCEMENT, minimumSize = 32)
     val matchOutcome = BattleCropContract("MatchOutcomeCrop", BattleRegionId.MATCH_OUTCOME, minimumSize = 32)
     val outOfBattleMenu = BattleCropContract("OutOfBattleMenuCrop", BattleRegionId.OUT_OF_BATTLE_MENU, minimumSize = 32)

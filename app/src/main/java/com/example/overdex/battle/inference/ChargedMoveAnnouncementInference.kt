@@ -58,7 +58,7 @@ class ChargedMoveAnnouncementInference(
             while (controlEvidence.size > 512) controlEvidence.removeFirst()
         }
         if (isAnnouncement && ((article.payload as RawTestimony).data as? String)?.let {
-                USED_MOVE_PATTERN.matches(it.trim()) || COMPACT_USED_MOVE_PATTERN.matches(it.trim())
+                matchAnnouncement(it) != null
             } == true) {
             pendingAnnouncements.addLast(article)
             while (pendingAnnouncements.size > 32) pendingAnnouncements.removeFirst()
@@ -78,7 +78,7 @@ class ChargedMoveAnnouncementInference(
         rosterSideForSpecies: (String) -> ActivePokemonSide?
     ): ChargedMoveAnnouncementDerivation? {
         val text = ((article.payload as? RawTestimony)?.data as? String)?.trim() ?: return null
-        val match = USED_MOVE_PATTERN.matchEntire(text) ?: COMPACT_USED_MOVE_PATTERN.matchEntire(text) ?: return null
+        val match = matchAnnouncement(text) ?: return null
         val at = article.monotonicTimeNanos ?: return null
         val activeAtUse = activeSpeciesHistory.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }
             .groupBy { (it.payload as ActivePokemonSpeciesWitnessed).side }
@@ -170,6 +170,12 @@ class ChargedMoveAnnouncementInference(
 
     private fun normalize(value: String): String = SpeciesOcrTypography.normalizeLabel(value)
 
+    /** OCR line breaks and a missing gap after "used" are formatting, not a new move. */
+    private fun matchAnnouncement(text: String): MatchResult? {
+        val line = text.trim().replace(ANNOUNCEMENT_WHITESPACE, " ")
+        return USED_MOVE_PATTERN.matchEntire(line) ?: COMPACT_USED_MOVE_PATTERN.matchEntire(line)
+    }
+
     /** Contact updates must not turn one unresolved announcement into repeated Room queries. */
     private suspend fun pokemon(name: String): Pokemon? {
         if (!pokemonByName.containsKey(name)) pokemonByName[name] = pokemonKnowledge.getPokemonByName(name)
@@ -211,7 +217,12 @@ class ChargedMoveAnnouncementInference(
             }.maxByOrNull { it.monotonicTimeNanos!! } ?: continue
             // The latest blank/ambiguous read deliberately blocks stale labels during QTE.
             val label = labelArticle.payload as PlayerChargeMoveLabelRead
-            val move = bestMoveMatches(normalize(label.text), pokemon.chargedMoves).singleOrNull()?.move ?: continue
+            val labelMatches = pokemon.chargedMoves.filter { MoveTextAliases.matchesButtonLabel(label.text, it.name) }
+            val move = when (labelMatches.size) {
+                1 -> labelMatches.single()
+                0 -> bestMoveMatches(normalize(MoveTextAliases.buttonLabelText(label.text)), pokemon.chargedMoves).singleOrNull()?.move
+                else -> null
+            } ?: continue
             if (MoveTextAliases.normalizedNames(move.name).none { reading == it || it.startsWith(reading) } &&
                 bestMoveMatches(reading, listOf(move)).isEmpty()) continue
             val ready = controlEvidence.filter { it.payload is GetReadyWitnessed &&
@@ -263,7 +274,8 @@ class ChargedMoveAnnouncementInference(
     private companion object {
         const val ANNOUNCEMENT_SOURCE = "ANNOUNCEMENT_WITNESS"
         const val ANNOUNCEMENT_EPISODE_NANOS = 4_000_000_000L
-        val USED_MOVE_PATTERN = Regex("^\\s*(?:(.+?)\\s+)?used\\s+(.+?)[!.]*\\s*$", RegexOption.IGNORE_CASE)
+        val ANNOUNCEMENT_WHITESPACE = Regex("\\s+")
+        val USED_MOVE_PATTERN = Regex("^\\s*(?:(.+?)\\s+)?used\\s*(.+?)[!.]*\\s*$", RegexOption.IGNORE_CASE)
         // Some small crops lose both word gaps: the October 13 record read "salusedDischargo".
         val COMPACT_USED_MOVE_PATTERN = Regex("^\\s*(\\p{L}{2,24})used([\\p{L}\\p{N}|$@€!]{6,})[!.]*\\s*$", RegexOption.IGNORE_CASE)
     }

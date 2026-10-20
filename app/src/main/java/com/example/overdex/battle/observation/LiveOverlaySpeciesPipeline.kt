@@ -79,7 +79,7 @@ internal class LiveOverlaySpeciesPipeline(
     private var activeMatch: Match? = null
     @Volatile private var lastSubmittedSpecies: String? = null
     private var lastRawReadings: List<String> = emptyList()
-    private var lastCaptureQueuedAtNanos = 0L
+    private var lastSampledAtNanos = 0L
     private var captureOperating: Boolean? = null
 
     override fun start(match: Match) {
@@ -87,7 +87,7 @@ internal class LiveOverlaySpeciesPipeline(
         activeMatch = match
         lastSubmittedSpecies = null
         lastRawReadings = emptyList()
-        lastCaptureQueuedAtNanos = 0L
+        lastSampledAtNanos = 0L
         captureOperating = null
         val sourceId = SourceId(observerId.id)
         val rawSourceId = SourceId("${observerId.id}_OCR")
@@ -120,8 +120,21 @@ internal class LiveOverlaySpeciesPipeline(
                     // previous successful recognition prevented recovery windows
                     // from ever opening when a switch cue was missed.
                     val calibratedRegion = cropContract.crop.region.regionIn(calibration)
-                    val enabled = captureAllowed() && match.speciesChecks.captureEnabled(side) &&
-                        SpeciesCaptureVisibility.canRead(calibratedRegion, frame.overlayRegion) && frame.canObserve(calibratedRegion)
+                    val scheduled = captureAllowed() && match.speciesChecks.captureEnabled(side)
+                    if (scheduled && lastSampledAtNanos > 0L &&
+                        frame.capturedAtMonotonicTimeNanos - lastSampledAtNanos <
+                        SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS
+                    ) return@supplyFrames
+                    if (scheduled) lastSampledAtNanos = frame.capturedAtMonotonicTimeNanos
+                    // A system-inset change can leave the saved strip inside our
+                    // HUD while the native name is clear just above it. Recover
+                    // the actual row first, excluding every presentation window.
+                    val searchRegion = if (scheduled) SpeciesBadgeTextLocator.locate(
+                        frame.bitmap, calibratedRegion,
+                        listOfNotNull(frame.overlayRegion, frame.retainedBadgeRegion),
+                    ) else calibratedRegion
+                    val enabled = scheduled && SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion) &&
+                        frame.canObserve(searchRegion)
                     if (captureOperating != enabled) {
                         match.custody.submitAvailability(
                             cropSourceId,
@@ -131,10 +144,6 @@ internal class LiveOverlaySpeciesPipeline(
                         captureOperating = enabled
                     }
                     if (!enabled) return@supplyFrames
-                    if (lastCaptureQueuedAtNanos > 0L &&
-                        frame.capturedAtMonotonicTimeNanos - lastCaptureQueuedAtNanos <
-                        SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS
-                    ) return@supplyFrames
                     val window = match.speciesChecks.windowFor(
                         side,
                         frame.capturedAtMonotonicTimeNanos
@@ -144,8 +153,6 @@ internal class LiveOverlaySpeciesPipeline(
                     // Do not add a blind row offset after locating it: a failed
                     // pre-battle read otherwise walks a correct strip into the
                     // status bar and keeps displacing subsequent valid names.
-                    val searchRegion = SpeciesBadgeTextLocator.locate(frame.bitmap, calibratedRegion)
-                    if (!SpeciesCaptureVisibility.canRead(searchRegion, frame.overlayRegion) || !frame.canObserve(searchRegion)) return@supplyFrames
                     val resolved = BattleCropResolver.resolve(
                         cropName = cropContract.crop.cropName,
                         region = searchRegion,
@@ -154,7 +161,6 @@ internal class LiveOverlaySpeciesPipeline(
                         area = cropContract.crop.areaInRegion,
                     )
                         ?: return@supplyFrames
-                    lastCaptureQueuedAtNanos = frame.capturedAtMonotonicTimeNanos
                     liveCrops.trySend(
                         LiveSpeciesCrop(
                             resolved,
@@ -333,7 +339,8 @@ internal class LiveOverlaySpeciesPipeline(
                     lastSubmittedSpecies = species.name
                     match.custody.submitTestimony(
                         sourceId = sourceId,
-                        payload = ActivePokemonSpeciesWitnessed(side, species.name, species.id),
+                        payload = ActivePokemonSpeciesWitnessed(side, species.name, species.id,
+                            ocrText = reading.text, ocrMatchBasis = resolution.basis),
                         timestamp = sample.capturedAtWallTimeMillis,
                         confidence = resolution.confidence,
                         evidenceReferences = evidenceReferences,
@@ -417,30 +424,11 @@ internal object FastOverlaySpeciesResolver {
         resolveDetailed(rawText, knownSpeciesNames)?.speciesName
 
     fun resolveDetailed(rawText: String, knownSpeciesNames: Set<String>): FastOverlaySpeciesResolution? {
-        val normalizedText = normalize(rawText)
-        val normalizedLines = rawText.lineSequence()
-            .map(::normalize)
-            .filter(String::isNotEmpty)
-            .toSet()
-        knownSpeciesNames
-            .filter { normalize(it).isNotEmpty() }
-            .filter {
-                val species = normalize(it)
-                normalizedText == species || species in normalizedLines
-            }
-            .maxByOrNull { normalize(it).length }
-            ?.let {
-                val caseEvidence = SpeciesOcrTypography.caseEvidence(rawText, it)
-                return FastOverlaySpeciesResolution(
-                    it,
-                    0.92f + caseEvidence * 0.06f,
-                    if (caseEvidence == 1f) "EXACT_CATALOGUE_TEXT_EXPECTED_CASE" else "EXACT_CATALOGUE_TEXT_CASE_NORMALIZED"
-                )
-            }
-
-        SpeciesTextResolver.resolve(rawText, knownSpeciesNames)?.let {
-            return FastOverlaySpeciesResolution(it, 0.82f, "UNAMBIGUOUS_CATALOGUE_FUZZY_MATCH")
+        val match = SpeciesTextResolver.match(rawText, knownSpeciesNames)
+        match.resolution?.let {
+            return FastOverlaySpeciesResolution(it.speciesName, it.confidence, it.basis)
         }
+        if (match.ambiguous) return null
 
         val tokens = rawText
             .replace(Regex("[^A-Za-z0-9]"), " ")
@@ -449,7 +437,9 @@ internal object FastOverlaySpeciesResolver {
             .filter { it.length >= 5 }
 
         for (token in tokens) {
-            val matches = knownSpeciesNames.filter { species ->
+            // A clipped base name cannot establish Shadow or another form. A
+            // longer parenthesized suffix must not also buy extra OCR edits.
+            val matches = knownSpeciesNames.map { it.substringBefore(" (") }.distinct().filter { species ->
                 val normalizedSpecies = normalize(species)
                 normalizedSpecies.length >= token.length &&
                     SpeciesOcrTypography.weightedDistance(token, normalizedSpecies.take(token.length)) <=

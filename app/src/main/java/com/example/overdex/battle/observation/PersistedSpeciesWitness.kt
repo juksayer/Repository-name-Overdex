@@ -135,7 +135,8 @@ class PersistedSpeciesWitness(
                         val species = match.pokemonKnowledge.getPokemonByName(speciesName)
                         match.custody.submitTestimony(
                             sourceId = sourceId,
-                            payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
+                            payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id,
+                                ocrText = recognition.rawText, ocrMatchBasis = recognition.basis),
                             timestamp = article.perceivedAt,
                             confidence = recognition.confidence,
                             evidenceReferences = refs,
@@ -166,10 +167,10 @@ class PersistedSpeciesWitness(
             }
             if (rawReadings.isEmpty()) return null
             val resolved = rawReadings.firstNotNullOfOrNull { reading ->
-                SpeciesTextResolver.resolve(reading.text, names)?.let { species -> reading to species }
+                SpeciesTextResolver.match(reading.text, names).resolution?.let { resolution -> reading to resolution }
             }
             val rawText = resolved?.first?.text ?: rawReadings.first().text
-            val speciesName = resolved?.second
+            val speciesName = resolved?.second?.speciesName
             resolved?.first?.let { reading -> reading.evidence?.let {
                 heightProfile.learn(it, context, names.any { name -> name.equals(reading.text.trim(), true) })
             } }
@@ -178,7 +179,8 @@ class PersistedSpeciesWitness(
                 "side=$side reads=${rawReadings.joinToString { "${it.treatment}:${it.text}" }} " +
                     "resolved=${speciesName ?: "none"} catalogue=${names.size}"
             )
-            SpeciesRecognition(rawText, rawReadings, speciesName, names, confidence = null)
+            SpeciesRecognition(rawText, rawReadings, speciesName, names,
+                confidence = resolved?.second?.confidence, basis = resolved?.second?.basis)
         } catch (error: Exception) {
             Log.e("ACTIVE_SPECIES", "recognition failed side=$side crop=${captured.cropProvenance.cropName}", error)
             null
@@ -211,7 +213,8 @@ class PersistedSpeciesWitness(
         val rawReadings: List<SpeciesNameRecognizer.Candidate>,
         val speciesName: String?,
         val knownNames: Set<String>,
-        val confidence: Float?
+        val confidence: Float?,
+        val basis: String?,
     )
 
     companion object {

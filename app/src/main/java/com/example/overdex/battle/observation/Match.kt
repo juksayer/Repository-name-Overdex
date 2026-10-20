@@ -71,8 +71,13 @@ class Match(
     private val interpreter = BattleInterpreter(pokemonKnowledge)
     private val countdownMatchStartInference = com.example.overdex.battle.inference.CountdownMatchStartInference()
     private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
+    private val playerInformationInference = com.example.overdex.battle.inference.PlayerBattleInformationInference(pokemonKnowledge)
     private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge)
     private val opponentEnergyForecast = com.example.overdex.battle.forecast.OpponentEnergyForecast()
+
+    internal fun observeForecastBattlefield(at: Long, bothBarsVisible: Boolean) {
+        opponentEnergyForecast.observeBattlefield(at, bothBarsVisible)
+    }
     private val fastMoveUseInference = FastMoveUseInference { impact ->
         // Capture the sound when the first raw impact arrives, without waiting
         // for the bounded corroboration buffer to publish the fused use.
@@ -505,6 +510,7 @@ class Match(
                     }
                 }
 
+                appendPlayerInformationChecks(article)
                 appendChargeMoveQteDerivation(article)
                 appendFastMoveEnergyDerivations(article)
 
@@ -539,8 +545,10 @@ class Match(
 
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
+                    _articles.tryEmit(derivedArticle)
                     battleMemory.timeline.record(derivedArticle)
                     appendChargeMoveQteDerivation(derivedArticle)
+                    appendFastMoveUseDerivations(derivedArticle)
                     Log.d("ATTACK_SLICE", "Derived AttackIncoming article appended: articleId=${derivedArticle.id.value}, predecessor=${derivedArticle.predecessorIds.firstOrNull()?.value}")
                 }
 
@@ -597,6 +605,22 @@ class Match(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun appendPlayerInformationChecks(article: RealityArticle) {
+        playerInformationInference.accept(article).forEach { check ->
+            val derived = RealityArticle(
+                id = ArticleId(UUID.randomUUID().toString()),
+                perceivedAt = check.observedArticle.perceivedAt,
+                recordedAt = System.currentTimeMillis(),
+                sourceId = SourceId("PLAYER_INFORMATION_COMPARISON"),
+                payload = check.payload, predecessorIds = check.predecessorIds,
+                matchId = MatchId(matchId), monotonicTimeNanos = check.observedArticle.monotonicTimeNanos,
+            )
+            realityTimeline.append(derived)
+            _articles.tryEmit(derived)
+            battleMemory.timeline.record(derived)
         }
     }
 
@@ -720,7 +744,7 @@ class Match(
             (derivation.payload as? FastMoveIdentified)?.let { identified ->
                 fastMoveUseInference.observeIdentity(identified)
                 if (identified.side == ActivePokemonSide.OPPONENT) {
-                    DroidballOverlayPresentation.recordOpponentFastMove(identified.moveName)
+                    DroidballOverlayPresentation.recordOpponentFastMove(identified)
                 }
             }
             val derivedArticle = RealityArticle(
@@ -737,6 +761,7 @@ class Match(
             realityTimeline.append(derivedArticle)
             _articles.tryEmit(derivedArticle)
             battleMemory.timeline.record(derivedArticle)
+            appendPlayerInformationChecks(derivedArticle)
             appendFastMoveEnergyDerivations(derivedArticle)
         }
     }

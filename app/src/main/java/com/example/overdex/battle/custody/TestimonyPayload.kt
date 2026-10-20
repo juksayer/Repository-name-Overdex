@@ -165,7 +165,10 @@ enum class ActivePokemonSide { PLAYER, OPPONENT }
 data class ActivePokemonSpeciesWitnessed(
     val side: ActivePokemonSide,
     val speciesName: String,
-    val speciesId: Int? = null
+    val speciesId: Int? = null,
+    /** OCR input and repair rule; null for older articles and non-OCR witnesses. */
+    val ocrText: String? = null,
+    val ocrMatchBasis: String? = null,
 ) : TestimonyPayload
 
 /** A stable opponent Poké Ball count decrease established that the active opponent fainted. */

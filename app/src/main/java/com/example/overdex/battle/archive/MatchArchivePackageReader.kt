@@ -107,7 +107,7 @@ object MatchArchivePackageReader {
             val finalArchive = archive ?: throw IllegalArgumentException("Missing $TIMELINE_ENTRY_NAME in archive.")
             validateIntegrity(finalManifest, finalArchive)
             validateArtifactReferences(finalManifest, finalArchive, stagedArtifacts.keys)
-            if (artifactPolicy == ArtifactPolicy.IMPORT_AND_VERIFY) {
+            if (artifactPolicy == ArtifactPolicy.IMPORT_AND_VERIFY && finalManifest.mediaIncluded) {
                 validateArtifactFiles(finalManifest, stagedArtifacts)
                 if (artifactRepositoryRoot != null) importArtifacts(artifactRepositoryRoot, stagedArtifacts)
             }
@@ -167,7 +167,7 @@ object MatchArchivePackageReader {
     private fun decodeManifest(jsonString: String): MatchArchiveManifest {
         val manifest = manifestJson.decodeFromString<MatchArchiveManifest>(jsonString)
         
-        if (manifest.archiveFormatVersion !in 1..2) {
+        if (manifest.archiveFormatVersion !in 1..3) {
             throw IllegalArgumentException("Unsupported archive format version: ${manifest.archiveFormatVersion}")
         }
         if (manifest.archiveType != "overdex-match-archive") {
@@ -175,6 +175,9 @@ object MatchArchivePackageReader {
         }
         if (manifest.timelineEntry != TIMELINE_ENTRY_NAME) {
             throw IllegalArgumentException("Unexpected timeline entry name in manifest: ${manifest.timelineEntry}")
+        }
+        require(manifest.mediaIncluded || manifest.archiveFormatVersion >= 3) {
+            "Omitted media requires archive format 3."
         }
         
         return manifest
@@ -203,7 +206,8 @@ object MatchArchivePackageReader {
         }.distinctBy { it.relativePath }.sortedBy { it.relativePath }
         val declared = manifest.artifacts.sortedBy { it.relativePath }
         if (referenced != declared) throw IllegalArgumentException("Crop artifact manifest does not match Timeline references.")
-        if (artifactPaths != null && artifactPaths != declared.map { it.relativePath }.toSet()) {
+        val expectedPaths = if (manifest.mediaIncluded) declared.map { it.relativePath }.toSet() else emptySet()
+        if (artifactPaths != null && artifactPaths != expectedPaths) {
             throw IllegalArgumentException("Archive crop artifact entries do not match the manifest.")
         }
         declared.forEach { artifact ->
@@ -235,6 +239,7 @@ object MatchArchivePackageReader {
     }
 
     private fun validateIntegrity(manifest: MatchArchiveManifest, archive: MatchArchive) {
+        require(manifest.mediaIncluded == archive.mediaIncluded) { "Archive media retention does not match the manifest." }
         if (manifest.matchId != archive.matchId) {
             throw IllegalArgumentException("Match ID mismatch: Manifest has ${manifest.matchId}, Timeline has ${archive.matchId}")
         }

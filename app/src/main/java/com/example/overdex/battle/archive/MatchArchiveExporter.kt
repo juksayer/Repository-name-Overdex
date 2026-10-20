@@ -28,12 +28,10 @@ object MatchArchiveExporter {
         val snapshot = realityTimeline.getArticles()
         val matchArticles = snapshot.filter { it.matchId == matchId }
         val archivedArticles = matchArticles.map(RealityArticleArchiveMapper::map)
-        val selectedArticles = MatchArchiveArticleSelector.select(archivedArticles, mode)
-
         val archive = MatchArchive(
             matchId = matchId.value,
-            articles = selectedArticles
-        )
+            articles = archivedArticles
+        ).forExport(mode)
 
         return MatchArchivePackageWriter.write(archive, output, artifactRepositoryRoot, onArtifactVerified)
     }

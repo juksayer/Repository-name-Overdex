@@ -207,7 +207,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.POINTER_COORDINATES,
             CalibrationRegion.DECISION_TIMER,
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT,
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT,
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT,
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT,
 
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
             CalibrationRegion.MATCH_OUTCOME
@@ -219,7 +221,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.POINTER_COORDINATES -> "Touch Coordinates"
             CalibrationRegion.DECISION_TIMER -> "Decision Timer"
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> "Player Charged Move Name - Left"
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT -> "Charged Button Effectiveness - Left"
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> "Player Charged Move Name - Right"
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT -> "Charged Button Effectiveness - Right"
             CalibrationRegion.ENEMY_NAME -> "Enemy Name"
             CalibrationRegion.HP_BAR -> "HP Bar"
             CalibrationRegion.TEAM_ICONS -> "Team Icons"
@@ -288,7 +292,9 @@ fun MatchCalibrationScreen(
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         CalibrationRegion.DECISION_TIMER -> calibration.decisionTimerRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
+        CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT -> calibration.playerChargeMoveEffectivenessLeftRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
+        CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT -> calibration.playerChargeMoveEffectivenessRightRegion
         CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         CalibrationRegion.MATCH_OUTCOME -> calibration.matchOutcomeRegion
@@ -359,7 +365,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)
             CalibrationRegion.DECISION_TIMER -> calibration.copy(decisionTimerRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.copy(playerChargeMoveNameLeftRegion = updated)
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT -> calibration.copy(playerChargeMoveEffectivenessLeftRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.copy(playerChargeMoveNameRightRegion = updated)
+            CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT -> calibration.copy(playerChargeMoveEffectivenessRightRegion = updated)
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> calibration.copy(trainerChargeMoveControlsRegion = updated)
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> calibration.copy(trainerInactivePokemonRegion = updated)
             CalibrationRegion.MATCH_OUTCOME -> calibration.copy(matchOutcomeRegion = updated)

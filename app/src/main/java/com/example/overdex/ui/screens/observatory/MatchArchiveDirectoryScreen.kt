@@ -123,7 +123,7 @@ fun MatchArchiveDirectoryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TerminalText(
-                    text = "AUTOMATIC COMPACT RECORDS · OVERDEX INTERNAL",
+                    text = "NEWEST 50 MATCHES · OVERDEX INTERNAL",
                     color = TerminalPurple,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold

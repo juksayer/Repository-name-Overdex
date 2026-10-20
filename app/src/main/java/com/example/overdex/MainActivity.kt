@@ -469,6 +469,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
                 InstrumentCommand.OpenBattleRecords -> navController.navigate("battle_records")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("timeline_viewer")
+                InstrumentCommand.OpenReplayEditor -> navController.navigate("replay_editor")
 
                 InstrumentCommand.OpenCapture -> navController.navigate("guided_registration") { launchSingleTop = true }
                 InstrumentCommand.OpenCalibration -> navController.navigate("calibration")
@@ -1263,6 +1264,7 @@ fun PokedexApp(
                         source = archiveSource,
                         directory = archiveDirectoryManager,
                         onLcdContentUpdate = { matchLcdContent = it },
+                        onOpenExportedMatch = onOpenArchive,
                         onBack = { navController.debugPopBackStack() },
                         onOpenMatches = { navController.navigate("match_archive_directory") },
                         onInspect = { archive, uri ->
@@ -1385,6 +1387,7 @@ fun PokedexApp(
                     ) {
                         com.example.overdex.ui.screens.observatory.MatchArchiveViewerScreen(
                             archive = archive,
+                            onOpenEditor = { navController.navigate("replay_editor") },
                             onLcdContentUpdate = { matchLcdContent = it },
                             onBack = {
                                 openedArchive.value = null
@@ -1404,6 +1407,7 @@ fun PokedexApp(
                                 lcdLine2 = line2
                             },
                             resolveSpeciesId = { name -> viewModel.getPokemonByName(name)?.id },
+                            resolveSpeciesTypes = { name -> viewModel.getPokemonByName(name)?.types.orEmpty() },
                             resolveFastMoveType = { speciesName, moveName ->
                                 viewModel.getPokemonByName(speciesName)
                                     ?.fastMoves
@@ -1444,6 +1448,33 @@ fun PokedexApp(
                         android.widget.Toast.makeText(context, "Archive data lost.", android.widget.Toast.LENGTH_SHORT).show()
                         navController.debugPopBackStack()
                     }
+                }
+            }
+            composable("replay_editor") {
+                var editorLcd by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+                var up by remember { mutableStateOf<() -> Unit>({}) }
+                var down by remember { mutableStateOf<() -> Unit>({}) }
+                var left by remember { mutableStateOf<() -> Unit>({}) }
+                var right by remember { mutableStateOf<() -> Unit>({}) }
+                var a by remember { mutableStateOf<() -> Unit>({}) }
+                var b by remember { mutableStateOf<() -> Unit>({}) }
+                ODXFiShell(
+                    viewModel = viewModel, showBattleOverlay = false,
+                    filterSettings = filterSettings, onFilterSettingsChange = { filterSettings = it },
+                    deploymentState = deploymentState, frameCount = frameCount,
+                    lcdContent = editorLcd,
+                    onUp = { up() }, onDown = { down() }, onLeft = { left() }, onRight = { right() },
+                    onA = { a() }, onB = { b() },
+                ) {
+                    com.example.overdex.ui.screens.observatory.ReplayEditorScreen(
+                        viewModel = viewModel,
+                        onBack = { navController.debugPopBackStack() },
+                        onOpenArchives = { navController.navigate("match_archive_directory") },
+                        onUp = { up = it }, onDown = { down = it },
+                        onLeft = { left = it }, onRight = { right = it },
+                        onA = { a = it }, onB = { b = it },
+                        onLcdContentUpdate = { editorLcd = it },
+                    )
                 }
             }
             composable("match_sight") {

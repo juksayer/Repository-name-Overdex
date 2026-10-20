@@ -21,6 +21,19 @@ data class ArchivedPlayerChargeButtonTouchWitnessed(
 data class ArchivedPlayerChargeMoveLabelRead(val slot: Int, val text: String, val basis: String = "OCR") : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_charged_move_effectiveness_observed")
+data class ArchivedPlayerChargedMoveEffectivenessObserved(
+    val slot: Int, val effectiveness: String, val recognizedText: String, val basis: String = "OCR",
+) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_battle_information_checked")
+data class ArchivedPlayerBattleInformationChecked(
+    val speciesName: String, val field: String, val configuredValue: String?,
+    val observedValue: String, val status: String, val basis: String,
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("raw_text")
 data class ArchivedRawText(
     val value: String,
@@ -73,7 +86,9 @@ data class ArchivedPokemonIdentified(
 data class ArchivedActivePokemonSpeciesWitnessed(
     val side: String,
     val speciesName: String,
-    val speciesId: Int? = null
+    val speciesId: Int? = null,
+    val ocrText: String? = null,
+    val ocrMatchBasis: String? = null,
 ) : ArchivedTestimonyPayload
 
 @Serializable

@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * A durable, evidence-preserving reference to one interval in an exported Match.
- * The excerpt deliberately copies no crops, audio, or Timeline articles.
+ * Original event times stay in the source clock. New clips retain a separate,
+ * compressed Timeline snapshot; no crops or audio are duplicated.
  */
 @Serializable
 data class ReplayExcerpt(
@@ -16,7 +17,11 @@ data class ReplayExcerpt(
     val endMonotonicTimeNanos: Long,
     val startArticleId: String? = null,
     val endArticleId: String? = null,
-    val title: String? = null
+    val title: String? = null,
+    val createdAtMillis: Long = 0,
+    val notes: String = "",
+    /** Presentation recovery stays explicitly separate from original articles. */
+    val recoveredIdentities: List<ReplayIdentityObservation> = emptyList(),
 ) {
     init {
         require(startMonotonicTimeNanos <= endMonotonicTimeNanos) {

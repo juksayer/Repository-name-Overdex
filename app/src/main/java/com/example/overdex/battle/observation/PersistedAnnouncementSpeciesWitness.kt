@@ -41,10 +41,11 @@ class PersistedAnnouncementSpeciesWitness(
                     // “Turtonator used Dragon Pulse!”.  Do not search the entire crop
                     // for a species-shaped substring: Android capture can include our
                     // own HUD, and “GREAT / Aurora Beam” is one edit away from Tauros.
-                    val speciesName = AnnouncementSpeciesTextResolver.resolveUsedMovePerformer(
+                    val resolution = AnnouncementSpeciesTextResolver.resolveDetailed(
                         rawText = text,
                         knownSpeciesNames = names
                     ) ?: return@collect
+                    val speciesName = resolution.speciesName
                     val side = match.sideForNamedMovePerformer(speciesName) ?: return@collect
                     val witnessed = side to speciesName
                     if (witnessed == lastWitnessed) return@collect
@@ -52,9 +53,10 @@ class PersistedAnnouncementSpeciesWitness(
                     val species = match.pokemonKnowledge.getPokemonByName(speciesName)
                     match.custody.submitTestimony(
                         sourceId = sourceId,
-                        payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id),
+                        payload = ActivePokemonSpeciesWitnessed(side, speciesName, species?.id,
+                            ocrText = text, ocrMatchBasis = resolution.basis),
                         timestamp = article.perceivedAt,
-                        confidence = null,
+                        confidence = resolution.confidence,
                         evidenceReferences = listOf(article.id.value),
                         monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
                     )
@@ -76,10 +78,12 @@ object AnnouncementSpeciesTextResolver {
     fun resolveUsedMovePerformer(
         rawText: String,
         knownSpeciesNames: Set<String>
-    ): String? {
+    ): String? = resolveDetailed(rawText, knownSpeciesNames)?.speciesName
+
+    internal fun resolveDetailed(rawText: String, knownSpeciesNames: Set<String>): SpeciesTextResolution? {
         val singleLine = rawText.trim().replace(Regex("\\s+"), " ")
         val performerText = usedMovePattern.matchEntire(singleLine)?.groupValues?.get(1)
             ?: return null
-        return SpeciesTextResolver.resolve(performerText, knownSpeciesNames)
+        return SpeciesTextResolver.match(performerText, knownSpeciesNames).resolution
     }
 }

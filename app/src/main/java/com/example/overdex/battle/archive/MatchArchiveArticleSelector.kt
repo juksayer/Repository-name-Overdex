@@ -6,7 +6,7 @@ object MatchArchiveArticleSelector {
         articles: List<ArchivedRealityArticle>,
         mode: MatchArchiveExportMode
     ): List<ArchivedRealityArticle> {
-        if (mode == MatchArchiveExportMode.FULL_FORENSIC) return articles
+        if (mode != MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) return articles
 
         val byId = articles.associateBy { it.articleId }
         val retainedIds = linkedSetOf<String>()

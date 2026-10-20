@@ -40,6 +40,8 @@ object MatchArchiveSerializer {
         writer.write(archive.schemaVersion.toString())
         writer.write(",\"matchId\":")
         writer.write(json.encodeToString(archive.matchId))
+        writer.write(",\"mediaIncluded\":")
+        writer.write(archive.mediaIncluded.toString())
         writer.write(",\"articles\":[")
         archive.articles.forEachIndexed { index, article ->
             if (index > 0) writer.write(','.code)

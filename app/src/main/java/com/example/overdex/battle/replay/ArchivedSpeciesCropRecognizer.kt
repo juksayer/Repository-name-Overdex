@@ -34,7 +34,7 @@ object ArchivedSpeciesCropRecognizer {
         resolveSpeciesId: suspend (String) -> Int?,
         onProgress: (ReplayCropProgress) -> Unit = {}
     ): List<ReplayIdentityObservation> = withContext(Dispatchers.IO) {
-        if (knownSpeciesNames.isEmpty()) return@withContext emptyList()
+        if (!archive.mediaIncluded || knownSpeciesNames.isEmpty()) return@withContext emptyList()
         val targets = listOf(
             sampleTargets(archive, "PLAYER", BattleCropContracts.playerActiveSpeciesText.cropName),
             sampleTargets(archive, "OPPONENT", BattleCropContracts.opponentActiveSpeciesText.cropName)

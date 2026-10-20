@@ -7,6 +7,30 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
+    @Test fun `resolved fast moves receive checkmarks and survive a switch`() {
+        val moves = listOf("Quick Attack" to PokemonType.NORMAL, "Spark" to PokemonType.ELECTRIC)
+        DroidballOverlayPresentation.recordOpponentSpecies("Plusle", 311, moves, emptyList())
+        fun identity(name: String, species: String = "Plusle", basis: String = "EFFECTIVENESS_TEXT") =
+            com.example.overdex.battle.custody.FastMoveIdentified(
+                com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT, species, name,
+                1_000_000_000L, null, 0, basis)
+        DroidballOverlayPresentation.recordOpponentFastMove(identity("Quick Attack", basis = "HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"))
+        assertEquals(2, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.size)
+        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.any { it.isConfirmed })
+        DroidballOverlayPresentation.recordOpponentFastMove(identity("Spark"))
+        val confirmed = DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single()
+        assertEquals("Spark", confirmed.name)
+        assertEquals(true, confirmed.isConfirmed)
+        DroidballOverlayPresentation.recordOpponentSpecies("Electrode", 101, listOf("Volt Switch" to PokemonType.ELECTRIC), emptyList())
+        // Late Plusle evidence cannot mark Electrode's move as confirmed.
+        DroidballOverlayPresentation.recordOpponentFastMove(identity("Spark"))
+        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
+        DroidballOverlayPresentation.recordOpponentSpecies("Plusle", 311, moves, emptyList())
+        assertEquals(true, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Plusle", listOf("Quick Attack"))
+        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
+    }
+
     @After
     fun resetPresentation() {
         DroidballOverlayPresentation.reset()

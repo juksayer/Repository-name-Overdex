@@ -85,13 +85,17 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     /** A known move changes the allowed phase offset, never creates a use. */
     fun observeIdentity(identity: FastMoveIdentified) {
         val key = identity.side to identity.speciesName.lowercase()
-        val trusted = !identity.basis.contains("HIGHER_ENERGY_TIE_BREAK_ASSUMPTION") &&
+        // Equal-duration names can remain tied while the duration itself is
+        // measured. Use that timing to join evidence, not to award assumed energy.
+        val measuredImpactDuration = identity.basis.contains("_CONSISTENT_IMPACT_STREAM") &&
+            identity.cadenceSampleCount >= 2
+        val trusted = measuredImpactDuration || (!identity.basis.contains("HIGHER_ENERGY_TIE_BREAK_ASSUMPTION") &&
             (identity.basis.startsWith("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES") ||
                 identity.basis.startsWith("ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE") ||
                 identity.basis.startsWith("AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE") ||
                 identity.basis.contains("EFFECTIVENESS_TEXT") || identity.basis.contains("_CORROBORATED_BY_") ||
                 (identity.basis.startsWith("BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE") &&
-                    identity.cadenceSampleCount >= 2))
+                    identity.cadenceSampleCount >= 2)))
         if (trusted && identity.moveDurationNanos > 0) knownDurations[key] = identity.moveDurationNanos
         else knownDurations.remove(key)
     }
@@ -317,10 +321,11 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private fun mergeWindow(use: PendingUse): Long {
         val duration = use.appearance?.speciesName?.let { knownDurations[use.attackingSide to it.lowercase()] }
         // Recorded Water Shuriken losses precede their border flashes by up to
-        // 792 ms, just over half its 1.5 s cycle. Allow this measured phase gap,
-        // still bounded below a full cycle and never from a cadence hypothesis.
+        // 1.002 s in the October 20 paired match's monotonic source times.
+        // Allow this measured phase gap plus a small capture tolerance, still
+        // below a full cycle and never from an energy-preference hypothesis.
         // Distinct losses and distinct pulse onsets remain distinct uses.
-        return duration?.let { (it * 60 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, 1_000_000_000L) } ?: USE_CLUSTER_WINDOW_NANOS
+        return duration?.let { (it * 70 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, 1_050_000_000L) } ?: USE_CLUSTER_WINDOW_NANOS
     }
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {

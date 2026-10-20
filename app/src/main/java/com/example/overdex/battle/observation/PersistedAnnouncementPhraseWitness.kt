@@ -83,7 +83,25 @@ internal fun announcementContainsPhrase(text: String, phrase: String): Boolean {
     val normalizedText = text.uppercase().filter(Char::isLetterOrDigit)
     val normalizedPhrase = phrase.uppercase().filter(Char::isLetterOrDigit)
     return when (normalizedPhrase) {
-        "GETREADY" -> normalizedText.contains("GETREADY") || normalizedText.contains("GETREA")
+        "GETREADY" -> normalizedText.contains("GETREADY") || normalizedText.contains("GETREA") ||
+            (normalizedText.length in 6..9 &&
+                (phraseEditDistance(normalizedText, "GETREADY") <= 2 ||
+                    (normalizedText.startsWith("GET") && phraseEditDistance(normalizedText, "GETREADY") <= 3)))
         else -> normalizedText.contains(normalizedPhrase)
     }
+}
+
+/** Bounded phrase vocabulary; never rewrite the raw OCR or repair a species here. */
+private fun phraseEditDistance(actual: String, expected: String): Int {
+    var previous = IntArray(expected.length + 1) { it }
+    actual.forEachIndexed { row, character ->
+        val next = IntArray(expected.length + 1)
+        next[0] = row + 1
+        expected.forEachIndexed { column, target ->
+            next[column + 1] = minOf(previous[column + 1] + 1, next[column] + 1,
+                previous[column] + if (character == target) 0 else 1)
+        }
+        previous = next
+    }
+    return previous.last()
 }

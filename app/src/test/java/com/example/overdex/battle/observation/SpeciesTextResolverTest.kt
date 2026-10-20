@@ -31,6 +31,6 @@ class SpeciesTextResolverTest {
     }
 
     @Test fun `does not shorten a damaged Mewtwo reading to Mew`() {
-        assertNull(SpeciesTextResolver.resolve("MewtO", setOf("Mew", "Mewtwo")))
+        assertEquals("Mewtwo", SpeciesTextResolver.resolve("MewtO", setOf("Mew", "Mewtwo")))
     }
 }

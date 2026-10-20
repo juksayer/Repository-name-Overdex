@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -41,6 +43,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -94,6 +97,11 @@ import kotlin.math.sin
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.example.overdex.battle.replay.ReplayExcerptStore
+import com.example.overdex.battle.replay.ReplayWindow
 
 /** A clean CRT battle stage. Replay transport and diagnostics live in the ODX-Fi LCD. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -110,16 +118,31 @@ fun MatchReplayScreen(
     onLcdUpdate: (String, String) -> Unit = { _, _ -> },
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit = {},
     resolveSpeciesId: suspend (String) -> Int? = { null },
+    resolveSpeciesTypes: suspend (String) -> List<PokemonType> = { emptyList() },
     resolveFastMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveChargedMoveType: suspend (speciesName: String, moveName: String) -> PokemonType? = { _, _ -> null },
     resolveFastMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveChargedMoves: suspend (speciesName: String) -> List<Move> = { emptyList() },
     resolveArchivedSpeciesCrops: suspend (MatchArchive, (ReplayCropProgress) -> Unit) -> List<ReplayIdentityObservation> = { _, _ -> emptyList() },
     initialCursorNanos: Long? = null,
+    playbackWindow: ReplayWindow? = null,
+    autoplay: Boolean = false,
+    playbackLabel: String? = null,
+    onPlaybackComplete: () -> Unit = {},
+    onOpenEditor: (() -> Unit)? = null,
+    allowClipSave: Boolean = true,
+    onLeft: (() -> Unit) -> Unit = {},
+    onRight: (() -> Unit) -> Unit = {},
+    initialPlaybackSpeed: Float = 1f,
+    onPlaybackSpeedChange: (Float) -> Unit = {},
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
+    var speciesResolved by remember(archive) { mutableStateOf(false) }
+    var fastMovesResolved by remember(archive) { mutableStateOf(false) }
+    var chargedMovesResolved by remember(archive) { mutableStateOf(false) }
     val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
         value = referencedNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
+        speciesResolved = true
     }
     var cropProgress by remember(archive) { mutableStateOf(ReplayCropProgress("READING ARCHIVE")) }
     var cropError by remember(archive) { mutableStateOf<String?>(null) }
@@ -133,6 +156,14 @@ fun MatchReplayScreen(
             emptyList()
         }
     }
+    val typeSpeciesNames = remember(referencedNames, archivedCropIdentities) {
+        (referencedNames + archivedCropIdentities.orEmpty().map { it.speciesName }).distinct()
+    }
+    val speciesTypes by produceState<Map<String, List<PokemonType>>>(emptyMap(), archive, typeSpeciesNames) {
+        value = typeSpeciesNames.associate { name ->
+            name.uppercase().filter(Char::isLetterOrDigit) to resolveSpeciesTypes(name).distinct()
+        }
+    }
     val fastMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
         value = archive.articles.mapNotNull { article ->
             val identified = article.payload as? ArchivedFastMoveIdentified ?: return@mapNotNull null
@@ -142,9 +173,11 @@ fun MatchReplayScreen(
     }
     val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
         value = referencedNames.associateWith { resolveFastMoves(it) }
+        fastMovesResolved = true
     }
     val chargedMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
         value = referencedNames.associateWith { resolveChargedMoves(it) }
+        chargedMovesResolved = true
     }
     val chargedMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
         value = archive.articles.mapNotNull { it.payload as? ArchivedChargedMoveEnergySpent }
@@ -165,20 +198,76 @@ fun MatchReplayScreen(
             chargedMovesBySpecies,
         )
     }
-    var cursor by remember(archive, initialCursorNanos) {
-        mutableLongStateOf((initialCursorNanos ?: model.startNanos).coerceIn(model.startNanos, model.endNanos))
+    val playbackStart = playbackWindow?.startNanos ?: model.startNanos
+    val playbackEnd = playbackWindow?.endNanos ?: model.endNanos
+    var cursor by remember(archive, initialCursorNanos, playbackWindow) {
+        mutableLongStateOf((initialCursorNanos ?: playbackStart).coerceIn(playbackStart, playbackEnd))
     }
-    var playing by remember(archive) { mutableStateOf(false) }
-    var playbackSpeed by remember(archive) { mutableFloatStateOf(1f) }
+    var playing by remember(archive, playbackWindow) { mutableStateOf(false) }
+    var autoStarted by remember(archive, playbackWindow) { mutableStateOf(false) }
+    var playbackSpeed by remember(archive, playbackWindow) { mutableFloatStateOf(initialPlaybackSpeed) }
+    LaunchedEffect(autoplay, speciesResolved, fastMovesResolved, chargedMovesResolved, archivedCropIdentities) {
+        if (autoplay && !autoStarted && speciesResolved && fastMovesResolved && chargedMovesResolved &&
+            archivedCropIdentities != null) {
+            autoStarted = true
+            playing = true
+        }
+    }
+    fun setSpeed(speed: Float) {
+        playbackSpeed = speed
+        onPlaybackSpeedChange(speed)
+    }
     val currentModel by rememberUpdatedState(model)
     val scene = model.sceneAt(cursor)
-    val duration = (model.endNanos - model.startNanos).coerceAtLeast(1L)
+    val duration = (playbackEnd - playbackStart).coerceAtLeast(1L)
     val displayedMatchStart = model.matchStartNanos ?: model.countdown?.goAtNanos
         ?.takeUnless { model.countdown?.timingBasis == com.example.overdex.battle.replay.ReplayCountdownTiming.PRESENTATION_ONLY }
-    val matchStartFraction = displayedMatchStart?.let { matchStartNanos ->
-        ((matchStartNanos - model.startNanos).toFloat() / duration).coerceIn(0f, 1f)
+    val matchStartFraction = displayedMatchStart?.takeIf { it in playbackStart..playbackEnd }?.let { matchStartNanos ->
+        ((matchStartNanos - playbackStart).toFloat() / duration).coerceIn(0f, 1f)
     }
     val context = LocalContext.current
+    val saveScope = rememberCoroutineScope()
+    var clipStart by remember(archive) { mutableStateOf<Long?>(null) }
+    var clipEnd by remember(archive) { mutableStateOf<Long?>(null) }
+    var savingClip by remember { mutableStateOf(false) }
+    var clipStatus by remember { mutableStateOf<String?>(null) }
+    var editorAction by remember { mutableIntStateOf(0) }
+    val editorActionCount = if (onOpenEditor != null) 4 else 3
+    val completion by rememberUpdatedState(onPlaybackComplete)
+    fun markClipStart() {
+        playing = false
+        clipStart = cursor
+        clipStatus = "START ${formatReplayTime(cursor - model.startNanos)}"
+    }
+    fun markClipEnd() {
+        playing = false
+        if (clipStart == null) clipStatus = "MARK START FIRST"
+        else if (cursor <= clipStart!!) clipStatus = "MOVE FORWARD TO SET THE END"
+        else clipEnd = cursor
+    }
+    if (clipEnd != null) ReplayNameDialog(
+        heading = "Save replay clip", initialTitle = "Clip", initialNotes = "",
+        onDismiss = { clipEnd = null },
+        onSave = { title, notes ->
+            val start = clipStart!!
+            val end = clipEnd!!
+            clipEnd = null
+            savingClip = true
+            saveScope.launch {
+                try {
+                    val clip = withContext(Dispatchers.IO) {
+                        ReplayExcerptStore(context.filesDir).saveRange(archive, start, end, title, notes,
+                            recoveredIdentities = archivedCropIdentities.orEmpty())
+                    }
+                    clipStatus = "SAVED: ${clip.title}"
+                    clipStart = null
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    clipStatus = "NOT SAVED: ${e.message}"
+                } finally { savingClip = false }
+            }
+        },
+    )
     val replayPreferences = remember(context) { context.getSharedPreferences("match_replay", Context.MODE_PRIVATE) }
     var eventBlipsEnabled by remember(replayPreferences) {
         mutableStateOf(replayPreferences.getBoolean("event_blips_enabled", true))
@@ -205,7 +294,7 @@ fun MatchReplayScreen(
     }
 
     fun togglePlayback() {
-        if (!playing && cursor >= model.endNanos) cursor = model.startNanos
+        if (!playing && cursor >= playbackEnd) cursor = playbackStart
         playing = !playing
         if (playing) transportSounds.play() else transportSounds.pause()
     }
@@ -213,15 +302,24 @@ fun MatchReplayScreen(
     fun scrubBy(deltaNanos: Long) {
         playing = false
         val previous = cursor
-        cursor = (cursor + deltaNanos).coerceIn(model.startNanos, model.endNanos)
+        cursor = (cursor + deltaNanos).coerceIn(playbackStart, playbackEnd)
         if (cursor != previous) transportSounds.scrub()
     }
 
     SideEffect {
         onUp { scrubBy(-SCRUB_STEP_NANOS) }
         onDown { scrubBy(SCRUB_STEP_NANOS) }
-        onA { togglePlayback() }
-        onB { playing = false; transportSounds.stop(); onBack() }
+        onLeft { if (allowClipSave) editorAction = (editorAction + editorActionCount - 1) % editorActionCount }
+        onRight { if (allowClipSave) editorAction = (editorAction + 1) % editorActionCount }
+        onA {
+            if (!savingClip && clipEnd == null) when (editorAction) {
+                1 -> markClipStart()
+                2 -> markClipEnd()
+                3 -> { playing = false; onOpenEditor?.invoke() }
+                else -> togglePlayback()
+            }
+        }
+        onB { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }
         onLcdTap { togglePlayback() }
         onLcdDrag { delta ->
             // A complete lower-LCD-width sweep spans the complete match record.
@@ -231,6 +329,14 @@ fun MatchReplayScreen(
 
     PublishMatchLcd(onLcdContentUpdate) {
         var scrubWidth by remember { mutableIntStateOf(1) }
+        val lcdScroll = rememberScrollState()
+        val marksRequester = remember { BringIntoViewRequester() }
+        LaunchedEffect(editorAction, clipStatus, savingClip) {
+            if (allowClipSave) when (editorAction) {
+                0 -> lcdScroll.animateScrollTo(0)
+                1, 2 -> marksRequester.bringIntoView()
+            }
+        }
         val drag by rememberUpdatedState<(Offset) -> Unit>({ delta ->
             scrubBy((duration * delta.x / scrubWidth).toLong())
         })
@@ -247,13 +353,14 @@ fun MatchReplayScreen(
             .pointerInput(Unit) { detectTapGestures { toggle() } }
         Column(Modifier.fillMaxSize().onSizeChanged { scrubWidth = it.width.coerceAtLeast(1) }
             .pointerInput(Unit) { detectTapGestures { toggle() } }
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(lcdScroll),
             verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            playbackLabel?.let { MatchLcdText(it) }
             Column(Modifier.fillMaxWidth().then(scrubGesture)) {
-                MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - model.startNanos)} / ${formatReplayTime(duration)}")
+                MatchLcdText("${if (playing) "PLAY" else "PAUSE"}  ${formatReplayTime(cursor - playbackStart)} / ${formatReplayTime(duration)}")
                 BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp)) {
                     androidx.compose.material3.LinearProgressIndicator(
-                        progress = { ((cursor - model.startNanos).toFloat() / duration).coerceIn(0f, 1f) },
+                        progress = { ((cursor - playbackStart).toFloat() / duration).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(8.dp).align(Alignment.Center),
                         color = TerminalGreen,
                     )
@@ -276,11 +383,11 @@ fun MatchReplayScreen(
                     Modifier.weight(1f).semantics { contentDescription = "Step forward one second" })
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                MatchLcdTextButton(String.format(Locale.ROOT, "%.1f×", playbackSpeed), { playbackSpeed = 1f },
+                MatchLcdTextButton(String.format(Locale.ROOT, "%.1f×", playbackSpeed), { setSpeed(1f) },
                     Modifier.width(40.dp).semantics { contentDescription = "Reset replay speed to 1x" })
                 Slider(
                     value = playbackSpeed,
-                    onValueChange = { playbackSpeed = (it * 10f).roundToInt() / 10f },
+                    onValueChange = { setSpeed((it * 10f).roundToInt() / 10f) },
                     valueRange = ReplayPlaybackClock.MIN_SPEED..ReplayPlaybackClock.MAX_SPEED,
                     steps = 48,
                     modifier = Modifier.weight(1f).height(28.dp).semantics {
@@ -303,7 +410,7 @@ fun MatchReplayScreen(
                 )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                MatchLcdTextButton("RESET", { cursor = model.startNanos; playing = false; transportSounds.reset() }, Modifier.weight(1f))
+                MatchLcdTextButton("RESET", { cursor = playbackStart; playing = false; transportSounds.reset() }, Modifier.weight(1f))
                 MatchLcdTextButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
                 MatchLcdTextButton(
                     label = "BLIPS ${if (eventBlipsEnabled) "ON" else "OFF"}",
@@ -314,7 +421,22 @@ fun MatchReplayScreen(
                     modifier = Modifier.weight(1.5f).semantics { contentDescription = "Replay event blips" },
                     selected = eventBlipsEnabled,
                 )
-                MatchLcdTextButton("BACK", { playing = false; transportSounds.stop(); onBack() }, Modifier.weight(1f))
+                MatchLcdTextButton("BACK", { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }, Modifier.weight(1f))
+            }
+            if (allowClipSave) {
+                MatchLcdText("←/→ ${listOf("PLAY / PAUSE", "MARK START", "MARK END + SAVE", "CLIP LIBRARY")[editorAction]}   A SELECT")
+                Column(Modifier.fillMaxWidth().bringIntoViewRequester(marksRequester)) {
+                    MatchLcdText("CLIP AT ${formatReplayTime(cursor - model.startNanos)}   ↑/↓ STEP")
+                    Row(Modifier.fillMaxWidth()) {
+                        MatchLcdTextButton("MARK START", { if (!savingClip) { editorAction = 1; markClipStart() } }, Modifier.weight(1f), editorAction == 1)
+                        MatchLcdTextButton("END + SAVE", { if (!savingClip) { editorAction = 2; markClipEnd() } }, Modifier.weight(1f), editorAction == 2)
+                    }
+                    if (savingClip) MatchLcdText("SAVING CLIP…")
+                    clipStatus?.let { MatchLcdText(it) }
+                }
+                onOpenEditor?.let { open ->
+                    MatchLcdButton("CLIP LIBRARY", { playing = false; open() }, selected = editorAction == 3, enabled = !savingClip)
+                }
             }
             if (archivedCropIdentities == null) {
                 MatchLcdText(cropProgress.stage + if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else "")
@@ -331,11 +453,11 @@ fun MatchReplayScreen(
         }
     }
 
-    LaunchedEffect(playing, playbackSpeed, model.endNanos) {
+    LaunchedEffect(playing, playbackSpeed, playbackEnd) {
         // Cursor is deliberately not an effect key. A frame is a chance to draw,
         // not a fixed amount of Match time; slow frames must not slow the clock.
-        val clock = ReplayPlaybackClock(cursor, model.endNanos, playbackSpeed)
-        while (playing && cursor < model.endNanos) {
+        val clock = ReplayPlaybackClock(cursor, playbackEnd, playbackSpeed)
+        while (playing && cursor < playbackEnd) {
             val frameNanos = withFrameNanos { it }
             if (!playing) break
             val previous = cursor
@@ -345,17 +467,19 @@ fun MatchReplayScreen(
                 replayHaptics.play(event.pulseCount)
             }
         }
-        if (playing && cursor >= model.endNanos) {
+        if (playing && cursor >= playbackEnd) {
             playing = false
             transportSounds.stop()
+            completion()
         }
     }
 
-    ReplayBattlefield(scene, cursor, context)
+    ReplayBattlefield(scene, cursor, context, speciesTypes)
 }
 
 @Composable
-internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Context) {
+internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Context,
+                               speciesTypes: Map<String, List<PokemonType>> = emptyMap()) {
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -412,9 +536,11 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 12.dp, vertical = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player", scene.playerEnergy)
+                    if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player", scene.playerEnergy,
+                        types = speciesTypes[scene.player.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
                     else Box(Modifier.width(114.dp))
-                    if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true)
+                    if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true,
+                        types = speciesTypes[scene.opponent.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
                 }
                 if (scene.player != null && !scene.player.isFainted && scene.outcome == null &&
                     scene.decisionTimer == null && scene.chargedMoveActions.isEmpty()) {

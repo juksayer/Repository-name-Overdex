@@ -28,6 +28,22 @@ import kotlinx.coroutines.runBlocking
 class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
 
+    @Test fun `damage and delayed flashes from two hits are one cadence sample not two independent votes`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        val uses = listOf(
+            fastUseAt("loss1", 1_000_000_000L),
+            fastUseAt("flash1", 1_400_000_000L, listOf("HP_BORDER_PULSE")),
+            fastUseAt("loss2", 2_000_000_000L),
+            fastUseAt("flash2", 2_400_000_000L, listOf("HP_BORDER_PULSE")),
+        )
+        val output = uses.flatMap {
+            engine.accept(it.copy(payload = (it.payload as FastMoveUseObserved).copy(attackerSpeciesName = "Sealeo")))
+        }
+        assertTrue(output.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
     @Test fun `post charge motion cannot replace measured Incinerate with Ember but repeated hits can`() = runBlocking {
         val camerupt = Pokemon(323, "Camerupt", listOf(PokemonType.FIRE, PokemonType.GROUND), "Hoenn",
             fastMoves = listOf(move("Incinerate", 5, 20), move("Ember", 2, 6)), chargedMoves = emptyList())
@@ -449,20 +465,25 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
-    fun `recipient visual cadence is attributed to the attacking side`() = runBlocking {
+    fun `recipient visual cadence supports the attacking side but requires independent corroboration`() = runBlocking {
         val pokemon = Pokemon(
-            id = 134,
-            name = "Vaporeon",
-            types = listOf(PokemonType.WATER),
-            region = "Kanto",
-            fastMoves = listOf(move("Water Gun", 1, 3)),
+            id = 364,
+            name = "Sealeo",
+            types = listOf(PokemonType.WATER, PokemonType.ICE),
+            region = "Hoenn",
+            fastMoves = listOf(move("Water Gun", 1, 3), move("Powder Snow", 2, 8)),
             chargedMoves = emptyList()
         )
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
-        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Vaporeon", 134)))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
 
         assertEquals(0, engine.accept(visualCadence("v0", 500_000_000L)).size)
-        val resolved = engine.accept(visualCadence("v1", 510_000_000L))
+        assertTrue(engine.accept(visualCadence("v1", 510_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertEquals(listOf("Water Gun"), engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.remainingMoveNames)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER))
+        assertTrue(engine.accept(borderCadence("b1", 510_000_000L)).isEmpty())
+        val resolved = engine.accept(borderCadence("b2", 500_000_000L))
 
         val identity = resolved.first { it.payload is FastMoveIdentified }.payload as FastMoveIdentified
         assertEquals(ActivePokemonSide.OPPONENT, identity.side)

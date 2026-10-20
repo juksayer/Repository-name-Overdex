@@ -21,6 +21,7 @@ import java.nio.file.StandardCopyOption
 class ArchiveDirectoryManager(private val context: Context) {
     private val internalArchiveDirectory = File(context.filesDir, "match_archives")
     private val checkpointWriters = mutableMapOf<MatchId, MatchCheckpointJournal>()
+    private val archiveRetention = MatchArchiveRetention(internalArchiveDirectory)
 
     init {
         releaseRetiredArchiveFolderPermission()
@@ -144,6 +145,30 @@ class ArchiveDirectoryManager(private val context: Context) {
             .sortedByDescending { it.name }
     }
 
+    /** Run on I/O after a successful save/recovery. Portable Downloads exports remain untouched. */
+    fun trimCompletedArchives(protectedMatchIds: Set<String> = emptySet()): MatchArchiveRetention.Result =
+        synchronized(retentionLock) {
+            val records = com.example.overdex.battle.history.BattleRecordStore(context)
+            val legacyClipSources = com.example.overdex.battle.replay.ReplayExcerptStore(context.filesDir)
+                .unprotectedSourceMatchIds()
+            archiveRetention.trim(protectedMatchIds = protectedMatchIds + legacyClipSources) { file ->
+                val archive = file.inputStream().use { MatchArchivePackageReader.read(it) }
+                val entry = ArchiveEntry(
+                    file.name,
+                    FileProvider.getUriForFile(context, "${context.packageName}.archive-files", file),
+                    file.lastModified(), file.length()
+                )
+                records.preserveBeforeArchiveRemoval(archive, entry)
+            }.also { result ->
+                if (result.deletedNames.isNotEmpty()) android.util.Log.i(
+                    "MATCH_ARCHIVE", "Kept newest 50 matches; retired ${result.deletedNames.size} archives (${result.bytesRemoved} bytes)"
+                )
+                result.failures.forEach { (name, reason) ->
+                    android.util.Log.w("MATCH_ARCHIVE", "Retention kept $name: $reason")
+                }
+            }
+        }
+
     fun exportMatch(
         matchId: MatchId,
         realityTimeline: RealityTimeline,
@@ -223,7 +248,11 @@ class ArchiveDirectoryManager(private val context: Context) {
         onArtifactVerified: ((completed: Int, total: Int) -> Unit)? = null
     ): Uri? {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS", Locale.ROOT)
-        val archiveKind = if (mode == MatchArchiveExportMode.FULL_FORENSIC) "full" else "compact"
+        val archiveKind = when (mode) {
+            MatchArchiveExportMode.TIMELINE_ONLY -> "replay-only"
+            MatchArchiveExportMode.FULL_FORENSIC -> "full"
+            MatchArchiveExportMode.COMPACT_CITED_EVIDENCE -> "compact"
+        }
         val fileName = "${dateFormat.format(Date())}-$archiveKind.odxmatch.zip"
 
         val temporary = File.createTempFile("overdex-export-", ".odxmatch.zip", context.cacheDir)
@@ -231,7 +260,7 @@ class ArchiveDirectoryManager(private val context: Context) {
         try {
             FileOutputStream(temporary).use {
                 MatchArchivePackageWriter.write(
-                    archive.copy(articles = MatchArchiveArticleSelector.select(archive.articles, mode)),
+                    archive.forExport(mode),
                     it,
                     context.filesDir,
                     onArtifactVerified
@@ -304,4 +333,6 @@ class ArchiveDirectoryManager(private val context: Context) {
         }
         prefs.edit().clear().apply()
     }
+
+    private companion object { val retentionLock = Any() }
 }

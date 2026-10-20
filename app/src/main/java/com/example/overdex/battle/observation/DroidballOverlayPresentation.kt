@@ -103,7 +103,7 @@ object DroidballOverlayPresentation {
     private var activeOpponentFastMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentChargedMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentSpeciesName: String? = null
-    private var identifiedOpponentFastMove: String? = null
+    private val confirmedFastMovesBySpecies = mutableMapOf<String, String>()
     private var opponentFastMoveCandidateNames: Set<String>? = null
     private val confirmedChargedMovesBySpecies = mutableMapOf<String, MutableSet<String>>()
     private val faintedSpeciesNames = mutableSetOf<String>()
@@ -161,7 +161,7 @@ object DroidballOverlayPresentation {
         activeOpponentFastMoves = emptyList()
         activeOpponentChargedMoves = emptyList()
         activeOpponentSpeciesName = null
-        identifiedOpponentFastMove = null
+        confirmedFastMovesBySpecies.clear()
         opponentFastMoveCandidateNames = null
         confirmedChargedMovesBySpecies.clear()
         faintedSpeciesNames.clear()
@@ -248,7 +248,6 @@ object DroidballOverlayPresentation {
             }
         }
         if (activeOpponentSpeciesName != speciesName) {
-            identifiedOpponentFastMove = null
             opponentFastMoveCandidateNames = null
         }
         activeOpponentSpeciesName = speciesName
@@ -279,10 +278,11 @@ object DroidballOverlayPresentation {
         _activeOpponentMovePossibilities.value = null
     }
 
-    /** Replace the opponent's candidate fast moves after cadence identifies one. */
-    @Synchronized fun recordOpponentFastMove(moveName: String) {
-        identifiedOpponentFastMove = moveName
-        opponentFastMoveCandidateNames = setOf(normalizeMoveName(moveName))
+    /** Only evidence-resolved identities earn a checkmark; energy tie-breaks remain guesses. */
+    @Synchronized fun recordOpponentFastMove(identity: com.example.overdex.battle.custody.FastMoveIdentified) {
+        if (identity.side != com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT ||
+            identity.basis.contains("TIE_BREAK")) return
+        confirmedFastMovesBySpecies[normalizeMoveName(identity.speciesName)] = identity.moveName
         publishMovePossibilities()
     }
 
@@ -295,10 +295,9 @@ object DroidballOverlayPresentation {
         val candidates = moveNames.map(::normalizeMoveName).filter(String::isNotBlank).toSet()
         if (candidates.isEmpty() && activeOpponentFastMoves.isNotEmpty()) return
         opponentFastMoveCandidateNames = candidates
-        if (identifiedOpponentFastMove != null &&
-            normalizeMoveName(requireNotNull(identifiedOpponentFastMove)) !in candidates
-        ) {
-            identifiedOpponentFastMove = null
+        val speciesKey = normalizeMoveName(speciesName)
+        if (confirmedFastMovesBySpecies[speciesKey]?.let { normalizeMoveName(it) !in candidates } == true) {
+            confirmedFastMovesBySpecies.remove(speciesKey)
         }
         publishMovePossibilities()
     }
@@ -319,6 +318,7 @@ object DroidballOverlayPresentation {
             return
         }
         val confirmedCharged = confirmedChargedMovesBySpecies[normalizeMoveName(speciesName)].orEmpty()
+        val identifiedOpponentFastMove = confirmedFastMovesBySpecies[normalizeMoveName(speciesName)]
         fun scored(moves: List<Pair<String, PokemonType>>) = moves.map { (name, type) ->
             OverlayMovePossibility(name, type, effectivenessAgainstPlayer(type))
         }
@@ -329,7 +329,7 @@ object DroidballOverlayPresentation {
         } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
             speciesName,
-            scored(fastMoves),
+            scored(fastMoves).map { it.copy(isConfirmed = it.name.equals(identifiedOpponentFastMove, ignoreCase = true)) },
             scored(activeOpponentChargedMoves.filter { confirmedCharged.size < 2 || normalizeMoveName(it.first) in confirmedCharged })
                 .map { it.copy(isConfirmed = normalizeMoveName(it.name) in confirmedCharged) }
         )

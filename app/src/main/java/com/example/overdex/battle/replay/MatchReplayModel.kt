@@ -148,7 +148,6 @@ class MatchReplayModel(
     ))
     private val playerResourceTrack = ReplayResourceTrack(timedArticles, "PLAYER")
     private val opponentResourceTrack = ReplayResourceTrack(timedArticles, "OPPONENT")
-    private val energyTrack = ReplayEnergyTrack(timedArticles, ::combatantFor)
     private val statChanges = ReplayStatChanges(timedArticles, ::combatantFor)
     private val hpEvidence = ReplayHpEvidence(timedArticles)
     private val chargedEffectivenessWindow = com.example.overdex.battle.inference.ChargedMoveEffectivenessWindow().apply {
@@ -206,6 +205,7 @@ class MatchReplayModel(
         } else use
     }
     private val fastMoveCycles = scheduleFastMoves()
+    private val energyTrack = ReplayEnergyTrack(timedArticles, ::combatantFor, fastMoveCycles)
     private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER", hpEvidence, fastMoveCycles)
     private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT", hpEvidence, fastMoveCycles)
     private val replayHapticEvents = buildList {
@@ -1404,6 +1404,7 @@ private class ReplayIdentityTrack private constructor(
     }
 }
 
+@kotlinx.serialization.Serializable
 data class ReplayIdentityObservation(
     val side: String,
     val speciesName: String,

@@ -303,7 +303,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     icon = TreeNodeIcon.BINDER,
                 ),
                 DirectoryNode("Match", listOf(
-                    ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs)
+                    ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs),
+                    ActionNode("Replay Editor", InstrumentCommand.OpenReplayEditor)
                 )),
                 ActionNode("Records", InstrumentCommand.OpenBattleRecords),
                 ActionNode("History", InstrumentCommand.OpenBattleHistory)
@@ -897,10 +898,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
                 input, calibration, cropArtifactStore,
                 isEnabled = {
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE &&
-                        (slot != 0 || pointerStripVisible())
+                    if (slot == 0) session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE && pointerStripVisible()
+                    else battleEvidenceLive()
                 },
                 slot = slot,
+            ))
+        }
+        (1..2).forEach { slot ->
+            observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
+                input, calibration, cropArtifactStore, isEnabled = battleEvidenceLive,
+                slot = slot, effectiveness = true,
             ))
         }
         listOf(
@@ -1274,6 +1281,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }.onFailure { error -> Log.w("BATTLE_RECORDS", "Match saved; records will be rebuilt when opened", error) }
                     Log.i("MATCH_ARCHIVE", "Auto-saved $reason match ${source.matchId.value}: $uri")
+                    runCatching {
+                        archiveMutex.withLock {
+                            archiveDirectoryManager.trimCompletedArchives(setOf(source.matchId.value))
+                        }
+                    }.onFailure { error -> Log.w("MATCH_ARCHIVE", "Match saved; retention will retry later", error) }
                 } else {
                     Log.w("MATCH_ARCHIVE", "$reason match ${source.matchId.value} remains in the field ledger; archive publication returned no location.")
                 }

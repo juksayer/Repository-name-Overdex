@@ -71,6 +71,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val intervalNanos: Long,
         val basis: CadenceBasis,
         val predecessorIds: List<ArticleId> = listOf(article.id),
+        val useEvidenceKind: String? = null,
     )
     private data class ConfiguredPlayerMove(
         val speciesId: Int?,
@@ -98,7 +99,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var selectedBasis: CadenceBasis? = null,
         var assumedHigherEnergyTieBreak: Boolean = false,
         var identificationEvidence: List<ArticleId> = emptyList(),
-        var lastDirectUseArticle: RealityArticle? = null,
+        val lastDirectUseArticles: MutableMap<String, RealityArticle> = mutableMapOf(),
         var lastSoundOnsetNanos: Long? = null,
         var lastSoundArticle: RealityArticle? = null,
         var corroborationSignature: String = "",
@@ -157,7 +158,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             article.monotonicTimeNanos?.let { cadenceFloorNanos = it + chargeGuard }
             states.values.forEach {
                 it.cadenceEvidence.clear()
-                it.lastDirectUseArticle = null
+                it.lastDirectUseArticles.clear()
                 it.lastSoundArticle = null
                 it.lastSoundOnsetNanos = null
                 it.referenceSounds.clear()
@@ -193,11 +194,12 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             // Another slot's edit leaves this active combatant untouched.
             val pokemon = pokemonKnowledge.getPokemonByName(configured.speciesName)
             val moves = pokemon?.fastMoves.orEmpty().filter {
-                it.isFast && it.turns != null && normalize(it.name) == normalize(configured.fastMoveName)
+                it.isFast && it.turns != null
             }.distinctBy { normalize(it.name) }
             val updated = active.copy(
-                possibleMoves = moves, identifiedMove = moves.singleOrNull(),
+                possibleMoves = moves, identifiedMove = moves.singleOrNull { normalize(it.name) == normalize(configured.fastMoveName) },
                 cadenceEvidence = mutableListOf(), selectedBasis = null,
+                lastDirectUseArticles = mutableMapOf(),
                 identificationEvidence = listOf(active.speciesArticleId, article.id),
                 identityBasis = "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES",
                 identityConfidence = article.confidence ?: 1f,
@@ -263,13 +265,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                         species.speciesId != null && it.speciesId == species.speciesId
                     }.distinctBy { normalize(it.moveName) }.singleOrNull()
             } else null
-            val candidateMoves = possibleMoves.filter {
-                configuredMove == null || normalize(it.name) == normalize(configuredMove.moveName)
-            }
+            val candidateMoves = possibleMoves
             val configuredIdentity = configuredMove?.let { configuredKnowledge ->
-                candidateMoves.singleOrNull()?.takeIf {
-                    normalize(it.name) == normalize(configuredKnowledge.moveName)
-                }
+                candidateMoves.singleOrNull { normalize(it.name) == normalize(configuredKnowledge.moveName) }
             }
             val referenceIdentity = configuredIdentity ?: candidateMoves.singleOrNull()
             val combatantKey = species.side to normalize(species.speciesName)
@@ -494,10 +492,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     /**
      * The fused FastMoveUseObserved stream is already the best statement that a
-     * particular attack occurred. Its monotonic timestamps therefore provide a
-     * cadence even when no dedicated border/motion cadence witness produced an
-     * aggregate interval. Charge-fill-only uses are excluded because one attack
-     * can expose several fill steps.
+     * particular attack occurred, but an unresolved flash/damage phase offset
+     * can still split one hit into two uses. Compare like evidence with like:
+     * damage-to-damage and flash-to-flash, never damage-to-flash. Keep the streams
+     * separate in voting so their shared impact cannot count twice.
      */
     private fun acceptObservedUseCadence(
         article: RealityArticle,
@@ -507,28 +505,29 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val state = states[use.attackingSide] ?: return emptyList()
         val at = article.monotonicTimeNanos ?: return emptyList()
         if (at < cadenceFloorNanos) return emptyList()
-        val previous = state.lastDirectUseArticle
-        val previousAt = previous?.monotonicTimeNanos
-        if (previous == null || previousAt == null) {
-            state.lastDirectUseArticle = article
-            return emptyList()
-        }
-        if (at <= previousAt) return emptyList()
-        val interval = at - previousAt
-        // Independent witnesses can occasionally publish two fragments of the
-        // same hit outside the fusion window. Do not let that replace the prior
-        // anchor with a physically impossible sub-turn interval.
-        if (interval < MIN_USE_INTERVAL_NANOS) return emptyList()
-        state.lastDirectUseArticle = article
-        return acceptCadence(
-            article,
-            CadenceInput(
-                attackingSide = use.attackingSide,
-                intervalNanos = interval,
-                basis = CadenceBasis.OBSERVED_USES,
-                predecessorIds = listOf(previous.id, article.id),
+        val streams = use.evidenceKinds.filter { it in IMPACT_USE_EVIDENCE_KINDS }
+            .ifEmpty { use.evidenceKinds.filter { it in DIRECT_USE_EVIDENCE_KINDS } }.distinct()
+        return streams.flatMap { kind ->
+            val previous = state.lastDirectUseArticles[kind]
+            val previousAt = previous?.monotonicTimeNanos
+            if (previous == null || previousAt == null) {
+                state.lastDirectUseArticles[kind] = article
+                return@flatMap emptyList()
+            }
+            val interval = at - previousAt
+            if (interval < MIN_USE_INTERVAL_NANOS) return@flatMap emptyList()
+            state.lastDirectUseArticles[kind] = article
+            acceptCadence(
+                article,
+                CadenceInput(
+                    attackingSide = use.attackingSide,
+                    intervalNanos = interval,
+                    basis = CadenceBasis.OBSERVED_USES,
+                    predecessorIds = listOf(previous.id, article.id),
+                    useEvidenceKind = kind,
+                )
             )
-        )
+        }
     }
 
     private fun acceptCadence(
@@ -547,13 +546,14 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             if (waiting.size > MAX_CADENCE_HISTORY) waiting.removeAt(0)
             return emptyList()
         }
-        if (state.cadenceEvidence.any { it.article.id == article.id })
+        if (state.cadenceEvidence.any { it.article.id == article.id && it.useEvidenceKind == cadence.useEvidenceKind })
             return emptyList()
         state.cadenceEvidence += CadenceEvidence(
             article,
             cadence.intervalNanos,
             cadence.basis,
             cadence.predecessorIds.ifEmpty { listOf(article.id) },
+            cadence.useEvidenceKind,
         )
         if (state.cadenceEvidence.size > MAX_CADENCE_HISTORY) state.cadenceEvidence.removeAt(0)
 
@@ -579,6 +579,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val priorEvidence = if (state.identifiedMove == resolved?.move?.move) state.identificationEvidence else emptyList()
         if (newlyIdentified) {
             val sameMove = state.identifiedMove == resolved!!.move.move
+            if (!sameMove) state.identityBasis = "" // Do not attach the old configuration to contradictory evidence.
             state.identityCadenceFamilies =
                 (if (sameMove) state.identityCadenceFamilies else emptySet()) + resolved.evidence.map(::family)
             state.identifiedMove = resolved.move.move
@@ -621,6 +622,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                         }
                         if (authoritative != null) append(authoritative.substringBefore("_SUPPORTED_BY_") + "_SUPPORTED_BY_")
                         append("${selectedBasis.name}_CADENCE_AND_REFERENCE_KNOWLEDGE")
+                        if (selectedBasis == CadenceBasis.OBSERVED_USES &&
+                            resolved.evidence.any { it.useEvidenceKind in IMPACT_USE_EVIDENCE_KINDS }) {
+                            append("_CONSISTENT_IMPACT_STREAM")
+                        }
                         if (state.assumedHigherEnergyTieBreak) append("_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION")
                         if (corroborationSignature.isNotBlank()) append("_CORROBORATED_BY_$corroborationSignature")
                     }.also { state.identityBasis = it }
@@ -775,7 +780,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         CadenceBasis.AUDIO_PROFILE -> EvidenceFamily.AUDIO
         CadenceBasis.RECIPIENT_VISUAL_ARTIFACT -> EvidenceFamily.VISUAL
         CadenceBasis.OBSERVED_USES -> {
-            val kinds = (evidence.article.payload as? FastMoveUseObserved)?.evidenceKinds.orEmpty()
+            val kinds = evidence.useEvidenceKind?.let(::listOf)
+                ?: (evidence.article.payload as? FastMoveUseObserved)?.evidenceKinds.orEmpty()
             when {
                 kinds.any { it == "HP_BORDER_PULSE" || it == "HP_DAMAGE_TICK" } -> EvidenceFamily.IMPACT
                 "HP_BAR_MOTION_COMPLETION" in kinds -> EvidenceFamily.MOTION
@@ -790,7 +796,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val latestAt = state.cadenceEvidence.maxOfOrNull { it.article.monotonicTimeNanos ?: 0L } ?: 0L
         val votes = state.cadenceEvidence.filter {
             latestAt - (it.article.monotonicTimeNanos ?: latestAt) <= CADENCE_WINDOW_NANOS
-        }.groupBy { it.basis to family(it) }.mapNotNull { (key, samples) ->
+        }.groupBy { Triple(it.basis, family(it), it.useEvidenceKind) }.mapNotNull { (key, samples) ->
             val evidence = samples.sortedBy { it.article.monotonicTimeNanos }
             val intervals = evidence.map { it.intervalNanos }
             val recent = evidence.takeLast(REQUIRED_INTERVALS)
@@ -832,11 +838,27 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val families = matchingVotes.groupBy { it.family }
         val enoughSamples = matchingVotes.any { it.evidence.size >= REQUIRED_INTERVALS }
         if (!enoughSamples && families.size < 2) return null
-        val chosen = chooseMove(candidates, emptySet()) ?: return null
+        // Equal timing cannot refute an explicitly equipped move. Keep that
+        // hypothesis until type/effectiveness/audio or incompatible timing does.
+        val configuredCandidate = state.identifiedMove?.takeIf {
+            state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM") && it in candidates
+        }
+        val chosen = configuredCandidate?.let { MoveResolution(it, false, emptySet()) }
+            ?: chooseMove(candidates, emptySet()) ?: return null
         val supporting = matchingVotes.filter { chosen.move in it.candidates }
             .groupBy { it.family }.values.map { group ->
                 group.maxWith(compareBy<CadenceVote> { it.evidence.size }.thenBy { -it.basis.ordinal })
             }
+        // Recipient effects have no validated direction/type catalogue yet.
+        // In the recorded idle Camerupt match, the opponent's effects supplied
+        // a convincing Rock Smash rhythm on our side without a single hit by us.
+        // Keep that raw rhythm and its provisional candidates, never certify it
+        // as a move identity or a contradiction of the player's saved moveset.
+        if (supporting.all { it.family == EvidenceFamily.VISUAL }) return null
+        if (state.identifiedMove != chosen.move && state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM") &&
+            supporting.none { it.family == EvidenceFamily.IMPACT && it.evidence.size >= REQUIRED_INTERVALS } &&
+            supporting.count { it.family != EvidenceFamily.VISUAL } < 2
+        ) return null
         val establishedTurns = state.identifiedMove?.turns
         val proposedTurns = chosen.move.turns
         if (state.identifiedMove != chosen.move && !state.assumedHigherEnergyTieBreak &&
@@ -1051,6 +1073,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val basis: CadenceBasis,
         val predecessorIds: List<ArticleId> = emptyList(),
         val eventAtNanos: Long? = null,
+        val useEvidenceKind: String? = null,
     )
 
     private data class MoveResolution(
@@ -1090,6 +1113,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         const val MIN_USE_INTERVAL_NANOS = 300_000_000L
         const val MIN_TOLERANCE_NANOS = 160_000_000L
         const val RELATIVE_TOLERANCE = 0.15
+        val IMPACT_USE_EVIDENCE_KINDS = setOf("HP_DAMAGE_TICK", "HP_BORDER_PULSE")
         val DIRECT_USE_EVIDENCE_KINDS = setOf(
             "HP_BORDER_PULSE",
             "HP_DAMAGE_TICK",

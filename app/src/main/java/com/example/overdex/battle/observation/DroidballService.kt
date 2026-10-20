@@ -548,11 +548,17 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     // without waiting for OCR. Once seen, keep it available when
                     // GO hides its badges during camera cuts or charged moves.
                     val badgeExclusionBefore = retainedOpponentBadge.exclusion(receivedAtNanos)
-                    val playerBadgePresent = !registrationMode && TeamBadgePresenceDetector.present(
-                        bitmap.width, bitmap.height, badgeCalibration.playerTeamInfoRegion, bitmap::getPixel)
+                    val nativeFrame = CapturedVisualFrame(bitmap, capturedAtWallTimeMillis, receivedAtNanos,
+                        overlayRegion = capturedOverlayRegion, retainedBadgeRegion = badgeExclusionBefore)
+                    val playerBadgeRegion = if (registrationMode) badgeCalibration.playerTeamInfoRegion else
+                        TeamBadgeCropLocator.locate(BattleRegionId.PLAYER_TEAM_INFO, badgeCalibration, nativeFrame)
+                    val opponentBadgeRegion = if (registrationMode || badgeExclusionBefore != null)
+                        badgeCalibration.opponentTeamInfoRegion else
+                        TeamBadgeCropLocator.locate(BattleRegionId.OPPONENT_TEAM_INFO, badgeCalibration, nativeFrame)
+                    val playerBadgePresent = !registrationMode &&
+                        TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, playerBadgeRegion)
                     val opponentBadgePresent = !registrationMode && badgeExclusionBefore == null &&
-                        TeamBadgePresenceDetector.present(bitmap.width, bitmap.height,
-                            badgeCalibration.opponentTeamInfoRegion, bitmap::getPixel)
+                        TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, opponentBadgeRegion)
                     if (!registrationMode && !DroidballOverlayPresentation.battleBadgeSeen.value &&
                         playerBadgePresent && opponentBadgePresent) {
                         DroidballOverlayPresentation.recordBattleBadgePresent()
@@ -562,7 +568,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     if (!registrationMode && DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
                         DroidballOverlayPresentation.battleBadgeSeen.value) {
                         retainedOpponentBadge.update(bitmap, receivedAtNanos, playerBadgePresent, opponentBadgePresent,
-                            badgeCalibration.opponentTeamInfoRegion, width, height)
+                            opponentBadgeRegion, width, height)
                     }
                     val capturedAtMonotonicTimeNanos = receivedAtNanos
                     lastPublishedFrameNanos?.let { previous ->

@@ -56,6 +56,8 @@ class OverdexApplication : Application(), ViewModelStoreOwner {
             recovery.failures.forEach { (name, reason) ->
                 Log.w("MATCH_ARCHIVE", "Kept unreadable checkpoint $name: $reason")
             }
+            runCatching { archives.trimCompletedArchives() }
+                .onFailure { Log.w("MATCH_ARCHIVE", "Unable to apply recording retention", it) }
             if (observationWasInterrupted || recovery.recoveredNames.isNotEmpty() || recovery.failures.isNotEmpty()) {
                 _interruptedObservationNotice.value = InterruptedObservationNotice(
                     recoveredMatchCount = recovery.recoveredNames.size,

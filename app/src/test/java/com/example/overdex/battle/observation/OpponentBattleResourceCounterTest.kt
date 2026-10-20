@@ -5,8 +5,42 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.File
 import javax.imageio.ImageIO
+import com.example.overdex.model.observation.OcrBox
+import kotlinx.serialization.json.*
 
 class OpponentBattleResourceCounterTest {
+    @Test fun `HUD over a resource cap cannot turn its visible dark rim into a spent resource`() {
+        val topRightCovered = OcrBox(60f, 0f, 90f, 10f)
+        assertNull(OpponentBattleResourceCounter.pokeBallCount(90, 24, topRightCovered) { x, y ->
+            when {
+                y in 6..9 && listOf(8..20, 35..47).any { x in it } -> rgb(225, 45, 35)
+                y in 10..17 && listOf(8..20, 35..47, 62..74).any { x in it } -> rgb(65, 65, 65)
+                else -> WHITE
+            }
+        })
+        assertNull(OpponentBattleResourceCounter.shieldCount(64, 24, OcrBox(32f, 0f, 64f, 10f)) { x, y ->
+            if (y in 6..17 && (x in 7..24 || x in 39..56)) rgb(80, 65, 85) else WHITE
+        })
+    }
+
+    @Test fun `October 20 HUD cards cannot become spent resources and visible badge caps still count`() {
+        val directory = File("src/test/resources/battle/resources-20261020")
+        val cases = Json.parseToJsonElement(File(directory, "manifest.json").readText()).jsonArray
+        for (value in cases) {
+            val sample = value.jsonObject
+            val name = sample.getValue("file").jsonPrimitive.content
+            val crop = ImageIO.read(File(directory, name))
+            val bounds = (sample["overlayBounds"] as? JsonObject)?.let {
+                OcrBox(it.getValue("left").jsonPrimitive.float, it.getValue("top").jsonPrimitive.float,
+                    it.getValue("right").jsonPrimitive.float, it.getValue("bottom").jsonPrimitive.float)
+            }
+            val actual = if (sample.getValue("resource").jsonPrimitive.content == "POKE_BALLS")
+                OpponentBattleResourceCounter.pokeBallCount(crop.width, crop.height, bounds, crop::getRGB)
+            else OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, bounds, crop::getRGB)
+            assertEquals(name, sample.getValue("expectedCount").jsonPrimitive.intOrNull, actual)
+        }
+    }
+
     @Test fun `player shields are counted from an actual badge strip`() {
         val frame = ImageIO.read(File("src/androidTest/assets/species/oct10/lead_frame.png"))
         val crop = frame.getSubimage(145, 125, 60, 30)
