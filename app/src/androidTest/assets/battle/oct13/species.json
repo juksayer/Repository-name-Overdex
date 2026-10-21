@@ -1,0 +1,48 @@
+{
+  "archive": "2026-10-13_12-44-46.odxmatch.zip",
+  "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+  "reading": {
+    "articleId": "f2094bef-389c-4c56-99e3-d7f0fdf82d65",
+    "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+    "perceivedAt": 1791913411509,
+    "recordedAt": 1791913412979,
+    "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+    "payload": {
+      "kind": "raw_text",
+      "value": "Sneasel"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 723,
+    "evidenceReferences": [
+      "576e04f1-7a6d-4b14-99ce-87bf63c6a81a"
+    ],
+    "monotonicTimeNanos": 1823066997108
+  },
+  "crop": {
+    "articleId": "576e04f1-7a6d-4b14-99ce-87bf63c6a81a",
+    "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+    "perceivedAt": 1791913411509,
+    "recordedAt": 1791913411666,
+    "sourceId": "OPPONENT_ACTIVE_SPECIES_TEXT_CAPTURE",
+    "payload": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/fefae7e8b00896dadd0ea6214a08fa70a51902673ff5035fdd4db6d1769feec9.png",
+      "sha256": "fefae7e8b00896dadd0ea6214a08fa70a51902673ff5035fdd4db6d1769feec9",
+      "byteCount": 4298,
+      "mediaType": "image/png",
+      "cropName": "OpponentActiveSpeciesTextCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 493,
+      "cropTop": 96,
+      "cropRight": 650,
+      "cropBottom": 128
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 643,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 1823066997108
+  }
+}

@@ -1,0 +1,3684 @@
+{
+  "schemaVersion": 1,
+  "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+  "articles": [
+    {
+      "articleId": "5a5bf680-b53b-426f-898d-40f5c768fe1a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 0,
+      "recordedAt": 5,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 0
+    },
+    {
+      "articleId": "85beb6df-48f2-408c-af84-701a8faacab7",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 0,
+      "recordedAt": 12,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Abomasnow",
+        "speciesId": 460,
+        "fastMoveName": "Powder Snow",
+        "chargedMoveNames": [
+          "Weather Ball (Ice)",
+          "Energy Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 487770
+    },
+    {
+      "articleId": "0ab188c3-6581-4b5a-8e2b-59101e5a7b9c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 0,
+      "recordedAt": 27,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 487770
+    },
+    {
+      "articleId": "9117889e-4936-4669-b437-912f2d9dbafb",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 0,
+      "recordedAt": 36,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Shadow Ball",
+          "Seed Bomb"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 487770
+    },
+    {
+      "articleId": "a0fd57ed-10fd-42a9-a574-cc3a1a0da329",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 11997,
+      "recordedAt": 16526,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 231,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 11909219463
+    },
+    {
+      "articleId": "bba89fb0-5c8f-4997-b493-5b512c398634",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 16729,
+      "recordedAt": 16797,
+      "sourceId": "TRAINER_INACTIVE_TIMER_OVERLAY",
+      "payload": {
+        "kind": "supporting_match_start",
+        "frameIndex": 6,
+        "upperColorfulPixelFraction": 0.0,
+        "lowerColorfulPixelFraction": 0.0,
+        "basis": "TRAINER_INACTIVE_TIMER_OVERLAY_CLEARANCE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 241,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 16699878232
+    },
+    {
+      "articleId": "5eec5e49-38c7-427d-9b9e-9c31f0369dcc",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 14933,
+      "recordedAt": 20653,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 324,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 14925089924
+    },
+    {
+      "articleId": "f2f9ba62-a2ac-4420-b5ab-3dc10ac29b1b",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 20592,
+      "recordedAt": 20742,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.44927537,
+          0.0
+        ],
+        "afterBySlot": [
+          0.5362319,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7669565,
+      "sequenceNumber": 325,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 20561669617
+    },
+    {
+      "articleId": "cea6dd28-31e8-45b8-8f5a-a273a51dedd6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 19528,
+      "recordedAt": 22117,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 359,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 19508317232
+    },
+    {
+      "articleId": "2d753b4a-84ed-4904-b7de-577e1fa22cf4",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 22119,
+      "recordedAt": 22524,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.0,
+          0.0869565
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7669565,
+      "sequenceNumber": 369,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 22090565002
+    },
+    {
+      "articleId": "ccb32355-8059-4f86-b683-54714d71a55f",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 22067,
+      "recordedAt": 22941,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 385,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 21985023463
+    },
+    {
+      "articleId": "4e52e653-da51-47fb-b7b3-b8b115a211d9",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 20750,
+      "recordedAt": 23330,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Abomasnow!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 397,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 20722873309
+    },
+    {
+      "articleId": "56a8f756-ff12-46da-9fc6-12a8de5a8e90",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 20750,
+      "recordedAt": 24261,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 428,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 20722873309
+    },
+    {
+      "articleId": "de7ed5ac-b83b-4cfc-995e-da9c08c3da75",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 20750,
+      "recordedAt": 24431,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "moveName": "Powder Snow",
+        "moveDurationNanos": 1000000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 20722873309
+    },
+    {
+      "articleId": "50b60d4f-f180-4aea-b44d-a2d29aff92da",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 24651,
+      "recordedAt": 24709,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.10144925,
+          0.0869565
+        ],
+        "afterBySlot": [
+          0.44927537,
+          0.44927537
+        ],
+        "changedSlots": [
+          0,
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 447,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 24621455079
+    },
+    {
+      "articleId": "2117501d-4a6a-4a76-a5ce-913fe5fd9514",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 24226,
+      "recordedAt": 24873,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 457,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 24178595079
+    },
+    {
+      "articleId": "90aa21a9-36c3-486d-a234-0ab507f1d6de",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 24770,
+      "recordedAt": 25407,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 483,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 24713322463
+    },
+    {
+      "articleId": "ef66318a-d212-4699-b9b1-cb7284851cda",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 22570,
+      "recordedAt": 25635,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 496,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 22507851771
+    },
+    {
+      "articleId": "3fec5fa4-7d1c-46c8-99d8-3c69b9a3476c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 24762,
+      "recordedAt": 25669,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.9893617,
+        "afterFraction": 0.9526316,
+        "lostFraction": 0.03673011
+      },
+      "predecessorIds": [],
+      "confidence": 0.73130876,
+      "sequenceNumber": 499,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 24713322463
+    },
+    {
+      "articleId": "7eb5c094-3897-4fdb-bb80-f9ed824068d6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25518,
+      "recordedAt": 25684,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.46376812,
+          0.44927537
+        ],
+        "afterBySlot": [
+          0.6376811,
+          0.6376811
+        ],
+        "changedSlots": [
+          0,
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.86840576,
+      "sequenceNumber": 500,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25494721540
+    },
+    {
+      "articleId": "df04ae7e-8226-496d-a4dc-ad7d75846162",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25344,
+      "recordedAt": 25830,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.5711806,
+        "meanColorDistance": 0.3108251,
+        "meanRed": 0.542023,
+        "meanGreen": 0.63497317,
+        "meanBlue": 0.6617211,
+        "centroidX": 0.5155142,
+        "centroidY": 0.4990503,
+        "changedSampleCount": 329
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 508,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25326510463
+    },
+    {
+      "articleId": "955251a5-89ba-4439-b16b-3b0ef87595dd",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25651,
+      "recordedAt": 25852,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.9,
+        "sampleCount": 3,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.8980529
+      },
+      "predecessorIds": [],
+      "confidence": 0.9898053,
+      "sequenceNumber": 510,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25634413233
+    },
+    {
+      "articleId": "35111b86-afbc-417e-a0fc-8f99747ff6b3",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25639,
+      "recordedAt": 26239,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.98930484,
+        "afterFraction": 0.9144385,
+        "lostFraction": 0.074866354
+      },
+      "predecessorIds": [],
+      "confidence": 0.78642416,
+      "sequenceNumber": 528,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25634413233
+    },
+    {
+      "articleId": "a6083cc4-c5ab-4c3f-a671-aeec3fa83e11",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25842,
+      "recordedAt": 26415,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 532,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25837525233
+    },
+    {
+      "articleId": "95fd090b-94f2-41f6-b38e-ff16d2ac26a3",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 25639,
+      "recordedAt": 26415,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.9526316,
+        "afterFraction": 0.92021275,
+        "lostFraction": 0.032418847
+      },
+      "predecessorIds": [],
+      "confidence": 0.7461599,
+      "sequenceNumber": 533,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 25634413233
+    },
+    {
+      "articleId": "de120551-a8de-4094-8dc5-6d124a611aef",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 26260,
+      "recordedAt": 26516,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.91,
+        "sampleCount": 4,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.9082476
+      },
+      "predecessorIds": [],
+      "confidence": 0.99082476,
+      "sequenceNumber": 546,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 26244168310
+    },
+    {
+      "articleId": "ca85171b-5363-4311-adb8-98c470338d8a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 26260,
+      "recordedAt": 26517,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 609755077,
+        "peakColorDistance": 0.91,
+        "sampleCount": 4,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.9082476
+      },
+      "predecessorIds": [],
+      "confidence": 0.99082476,
+      "sequenceNumber": 547,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 26244168310
+    },
+    {
+      "articleId": "05de401d-24a9-42b5-8afe-f7edf2806d9d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 26387,
+      "recordedAt": 26689,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.92021275,
+        "afterFraction": 0.87830687,
+        "lostFraction": 0.04190588
+      },
+      "predecessorIds": [],
+      "confidence": 0.7506704,
+      "sequenceNumber": 561,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 26354785540
+    },
+    {
+      "articleId": "a8c0eb3e-bb66-46ff-bc66-94666e4ff5bb",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 26771,
+      "recordedAt": 27301,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "OPPONENT",
+        "changedPixelFraction": 0.6267361,
+        "meanColorDistance": 0.2994187,
+        "meanRed": 0.3981417,
+        "meanGreen": 0.40140045,
+        "meanBlue": 0.5037523,
+        "centroidX": 0.4692405,
+        "centroidY": 0.5449565,
+        "changedSampleCount": 361
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 580,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 26752158233
+    },
+    {
+      "articleId": "4813ef22-62e6-4025-9970-773d6a7a37f2",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 27143,
+      "recordedAt": 27349,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "OPPONENT",
+        "intervalNanos": 1490442231,
+        "verticalExcursionPixels": 4.8756714,
+        "sampleCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": 0.9511866,
+      "sequenceNumber": 581,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 27124855464
+    },
+    {
+      "articleId": "40fb9e99-b892-4c3f-b74a-113b9da5587a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 27383,
+      "recordedAt": 27597,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.9144385,
+        "afterFraction": 0.84324324,
+        "lostFraction": 0.071195245
+      },
+      "predecessorIds": [],
+      "confidence": 0.77550584,
+      "sequenceNumber": 590,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 27124855464
+    },
+    {
+      "articleId": "f4bc727d-796a-4aaf-a5de-3e6e030b5211",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 24892,
+      "recordedAt": 28614,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 624,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 24866544079
+    },
+    {
+      "articleId": "f3cd5e25-eca4-48e6-a977-337b67ba5d4d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 28458,
+      "recordedAt": 28738,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.87830687,
+        "afterFraction": 0.80851066,
+        "lostFraction": 0.069796205
+      },
+      "predecessorIds": [],
+      "confidence": 0.774985,
+      "sequenceNumber": 635,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28420624002
+    },
+    {
+      "articleId": "3619ccec-bf26-4942-80ef-258d3c79e944",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 28630,
+      "recordedAt": 28954,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.84324324,
+        "afterFraction": 0.7593583,
+        "lostFraction": 0.083884954
+      },
+      "predecessorIds": [],
+      "confidence": 0.7885071,
+      "sequenceNumber": 650,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28556175464
+    },
+    {
+      "articleId": "a833bf64-6d4c-4b18-a4f3-d438520eb4e1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 28748,
+      "recordedAt": 28971,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 652,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28674796310
+    },
+    {
+      "articleId": "130b681f-6498-4678-87e3-0bf902d77084",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 29006,
+      "recordedAt": 29172,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "PRESENT",
+        "peakColorDistance": 1.0,
+        "sampleCount": 16,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9507789
+      },
+      "predecessorIds": [],
+      "confidence": 0.99507785,
+      "sequenceNumber": 656,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28838098848
+    },
+    {
+      "articleId": "fc98e389-82b5-4090-a559-f602c6584949",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 29006,
+      "recordedAt": 29180,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.919,
+        "sampleCount": 5,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.91742283
+      },
+      "predecessorIds": [],
+      "confidence": 0.99174225,
+      "sequenceNumber": 658,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28838098848
+    },
+    {
+      "articleId": "c84f81f8-cdf6-4aec-95ce-760ccd2e4778",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 29006,
+      "recordedAt": 29181,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 2593930538,
+        "peakColorDistance": 0.919,
+        "sampleCount": 5,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.91742283
+      },
+      "predecessorIds": [],
+      "confidence": 0.99174225,
+      "sequenceNumber": 659,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 28838098848
+    },
+    {
+      "articleId": "d8961963-d14d-4383-a1cf-1b4ef1451111",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 29852,
+      "recordedAt": 30081,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 680,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29785491079
+    },
+    {
+      "articleId": "4b578550-827d-4a03-814f-a31d79def07c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 29852,
+      "recordedAt": 30131,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 682,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29785491079
+    },
+    {
+      "articleId": "98883fae-20f5-452d-adea-7034b4b69d78",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 30082,
+      "recordedAt": 30355,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "OPPONENT",
+        "intervalNanos": 2896076231,
+        "verticalExcursionPixels": 4.3719482,
+        "sampleCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": 0.94781643,
+      "sequenceNumber": 690,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 30020931695
+    },
+    {
+      "articleId": "9a4eb086-2fe4-44ae-85bb-c336ef49ac00",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 30114,
+      "recordedAt": 30584,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.7593583,
+        "afterFraction": 0.6918919,
+        "lostFraction": 0.06746638
+      },
+      "predecessorIds": [],
+      "confidence": 0.762471,
+      "sequenceNumber": 699,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 30020931695
+    },
+    {
+      "articleId": "ce7369f9-7a9d-4af0-afb3-a97f47f3c67d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 30736,
+      "recordedAt": 30828,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.28985506,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 703,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 30670283387
+    },
+    {
+      "articleId": "83f4bca0-ebe6-45fe-b8c2-e7db53fb9333",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 27800,
+      "recordedAt": 31512,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 726,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 27767690848
+    },
+    {
+      "articleId": "da528488-de0e-46d2-91d4-153f25a6eaf1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 30852,
+      "recordedAt": 33230,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 769,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 30815116387
+    },
+    {
+      "articleId": "6585d55c-4b4e-4ffe-9ec1-c8df4bd3ee9e",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 30852,
+      "recordedAt": 33325,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 776,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 30815116387
+    },
+    {
+      "articleId": "5ea312d2-c6c7-46f5-80f8-f54a3a80c796",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 32351,
+      "recordedAt": 36115,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 858,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 32186584002
+    },
+    {
+      "articleId": "7d5f2192-4ddf-4a49-97dd-d09ee4da5a3c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 38434,
+      "recordedAt": 38551,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.0,
+          0.28985506
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 919,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38423000387
+    },
+    {
+      "articleId": "f2ec2d19-aaf1-4d7b-ad4f-f34b7d16e8bf",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 39000,
+      "recordedAt": 39547,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.43915343,
+        "afterFraction": 0.4021164,
+        "lostFraction": 0.037037045
+      },
+      "predecessorIds": [],
+      "confidence": 0.716898,
+      "sequenceNumber": 957,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38914260926
+    },
+    {
+      "articleId": "c023b35c-d9bd-4571-becf-06e1c5fa0fe1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 35631,
+      "recordedAt": 39667,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 962,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 35617467464
+    },
+    {
+      "articleId": "4fd5a728-1b54-4273-b0d5-4758dec4e318",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 39901,
+      "recordedAt": 40114,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.96125793,
+        "sampleCount": 12,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.96050364
+      },
+      "predecessorIds": [],
+      "confidence": 0.99605036,
+      "sequenceNumber": 983,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 39848756618
+    },
+    {
+      "articleId": "ec719db2-fe88-4ffa-be89-a2ffc1725aa4",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40672,
+      "recordedAt": 40917,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.01449275,
+          0.0
+        ],
+        "afterBySlot": [
+          0.115942,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.78144926,
+      "sequenceNumber": 1019,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40621322849
+    },
+    {
+      "articleId": "0b0259f2-fef0-4a21-ab40-ecc895be4c0a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40221,
+      "recordedAt": 40958,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.4021164,
+        "afterFraction": 0.36507937,
+        "lostFraction": 0.037037015
+      },
+      "predecessorIds": [],
+      "confidence": 0.70618886,
+      "sequenceNumber": 1024,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40215903695
+    },
+    {
+      "articleId": "6eda1625-9938-440f-8145-16681daada66",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40989,
+      "recordedAt": 41110,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.115942,
+          0.7246377
+        ],
+        "afterBySlot": [
+          0.18840581,
+          0.76811594
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7524638,
+      "sequenceNumber": 1036,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40983291772
+    },
+    {
+      "articleId": "fb73ca0f-a5ec-4502-8f7b-ff7e8c35dfe0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40811,
+      "recordedAt": 41165,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "PLAYER",
+        "intervalNanos": 953251462,
+        "verticalExcursionPixels": 17.0,
+        "sampleCount": 6
+      },
+      "predecessorIds": [],
+      "confidence": 0.9395185,
+      "sequenceNumber": 1041,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40802008080
+    },
+    {
+      "articleId": "407b2ffb-b72b-4998-a7dd-a7716c52b262",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40566,
+      "recordedAt": 41353,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.6475694,
+        "meanColorDistance": 0.31258994,
+        "meanRed": 0.6043851,
+        "meanGreen": 0.6846564,
+        "meanBlue": 0.7130955,
+        "centroidX": 0.46955982,
+        "centroidY": 0.5257485,
+        "changedSampleCount": 373
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1051,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40536093311
+    },
+    {
+      "articleId": "b84ae775-4057-4233-8d03-afa31026f18f",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40566,
+      "recordedAt": 41403,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 15209582848
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1054,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40536093311
+    },
+    {
+      "articleId": "6c7637a7-d1fe-414f-aa13-9cbbf4600f04",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41313,
+      "recordedAt": 41453,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1062,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41303816618
+    },
+    {
+      "articleId": "7d2095f5-11ef-406a-ba7d-6d4f0d1d9286",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41162,
+      "recordedAt": 41458,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.36507937,
+        "afterFraction": 0.32804233,
+        "lostFraction": 0.037037045
+      },
+      "predecessorIds": [],
+      "confidence": 0.71349794,
+      "sequenceNumber": 1063,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41151899772
+    },
+    {
+      "articleId": "4744918c-ef9e-4ef7-bbee-238f38de0601",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 38469,
+      "recordedAt": 41535,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Abomasnow used VWeather Ball!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1066,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38458744310
+    },
+    {
+      "articleId": "f412b9f3-cf3d-4679-94a0-13e853a2c602",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 38469,
+      "recordedAt": 42110,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "moveName": "Weather Ball (Ice)",
+        "energyCost": 35,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_OCR_SINGLE_CHARACTER_REPAIR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38458744310
+    },
+    {
+      "articleId": "4b567e15-b661-422b-8a27-78a402aac702",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 38469,
+      "recordedAt": 42294,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1073,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38458744310
+    },
+    {
+      "articleId": "8c9c7a51-2c9e-4b02-bbd0-44e35badea64",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41607,
+      "recordedAt": 42320,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0869565,
+          0.0
+        ],
+        "afterBySlot": [
+          0.2753623,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.8684058,
+      "sequenceNumber": 1075,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41462435080
+    },
+    {
+      "articleId": "699e3162-9cba-44da-9a41-7c6c8ea47473",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 38469,
+      "recordedAt": 42337,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1077,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 38458744310
+    },
+    {
+      "articleId": "c9d89ed8-fdc8-43d5-8931-a9d8446f7fb1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41909,
+      "recordedAt": 42699,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.97458136,
+        "sampleCount": 16,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.97408646
+      },
+      "predecessorIds": [],
+      "confidence": 0.9974086,
+      "sequenceNumber": 1098,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41828877849
+    },
+    {
+      "articleId": "60858450-e1e5-4f55-8fe4-63b19f1dfc38",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41909,
+      "recordedAt": 42716,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 1980121231,
+        "peakColorDistance": 0.97458136,
+        "sampleCount": 16,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.97408646
+      },
+      "predecessorIds": [],
+      "confidence": 0.9974086,
+      "sequenceNumber": 1099,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41828877849
+    },
+    {
+      "articleId": "e2746c4d-ba83-4dc4-b193-7c026476ba40",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41842,
+      "recordedAt": 42890,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.7725694,
+        "meanColorDistance": 0.31394017,
+        "meanRed": 0.5002855,
+        "meanGreen": 0.4712211,
+        "meanBlue": 0.6705701,
+        "centroidX": 0.5013577,
+        "centroidY": 0.5272943,
+        "changedSampleCount": 445
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1110,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41828877849
+    },
+    {
+      "articleId": "b7a4346f-c1a9-4e24-917b-5552e7f34d13",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 42173,
+      "recordedAt": 43006,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.32804233,
+        "afterFraction": 0.2962963,
+        "lostFraction": 0.03174603
+      },
+      "predecessorIds": [],
+      "confidence": 0.70518744,
+      "sequenceNumber": 1122,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 42155012080
+    },
+    {
+      "articleId": "8924c37b-1f40-490b-8633-a634a976c8a6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41909,
+      "recordedAt": 43032,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "PLAYER",
+        "intervalNanos": 1026869769,
+        "verticalExcursionPixels": 20.0,
+        "sampleCount": 7
+      },
+      "predecessorIds": [],
+      "confidence": 0.9395185,
+      "sequenceNumber": 1127,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41828877849
+    },
+    {
+      "articleId": "66c933d4-25f4-48dd-9448-e563509329c5",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 39963,
+      "recordedAt": 43154,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1133,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 39919328387
+    },
+    {
+      "articleId": "2fd9740b-bf83-4e06-b0b4-734893c99322",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 41842,
+      "recordedAt": 43381,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 1292784538
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1140,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41828877849
+    },
+    {
+      "articleId": "8177437d-2b31-4b16-9597-22b1cc542b33",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 42801,
+      "recordedAt": 43399,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "PLAYER",
+        "intervalNanos": 889084000,
+        "verticalExcursionPixels": 20.0,
+        "sampleCount": 6
+      },
+      "predecessorIds": [],
+      "confidence": 0.9388902,
+      "sequenceNumber": 1155,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 42717961849
+    },
+    {
+      "articleId": "dc6e22bf-9a05-43e6-babc-d919c11ff492",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 42801,
+      "recordedAt": 43406,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "moveName": "Powder Snow",
+        "moveDurationNanos": 1000000000,
+        "observedMedianIntervalNanos": 957976884,
+        "cadenceSampleCount": 2,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.9579769,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 42717961849
+    },
+    {
+      "articleId": "1121bf3c-d205-4a65-9d89-ac3f7ba2c721",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 43407,
+      "recordedAt": 43492,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.37681162,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 1158,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 43367911080
+    },
+    {
+      "articleId": "e033e47a-777c-44ba-b9e5-77868bc5caf3",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 40153,
+      "recordedAt": 45891,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1252,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 40137415157
+    },
+    {
+      "articleId": "8cf56d81-f123-43b0-9964-140f32cbba78",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 44699,
+      "recordedAt": 47038,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1286,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 44600560618
+    },
+    {
+      "articleId": "2922b184-63b2-4145-911d-bcce4bac32a6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 47292,
+      "recordedAt": 47456,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.6811594,
+          0.0
+        ],
+        "afterBySlot": [
+          0.89855075,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.8973914,
+      "sequenceNumber": 1299,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47251296003
+    },
+    {
+      "articleId": "86843b8b-8666-4c18-962b-0ab7731c7f84",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 49161,
+      "recordedAt": 51262,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1398,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 49032523773
+    },
+    {
+      "articleId": "7a4471ba-8fad-48fe-b2b7-3dc294efcc3c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 46682,
+      "recordedAt": 52246,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1435,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 46668125849
+    },
+    {
+      "articleId": "cad31172-0eea-4707-b9c4-4b54e1e93f1e",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 52912,
+      "recordedAt": 53357,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.0,
+          0.3623188
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 1458,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 52741397234
+    },
+    {
+      "articleId": "49b40380-4786-45de-b75f-4b338157512c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 53846,
+      "recordedAt": 54120,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.78144926,
+      "sequenceNumber": 1477,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 53820857850
+    },
+    {
+      "articleId": "f67594db-f4f9-409c-bd8d-9f91bb202975",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 51439,
+      "recordedAt": 54499,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Abomasnow used Weather Ball!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1494,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 51387689619
+    },
+    {
+      "articleId": "8ee4055d-1a33-47be-b653-bfa63fb8b139",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 51439,
+      "recordedAt": 54513,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "moveName": "Weather Ball (Ice)",
+        "energyCost": 35,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 51387689619
+    },
+    {
+      "articleId": "66c6b966-e6f5-4b5f-991c-d5b44091be2d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 51439,
+      "recordedAt": 54518,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1495,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 51387689619
+    },
+    {
+      "articleId": "3df201c5-7000-4e2c-a233-728c63e81c28",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 53899,
+      "recordedAt": 55187,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.8836806,
+        "meanColorDistance": 0.32665595,
+        "meanRed": 0.52928954,
+        "meanGreen": 0.62076396,
+        "meanBlue": 0.66121143,
+        "centroidX": 0.47245413,
+        "centroidY": 0.5021696,
+        "changedSampleCount": 509
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1512,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 53890377004
+    },
+    {
+      "articleId": "b32e389b-42f2-467e-8d97-dd1432cd4401",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 54974,
+      "recordedAt": 55250,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.86956525,
+          0.44927537
+        ],
+        "afterBySlot": [
+          0.86956525,
+          0.6376811
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.86840576,
+      "sequenceNumber": 1519,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 54952413927
+    },
+    {
+      "articleId": "8e032a8f-c929-4934-b750-1f3ee29719bb",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 53899,
+      "recordedAt": 55292,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 12061499155
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1522,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 53890377004
+    },
+    {
+      "articleId": "c6d24a45-687e-424b-bcde-15655d0d10b0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 53635,
+      "recordedAt": 55346,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1528,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 53620676927
+    },
+    {
+      "articleId": "a859a241-7e3f-46f2-aaed-cb27593cd650",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 56204,
+      "recordedAt": 56659,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.95212764,
+        "afterFraction": 0.9361702,
+        "lostFraction": 0.015957415
+      },
+      "predecessorIds": [],
+      "confidence": 0.73233944,
+      "sequenceNumber": 1579,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 56027116004
+    },
+    {
+      "articleId": "0e5ebc31-36b7-4088-8840-ac285b2c8b53",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 56583,
+      "recordedAt": 57044,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1594,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 56427609927
+    },
+    {
+      "articleId": "278e4196-18e7-4147-808d-bd6896ac482f",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 57300,
+      "recordedAt": 57515,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.9,
+        "sampleCount": 3,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.9
+      },
+      "predecessorIds": [],
+      "confidence": 0.98999995,
+      "sequenceNumber": 1625,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 57284500619
+    },
+    {
+      "articleId": "02402f61-7dae-4d09-9197-2c6e91772afa",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 52808,
+      "recordedAt": 57570,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1627,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 52741397234
+    },
+    {
+      "articleId": "4ce6d3f0-dd92-4657-99b3-d079aecb020a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 57947,
+      "recordedAt": 58282,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1656,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 57922901312
+    },
+    {
+      "articleId": "0427366e-3961-46af-b225-a9d863bc367f",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 58568,
+      "recordedAt": 58613,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.10144925,
+          0.0
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.0869565
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7669565,
+      "sequenceNumber": 1673,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 58558111158
+    },
+    {
+      "articleId": "28076c6e-eb06-4d59-9b13-67b47e67a918",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 55388,
+      "recordedAt": 59264,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1707,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 55383370465
+    },
+    {
+      "articleId": "d3808869-ddb2-4fe9-b712-f8ceb5ff8762",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 59219,
+      "recordedAt": 59407,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1715,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 59184852389
+    },
+    {
+      "articleId": "a8e85c63-4052-4f3e-b8ca-c387ed3224a3",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 59982,
+      "recordedAt": 60285,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 1.0,
+        "sampleCount": 4,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1759,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 59935128081
+    },
+    {
+      "articleId": "4ebfec3b-f3c8-4d1b-a128-577c1ed7f44e",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 58643,
+      "recordedAt": 60543,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1771,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 58637339465
+    },
+    {
+      "articleId": "1b117f24-4d2a-431f-9cd8-63aa7ce46e4c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 58643,
+      "recordedAt": 60618,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 58637339465
+    },
+    {
+      "articleId": "17079ba7-3c68-4a8b-9290-15a736e058f5",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 60188,
+      "recordedAt": 61020,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1786,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 60135485235
+    },
+    {
+      "articleId": "8e149231-6ffe-41e6-9a44-29431329c906",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 59961,
+      "recordedAt": 61351,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "OPPONENT",
+        "changedPixelFraction": 0.38194445,
+        "meanColorDistance": 0.29767093,
+        "meanRed": 0.61764723,
+        "meanGreen": 0.47898352,
+        "meanBlue": 0.35167533,
+        "centroidX": 0.36931828,
+        "centroidY": 0.483144,
+        "changedSampleCount": 220
+      },
+      "predecessorIds": [],
+      "confidence": 0.9979024,
+      "sequenceNumber": 1801,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 59935128081
+    },
+    {
+      "articleId": "bf04949a-9900-4302-a34e-ba42057926a1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61011,
+      "recordedAt": 61354,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1802,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 60985851466
+    },
+    {
+      "articleId": "9bf10d54-db07-41f6-bc60-257f6e881354",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61042,
+      "recordedAt": 61431,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.9946808,
+        "afterFraction": 0.91534394,
+        "lostFraction": 0.07933688
+      },
+      "predecessorIds": [],
+      "confidence": 0.76441807,
+      "sequenceNumber": 1807,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 60985851466
+    },
+    {
+      "articleId": "af0883c8-2304-41de-af6b-fb2f6c6a89a0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61428,
+      "recordedAt": 61885,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.014492749,
+          0.0
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7669565,
+      "sequenceNumber": 1829,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61387579773
+    },
+    {
+      "articleId": "88a11ba0-c502-4e9e-a11e-e98bb7330668",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 56209,
+      "recordedAt": 61923,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1841,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 56109119773
+    },
+    {
+      "articleId": "a15c4c29-9063-4896-b8fa-eed40d64a1dc",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61534,
+      "recordedAt": 61957,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.79787236,
+        "afterFraction": 0.65425533,
+        "lostFraction": 0.14361703
+      },
+      "predecessorIds": [],
+      "confidence": 0.83360523,
+      "sequenceNumber": 1847,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61477588081
+    },
+    {
+      "articleId": "6ada47b4-6e28-4223-bd0a-8f84dd170d80",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 58306,
+      "recordedAt": 62171,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1865,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 58289428696
+    },
+    {
+      "articleId": "ff4a3779-16cb-4abf-bf47-65b9bcb349b8",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61987,
+      "recordedAt": 62299,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 2028967923,
+        "peakColorDistance": 1.0,
+        "sampleCount": 12,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1874,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61964096004
+    },
+    {
+      "articleId": "aeb187b6-c2c4-4669-a271-ef2965830b3a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61987,
+      "recordedAt": 62305,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 1.0,
+        "sampleCount": 12,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1875,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61964096004
+    },
+    {
+      "articleId": "8850b476-de75-457b-867d-021d53f17927",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61997,
+      "recordedAt": 62375,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.91534394,
+        "afterFraction": 0.84126985,
+        "lostFraction": 0.07407409
+      },
+      "predecessorIds": [],
+      "confidence": 0.784423,
+      "sequenceNumber": 1881,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61964096004
+    },
+    {
+      "articleId": "be27cb7f-10fa-4bdb-beb4-e979b418c650",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 62271,
+      "recordedAt": 62407,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1883,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 62238719696
+    },
+    {
+      "articleId": "19b7f97c-5beb-4559-bebe-eabd3aa79cba",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 63032,
+      "recordedAt": 63283,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.10038766,
+          0.0
+        ],
+        "afterBySlot": [
+          0.2753623,
+          0.26086956
+        ],
+        "changedSlots": [
+          0,
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 1919,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 63011350850
+    },
+    {
+      "articleId": "b669da61-2c83-4fb6-a7ee-c76ce66191b0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 62669,
+      "recordedAt": 63606,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "OPPONENT",
+        "intervalNanos": 1072302461,
+        "verticalExcursionPixels": 4.4680176,
+        "sampleCount": 4
+      },
+      "predecessorIds": [],
+      "confidence": 0.9328439,
+      "sequenceNumber": 1933,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 62629173004
+    },
+    {
+      "articleId": "5bf0c860-fe27-4f84-a0c3-c176e8010aba",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 62644,
+      "recordedAt": 63646,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.84126985,
+        "afterFraction": 0.7712766,
+        "lostFraction": 0.06999326
+      },
+      "predecessorIds": [],
+      "confidence": 0.7755923,
+      "sequenceNumber": 1938,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 62629173004
+    },
+    {
+      "articleId": "96e48df6-6e69-4742-a68c-1988b6745563",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 63359,
+      "recordedAt": 63717,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.7712766,
+        "afterFraction": 0.6968085,
+        "lostFraction": 0.074468076
+      },
+      "predecessorIds": [],
+      "confidence": 0.7750241,
+      "sequenceNumber": 1943,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 63302677004
+    },
+    {
+      "articleId": "c08adcdf-9709-4317-a8fd-d12694a4de5d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 63680,
+      "recordedAt": 63772,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "PLAYER",
+        "intervalNanos": 1614343077,
+        "verticalExcursionPixels": 13.0,
+        "sampleCount": 7
+      },
+      "predecessorIds": [],
+      "confidence": 0.95039654,
+      "sequenceNumber": 1947,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 63578439081
+    },
+    {
+      "articleId": "3fea4a56-d3d3-4333-8f3e-1edacfbf85a9",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 63599,
+      "recordedAt": 63821,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.6968085,
+        "afterFraction": 0.62765956,
+        "lostFraction": 0.06914896
+      },
+      "predecessorIds": [],
+      "confidence": 0.7654359,
+      "sequenceNumber": 1950,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 63578439081
+    },
+    {
+      "articleId": "4d421610-95d6-4d6c-9f83-6aab379ef9cd",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 60188,
+      "recordedAt": 63908,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1958,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 60135485235
+    },
+    {
+      "articleId": "b62dedc1-00f4-4257-9fb9-277487011684",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 63835,
+      "recordedAt": 64021,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.2753623,
+          0.2753623
+        ],
+        "afterBySlot": [
+          0.5217391,
+          0.2753623
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 1963,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 63806816081
+    },
+    {
+      "articleId": "d326777d-471c-4c0d-af25-a5925d15f1a0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64123,
+      "recordedAt": 64629,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.62765956,
+        "afterFraction": 0.55026454,
+        "lostFraction": 0.07739502
+      },
+      "predecessorIds": [],
+      "confidence": 0.7666766,
+      "sequenceNumber": 1983,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64116665850
+    },
+    {
+      "articleId": "7a3d0840-fc41-4af5-b2a7-1f123d071346",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64123,
+      "recordedAt": 64675,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.65425533,
+        "afterFraction": 0.5026455,
+        "lostFraction": 0.15160984
+      },
+      "predecessorIds": [],
+      "confidence": 0.828602,
+      "sequenceNumber": 1985,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64116665850
+    },
+    {
+      "articleId": "77780e88-b606-4f25-8a84-e1cf54b8a42a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64410,
+      "recordedAt": 65149,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 2436983385,
+        "peakColorDistance": 1.0,
+        "sampleCount": 25,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1999,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64401079389
+    },
+    {
+      "articleId": "7ca7ad16-d758-4299-a24b-a04381de5bec",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64410,
+      "recordedAt": 65181,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 1.0,
+        "sampleCount": 25,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2000,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64401079389
+    },
+    {
+      "articleId": "25eebf7e-f65f-42e3-bd84-8bd1bcb5e4e6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64407,
+      "recordedAt": 65727,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.55026454,
+        "afterFraction": 0.47340426,
+        "lostFraction": 0.07686028
+      },
+      "predecessorIds": [],
+      "confidence": 0.76213735,
+      "sequenceNumber": 2009,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64401079389
+    },
+    {
+      "articleId": "2b3424e2-6433-437c-94d9-5d26f3a1ca2d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64658,
+      "recordedAt": 65834,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.17536233,
+          0.2753623
+        ],
+        "afterBySlot": [
+          0.31884056,
+          0.2753623
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.8234782,
+      "sequenceNumber": 2014,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64629922235
+    },
+    {
+      "articleId": "120d0fcf-3233-4180-a614-35f15aaad2c8",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 61257,
+      "recordedAt": 65851,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2018,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 61201748389
+    },
+    {
+      "articleId": "5199564b-cf30-4222-9459-73191ee98f40",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 65046,
+      "recordedAt": 66083,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2029,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 65017365850
+    },
+    {
+      "articleId": "c80c259d-7937-481f-b2d5-327dd5ce0ec7",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 65049,
+      "recordedAt": 66134,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.47340426,
+        "afterFraction": 0.3968254,
+        "lostFraction": 0.076578856
+      },
+      "predecessorIds": [],
+      "confidence": 0.7568921,
+      "sequenceNumber": 2041,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 65017365850
+    },
+    {
+      "articleId": "d88b7346-0fe8-4beb-a39e-a72e22f762bf",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64458,
+      "recordedAt": 66152,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "PLAYER",
+        "intervalNanos": 875177308,
+        "verticalExcursionPixels": 6.862854,
+        "sampleCount": 7
+      },
+      "predecessorIds": [],
+      "confidence": 0.9281872,
+      "sequenceNumber": 2045,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64453616389
+    },
+    {
+      "articleId": "9d2a8780-314b-4dbc-9681-d26fccf7867d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64458,
+      "recordedAt": 66157,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_motion_cadence_measured",
+        "movingSide": "OPPONENT",
+        "intervalNanos": 1824443385,
+        "verticalExcursionPixels": 11.5,
+        "sampleCount": 13
+      },
+      "predecessorIds": [],
+      "confidence": 0.9310251,
+      "sequenceNumber": 2046,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64453616389
+    },
+    {
+      "articleId": "03efde35-e914-4498-b400-3eab9d780f4b",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 65407,
+      "recordedAt": 66189,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.20289856,
+          0.0
+        ],
+        "afterBySlot": [
+          0.43478262,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2051,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 65399966158
+    },
+    {
+      "articleId": "b280a0d4-bd67-4521-89b4-92f8fbdbec0c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 64059,
+      "recordedAt": 67060,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2104,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 64053993543
+    },
+    {
+      "articleId": "aead6e2d-5b73-4444-a581-502533e7923d",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 68077,
+      "recordedAt": 68166,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.34782606,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2130,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 67899030466
+    },
+    {
+      "articleId": "fa3bac09-789a-4d1e-92f0-08c01eb06e55",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 66831,
+      "recordedAt": 68315,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2134,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 66796352927
+    },
+    {
+      "articleId": "b22b8c10-1e5a-4711-aac3-ecf115cd280f",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 67691,
+      "recordedAt": 68890,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2150,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 67635600312
+    },
+    {
+      "articleId": "42c0b5ee-fe1c-49c7-9a66-839522e4b8ce",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 65084,
+      "recordedAt": 70070,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "moveName": "Water Gun",
+        "moveDurationNanos": 500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 65065204389
+    },
+    {
+      "articleId": "a353b26f-6a7f-4660-a634-a7d15ece7e02",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 68891,
+      "recordedAt": 70407,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2189,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 68854274543
+    },
+    {
+      "articleId": "341d8c63-f678-44f9-a5c6-a96c66d055d7",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 69958,
+      "recordedAt": 72118,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2237,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 69942172389
+    },
+    {
+      "articleId": "1735fc35-3c90-460e-baf8-40310a2c5cf8",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 70862,
+      "recordedAt": 73923,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2296,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 70813610851
+    },
+    {
+      "articleId": "43317431-e6e3-46b1-ad36-0dde0c6d1fea",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 74970,
+      "recordedAt": 75086,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0049565206,
+          0.0
+        ],
+        "afterBySlot": [
+          0.0,
+          0.3043478
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2322,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 74932606851
+    },
+    {
+      "articleId": "987de775-ca7b-43c9-9dda-bbd920fad312",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 73539,
+      "recordedAt": 75496,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt used Rock Tomb",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2329,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 73531931159
+    },
+    {
+      "articleId": "b5de4b99-1979-41c8-a767-194ce744cd05",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 73539,
+      "recordedAt": 75624,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Rock Tomb",
+        "energyCost": 50,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 73531931159
+    },
+    {
+      "articleId": "b584a77b-ceb9-4abb-aeec-40c953ab6035",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 73539,
+      "recordedAt": 75659,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2332,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 73531931159
+    },
+    {
+      "articleId": "44b3bfbe-2545-4003-9b10-781ebe39e4fa",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 73539,
+      "recordedAt": 75703,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2339,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 73531931159
+    },
+    {
+      "articleId": "8a5b737a-33df-4ef6-9064-dbcfce688516",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 75552,
+      "recordedAt": 75736,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.78144926,
+      "sequenceNumber": 2340,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 75536089620
+    },
+    {
+      "articleId": "2924adb5-abe0-4747-b23e-8b96cc69b1b1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 75720,
+      "recordedAt": 76764,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.8472222,
+        "meanColorDistance": 0.24329016,
+        "meanRed": 0.62608504,
+        "meanGreen": 0.4131533,
+        "meanBlue": 0.3896888,
+        "centroidX": 0.49043715,
+        "centroidY": 0.53133553,
+        "changedSampleCount": 488
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2389,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 75694780928
+    },
+    {
+      "articleId": "d326b9e7-f2f0-4479-bafd-26f1e1e191bf",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 77099,
+      "recordedAt": 77159,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.942029,
+          0.37681162
+        ],
+        "afterBySlot": [
+          0.942029,
+          0.6666666
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2405,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 77058469005
+    },
+    {
+      "articleId": "f123b026-3aed-4168-bca7-22e312d13ecc",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 76559,
+      "recordedAt": 78247,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2446,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 76552677313
+    },
+    {
+      "articleId": "3f81a321-3bc8-4869-a5ae-f9d0f70125d2",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 77938,
+      "recordedAt": 78355,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.9893617,
+        "afterFraction": 0.87765956,
+        "lostFraction": 0.111702144
+      },
+      "predecessorIds": [],
+      "confidence": 0.82193315,
+      "sequenceNumber": 2456,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 77916447159
+    },
+    {
+      "articleId": "58dc8da1-21e1-4155-9db0-074faaf55a7b",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78225,
+      "recordedAt": 78362,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.99808156,
+        "sampleCount": 35,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2457,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78203749313
+    },
+    {
+      "articleId": "8cdd166e-77e2-4f09-b391-8dc0f16cebf6",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78363,
+      "recordedAt": 78435,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.10144925,
+          0.13043481
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.18840581
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.737971,
+      "sequenceNumber": 2461,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78339036005
+    },
+    {
+      "articleId": "02bc8b0a-3b31-462e-847b-3f38f856d795",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 76559,
+      "recordedAt": 78689,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Vaporeon!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2477,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 76552677313
+    },
+    {
+      "articleId": "ad5728f3-6441-42e7-a51a-899b8dd73708",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78223,
+      "recordedAt": 78763,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.8645833,
+        "meanColorDistance": 0.2503084,
+        "meanRed": 0.49030617,
+        "meanGreen": 0.39259624,
+        "meanBlue": 0.38193387,
+        "centroidX": 0.5040161,
+        "centroidY": 0.48033828,
+        "changedSampleCount": 498
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2483,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78203749313
+    },
+    {
+      "articleId": "bc828eb5-397f-46a2-b351-ad428ec6cd34",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78223,
+      "recordedAt": 78766,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2508968385
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2484,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78203749313
+    },
+    {
+      "articleId": "1139e893-20f1-4b78-96a6-26644119dbd0",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78576,
+      "recordedAt": 78959,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.39893618,
+        "afterFraction": 0.32804233,
+        "lostFraction": 0.070893854
+      },
+      "predecessorIds": [],
+      "confidence": 0.7472601,
+      "sequenceNumber": 2493,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78479204005
+    },
+    {
+      "articleId": "ac39915a-b73e-43da-bfe4-a970376d6e6b",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 79152,
+      "recordedAt": 79563,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2518,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 79132398851
+    },
+    {
+      "articleId": "4eb8a160-1516-48cb-a364-37908bb631ea",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 79446,
+      "recordedAt": 79865,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.10144925,
+          0.31884053
+        ],
+        "afterBySlot": [
+          0.10144925,
+          0.5942029
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2535,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 79413448082
+    },
+    {
+      "articleId": "c9f1825d-1e3d-4f0e-833d-4c41dc459ccb",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 78049,
+      "recordedAt": 79961,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2546,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 78003874467
+    },
+    {
+      "articleId": "ec60fce7-fa27-439d-8078-6094406dc834",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 79528,
+      "recordedAt": 79987,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.32804233,
+        "afterFraction": 0.25396827,
+        "lostFraction": 0.07407406
+      },
+      "predecessorIds": [],
+      "confidence": 0.74382156,
+      "sequenceNumber": 2554,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 79500606467
+    },
+    {
+      "articleId": "3574cb0d-2445-48ea-99d2-eb741d9096ae",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80103,
+      "recordedAt": 80289,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.25396827,
+        "afterFraction": 0.17989418,
+        "lostFraction": 0.07407409
+      },
+      "predecessorIds": [],
+      "confidence": 0.7390503,
+      "sequenceNumber": 2585,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80015110774
+    },
+    {
+      "articleId": "5082b0c4-7587-4a75-806a-25ec758d4123",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80103,
+      "recordedAt": 80380,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.87765956,
+        "afterFraction": 0.76719576,
+        "lostFraction": 0.1104638
+      },
+      "predecessorIds": [],
+      "confidence": 0.8093854,
+      "sequenceNumber": 2587,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80015110774
+    },
+    {
+      "articleId": "cc492edf-a0b4-4786-b1c7-9e5c4d5bb260",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80544,
+      "recordedAt": 80670,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "OPPONENT",
+        "intervalNanos": 2301059923,
+        "peakColorDistance": 0.999398,
+        "sampleCount": 46,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2608,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80504809236
+    },
+    {
+      "articleId": "76f5629e-436d-4280-8c0c-6eb64f18eccd",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80544,
+      "recordedAt": 80671,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.999398,
+        "sampleCount": 46,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 1.0
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2609,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80504809236
+    },
+    {
+      "articleId": "3bd84c6a-7f19-40c8-95b2-4fcf3a6b0ea8",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80535,
+      "recordedAt": 80802,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.17989418,
+        "afterFraction": 0.105820104,
+        "lostFraction": 0.074074075
+      },
+      "predecessorIds": [],
+      "confidence": 0.7341059,
+      "sequenceNumber": 2616,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80504809236
+    },
+    {
+      "articleId": "fa5acda0-d151-46dd-9dd5-c6744b7048de",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80548,
+      "recordedAt": 80869,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_ARTIFACT_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_artifact_measured",
+        "damagedSide": "PLAYER",
+        "changedPixelFraction": 0.5798611,
+        "meanColorDistance": 0.21566682,
+        "meanRed": 0.59344906,
+        "meanGreen": 0.36630353,
+        "meanBlue": 0.4258194,
+        "centroidX": 0.43138722,
+        "centroidY": 0.5395462,
+        "changedSampleCount": 334
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2619,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80504809236
+    },
+    {
+      "articleId": "2f6156f5-60d0-48db-b020-aa29ea1d3cc1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 80548,
+      "recordedAt": 80893,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2301059923
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2622,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 80504809236
+    },
+    {
+      "articleId": "d4436674-4732-4f05-9b63-9a2732ed5f96",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 81771,
+      "recordedAt": 81832,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.005362317
+        ],
+        "afterBySlot": [
+          0.0,
+          0.115942
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.7905797,
+      "sequenceNumber": 2669,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 81743105851
+    },
+    {
+      "articleId": "a1635c70-035a-4da3-837c-8a3d7a422fd1",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 83215,
+      "recordedAt": 83458,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.0,
+          0.31884056
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2718,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 83202203390
+    },
+    {
+      "articleId": "d917c1a7-eca5-4a3d-b0ad-1acc5ba8b41b",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 79665,
+      "recordedAt": 83588,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2729,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 79638467467
+    },
+    {
+      "articleId": "8fc2d80e-e8ed-4a6f-b947-4519c482e23e",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 83816,
+      "recordedAt": 83974,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.1478261
+        ],
+        "afterBySlot": [
+          0.0,
+          0.39130437
+        ],
+        "changedSlots": [
+          1
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 2745,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 83791651082
+    },
+    {
+      "articleId": "b07bbfed-1047-4951-a46b-9ad7c5364e3c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 84434,
+      "recordedAt": 84622,
+      "sourceId": "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_energy_fill_increased",
+        "beforeBySlot": [
+          0.0,
+          0.0
+        ],
+        "afterBySlot": [
+          0.057971,
+          0.0
+        ],
+        "changedSlots": [
+          0
+        ]
+      },
+      "predecessorIds": [],
+      "confidence": 0.737971,
+      "sequenceNumber": 2766,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 84386838852
+    },
+    {
+      "articleId": "ed03953d-5089-46a9-83b4-49f9c74286d3",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 81809,
+      "recordedAt": 84679,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2768,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 81781616928
+    },
+    {
+      "articleId": "bf027be7-4bce-4528-a940-be026dcfc4dc",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 81809,
+      "recordedAt": 84683,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2769,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 81781616928
+    },
+    {
+      "articleId": "d5cb540d-faa2-48eb-a9a9-47928a452494",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 83378,
+      "recordedAt": 88390,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2870,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 83372309236
+    },
+    {
+      "articleId": "2fb7b519-03df-477c-b7f6-f8b732da034a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 87612,
+      "recordedAt": 90070,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2923,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 87564921852
+    },
+    {
+      "articleId": "08866a48-1bfd-40fd-b9f9-8f33db3a9573",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 89337,
+      "recordedAt": 91990,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt used Earth Power!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2956,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 89293936313
+    },
+    {
+      "articleId": "85d5ecbb-9a82-49c6-97c2-8e2614d6fcf4",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 89337,
+      "recordedAt": 92020,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Earth Power",
+        "energyCost": 50,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 89293936313
+    },
+    {
+      "articleId": "ba0a67e1-9377-4f8e-b8dc-114c5528451a",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 89337,
+      "recordedAt": 92177,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2959,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 89293936313
+    },
+    {
+      "articleId": "a220168f-5b15-401e-bdf2-3b529192e1b8",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 91060,
+      "recordedAt": 93324,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3005,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 91055349929
+    },
+    {
+      "articleId": "1cefb1f4-415b-40d3-8c6c-aaaf6f50856c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 92263,
+      "recordedAt": 94398,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3052,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 92203229314
+    },
+    {
+      "articleId": "5f8eaf5d-3dc5-4389-be4c-be47da0ad68c",
+      "matchId": "76487bfd-d8b2-40ad-abc7-3436e7e64fcd",
+      "perceivedAt": 94950,
+      "recordedAt": 96511,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 94925356083
+    }
+  ]
+}

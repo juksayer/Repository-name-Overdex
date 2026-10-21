@@ -1,0 +1,612 @@
+{
+  "date": "2026-10-15",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "branch": "odx-recovery",
+  "device": {
+    "model": "MD_PH_001",
+    "serial": "MDPH00124112500414"
+  },
+  "recording": {
+    "filename": "2026-10-15_20-33-27_6e067f03-142c-40ba-bf28-9570164dd81f.odxmatch.zip",
+    "match_id": "6e067f03-142c-40ba-bf28-9570164dd81f",
+    "bytes": 12363137,
+    "sha256": "d9cd5d94a9f473477392e4c1ab789cfb4a4f414b289ecc7d1f62a1f408a73a19",
+    "archive_type": "overdex-match-archive",
+    "articles": 2732,
+    "artifacts_verified": 515,
+    "source_span_s": 153.488
+  },
+  "build_provenance": {
+    "installed_apk": {
+      "path": "/data/app/~~tEFyOCU4oILhVpQW9eGHRw==/com.example.overdex-0DjUVr13dqPeJ10lIP_f6w==/base.apk",
+      "sha256": "cd9675bc35275184c536911a58f295da5e00df14c10fed98befd1c812b14c1ae",
+      "last_update_time": "2026-10-15 20:46:22"
+    },
+    "recorded_before_latest_audio_window_fix": true,
+    "recorded_apk_inferred_from_install_chronology": "5b92805a69895976552ed1ae5aafd3ce634e214a5cb987ba5789fb48adb9313d",
+    "note": "Archive does not embed its APK hash. It starts at 20:33:27 and was completed before the source-timed audio fix was installed at 20:46:22."
+  },
+  "user_confirmed_context": {
+    "match_type": "TEAM_LEADER_PRACTICE",
+    "abomasnow_deliberately_idle_after_camerupt_fainted": true,
+    "opponent_pauses_approximately_seconds": 2,
+    "pause_triggers": [
+      "player switch",
+      "completed charged move",
+      "opponent KO followed by new opponent entry"
+    ],
+    "opponent_shields": "User reports Team Leaders use shields only in Master League practice. Do not apply to Go Battle League.",
+    "interpretation": "Do not score these expected practice pauses as dropped attacks or create witnessed attacks from elapsed time."
+  },
+  "match_start": [
+    {
+      "at_s": 38.255,
+      "published_s": 39.105,
+      "source": "BATTLE_INTERPRETER",
+      "article_id": "017bfded-247f-4819-9519-23a94b9ac711",
+      "kind": "match_started"
+    }
+  ],
+  "result": [
+    {
+      "at_s": 151.341,
+      "published_s": 152.923,
+      "source": "BATTLE_INTERPRETER",
+      "article_id": "845443f4-7c13-4918-8d1a-8552f5abc60a",
+      "kind": "match_ended",
+      "result": "WIN"
+    }
+  ],
+  "first_species_publications": {
+    "PLAYER:Abomasnow": {
+      "published_s": 36.371,
+      "source_frame_s": 34.418,
+      "earliest_supporting_frame_s": 34.418,
+      "earliest_supporting_frame_to_first_publication_ms": 1953,
+      "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+    },
+    "OPPONENT:Sneasel": {
+      "published_s": 42.07,
+      "source_frame_s": 37.928,
+      "earliest_supporting_frame_s": 37.139,
+      "earliest_supporting_frame_to_first_publication_ms": 4931,
+      "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+    },
+    "PLAYER:Camerupt": {
+      "published_s": 42.798,
+      "source_frame_s": 41.673,
+      "earliest_supporting_frame_s": 41.673,
+      "earliest_supporting_frame_to_first_publication_ms": 1125,
+      "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+    },
+    "OPPONENT:Sealeo": {
+      "published_s": 54.459,
+      "source_frame_s": 51.886,
+      "earliest_supporting_frame_s": 50.107,
+      "earliest_supporting_frame_to_first_publication_ms": 4352,
+      "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+    },
+    "OPPONENT:Vaporeon": {
+      "published_s": 70.2,
+      "source_frame_s": 68.754,
+      "earliest_supporting_frame_s": 68.754,
+      "earliest_supporting_frame_to_first_publication_ms": 1446,
+      "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+    },
+    "PLAYER:Gourgeist": {
+      "published_s": 119.141,
+      "source_frame_s": 115.916,
+      "earliest_supporting_frame_s": 115.916,
+      "earliest_supporting_frame_to_first_publication_ms": 3225,
+      "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+    }
+  },
+  "fast_move_identities": [
+    {
+      "at_s": 34.418,
+      "published_s": 36.419,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "9222ed1b-d8a5-4e10-9a75-b7cd56ca57b3",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Abomasnow",
+      "moveName": "Powder Snow",
+      "moveDurationNanos": 1000000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+    },
+    {
+      "at_s": 41.673,
+      "published_s": 42.832,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "d0739b1d-5559-4b81-adaa-5d932abeffda",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+    },
+    {
+      "at_s": 45.259,
+      "published_s": 47.794,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "ab36283a-753c-4e8b-81fb-3c1c45cc384a",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": 2418227039,
+      "cadenceSampleCount": 2,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION"
+    },
+    {
+      "at_s": 48.513,
+      "published_s": 48.827,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "d7a1f653-e12d-4bf9-a227-2be72cdf8f72",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": 2446581847,
+      "cadenceSampleCount": 3,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+OBSERVED_USES"
+    },
+    {
+      "at_s": 45.684,
+      "published_s": 49.617,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "bfc46ca6-a135-4b11-9e87-a9626b9dbef1",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Sneasel",
+      "moveName": "Ice Shard",
+      "moveDurationNanos": 1500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
+    },
+    {
+      "at_s": 51.448,
+      "published_s": 52.433,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "e2b3ebbf-220d-4790-8589-891e460ff77a",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": 2446581847,
+      "cadenceSampleCount": 3,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS+OBSERVED_USES"
+    },
+    {
+      "at_s": 57.077,
+      "published_s": 58.779,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "34d23518-7f1a-4651-96fc-1ef2f150d33a",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Sealeo",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": 493076423,
+      "cadenceSampleCount": 2,
+      "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE"
+    },
+    {
+      "at_s": 56.476,
+      "published_s": 60.09,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "6f01ce87-fde7-46ae-84b0-f1537cdfa780",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Sealeo",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
+    },
+    {
+      "at_s": 54.249,
+      "published_s": 60.231,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "27830bc9-7fce-4d62-9ee2-e1e7a4ff3438",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Sealeo",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE"
+    },
+    {
+      "at_s": 56.934,
+      "published_s": 62.535,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "ac9f4892-f015-4ab1-9053-b0c3ad0faa17",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Sealeo",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
+    },
+    {
+      "at_s": 68.754,
+      "published_s": 70.409,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "9cf27499-a791-48ee-984a-92f89100760d",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Vaporeon",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE"
+    },
+    {
+      "at_s": 77.381,
+      "published_s": 78.447,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "80ff8baf-8f19-4d25-b4c2-5478f27cfeab",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Abomasnow",
+      "moveName": "Powder Snow",
+      "moveDurationNanos": 1000000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+    },
+    {
+      "at_s": 86.001,
+      "published_s": 87.955,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "f5df1b0b-40bf-42a8-81db-fcf58d3ec6b0",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Vaporeon",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE"
+    },
+    {
+      "at_s": 115.916,
+      "published_s": 119.803,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "4ae3c2f4-fe6a-4687-8612-803b00d8c560",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Gourgeist",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": null,
+      "cadenceSampleCount": 0,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+    },
+    {
+      "at_s": 121.761,
+      "published_s": 123.062,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "6a254f23-a343-4cbc-bbce-90790a27e62e",
+      "kind": "fast_move_identified",
+      "side": "OPPONENT",
+      "speciesName": "Vaporeon",
+      "moveName": "Water Gun",
+      "moveDurationNanos": 500000000,
+      "observedMedianIntervalNanos": 506302038,
+      "cadenceSampleCount": 2,
+      "basis": "SIDE_LOCATED_EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE_SUPPORTED_BY_OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS"
+    },
+    {
+      "at_s": 123.791,
+      "published_s": 123.997,
+      "source": "FAST_MOVE_CADENCE_INTERPRETER",
+      "article_id": "37497f8a-d399-4d47-a138-eba2b7d60a75",
+      "kind": "fast_move_identified",
+      "side": "PLAYER",
+      "speciesName": "Gourgeist",
+      "moveName": "Incinerate",
+      "moveDurationNanos": 2500000000,
+      "observedMedianIntervalNanos": 2532794769,
+      "cadenceSampleCount": 2,
+      "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"
+    }
+  ],
+  "recorded_fast_uses": {
+    "PLAYER:Abomasnow": 1,
+    "OPPONENT:None": 1,
+    "OPPONENT:Sneasel": 3,
+    "PLAYER:Camerupt": 6,
+    "OPPONENT:Sealeo": 8,
+    "OPPONENT:Vaporeon": 14,
+    "PLAYER:Gourgeist": 5
+  },
+  "fast_use_count_note": "These are retained fused observations, not ground-truth performed attack totals. Practice pauses and the confirmed idle player must not be filled in as attacks.",
+  "charged_moves": [
+    {
+      "at_s": 65.892,
+      "published_s": 68.679,
+      "source": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "article_id": "c8fbe49d-d64c-4a28-8e9c-311f5118cc04",
+      "kind": "charged_move_energy_spent",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "moveName": "Rock Tomb",
+      "energyCost": 50,
+      "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+    },
+    {
+      "at_s": 96.334,
+      "published_s": 97.984,
+      "source": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "article_id": "672fcb0d-3e3c-4ce8-84b2-bfa9e4c8ab04",
+      "kind": "charged_move_energy_spent",
+      "side": "OPPONENT",
+      "speciesName": "Vaporeon",
+      "moveName": "Water Pulse",
+      "energyCost": 50,
+      "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+    },
+    {
+      "at_s": 133.071,
+      "published_s": 136.842,
+      "source": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "article_id": "d6fc7f59-66fb-4e37-894c-4a8f0dbf68db",
+      "kind": "charged_move_energy_spent",
+      "side": "PLAYER",
+      "speciesName": "Gourgeist",
+      "moveName": "Seed Bomb",
+      "energyCost": 40,
+      "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+    }
+  ],
+  "faints": [
+    {
+      "at_s": 51.831,
+      "published_s": 53.052,
+      "source": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "article_id": "d0a81d2b-76dc-4874-82a1-693cf3e3ea66",
+      "kind": "active_pokemon_fainted_witnessed",
+      "side": "OPPONENT",
+      "speciesName": "Sneasel",
+      "speciesId": 215,
+      "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+    },
+    {
+      "at_s": 69.258,
+      "published_s": 70.501,
+      "source": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "article_id": "1d38a858-f805-4577-af46-c1a0a050868e",
+      "kind": "active_pokemon_fainted_witnessed",
+      "side": "OPPONENT",
+      "speciesName": "Sealeo",
+      "speciesId": 364,
+      "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+    },
+    {
+      "at_s": 72.415,
+      "published_s": 73.297,
+      "source": "PLAYER_POKEMON_FAINT_WITNESS",
+      "article_id": "29e5a519-ffd4-463f-8f83-11dc1721636a",
+      "kind": "active_pokemon_fainted_witnessed",
+      "side": "PLAYER",
+      "speciesName": "Camerupt",
+      "speciesId": 323,
+      "basis": "PLAYER_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+    },
+    {
+      "at_s": 119.346,
+      "published_s": 122.635,
+      "source": "PLAYER_POKEMON_FAINT_WITNESS",
+      "article_id": "aeb0cb08-ec81-4508-a5d8-febf3a15c17e",
+      "kind": "active_pokemon_fainted_witnessed",
+      "side": "PLAYER",
+      "speciesName": "Abomasnow",
+      "speciesId": 460,
+      "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+    }
+  ],
+  "audio": {
+    "input_status": [
+      {
+        "at_s": 0.527,
+        "published_s": 0.534,
+        "source": "AUDIO_INPUT_STATUS",
+        "article_id": "9981c198-386d-4901-8025-0c205ff4f837",
+        "kind": "audio_input_status",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "state": "QUIET_OR_UNAVAILABLE"
+      },
+      {
+        "at_s": 1.263,
+        "published_s": 1.291,
+        "source": "AUDIO_INPUT_STATUS",
+        "article_id": "f481fdc1-edbe-4fd4-bd32-c2b1e6711523",
+        "kind": "audio_input_status",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "state": "RUNNING_AWAITING_SIGNAL"
+      },
+      {
+        "at_s": 2.085,
+        "published_s": 2.087,
+        "source": "AUDIO_INPUT_STATUS",
+        "article_id": "cc2694c7-b77d-4eb1-8a88-c65e6dedbb4f",
+        "kind": "audio_input_status",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "state": "SIGNAL_PRESENT"
+      }
+    ],
+    "clips": 50,
+    "clip_kinds": {
+      "COUNTDOWN_VISUAL_PRESENCE": 1,
+      "SPECIES_ENTRY": 7,
+      "COUNTDOWN_2": 1,
+      "FAST_MOVE_IMPACT": 37,
+      "CHARGED_MOVE_EFFECT": 3,
+      "MATCH_RESULT_MUSIC": 1
+    },
+    "fast_sound_measurements": 37,
+    "accepted_reference_matches": {
+      "Ice Shard": 4,
+      "Incinerate": 4,
+      "Water Gun": 19
+    },
+    "fast_clip_start_minus_source_hit_ms": {
+      "count": 37,
+      "median_ms": 27.62,
+      "p90_ms": 629.39,
+      "max_ms": 1182.67
+    },
+    "fast_clips_starting_after_hit": 22,
+    "classification_after_audio_publication": {
+      "count": 37,
+      "median_ms": 2559,
+      "p90_ms": 8069,
+      "max_ms": 12159
+    },
+    "result_music": [
+      {
+        "at_s": 149.102,
+        "published_s": 153.429,
+        "source": "RESULT_MUSIC_WITNESS",
+        "article_id": "687e8cf9-a06f-48b9-9b22-92cb2420e149",
+        "kind": "match_result_music_measured",
+        "theme": "WIN",
+        "referenceSha256": "38fc2fdf567d9f7bd284ccb5f989d5434f67d5e129c03945f0489b84cb182c1e",
+        "similarity": 0.9566097,
+        "runnerUpSimilarity": 0.70127994,
+        "referenceOffsetNanos": 5344000000,
+        "durationNanos": 4000000000,
+        "confirmingWindows": 2,
+        "followingWindowSimilarity": 0.9216797,
+        "followingWindowRunnerUpSimilarity": 0.7059536
+      }
+    ]
+  },
+  "latencies": {
+    "active_hp_bar_measured": {
+      "n": 585,
+      "median_ms": 233,
+      "p90_ms": 770,
+      "max_ms": 1468
+    },
+    "active_pokemon_species_witnessed": {
+      "n": 28,
+      "median_ms": 2733.5,
+      "p90_ms": 8135,
+      "max_ms": 10148
+    },
+    "fast_move_use_observed": {
+      "n": 38,
+      "median_ms": 1958.0,
+      "p90_ms": 2480,
+      "max_ms": 3400
+    },
+    "fast_move_sound_measured": {
+      "n": 37,
+      "median_ms": 4397,
+      "p90_ms": 9585,
+      "max_ms": 13470
+    },
+    "charge_move_used_announced": {
+      "n": 3,
+      "median_ms": 2853,
+      "p90_ms": 3798,
+      "max_ms": 3798
+    },
+    "match_ended": {
+      "n": 1,
+      "median_ms": 1582,
+      "p90_ms": 1582,
+      "max_ms": 1582
+    },
+    "ANNOUNCEMENT_WITNESS": {
+      "n": 81,
+      "median_ms": 1923,
+      "p90_ms": 3932,
+      "max_ms": 6887
+    },
+    "ANNOUNCEMENT_WITNESS_OCR": {
+      "n": 137,
+      "median_ms": 2156,
+      "p90_ms": 4049,
+      "max_ms": 6375
+    },
+    "MATCH_OUTCOME_WITNESS": null,
+    "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+      "n": 10,
+      "median_ms": 2856.5,
+      "p90_ms": 8135,
+      "max_ms": 8135
+    },
+    "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+      "n": 10,
+      "median_ms": 2373.5,
+      "p90_ms": 10148,
+      "max_ms": 10148
+    }
+  },
+  "player_charge_label_read_bases": {
+    "OCR": 4,
+    "UNCHANGED_LETTER_PIXELS": 10
+  },
+  "last_hp": {
+    "PLAYER": {
+      "at_s": 138.746,
+      "fraction": 0.8148148,
+      "article_id": "36360e3e-13ce-4e5d-bc86-ae6f2e4b4530"
+    },
+    "OPPONENT": {
+      "at_s": 137.59,
+      "fraction": 0.06382979,
+      "article_id": "fbca4351-dd2b-4ffd-874d-64b22cee7a99"
+    }
+  },
+  "observed_limits": [
+    "Sneasel first identity publication arrived 4.931 seconds after the earliest supporting entry-announcement frame.",
+    "No confirmed player Fast Moves follow the return of deliberately idle Abomasnow; no attacks should be inferred merely from elapsed time.",
+    "Valid player HP measurements are missing for stretches of the Abomasnow appearance; these measurement gaps remain distinct from expected practice pauses.",
+    "Vaporeon has no raw final faint testimony; the WIN result can drive the existing defeated replay pose without claiming a witnessed final KO. Seed Bomb is recorded, but Vaporeon still has a later 6.38 percent HP measurement, so the archive does not prove Seed Bomb was the finishing hit.",
+    "Individual hit count accuracy still needs independent ground truth; short-gap fused events can be duplicate corroboration.",
+    "This recording predates the newly installed source-aligned audio window selection, so it cannot validate that change."
+  ],
+  "changes_this_review": {
+    "production_code": false,
+    "calibrations": false,
+    "installed_new_apk": false,
+    "original_phone_archive_preserved": true
+  },
+  "local_evidence_directory": "/tmp/overdex-review-20261015-2033",
+  "replay_validation": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "names": [
+      "namedChargesAppearOnTheirRecordedSideWithTheType",
+      "winEndsVaporeonsPoseWithoutInventingAFaintWitness",
+      "confirmedIdleAbomasnowDoesNotProduceReplayAttacks",
+      "sealeoKeepsWaterGunAndCorrectSide"
+    ],
+    "scope": "Four JVM checks using the complete original timeline and the current replay projection; this is not a phone visual test or live acceptance of the audio fix."
+  },
+  "validation_commands": [
+    "inspect_odxmatch.py --verify-artifacts ARCHIVE",
+    "./gradlew :app:testDebugUnitTest --tests com.example.overdex.battle.replay.CurrentMatchReviewTest (temporary review test source, retained under local_evidence_directory/qa)"
+  ]
+}

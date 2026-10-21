@@ -1,0 +1,65 @@
+{
+  "description": "Unmodified recorded regression fixtures; original local captures retained.",
+  "images": [
+    {
+      "file": "2026-10-12-1546/frame-055.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/frame-055.png",
+      "sha256": "9ba2b26bc14ecf9afee49d4f4c8d7c54430a670701d50c1eb13d6f0bb35aaa57",
+      "bytes": 843084
+    },
+    {
+      "file": "2026-10-12-1546/frame-089.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/frame-089.png",
+      "sha256": "4e832ce9f4676cee866e1bae87ebc31dcdaa11bcf13c7466eb1ea652af8bb83a",
+      "bytes": 852586
+    },
+    {
+      "file": "2026-10-12-1546/frame-156.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/frame-156.png",
+      "sha256": "b4e5cb380463c1eba655d59ab5777df7a1fedee3da21d060595ea2597af7f51a",
+      "bytes": 870766
+    },
+    {
+      "file": "2026-10-12-1546/player-shields-74.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/player-shields-74.png",
+      "sha256": "a07221be9012fb0b45fffe65abea51dc10c25ce348e0773c23586afea2c3b84b",
+      "bytes": 1202
+    },
+    {
+      "file": "2026-10-12-1546/opponent-shields-75.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/opponent-shields-75.png",
+      "sha256": "caa16eec34b7232c0588d2ea7873583496a13d6cdeda18972e15a350486477d4",
+      "bytes": 1403
+    },
+    {
+      "file": "2026-10-12-1546/player-shields-79.png",
+      "originalPath": "docs/verification/evidence/2026-10-12-1546/player-shields-79.png",
+      "sha256": "8e1bf50ede4a20cc03456ec442e5a4fbf935e97e703dac176428e59dd5f82859",
+      "bytes": 3229
+    },
+    {
+      "file": "2026-10-16-hp-outline/abomasnow-89.png",
+      "originalPath": "docs/verification/evidence/2026-10-16-hp-outline/abomasnow-89.png",
+      "sha256": "d908de8853d88a07b15203619e3df23e91cf4ad6f4ce5fea8713644497ba4438",
+      "bytes": 870228
+    },
+    {
+      "file": "2026-10-16-hp-outline/abomasnow-77.png",
+      "originalPath": "docs/verification/evidence/2026-10-16-hp-outline/abomasnow-77.png",
+      "sha256": "ef41adc21e2c07ddf4c876e9e98cb07ab5744968e73cd4a0bda473cf1dfe65a8",
+      "bytes": 857158
+    },
+    {
+      "file": "2026-10-16-hp-outline/abomasnow-66.png",
+      "originalPath": "docs/verification/evidence/2026-10-16-hp-outline/abomasnow-66.png",
+      "sha256": "e08654352cb8debfd686a94ac19831e75725802e9e51f77fe6a3e0a2fb119d90",
+      "bytes": 872920
+    },
+    {
+      "file": "2026-10-16-camerupt-hp/camerupt-vaporeon.png",
+      "originalPath": "docs/verification/evidence/2026-10-16-camerupt-hp/camerupt-vaporeon.png",
+      "sha256": "2f0e2d48cd592c78e58a452a68800066a3d1f9c39413bf23a78360b2f725f157",
+      "bytes": 881797
+    }
+  ]
+}

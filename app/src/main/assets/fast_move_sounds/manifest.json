@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "source": "Pokemon GO asset collection supplied by the user; original files preserved.",
+  "notes": "Filename labels are candidate identities. Runtime requires global spectral separation, active legal pools and repeated independent occurrences. Clip length is not move duration.",
+  "references": [
+    {
+      "file": "001-0_pound.wav",
+      "moveName": "Pound",
+      "sha256": "72630e150b79c9baffc3136ac66308e6cccb8bc22afbe9442462f1b8e6841f44"
+    },
+    {
+      "file": "002-0_karate_chop.wav",
+      "moveName": "Karate Chop",
+      "sha256": "313ff375145d86a61abd5ec73389cb3d4ad216b6b04a07f2aa467d9b704464cf"
+    },
+    {
+      "file": "010-0_scratch.wav",
+      "moveName": "Scratch",
+      "sha256": "61949cc23c0c00e4fa5c6f17fcbbf82088df6c7d8df0a241e24fe2c6280406e7"
+    },
+    {
+      "file": "015-0_cut.wav",
+      "moveName": "Cut",
+      "sha256": "b098af9b31f738a1a1ca59e300a1612bb085dd4103b741adfccb8b48332373f9"
+    },
+    {
+      "file": "016-0_gust_fast.wav",
+      "moveName": "Gust",
+      "sha256": "e151643ca2fad69f09876728159d402cbc29fca3e56698ed90251df763ccdf5d"
+    },
+    {
+      "file": "017-0_wing_attack.wav",
+      "moveName": "Wing Attack",
+      "sha256": "f332758c8815435ccce02293559a4645922c6eaa70a6659b2ab6b360a3ba2a0f"
+    },
+    {
+      "file": "022-0_vine_whip.wav",
+      "moveName": "Vine Whip",
+      "sha256": "4b7978dc63a8530ee0c58dd28c712bb50eee0e63fd6952be7276abd872cdb141"
+    },
+    {
+      "file": "024-0_double_kick_fast.wav",
+      "moveName": "Double Kick",
+      "sha256": "1709ad2ce4592c2e6662ba67d99384ee673e72506fb9f8c71ca891d84298cd6f"
+    },
+    {
+      "file": "028-0_sand_attack.wav",
+      "moveName": "Sand Attack",
+      "sha256": "8ef660abec3ca71d41220612b79ff1be755bbf3cdb0216e7a68ec6cec43b84fd"
+    },
+    {
+      "file": "033-0_tackle.wav",
+      "moveName": "Tackle",
+      "sha256": "150459b9b6afde6d3e5877c2bbaf7840b2f463ef9239bdf512a04b9e7860738c"
+    },
+    {
+      "file": "036-0_take_down.wav",
+      "moveName": "Take Down",
+      "sha256": "33e5056b4e9e5ac1f4d8f3e327bc11a2a1796693713fe5455a9fcd39c826846e"
+    },
+    {
+      "file": "044-0_bite.wav",
+      "moveName": "Bite",
+      "sha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421"
+    },
+    {
+      "file": "051-0_acid.wav",
+      "moveName": "Acid",
+      "sha256": "e48c303469c9d5c490cedae8524170f33fe004c6f6a8dc8b04d52e9a0ffa9932"
+    },
+    {
+      "file": "052-0_ember.wav",
+      "moveName": "Ember",
+      "sha256": "d51b3f01e7e378acd5bdf999e360632d90820cdbcdaca15cc18bf442933d3181"
+    },
+    {
+      "file": "055-0_water_gun.wav",
+      "moveName": "Water Gun",
+      "sha256": "bc65d91b12c30d766e53232bc5241d1879895c3e8a0ceae76d17edf78e16b07d"
+    },
+    {
+      "file": "064-0_peck.wav",
+      "moveName": "Peck",
+      "sha256": "41e84143027bf7ad56f8608203b5ef20b36e288350095afa2c42871bec698ad6"
+    },
+    {
+      "file": "067-0_low_kick.wav",
+      "moveName": "Low Kick",
+      "sha256": "7eaacb67b3227270a6e7630c840ed072f4729529f672da30dc107e30b721e722"
+    },
+    {
+      "file": "068-0_counter.wav",
+      "moveName": "Counter",
+      "sha256": "b43082e9ed5afa2254ce5222acc75cd1537b637e1b647b46bd69745d51abe7e0"
+    },
+    {
+      "file": "075-0_razor_leaf.wav",
+      "moveName": "Razor Leaf",
+      "sha256": "ee0b3febca8c5991da6e5f7b77882b6cb28eb41dcee8c0b8ff837a648d740eae"
+    },
+    {
+      "file": "083-0_fire_spin.wav",
+      "moveName": "Fire Spin",
+      "sha256": "9630a0f7573cac4fb41653c73fc2cd83b1102eaf9653d35d03fad860196d5af4"
+    },
+    {
+      "file": "084-0_thunder_shock.wav",
+      "moveName": "Thunder Shock",
+      "sha256": "59aca34bd397555fa52a65f5abac59486eedf38cdbbac88974d3553c45e561d2"
+    },
+    {
+      "file": "088-0_rock_throw.wav",
+      "moveName": "Rock Throw",
+      "sha256": "2ed90158300b4500d31c9428f8f355c732d7b6a3843b713b9b77b535e6e2eef8"
+    },
+    {
+      "file": "098-0_quick_attack.wav",
+      "moveName": "Quick Attack",
+      "sha256": "7db087efc66135837226404f2a5da0d9addca3baeaa1e3394cfe5bdad165aca1"
+    },
+    {
+      "file": "122-0_lick.wav",
+      "moveName": "Lick",
+      "sha256": "4f67166366716ce248c34dac0b91b1d86ef88b35b2296ebb3cddea6750a28bb2"
+    },
+    {
+      "file": "127-0_waterfall.wav",
+      "moveName": "Waterfall",
+      "sha256": "57470a0a7b1996acca8fda8454c6fb8ec15ea3af1ab3fe9f26d92d0bb004ad89"
+    },
+    {
+      "file": "149-0_psywave.wav",
+      "moveName": "Psywave",
+      "sha256": "aa2ad76c586841784433bf6c28246bb5888dcc94a8fe7a6666c569ca02e320d8"
+    },
+    {
+      "file": "150-0_splash.wav",
+      "moveName": "Splash",
+      "sha256": "1db97ca28ee4a0a620100fc6d41573e2e57e9198df397c6289812613b9ae19e4"
+    },
+    {
+      "file": "181-0_powder_snow.wav",
+      "moveName": "Powder Snow",
+      "sha256": "e140475333487c9c6a9f9af472c2f4684f008b4172589f11471142718af8f65d"
+    },
+    {
+      "file": "185-0_feint_attack.wav",
+      "moveName": "Feint Attack",
+      "sha256": "24ea9a7a7e17183b765e0e27b4cbbb56d3f26e2fbc18f95498a08e5b1fdf3669"
+    },
+    {
+      "file": "199-0_lock_on_fast.wav",
+      "moveName": "Lock On",
+      "sha256": "9f3d7095c4b07a77b61bde2a57986df8b23d6638838d28731e891e811d219271"
+    },
+    {
+      "file": "204-0_charm.wav",
+      "moveName": "Charm",
+      "sha256": "4e0f1a4c2ffe76d57e2266a3b8902847459a6094e2c48722291b75998ce8cb6a"
+    },
+    {
+      "file": "205-0_rollout_fast.wav",
+      "moveName": "Rollout",
+      "sha256": "c82a7abe59ed1c24b86f50d2d80bb87950d9ca38d06e52764390190041196516"
+    },
+    {
+      "file": "209-0_spark.wav",
+      "moveName": "Spark",
+      "sha256": "b030fd112881109f7b6fc966b47b1b81beba9d0c6fabd4517bb4d881b20d30da"
+    },
+    {
+      "file": "210-0_fury_cutter.wav",
+      "moveName": "Fury Cutter",
+      "sha256": "15899422ba038fb16b4d6abe6fa36e31bfea58a220514a4c2875e2e5210fb623"
+    },
+    {
+      "file": "217-0_present.wav",
+      "moveName": "Present",
+      "sha256": "67cbae3444b79b2aa9610b242338916b4f77fc0b58f42adad5debaedc45bdbb3"
+    },
+    {
+      "file": "225-0_dragon_breath.wav",
+      "moveName": "Dragon Breath",
+      "sha256": "bf157fcda882c5824e889667c5720a5008d4c4c830d70a63787c636404b822cf"
+    },
+    {
+      "file": "231-0_iron_tail.wav",
+      "moveName": "Iron Tail",
+      "sha256": "5934ae34c9cf5a5c01fbbfd6ba27a8734cb7406b08365d4dd2d5e8eafd581938"
+    },
+    {
+      "file": "232-0_metal_claw.wav",
+      "moveName": "Metal Claw",
+      "sha256": "874826dd6682323b474b1187ffc6442eee70af4b40f4a844936cba544e237034"
+    },
+    {
+      "file": "237-0_hidden_power.wav",
+      "moveName": "Hidden Power",
+      "sha256": "0ffdf7bf0a574a4facab1b0c616faa1e2989f25bdd64289c965613acf2b09b6e"
+    },
+    {
+      "file": "281-0_yawn.wav",
+      "moveName": "Yawn",
+      "sha256": "21cb33e4a314c67028fd096d37d8f39daafa483ad1d6c7940c850f1d82977a14"
+    },
+    {
+      "file": "310-0_astonish.wav",
+      "moveName": "Astonish",
+      "sha256": "26dea6594f7c0d6bd8df64558c9124241ff5ee293e2b759699d0b4d59dc93cdf"
+    },
+    {
+      "file": "319-0_metal_sound.wav",
+      "moveName": "Metal Sound",
+      "sha256": "97b26952bcb8a9b6f1a264626bc49737db04acfb85bea981173d3f551b8f6f87"
+    },
+    {
+      "file": "326-0_extrasensory.wav",
+      "moveName": "Extrasensory",
+      "sha256": "1c9b9479deb0f872934cc7c684dcee4e4705a11b459f10243f39a6ee37e71b8a"
+    },
+    {
+      "file": "331-0_bullet_seed.wav",
+      "moveName": "Bullet Seed",
+      "sha256": "16a4667eeeac99e955a4c3e0825559211995963ce88250fc56fcba007617d00c"
+    },
+    {
+      "file": "341-0_mud_shot.wav",
+      "moveName": "Mud Shot",
+      "sha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24"
+    },
+    {
+      "file": "345-0_magical_leaf_fast.wav",
+      "moveName": "Magical Leaf",
+      "sha256": "cc1f18a5bb14c389f85bc1c2b0593281db8f029ba2bf9e37efdeafcb1ad9d9cd"
+    },
+    {
+      "file": "385-0_leafage_fast.wav",
+      "moveName": "Leafage",
+      "sha256": "1d8b654a0d44c517feae8c963af458a7f980624ca6ba9ac7eca5652463fcc4d0"
+    },
+    {
+      "file": "389-0_sucker_punch.wav",
+      "moveName": "Sucker Punch",
+      "sha256": "ca2aab5ac45181ab6c42fafb56ebe2d33a04f1a8e0e9cdc137703fb151e47a8b"
+    },
+    {
+      "file": "395-0_force_palm_fast.wav",
+      "moveName": "Force Palm",
+      "sha256": "d3992ca50897ab538fac37e5bfc2064a815bd109e9ec2ce565745872d5bb8d0b"
+    },
+    {
+      "file": "398-0_poison_jab.wav",
+      "moveName": "Poison Jab",
+      "sha256": "d580bd0df4a6b3f42c0909f1cce5cdde7d7fca0deefb407676516682ebc2dc1b"
+    },
+    {
+      "file": "403-0_air_slash.wav",
+      "moveName": "Air Slash",
+      "sha256": "2166776362f55262b5d8dc008e1a0e22734362c55bb0a1fd95facb3651864e44"
+    },
+    {
+      "file": "418-0_bullet_punch.wav",
+      "moveName": "Bullet Punch",
+      "sha256": "565931ab94627c045e9daf958bfbeb3e6bea7f4871e88242b672257ac57ee5f7"
+    },
+    {
+      "file": "420-0_ice_shard.wav",
+      "moveName": "Ice Shard",
+      "sha256": "463228de01101e7ee9085ff14437ea505267b6d8eb201649eb06621b1ef3c4de"
+    },
+    {
+      "file": "421-0_shadow_claw.wav",
+      "moveName": "Shadow Claw",
+      "sha256": "11090dbc4ab721c9911c3865b2fed11e63ce42404d4da786f9802d9f59259daa"
+    },
+    {
+      "file": "422-0_thunder_fang_fast.wav",
+      "moveName": "Thunder Fang",
+      "sha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43"
+    },
+    {
+      "file": "423-0_ice_fang_fast.wav",
+      "moveName": "Ice Fang",
+      "sha256": "c0df7dd09f374ed49ee0db96a9d5d582476afbe19888b9ce9ee5acc2a911f9f2"
+    },
+    {
+      "file": "427-0_psycho_cut.wav",
+      "moveName": "Psycho Cut",
+      "sha256": "aa53a66ffe1338971c851c411c41f8aab93962784c9fd9eef4098a0a2524ec50"
+    },
+    {
+      "file": "450-0_bug_bite.wav",
+      "moveName": "Bug Bite",
+      "sha256": "bf107b7124f35d8f52fbd2fb853bcad70eae3d4d2a7a02b94ece541b3508d240"
+    },
+    {
+      "file": "451-0_charge_beam-old1.wav",
+      "moveName": "Charge Beam",
+      "sha256": "126177e650179c6529d7997b19563a29de0d9c3fe39644f202106fb40f87ee50"
+    },
+    {
+      "file": "451-0_charge_beam.wav",
+      "moveName": "Charge Beam",
+      "sha256": "d519eae26c94e19d95d40ca8bd38a8c66dfca87bafac8a5fdb9c0bc60291a983"
+    },
+    {
+      "file": "479-0_smack_down.wav",
+      "moveName": "Smack Down",
+      "sha256": "700433135b96daff552d7c54cdb9f7c96a5d2ccdf40c6c7edf04648e0f749ccd"
+    },
+    {
+      "file": "506-0_hex.wav",
+      "moveName": "Hex",
+      "sha256": "868f5152cd952855a464ebf86aa617ff7c5a3297a486d306f2570e04eb964e69"
+    },
+    {
+      "file": "510-0_incinerate_fast.wav",
+      "moveName": "Incinerate",
+      "sha256": "8fc0651c96db42f43b3c248bf3c5acde5803f5f3be3f90adb689d47c5e0cc107"
+    },
+    {
+      "file": "521-0_volt_switch.wav",
+      "moveName": "Volt Switch",
+      "sha256": "7702c72f2c786999efb2b9a2c6872c11458a4de3755b1218a206477ad4de4198"
+    },
+    {
+      "file": "522-0_struggle_bug.wav",
+      "moveName": "Struggle Bug",
+      "sha256": "e92c783ed2a7b8c12b35f63e88cc11c3a25ba6419cf6ff9c2ccec70a3b476d01"
+    },
+    {
+      "file": "524-0_frost_breath.wav",
+      "moveName": "Frost Breath",
+      "sha256": "011143c0b08768591252a94c942252a658b8e7482f8c04e0b9eb4aabe92b86be"
+    },
+    {
+      "file": "525-0_dragon_tail.wav",
+      "moveName": "Dragon Tail",
+      "sha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48"
+    },
+    {
+      "file": "555-0_snarl.wav",
+      "moveName": "Snarl",
+      "sha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4"
+    },
+    {
+      "file": "584-0_fairy_wind_fast.wav",
+      "moveName": "Fairy Wind",
+      "sha256": "b515f1368a87289f5141f893b0e76508fa9233d649d671da4487c3be2d2a51f6"
+    },
+    {
+      "file": "594-0_water_shuriken_fast.wav",
+      "moveName": "Water Shuriken",
+      "sha256": "eb6c8a977d0da87086df49c9caed4c8e945301f0b3671bb95f17873d11bc483b"
+    },
+    {
+      "file": "601-0_geomancy_fast.wav",
+      "moveName": "Geomancy",
+      "sha256": "ed6c3c2e4cfd3172fea8e33c0b51ce702db9ca5655ac291686b1a9429d5459aa"
+    },
+    {
+      "file": "611-0_infestation.wav",
+      "moveName": "Infestation",
+      "sha256": "2e1e7500eef011dc30b89749d7bd58e8b0ef7ea9ee51b70ad57841fa13050b62"
+    }
+  ]
+}

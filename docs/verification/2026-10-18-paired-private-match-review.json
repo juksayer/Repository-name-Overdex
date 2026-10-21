@@ -1,0 +1,571 @@
+{
+  "date": "2026-10-18",
+  "scenario": {
+    "kind": "paired-private-match",
+    "idle_team": [
+      "Greninja",
+      "Lucario",
+      "Obstagoon"
+    ],
+    "attacking_team": [
+      "Abomasnow",
+      "Camerupt",
+      "Gourgeist"
+    ],
+    "ground_truth_source": "User confirmation in chat",
+    "idle_team_fast_moves": 0,
+    "shield_uses": [
+      {
+        "species": "Lucario",
+        "count": 2
+      }
+    ],
+    "notes": "First and second matchup refer to successive active Pokemon in one battle, not two separate battles. No exact count was supplied for the attacking team."
+  },
+  "devices": [
+    {
+      "name": "Moondrop MD-PH-001",
+      "serial": "MDPH00124112500414",
+      "archive_name": "2026-10-18_19-02-10_2ec656bd-38bc-4022-ac54-734baefc2e9c.odxmatch.zip",
+      "archive_sha256": "e7e0c5107bb2ab7562d4c75a0b61ffff50069ce73023bac74a822d8dcb0e4ec6",
+      "archive_match_id": "2ec656bd-38bc-4022-ac54-734baefc2e9c",
+      "archive_articles": 4159,
+      "fast_move_counts": {
+        "OPPONENT:Abomasnow": 39,
+        "PLAYER:Greninja": 1,
+        "PLAYER:Lucario": 3,
+        "OPPONENT:Camerupt": 4
+      },
+      "idle_team_false_uses": [
+        {
+          "article_id": "a07aa3c2-0a48-4005-bc8b-519324fc6b1a",
+          "perceived_relative_seconds": 61.687,
+          "payload": {
+            "kind": "fast_move_use_observed",
+            "useId": "fast-move-use:449db355-0276-4c49-9c7d-3ab22b76aedc",
+            "attackingSide": "PLAYER",
+            "damagedSide": "OPPONENT",
+            "appearanceId": "94618c62-e097-4534-909a-e440302d671a",
+            "attackerSpeciesName": "Greninja",
+            "evidenceKinds": [
+              "HP_DAMAGE_TICK",
+              "PLAYER_CHARGE_FILL_INCREASE"
+            ],
+            "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+          },
+          "predecessors": [
+            {
+              "article_id": "e42dc51b-b3d2-4f98-89ea-8606a1143ea9",
+              "payload": {
+                "kind": "player_charge_move_energy_fill_increased",
+                "beforeBySlot": [
+                  0.0,
+                  0.0
+                ],
+                "afterBySlot": [
+                  0.0,
+                  0.21739131
+                ],
+                "changedSlots": [
+                  1
+                ]
+              }
+            },
+            {
+              "article_id": "449db355-0276-4c49-9c7d-3ab22b76aedc",
+              "payload": {
+                "kind": "active_hp_bar_damage_tick_measured",
+                "damagedSide": "OPPONENT",
+                "beforeFraction": 1.0,
+                "afterFraction": 0.98941797,
+                "lostFraction": 0.01058203
+              }
+            }
+          ]
+        },
+        {
+          "article_id": "f38a7c1d-38e1-4125-a603-29c87dd470b6",
+          "perceived_relative_seconds": 92.598,
+          "payload": {
+            "kind": "fast_move_use_observed",
+            "useId": "fast-move-use:5ce4be6d-d288-455b-bbb1-d234f036c1c9",
+            "attackingSide": "PLAYER",
+            "damagedSide": "OPPONENT",
+            "appearanceId": "22b9da40-b7a3-4d18-b581-a781da5eb0a7",
+            "attackerSpeciesName": "Lucario",
+            "evidenceKinds": [
+              "HP_BORDER_PULSE",
+              "RECIPIENT_VISUAL_ARTIFACT",
+              "RECIPIENT_VISUAL_CADENCE"
+            ],
+            "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+          },
+          "predecessors": [
+            {
+              "article_id": "5ce4be6d-d288-455b-bbb1-d234f036c1c9",
+              "payload": {
+                "kind": "hp_bar_border_pulse",
+                "barSide": "OPPONENT",
+                "status": "PRESENT",
+                "peakColorDistance": 0.23816083,
+                "sampleCount": 488,
+                "peakOrangeFraction": 0.0,
+                "baselineWhiteFraction": 0.9759255
+              }
+            },
+            {
+              "article_id": "5037c923-5087-438b-8248-dd4569b1cc43",
+              "payload": {
+                "kind": "fast_move_recipient_visual_artifact_measured",
+                "damagedSide": "OPPONENT",
+                "changedPixelFraction": 0.7847222,
+                "meanColorDistance": 0.3481607,
+                "meanRed": 0.3914272,
+                "meanGreen": 0.4023246,
+                "meanBlue": 0.5693734,
+                "centroidX": 0.4769542,
+                "centroidY": 0.47870567,
+                "changedSampleCount": 452
+              }
+            },
+            {
+              "article_id": "debfc069-d717-432a-92aa-e4c9e3e7f9b5",
+              "payload": {
+                "kind": "fast_move_recipient_visual_cadence_measured",
+                "damagedSide": "OPPONENT",
+                "intervalNanos": 13557759693
+              }
+            }
+          ]
+        },
+        {
+          "article_id": "a68d81e5-7f2d-4139-896d-2c3898f8df5a",
+          "perceived_relative_seconds": 105.407,
+          "payload": {
+            "kind": "fast_move_use_observed",
+            "useId": "fast-move-use:a6ff8734-3636-4a29-a199-e3432a96eb4d",
+            "attackingSide": "PLAYER",
+            "damagedSide": "OPPONENT",
+            "appearanceId": "22b9da40-b7a3-4d18-b581-a781da5eb0a7",
+            "attackerSpeciesName": "Lucario",
+            "evidenceKinds": [
+              "HP_BORDER_PULSE",
+              "HP_DAMAGE_TICK",
+              "PLAYER_CHARGE_FILL_INCREASE"
+            ],
+            "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+          },
+          "predecessors": [
+            {
+              "article_id": "8a3c2a88-8524-4bad-a4e8-58731dc2d671",
+              "payload": {
+                "kind": "player_charge_move_energy_fill_increased",
+                "beforeBySlot": [
+                  0.0,
+                  0.0
+                ],
+                "afterBySlot": [
+                  0.0869565,
+                  0.0869565
+                ],
+                "changedSlots": [
+                  0,
+                  1
+                ]
+              }
+            },
+            {
+              "article_id": "a6ff8734-3636-4a29-a199-e3432a96eb4d",
+              "payload": {
+                "kind": "active_hp_bar_damage_tick_measured",
+                "damagedSide": "OPPONENT",
+                "beforeFraction": 0.9946808,
+                "afterFraction": 0.984127,
+                "lostFraction": 0.010553837
+              }
+            },
+            {
+              "article_id": "86407ce8-09c1-418d-8b8b-386e7237734c",
+              "payload": {
+                "kind": "hp_bar_border_pulse",
+                "barSide": "OPPONENT",
+                "status": "PRESENT",
+                "peakColorDistance": 0.1468264,
+                "sampleCount": 603,
+                "peakOrangeFraction": 0.0,
+                "baselineWhiteFraction": 0.9849579
+              }
+            }
+          ]
+        },
+        {
+          "article_id": "14d22427-4c3f-40a6-90f0-a5fc99e1200c",
+          "perceived_relative_seconds": 107.802,
+          "payload": {
+            "kind": "fast_move_use_observed",
+            "useId": "fast-move-use:1835d633-2208-482d-8b8f-2c8e367ada99",
+            "attackingSide": "PLAYER",
+            "damagedSide": "OPPONENT",
+            "appearanceId": "22b9da40-b7a3-4d18-b581-a781da5eb0a7",
+            "attackerSpeciesName": "Lucario",
+            "evidenceKinds": [
+              "HP_BORDER_PULSE",
+              "RECIPIENT_VISUAL_ARTIFACT",
+              "HP_BORDER_CADENCE",
+              "RECIPIENT_VISUAL_CADENCE"
+            ],
+            "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+          },
+          "predecessors": [
+            {
+              "article_id": "2ac585ca-fcd7-4e1b-a7c8-b13ba0d63e31",
+              "payload": {
+                "kind": "fast_move_recipient_visual_cadence_measured",
+                "damagedSide": "OPPONENT",
+                "intervalNanos": 10418665847
+              }
+            },
+            {
+              "article_id": "c1caf109-d9ec-4d6a-a80c-391d12836253",
+              "payload": {
+                "kind": "fast_move_recipient_visual_artifact_measured",
+                "damagedSide": "OPPONENT",
+                "changedPixelFraction": 0.8298611,
+                "meanColorDistance": 0.39431998,
+                "meanRed": 0.3901792,
+                "meanGreen": 0.3939861,
+                "meanBlue": 0.56601095,
+                "centroidX": 0.49642602,
+                "centroidY": 0.48596585,
+                "changedSampleCount": 478
+              }
+            },
+            {
+              "article_id": "1835d633-2208-482d-8b8f-2c8e367ada99",
+              "payload": {
+                "kind": "hp_bar_border_pulse",
+                "barSide": "OPPONENT",
+                "status": "PRESENT",
+                "peakColorDistance": 0.10703714,
+                "sampleCount": 613,
+                "peakOrangeFraction": 0.0,
+                "baselineWhiteFraction": 0.98487276
+              }
+            },
+            {
+              "article_id": "ff7f5846-638f-479b-b99e-2a9a7eba8300",
+              "payload": {
+                "kind": "active_hp_bar_border_cadence_measured",
+                "damagedBarSide": "OPPONENT",
+                "intervalNanos": 2026246769,
+                "peakColorDistance": 0.10703714,
+                "sampleCount": 613,
+                "peakOrangeFraction": 0.0,
+                "baselineWhiteFraction": 0.98487276
+              }
+            }
+          ]
+        }
+      ],
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 1754,
+          "median_ms": 130.0,
+          "p90_ms": 434,
+          "max_ms": 1492
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 25,
+          "median_ms": 1097,
+          "p90_ms": 2086,
+          "max_ms": 2427
+        },
+        "fast_move_use_observed": {
+          "n": 47,
+          "median_ms": 1872,
+          "p90_ms": 2528,
+          "max_ms": 3048
+        },
+        "fast_move_sound_measured": {
+          "n": 47,
+          "median_ms": 3154,
+          "p90_ms": 4546,
+          "max_ms": 5369
+        },
+        "charge_move_used_announced": {
+          "n": 5,
+          "median_ms": 1423,
+          "p90_ms": 2023,
+          "max_ms": 2023
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1079,
+          "p90_ms": 1079,
+          "max_ms": 1079
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 104,
+          "median_ms": 1433.5,
+          "p90_ms": 2765,
+          "max_ms": 7572
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 184,
+          "median_ms": 1396.0,
+          "p90_ms": 2660,
+          "max_ms": 6981
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 11,
+          "median_ms": 1065,
+          "p90_ms": 2034,
+          "max_ms": 2427
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 11,
+          "median_ms": 976,
+          "p90_ms": 1329,
+          "max_ms": 2176
+        }
+      },
+      "match_started_count": 1,
+      "match_ended_count": 1,
+      "player_ball_count_measurements": 55,
+      "opponent_resource_measurements": 58,
+      "player_shield_measurements": 2,
+      "installed_apk_sha256": "201ce56efaa1c53b079d7bda688f5e02f6a656955ad0cea2ed2d3e42ec3029b2",
+      "calibration_unchanged_checks": {
+        "overmon_calibration": true,
+        "team_select_calibration": true,
+        "match_calibration_profile_selection": true,
+        "MDPH00124112500414-profile-0acedd05-88ee-41bb-97a8-a59ea43abc67.json": true,
+        "MDPH00124112500414-profile-e2974027-fec7-4727-b7bc-e40ba2d5e259.json": true,
+        "MDPH00124112500414-profile-e02a9f38-d700-4757-9fae-44c4e6426965.json": true,
+        "MDPH00124112500414-profile-a20dd2c3-5b24-472c-9835-1824530432d1.json": true,
+        "MDPH00124112500414-profile-d1dd7a28-4be5-48b0-981c-61d1076bf47b.json": true,
+        "MDPH00124112500414-profile-6edf8eae-9a62-4d62-976e-e9dba45da531.json": true,
+        "MDPH00124112500414-profile-ee5b3d48-710c-4148-8df7-5bffa80969ca.json": true
+      },
+      "original_archive_unchanged": true,
+      "launch_check": {
+        "process_running": true,
+        "fatal_exception_in_recent_app_log": false,
+        "activity_start": "Status: ok"
+      }
+    },
+    {
+      "name": "Google Pixel 4",
+      "serial": "99261FFAZ0017J",
+      "archive_name": "2026-10-18_19-02-10_d5ccc6ab-ba10-47ea-a0a8-a31b8d69a11b.odxmatch.zip",
+      "archive_sha256": "4af57c104c25b4f29f14b4cdab5d1f6c2c606c8949877b3a211ae3537bd9421e",
+      "archive_match_id": "d5ccc6ab-ba10-47ea-a0a8-a31b8d69a11b",
+      "archive_articles": 3514,
+      "fast_move_counts": {
+        "PLAYER:Abomasnow": 29,
+        "OPPONENT:Lucario": 1,
+        "PLAYER:Camerupt": 3
+      },
+      "idle_team_false_uses": [
+        {
+          "article_id": "8eda6269-cf0b-466a-9972-2441a5127cdd",
+          "perceived_relative_seconds": 91.847,
+          "payload": {
+            "kind": "fast_move_use_observed",
+            "useId": "fast-move-use:9f7e6423-beda-4f5b-bbda-5d0fb18bc7ab",
+            "attackingSide": "OPPONENT",
+            "damagedSide": "PLAYER",
+            "appearanceId": "b1f6a74b-f0b9-47d9-80cf-6d9e7240c047",
+            "attackerSpeciesName": "Lucario",
+            "evidenceKinds": [
+              "HP_DAMAGE_TICK"
+            ],
+            "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+          },
+          "predecessors": [
+            {
+              "article_id": "9f7e6423-beda-4f5b-bbda-5d0fb18bc7ab",
+              "payload": {
+                "kind": "active_hp_bar_damage_tick_measured",
+                "damagedSide": "PLAYER",
+                "beforeFraction": 1.0,
+                "afterFraction": 0.98930484,
+                "lostFraction": 0.010695159
+              }
+            }
+          ]
+        }
+      ],
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 715,
+          "median_ms": 126,
+          "p90_ms": 727,
+          "max_ms": 3465
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 19,
+          "median_ms": 783,
+          "p90_ms": 3265,
+          "max_ms": 6408
+        },
+        "fast_move_use_observed": {
+          "n": 33,
+          "median_ms": 1757,
+          "p90_ms": 2349,
+          "max_ms": 2506
+        },
+        "fast_move_sound_measured": {
+          "n": 33,
+          "median_ms": 2386,
+          "p90_ms": 3833,
+          "max_ms": 4458
+        },
+        "charge_move_used_announced": {
+          "n": 6,
+          "median_ms": 1181.5,
+          "p90_ms": 4461,
+          "max_ms": 4461
+        },
+        "match_ended": null,
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 288,
+          "median_ms": 505.0,
+          "p90_ms": 1579,
+          "max_ms": 6097
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 468,
+          "median_ms": 444.0,
+          "p90_ms": 1487,
+          "max_ms": 5784
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 570.0,
+          "p90_ms": 3265,
+          "max_ms": 3265
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 7,
+          "median_ms": 700,
+          "p90_ms": 923,
+          "max_ms": 923
+        }
+      },
+      "match_started_count": 0,
+      "match_ended_count": 0,
+      "player_ball_count_measurements": 0,
+      "opponent_resource_measurements": 0,
+      "player_shield_measurements": 0,
+      "installed_apk_sha256": "201ce56efaa1c53b079d7bda688f5e02f6a656955ad0cea2ed2d3e42ec3029b2",
+      "calibration_unchanged_checks": {
+        "overmon_calibration": true,
+        "team_select_calibration": true,
+        "match_calibration_profile_selection": true,
+        "99261FFAZ0017J-profile-ac917d57-216e-4456-9488-32eb99eb16c9.json": true
+      },
+      "original_archive_unchanged": true,
+      "launch_check": {
+        "process_running": true,
+        "fatal_exception_in_recent_app_log": false,
+        "activity_start": "Status: ok"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "issue": "Idle team false Fast Moves",
+      "evidence": "Moondrop inferred 1 Greninja and 3 Lucario uses; Pixel inferred 1 Lucario use. Sources are tiny HP changes and weak blue-border changes. Both devices observed the same idle team."
+    },
+    {
+      "issue": "Camerupt wrongly assigned to player on Moondrop",
+      "evidence": "Lucario faint at 123.152 s; independently read player Obstagoon at 123.330 s; Camerupt entry at 125.791 s consumed the stale player vacancy; opponent badge correctly read Camerupt at 126.839 s."
+    },
+    {
+      "issue": "Pixel badge crops missed live resources",
+      "evidence": "Resource capture availability repeatedly true but no counts entered compact archive. Saved Pixel ball crops resolve to y=165..201 in a 672x1419 retained frame while live balls sit around y=132..154. No calibration_reference directory existed. Calibration screen therefore offered bundled references in absence of user screenshots. Actual image used by user is not established. Pixel also had no overdex_screenshot_directory preferences file, so its calibration image source was the bundled references."
+    },
+    {
+      "issue": "Pixel start and result missed",
+      "evidence": "Pixel has no MatchStarted or MatchEnded. The result gate has no ball counts; only one cited countdown crop survived compact export. Moondrop recorded GO and LOSS."
+    },
+    {
+      "issue": "Shield transitions incomplete",
+      "evidence": "Moondrop recorded player shields 2 then 0, without an intermediate 1. Pixel recorded no shield counts. User confirms both shields used by Lucario."
+    },
+    {
+      "issue": "Attacking team counts disagree",
+      "evidence": "Abomasnow 39 from Moondrop opponent observations versus 29 from Pixel player observations; Camerupt 4 versus 3. Exact attack count is not established by this review."
+    },
+    {
+      "issue": "Pixel charge announcements obscured by HUD",
+      "evidence": "Pixel OCR combined Weather Ball / Energy Ball letters with HUD move lists. Only Earth Power generated a charged-energy spend; Moondrop had 4 spends, despite Pixel recording 6 charge-used episodes."
+    }
+  ],
+  "source_changes": [
+    {
+      "files": [
+        "battle/observation/LiveActiveHpBarWitnesses.kt"
+      ],
+      "change": "HP-only damage evidence must exceed a 3.5-pixel edge uncertainty scaled to measured bar width. Raw HP observations remain available. Small hits may still be counted from independent border flashes."
+    },
+    {
+      "files": [
+        "battle/observation/PersistedActiveHpBarBorderCadenceWitness.kt"
+      ],
+      "change": "Require at least 35 percent of outline samples to carry pulse colors; both orange and blue remain eligible. Weak 11-24 percent blue shifts no longer establish pulses."
+    },
+    {
+      "files": [
+        "battle/observation/TeamRosterSpeciesAttributor.kt",
+        "battle/observation/Match.kt",
+        "battle/replay/ReplaySpeciesAttribution.kt"
+      ],
+      "change": "Independent replacement badge closes a faint vacancy; capture timestamps prevent late faint delivery reopening an already filled vacancy."
+    },
+    {
+      "files": [
+        "ui/PokedexViewModel.kt"
+      ],
+      "change": "A captured battle surface with both HP bars visible may save a real calibration reference even when GO was missed; does not create MatchStarted or change profile coordinates."
+    }
+  ],
+  "validation": {
+    "status": "unit_tests_and_build_passed",
+    "unit_tests": {
+      "tests": 875,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "apk_sha256": "201ce56efaa1c53b079d7bda688f5e02f6a656955ad0cea2ed2d3e42ec3029b2",
+    "recorded_idle_hp_samples": {
+      "Moondrop": 750,
+      "Pixel": 316
+    },
+    "reprocessed_idle_hp_damage_ticks": 0,
+    "notes": [
+      "Both undamaged Abomasnow measurement sequences produce zero damage ticks in the regression test.",
+      "Low-coverage blue edge regression cases reject 0.107, 0.147, and 0.238 fractions; a full blue Powder Snow pulse remains accepted.",
+      "No original archives or inferred Articles were rewritten. A new live controlled match is still required to measure post-fix attack-count accuracy."
+    ],
+    "installed_on_both_devices": true
+  },
+  "calibration_profiles_modified": false,
+  "retained_frames": [
+    {
+      "file": "docs/verification/evidence/2026-10-18-paired/pixel-battlefield.png",
+      "sha256": "5c9042b6c67e9476965fa535bb5e7af03d8467515d270e19362597b0081839b9",
+      "timing_note": "Selected by file modification time for scene inspection. Not asserted to be the exact false-event frame."
+    },
+    {
+      "file": "docs/verification/evidence/2026-10-18-paired/moondrop-lucario-blocked.png",
+      "sha256": "9381e2018268d749bfed1ae7a3c2f60e67f66ebe257f67e4ab98835683533568",
+      "timing_note": "Selected by file modification time for scene inspection. Not asserted to be the exact false-event frame."
+    }
+  ],
+  "pixel_reference_image": "docs/verification/evidence/2026-10-18-paired/pixel-battlefield.png"
+}

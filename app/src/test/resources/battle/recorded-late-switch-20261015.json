@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+  "articles": [
+    {
+      "articleId": "fa8ac50e-8dc5-4106-8d6b-e3515995d96b",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089888431,
+      "recordedAt": 1792089888437,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41326121496539
+    },
+    {
+      "articleId": "309cc06a-224e-48c1-a4c2-786b3b9f7625",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089910990,
+      "recordedAt": 1792089913097,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 586,
+      "evidenceReferences": [
+        "9020459a-dc20-45be-b39a-84a31e5fdc0e",
+        "7cb3adf7-3286-42b1-8ae5-7030cf214403",
+        "393784b7-b1cf-413c-8179-98a0e587a16d",
+        "b24ef1a5-4d81-4c3c-b02c-99d3ec46f170"
+      ],
+      "monotonicTimeNanos": 41348675841772
+    },
+    {
+      "articleId": "732f83c7-e4d2-4330-b467-6e16e4d95a2f",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089914968,
+      "recordedAt": 1792089915485,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.98941797,
+        "afterFraction": 0.94708997,
+        "lostFraction": 0.042328
+      },
+      "predecessorIds": [],
+      "confidence": 0.7309889,
+      "sequenceNumber": 714,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41352643899849
+    },
+    {
+      "articleId": "2e32142e-ff0e-475d-9361-be22ee8b5ac2",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089920334,
+      "recordedAt": 1792089922837,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1050,
+      "evidenceReferences": [
+        "ab717e6f-58cb-4676-ab12-e66f124d88a4"
+      ],
+      "monotonicTimeNanos": 41358014294695
+    },
+    {
+      "articleId": "71d7453f-280a-440c-87bb-ee5c54ce1972",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089932173,
+      "recordedAt": 1792089932660,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.42021278,
+        "afterFraction": 0.28723404,
+        "lostFraction": 0.13297874
+      },
+      "predecessorIds": [],
+      "confidence": 0.7974316,
+      "sequenceNumber": 1403,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41369810144234
+    },
+    {
+      "articleId": "01225384-b6b7-4b56-911f-60157d4fe137",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089932636,
+      "recordedAt": 1792089933068,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "PRESENT",
+        "peakColorDistance": 0.9935389,
+        "sampleCount": 29,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.993539
+      },
+      "predecessorIds": [],
+      "confidence": 0.9993539,
+      "sequenceNumber": 1422,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41370313053465
+    },
+    {
+      "articleId": "52bb4abc-01ba-4a1e-ab31-b569deffa329",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089931713,
+      "recordedAt": 1792089933813,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1463,
+      "evidenceReferences": [
+        "2532d690-0bfe-4df0-a845-77fe032d681d",
+        "274cc426-fe20-4b9d-9893-959a9d418036"
+      ],
+      "monotonicTimeNanos": 41369374271004
+    },
+    {
+      "articleId": "8ac2a6c2-7e12-42a5-8f85-6ddd88d2a421",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089931713,
+      "recordedAt": 1792089933920,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "52bb4abc-01ba-4a1e-ab31-b569deffa329",
+        "393784b7-b1cf-413c-8179-98a0e587a16d"
+      ],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 41369374271004
+    },
+    {
+      "articleId": "19c9c8c3-7975-4f6e-9271-a500038b4930",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089933589,
+      "recordedAt": 1792089934027,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "OPPONENT",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1475,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41371270194619
+    },
+    {
+      "articleId": "f34df5cb-ec9a-4efe-8127-5d678d4d10a6",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089933760,
+      "recordedAt": 1792089934094,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "ABSENT",
+        "peakColorDistance": null,
+        "sampleCount": null,
+        "peakOrangeFraction": null,
+        "baselineWhiteFraction": null
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1499,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 41371438923619
+    },
+    {
+      "articleId": "3b688812-17b7-43fb-a0f9-6da7345d0902",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089931713,
+      "recordedAt": 1792089935353,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1568,
+      "evidenceReferences": [
+        "2532d690-0bfe-4df0-a845-77fe032d681d",
+        "775edd93-55b5-4cf9-b777-9f3746c064f4"
+      ],
+      "monotonicTimeNanos": 41369374271004
+    },
+    {
+      "articleId": "547a5007-34bc-4900-bdc8-81d715bc2039",
+      "matchId": "916d1aca-c10b-49a6-9c1b-4dd8590ec8ff",
+      "perceivedAt": 1792089932896,
+      "recordedAt": 1792089935961,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1628,
+      "evidenceReferences": [
+        "2532d690-0bfe-4df0-a845-77fe032d681d",
+        "409d5296-284c-4542-a94e-5368bd722347"
+      ],
+      "monotonicTimeNanos": 41370555624234
+    }
+  ]
+}

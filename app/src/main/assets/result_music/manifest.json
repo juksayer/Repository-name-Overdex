@@ -1,0 +1,28 @@
+{
+  "references": [
+    {
+      "theme": "WIN",
+      "file": "126_pvp_win.wav",
+      "sha256": "38fc2fdf567d9f7bd284ccb5f989d5434f67d5e129c03945f0489b84cb182c1e",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/126_pvp_win.wav"
+    },
+    {
+      "theme": "LOSS",
+      "file": "127_pvp_lose.wav",
+      "sha256": "a5be212ba4b81dcbc78300d2369ef488730ff51c1c7772d2f99c9599d2736e9d",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/127_pvp_lose.wav"
+    },
+    {
+      "theme": "BATTLE",
+      "file": "128_pvp.wav",
+      "sha256": "c957b6afa780f2c7e4e688cf8737fe3a2aa8e76d16336a6801cc67bbc794ae41",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/128_pvp.wav"
+    },
+    {
+      "theme": "TEAM_SELECT",
+      "file": "pvp_select.wav",
+      "sha256": "7e2361cd48f5f556b93f7adb4538d6ecc178180143c68910839cd416f6ed67cd",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/pvp_select.wav"
+    }
+  ]
+}

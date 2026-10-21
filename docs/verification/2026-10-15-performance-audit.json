@@ -1,0 +1,234 @@
+{
+  "date": "2026-10-15",
+  "scope": "Read-only performance audit of the current working tree and the two latest complete copied recordings. No production code changed.",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "branch": "odx-recovery",
+  "head": "b7330c64969f77d5f5a4605c9eac56b3f49f1bb5",
+  "working_tree_has_prior_changes": true,
+  "limits": [
+    "No phone was visible over ADB during this audit; no new simultaneous battle CPU, memory, thermal, or OCR-queue profile was collected.",
+    "The recordings precede the latest Fast Move reference audio installation. The 195 ms number below comes from its recorded-mixture device test, not a fresh live match.",
+    "Perceived-to-recorded delay includes source processing, waiting, publication, and intentional corroboration. It is not a direct CPU measurement.",
+    "Compact archives omit uncited artifacts; retained crop counts are lower bounds for live capture/storage work.",
+    "An article-count percentage is not a CPU-time percentage."
+  ],
+  "recordings": [
+    {
+      "path": "/tmp/overdex-review-20261015-evening/2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+      "sha256": "f2a4783ddbc583dc965c518cf977d400b7ce5ad856c29e481c98a17d5647b7d1",
+      "articles": 2399,
+      "publication_delay_ms": {
+        "active_hp": {
+          "count": 183,
+          "median": 299,
+          "p95_lower_rank": 803,
+          "max": 1694
+        },
+        "badge_species": {
+          "count": 9,
+          "median": 3624,
+          "p95_lower_rank": 5183,
+          "max": 7808
+        },
+        "announcement_text": {
+          "count": 35,
+          "median": 3659,
+          "p95_lower_rank": 5759,
+          "max": 7102
+        },
+        "outcome_text": {
+          "count": 11,
+          "median": 10795,
+          "p95_lower_rank": 11115,
+          "max": 11397
+        },
+        "match_end": {
+          "count": 1,
+          "median": 10945,
+          "p95_lower_rank": 10945,
+          "max": 10945
+        }
+      },
+      "species_ms_after_preserved_crop": {
+        "count": 9,
+        "median": 3394,
+        "p95_lower_rank": 4909,
+        "max": 7497
+      },
+      "active_type_checks": {
+        "captures": 511,
+        "measurements": 511,
+        "share_of_all_articles_percent": 42.6,
+        "unique_pngs": 507,
+        "png_bytes": 1677991,
+        "outputs": {
+          "PLAYER:GRASS,STEEL": 255,
+          "OPPONENT:WATER,STEEL": 1,
+          "OPPONENT:DARK,GHOST": 125,
+          "OPPONENT:FIGHTING,WATER": 81,
+          "OPPONENT:WATER": 49
+        }
+      },
+      "fast_move_audio": {
+        "clips": 18,
+        "summed_duration_seconds": 21.6,
+        "distinct_time_seconds": 14.66127354,
+        "overlap_seconds": 6.93872646,
+        "overlap_percent": 32.12
+      },
+      "png_zip_recompression": {
+        "png_files": 694,
+        "original_bytes": 5655932,
+        "zip_bytes": 5658538
+      }
+    },
+    {
+      "path": "/tmp/overdex-review-20261015-evening/2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+      "sha256": "8d0d44e1db32ce8d4014ca8943600bb8529208f8555c4a42e6cc57d3d94ef115",
+      "articles": 3728,
+      "publication_delay_ms": {
+        "active_hp": {
+          "count": 531,
+          "median": 235,
+          "p95_lower_rank": 710,
+          "max": 1102
+        },
+        "badge_species": {
+          "count": 12,
+          "median": 2658.5,
+          "p95_lower_rank": 4356,
+          "max": 4635
+        },
+        "announcement_text": {
+          "count": 59,
+          "median": 2939,
+          "p95_lower_rank": 4732,
+          "max": 6883
+        },
+        "outcome_text": {
+          "count": 27,
+          "median": 15651,
+          "p95_lower_rank": 19135,
+          "max": 19534
+        },
+        "match_end": {
+          "count": 1,
+          "median": 14367,
+          "p95_lower_rank": 14367,
+          "max": 14367
+        }
+      },
+      "species_ms_after_preserved_crop": {
+        "count": 12,
+        "median": 2522.5,
+        "p95_lower_rank": 4033,
+        "max": 4512
+      },
+      "active_type_checks": {
+        "captures": 684,
+        "measurements": 684,
+        "share_of_all_articles_percent": 36.7,
+        "unique_pngs": 680,
+        "png_bytes": 1961847,
+        "outputs": {
+          "PLAYER:GRASS,STEEL": 305,
+          "OPPONENT:ELECTRIC": 343,
+          "PLAYER:FIGHTING,GRASS": 36
+        }
+      },
+      "fast_move_audio": {
+        "clips": 41,
+        "summed_duration_seconds": 49.2,
+        "distinct_time_seconds": 25.928185155,
+        "overlap_seconds": 23.271814845,
+        "overlap_percent": 47.3
+      },
+      "png_zip_recompression": {
+        "png_files": 985,
+        "original_bytes": 8175638,
+        "zip_bytes": 8175831
+      }
+    }
+  ],
+  "ranked_findings": [
+    {
+      "priority": 1,
+      "area": "OCR waiting and stale reads",
+      "evidence": "HP is usually published in hundreds of milliseconds; species and announcement results take seconds, with outcome text substantially later. One shared priority scheduler already owns the warm ML Kit recognizer. Outcome OCR consumes every queued crop in order. Routine charge labels are repeatedly reread and share a mutex with optional pointer OCR.",
+      "next_change": "Instrument per-field queue wait, read duration, sample age, and publication separately. Give current species/announcements priority over repeat labels; confirm labels once per appearance with cheap change detection. Keep brief result candidates and their source evidence, while avoiding expensive re-reading of near-identical blank/result frames.",
+      "sources": [
+        "app/src/main/java/com/example/overdex/data/observation/SharedLatinTextRecognizer.kt:11",
+        "app/src/main/java/com/example/overdex/data/observation/OcrWorkScheduler.kt:16",
+        "app/src/main/java/com/example/overdex/battle/observation/PersistedOutcomeTextWitness.kt:39",
+        "app/src/main/java/com/example/overdex/battle/observation/LivePlayerControlTextWitness.kt:20",
+        "app/src/main/java/com/example/overdex/battle/observation/LiveOverlaySpeciesPipeline.kt:215"
+      ]
+    },
+    {
+      "priority": 2,
+      "area": "Repeated stable type-icon work",
+      "evidence": "The longer match retains 684 type captures and 684 corresponding measurements; both type capture observers request five samples per second throughout the battle. Some repeated output types are incorrect, so blind permanent caching is inappropriate.",
+      "next_change": "Burst at entry/switch/faint/cry and changed badge pixels, then inexpensive change checks and sparse recovery samples. Require trustworthy confirmation before reducing recognition work. Preserve existing raw evidence and coverage.",
+      "sources": [
+        "app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt:725",
+        "app/src/main/java/com/example/overdex/battle/observation/PersistedActivePokemonTypeWitness.kt:32"
+      ]
+    },
+    {
+      "priority": 3,
+      "area": "Synchronous PNG round trips and repeated ZIP checkpoints",
+      "evidence": "Crop persistence compresses, hashes, writes, syncs, and verifies each PNG; persisted readers hash and decode again. Every 15 seconds the checkpoint reconstructs the growing compact ZIP and rehashes/recompresses its artifacts. PNG recompression saves no meaningful space in these recordings.",
+      "next_change": "Use an append-only durable checkpoint journal and already-persisted content-addressed artifacts; package portable ZIP at completion/export. Bypass ZIP deflation for PNG entries, retain hash validation and atomic publication. Hand the immutable in-memory crop to live analysis after durability acknowledgment instead of decoding it again.",
+      "sources": [
+        "app/src/main/java/com/example/overdex/battle/artifact/CropArtifactStore.kt:57",
+        "app/src/main/java/com/example/overdex/battle/artifact/CropArtifactStore.kt:200",
+        "app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt:1215",
+        "app/src/main/java/com/example/overdex/battle/archive/MatchArchivePackageWriter.kt:61"
+      ]
+    },
+    {
+      "priority": 4,
+      "area": "Overlapping audio and repeated signal processing",
+      "evidence": "41 Fast Move clips cover 49.2 seconds in total but only 25.928 seconds of distinct capture time. Current analysis matches all 72 references for each clip, plus separate pulse/centroid analysis. Buff/debuff analysis rescans overlapping 1.5-second windows every 0.2 seconds; result music scans throughout an established match.",
+      "next_change": "Share timestamped PCM blocks, resampling and compatible spectral features; reuse overlapping feature windows and avoid reclassifying the same sound occurrence. Preserve cue ownership separately and retain unknown/mirror rejection. Gate heavier stat/result classification to plausible windows with a low-cost sentinel and enough preroll for delayed cues.",
+      "sources": [
+        "app/src/main/java/com/example/overdex/battle/audio/CueCenteredPcmCollector.kt:45",
+        "app/src/main/java/com/example/overdex/battle/audio/FastMoveSoundMeasurement.kt:76",
+        "app/src/main/java/com/example/overdex/battle/audio/FastMoveReferenceMatcher.kt:21",
+        "app/src/main/java/com/example/overdex/battle/audio/StatChangeSoundMatcher.kt:111",
+        "app/src/main/java/com/example/overdex/battle/audio/ResultMusicListeningGate.kt:26"
+      ],
+      "measured_reference_matcher_ms": {
+        "median": 195,
+        "max": 302,
+        "scope": "Existing Moondrop test on 11 recorded mixtures; excludes pulse analyzer, file I/O, and publication.",
+        "source": "docs/verification/2026-10-15-fast-move-audio.json"
+      }
+    },
+    {
+      "priority": 5,
+      "area": "Per-frame allocation and diagnostic fan-out",
+      "evidence": "Capture allocates a new ARGB bitmap on each published frame, targeting 30 fps at approximately 672x1493 on the Moondrop. This is about 120 MB/s of pixel-buffer allocation at target rate, not retained memory or a measured delivered rate. Canonical articles are also appended to a Compose-backed compatibility ledger and formatted into debug logs.",
+      "next_change": "Measure allocation and consumer time on-device before changing ownership. Consider safe leased/pool buffers and batched diagnostics. Keep high-rate HP measurement and source timing intact.",
+      "sources": [
+        "app/src/main/java/com/example/overdex/battle/observation/DroidballService.kt:515",
+        "app/src/main/java/com/example/overdex/battle/observation/LiveCaptureSamplingPolicy.kt:11",
+        "app/src/main/java/com/example/overdex/model/BattleTimeline.kt:22"
+      ]
+    }
+  ],
+  "already_improved": [
+    "Only one production TextRecognition.getClient call; the warm shared model is reused.",
+    "RealityTimeline append no longer copies the complete ledger on every event.",
+    "Capture runs on a dedicated handler thread; its large-bitmap stream keeps only one replay frame.",
+    "Live HP measurement bypasses PNG persistence and fans out small measurements to independent detectors.",
+    "Species already uses bounded latest-crop queues and burst coordination; improvements should refine this, not add another duplicate pipeline."
+  ],
+  "user_actions": [
+    "Stop Droidball when finished observing.",
+    "For audio isolation tests use SFX with music off; this improves separation, but current code still scans for music, so it is not a proven CPU reduction.",
+    "Keep the actual team and moves selected, providing positive identity evidence and reducing ambiguity; further scheduling changes are needed to turn all of that knowledge into avoided work.",
+    "Use compact archives for routine replay and full forensic archives for specific diagnosis; this affects archive handling, not the live capture workload.",
+    "Keep offline sprites and cries. Do not sacrifice high-rate HP sampling or lower OCR resolution as the first optimization."
+  ]
+}

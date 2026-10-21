@@ -1,0 +1,16 @@
+{
+  "matchId": "d504d15f-614b-4697-9f6c-a4d1d960a142",
+  "source": "Unmodified retained full-display frames from Moondrop; 672x1493 capture of 1080x2400 display. Located by the 15:24-15:25 filesystem modification-time window, not an exact article timestamp. Compact archive does not contain full-frame entries.",
+  "frames": [
+    {
+      "file": "afternoon-abomasnow.png",
+      "sha256": "a3170bd6eab2027c366dbd189cd3e31f4e4111f18a010825f1f328b1909fac6a",
+      "devicePath": "files/artifacts/frames/sha256/a3170bd6eab2027c366dbd189cd3e31f4e4111f18a010825f1f328b1909fac6a.png"
+    },
+    {
+      "file": "afternoon-camerupt.png",
+      "sha256": "e0351d2c6002c68d7bc05de7226facbeeb18ae57bb21f08653dd5ba0f8c2cbe3",
+      "devicePath": "files/artifacts/frames/sha256/e0351d2c6002c68d7bc05de7226facbeeb18ae57bb21f08653dd5ba0f8c2cbe3.png"
+    }
+  ]
+}

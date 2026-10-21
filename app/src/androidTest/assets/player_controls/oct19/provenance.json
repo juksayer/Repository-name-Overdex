@@ -1,0 +1,15 @@
+{
+  "matchId": "74abbf2c-d051-4033-babe-557c3fd21f91",
+  "archive": "2026-10-19_09-05-03-373-full.odxmatch.zip",
+  "source": "Unmodified full-frame evidence from Moondrop; 672x1493 capture of 1080x2400 display",
+  "frames": [
+    {
+      "file": "gourgeist.png",
+      "sha256": "eb59e62af618ef61b367bd8e0ab6315db955363299ee70ef500eb2263196858e"
+    },
+    {
+      "file": "abomasnow.png",
+      "sha256": "93109cfd020136d2b4f0389fabfd8306921830e0a2e3d6345e2b39de825664ff"
+    }
+  ]
+}

@@ -1,0 +1,2200 @@
+{
+  "schemaVersion": 1,
+  "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+  "articles": [
+    {
+      "articleId": "13f95ab3-6e4d-4bf6-aacd-e3404655984e",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426351341,
+      "recordedAt": 1792426351342,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Abomasnow",
+        "speciesId": 460,
+        "fastMoveName": "Powder Snow",
+        "chargedMoveNames": [
+          "Weather Ball (Ice)",
+          "Energy Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18972106126129
+    },
+    {
+      "articleId": "3ac54ad9-dc04-46bc-afe3-b8cfc351c87b",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426351341,
+      "recordedAt": 1792426351350,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18972106126129
+    },
+    {
+      "articleId": "414c152a-00aa-4557-9b86-88885426cc15",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426351341,
+      "recordedAt": 1792426351352,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18972106126129
+    },
+    {
+      "articleId": "ed177d78-696d-4d94-9e41-84409af9a80a",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426363270,
+      "recordedAt": 1792426364729,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 444,
+      "evidenceReferences": [
+        "20fe2419-01b5-4281-a11f-b9e18bf1f3a2",
+        "13f95ab3-6e4d-4bf6-aacd-e3404655984e",
+        "3ac54ad9-dc04-46bc-afe3-b8cfc351c87b",
+        "414c152a-00aa-4557-9b86-88885426cc15"
+      ],
+      "monotonicTimeNanos": 18984015308976
+    },
+    {
+      "articleId": "951b2799-7f02-453e-9ce9-b246fb334c41",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426365083,
+      "recordedAt": 1792426366257,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 509,
+      "evidenceReferences": [
+        "20fe2419-01b5-4281-a11f-b9e18bf1f3a2",
+        "c69c4b2f-1fb9-4ca5-8cb3-ed3e61adf545"
+      ],
+      "monotonicTimeNanos": 18985828860669
+    },
+    {
+      "articleId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426366195,
+      "recordedAt": 1792426367099,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 560,
+      "evidenceReferences": [
+        "20fe2419-01b5-4281-a11f-b9e18bf1f3a2",
+        "2acf6279-6eca-4472-b8e7-4299aee3390b"
+      ],
+      "monotonicTimeNanos": 18986937277284
+    },
+    {
+      "articleId": "364ccf8e-67ab-464c-bc85-b47b5f281daf",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426366735,
+      "recordedAt": 1792426367579,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 582,
+      "evidenceReferences": [
+        "7bf30e77-09d1-4ce7-abe0-80b9c80459ee",
+        "3f305d82-c56b-4580-b648-d654080feb22"
+      ],
+      "monotonicTimeNanos": 18987482258823
+    },
+    {
+      "articleId": "a8a4e99d-90d5-4292-8aa8-7886213a70ef",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426366328,
+      "recordedAt": 1792426368723,
+      "sourceId": "COUNTDOWN_AND_COMBAT_START_INFERENCE",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "2a1e6b97-eb1e-4f00-a425-5150b845c2f6",
+        "b74c4cb7-411f-41ff-a6fa-90d42f975e9c"
+      ],
+      "confidence": 0.75,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18987068942130
+    },
+    {
+      "articleId": "ca13df03-0222-40a7-98d6-99eff6ddfa0f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426368168,
+      "recordedAt": 1792426369178,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 649,
+      "evidenceReferences": [
+        "e2320fd7-91b8-47d0-8a51-2216ba660fc7",
+        "f7f72ee8-3023-4c20-85ab-7ee36e5d66bb"
+      ],
+      "monotonicTimeNanos": 18988923940284
+    },
+    {
+      "articleId": "4b9c64a4-dd18-4a59-938e-0112cc317f48",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426368810,
+      "recordedAt": 1792426369584,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 679,
+      "evidenceReferences": [
+        "e2320fd7-91b8-47d0-8a51-2216ba660fc7",
+        "c3fa4b7a-a429-4e1a-9ee7-d3f43d80c45a"
+      ],
+      "monotonicTimeNanos": 18989565914130
+    },
+    {
+      "articleId": "436c6e3e-4233-4ca1-8aa5-158e0c08aa25",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426369789,
+      "recordedAt": 1792426370021,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 919690461,
+        "peakColorDistance": 1.0,
+        "sampleCount": 24,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.923185
+      },
+      "predecessorIds": [],
+      "confidence": 0.99231845,
+      "sequenceNumber": 699,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18990534604361
+    },
+    {
+      "articleId": "99709a1d-9170-4ea0-b0aa-0e05cdf79f6f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426368315,
+      "recordedAt": 1792426370200,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b74c4cb7-411f-41ff-a6fa-90d42f975e9c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b74c4cb7-411f-41ff-a6fa-90d42f975e9c"
+      ],
+      "confidence": 0.7713057,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18989072891130
+    },
+    {
+      "articleId": "1b61c584-0343-4194-a82f-451868037d0c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426368861,
+      "recordedAt": 1792426370669,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7939c754-0c35-451d-a37d-9865cf9b35d5",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7939c754-0c35-451d-a37d-9865cf9b35d5",
+        "c658cb70-8b8c-4cd6-9d17-2a5ca5a9ca0a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18989614913900
+    },
+    {
+      "articleId": "c180d509-93f6-40f9-b223-ad306e1d5e78",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426370942,
+      "recordedAt": 1792426371432,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1132203000,
+        "peakColorDistance": 1.0,
+        "sampleCount": 32,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.92266
+      },
+      "predecessorIds": [],
+      "confidence": 0.992266,
+      "sequenceNumber": 764,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18991666807361
+    },
+    {
+      "articleId": "22704b5b-2caf-43d4-b60a-3c5101676ba2",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426364790,
+      "recordedAt": 1792426371570,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 767,
+      "evidenceReferences": [
+        "6884cd4a-392e-4920-ae7b-ec930fb55d22",
+        "ca13df03-0222-40a7-98d6-99eff6ddfa0f"
+      ],
+      "monotonicTimeNanos": 18985517036669
+    },
+    {
+      "articleId": "fc12278a-d628-477c-a7d8-69a77be0f635",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426369789,
+      "recordedAt": 1792426371774,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:405add97-c91f-4f0c-b2dd-f9bae63878b2",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "405add97-c91f-4f0c-b2dd-f9bae63878b2",
+        "436c6e3e-4233-4ca1-8aa5-158e0c08aa25",
+        "9a61eae8-6c64-40f8-a840-6cf11dccb422"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18990534604361
+    },
+    {
+      "articleId": "e4f90d08-bec5-4c22-94f1-29fcd2b51f81",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426370479,
+      "recordedAt": 1792426371847,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2626172308
+      },
+      "predecessorIds": [],
+      "confidence": 0.75638235,
+      "sequenceNumber": 785,
+      "evidenceReferences": [
+        "f8b85dbd-2ba2-4b2a-8e70-1cc2a107e687",
+        "d8c85519-db3a-45e4-b002-867e0f4ac438"
+      ],
+      "monotonicTimeNanos": 18991215830746
+    },
+    {
+      "articleId": "f0509e8a-14e9-4f1f-a1df-4be21c14abc3",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426370758,
+      "recordedAt": 1792426372675,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e689ebe9-eb7d-4435-a48d-af3640fa190f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "d8c85519-db3a-45e4-b002-867e0f4ac438",
+        "e4f90d08-bec5-4c22-94f1-29fcd2b51f81",
+        "e689ebe9-eb7d-4435-a48d-af3640fa190f",
+        "2acb217f-bf33-4c85-854a-7a423b1a76e8",
+        "c180d509-93f6-40f9-b223-ad306e1d5e78"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18991479019361
+    },
+    {
+      "articleId": "f0618117-58d4-4a8c-b2ce-b2f5317b0dd6",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426372913,
+      "recordedAt": 1792426373032,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 2004300077,
+        "peakColorDistance": 1.0,
+        "sampleCount": 44,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.92302334
+      },
+      "predecessorIds": [],
+      "confidence": 0.9923023,
+      "sequenceNumber": 829,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18993671107438
+    },
+    {
+      "articleId": "be4626a1-8ec0-4ba4-a39e-21263041cf4c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426372994,
+      "recordedAt": 1792426373436,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2504381846
+      },
+      "predecessorIds": [],
+      "confidence": 0.75638235,
+      "sequenceNumber": 849,
+      "evidenceReferences": [
+        "d8c85519-db3a-45e4-b002-867e0f4ac438",
+        "61df7254-da16-446e-8f07-bb3a2bae6554"
+      ],
+      "monotonicTimeNanos": 18993720212592
+    },
+    {
+      "articleId": "56421467-5fe9-40fe-b2d4-2f6212b9dae3",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426371842,
+      "recordedAt": 1792426373856,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:c018fb6a-9edd-47fd-98e7-c853e02ed2bf",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "c018fb6a-9edd-47fd-98e7-c853e02ed2bf"
+      ],
+      "confidence": 0.7517212,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18992559975361
+    },
+    {
+      "articleId": "474d6fd1-8a10-44bb-8548-ecbf5d9690f9",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426374017,
+      "recordedAt": 1792426374197,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1089567616,
+        "peakColorDistance": 1.0,
+        "sampleCount": 56,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9224638
+      },
+      "predecessorIds": [],
+      "confidence": 0.9922463,
+      "sequenceNumber": 880,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18994760675054
+    },
+    {
+      "articleId": "5a7e1475-9e5e-49d0-bbac-d21f7c282e5c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426372771,
+      "recordedAt": 1792426374660,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:d6bb07b3-e745-47b2-8cbe-85f1d73e4a4b",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "d6bb07b3-e745-47b2-8cbe-85f1d73e4a4b",
+        "8dc8c6ed-8c67-4558-8d29-b9ea61c3f34b",
+        "f0618117-58d4-4a8c-b2ce-b2f5317b0dd6",
+        "61df7254-da16-446e-8f07-bb3a2bae6554",
+        "be4626a1-8ec0-4ba4-a39e-21263041cf4c"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18993528317592
+    },
+    {
+      "articleId": "091dafd3-f0ba-4216-a776-22886a08f9b2",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426374853,
+      "recordedAt": 1792426375091,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 813158846,
+        "peakColorDistance": 1.0,
+        "sampleCount": 64,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.92205334
+      },
+      "predecessorIds": [],
+      "confidence": 0.9922053,
+      "sequenceNumber": 922,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18995573833900
+    },
+    {
+      "articleId": "fc4ea58e-b7a2-43b1-92b5-30818c1bbe5a",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426373653,
+      "recordedAt": 1792426375503,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:74928ec0-4c0a-4550-a9d8-c3b3bb29d6c7",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "74928ec0-4c0a-4550-a9d8-c3b3bb29d6c7",
+        "474d6fd1-8a10-44bb-8548-ecbf5d9690f9",
+        "dcf28f48-1179-4fdf-b415-6eb96de70114"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18994405444900
+    },
+    {
+      "articleId": "7452177e-c38a-4305-b590-934fda6a57bc",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426375930,
+      "recordedAt": 1792426376081,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1110921462,
+        "peakColorDistance": 1.0,
+        "sampleCount": 68,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9226177
+      },
+      "predecessorIds": [],
+      "confidence": 0.99226177,
+      "sequenceNumber": 971,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18996684755362
+    },
+    {
+      "articleId": "a6c437e8-f508-4cb0-a3e0-b15a9796f1a7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426374747,
+      "recordedAt": 1792426376645,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:9d8d4a63-de62-4683-880c-1c314d7f8dba",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "9d8d4a63-de62-4683-880c-1c314d7f8dba",
+        "091dafd3-f0ba-4216-a776-22886a08f9b2",
+        "a796522a-10d6-4375-8ef2-f6af725f07fc"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18995467140362
+    },
+    {
+      "articleId": "0dd69717-8881-462e-8cbb-c5d6f0979d4b",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426376927,
+      "recordedAt": 1792426377011,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 986433000,
+        "peakColorDistance": 1.0,
+        "sampleCount": 74,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9224832
+      },
+      "predecessorIds": [],
+      "confidence": 0.9922483,
+      "sequenceNumber": 1006,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 18997671188362
+    },
+    {
+      "articleId": "adefca80-8cca-42da-8e27-7bde9dba49bb",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426376822,
+      "recordedAt": 1792426377391,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 3643792385
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 1021,
+      "evidenceReferences": [
+        "ec6e7ada-3549-4b7f-9a3c-48b612a25539",
+        "b6e56ec6-57f0-48d2-b93b-9d145af60490"
+      ],
+      "monotonicTimeNanos": 18997546038208
+    },
+    {
+      "articleId": "90f553d3-c9c1-4365-86e6-f94cc0cefd35",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426375835,
+      "recordedAt": 1792426377936,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:ca14b25a-d8bb-4885-ac9c-07e84251a92d",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "ca14b25a-d8bb-4885-ac9c-07e84251a92d",
+        "7452177e-c38a-4305-b590-934fda6a57bc",
+        "983f6b92-a381-46d1-9dad-43d24a2c41b5"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18996589324362
+    },
+    {
+      "articleId": "620e797a-8a45-4b93-ba69-614f775652ab",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426376739,
+      "recordedAt": 1792426378702,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:8781dd80-2af8-44b2-a5a4-50892b566e35",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "8781dd80-2af8-44b2-a5a4-50892b566e35",
+        "0dd69717-8881-462e-8cbb-c5d6f0979d4b",
+        "1ef7b8df-c812-4221-a44a-43df125272a6"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18997482981900
+    },
+    {
+      "articleId": "b67fa199-c167-4a9c-aaa2-8a2221645574",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426377868,
+      "recordedAt": 1792426379811,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e810ed9f-3e1d-464b-bd1d-3e090b793bc4",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "e810ed9f-3e1d-464b-bd1d-3e090b793bc4"
+      ],
+      "confidence": 0.7298944,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 18998627928669
+    },
+    {
+      "articleId": "7ef7a21b-0d3c-45db-9ec1-d608aabfe156",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426384366,
+      "recordedAt": 1792426384912,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 11394389309
+      },
+      "predecessorIds": [],
+      "confidence": 0.9577911,
+      "sequenceNumber": 1326,
+      "evidenceReferences": [
+        "61df7254-da16-446e-8f07-bb3a2bae6554",
+        "d62b9968-4baa-4352-beaf-22ec3c640a7f"
+      ],
+      "monotonicTimeNanos": 19005114601901
+    },
+    {
+      "articleId": "c84a41c4-c563-445f-b4c7-4f42b7080678",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426386379,
+      "recordedAt": 1792426387470,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1396,
+      "evidenceReferences": [
+        "fc2eefc7-9bc1-4055-8524-b2dc3b41e04d"
+      ],
+      "monotonicTimeNanos": 19007123505208
+    },
+    {
+      "articleId": "133ae097-3e3b-407e-a47a-efdb88978ad9",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426386379,
+      "recordedAt": 1792426387493,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1398,
+      "evidenceReferences": [
+        "fc2eefc7-9bc1-4055-8524-b2dc3b41e04d"
+      ],
+      "monotonicTimeNanos": 19007123505208
+    },
+    {
+      "articleId": "d4415ffa-2d9a-4f22-be2e-3ccc9cefd61f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426405214,
+      "recordedAt": 1792426406014,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1882,
+      "evidenceReferences": [
+        "d47b11fc-3b82-4dd0-ab55-aec0948d5276"
+      ],
+      "monotonicTimeNanos": 19025960889902
+    },
+    {
+      "articleId": "d3484feb-44f2-46d2-8dc0-8c4e7ae22a0f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426406405,
+      "recordedAt": 1792426407253,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Abomasnow",
+        "speciesId": 460,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1943,
+      "evidenceReferences": [
+        "ed177d78-696d-4d94-9e41-84409af9a80a",
+        "b5f2fd76-bf87-4f73-909e-77ef0f7c7d11",
+        "5826d8b6-2980-403a-b787-c44622701984"
+      ],
+      "monotonicTimeNanos": 19027158233287
+    },
+    {
+      "articleId": "226820a8-e784-400d-9288-185b0506775d",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426407558,
+      "recordedAt": 1792426408536,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2023,
+      "evidenceReferences": [
+        "cb2b29b2-1dd9-4103-ac25-8afbe629682e",
+        "0eb3c780-542b-4144-b29f-ce830c1064a9"
+      ],
+      "monotonicTimeNanos": 19028315583364
+    },
+    {
+      "articleId": "4ab1f9ee-e68b-4c82-bd7c-d94c9913c77c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426408047,
+      "recordedAt": 1792426408922,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2046,
+      "evidenceReferences": [
+        "cb2b29b2-1dd9-4103-ac25-8afbe629682e",
+        "cd4eb971-3d96-41b4-a728-cd8fc4bca351"
+      ],
+      "monotonicTimeNanos": 19028772811364
+    },
+    {
+      "articleId": "f4aa8981-bfef-4f44-af9f-70bf40cd34a3",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426408642,
+      "recordedAt": 1792426409883,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2095,
+      "evidenceReferences": [
+        "87354e43-e959-4a17-8d9f-dd5d728e3970",
+        "8591902b-b43c-4484-abee-7ad815584501"
+      ],
+      "monotonicTimeNanos": 19029395456594
+    },
+    {
+      "articleId": "0b564f25-edda-4493-afb4-5035062ffe16",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426409579,
+      "recordedAt": 1792426410068,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 32775101463
+      },
+      "predecessorIds": [],
+      "confidence": 0.80898166,
+      "sequenceNumber": 2110,
+      "evidenceReferences": [
+        "b6e56ec6-57f0-48d2-b93b-9d145af60490",
+        "1b0fba76-806c-4c04-9f50-53e9d524d666"
+      ],
+      "monotonicTimeNanos": 19030321139671
+    },
+    {
+      "articleId": "e57f93d4-54cd-45fc-bdf8-53aee94b177b",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426409679,
+      "recordedAt": 1792426410741,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2138,
+      "evidenceReferences": [
+        "c7209536-b549-4928-9c80-7f16a7da3145",
+        "9ef491de-f9a1-4280-9b4a-17eb13ae27ff"
+      ],
+      "monotonicTimeNanos": 19030436948056
+    },
+    {
+      "articleId": "8d26f320-a1c8-491e-a102-dfac8bc442cc",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426406254,
+      "recordedAt": 1792426412194,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 2206,
+      "evidenceReferences": [
+        "cb2b29b2-1dd9-4103-ac25-8afbe629682e",
+        "f4aa8981-bfef-4f44-af9f-70bf40cd34a3"
+      ],
+      "monotonicTimeNanos": 19026992158748
+    },
+    {
+      "articleId": "b5c0ce91-0ae9-4449-b0fd-30fc7b2c90aa",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426410234,
+      "recordedAt": 1792426412326,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:68186965-b3a3-40e9-8ab2-63a43c6c864e",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "68186965-b3a3-40e9-8ab2-63a43c6c864e"
+      ],
+      "confidence": 0.7973713,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19030955261210
+    },
+    {
+      "articleId": "28991400-e3a2-420e-9362-9a0f920301d8",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426412335,
+      "recordedAt": 1792426412838,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 2742269924
+      },
+      "predecessorIds": [],
+      "confidence": 0.75606656,
+      "sequenceNumber": 2237,
+      "evidenceReferences": [
+        "1b0fba76-806c-4c04-9f50-53e9d524d666",
+        "c8f463a0-a513-4d50-93b7-e4eed001df7e"
+      ],
+      "monotonicTimeNanos": 19033063409595
+    },
+    {
+      "articleId": "42b35724-8d23-449a-9300-d6b683f7f4bc",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426411296,
+      "recordedAt": 1792426413400,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7ed396c0-8d50-4f8b-aea6-3d200cbabe9d",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7ed396c0-8d50-4f8b-aea6-3d200cbabe9d"
+      ],
+      "confidence": 0.7869851,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19032052190133
+    },
+    {
+      "articleId": "4c34a0f4-c5ac-4070-95d5-bd9bd2b7ceae",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426412271,
+      "recordedAt": 1792426414374,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e8400c9e-d17e-44da-8d6a-c0577635d774",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "e8400c9e-d17e-44da-8d6a-c0577635d774"
+      ],
+      "confidence": 0.7862824,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19033008457287
+    },
+    {
+      "articleId": "1672a6e8-0c38-4db0-ad71-9756c43fa473",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426413798,
+      "recordedAt": 1792426414558,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1477863000
+      },
+      "predecessorIds": [],
+      "confidence": 0.75606656,
+      "sequenceNumber": 2292,
+      "evidenceReferences": [
+        "c8f463a0-a513-4d50-93b7-e4eed001df7e",
+        "ac21d0b7-153c-450b-b543-b39cf849171a"
+      ],
+      "monotonicTimeNanos": 19034541272595
+    },
+    {
+      "articleId": "dcebfb29-6889-4365-8af9-cf100e90b629",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426413260,
+      "recordedAt": 1792426414598,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "attack_incoming"
+      },
+      "predecessorIds": [
+        "6d29d072-6062-4d40-8d55-c72380f33e45"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19034015647364
+    },
+    {
+      "articleId": "d525c7a1-046a-47da-89fe-4cc0971bef5a",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426415237,
+      "recordedAt": 1792426415735,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1451510461
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2329,
+      "evidenceReferences": [
+        "ac21d0b7-153c-450b-b543-b39cf849171a",
+        "99a8cf1b-6aee-47ec-a455-a7a1b5c047c7"
+      ],
+      "monotonicTimeNanos": 19035992783056
+    },
+    {
+      "articleId": "b1a5f754-5773-4d4b-b96d-4b6ef0aa229e",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426418229,
+      "recordedAt": 1792426418970,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2426482154
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2441,
+      "evidenceReferences": [
+        "6429d678-d298-4dce-a4ee-90c195ef93b4",
+        "8985d8a0-9615-4881-acf1-6ef234e15f39"
+      ],
+      "monotonicTimeNanos": 19038971450749
+    },
+    {
+      "articleId": "c61e1342-1f64-415d-9464-8411e1a58605",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426416608,
+      "recordedAt": 1792426419152,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2450,
+      "evidenceReferences": [
+        "666288fa-2800-4bad-b0de-9c8c8744b01c"
+      ],
+      "monotonicTimeNanos": 19037320770441
+    },
+    {
+      "articleId": "aef0369e-10ef-467d-b014-bcf28208c868",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426421178,
+      "recordedAt": 1792426421986,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 5933365924
+      },
+      "predecessorIds": [],
+      "confidence": 0.86678237,
+      "sequenceNumber": 2597,
+      "evidenceReferences": [
+        "99a8cf1b-6aee-47ec-a455-a7a1b5c047c7",
+        "7b1e4f71-1320-45a3-9b76-a2afe695bf6a"
+      ],
+      "monotonicTimeNanos": 19041926148980
+    },
+    {
+      "articleId": "f7f8f919-1a51-4943-a880-fdc5c831a8e1",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426422475,
+      "recordedAt": 1792426422712,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1286339077
+      },
+      "predecessorIds": [],
+      "confidence": 0.5888736,
+      "sequenceNumber": 2632,
+      "evidenceReferences": [
+        "7b1e4f71-1320-45a3-9b76-a2afe695bf6a",
+        "606d5afb-2dbb-4d9a-8514-60ee92104cde"
+      ],
+      "monotonicTimeNanos": 19043212488057
+    },
+    {
+      "articleId": "e3204835-aab7-4071-adad-062464174221",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426421247,
+      "recordedAt": 1792426423244,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:704a95ab-d7fe-4994-9888-0a201a558b0c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "704a95ab-d7fe-4994-9888-0a201a558b0c"
+      ],
+      "confidence": 0.79394513,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19042004105903
+    },
+    {
+      "articleId": "e8649b03-b81f-48b0-8fe9-4de5f81b4cb1",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426422288,
+      "recordedAt": 1792426424059,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e2e29e89-14d3-473a-970a-02cbd402d61f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "e2e29e89-14d3-473a-970a-02cbd402d61f",
+        "444a06d9-cdf2-4c10-a3db-1103ead27895"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19042999685595
+    },
+    {
+      "articleId": "3184e041-d430-457b-9c85-232570e7efe7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426423519,
+      "recordedAt": 1792426424149,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1014336615
+      },
+      "predecessorIds": [],
+      "confidence": 0.5888736,
+      "sequenceNumber": 2692,
+      "evidenceReferences": [
+        "606d5afb-2dbb-4d9a-8514-60ee92104cde",
+        "770f0458-14d7-4fb3-8db8-5e90207b5cd3"
+      ],
+      "monotonicTimeNanos": 19044226824672
+    },
+    {
+      "articleId": "f19c8583-f45f-4f33-8763-4d1967aa636d",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426424449,
+      "recordedAt": 1792426424517,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 2083810539,
+        "peakColorDistance": 1.0,
+        "sampleCount": 144,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9999986
+      },
+      "predecessorIds": [],
+      "confidence": 0.9999998,
+      "sequenceNumber": 2711,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 19045182280057
+    },
+    {
+      "articleId": "605c463c-d236-4fb8-8c5e-a6a7b00bac44",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426423403,
+      "recordedAt": 1792426425368,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:a6ce3c47-fe9e-4d40-9aba-cb55945127f6",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "a6ce3c47-fe9e-4d40-9aba-cb55945127f6"
+      ],
+      "confidence": 0.78385,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19044104477518
+    },
+    {
+      "articleId": "35f8c835-b089-4187-a05d-11a8169dc75f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426425348,
+      "recordedAt": 1792426425440,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 919431308,
+        "peakColorDistance": 1.0,
+        "sampleCount": 150,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9999993
+      },
+      "predecessorIds": [],
+      "confidence": 0.9999999,
+      "sequenceNumber": 2751,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 19046101711365
+    },
+    {
+      "articleId": "3b7c8a91-caa5-4544-9f0e-a5543dca8137",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426425126,
+      "recordedAt": 1792426426143,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 6903412385
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2774,
+      "evidenceReferences": [
+        "8985d8a0-9615-4881-acf1-6ef234e15f39",
+        "a2771691-6e10-473d-9df4-d3562ae2d51c"
+      ],
+      "monotonicTimeNanos": 19045874863134
+    },
+    {
+      "articleId": "3bf46695-d31f-401d-8175-de55ac0241fb",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426424873,
+      "recordedAt": 1792426426252,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1395171000
+      },
+      "predecessorIds": [],
+      "confidence": 0.68546945,
+      "sequenceNumber": 2781,
+      "evidenceReferences": [
+        "770f0458-14d7-4fb3-8db8-5e90207b5cd3",
+        "60ca68d2-9b01-4d6b-adb9-180d04db329a"
+      ],
+      "monotonicTimeNanos": 19045621995672
+    },
+    {
+      "articleId": "b11518b4-aa5b-49f9-aa1c-81888ceed165",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426424243,
+      "recordedAt": 1792426426339,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:08ebb4f5-74fc-4140-ad70-7b080fa10c4d",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "08ebb4f5-74fc-4140-ad70-7b080fa10c4d",
+        "09fc19ea-617e-443a-965a-5f3653264dc7",
+        "f19c8583-f45f-4f33-8763-4d1967aa636d"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19044995268057
+    },
+    {
+      "articleId": "a46093d0-4c60-4e41-80a7-c9a827938dd0",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426426286,
+      "recordedAt": 1792426426502,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 930246230,
+        "peakColorDistance": 1.0,
+        "sampleCount": 156,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.99999964
+      },
+      "predecessorIds": [],
+      "confidence": 0.99999994,
+      "sequenceNumber": 2793,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 19047031957595
+    },
+    {
+      "articleId": "70429260-c94c-4667-a72b-36de3768fa17",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426426343,
+      "recordedAt": 1792426426914,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1479205616
+      },
+      "predecessorIds": [],
+      "confidence": 0.737581,
+      "sequenceNumber": 2828,
+      "evidenceReferences": [
+        "60ca68d2-9b01-4d6b-adb9-180d04db329a",
+        "f403817c-adb7-4f47-9d19-5fc3bc8a7735"
+      ],
+      "monotonicTimeNanos": 19047101201288
+    },
+    {
+      "articleId": "d895449a-0488-47de-a364-b1c3cc21679c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426426793,
+      "recordedAt": 1792426427068,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 440097461
+      },
+      "predecessorIds": [],
+      "confidence": 0.45319295,
+      "sequenceNumber": 2840,
+      "evidenceReferences": [
+        "f403817c-adb7-4f47-9d19-5fc3bc8a7735",
+        "2bebb2f1-832f-45b0-9595-264093f14256"
+      ],
+      "monotonicTimeNanos": 19047541298749
+    },
+    {
+      "articleId": "675de6cf-ecf5-4758-b1d1-af3ffde60930",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426426298,
+      "recordedAt": 1792426427095,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 1157094461
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2842,
+      "evidenceReferences": [
+        "a2771691-6e10-473d-9df4-d3562ae2d51c",
+        "12980325-1122-499f-9214-1b5bbe995259"
+      ],
+      "monotonicTimeNanos": 19047031957595
+    },
+    {
+      "articleId": "3c236843-50db-4120-9cb3-a4e588cfb244",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426425317,
+      "recordedAt": 1792426427223,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:407d4498-137f-468f-9e99-4e3e04c40360",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "3b7c8a91-caa5-4544-9f0e-a5543dca8137",
+        "a2771691-6e10-473d-9df4-d3562ae2d51c",
+        "407d4498-137f-468f-9e99-4e3e04c40360",
+        "35f8c835-b089-4187-a05d-11a8169dc75f",
+        "95ab2256-4f4d-40e6-8b41-78fb791e6b3c"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19046053515749
+    },
+    {
+      "articleId": "53e02821-3be8-4e41-9231-d6d4e5a15596",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426427528,
+      "recordedAt": 1792426427646,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1222440847,
+        "peakColorDistance": 1.0,
+        "sampleCount": 171,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.99999976
+      },
+      "predecessorIds": [],
+      "confidence": 0.99999994,
+      "sequenceNumber": 2868,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 19048254398442
+    },
+    {
+      "articleId": "7b7f8623-02ad-49a3-8ded-4604c223fb72",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426427512,
+      "recordedAt": 1792426427961,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 1222440847
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 2885,
+      "evidenceReferences": [
+        "12980325-1122-499f-9214-1b5bbe995259",
+        "9b14e010-fbec-4462-a563-a894974021d6"
+      ],
+      "monotonicTimeNanos": 19048254398442
+    },
+    {
+      "articleId": "0a32a479-c8c8-4ccb-987f-2230bd7ba4bc",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426427636,
+      "recordedAt": 1792426427970,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 837193847
+      },
+      "predecessorIds": [],
+      "confidence": 0.45319295,
+      "sequenceNumber": 2888,
+      "evidenceReferences": [
+        "2bebb2f1-832f-45b0-9595-264093f14256",
+        "50ca976f-73e2-4262-a1d4-440688ba4ca9"
+      ],
+      "monotonicTimeNanos": 19048378492596
+    },
+    {
+      "articleId": "d75b4f7f-07a1-47d8-a38d-efb33e50e0a7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426426286,
+      "recordedAt": 1792426428308,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:d743ee8d-6d6a-4c62-8d9a-261ee66283cb",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "12980325-1122-499f-9214-1b5bbe995259",
+        "675de6cf-ecf5-4758-b1d1-af3ffde60930",
+        "a46093d0-4c60-4e41-80a7-c9a827938dd0",
+        "d743ee8d-6d6a-4c62-8d9a-261ee66283cb",
+        "7950d308-836e-43dc-8de2-7e0cf6fb993e"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19047031957595
+    },
+    {
+      "articleId": "abce8f2f-be8d-45b8-96b7-8d896e3e6a2a",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426427358,
+      "recordedAt": 1792426429317,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:d4ed7157-859d-4fb4-88b8-eca30cf8a14b",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "d4ed7157-859d-4fb4-88b8-eca30cf8a14b",
+        "43778c22-2e16-4c80-a7de-43cc9b818ba3",
+        "53e02821-3be8-4e41-9231-d6d4e5a15596",
+        "7b7f8623-02ad-49a3-8ded-4604c223fb72",
+        "9b14e010-fbec-4462-a563-a894974021d6"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19048097127442
+    },
+    {
+      "articleId": "f431ac30-6456-40f2-989a-f5da7e3cae9e",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426428504,
+      "recordedAt": 1792426429809,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2943,
+      "evidenceReferences": [
+        "d4415ffa-2d9a-4f22-be2e-3ccc9cefd61f",
+        "5de64cd8-3ecd-4ce4-bfd0-382c43ee28cc",
+        "43facb21-2cee-4785-83e3-28b755f3aae5"
+      ],
+      "monotonicTimeNanos": 19049221418134
+    },
+    {
+      "articleId": "9c156f8c-545e-4448-b4e0-b1fb0bb505b8",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426430142,
+      "recordedAt": 1792426431254,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2993,
+      "evidenceReferences": [
+        "f431ac30-6456-40f2-989a-f5da7e3cae9e",
+        "6768febe-8779-4789-b312-d1aa2668bdf6"
+      ],
+      "monotonicTimeNanos": 19050893584673
+    },
+    {
+      "articleId": "d2ac75a4-14ef-4241-9095-a8498d4d14d7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426430200,
+      "recordedAt": 1792426433478,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 3119,
+      "evidenceReferences": [
+        "e3f23223-9e8b-4637-b1f2-c6a70f76a9fd",
+        "9c156f8c-545e-4448-b4e0-b1fb0bb505b8"
+      ],
+      "monotonicTimeNanos": 19050938527134
+    },
+    {
+      "articleId": "87b7db33-054c-4c7d-8305-5a5291989d2c",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426433653,
+      "recordedAt": 1792426434891,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3206,
+      "evidenceReferences": [
+        "e3f23223-9e8b-4637-b1f2-c6a70f76a9fd",
+        "18575114-1a10-4dcf-b9f8-65a002a59f8f"
+      ],
+      "monotonicTimeNanos": 19054409865288
+    },
+    {
+      "articleId": "a589995c-98e0-49a1-b112-cf43e33fbbce",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426434477,
+      "recordedAt": 1792426435113,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 6840189308
+      },
+      "predecessorIds": [],
+      "confidence": 0.7093526,
+      "sequenceNumber": 3231,
+      "evidenceReferences": [
+        "50ca976f-73e2-4262-a1d4-440688ba4ca9",
+        "c08b7d38-3c9f-453e-8e14-e26c9755dd58"
+      ],
+      "monotonicTimeNanos": 19055218681904
+    },
+    {
+      "articleId": "f6eca1fa-9ea9-4b1a-99fa-099f26735266",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426434319,
+      "recordedAt": 1792426435487,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3255,
+      "evidenceReferences": [
+        "e3f23223-9e8b-4637-b1f2-c6a70f76a9fd",
+        "02423601-1645-46b9-99a5-bb8b45849f28"
+      ],
+      "monotonicTimeNanos": 19055070126211
+    },
+    {
+      "articleId": "5f72ab39-ee87-4520-89d0-524a027b14b7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426435826,
+      "recordedAt": 1792426436405,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "attack_incoming"
+      },
+      "predecessorIds": [
+        "98e6c719-abbd-48e2-833e-a75a1d77d6a8"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19056572364288
+    },
+    {
+      "articleId": "428b972a-15fa-4b00-8511-3ab2611b2ccf",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426434735,
+      "recordedAt": 1792426436933,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:0a4b3a72-d9ef-4393-bcb9-968d04956891",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "0a4b3a72-d9ef-4393-bcb9-968d04956891"
+      ],
+      "confidence": 0.80675614,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19055489606442
+    },
+    {
+      "articleId": "bcb3fe23-1cb0-42c1-966e-a32b57f39701",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426436401,
+      "recordedAt": 1792426436971,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1928465461
+      },
+      "predecessorIds": [],
+      "confidence": 0.7093526,
+      "sequenceNumber": 3329,
+      "evidenceReferences": [
+        "c08b7d38-3c9f-453e-8e14-e26c9755dd58",
+        "a03ff7f0-ff49-4269-9562-ad04e9caf000"
+      ],
+      "monotonicTimeNanos": 19057147147365
+    },
+    {
+      "articleId": "af509785-d34f-4092-8e9b-6803286fa34b",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426437642,
+      "recordedAt": 1792426437869,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1241522462
+      },
+      "predecessorIds": [],
+      "confidence": 0.44925106,
+      "sequenceNumber": 3378,
+      "evidenceReferences": [
+        "a03ff7f0-ff49-4269-9562-ad04e9caf000",
+        "25568dbe-edc4-48f5-b9f2-24177f49c3e3"
+      ],
+      "monotonicTimeNanos": 19058388669827
+    },
+    {
+      "articleId": "9bc98c7f-554f-4d87-9646-819e815c3808",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426438221,
+      "recordedAt": 1792426438656,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 591513308
+      },
+      "predecessorIds": [],
+      "confidence": 0.43624723,
+      "sequenceNumber": 3415,
+      "evidenceReferences": [
+        "25568dbe-edc4-48f5-b9f2-24177f49c3e3",
+        "f14c02a8-0519-4c41-a5fb-72c34804d4a9"
+      ],
+      "monotonicTimeNanos": 19058980183135
+    },
+    {
+      "articleId": "726a04cc-e9e6-42bc-88b9-4019b85a2ce5",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426438567,
+      "recordedAt": 1792426438722,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 330508538
+      },
+      "predecessorIds": [],
+      "confidence": 0.43624723,
+      "sequenceNumber": 3427,
+      "evidenceReferences": [
+        "f14c02a8-0519-4c41-a5fb-72c34804d4a9",
+        "a96fc764-a44d-4c25-aa94-0d19cc94f84b"
+      ],
+      "monotonicTimeNanos": 19059310691673
+    },
+    {
+      "articleId": "35acd0ae-7b03-4cd9-9419-eb44a4b675e2",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426439028,
+      "recordedAt": 1792426439495,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 473749308
+      },
+      "predecessorIds": [],
+      "confidence": 0.45688158,
+      "sequenceNumber": 3470,
+      "evidenceReferences": [
+        "a96fc764-a44d-4c25-aa94-0d19cc94f84b",
+        "30132c8e-d0f3-4f22-a695-c997f0649d12"
+      ],
+      "monotonicTimeNanos": 19059784440981
+    },
+    {
+      "articleId": "57f26989-5931-4014-92a3-d36fb4e4c978",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426439049,
+      "recordedAt": 1792426439534,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 5755931693
+      },
+      "predecessorIds": [],
+      "confidence": 0.48230526,
+      "sequenceNumber": 3474,
+      "evidenceReferences": [
+        "4edced17-0283-4aff-b80c-c4d794157135",
+        "96cccd4c-0eed-460f-acf5-8fdaacd5327d"
+      ],
+      "monotonicTimeNanos": 19059784440981
+    },
+    {
+      "articleId": "7389b8bf-6172-4bef-ba2a-5eed400a989f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426439478,
+      "recordedAt": 1792426439733,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 416867077
+      },
+      "predecessorIds": [],
+      "confidence": 0.48340142,
+      "sequenceNumber": 3489,
+      "evidenceReferences": [
+        "30132c8e-d0f3-4f22-a695-c997f0649d12",
+        "e0737d88-ad95-4c60-a575-d451bd2327a6"
+      ],
+      "monotonicTimeNanos": 19060201308058
+    },
+    {
+      "articleId": "f6ce3f1f-7507-484d-a00d-6b114e079ff1",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426440209,
+      "recordedAt": 1792426440724,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 745702384
+      },
+      "predecessorIds": [],
+      "confidence": 0.48393375,
+      "sequenceNumber": 3536,
+      "evidenceReferences": [
+        "e0737d88-ad95-4c60-a575-d451bd2327a6",
+        "96b81ab9-cdf4-42cb-b2ef-e08c312745e3"
+      ],
+      "monotonicTimeNanos": 19060947010442
+    },
+    {
+      "articleId": "2cdb6931-1f3b-4a5d-971c-e9ecfdcdc6c7",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426440852,
+      "recordedAt": 1792426441003,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 663882462
+      },
+      "predecessorIds": [],
+      "confidence": 0.44581985,
+      "sequenceNumber": 3552,
+      "evidenceReferences": [
+        "96b81ab9-cdf4-42cb-b2ef-e08c312745e3",
+        "2efcd4ed-2195-4917-b41c-17da8c37337c"
+      ],
+      "monotonicTimeNanos": 19061610892904
+    },
+    {
+      "articleId": "e4dffd32-0019-4448-a15a-b8059582a0ef",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426441019,
+      "recordedAt": 1792426441604,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 1973539692
+      },
+      "predecessorIds": [],
+      "confidence": 0.48230526,
+      "sequenceNumber": 3589,
+      "evidenceReferences": [
+        "96cccd4c-0eed-460f-acf5-8fdaacd5327d",
+        "0ea7aa25-ffbf-493c-a09c-8fa2dffe0654"
+      ],
+      "monotonicTimeNanos": 19061757980673
+    },
+    {
+      "articleId": "77e0641f-dbcb-4cd0-96c3-f311c9b1ffea",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426441498,
+      "recordedAt": 1792426441728,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 628619692
+      },
+      "predecessorIds": [],
+      "confidence": 0.44581985,
+      "sequenceNumber": 3599,
+      "evidenceReferences": [
+        "2efcd4ed-2195-4917-b41c-17da8c37337c",
+        "2dad9e19-871f-4502-8e52-80ccdcdde548"
+      ],
+      "monotonicTimeNanos": 19062239512596
+    },
+    {
+      "articleId": "3b05eda0-c844-43f0-8157-8631648e0c94",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426442042,
+      "recordedAt": 1792426442444,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 548967693
+      },
+      "predecessorIds": [],
+      "confidence": 0.49156487,
+      "sequenceNumber": 3633,
+      "evidenceReferences": [
+        "2dad9e19-871f-4502-8e52-80ccdcdde548",
+        "92c237b2-b904-4f43-8379-c51f4db88473"
+      ],
+      "monotonicTimeNanos": 19062788480289
+    },
+    {
+      "articleId": "f03ee59b-29fe-4bb6-8c71-ef05a43ba3c0",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426442694,
+      "recordedAt": 1792426444857,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 663649307
+      },
+      "predecessorIds": [],
+      "confidence": 0.49156487,
+      "sequenceNumber": 3705,
+      "evidenceReferences": [
+        "92c237b2-b904-4f43-8379-c51f4db88473",
+        "a5de2b47-c2d2-4029-b1c8-db55011f71ca"
+      ],
+      "monotonicTimeNanos": 19063452129596
+    },
+    {
+      "articleId": "ae85ae46-8faf-48fb-83a9-8ef372be9f1e",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426442699,
+      "recordedAt": 1792426447016,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3729,
+      "evidenceReferences": [
+        "6e35d262-57cb-4ca1-8d1f-51817ebd65f2"
+      ],
+      "monotonicTimeNanos": 19063452129596
+    },
+    {
+      "articleId": "8f822727-fafa-444a-9f49-d561cde4c68f",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426447153,
+      "recordedAt": 1792426448387,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 6134415385
+      },
+      "predecessorIds": [],
+      "confidence": 0.5214452,
+      "sequenceNumber": 3848,
+      "evidenceReferences": [
+        "0ea7aa25-ffbf-493c-a09c-8fa2dffe0654",
+        "f7c3f3f9-817d-4176-a884-6e88b590ef5f"
+      ],
+      "monotonicTimeNanos": 19067892396058
+    },
+    {
+      "articleId": "32a8d96b-761f-403e-9406-133d23d17752",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426448747,
+      "recordedAt": 1792426450786,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e07d328c-4bf0-4c74-9be4-ffc5e8dc5f31",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c76bf4c6-33cd-4a8b-b6d0-2ccd7039f66f",
+        "attackerSpeciesName": "Sneasel",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "e07d328c-4bf0-4c74-9be4-ffc5e8dc5f31"
+      ],
+      "confidence": 0.7673297,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19069504373597
+    },
+    {
+      "articleId": "b2c3a0e3-1f9f-477e-966b-12270c58d46e",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "perceivedAt": 1792426455194,
+      "recordedAt": 1792426456514,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "LOSS"
+      },
+      "predecessorIds": [
+        "936fc945-f99f-48ec-9d37-2978734d864a"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 19075950508982
+    }
+  ]
+}

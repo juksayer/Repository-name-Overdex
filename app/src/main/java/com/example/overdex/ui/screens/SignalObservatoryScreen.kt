@@ -28,7 +28,6 @@ import com.example.overdex.ui.theme.TerminalPurple
 enum class SignalObservatoryFocus {
     PROBE,
     OBSERVATORY,
-    MATCH_SIGHT,
     MATCH_CALIBRATION,
     FILTERS_ENABLED,
     SCANLINES,
@@ -40,7 +39,6 @@ enum class SignalObservatoryFocus {
 enum class ResearcherFocus {
     PROBE,
     OBSERVATORY,
-    MATCH_SIGHT,
     MATCH_CALIBRATION,
     CLOSE
 }
@@ -51,7 +49,6 @@ fun SignalObservatoryScreen(
     onFilterSettingsChange: (FilterSettings) -> Unit,
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
-    onLaunchMatchSight: () -> Unit = {},
     onLaunchMatchCalibration: () -> Unit = {},
     onBack: () -> Unit = {},
     onUp: (() -> Unit) -> Unit = {},
@@ -67,7 +64,6 @@ fun SignalObservatoryScreen(
         listOf(
             SignalObservatoryFocus.PROBE,
             SignalObservatoryFocus.OBSERVATORY,
-            SignalObservatoryFocus.MATCH_SIGHT,
             SignalObservatoryFocus.MATCH_CALIBRATION,
             SignalObservatoryFocus.FILTERS_ENABLED,
             SignalObservatoryFocus.SCANLINES,
@@ -95,7 +91,6 @@ fun SignalObservatoryScreen(
     val currentOnFilterSettingsChange by rememberUpdatedState(onFilterSettingsChange)
     val currentOnLaunchProbe by rememberUpdatedState(onLaunchProbe)
     val currentOnLaunchObservatory by rememberUpdatedState(onLaunchObservatory)
-    val currentOnLaunchMatchSight by rememberUpdatedState(onLaunchMatchSight)
     val currentOnLaunchMatchCalibration by rememberUpdatedState(onLaunchMatchCalibration)
     val currentOnBack by rememberUpdatedState(onBack)
 
@@ -134,7 +129,6 @@ fun SignalObservatoryScreen(
             when (focusManager.currentItem) {
                 SignalObservatoryFocus.PROBE -> currentOnLaunchProbe()
                 SignalObservatoryFocus.OBSERVATORY -> currentOnLaunchObservatory()
-                SignalObservatoryFocus.MATCH_SIGHT -> currentOnLaunchMatchSight()
                 SignalObservatoryFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
                 SignalObservatoryFocus.FILTERS_ENABLED -> currentOnFilterSettingsChange(
                     currentFilterSettings.copy(isEnabled = !currentFilterSettings.isEnabled)
@@ -183,13 +177,6 @@ fun SignalObservatoryScreen(
                 label = "Timeline Viewer",
                 selected = focusManager.currentItem == SignalObservatoryFocus.OBSERVATORY,
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.OBSERVATORY]!!
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-
-            LauncherBox(
-                label = "Match Sight",
-                selected = focusManager.currentItem == SignalObservatoryFocus.MATCH_SIGHT,
-                requester = bringIntoViewRequesters[SignalObservatoryFocus.MATCH_SIGHT]!!
             )
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -279,7 +266,6 @@ fun SignalObservatoryScreen(
 fun ResearcherModeOverlay(
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
-    onLaunchMatchSight: () -> Unit = {},
     onLaunchMatchCalibration: () -> Unit = {},
     onClose: () -> Unit,
     onUp: (() -> Unit) -> Unit = {},
@@ -295,7 +281,6 @@ fun ResearcherModeOverlay(
         listOf(
             ResearcherFocus.PROBE,
             ResearcherFocus.OBSERVATORY,
-            ResearcherFocus.MATCH_SIGHT,
             ResearcherFocus.MATCH_CALIBRATION,
             ResearcherFocus.CLOSE
         )
@@ -317,7 +302,6 @@ fun ResearcherModeOverlay(
 
     val currentOnLaunchProbe by rememberUpdatedState(onLaunchProbe)
     val currentOnLaunchObservatory by rememberUpdatedState(onLaunchObservatory)
-    val currentOnLaunchMatchSight by rememberUpdatedState(onLaunchMatchSight)
     val currentOnLaunchMatchCalibration by rememberUpdatedState(onLaunchMatchCalibration)
     val currentOnClose by rememberUpdatedState(onClose)
 
@@ -328,7 +312,6 @@ fun ResearcherModeOverlay(
             when (focusManager.currentItem) {
                 ResearcherFocus.PROBE -> currentOnLaunchProbe()
                 ResearcherFocus.OBSERVATORY -> currentOnLaunchObservatory()
-                ResearcherFocus.MATCH_SIGHT -> currentOnLaunchMatchSight()
                 ResearcherFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
                 ResearcherFocus.CLOSE -> currentOnClose()
                 else -> {}
@@ -372,13 +355,6 @@ fun ResearcherModeOverlay(
                 label = "Timeline Viewer",
                 selected = focusManager.currentItem == ResearcherFocus.OBSERVATORY,
                 requester = bringIntoViewRequesters[ResearcherFocus.OBSERVATORY]!!
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LauncherBox(
-                label = "Match Sight",
-                selected = focusManager.currentItem == ResearcherFocus.MATCH_SIGHT,
-                requester = bringIntoViewRequesters[ResearcherFocus.MATCH_SIGHT]!!
             )
             Spacer(modifier = Modifier.height(8.dp))
 

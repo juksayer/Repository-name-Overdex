@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-15",
+  "match_id": "6e067f03-142c-40ba-bf28-9570164dd81f",
+  "scope": "Read-only diagnosis of species latency and cry/type/OCR routing; no production code or calibration changes.",
+  "sneasel_timing_ms": {
+    "announcement_capture_to_text_publication": 1717,
+    "announcement_capture_to_unsided_species_publication": 1840,
+    "announcement_capture_to_side_assigned_species_publication": 4931,
+    "badge_capture_to_crop_preserved_publication": 37,
+    "preserved_crop_publication_to_badge_ocr_publication": 4056,
+    "badge_ocr_to_side_assigned_species_publication": 49,
+    "cry_window_start_minus_entry_frame": 1209.592
+  },
+  "evidence_article_ids": {
+    "entry": "41c65b05-d66b-4b9a-b45d-1b2584b3c376",
+    "badge_crop": "dd38678a-7f6c-48fd-980e-03f8fd149a4d",
+    "badge_ocr": "2fc4daa3-2beb-442e-bc4a-505619ae220b",
+    "unsided_species": "2e1fd89a-6252-4a73-a880-5e6cbcfe3c9e",
+    "side_assigned_species": "29f58fdc-9cb8-48ed-ac7f-8c6f99c8f6ba",
+    "cry_ranked": "260cc30c-60d1-4017-9ed6-cd94d7ab8917",
+    "audio": "42755fca-9f91-4c8c-a8bc-11bf4a5d4f08"
+  },
+  "cry": {
+    "best_species_id": 545,
+    "best_similarity": 0.87583387,
+    "distinct_species_margin": 0.001766029999999974,
+    "sneasel_in_top_five": false,
+    "required_similarity": 0.88,
+    "required_margin": 0.035,
+    "algorithm": "Normalized RMS amplitude envelopes only; no spectral or pitch comparison.",
+    "acceptance": "Qualified acoustic identity can emit ActivePokemonSpeciesWitnessed without OCR confirmation, but existing side attribution is still required; output is marked provisional in the HUD.",
+    "limitations": [
+      "SPECIES_ENTRY recording is requested after announcement OCR, not by a continuous cry-onset detector.",
+      "The recording predates the newly installed source-aligned audio window fix.",
+      "Type-icon observations are not fused into DecisiveBattleCryRule or side attribution.",
+      "Reference acoustic index is rebuilt per Match; this archive alone does not establish that index preparation caused the Sneasel delay.",
+      "MATCH_RESULT_MUSIC also reached the cry candidate matcher because its exclusion list does not exclude result music. No species was accepted from it in this archive."
+    ]
+  },
+  "type_reading": {
+    "opponent_observed": [
+      "DARK",
+      "GHOST"
+    ],
+    "opponent_expected_from_witnessed_sneasel": [
+      "DARK",
+      "ICE"
+    ],
+    "player_observed": [
+      "GRASS",
+      "STEEL"
+    ],
+    "player_expected_from_witnessed_abomasnow": [
+      "GRASS",
+      "ICE"
+    ],
+    "crop_visual_inspection": "Both correctly placed crops contain an intact Ice snowflake. Do not ask for recalibration based on these classifications.",
+    "evidence_files": [
+      "/tmp/overdex-review-20261015-2033/evidence/opening-OpponentActiveTypeIconsCrop.png",
+      "/tmp/overdex-review-20261015-2033/evidence/opening-PlayerActiveTypeIconsCrop.png",
+      "/tmp/overdex-review-20261015-2033/evidence/opening-OpponentActiveSpeciesTextCrop.png"
+    ]
+  },
+  "ocr": {
+    "registered_active_badge_readers": "One LiveOverlaySpeciesPipeline per side; legacy PersistedSpeciesWitness is not additionally registered.",
+    "treatments": "Badge height below 64 uses THRESHOLD_190_PADDED first and RAW only if necessary; stop on a resolvable species.",
+    "sneasel_successful_treatment": "THRESHOLD_190_PADDED; one accepted read, no multi-frame confirmation wait.",
+    "scheduling": "Player/opponent badge reads share SpeciesNameRecognizer recognitionMutex; each ML Kit call also enters the shared priority OcrWorkScheduler.",
+    "attribution_wait": "Go Sneasel was immediately preserved as PokemonIdentified with no side. New opponent identity waited for a side-located badge because configured roster alone is not treated as complete witnessed roster.",
+    "measurement_limit": "Archive brackets the four-second delay between preserved badge and OCR result, but does not separate species lock wait, backend queue wait, preprocessing, or ML Kit execution. Requested logcat was unavailable because ADB was waiting for the device; the read request was terminated without changing phone state."
+  },
+  "proposed_next_changes": [
+    "Measure per-stage identity latency and remove stale or redundant queued identity work while preserving original testimony.",
+    "Use verified team and side context to publish clean entry announcements sooner without assigning mirror matches by name alone.",
+    "Validate source-aligned cry windows, replace amplitude-only ranking with time/frequency matching, and combine reliable side-located type evidence conservatively.",
+    "Correct Ice type-icon classification against the retained clean crops; preserve original raw classifier outputs."
+  ]
+}

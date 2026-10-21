@@ -1,0 +1,437 @@
+{
+  "date": "2026-10-18",
+  "scenario": {
+    "kind": "alternating-attacker private match from both perspectives",
+    "user_report": "Only one Pokemon attacked at a time, changing after a KO. Initial no-shields recollection was subsequently uncertain.",
+    "verified_shields": "Obstagoon used both shields against Camerupt Earth Power; Pixel badge crops show 2 to 1 to 0 and Moondrop retained frame shows the shield."
+  },
+  "devices": [
+    {
+      "device": "pixel",
+      "archive_name": "2026-10-18_19-41-52_da3d6c62-8770-40b0-be64-8fa25beff2d6.odxmatch.zip",
+      "sha256": "86ebb61c3884b236b86942b7616ac9cbdf0aaf62dbb35b025598c0e1e3609446",
+      "articles": 3951,
+      "artifacts_verified": 761,
+      "duration_seconds": 132.717,
+      "archived_fast_move_counts": {
+        "PLAYER:Abomasnow": 6,
+        "OPPONENT:Obstagoon": 6,
+        "PLAYER:Camerupt": 6
+      },
+      "first_hp_source_times_seconds": [
+        22.889,
+        26.723
+      ],
+      "opening_hp_source_gap_seconds": 3.834,
+      "latency_recorded_minus_perceived": {
+        "active_hp_bar_measured": {
+          "n": 1136,
+          "median_ms": 94.0,
+          "p90_ms": 207,
+          "max_ms": 3894
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 24,
+          "median_ms": 845.0,
+          "p90_ms": 3371,
+          "max_ms": 3969
+        },
+        "fast_move_use_observed": {
+          "n": 18,
+          "median_ms": 1844.0,
+          "p90_ms": 2307,
+          "max_ms": 2379
+        }
+      },
+      "results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ]
+    },
+    {
+      "device": "moondrop",
+      "archive_name": "2026-10-18_19-41-57_44a2a4e8-c83e-4b8e-aa8f-b636ee511166.odxmatch.zip",
+      "sha256": "69c30c1fa12646a7a07eae8eedf3602e1939fcffd9d9f511bf7e7ae79cd708a0",
+      "articles": 3000,
+      "artifacts_verified": 428,
+      "duration_seconds": 133.314,
+      "archived_fast_move_counts": {
+        "OPPONENT:Abomasnow": 1,
+        "PLAYER:None": 1,
+        "PLAYER:Obstagoon": 5,
+        "OPPONENT:None": 1,
+        "OPPONENT:Camerupt": 9
+      },
+      "first_hp_source_times_seconds": [
+        17.153,
+        23.478
+      ],
+      "opening_hp_source_gap_seconds": 6.325,
+      "latency_recorded_minus_perceived": {
+        "active_hp_bar_measured": {
+          "n": 1089,
+          "median_ms": 153,
+          "p90_ms": 419,
+          "max_ms": 6229
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 22,
+          "median_ms": 1486.0,
+          "p90_ms": 2840,
+          "max_ms": 3926
+        },
+        "fast_move_use_observed": {
+          "n": 17,
+          "median_ms": 1851,
+          "p90_ms": 2131,
+          "max_ms": 2304
+        }
+      },
+      "results": [
+        {
+          "kind": "match_ended",
+          "result": "LOSS"
+        }
+      ]
+    }
+  ],
+  "confirmed_findings": [
+    "Greninja and Lucario have zero Fast Move uses in either archive.",
+    "Both perspectives contain six Obstagoon uses, including one initially unattributed use on Moondrop.",
+    "No Camerupt assignment to the wrong team was found in this pair.",
+    "Pixel records the Earth Power defense debuff with the named announcement and matching audio cue."
+  ],
+  "debuff_evidence": [
+    {
+      "articleId": "af7eead3-fc04-4e88-9b27-d58c5e84c846",
+      "perceivedAt": 1792370604131,
+      "recordedAt": 1792370605144,
+      "sourceId": "STAT_CHANGE_SOUND_WITNESS",
+      "payload": {
+        "kind": "stat_change_sound_measured",
+        "cue": "DEFENSE_DOWN",
+        "referenceSha256": "a73e059dc53f863b3678707a065b66ddb3a83416f0abc4b113fab53fd82eda4d",
+        "similarity": 0.9873729,
+        "runnerUpSimilarity": 0.82329744,
+        "durationNanos": 917125000
+      },
+      "predecessorIds": [],
+      "evidenceReferences": [
+        "29df8d43-0686-4a9e-8629-cde3388dd299"
+      ]
+    },
+    {
+      "articleId": "ff96c0d0-ef35-4841-b862-0e11847620bd",
+      "perceivedAt": 1792370604131,
+      "recordedAt": 1792370605153,
+      "sourceId": "STAT_CHANGE_ATTRIBUTION",
+      "payload": {
+        "kind": "stat_change_observed",
+        "affectedSide": "OPPONENT",
+        "stat": "DEFENSE",
+        "direction": -1,
+        "stages": 1,
+        "moveName": "Earth Power",
+        "soundArticleId": "af7eead3-fc04-4e88-9b27-d58c5e84c846",
+        "basis": "AUDIO_CUE_AND_NAMED_CHARGED_MOVE"
+      },
+      "predecessorIds": [],
+      "evidenceReferences": [
+        "af7eead3-fc04-4e88-9b27-d58c5e84c846",
+        "23546759-e3f2-4963-8c9c-124d4d0188e8"
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "issue": "Two duplicate opponent Incinerates in Moondrop",
+      "change": "Allow repeated measured border-pulse identity to supply the move duration for pulse/damage fusion; speculative higher-energy ties do not qualify.",
+      "recorded_pairs": [
+        [
+          "8c4a5ad4-f449-48c7-a6ee-9c00836fb97a",
+          "2f6e55c4-1c99-4781-90c1-c53873ed2df3"
+        ],
+        [
+          "8aaf12bb-0d4e-4c92-ae7c-138eeb0fdff4",
+          "ad6d8e06-338c-4142-bdd3-0654ca667958"
+        ]
+      ],
+      "regression": "The selected Camerupt segment has five distinct HP losses and now produces five fused uses, keeping all independent raw articles intact."
+    },
+    {
+      "issue": "Incinerate changed to Ember after a charge move",
+      "change": "Remember the evidence families supporting identity across QTE cadence resets; camera motion alone cannot replace a repeated-impact identity. Fresh repeated impact evidence can still correct it."
+    },
+    {
+      "issue": "Abomasnow QTE artwork matched GO on Pixel at 37.712 seconds",
+      "change": "Reject overlapping white components that do not form adjacent GO glyphs; stop countdown capture after actual combat evidence without inventing a witnessed GO."
+    },
+    {
+      "issue": "Live HUD could no longer be repositioned",
+      "change": "Long press anywhere on the visible battle panel, then drag. Screen-coordinate deltas follow the finger while the window moves. Release saves the existing device-specific HUD layout, without edge snapping or new labels/icons."
+    },
+    {
+      "issue": "Nighttime decision timer was visible but no accepted timer articles were present in either archive",
+      "change": "Accept the dark navy dial interior and rim while retaining white-arc geometry and repeated legal numeral confirmation. The original saved 9 and 11 are read by OCR on the Moondrop. Empty nighttime crops remain rejected."
+    },
+    {
+      "issue": "Replacement pause lacked a visible replay dial, especially on the opponent side",
+      "change": "Show a central remaining-time arc and actual seconds when witnessed; for a bounded named-faint-to-replacement interval, show a waiting dial without invented numerals. Retain reconstruction basis and source article IDs; suppress fast moves during either side’s supported pause."
+    },
+    {
+      "issue": "Obstagoon could be replaced before its KO animation",
+      "change": "Associate a late named faint only with the immediately outgoing same-side actor within two seconds, preserving original source time. Fit its complete fall and subsequent colour drain before the recorded replacement, with a brief lying-down beat. Fit incoming charged-projectile timing before that pose. No archive articles are changed."
+    }
+  ],
+  "remaining_limits": [
+    "Opening source gaps are 3.834 seconds on Pixel and 6.325 seconds on Moondrop. Standalone HP measurement is substantially faster, so the live startup bottleneck remains unlocalized.",
+    "Counts from the two archives still differ. No missing impacts were fabricated to force agreement.",
+    "Existing archives retain their original evidence and derived articles; corrected live inference requires a new match for acceptance.",
+    "User HP search regions are retained. Local tracking and wide reacquisition must handle moving bars; shrinking the saved crops is not the remedy.",
+    "Actual numbered decision-timer testimony is absent from this recorded pair. Replay uses an explicitly reconstructed waiting dial; the corrected live reader must be checked in a new match."
+  ],
+  "regression_fixtures": {
+    "timeline": {
+      "file": "app/src/test/resources/battle/2026-10-18-paired-camerupt.json",
+      "sha256": "25dfa330d58f9a38ab273962bc6ccd7a3a8d7424b2ddd5405c92fa7c6baff4cf",
+      "articles": 511,
+      "source_match": "44a2a4e8-c83e-4b8e-aa8f-b636ee511166",
+      "all_articles_exactly_equal_to_original": true,
+      "selection": "60-80 second Camerupt segment, plus earlier species/start/faint/identity context. Original delivery order, IDs and source times retained."
+    },
+    "images": [
+      {
+        "file": "app/src/androidTest/assets/battle/oct18/abomasnow-qte-not-go.png",
+        "sha256": "180cf6f9c3addb5fa7fae4cceee0b4cac6052f082b97a0872383ea74fe9429c2",
+        "sources": [
+          {
+            "archive": "2026-10-18_19-41-52_da3d6c62-8770-40b0-be64-8fa25beff2d6.odxmatch.zip",
+            "article_id": "e96ad232-f39e-4182-96e2-5068064408aa",
+            "perceived_at": 1792370550024,
+            "payload": {
+              "kind": "crop_captured",
+              "artifactPath": "artifacts/crops/sha256/180cf6f9c3addb5fa7fae4cceee0b4cac6052f082b97a0872383ea74fe9429c2.png",
+              "sha256": "180cf6f9c3addb5fa7fae4cceee0b4cac6052f082b97a0872383ea74fe9429c2",
+              "byteCount": 160853,
+              "mediaType": "image/png",
+              "cropName": "CountdownGlyphCrop",
+              "sourceWidth": 672,
+              "sourceHeight": 1419,
+              "cropLeft": 134,
+              "cropTop": 496,
+              "cropRight": 538,
+              "cropBottom": 922,
+              "overlayBounds": null
+            }
+          }
+        ]
+      },
+      {
+        "file": "app/src/androidTest/assets/battle/oct18/moondrop-opening.png",
+        "sha256": "6b8946d3e1966bb206d2f914c56c7fb75a520e596efab55c59630d940419aa37",
+        "sources": [],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370536,
+            "device_path": "files/artifacts/frames/sha256/6b8946d3e1966bb206d2f914c56c7fb75a520e596efab55c59630d940419aa37.png"
+          }
+        ],
+        "timing_note": "Sparse retained full frame chosen by filesystem mtime. Mtime is not an exact event capture timestamp; used only to exercise original-pixel HP acquisition."
+      },
+      {
+        "file": "app/src/androidTest/assets/battle/oct18/pixel-opening.png",
+        "sha256": "21a880511ae13c599f83f3d53927a6a40f1628915593ab92a838ce23512603a3",
+        "sources": [],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370536,
+            "device_path": "files/artifacts/frames/sha256/21a880511ae13c599f83f3d53927a6a40f1628915593ab92a838ce23512603a3.png"
+          }
+        ],
+        "timing_note": "Sparse retained full frame chosen by filesystem mtime. Mtime is not an exact event capture timestamp; used only to exercise original-pixel HP acquisition."
+      },
+      {
+        "file": "app/src/androidTest/assets/battle/oct18/real-go.png",
+        "sha256": "a249b392a3c612c7d27f11ed5a5d42584537a8c8615925ffd57c95adfd39fbcd",
+        "sources": [
+          {
+            "archive": "2026-10-18_19-41-57_44a2a4e8-c83e-4b8e-aa8f-b636ee511166.odxmatch.zip",
+            "article_id": "ad07ca4a-2abb-4d15-bea6-97224e248edb",
+            "perceived_at": 1792370535925,
+            "payload": {
+              "kind": "crop_captured",
+              "artifactPath": "artifacts/crops/sha256/a249b392a3c612c7d27f11ed5a5d42584537a8c8615925ffd57c95adfd39fbcd.png",
+              "sha256": "a249b392a3c612c7d27f11ed5a5d42584537a8c8615925ffd57c95adfd39fbcd",
+              "byteCount": 140983,
+              "mediaType": "image/png",
+              "cropName": "CountdownGlyphCrop",
+              "sourceWidth": 672,
+              "sourceHeight": 1493,
+              "cropLeft": 130,
+              "cropTop": 600,
+              "cropRight": 590,
+              "cropBottom": 920,
+              "overlayBounds": null
+            }
+          }
+        ]
+      }
+    ],
+    "replacement_lifetimes": [
+      {
+        "file": "app/src/test/resources/replay/oct18-pixel-lifetimes.json",
+        "sha256": "96fe0268ec0f521a2a8ed61d34486c533bba54e8a2357c75c894ed493bc6f2f6",
+        "source_archive": "2026-10-18_19-41-52_da3d6c62-8770-40b0-be64-8fa25beff2d6.odxmatch.zip",
+        "articles": 34,
+        "all_articles_exactly_equal_to_original": true,
+        "selection": "Identity, faint, configured team and battle-boundary articles. Original times, IDs and delivery order retained; no media."
+      },
+      {
+        "file": "app/src/test/resources/replay/oct18-moondrop-lifetimes.json",
+        "sha256": "fe4859bd7a311c01579d7be84b43e868316229820607ab5bc55261e8c25bb3b1",
+        "source_archive": "2026-10-18_19-41-57_44a2a4e8-c83e-4b8e-aa8f-b636ee511166.odxmatch.zip",
+        "articles": 33,
+        "all_articles_exactly_equal_to_original": true,
+        "selection": "Identity, faint, configured team and battle-boundary articles. Original times, IDs and delivery order retained; no media."
+      }
+    ],
+    "night_decision_dials": [
+      {
+        "file": "app/src/test/resources/battle/decision-timer/moondrop-night-9.png",
+        "sha256": "a7c2ff1cff2c7233cfaa7490c714e65f10f8f735d20264c117f184d4614b6367",
+        "source_sha256": "08efb69599f1872deb5fbf5179d043862f7ef350a765506e819e8d3694a28ce7",
+        "source_dimensions": [
+          672,
+          1493
+        ],
+        "bounds": [
+          273,
+          49,
+          398,
+          242
+        ],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370558,
+            "device_path": "files/artifacts/frames/sha256/08efb69599f1872deb5fbf5179d043862f7ef350a765506e819e8d3694a28ce7.png"
+          }
+        ],
+        "timing_note": "Retained full frame located by file mtime, not an exact event timestamp. Exact crop pixels used for detector/OCR regression only."
+      },
+      {
+        "file": "app/src/test/resources/battle/decision-timer/pixel-night-11.png",
+        "sha256": "b1f5f129cb5d292d30f767eb95fa93b5569ba56c5c80351551b7463df9f2a81a",
+        "source_sha256": "44aa3d58c784efe4bbf014db29c853e18d61c131a78f5499c11b462d8358d941",
+        "source_dimensions": [
+          672,
+          1419
+        ],
+        "bounds": [
+          273,
+          47,
+          398,
+          230
+        ],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370580,
+            "device_path": "files/artifacts/frames/sha256/44aa3d58c784efe4bbf014db29c853e18d61c131a78f5499c11b462d8358d941.png"
+          }
+        ],
+        "timing_note": "Retained full frame located by file mtime, not an exact event timestamp. Exact crop pixels used for detector/OCR regression only."
+      },
+      {
+        "file": "app/src/test/resources/battle/decision-timer/moondrop-night-absent.png",
+        "sha256": "6af6a4c9c913a6a0ebdba79f68c9f1ac4b8005504f2c43279457b4469527d0c0",
+        "source_sha256": "a86edd5fdd89d7ffa20f55fc7a1640ab6735caa75c5b2b3420ffe5a3161f1436",
+        "source_dimensions": [
+          672,
+          1493
+        ],
+        "bounds": [
+          273,
+          49,
+          398,
+          242
+        ],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370555,
+            "device_path": "files/artifacts/frames/sha256/a86edd5fdd89d7ffa20f55fc7a1640ab6735caa75c5b2b3420ffe5a3161f1436.png"
+          }
+        ],
+        "timing_note": "Retained full frame located by file mtime, not an exact event timestamp. Exact crop pixels used for detector/OCR regression only."
+      },
+      {
+        "file": "app/src/test/resources/battle/decision-timer/pixel-night-absent.png",
+        "sha256": "6dea9ff2f6694d6fb1ebab465d3420ba9658f97f79f0e9574fc7c0f88cd0b87a",
+        "source_sha256": "a090ccfdcca06958754758e32f9588570198cb7a06457d8a7787676bc32f211f",
+        "source_dimensions": [
+          672,
+          1419
+        ],
+        "bounds": [
+          273,
+          47,
+          398,
+          230
+        ],
+        "retained_frame_sources": [
+          {
+            "file_mtime_seconds": 1792370578,
+            "device_path": "files/artifacts/frames/sha256/a090ccfdcca06958754758e32f9588570198cb7a06457d8a7787676bc32f211f.png"
+          }
+        ],
+        "timing_note": "Retained full frame located by file mtime, not an exact event timestamp. Exact crop pixels used for detector/OCR regression only."
+      }
+    ]
+  },
+  "validation": {
+    "status": "Complete: local tests/build, Moondrop recorded-image and UI checks, and update/launch on both phones passed. New live capture remains the acceptance check for detection performance.",
+    "unit_tests": {
+      "tests": 891,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "transient_test_failure": "An initial unit run concurrent with APK assembly timed out in ResultMusicWitnessTest. Isolated rerun and the complete unit suite passed without modifying that test.",
+    "recorded_image_tests": "October 18 HP acquisition and false-GO/real-GO cases passed on Moondrop, as did older 3, 1 and GO recorded crops.",
+    "opening_hp_probe_ms": {
+      "moondrop_first": 637.55,
+      "moondrop_warm_median": 24.09,
+      "pixel_frame_on_moondrop_first": 85.81,
+      "pixel_frame_on_moondrop_warm_median": 21.93
+    },
+    "apk_sha256": "826f117573760631bdee140203d83e7042bfe1dbe950f8021b2ca87eaea83f43",
+    "hud_drag_device_test": "Moondrop: real injected screen gestures moved the whole overlay by -60,+72 px from both move-label and sprite starts; quick swipe did not move it; each release completed once.",
+    "calibration_preserved": {
+      "moondrop": {
+        "files": 10,
+        "exact_hash_matches": 10,
+        "unchanged_after_launch": true
+      },
+      "pixel": {
+        "files": 4,
+        "exact_hash_matches": 4,
+        "unchanged_after_launch": true
+      }
+    },
+    "device_test_note": "Long-press test advances Compose test clock as well as real event time. Physical input initially exposed half-speed relative-coordinate movement; screen-relative deltas corrected it.",
+    "installed": [
+      "Moondrop MD-PH-001",
+      "Pixel 4"
+    ],
+    "moondrop_installed_apk_hash_verified": true,
+    "moondrop_reviewed_archive_unchanged": true,
+    "moondrop_cold_launch": "Passed; no current-process AndroidRuntime fatal exception.",
+    "pixel_update_blocker": "Resolved after user freed storage. No retained Overdex evidence was deleted.",
+    "replacement_device_tests": "Moondrop: recorded nighttime 9/11 OCR, observed timer countdown/clearance, and late-KO waiting dial/fall/replacement/reverse-scrub tests passed (3 tests).",
+    "replacement_visual_review": "Production battlefield screenshots inspected: dial centered between team indicators; Obstagoon falls, then drains colour; replacement and reverse scrubbing validated.",
+    "pixel_installed_apk_hash_verified": true,
+    "pixel_reviewed_archive_unchanged": true,
+    "pixel_launch": "Passed; running normally with no current-process AndroidRuntime fatal exception.",
+    "moondrop_launch": "Passed; running normally with no current-process AndroidRuntime fatal exception."
+  }
+}

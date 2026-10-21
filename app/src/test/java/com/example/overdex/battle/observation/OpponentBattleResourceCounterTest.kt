@@ -151,7 +151,7 @@ class OpponentBattleResourceCounterTest {
     }
     @Test fun `October 12 hidden sky strips are unavailable and returning badge retains two shields`() {
         for ((name, expected) in listOf("player-shields-74.png" to null, "opponent-shields-75.png" to null, "player-shields-79.png" to 2)) {
-            val crop = ImageIO.read(File("../docs/verification/evidence/2026-10-12-1546/$name"))
+            val crop = ImageIO.read(File("src/test/resources/battle/recorded-evidence/2026-10-12-1546/$name"))
             assertEquals(name, expected, OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, crop::getRGB))
         }
     }
@@ -168,7 +168,7 @@ class OpponentBattleResourceCounterTest {
     }
 
     @Test fun `recorded dark player shields are visible zero rather than unavailable`() {
-        val source = ImageIO.read(File("../docs/verification/evidence/2026-10-12-1546/frame-156.png"))
+        val source = ImageIO.read(File("src/test/resources/battle/recorded-evidence/2026-10-12-1546/frame-156.png"))
         val crop = source.getSubimage(146, 124, 57, 35)
         assertEquals(0, OpponentBattleResourceCounter.shieldCount(crop.width, crop.height, crop::getRGB))
     }

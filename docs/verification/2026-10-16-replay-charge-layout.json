@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-16",
+  "scope": [
+    "Mirrored opponent replay resources",
+    "Player charged-move type icons from archived loadouts",
+    "Recorded energy under both replay resource badges"
+  ],
+  "source": "2026-10-16_13-20-52_670f5c15-daa1-4add-ac35-8133badf99f8.odxmatch.zip",
+  "unit_tests": {
+    "tests": 865,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "build": {
+    "debug": "passed",
+    "android_test": "passed",
+    "apk_sha256": "e681864d0fb1ac96b6c7ed28b5104ec57c9967857cc58ff7c72c0adaab484340"
+  },
+  "installation": {
+    "serial": "MDPH00124112500414",
+    "model": "MD_PH_001",
+    "status": "installed",
+    "calibration_files_verified_unchanged": 13
+  },
+  "phone_visual_check": {
+    "test": "ReplayChargeLayoutDeviceTest",
+    "status": "passed_on_unlocked_moondrop",
+    "tests": 1,
+    "elapsed_seconds": 9.671,
+    "viewport_dp": [
+      350,
+      480
+    ],
+    "cases": [
+      {
+        "cursor_seconds": 35,
+        "species": "Abomasnow",
+        "charge_moves": [
+          "Weather Ball (Ice)",
+          "Energy Ball"
+        ],
+        "types": [
+          "ICE",
+          "GRASS"
+        ],
+        "player_recorded_energy": 0,
+        "opponent_recorded_energy": 12
+      },
+      {
+        "cursor_seconds": 105,
+        "species": "Gourgeist",
+        "charge_moves": [
+          "Shadow Ball",
+          "Seed Bomb"
+        ],
+        "types": [
+          "GHOST",
+          "GRASS"
+        ],
+        "player_recorded_energy": 100,
+        "opponent_recorded_energy": 0
+      },
+      {
+        "cursor_seconds": 35,
+        "action": "rewind",
+        "result": "Earlier loadout and energy restored"
+      }
+    ],
+    "assertions": [
+      "Both charge icons and both energy labels displayed",
+      "Charge controls remain inside the replay viewport and do not overlap",
+      "Archive serialization unchanged after playback and rewind"
+    ],
+    "visual_review": [
+      "Opponent Pok\u00e9 Balls outside, shields inside, mirroring player",
+      "Energy legible beneath each resource group",
+      "Sprites, HP bars, and bottom charge icons do not overlap",
+      "Filled charge indicators visible for Gourgeist; empty indicators visible for Abomasnow"
+    ],
+    "captures": {
+      "gourgeist.png": "4f48983410a25f5f3b18ba0309c33592f1c0c9cfbf192194f925b445114352dd",
+      "abomasnow.png": "f3e6a0b936a991185407404a118dff0d640618f36e0c009c7ddc51f741dd282b",
+      "rewind.png": "f3e6a0b936a991185407404a118dff0d640618f36e0c009c7ddc51f741dd282b"
+    }
+  },
+  "evidence_rules": [
+    "Charge icons are configured, uniquely read, or confirmed player moves; legal movepools alone do not select equipment.",
+    "Energy retains its approximation marker and the existing recorded-use accounting.",
+    "Archived articles remain unchanged."
+  ]
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "file": "sneasel.png",
+    "archive": "2026-10-19_08-10-24-101-full.odxmatch.zip",
+    "matchId": "3491092d-8327-452c-a2cd-b89128c2a87f",
+    "articleId": "78aea638-53aa-4c5b-9175-ca5a4ff8d205",
+    "perceivedAt": 1792415348694,
+    "sha256": "8ecd2e2eca3662764f1b0a279d10778b43f18f777d080f0d90d363b0984ac914"
+  },
+  {
+    "file": "sealeo.png",
+    "archive": "2026-10-19_08-10-24-101-full.odxmatch.zip",
+    "matchId": "3491092d-8327-452c-a2cd-b89128c2a87f",
+    "articleId": "8fe880b2-9386-4ec9-9347-86c69cac3ba0",
+    "perceivedAt": 1792415365877,
+    "sha256": "950fe675f1f4df6a32a47935675c7de1897ef56812425aa00850214959a0b576"
+  },
+  {
+    "file": "vaporeon.png",
+    "archive": "2026-10-19_08-10-24-101-full.odxmatch.zip",
+    "matchId": "3491092d-8327-452c-a2cd-b89128c2a87f",
+    "articleId": "522c31b6-a8ca-44e1-9b57-f02480506698",
+    "perceivedAt": 1792415392301,
+    "sha256": "614d29d610c425af349a72546f92010ad99fb299ac7ca43325f73d6ce9376444"
+  },
+  {
+    "file": "gesture_sealeo.png",
+    "archive": "2026-10-19_08-24-50-831-full.odxmatch.zip",
+    "matchId": "0a01b6ca-5bdc-42b9-adaf-14f9247dce66",
+    "articleId": "215e5cd9-0c94-45b6-b428-f7a3bf13590a",
+    "perceivedAt": 1792416185798,
+    "sha256": "97c0d9095c2fabf51371ed0c1bebb72ccc85706318fae0d3eb7088a4c5acf413"
+  }
+]

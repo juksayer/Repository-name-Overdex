@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-15",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "branch": "odx-recovery",
+  "base_head": "b7330c64969f77d5f5a4605c9eac56b3f49f1bb5",
+  "scope": "Performance changes in the existing working tree; prior changes preserved. Installed and tested on the Moondrop.",
+  "apk_sha256": "1edf38eb5870dc1d061ee77c021bba52610127e8a14e0dc97113218adb7ad8be",
+  "changes": {
+    "type_icons": "Three initial/cue-driven captures 200 ms apart; recovery probe every 1.5 s without treating an earlier classification as certain. Independent sides; entry, faint, cry and Match-start cues reopen the burst.",
+    "charged_labels": "Exact bright neutral letter-pixel comparisons reuse an OCR result for at most 5 s (blank: 1 s). New evidence cites the fresh crop and the original OCR crop, with UNCHANGED_LETTER_PIXELS basis. Any changed letter pixel forces OCR. No change to touch inference freshness rules.",
+    "ocr_queue": "Optional pointer checks only enter an idle recognizer. Routine label work older than 1 s is skipped at admission, allowing the newest conflated crop to be tried. Preserved results alternate newest and oldest candidates rather than waiting behind the entire result backlog. Original times and raw artifacts remain intact.",
+    "checkpoints": "15-second cadence retained. Append-only SHA-256-checked, fsynced batches of new articles replace recurring full ZIP rewrites. Content-addressed source artifacts remain durable separately. On process restart, background recovery validates batches and packages a compact replay archive. Incomplete tails and corrupt journals are preserved; legacy ZIP checkpoints remain recoverable. Archive Directory and Match Summary already refresh every second, so recovered files appear without leaving the screen.",
+    "zip": "Already-compressed PNG bytes use DEFLATE level 0; Timeline JSON and audio retain normal compression. Artifact size, SHA-256 and ZIP validation remain.",
+    "audio": "One resampling pass per fast-move clip. A bounded 2048-window shared spectral cache compares every PCM sample before reusing overlapping data. Fast-move and stat-change readers normalize independent copies. Goertzel centroid replaces the equivalent direct DFT without per-sample trigonometry. Raw audio, attribution, candidate thresholds and counts remain independent.",
+    "hp": "Capture rate, calibration, measurements, buffer ownership and high-rate HP processing unchanged. Shared-buffer redesign deferred until a simultaneous live profile justifies the risk."
+  },
+  "validation": {
+    "unit_tests": {
+      "tests": 837,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "debug_apk_build": "passed",
+    "instrumentation_apk_build": "passed",
+    "device": {
+      "serial": "MDPH00124112500414",
+      "model": "MD_PH_001",
+      "tests_passed": 11,
+      "tests_failed": 0,
+      "coverage": [
+        "incremental recovery, torn tail, corruption rejection, duplicate publication, legacy ZIP recovery",
+        "11 recorded fast-move mixtures: 8 expected accepted references and 3 expected rejections",
+        "preserved clips reach Timeline with correct side inference",
+        "four stat-change reference sounds and Timeline witness",
+        "recorded result OCR and a single source-timed MatchEnded",
+        "species and result OCR under competing readers",
+        "charged-label and pointer inference, archive roundtrip, simultaneous live witness fixtures",
+        "60 recorded HP frames"
+      ],
+      "fast_move_matcher_ms": {
+        "median": 191,
+        "max": 205
+      },
+      "species_ocr_ms": [
+        311,
+        195,
+        200,
+        206,
+        194,
+        164,
+        154,
+        165
+      ],
+      "result_ocr_ms": [
+        220,
+        195,
+        172,
+        240,
+        185,
+        168,
+        158,
+        161
+      ],
+      "result_test_chain_ms": 292,
+      "hp_tracker_ms": {
+        "median": 18.425769,
+        "p90": 21.769154,
+        "max": 29.832923
+      },
+      "calibration_files_backed_up": 13,
+      "calibration_files_hash_unchanged": 13,
+      "launch": "MainActivity opened after tests; com.example.overdex process present"
+    },
+    "recorded_work_estimate": {
+      "method": "Counterfactual sampling over retained captures and original cue publication times, not a new live CPU or latency benchmark. Checkpoints retain the same 15-second cadence.",
+      "recordings": [
+        {
+          "retained_original_type_captures": 511,
+          "simulated_type_captures": 124,
+          "reduction_percent": 75.7,
+          "archive": "/tmp/overdex-review-20261015-evening/2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+          "checkpoint_count": 7,
+          "old_articles_serialized_at_checkpoints": 9812,
+          "incremental_articles_serialized_at_checkpoints": 2383
+        },
+        {
+          "retained_original_type_captures": 684,
+          "simulated_type_captures": 166,
+          "reduction_percent": 75.7,
+          "archive": "/tmp/overdex-review-20261015-evening/2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+          "checkpoint_count": 10,
+          "old_articles_serialized_at_checkpoints": 22333,
+          "incremental_articles_serialized_at_checkpoints": 3715
+        }
+      ]
+    },
+    "logs": "/tmp/overdex-performance-20261015",
+    "final_unit_confirmation": "passed, tasks up-to-date for the installed production sources"
+  },
+  "limits": [
+    "Recorded fixture timing is not end-to-end live battle latency. A fresh battle is still required to assess HUD delivery and missed or duplicate Fast Move uses under Pokemon GO load.",
+    "Type-capture and checkpoint counts are counterfactual estimates over retained recordings, not measured CPU or battery savings.",
+    "Audio clips still retain their original overlapping evidence windows. Computation is shared only for byte-identical sample windows; there is no invented attacker or destructive audio deduplication.",
+    "No commit or push was performed."
+  ]
+}

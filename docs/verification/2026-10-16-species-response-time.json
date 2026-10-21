@@ -1,0 +1,391 @@
+{
+  "date": "2026-10-16",
+  "device": {
+    "model": "Moondrop MIAD01 / MD_PH_001",
+    "serial": "MDPH00124112500414"
+  },
+  "archives": [
+    {
+      "name": "2026-10-16_09-34-26_b9d6da22-93f1-403c-a017-b59ab2393240.odxmatch.zip",
+      "bytes": 7690836,
+      "sha256": "ead955253e7e07f64188c41a9394d85ce2b3ea4995aa01990963d4f92d8f6d08",
+      "articles": 1490,
+      "artifacts": 262,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        754,
+        1403,
+        1690,
+        2147,
+        1592,
+        2460,
+        4697,
+        888,
+        2234
+      ],
+      "audio_cue_windows": 40,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.049,
+        "median": -500.013616,
+        "maximum": -500.000103
+      },
+      "result_music_ranked_as_cry": 0,
+      "observed_results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "species_observed": {
+        "PLAYER": [
+          "Abomasnow"
+        ],
+        "OPPONENT": [
+          "Sealeo",
+          "Sneasel",
+          "Vaporeon"
+        ]
+      }
+    },
+    {
+      "name": "2026-10-16_09-29-26_74fcfc8d-d628-4f86-bda4-d184eed8fdd5.odxmatch.zip",
+      "bytes": 16387519,
+      "sha256": "8f48a5ca92e9b0fe7424d9d04d409e70a7eed08fd5c4c7a4ef060c7f0c773994",
+      "articles": 3956,
+      "artifacts": 749,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        2156,
+        1669,
+        2010,
+        3062,
+        3448,
+        6220,
+        1160,
+        2328,
+        8986,
+        5195,
+        4354,
+        8655,
+        3851,
+        8494,
+        2037,
+        2348,
+        2383
+      ],
+      "audio_cue_windows": 69,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.087922,
+        "median": -500.007436,
+        "maximum": -500.000154
+      },
+      "result_music_ranked_as_cry": 1,
+      "observed_results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "species_observed": {
+        "PLAYER": [
+          "Camerupt",
+          "Gourgeist",
+          "Machamp"
+        ],
+        "OPPONENT": [
+          "Blastoise",
+          "Houndoom",
+          "Pancham"
+        ]
+      }
+    },
+    {
+      "name": "2026-10-16_09-25-03_9554bd99-0bdd-4dd7-999c-e8934d83fa88.odxmatch.zip",
+      "bytes": 17728341,
+      "sha256": "3080fb6f7c5b1a1a8a696ad0625be01b8f742c6967f0a3b4a6e4ca8b89d75b07",
+      "articles": 4289,
+      "artifacts": 792,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        3660,
+        3202,
+        3483,
+        3467,
+        2681,
+        8914,
+        1831,
+        1707,
+        2974,
+        2635,
+        3256,
+        1538,
+        1650,
+        3355,
+        4359,
+        3417,
+        3069
+      ],
+      "audio_cue_windows": 78,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.111076,
+        "median": -500.0128975,
+        "maximum": -500.000475
+      },
+      "result_music_ranked_as_cry": 1,
+      "observed_results": [],
+      "species_observed": {
+        "PLAYER": [
+          "Abomasnow",
+          "Camerupt",
+          "Gourgeist"
+        ],
+        "OPPONENT": [
+          "Blastoise",
+          "Houndoom",
+          "Pancham"
+        ]
+      }
+    },
+    {
+      "name": "2026-10-15_23-21-12_cc3fe781-37bd-465f-9932-2e40367aed9d.odxmatch.zip",
+      "bytes": 12899368,
+      "sha256": "396327ecf95f33e32e84e20fbcf1fb6bab2b3163ed41bf0fe413154e527122e3",
+      "articles": 3240,
+      "artifacts": 555,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        2973,
+        3455,
+        1543,
+        2429,
+        2481,
+        2792,
+        8978,
+        723,
+        2986,
+        1425,
+        3222,
+        3266,
+        2358
+      ],
+      "audio_cue_windows": 57,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.088692,
+        "median": -500.010065,
+        "maximum": -500.001334
+      },
+      "result_music_ranked_as_cry": 1,
+      "observed_results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "species_observed": {
+        "PLAYER": [
+          "Abomasnow",
+          "Camerupt",
+          "Gourgeist"
+        ],
+        "OPPONENT": [
+          "Combusken",
+          "Flareon",
+          "Magcargo"
+        ]
+      }
+    },
+    {
+      "name": "2026-10-15_22-15-37_50d08ef0-58f4-4d09-a974-790e2971d0f8.odxmatch.zip",
+      "bytes": 13326136,
+      "sha256": "ad9a65703899231e2c696c9bf0fe7bfebf4549ef028e27ae2e2fa3a49431f528",
+      "articles": 2770,
+      "artifacts": 492,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        2816,
+        2524,
+        1558,
+        781,
+        643,
+        1755,
+        2101,
+        2372,
+        7282,
+        11270,
+        1579
+      ],
+      "audio_cue_windows": 62,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.047076,
+        "median": -500.0090325,
+        "maximum": -500.000257
+      },
+      "result_music_ranked_as_cry": 1,
+      "observed_results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "species_observed": {
+        "PLAYER": [
+          "Abomasnow"
+        ],
+        "OPPONENT": [
+          "Sealeo",
+          "Sneasel",
+          "Vaporeon"
+        ]
+      }
+    },
+    {
+      "name": "2026-10-15_22-13-30_9006283e-810f-46a7-9f2b-778a05499fee.odxmatch.zip",
+      "bytes": 9556744,
+      "sha256": "ab99adf82a42143f1f845b7e6f012b25b82408c52b5a43f96833291d53d7348b",
+      "articles": 2277,
+      "artifacts": 388,
+      "integrity": "verified by inspect_odxmatch.py --verify-artifacts; exit 0",
+      "direct_badge_read_latencies_ms": [
+        8461,
+        6160,
+        2783,
+        4641,
+        1236,
+        1198,
+        3597
+      ],
+      "audio_cue_windows": 49,
+      "audio_window_start_offset_from_cue_ms": {
+        "minimum": -6000.101538,
+        "median": -500.013962,
+        "maximum": -500.000128
+      },
+      "result_music_ranked_as_cry": 1,
+      "observed_results": [
+        {
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "species_observed": {
+        "PLAYER": [
+          "Abomasnow"
+        ],
+        "OPPONENT": [
+          "Sealeo",
+          "Sneasel",
+          "Vaporeon"
+        ]
+      }
+    }
+  ],
+  "pre_change_badge_delivery": {
+    "OPPONENT": {
+      "count": 40,
+      "median_ms": 2502.5,
+      "p90_ms": 8655,
+      "max_ms": 11270
+    },
+    "PLAYER": {
+      "count": 34,
+      "median_ms": 2804.0,
+      "p90_ms": 5195,
+      "max_ms": 8914
+    }
+  },
+  "measurement_definition": "Wall-clock recordedAt minus original perceivedAt. Includes all waiting and processing; old archives cannot isolate native OCR duration.",
+  "changes": [
+    "Species pending crop selected after admission to shared OCR, with a single scheduler turn for bounded treatments and no outer species mutex.",
+    "Confirmed checks skip leftover pending OCR; independent badge acceptance does not trigger a redundant switch check.",
+    "Each performed species read retains queue, native-read, processing and capture-to-completion timing linked to its source crop.",
+    "WAV decoding uses a bulk little-endian short view instead of one buffer allocation per sample.",
+    "Cry reference verification and feature preparation run off the UI thread once per process.",
+    "Only cry-related cues enter the cry matcher or trigger species checks; result music and QTE/attack effects are excluded.",
+    "Verified bundled reference WAVs with the known 46-byte PCM header and zero RIFF/data lengths are decoded from a finalized temporary copy; strict captured-audio decoding still rejects unfinished headers and impossible chunk lengths."
+  ],
+  "preservation": "Original phone archives and calibration files remain untouched. Only reference features are cached. Evidence timestamps and raw crop articles are retained.",
+  "validation": {
+    "unit_tests": {
+      "tests": 856,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "build": "debug APK and instrumentation APK assembled successfully",
+    "apk": {
+      "sha256": "77ff042157aafd0fe6616b31d17623992ba51323ceb302cdcc2f8c916200fc4a",
+      "calibrations_unchanged": 13
+    },
+    "phone_tests": {
+      "passed": 4,
+      "failed": 0,
+      "checks": [
+        "Actual recorded pixels replace an older queued crop at shared OCR admission, with source timestamp and crop links preserved; only Vaporeon reaches the HUD.",
+        "Independent badge switch closes its check without triggering redundant OCR.",
+        "All bundled cry references load; consecutive calls reuse the same index; bulk PCM decode preserves samples.",
+        "Species and results remain readable under competing OCR work; a late faint safely assigns a pending Vaporeon announcement and populates HUD moves."
+      ]
+    },
+    "fresh_crop_timing_ms": {
+      "scheduler_wait_for_initial_job": 291,
+      "selected_crop_capture_to_admission": 32,
+      "native_read": 145,
+      "processing": 251,
+      "selected_crop_capture_to_read_completion": 284,
+      "ocr_passes": 1,
+      "waiting_crops_replaced": 1
+    },
+    "cry_preparation": {
+      "references": 1175,
+      "first_preparation_ms": 2762,
+      "reuse_microseconds": 30,
+      "twenty_1_2_second_pcm_decodes_ms": 5
+    },
+    "controlled_species_read_comparison": {
+      "before_ms": [
+        306,
+        212,
+        176,
+        186,
+        215,
+        148,
+        169,
+        194
+      ],
+      "after_ms": [
+        398,
+        225,
+        220,
+        226,
+        218,
+        189,
+        223,
+        180
+      ],
+      "before_median_ms": 190.0,
+      "after_median_ms": 221.5,
+      "interpretation": "No demonstrated speedup of ML Kit itself. The changes remove obsolete queued work and repeated reference preparation; these controlled readings do not measure live gameplay latency."
+    },
+    "calibration_files_unchanged": 13,
+    "initial_test_repairs": "Corrected stale corpus-size expectation and explicitly waited for the OCR queue before replacing the test frame; an added unit check also prevented unfinished capture WAVs being treated as empty audio.",
+    "logs_directory": "/tmp/overdex-review-20261016",
+    "launch": {
+      "app_running": true,
+      "resumed_activity": [
+        "topResumedActivity=ActivityRecord{da9be61 u0 com.example.overdex/.MainActivity t6365}",
+        "ResumedActivity: ActivityRecord{da9be61 u0 com.example.overdex/.MainActivity t6365}"
+      ],
+      "current_process_crashes": 0
+    }
+  },
+  "remaining_boundary": "Recorded-crop and queue tests cannot establish live latency while Pokemon GO is rendering. New instrumented battle required. Cry ranking still uses amplitude envelopes; type-icon classification/fusion is not redesigned here.",
+  "cry_corpus_inventory": {
+    "species": 966,
+    "unique_files": 1175,
+    "pcm_samples": 13925349,
+    "input_bytes": 32248992,
+    "previously_rejected_zero_length_headers": 113,
+    "original_files_modified": false,
+    "all_unique_references_prepared_on_phone": 1175
+  }
+}

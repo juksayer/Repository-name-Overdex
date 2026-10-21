@@ -1,0 +1,101 @@
+[
+  {
+    "file": "17-37-25_53.795.wav",
+    "sha256": "a70257c040153406d972a0402ee2c5b8734d1b76fd31b6ac816c5a36a4635bc8",
+    "archive": "2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+    "articleId": "84741c17-b0cb-4a3d-8b75-b3c9222a796f",
+    "secondsAfterGo": 53.795490465,
+    "expectedReference": "Water Gun",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-37-25_54.178.wav",
+    "sha256": "93e1e5d3ebcd74bf7d1612516b9fe4d361fae811bbf7fc462ce76e3fd1730e9e",
+    "archive": "2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+    "articleId": "b8c9fcdc-1af0-4796-b1fb-0f2eeac1588e",
+    "secondsAfterGo": 54.178391772,
+    "expectedReference": "Water Gun",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-37-25_32.205.wav",
+    "sha256": "c72ebc90f66b42234836c43395ee36e9d60055dd9db91bb2f28e5f829d314a94",
+    "archive": "2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+    "articleId": "7f08d05b-b312-45b2-b42a-cf4b7b05a327",
+    "secondsAfterGo": 32.205210771,
+    "expectedReference": null,
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-37-25_18.467.wav",
+    "sha256": "aac9d9b57900c64f6640d197255431b20dc2c47973691bcb97df9b3ba3eb4e67",
+    "archive": "2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+    "articleId": "54d3a51a-4b35-41d4-8365-672a2b11403b",
+    "secondsAfterGo": 18.467117232,
+    "expectedReference": null,
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-37-25_19.043.wav",
+    "sha256": "a4bf720bcc39f13a7c75a299fb9f8bb8657e4e67286daf2566761d7b914d2bc6",
+    "archive": "2026-10-15_17-37-25_f37f914a-99b6-490e-85e4-c6ee83d6ce53.odxmatch.zip",
+    "articleId": "ff2b3014-fbc4-4ffd-b98f-758ce0909516",
+    "secondsAfterGo": 19.042502463,
+    "expectedReference": "Feint Attack",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_36.328.wav",
+    "sha256": "b8248ce90d293baccf36014d095fae8113217472069815ee2e8dd7a417e21edd",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "6586428c-b26b-46cd-a5ee-cc5ddc844c61",
+    "secondsAfterGo": 36.328108848,
+    "expectedReference": "Spark",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_37.392.wav",
+    "sha256": "c0023794f7844b42ac52952d529a7c5eaf7b540ed4ddd2f4bee069deb4da2948",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "abb1565c-3cc8-45f6-ae04-f99758b96d8b",
+    "secondsAfterGo": 37.391777233,
+    "expectedReference": "Spark",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_39.417.wav",
+    "sha256": "fa2284e380f3be3c8398b48b0bb614c995860728aaa4730800f2829f8469e91d",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "dc0d2b8a-7ccf-4d5a-9c4e-2c320ad89bba",
+    "secondsAfterGo": 39.417011618,
+    "expectedReference": "Spark",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_64.662.wav",
+    "sha256": "9a53f540357d128054464f2909b2e29b542801dfa8c106baac6c9e3267e4b3fa",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "43952506-61a7-4713-8d48-df625a47a820",
+    "secondsAfterGo": 64.66218485,
+    "expectedReference": "Thunder Shock",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_84.284.wav",
+    "sha256": "ed323d5b9d0e8a38216dc0cb865cee34e0333aea30afc4f01bbf8132458cfe46",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "d5f68a11-08aa-4c3d-9d15-b9668f5d98e9",
+    "secondsAfterGo": 84.284384543,
+    "expectedReference": "Incinerate",
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  },
+  {
+    "file": "17-41-25_76.994.wav",
+    "sha256": "d1611a839a61d7bbd29eccfe0da302df2d71fb57fd71c11204ac43ed3915c80f",
+    "archive": "2026-10-15_17-41-25_f0a17258-dc8f-43b4-a0e8-557378b225e4.odxmatch.zip",
+    "articleId": "49217ef5-ee67-40f6-a6f6-ac05e1561417",
+    "secondsAfterGo": 76.993993158,
+    "expectedReference": null,
+    "notes": "Regression of spectral separation, not a human-labelled move-use count."
+  }
+]

@@ -1,0 +1,335 @@
+[
+  {
+    "file": "16bc-shields-2-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": null,
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "94de15bc-c250-4d54-92c1-dc265c1dbb18",
+    "sha256": "03416aba2f0ea639bd02e5e9791a409a0883a0054bca12327e94a276f7b754ee"
+  },
+  {
+    "file": "16bc-poke_balls-3-clear.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 3,
+    "expectedCount": 3,
+    "overlayBounds": null,
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "751b47de-54dc-4702-85a6-843e14bedb71",
+    "sha256": "44656d10f92e477e2f3c5b035555be0e856ee82fdeabe2314862227a0f1e20dd"
+  },
+  {
+    "file": "16bc-poke_balls-3-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 3,
+    "expectedCount": 3,
+    "overlayBounds": {
+      "left": -176.4,
+      "top": 17.56749,
+      "right": 81.822266,
+      "bottom": 131.40875
+    },
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "1116291c-7b8e-4b95-9be6-fa419bf5ccc2",
+    "sha256": "d9af7d2319ca1ae1f75af18ccc83625617adf4989827080afca97794a992dfd6"
+  },
+  {
+    "file": "16bc-shields-1-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 1,
+    "expectedCount": 1,
+    "overlayBounds": null,
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "57f9eb31-54db-4253-8c72-d058222f049b",
+    "sha256": "c55c1ecee29d53bb5d86c04a37edda0f6a7f8076474f1454c585156654be8582"
+  },
+  {
+    "file": "16bc-shields-0-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 0,
+    "expectedCount": 0,
+    "overlayBounds": null,
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "cf18d88c-acf2-463c-9255-4edf3e751e7b",
+    "sha256": "76c312bb7fab1716f151a62a520f0d1b11dab25fb185796aa78dd85482752545"
+  },
+  {
+    "file": "16bc-poke_balls-2-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": {
+      "left": -145.91113,
+      "top": 14.945419,
+      "right": 112.3111,
+      "bottom": 215.87833
+    },
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "f89211f6-e251-47ab-838b-b843ea78264d",
+    "sha256": "5c5fb3a4258a35febf87aa5ae4398c02c34d50f6017e8dfed05544a90682f8ff"
+  },
+  {
+    "file": "16bc-poke_balls-1-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": 1,
+    "overlayBounds": {
+      "left": -145.91113,
+      "top": 16.94542,
+      "right": 112.3111,
+      "bottom": 270.1333
+    },
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "a2ddaba1-0728-4c13-8f3d-cc1b36da4476",
+    "sha256": "7e6762bd94ecf205ed43d4e8ec6047338e7c358ed54fedbfa2d4cd59dee8a9f2"
+  },
+  {
+    "file": "16bc-poke_balls-1-covered.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": null,
+    "overlayBounds": {
+      "left": -145.91113,
+      "top": -35.05458,
+      "right": 112.3111,
+      "bottom": 235.55167
+    },
+    "sourceMatchId": "16bc89d9-6fca-4c58-a8c5-07a5dda29f54",
+    "sourceArchiveSha256": "6deb1abf1fee42b4b27dc7ff1c5a229c817827c20d6d4bb742318764f3d0c2b8",
+    "sourceCropArticleId": "f21e0306-5a2f-4a5e-a4ff-bb1a40e20d8a",
+    "sha256": "cebcc261e132f060380c438d01aded7314dfb3d7a50dc4e92ef77e2fb622e567"
+  },
+  {
+    "file": "0561-poke_balls-3-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 3,
+    "expectedCount": 3,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 129.54251
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "cee1f3ae-cc81-48dd-a7f6-b9251c246a63",
+    "sha256": "e329096d7b87135e0c0d409a4eb3cce7a6d9a0a93856687af728bddf174e5427"
+  },
+  {
+    "file": "0561-shields-2-partial.png",
+    "resource": "SHIELDS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": {
+      "left": -69.533325,
+      "top": 15.701248,
+      "right": 188.6889,
+      "bottom": 251.47083
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "5db45833-43e8-43a3-b4b5-13329c10d487",
+    "sha256": "15d5630b92a6389d371b2c8d9a17c6f5ac4c9132c598db777c5a2d4e35ba6e64"
+  },
+  {
+    "file": "0561-shields-2-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": null,
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "6a9087c5-efb3-45fd-a367-bf76c57fd1d3",
+    "sha256": "5c4c495e0d24d73c390c6cddac48add99e47b2ad9e2b43be0f8446f7efe9446d"
+  },
+  {
+    "file": "0561-poke_balls-2-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 235.29666
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "a0407350-4cae-46e6-8824-0b9c65100986",
+    "sha256": "570bdd8c8863a186ef4853bf5dbb3f16a19b45c773129c0b71cf6570ae2fc74a"
+  },
+  {
+    "file": "0561-poke_balls-0-covered.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 0,
+    "expectedCount": null,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": -36.29875,
+      "right": 111.6889,
+      "bottom": 182.05249
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "a738da2f-1984-4d7f-b4dc-250d38e98e21",
+    "sha256": "bcec0d0d13da2a5d32cc939bc4b4eacbf842d31039dc04cbf5e254e2842b5fff"
+  },
+  {
+    "file": "0561-poke_balls-1-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": 1,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 129.54251
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "5a432bc2-35f5-45b8-b8aa-d04ca1bbac78",
+    "sha256": "27fdebfe7525efe8d088cfe1b27615209eb16700c83c4f6b6dd2808b90bc2f30"
+  },
+  {
+    "file": "0561-poke_balls-1-covered.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": null,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": -36.29875,
+      "right": 111.6889,
+      "bottom": 77.54251
+    },
+    "sourceMatchId": "0561cfd3-4be3-430d-9cac-d099d23a206d",
+    "sourceArchiveSha256": "0792dded419cc12b2b7b7e2b39c00be33804a5e507c2d2a76c29e2c2e9928ccb",
+    "sourceCropArticleId": "9a874f83-15a2-4e19-a6f2-e564b3a4e378",
+    "sha256": "81f60436ab332d6f15f1d0810d75e8678994d3a328c72cc6be6a17788575583c"
+  },
+  {
+    "file": "945e-poke_balls-3-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 3,
+    "expectedCount": 3,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 129.54251
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "cff6f0e8-0b58-43a1-96cc-246824503302",
+    "sha256": "a4817e4d05ef62db922f9f9acb19c25714258030da9163f394a2249bc39c610c"
+  },
+  {
+    "file": "945e-shields-2-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": null,
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "fa4e1f65-e601-4947-ae2e-3a3e65a5b3d2",
+    "sha256": "cef0532ac635e1f97ec867f57d4234d4807f300ee5144d162bef54eeb712f867"
+  },
+  {
+    "file": "945e-shields-2-partial.png",
+    "resource": "SHIELDS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": {
+      "left": -69.533325,
+      "top": 15.701248,
+      "right": 188.6889,
+      "bottom": 129.54251
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "09652669-db52-4b1b-a68e-1cde90fcc2e5",
+    "sha256": "c5f2da14db48edfd4a9f5ea60e06fa71c2d821ee4de2f6dad889a628bcbad922"
+  },
+  {
+    "file": "945e-poke_balls-2-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 2,
+    "expectedCount": 2,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 235.29666
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "f3535076-98fc-46ef-a162-e644ed600602",
+    "sha256": "e0a3ac73332234f7b79fe25a56f36b3be6939c7a33a7b4a7d6f0bd33d6f96450"
+  },
+  {
+    "file": "945e-shields-1-clear.png",
+    "resource": "SHIELDS",
+    "recordedCount": 1,
+    "expectedCount": 1,
+    "overlayBounds": null,
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "6476f158-eb40-4b02-bff8-cf4ea429b504",
+    "sha256": "3c55c86ca187bad44f733a08dfb0422cfc9a4429bf30088d6f93e5714909117b"
+  },
+  {
+    "file": "945e-poke_balls-1-partial.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": 1,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": 15.701248,
+      "right": 111.6889,
+      "bottom": 236.54083
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "1ea3faeb-f6ac-40b1-bd1e-eaedf2b521e4",
+    "sha256": "195be598431ba1f835c6aa507f36998e6d24862a2dbc26aeee8120078636cb9d"
+  },
+  {
+    "file": "945e-poke_balls-0-covered.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 0,
+    "expectedCount": null,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": -36.29875,
+      "right": 111.6889,
+      "bottom": 218.1333
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "07087165-e05d-4d2e-b4bd-60ae9f9a5e95",
+    "sha256": "cca66eff145ecc9fc24c12a6386896f1289b60200d100bbc5f0cccdc3f85abd2"
+  },
+  {
+    "file": "945e-poke_balls-1-covered.png",
+    "resource": "POKE_BALLS",
+    "recordedCount": 1,
+    "expectedCount": null,
+    "overlayBounds": {
+      "left": -146.53333,
+      "top": -36.29875,
+      "right": 111.6889,
+      "bottom": 77.54251
+    },
+    "sourceMatchId": "945e6a6a-3deb-4b50-9897-64ea40df1202",
+    "sourceArchiveSha256": "830dddbd95e354d120d4f59b0a424c49b533e0ed39a4110fb63d34a8f6900dc8",
+    "sourceCropArticleId": "6f8be681-4177-4127-a35a-7151da28ae00",
+    "sha256": "7525dfa634f940a73d596282a85316ba1dda18edcab3f6c731dab644cb51dfe6"
+  }
+]

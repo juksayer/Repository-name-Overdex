@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#214638">
+  <meta name="description" content="A small, keypad-friendly Pokédex from Overdex.">
+  <title>Overdex Pocket</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="instrument" id="instrument">
+    <header class="brand"><span class="power-dot" aria-hidden="true"></span><strong>OVERDEX</strong><span class="edition">POCKET<br>FIELD INDEX</span></header>
+    <main id="screen">
+      <section id="list-view" class="view list-view" aria-label="Pokédex">
+        <div class="section-line"><span id="list-title">NATIONAL INDEX</span><span id="list-count">LOADING</span></div>
+        <div id="list-items" class="entries" role="listbox" aria-label="Pokémon" tabindex="0"></div>
+        <div class="list-position"><span id="list-position">Preparing your field guide…</span><span>◂ ▸ PAGE</span></div>
+      </section>
+      <section id="detail-view" class="view detail-view" aria-label="Pokémon details" hidden>
+        <div class="section-line"><span id="detail-number"></span><span id="detail-region"></span><span id="detail-star" aria-label="Saved favorite"></span></div>
+        <h1 id="detail-name"></h1>
+        <div id="detail-types" class="type-badges"></div>
+        <div id="portrait" class="portrait"><div class="sprite-platform" aria-hidden="true"></div><img id="detail-sprite" width="144" height="144" alt=""><span id="sprite-missing" hidden>Sprite unavailable</span></div>
+        <div id="detail-genus" class="genus"></div>
+        <div class="stats"><div class="stats-label">POKÉMON GO · BASE STATS</div><div id="stat-values" class="stat-values"></div></div>
+        <div class="detail-hint">◂ PREVIOUS <span>•</span> NEXT ▸</div>
+      </section>
+      <section id="info-view" class="view info-view" aria-label="Pokédex entry" hidden>
+        <div class="section-line"><span id="info-number"></span><span>FIELD GUIDE</span></div>
+        <div id="info-scroll" class="info-scroll" tabindex="0">
+          <h1 id="info-name"></h1><p id="info-genus" class="entry-genus"></p>
+          <p id="info-description" class="entry-description"></p>
+          <div class="reference-note"><h2>Reference</h2><p id="info-form"></p><p id="info-date"></p><p id="info-release"></p></div>
+          <p class="credits">An Overdex companion. Pokémon and sprites © their respective owners.</p>
+        </div>
+        <div class="detail-hint">▴ ▾ SCROLL</div>
+      </section>
+      <section id="search-view" class="view search-view" aria-label="Search Pokédex" hidden>
+        <label for="search-input" class="section-line">FIND A POKÉMON</label>
+        <input id="search-input" type="text" placeholder="Name or number" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="60">
+        <div class="search-caption"><span id="search-count"></span><span>▾ RESULTS</span></div>
+        <div id="search-items" class="entries" role="listbox" aria-label="Search results" tabindex="0"></div>
+      </section>
+      <p id="load-error" class="empty-state" hidden>The field guide could not load. Please reopen this page.</p>
+      <noscript>This Pokédex needs JavaScript enabled in your browser.</noscript>
+    </main>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <footer class="softkeys" aria-label="Phone softkeys"><button id="soft-left" type="button">FIND</button><button id="soft-center" type="button">OPEN</button><button id="soft-right" type="button">SAVED</button></footer>
+  </div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

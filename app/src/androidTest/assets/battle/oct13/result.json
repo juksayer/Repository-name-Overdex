@@ -1,0 +1,48 @@
+{
+  "archive": "2026-10-13_12-44-46.odxmatch.zip",
+  "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+  "reading": {
+    "articleId": "3cf25d35-5289-465d-ac74-2d65223a3757",
+    "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+    "perceivedAt": 1791913469694,
+    "recordedAt": 1791913486672,
+    "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+    "payload": {
+      "kind": "raw_text",
+      "value": "YOU WIN!"
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3730,
+    "evidenceReferences": [
+      "e6116fbf-e788-4ba3-8051-c6a006aef35f"
+    ],
+    "monotonicTimeNanos": 1881258331803
+  },
+  "crop": {
+    "articleId": "e6116fbf-e788-4ba3-8051-c6a006aef35f",
+    "matchId": "0c8ede98-945a-4d74-a47b-cb4bbfcbde30",
+    "perceivedAt": 1791913469694,
+    "recordedAt": 1791913469897,
+    "sourceId": "MATCH_OUTCOME_CROP_CAPTURE",
+    "payload": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/f560ae207e077e9e193260655b13d27cf35ac323b8b70c3362beb4e407cf019c.png",
+      "sha256": "f560ae207e077e9e193260655b13d27cf35ac323b8b70c3362beb4e407cf019c",
+      "byteCount": 156509,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888
+    },
+    "predecessorIds": [],
+    "confidence": null,
+    "sequenceNumber": 3218,
+    "evidenceReferences": [],
+    "monotonicTimeNanos": 1881258331803
+  }
+}

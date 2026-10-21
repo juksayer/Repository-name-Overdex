@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-18",
+  "feature": "Stereo playback audio capture and independent mono recognition projection",
+  "apk_sha256": "29b1cf19ff87ed7cb5ea22f2829aa767ce72664904da54acf694d51bd8304e6f",
+  "capture": {
+    "preferred": "48 kHz PCM-16 stereo from Pokemon GO UID",
+    "fallback_order": [
+      "mono Pokemon GO playback",
+      "existing mono microphone fallback"
+    ],
+    "cue_pre_ms": 500,
+    "cue_post_ms": 700,
+    "retained_ram_history_seconds": 8,
+    "read_ms": 20,
+    "original_channels_preserved": true,
+    "recognition": "Existing spectral readers downmix to mono8k; cry reader explicitly downmixes without altering source.",
+    "status_metadata": [
+      "captureSource",
+      "state",
+      "sampleRateHz",
+      "channelCount"
+    ]
+  },
+  "unit_tests": {
+    "tests": 903,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "unit_test_note": "Initial concurrent build/test run timed out in the existing ResultMusicWitnessTest. It passed alone and the subsequent full suite passed; no music-test code was changed.",
+  "python_inspector_tests": {
+    "passed": 4
+  },
+  "older_archive_baseline": {
+    "match_id": "d4ae7287-9850-43fb-bb48-3b388ece7a95",
+    "verified_audio_artifacts": 34,
+    "all_mono": true
+  },
+  "devices": {
+    "moondrop": {
+      "calibration_count": 14,
+      "calibration_unchanged": true,
+      "changed_calibrations": [],
+      "archive_count": 3,
+      "archives_unchanged": true,
+      "installed_apk_sha256": "29b1cf19ff87ed7cb5ea22f2829aa767ce72664904da54acf694d51bd8304e6f",
+      "expected_apk_matches": true,
+      "launch_pid": "24180",
+      "active_service": false,
+      "stereo_preservation_device_test": "passed",
+      "recognition_example_ms": 198,
+      "recognition_example_note": "One synthetic stereo fixture averaged to the unchanged recorded Spark sample; not a live-game benchmark.",
+      "device": {
+        "ro.product.model": "MD-PH-001",
+        "ro.build.version.release": "14",
+        "ro.build.version.sdk": "34",
+        "serial": "MDPH00124112500414"
+      }
+    },
+    "pixel": {
+      "calibration_count": 4,
+      "calibration_unchanged": true,
+      "changed_calibrations": [],
+      "archive_count": 3,
+      "archives_unchanged": true,
+      "installed_apk_sha256": "29b1cf19ff87ed7cb5ea22f2829aa767ce72664904da54acf694d51bd8304e6f",
+      "expected_apk_matches": true,
+      "launch_pid": "1875",
+      "active_service": false,
+      "stereo_preservation_device_test": "passed",
+      "recognition_example_ms": 122,
+      "recognition_example_note": "One synthetic stereo fixture averaged to the unchanged recorded Spark sample; not a live-game benchmark.",
+      "device": {
+        "ro.product.model": "Pixel 4",
+        "ro.build.version.release": "13",
+        "ro.build.version.sdk": "33",
+        "serial": "99261FFAZ0017J"
+      }
+    }
+  },
+  "live_acceptance_pending": [
+    "Actual Pokemon GO channel differences on each device",
+    "Effect of Android Mono Audio on internal playback capture",
+    "Whether channel information improves combatant attribution"
+  ],
+  "first_match_protocol": {
+    "settings": "Both phones: Pokemon GO SFX on, music off, Android Mono Audio off; keep volume/output route consistent.",
+    "sequence": [
+      "Start observation on both phones before the private battle.",
+      "Let opening cries and countdown finish.",
+      "Both idle for about 5 seconds.",
+      "Moondrop attacks alone for about 10 seconds.",
+      "Both idle for about 5 seconds.",
+      "Pixel attacks alone for about 10 seconds.",
+      "No charged moves during those blocks; finish normally afterward."
+    ],
+    "if_early_faint": "Note the switch; do not treat the interval as a single uninterrupted combatant.",
+    "second_pass": "After reviewing this baseline, repeat the same setup with Android Mono Audio on. Do not assume that setting changes internal capture."
+  }
+}

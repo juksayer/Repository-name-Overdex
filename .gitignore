@@ -20,3 +20,8 @@ local.properties
 /.kotlin/
 /.artifacts/
 apikeys.properties
+
+# Generated Python caches and local device captures. Keep curated test fixtures.
+__pycache__/
+*.py[cod]
+/docs/verification/evidence/

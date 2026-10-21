@@ -1,5 +1,10 @@
 # Overdex Roadmap
 
+> **Historical milestone plan.** Reviewed October 20, 2026: several "Next"
+> items below now exist, including teams, binders, archives, and replay.
+> Use the [current feature status](../docs/reference/current-feature-status.md)
+> for verified remaining work. The original plan is preserved below.
+
 > **Build first. Test what exists. Show that it happened. One feature.
 > One commit. One test.**
 

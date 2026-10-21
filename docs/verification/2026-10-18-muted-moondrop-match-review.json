@@ -1,0 +1,572 @@
+{
+  "review_date": "2026-10-18",
+  "devices": {
+    "moondrop": "MDPH00124112500414",
+    "pixel_4": "99261FFAZ0017J"
+  },
+  "user_report": {
+    "media_volume": "muted; game sound settings were not reported off",
+    "attack_pattern": "attacking continuously in all three Moondrop matches",
+    "animation_caveat": "Partial Fast Move animations can restart repeatedly; animation starts are not a ground-truth completed-attack count."
+  },
+  "recording_apk_sha256": "826f117573760631bdee140203d83e7042bfe1dbe950f8021b2ca87eaea83f43",
+  "archives": [
+    {
+      "name": "2026-10-18_20-47-30_761754fa-37df-491d-b22a-2c86f4eb8203.odxmatch.zip",
+      "sha256": "0a1434411bcf1183f5f5d4091fc9965af4e6a9b117f2ee7823aef26ce4cbdd03",
+      "bytes": 11243930,
+      "articles": 2364,
+      "verified_artifacts": 384,
+      "duration_s": 105.458,
+      "validation": "ZIP CRC and every manifest artifact hash/size verified; original file unchanged",
+      "results": [
+        "WIN"
+      ],
+      "first_published_species": {
+        "OPPONENT:Sneasel": {
+          "source_time_s": 18.277,
+          "publication_delay_ms": 1259,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Greninja": {
+          "source_time_s": 19.607,
+          "publication_delay_ms": 1503,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sealeo": {
+          "source_time_s": 39.417,
+          "publication_delay_ms": 1956,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "PLAYER:Lucario": {
+          "source_time_s": 58.684,
+          "publication_delay_ms": 1156,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Vaporeon": {
+          "source_time_s": 65.353,
+          "publication_delay_ms": 1160,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "faints": [
+        {
+          "source_time_s": 39.417,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "speciesId": 215,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "source_time_s": 64.573,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sealeo",
+          "speciesId": 364,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "recorded_fast_uses_not_ground_truth": {
+        "PLAYER:Greninja": 17,
+        "OPPONENT:Sneasel": 6,
+        "OPPONENT:Sealeo": 9,
+        "PLAYER:Lucario": 7,
+        "OPPONENT:Vaporeon": 1
+      },
+      "publication_latency": {
+        "active_hp_bar_measured": {
+          "n": 484,
+          "median_ms": 256.5,
+          "p90_ms": 1645,
+          "max_ms": 2476
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 19,
+          "median_ms": 1589,
+          "p90_ms": 4483,
+          "max_ms": 8584
+        },
+        "fast_move_use_observed": {
+          "n": 40,
+          "median_ms": 2184.5,
+          "p90_ms": 3445,
+          "max_ms": 4246
+        },
+        "fast_move_sound_measured": {
+          "n": 40,
+          "median_ms": 4784.5,
+          "p90_ms": 9424,
+          "max_ms": 11153
+        },
+        "charge_move_used_announced": {
+          "n": 4,
+          "median_ms": 1521.0,
+          "p90_ms": 1947,
+          "max_ms": 1947
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1853,
+          "p90_ms": 1853,
+          "max_ms": 1853
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 54,
+          "median_ms": 1908.0,
+          "p90_ms": 4244,
+          "max_ms": 6349
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 87,
+          "median_ms": 1963,
+          "p90_ms": 4134,
+          "max_ms": 5974
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 1330.0,
+          "p90_ms": 4483,
+          "max_ms": 4483
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 1595.5,
+          "p90_ms": 4342,
+          "max_ms": 4342
+        }
+      },
+      "audio": {
+        "wav_count": 49,
+        "nonzero_wav_count": 49,
+        "median_rms": 0.08160703846014755,
+        "peak": 0.5845947265625,
+        "sound_measurements": 40,
+        "audible_measurements": 38,
+        "accepted_reference_windows": 1,
+        "accepted_reference_names": [
+          "Water Gun"
+        ],
+        "side_proven_reference_windows": 0,
+        "interpretation": "Internal PCM remained non-silent while media volume was muted. A cue side and an accepted sound template do not prove the attacking side."
+      },
+      "match_started_count": 1,
+      "decision_timer_count": 0,
+      "attack_incoming_count": 0,
+      "visual_capture_gaps": 0
+    },
+    {
+      "name": "2026-10-18_22-15-36_477d6677-1afb-4917-b42e-f00b29f7112d.odxmatch.zip",
+      "sha256": "4455591e2176abafeddc8b6654ae53881d723bdb4efcafd75d960513915de914",
+      "bytes": 5956455,
+      "articles": 1718,
+      "verified_artifacts": 285,
+      "duration_s": 88.45,
+      "validation": "ZIP CRC and every manifest artifact hash/size verified; original file unchanged",
+      "results": [
+        "WIN"
+      ],
+      "first_published_species": {
+        "PLAYER:Abomasnow": {
+          "source_time_s": 19.805,
+          "publication_delay_ms": 2330,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sneasel": {
+          "source_time_s": 19.805,
+          "publication_delay_ms": 3486,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sealeo": {
+          "source_time_s": 41.398,
+          "publication_delay_ms": 1702,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Vaporeon": {
+          "source_time_s": 64.063,
+          "publication_delay_ms": 1417,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "faints": [
+        {
+          "source_time_s": 40.307,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "speciesId": 215,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "source_time_s": 59.861,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sealeo",
+          "speciesId": 364,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "recorded_fast_uses_not_ground_truth": {
+        "OPPONENT:Sneasel": 6,
+        "PLAYER:Abomasnow": 15,
+        "OPPONENT:Sealeo": 3,
+        "OPPONENT:Vaporeon": 3
+      },
+      "publication_latency": {
+        "active_hp_bar_measured": {
+          "n": 328,
+          "median_ms": 258.5,
+          "p90_ms": 521,
+          "max_ms": 1133
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 13,
+          "median_ms": 1702,
+          "p90_ms": 3486,
+          "max_ms": 4328
+        },
+        "fast_move_use_observed": {
+          "n": 27,
+          "median_ms": 1910,
+          "p90_ms": 2115,
+          "max_ms": 2373
+        },
+        "fast_move_sound_measured": {
+          "n": 27,
+          "median_ms": 4972,
+          "p90_ms": 6951,
+          "max_ms": 7442
+        },
+        "charge_move_used_announced": {
+          "n": 3,
+          "median_ms": 2227,
+          "p90_ms": 2400,
+          "max_ms": 2400
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1650,
+          "p90_ms": 1650,
+          "max_ms": 1650
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 41,
+          "median_ms": 2336,
+          "p90_ms": 3959,
+          "max_ms": 5143
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 70,
+          "median_ms": 2178.5,
+          "p90_ms": 3932,
+          "max_ms": 5045
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 6,
+          "median_ms": 1473.5,
+          "p90_ms": 3486,
+          "max_ms": 3486
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 6,
+          "median_ms": 1443.5,
+          "p90_ms": 2330,
+          "max_ms": 2330
+        }
+      },
+      "audio": {
+        "wav_count": 32,
+        "nonzero_wav_count": 31,
+        "median_rms": 0.05008443515636715,
+        "peak": 0.481842041015625,
+        "sound_measurements": 27,
+        "audible_measurements": 25,
+        "accepted_reference_windows": 2,
+        "accepted_reference_names": [
+          "Water Gun"
+        ],
+        "side_proven_reference_windows": 0,
+        "interpretation": "Internal PCM remained non-silent while media volume was muted. A cue side and an accepted sound template do not prove the attacking side."
+      },
+      "match_started_count": 0,
+      "decision_timer_count": 0,
+      "attack_incoming_count": 0,
+      "visual_capture_gaps": 0
+    },
+    {
+      "name": "2026-10-18_22-19-33_d4ae7287-9850-43fb-bb48-3b388ece7a95.odxmatch.zip",
+      "sha256": "54393326b18b5452361c189e8ef029631a4816698e8d1642bf19698e44e6ecc7",
+      "bytes": 8798585,
+      "articles": 2219,
+      "verified_artifacts": 407,
+      "duration_s": 90.825,
+      "validation": "ZIP CRC and every manifest artifact hash/size verified; original file unchanged",
+      "results": [
+        "WIN"
+      ],
+      "first_published_species": {
+        "PLAYER:Abomasnow": {
+          "source_time_s": 16.682,
+          "publication_delay_ms": 859,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Combusken": {
+          "source_time_s": 21.413,
+          "publication_delay_ms": 839,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "source_time_s": 24.791,
+          "publication_delay_ms": 867,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Magcargo": {
+          "source_time_s": 42.872,
+          "publication_delay_ms": 1803,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Flareon": {
+          "source_time_s": 63.683,
+          "publication_delay_ms": 2085,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        }
+      },
+      "faints": [
+        {
+          "source_time_s": 40.78,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "speciesId": 256,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "source_time_s": 62.199,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Magcargo",
+          "speciesId": 219,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "recorded_fast_uses_not_ground_truth": {
+        "PLAYER:Abomasnow": 2,
+        "OPPONENT:Combusken": 7,
+        "PLAYER:Camerupt": 8,
+        "OPPONENT:Magcargo": 5,
+        "OPPONENT:Flareon": 1
+      },
+      "publication_latency": {
+        "active_hp_bar_measured": {
+          "n": 485,
+          "median_ms": 191,
+          "p90_ms": 513,
+          "max_ms": 748
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 16,
+          "median_ms": 1314.5,
+          "p90_ms": 2085,
+          "max_ms": 3178
+        },
+        "fast_move_use_observed": {
+          "n": 23,
+          "median_ms": 1965,
+          "p90_ms": 2603,
+          "max_ms": 2770
+        },
+        "fast_move_sound_measured": {
+          "n": 23,
+          "median_ms": 3094,
+          "p90_ms": 4184,
+          "max_ms": 5000
+        },
+        "charge_move_used_announced": {
+          "n": 3,
+          "median_ms": 1191,
+          "p90_ms": 1364,
+          "max_ms": 1364
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1392,
+          "p90_ms": 1392,
+          "max_ms": 1392
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 59,
+          "median_ms": 1493,
+          "p90_ms": 3173,
+          "max_ms": 4964
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 94,
+          "median_ms": 1455.5,
+          "p90_ms": 3075,
+          "max_ms": 4953
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 6,
+          "median_ms": 1140.0,
+          "p90_ms": 1803,
+          "max_ms": 1803
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 7,
+          "median_ms": 1351,
+          "p90_ms": 1632,
+          "max_ms": 1632
+        }
+      },
+      "audio": {
+        "wav_count": 34,
+        "nonzero_wav_count": 33,
+        "median_rms": 0.044446238401081,
+        "peak": 0.441162109375,
+        "sound_measurements": 23,
+        "audible_measurements": 22,
+        "accepted_reference_windows": 12,
+        "accepted_reference_names": [
+          "Ember",
+          "Incinerate"
+        ],
+        "side_proven_reference_windows": 0,
+        "interpretation": "Internal PCM remained non-silent while media volume was muted. A cue side and an accepted sound template do not prove the attacking side."
+      },
+      "match_started_count": 1,
+      "decision_timer_count": 0,
+      "attack_incoming_count": 0,
+      "visual_capture_gaps": 0
+    }
+  ],
+  "confirmed_fix": {
+    "issue": "Six recipient HP-loss steps and six border flashes in Greninja opening were split into eight canonical Fast Move uses.",
+    "evidence_window_source_seconds": [
+      20.771,
+      28.426
+    ],
+    "causes": [
+      "Water Shuriken loss-to-flash gap reaches 792 ms, exceeding the prior 675 ms matching window.",
+      "Unrelated readers advance capture time while a slow HP reader is still publishing earlier evidence; capture age alone could expire a newly received impact."
+    ],
+    "change": [
+      "For a trusted move identity, allow phase separation up to 60 percent of duration, bounded to 450-1000 ms.",
+      "Require both the source-time deadline and 1200 ms of receipt time before expiring pending impact evidence."
+    ],
+    "regression": "Original recorded timestamps, arrival order, IDs and payloads now yield six player uses; every loss and its corresponding flash are retained as predecessors.",
+    "preserved_rules": [
+      "Distinct same-kind impact readings remain separate.",
+      "Unknown duration or a higher-energy tie assumption does not widen fusion.",
+      "A 0.5-second Water Gun sequence stays separate.",
+      "Sprite motion, unclassified visual effects and charge-button shading cannot establish a use alone.",
+      "No archived witness or timestamp is rewritten; the fix affects new live accounting."
+    ],
+    "fixture": {
+      "path": "app/src/test/resources/battle/2026-10-18-greninja-opening.json",
+      "articles": 748,
+      "sha256": "48a8f82a6951012ad697a58233738f0f1f4ba6f18630a4b16e46ccc701ce8947",
+      "selection": "Unmodified prefix through 30.5 seconds of article receipt from the original 20:47:30 archive."
+    }
+  },
+  "pixel_review": [
+    {
+      "name": "2026-10-18_20-03-27_8dcd4c44-a5fa-4c32-8ff3-08f34f2df1e7.odxmatch.zip",
+      "sha256": "ab836c4e6ee8d128477ff47c69b1eaa1f32e09bc34a65b5f93306161e6b35706",
+      "bytes": 1166436,
+      "articles": 300,
+      "duration_s": 1205.067,
+      "species": [],
+      "counts": {
+        "match_started": 0,
+        "match_ended": 0,
+        "fast_move_use_observed": 0,
+        "active_hp_bar_damage_tick_measured": 0,
+        "active_hp_bar_measured": 0,
+        "charge_move_used_announced": 0,
+        "countdown_glyph_witnessed": 0,
+        "battle_overlay_opened": 1
+      },
+      "results": [],
+      "verified_artifacts": 30
+    },
+    {
+      "name": "2026-10-18_20-04-21_9853f194-e0a9-4002-af96-0d4f50bf11b1.odxmatch.zip",
+      "sha256": "fbc38a45ae3d731f27baff173cce16fd369a39e2b44f8c3dc2d8232076535aa3",
+      "bytes": 51375033,
+      "articles": 7756,
+      "duration_s": 472.836,
+      "species": [
+        "OPPONENT:Sneasel",
+        "PLAYER:Abomasnow"
+      ],
+      "counts": {
+        "match_started": 1,
+        "match_ended": 0,
+        "fast_move_use_observed": 9,
+        "active_hp_bar_damage_tick_measured": 8,
+        "active_hp_bar_measured": 413,
+        "charge_move_used_announced": 1,
+        "countdown_glyph_witnessed": 3,
+        "battle_overlay_opened": 1
+      },
+      "results": [],
+      "verified_artifacts": 2228
+    }
+  ],
+  "pixel_counterparts": {
+    "latest_recording": "2026-10-18_20-04-21_9853f194-e0a9-4002-af96-0d4f50bf11b1.odxmatch.zip",
+    "newer_than_previous_install": false,
+    "latest_session_moondrop_counterpart_found": false,
+    "basis": "Latest Pixel session is 20:04 (Abomasnow/Sneasel); Moondrop records jump from paired 19:41 to 20:47. Earlier paired 19:02 and 19:41 records remain present."
+  },
+  "remaining_boundaries": [
+    "No player faint or AttackIncoming testimony is present in these three Moondrop matches, so they do not validate the live shield/replacement numeral detector.",
+    "The 22:15 recording has combat and WIN but no observed GO/MatchStarted.",
+    "Species publication still takes roughly 1-3.5 seconds for some first identities; this change does not fix OCR/custody scheduling.",
+    "Accepted audio reference windows still have unknown attackingSide; shared or overlapping sounds must not be assigned from the listening cue alone.",
+    "Some same-family pulse intervals are shorter than a known move duration. No raw pulse is deleted merely to fit the expected cadence; further pixel evidence is required.",
+    "Continuous attacking does not establish exact landed-attack counts. A new known-pattern battle is still needed to assess live accuracy after this fix."
+  ],
+  "validation": {
+    "tests": 894,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "debug_build": "passed",
+    "new_apk_sha256": "a65cd3431f86adfdbe264725f737cc7a8ff7f6039951ca6469f55ac353a724a2"
+  },
+  "device_install_verification": {
+    "moondrop": {
+      "serial": "MDPH00124112500414",
+      "apk_sha256": "a65cd3431f86adfdbe264725f737cc7a8ff7f6039951ca6469f55ac353a724a2",
+      "installed_apk_matches_build": true,
+      "process_running": true,
+      "fatal_log_lines": [],
+      "calibration_files_checked": 12,
+      "calibrations_unchanged": true,
+      "changed_calibration_files": [],
+      "reviewed_archives_unchanged": {
+        "2026-10-18_20-47-30_761754fa-37df-491d-b22a-2c86f4eb8203.odxmatch.zip": true,
+        "2026-10-18_22-15-36_477d6677-1afb-4917-b42e-f00b29f7112d.odxmatch.zip": true,
+        "2026-10-18_22-19-33_d4ae7287-9850-43fb-bb48-3b388ece7a95.odxmatch.zip": true
+      }
+    },
+    "pixel": {
+      "serial": "99261FFAZ0017J",
+      "apk_sha256": "a65cd3431f86adfdbe264725f737cc7a8ff7f6039951ca6469f55ac353a724a2",
+      "installed_apk_matches_build": true,
+      "process_running": true,
+      "fatal_log_lines": [],
+      "calibration_files_checked": 3,
+      "calibrations_unchanged": true,
+      "changed_calibration_files": [],
+      "reviewed_archives_unchanged": {
+        "2026-10-18_20-03-27_8dcd4c44-a5fa-4c32-8ff3-08f34f2df1e7.odxmatch.zip": true,
+        "2026-10-18_20-04-21_9853f194-e0a9-4002-af96-0d4f50bf11b1.odxmatch.zip": true
+      }
+    }
+  }
+}

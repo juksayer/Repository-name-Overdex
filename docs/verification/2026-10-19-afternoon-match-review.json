@@ -1,0 +1,1768 @@
+{
+  "reviewDate": "2026-10-19",
+  "device": "Moondrop MD_PH_001 / MDPH00124112500414",
+  "sourceDirectory": "files/match_archives",
+  "workingCopies": "/tmp/overdex-review-20261019c",
+  "archiveIntegrity": "All five ZIPs verified with inspect_odxmatch.py --verify-artifacts; originals untouched.",
+  "userGroundTruth": {
+    "164e733b-57e0-4be0-8eaf-a3cb1ffc7966": "User confirmed all player Pokemon deliberately idle.",
+    "gourgeist": "User reports XL size label. Original team configuration says Gourgeist (Average), with no ownedPokemonId; no saved card or form was rewritten."
+  },
+  "limitations": [
+    "Canonical use counts below are recorded observations, not independently measured ground truth.",
+    "Publication delay measures recordedAt minus perceivedAt, not delay from first appearance on the physical screen.",
+    "A missing compact full-frame entry is not a missing capture.",
+    "No controlled two-phone battle was performed."
+  ],
+  "matches": [
+    {
+      "archive": "2026-10-19_11-02-46_ad798278-3980-4718-a79c-11ccd47f0481.odxmatch.zip",
+      "sha256": "889ca40f9e19768158078630f71fbc08d07afa8bc622f8e1a31db98a85401e7e",
+      "matchId": "ad798278-3980-4718-a79c-11ccd47f0481",
+      "bytes": 7506718,
+      "articles": 1208,
+      "durationSeconds": 81.14,
+      "result": [
+        {
+          "at": 78.111,
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "start": [
+        {
+          "at": 16.752,
+          "kind": "match_started"
+        }
+      ],
+      "firstSpecies": {
+        "PLAYER:Abomasnow": {
+          "at": 17.903,
+          "publicationDelayMs": 2404,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sneasel": {
+          "at": 19.17,
+          "publicationDelayMs": 1527,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "at": 25.724,
+          "publicationDelayMs": 2219,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sealeo": {
+          "at": 40.07,
+          "publicationDelayMs": 2159,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Vaporeon": {
+          "at": 56.281,
+          "publicationDelayMs": 1434,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recordedFastMoveUses": {
+        "OPPONENT:None": 2,
+        "OPPONENT:Sneasel": 3,
+        "PLAYER:Abomasnow": 6,
+        "PLAYER:Camerupt": 4,
+        "OPPONENT:Sealeo": 2,
+        "OPPONENT:Vaporeon": 2
+      },
+      "identities": [
+        {
+          "at": 17.903,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 25.724,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 56.281,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Vaporeon",
+          "moveName": "Water Gun",
+          "moveDurationNanos": 500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "ACTIVE_SPECIES_UNIQUE_FAST_MOVE_REFERENCE_KNOWLEDGE"
+        }
+      ],
+      "faints": [
+        {
+          "at": 40.249,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "speciesId": 215,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+        },
+        {
+          "at": 53.619,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sealeo",
+          "speciesId": 364,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at": 69.436,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Vaporeon",
+          "speciesId": 134,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "chargedMoves": [
+        {
+          "at": 51.814,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Rock Tomb",
+          "energyCost": 50,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at": 66.701,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Earth Power",
+          "energyCost": 50,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "labels": [
+        {
+          "at": 17.427,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 46.95,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 49.956,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 52.102,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 52.102,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 75.012,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        }
+      ],
+      "chargedButtonEffectiveness": 0,
+      "generatedEnergyBySide": {
+        "PLAYER": 128,
+        "OPPONENT": 9
+      },
+      "audio": {
+        "wavCount": 22,
+        "nonSilentWavs": 22,
+        "formats": [
+          [
+            8000,
+            1
+          ],
+          [
+            48000,
+            2
+          ]
+        ],
+        "maxRmsByChannel": [
+          0.13631,
+          0.14247
+        ]
+      },
+      "payloadCounts": {
+        "match_record_started": 1,
+        "player_team_slot_configured": 3,
+        "witness_operating": 282,
+        "audio_input_status": 3,
+        "visual_capture_gap": 1,
+        "battle_overlay_opened": 1,
+        "species_check_measured": 77,
+        "device_motion_pulse_measured": 81,
+        "crop_captured": 147,
+        "raw_text": 127,
+        "player_charge_move_energy_fill_increased": 18,
+        "player_charge_move_energy_fill_cadence_measured": 8,
+        "countdown_glyph_witnessed": 1,
+        "match_started": 1,
+        "audio_captured": 24,
+        "active_hp_bar_measured": 237,
+        "hp_bar_border_pulse": 24,
+        "player_inactive_species_sprite_fingerprint_measured": 13,
+        "player_charge_move_label_read": 6,
+        "player_inactive_hp_bar_measured": 4,
+        "active_hp_bar_damage_tick_measured": 16,
+        "battle_cry_candidates_measured": 2,
+        "active_pokemon_species_witnessed": 8,
+        "player_battle_information_checked": 2,
+        "fast_move_identified": 3,
+        "active_hp_bar_border_cadence_measured": 4,
+        "fast_move_use_observed": 19,
+        "player_poke_ball_count_measured": 16,
+        "opponent_battle_resource_count_measured": 18,
+        "player_shield_count_measured": 1,
+        "fast_move_energy_derived": 13,
+        "fast_move_sound_measured": 19,
+        "fast_move_effectiveness_witnessed": 2,
+        "fast_move_recipient_visual_artifact_measured": 3,
+        "active_hp_bar_motion_cadence_measured": 3,
+        "pokemon_identified": 1,
+        "active_pokemon_fainted_witnessed": 3,
+        "get_ready_witnessed": 2,
+        "charge_move_used_announced": 2,
+        "charge_move_qte_vibration_pattern_inferred": 2,
+        "stat_change_sound_checked": 4,
+        "charged_move_energy_spent": 2,
+        "fast_move_recipient_visual_cadence_measured": 1,
+        "match_result_music_measured": 1,
+        "match_ended": 1,
+        "match_result_music_compared": 1
+      }
+    },
+    {
+      "archive": "2026-10-19_11-06-24_1d0fe035-01d4-400d-a58b-db4d87eb18df.odxmatch.zip",
+      "sha256": "c4b1e8139527283884824aba0cf1b895723f64aa4b7bf7a3ac2af151cf2edcf9",
+      "matchId": "1d0fe035-01d4-400d-a58b-db4d87eb18df",
+      "bytes": 17073749,
+      "articles": 2816,
+      "durationSeconds": 129.859,
+      "result": [
+        {
+          "at": 128.156,
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "start": [],
+      "firstSpecies": {
+        "PLAYER:Abomasnow": {
+          "at": 16.637,
+          "publicationDelayMs": 1917,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Combusken": {
+          "at": 20.629,
+          "publicationDelayMs": 1088,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Magcargo": {
+          "at": 50.4,
+          "publicationDelayMs": 2108,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "PLAYER:Gourgeist": {
+          "at": 62.646,
+          "publicationDelayMs": 1575,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Flareon": {
+          "at": 104.785,
+          "publicationDelayMs": 782,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "at": 106.043,
+          "publicationDelayMs": 1052,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recordedFastMoveUses": {
+        "OPPONENT:Combusken": 6,
+        "PLAYER:Abomasnow": 16,
+        "OPPONENT:Magcargo": 4,
+        "PLAYER:Gourgeist": 7,
+        "PLAYER:Camerupt": 3,
+        "OPPONENT:Flareon": 3
+      },
+      "identities": [
+        {
+          "at": 16.637,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 24.311,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1017211500,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 56.258,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1113125500,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS"
+        },
+        {
+          "at": 56.258,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1073825846,
+          "cadenceSampleCount": 3,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+BORDER_PULSE+EFFECTIVENESS"
+        },
+        {
+          "at": 57.275,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1016934462,
+          "cadenceSampleCount": 5,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+BORDER_PULSE+EFFECTIVENESS+OBSERVED_USES"
+        },
+        {
+          "at": 62.646,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 69.715,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": 2605630730,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 106.043,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 113.071,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Flareon",
+          "moveName": "Fire Spin",
+          "moveDurationNanos": 1500000000,
+          "observedMedianIntervalNanos": 1500221230,
+          "cadenceSampleCount": 2,
+          "basis": "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION"
+        },
+        {
+          "at": 113.78,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": 2513061807,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_EFFECTIVENESS"
+        },
+        {
+          "at": 113.78,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Flareon",
+          "moveName": "Fire Spin",
+          "moveDurationNanos": 1500000000,
+          "observedMedianIntervalNanos": 1481735692,
+          "cadenceSampleCount": 3,
+          "basis": "BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+BORDER_PULSE+EFFECTIVENESS"
+        },
+        {
+          "at": 112.626,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Flareon",
+          "moveName": "Fire Spin",
+          "moveDurationNanos": 1500000000,
+          "observedMedianIntervalNanos": 1290410153,
+          "cadenceSampleCount": 3,
+          "basis": "BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+BORDER_PULSE+EFFECTIVENESS+OBSERVED_USES"
+        }
+      ],
+      "faints": [
+        {
+          "at": 49.788,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "speciesId": 256,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at": 64.276,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "speciesId": 460,
+          "basis": "PLAYER_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+        },
+        {
+          "at": 103.902,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Magcargo",
+          "speciesId": 219,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "chargedMoves": [
+        {
+          "at": 34.77,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Weather Ball (Ice)",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+        },
+        {
+          "at": 48.646,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Weather Ball (Ice)",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+        },
+        {
+          "at": 87.1,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Shadow Ball",
+          "energyCost": 50,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at": 101.907,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Seed Bomb",
+          "energyCost": 40,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "labels": [
+        {
+          "at": 9.374,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "rupt\nGourgeist",
+          "basis": "OCR"
+        },
+        {
+          "at": 10.52,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "rupt\nGourgeist",
+          "basis": "UNCHANGED_LETTER_PIXELS"
+        },
+        {
+          "at": 11.597,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "rupt\nGourgeist",
+          "basis": "UNCHANGED_LETTER_PIXELS"
+        },
+        {
+          "at": 16.455,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 16.455,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 33.239,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 34.304,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 34.304,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 47.675,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 48.71,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 49.788,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 85.438,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 86.461,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 94.618,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 96.179,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 97.343,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 98.43,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 98.43,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 100.003,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        }
+      ],
+      "chargedButtonEffectiveness": 0,
+      "generatedEnergyBySide": {
+        "PLAYER": 328,
+        "OPPONENT": 30
+      },
+      "audio": {
+        "wavCount": 50,
+        "nonSilentWavs": 50,
+        "formats": [
+          [
+            8000,
+            1
+          ],
+          [
+            48000,
+            2
+          ]
+        ],
+        "maxRmsByChannel": [
+          0.16709,
+          0.16641
+        ]
+      },
+      "payloadCounts": {
+        "match_record_started": 1,
+        "player_team_slot_configured": 3,
+        "witness_operating": 405,
+        "audio_input_status": 3,
+        "battle_overlay_opened": 1,
+        "species_check_measured": 156,
+        "crop_captured": 349,
+        "device_motion_pulse_measured": 228,
+        "active_pokemon_types_witnessed": 5,
+        "player_charge_move_label_read": 19,
+        "audio_captured": 52,
+        "raw_text": 259,
+        "battle_cry_candidates_measured": 9,
+        "player_inactive_species_sprite_fingerprint_measured": 43,
+        "active_pokemon_species_witnessed": 29,
+        "player_battle_information_checked": 9,
+        "fast_move_identified": 12,
+        "player_charge_move_energy_fill_increased": 34,
+        "active_hp_bar_measured": 793,
+        "hp_bar_border_pulse": 51,
+        "opponent_battle_resource_count_measured": 51,
+        "player_shield_count_measured": 1,
+        "player_poke_ball_count_measured": 42,
+        "active_hp_bar_damage_tick_measured": 34,
+        "player_inactive_hp_bar_measured": 11,
+        "active_hp_bar_motion_cadence_measured": 13,
+        "fast_move_use_observed": 39,
+        "fast_move_sound_measured": 39,
+        "fast_move_energy_derived": 29,
+        "fast_move_recipient_visual_artifact_measured": 15,
+        "active_hp_bar_border_cadence_measured": 15,
+        "fast_move_effectiveness_witnessed": 11,
+        "get_ready_witnessed": 3,
+        "charge_move_qte_vibration_pattern_inferred": 2,
+        "charged_move_energy_spent": 4,
+        "charge_move_used_announced": 5,
+        "stat_change_sound_checked": 8,
+        "player_charge_move_energy_fill_cadence_measured": 17,
+        "fast_move_recipient_visual_cadence_measured": 11,
+        "active_pokemon_fainted_witnessed": 3,
+        "attack_incoming": 1,
+        "match_ended": 1
+      }
+    },
+    {
+      "archive": "2026-10-19_11-10-25_3098dd57-40b8-4d6e-8c4c-02bd46b481a8.odxmatch.zip",
+      "sha256": "9f799e0b748ea268e59fbb8ca78712ec3c31cebd34d6c9fe4e508e0e9b298f35",
+      "matchId": "3098dd57-40b8-4d6e-8c4c-02bd46b481a8",
+      "bytes": 12730495,
+      "articles": 1881,
+      "durationSeconds": 93.546,
+      "result": [
+        {
+          "at": 91.773,
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "start": [
+        {
+          "at": 23.674,
+          "kind": "match_started"
+        }
+      ],
+      "firstSpecies": {
+        "PLAYER:Abomasnow": {
+          "at": 20.997,
+          "publicationDelayMs": 2214,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Plusle": {
+          "at": 23.224,
+          "publicationDelayMs": 1054,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Electrode": {
+          "at": 45.098,
+          "publicationDelayMs": 1223,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Jolteon": {
+          "at": 67.269,
+          "publicationDelayMs": 632,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recordedFastMoveUses": {
+        "PLAYER:Abomasnow": 20,
+        "OPPONENT:Plusle": 6,
+        "OPPONENT:Electrode": 2,
+        "OPPONENT:Jolteon": 4
+      },
+      "identities": [
+        {
+          "at": 20.997,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 30.467,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 906245192,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 30.534,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 908047923,
+          "cadenceSampleCount": 3,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION"
+        },
+        {
+          "at": 29.661,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Plusle",
+          "moveName": "Quick Attack",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1040840615,
+          "cadenceSampleCount": 2,
+          "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
+        },
+        {
+          "at": 31.136,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Plusle",
+          "moveName": "Quick Attack",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1074288615,
+          "cadenceSampleCount": 3,
+          "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION_CORROBORATED_BY_BAR_MOTION"
+        },
+        {
+          "at": 58.756,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Electrode",
+          "moveName": "Spark",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 878201230,
+          "cadenceSampleCount": 2,
+          "basis": "RECIPIENT_VISUAL_ARTIFACT_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 73.807,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Jolteon",
+          "moveName": "Volt Switch",
+          "moveDurationNanos": 2000000000,
+          "observedMedianIntervalNanos": 1909781846,
+          "cadenceSampleCount": 2,
+          "basis": "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_EFFECTIVENESS"
+        }
+      ],
+      "faints": [
+        {
+          "at": 43.61,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Plusle",
+          "speciesId": 311,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at": 66.921,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Electrode",
+          "speciesId": 101,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+        },
+        {
+          "at": 87.49,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Jolteon",
+          "speciesId": 135,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "chargedMoves": [
+        {
+          "at": 41.888,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Weather Ball (Ice)",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+        },
+        {
+          "at": 56.063,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Energy Ball",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "labels": [
+        {
+          "at": 16.713,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 27.403,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 42.959,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 54.7,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 55.214,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 55.773,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 75.749,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        }
+      ],
+      "chargedButtonEffectiveness": 0,
+      "generatedEnergyBySide": {
+        "PLAYER": 160,
+        "OPPONENT": 64
+      },
+      "audio": {
+        "wavCount": 41,
+        "nonSilentWavs": 41,
+        "formats": [
+          [
+            8000,
+            1
+          ],
+          [
+            48000,
+            2
+          ]
+        ],
+        "maxRmsByChannel": [
+          0.15089,
+          0.14513
+        ]
+      },
+      "payloadCounts": {
+        "match_record_started": 1,
+        "player_team_slot_configured": 3,
+        "witness_operating": 324,
+        "audio_input_status": 3,
+        "battle_overlay_opened": 1,
+        "species_check_measured": 105,
+        "crop_captured": 235,
+        "active_pokemon_types_witnessed": 8,
+        "device_motion_pulse_measured": 158,
+        "audio_captured": 43,
+        "raw_text": 195,
+        "battle_cry_candidates_measured": 7,
+        "player_charge_move_energy_fill_increased": 21,
+        "player_charge_move_label_read": 7,
+        "countdown_glyph_witnessed": 3,
+        "active_pokemon_species_witnessed": 16,
+        "player_battle_information_checked": 3,
+        "fast_move_identified": 7,
+        "active_hp_bar_measured": 387,
+        "hp_bar_border_pulse": 52,
+        "player_inactive_species_sprite_fingerprint_measured": 24,
+        "player_inactive_hp_bar_measured": 8,
+        "match_started": 1,
+        "player_poke_ball_count_measured": 34,
+        "opponent_battle_resource_count_measured": 37,
+        "player_shield_count_measured": 1,
+        "fast_move_recipient_visual_artifact_measured": 14,
+        "fast_move_use_observed": 32,
+        "fast_move_energy_derived": 24,
+        "fast_move_sound_measured": 32,
+        "active_hp_bar_border_cadence_measured": 16,
+        "active_hp_bar_damage_tick_measured": 28,
+        "player_charge_move_energy_fill_cadence_measured": 10,
+        "fast_move_recipient_visual_cadence_measured": 13,
+        "active_hp_bar_motion_cadence_measured": 5,
+        "charged_move_energy_spent": 2,
+        "charge_move_used_announced": 3,
+        "stat_change_sound_checked": 6,
+        "active_pokemon_fainted_witnessed": 3,
+        "get_ready_witnessed": 1,
+        "pokemon_identified": 1,
+        "fast_move_effectiveness_witnessed": 4,
+        "match_ended": 1,
+        "match_result_music_measured": 1,
+        "match_result_music_compared": 1
+      }
+    },
+    {
+      "archive": "2026-10-19_11-12-31_164e733b-57e0-4be0-8eaf-a3cb1ffc7966.odxmatch.zip",
+      "sha256": "c60367e19dea48d6073566ec77c78c8e18abed8df921dda0957c1049cda2dc75",
+      "matchId": "164e733b-57e0-4be0-8eaf-a3cb1ffc7966",
+      "bytes": 12401569,
+      "articles": 2844,
+      "durationSeconds": 106.126,
+      "result": [
+        {
+          "at": 103.845,
+          "kind": "match_ended",
+          "result": "LOSS"
+        }
+      ],
+      "start": [
+        {
+          "at": 14.964,
+          "kind": "match_started"
+        }
+      ],
+      "firstSpecies": {
+        "PLAYER:Abomasnow": {
+          "at": 11.91,
+          "publicationDelayMs": 1459,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Sneasel": {
+          "at": 14.832,
+          "publicationDelayMs": 904,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "at": 53.855,
+          "publicationDelayMs": 800,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Gourgeist": {
+          "at": 78.788,
+          "publicationDelayMs": 1112,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recordedFastMoveUses": {
+        "OPPONENT:Sneasel": 23
+      },
+      "identities": [
+        {
+          "at": 11.91,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 19.561,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Feint Attack",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1025946730,
+          "cadenceSampleCount": 2,
+          "basis": "BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 21.45,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Feint Attack",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
+        },
+        {
+          "at": 22.3,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Feint Attack",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1089567616,
+          "cadenceSampleCount": 3,
+          "basis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 53.855,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 63.887,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Rock Smash",
+          "moveDurationNanos": 1500000000,
+          "observedMedianIntervalNanos": 1464686730,
+          "cadenceSampleCount": 2,
+          "basis": "RECIPIENT_VISUAL_ARTIFACT_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        },
+        {
+          "at": 78.788,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        }
+      ],
+      "faints": [
+        {
+          "at": 55.053,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "speciesId": 460,
+          "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at": 77.116,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "speciesId": 323,
+          "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "chargedMoves": [
+        {
+          "at": 35.018,
+          "kind": "charged_move_energy_spent",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Triple Axel",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_OCR_SINGLE_CHARACTER_REPAIR"
+        },
+        {
+          "at": 65.215,
+          "kind": "charged_move_energy_spent",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Triple Axel",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "labels": [
+        {
+          "at": 4.485,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "Abomasnow\nCam",
+          "basis": "OCR"
+        },
+        {
+          "at": 5.51,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "Abomasnow\nCam",
+          "basis": "UNCHANGED_LETTER_PIXELS"
+        },
+        {
+          "at": 26.984,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 73.634,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 84.467,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 85.574,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        }
+      ],
+      "chargedButtonEffectiveness": 0,
+      "generatedEnergyBySide": {
+        "PLAYER": 0,
+        "OPPONENT": 138
+      },
+      "audio": {
+        "wavCount": 35,
+        "nonSilentWavs": 35,
+        "formats": [
+          [
+            8000,
+            1
+          ],
+          [
+            48000,
+            2
+          ]
+        ],
+        "maxRmsByChannel": [
+          0.16187,
+          0.15988
+        ]
+      },
+      "payloadCounts": {
+        "match_record_started": 1,
+        "player_team_slot_configured": 3,
+        "witness_operating": 348,
+        "audio_input_status": 5,
+        "battle_overlay_opened": 1,
+        "species_check_measured": 113,
+        "crop_captured": 262,
+        "active_pokemon_types_witnessed": 5,
+        "audio_captured": 35,
+        "device_motion_pulse_measured": 131,
+        "player_charge_move_label_read": 6,
+        "battle_cry_candidates_measured": 8,
+        "raw_text": 265,
+        "player_charge_move_energy_fill_increased": 15,
+        "active_hp_bar_measured": 1262,
+        "hp_bar_border_pulse": 32,
+        "player_inactive_species_sprite_fingerprint_measured": 28,
+        "countdown_glyph_witnessed": 1,
+        "player_charge_move_energy_fill_cadence_measured": 7,
+        "supporting_match_start": 1,
+        "active_pokemon_species_witnessed": 18,
+        "player_battle_information_checked": 4,
+        "fast_move_identified": 7,
+        "player_inactive_hp_bar_measured": 6,
+        "opponent_battle_resource_count_measured": 40,
+        "player_shield_count_measured": 2,
+        "player_poke_ball_count_measured": 38,
+        "fast_move_recipient_visual_artifact_measured": 38,
+        "active_hp_bar_damage_tick_measured": 23,
+        "match_started": 1,
+        "active_hp_bar_border_cadence_measured": 11,
+        "fast_move_sound_measured": 23,
+        "fast_move_use_observed": 23,
+        "fast_move_recipient_visual_cadence_measured": 34,
+        "fast_move_energy_derived": 23,
+        "charged_move_energy_spent": 2,
+        "charge_move_used_announced": 3,
+        "stat_change_sound_checked": 6,
+        "active_pokemon_fainted_witnessed": 2,
+        "attack_incoming": 2,
+        "fast_move_effectiveness_witnessed": 3,
+        "battle_decision_timer_observed": 3,
+        "match_ended": 1,
+        "match_result_music_measured": 1,
+        "match_result_music_compared": 1
+      }
+    },
+    {
+      "archive": "2026-10-19_15-23-38_d504d15f-614b-4697-9f6c-a4d1d960a142.odxmatch.zip",
+      "sha256": "4a96763d94884229fa6c5403b414cf5c536caa696fb25b701ff231d00f8978e3",
+      "matchId": "d504d15f-614b-4697-9f6c-a4d1d960a142",
+      "bytes": 16396276,
+      "articles": 2424,
+      "durationSeconds": 116.598,
+      "result": [
+        {
+          "at": 113.614,
+          "kind": "match_ended",
+          "result": "WIN"
+        }
+      ],
+      "start": [
+        {
+          "at": 20.453,
+          "kind": "match_started"
+        }
+      ],
+      "firstSpecies": {
+        "PLAYER:Abomasnow": {
+          "at": 16.416,
+          "publicationDelayMs": 803,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Combusken": {
+          "at": 22.039,
+          "publicationDelayMs": 999,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Magcargo": {
+          "at": 54.133,
+          "publicationDelayMs": 1272,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "at": 67.772,
+          "publicationDelayMs": 744,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Flareon": {
+          "at": 87.882,
+          "publicationDelayMs": 1178,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recordedFastMoveUses": {
+        "PLAYER:Abomasnow": 19,
+        "OPPONENT:Combusken": 10,
+        "PLAYER:Camerupt": 6,
+        "OPPONENT:Magcargo": 4,
+        "OPPONENT:Flareon": 4
+      },
+      "identities": [
+        {
+          "at": 16.416,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 23.516,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "moveName": "Ember",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 988665230,
+          "cadenceSampleCount": 2,
+          "basis": "RECIPIENT_VISUAL_ARTIFACT_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION"
+        },
+        {
+          "at": 24.868,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "moveName": "Ember",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 1060696308,
+          "cadenceSampleCount": 2,
+          "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION_CORROBORATED_BY_EFFECTIVENESS"
+        },
+        {
+          "at": 26.613,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "moveName": "Ember",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 983838462,
+          "cadenceSampleCount": 3,
+          "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_HIGHER_ENERGY_TIE_BREAK_ASSUMPTION_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS"
+        },
+        {
+          "at": 26.966,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Powder Snow",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 906824770,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS"
+        },
+        {
+          "at": 67.772,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": null,
+          "cadenceSampleCount": 0,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+        },
+        {
+          "at": 74.132,
+          "kind": "fast_move_identified",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Incinerate",
+          "moveDurationNanos": 2500000000,
+          "observedMedianIntervalNanos": 2404236499,
+          "cadenceSampleCount": 2,
+          "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES_SUPPORTED_BY_BORDER_PULSE_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_EFFECTIVENESS"
+        },
+        {
+          "at": 92.067,
+          "kind": "fast_move_identified",
+          "side": "OPPONENT",
+          "speciesName": "Flareon",
+          "moveName": "Ember",
+          "moveDurationNanos": 1000000000,
+          "observedMedianIntervalNanos": 920241308,
+          "cadenceSampleCount": 2,
+          "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE"
+        }
+      ],
+      "faints": [
+        {
+          "at": 52.423,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "speciesId": 256,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at": 88.335,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Magcargo",
+          "speciesId": 219,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+        }
+      ],
+      "chargedMoves": [
+        {
+          "at": 34.555,
+          "kind": "charged_move_energy_spent",
+          "side": "OPPONENT",
+          "speciesName": "Combusken",
+          "moveName": "Flamethrower",
+          "energyCost": 55,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at": 65.233,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Energy Ball",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at": 101.643,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Camerupt",
+          "moveName": "Earth Power",
+          "energyCost": 50,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "labels": [
+        {
+          "at": 6.903,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 13.839,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 13.839,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 14.867,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 15.412,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 15.979,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 16.529,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 32.668,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 33.703,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 44.582,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 46.175,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 47.219,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 58.486,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 59.053,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 59.555,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 60.069,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 61.698,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 61.698,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 62.716,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 63.29,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 64.835,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 66.027,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 66.027,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 82.795,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 86.067,
+          "kind": "player_charge_move_label_read",
+          "slot": 2,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 86.067,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        },
+        {
+          "at": 106.965,
+          "kind": "player_charge_move_label_read",
+          "slot": 1,
+          "text": "",
+          "basis": "OCR"
+        }
+      ],
+      "chargedButtonEffectiveness": 0,
+      "generatedEnergyBySide": {
+        "PLAYER": 272,
+        "OPPONENT": 0
+      },
+      "audio": {
+        "wavCount": 47,
+        "nonSilentWavs": 47,
+        "formats": [
+          [
+            8000,
+            1
+          ],
+          [
+            48000,
+            2
+          ]
+        ],
+        "maxRmsByChannel": [
+          0.13025,
+          0.12289
+        ]
+      },
+      "payloadCounts": {
+        "match_record_started": 1,
+        "player_team_slot_configured": 3,
+        "witness_operating": 364,
+        "audio_input_status": 3,
+        "battle_overlay_opened": 1,
+        "species_check_measured": 117,
+        "crop_captured": 324,
+        "device_motion_pulse_measured": 210,
+        "active_pokemon_types_witnessed": 6,
+        "player_charge_move_label_read": 27,
+        "audio_captured": 51,
+        "raw_text": 285,
+        "battle_cry_candidates_measured": 5,
+        "supporting_match_start": 1,
+        "active_pokemon_species_witnessed": 16,
+        "player_battle_information_checked": 4,
+        "fast_move_identified": 8,
+        "player_inactive_species_sprite_fingerprint_measured": 23,
+        "player_charge_move_energy_fill_increased": 29,
+        "countdown_glyph_witnessed": 1,
+        "player_charge_move_energy_fill_cadence_measured": 15,
+        "active_hp_bar_measured": 541,
+        "hp_bar_border_pulse": 53,
+        "player_inactive_hp_bar_measured": 6,
+        "active_hp_bar_damage_tick_measured": 36,
+        "match_started": 1,
+        "player_shield_count_measured": 2,
+        "opponent_battle_resource_count_measured": 40,
+        "fast_move_recipient_visual_artifact_measured": 17,
+        "player_poke_ball_count_measured": 37,
+        "fast_move_sound_measured": 41,
+        "fast_move_use_observed": 43,
+        "fast_move_energy_derived": 25,
+        "fast_move_recipient_visual_cadence_measured": 13,
+        "fast_move_effectiveness_witnessed": 21,
+        "active_hp_bar_motion_cadence_measured": 13,
+        "active_hp_bar_border_cadence_measured": 14,
+        "attack_incoming": 1,
+        "charged_move_energy_spent": 3,
+        "charge_move_used_announced": 4,
+        "stat_change_sound_checked": 8,
+        "get_ready_witnessed": 4,
+        "active_pokemon_fainted_witnessed": 2,
+        "charge_move_qte_vibration_pattern_inferred": 1,
+        "pokemon_identified": 1,
+        "match_result_music_measured": 1,
+        "match_ended": 1,
+        "match_result_music_compared": 1
+      }
+    }
+  ],
+  "validation": {
+    "unitTests": 919,
+    "unitFailures": 0,
+    "unitErrors": 0,
+    "build": "debug and androidTest APK builds succeeded",
+    "sourceHead": "bda55778407385d1ef8e46314fe3f64b00352fd4",
+    "workingTree": "Uncommitted edits present; review concerns current working tree, not HEAD alone.",
+    "apkSha256": "003763943ed7637a296a9d532cee5c23b599de3160bcce250a5af381aedfcedf",
+    "deviceTests": "6 recorded-image, OCR-contention, contact/label/archive tests passed on Moondrop",
+    "calibrationPreservation": "All 11 files (9 profiles and 2 preference files) byte-identical after update and tests.",
+    "installedApkSha256": "003763943ed7637a296a9d532cee5c23b599de3160bcce250a5af381aedfcedf",
+    "liveBattleValidation": "Pending a new battle. Existing archive contents were not rewritten."
+  }
+}

@@ -6,6 +6,9 @@
 
 **Generated file inventory:** [CODEBASE_INDEX.md](CODEBASE_INDEX.md)
 
+**Current feature gaps and roadmap review:** [Feature status](docs/reference/current-feature-status.md)
+(October 20, 2026; includes Match Sight retirement).
+
 **Terms and component navigation:** [Verified navigation index](docs/reference/overdex-navigation-index.md)
 (code-checked October 12, 2026; includes the preserved supplied inventory and
 corrections to its method names and responsibilities).
@@ -458,7 +461,7 @@ thing:
 | `battle.reality.RealityTimeline` | **Canonical** | Immutable Article ledger used by current Match archives and replay. |
 | `battle.timeline.BattleTimeline` | **Debug/legacy-active** | Used by verification, tests, and the old pipeline demo; it is not the current Match archive ledger. |
 | `model.BattleTimeline` | **Legacy-active** | Used by the earlier `BattleMemory` path. |
-| `SharedTimelineRepository` and `SharedTimelineScreen` | **Retired concept, legacy-active code** | Still reachable by current UI wiring. It must not be used for Match recording or new sharing work. |
+| `SharedTimelineRepository` and `SharedTimelineScreen` | **Legacy-active; sharing moves to Trainer Comms** | Still reachable by current UI wiring. New match/clip sharing, groups, coaching, and future tournament coordination belong in Profile → Trainer Comms; see the [sharing plan](docs/plans/trainer-comms-sharing.md). Keep it separate from Match recording. |
 | `model.Observation` | **Legacy-active** | Raw crop object used by `ObservationExtractor`; not a Battle Region or current RealityArticle. |
 | `model.observation.Observation` | **Legacy-active/supporting** | Used by registration, general observation inputs, and older Witnesses. |
 | `battle.observation.Observation` | **Supporting/debug** | Used by the battle workspace, debug factories, and verification paths. |

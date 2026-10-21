@@ -1,0 +1,1916 @@
+{
+  "schemaVersion": 1,
+  "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+  "articles": [
+    {
+      "articleId": "4e546f4f-dd8b-45b7-bdb8-f8fcc0f3a77d",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901093052,
+      "recordedAt": 1791901093055,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Galvantula",
+        "speciesId": 596,
+        "fastMoveName": "Volt Switch",
+        "chargedMoveNames": [
+          "Discharge",
+          "Lunge"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 517461
+    },
+    {
+      "articleId": "4c4447ca-23e0-439f-b91f-e7e7f1c72023",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901093052,
+      "recordedAt": 1791901093064,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 517461
+    },
+    {
+      "articleId": "cf3948f0-e6f5-4a4b-aa47-1b5e106fb42a",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901093052,
+      "recordedAt": 1791901093065,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 517461
+    },
+    {
+      "articleId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901124571,
+      "recordedAt": 1791901125721,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 637,
+      "evidenceReferences": [
+        "cf55dc92-03c4-464d-887c-0efe70dbe6c6"
+      ],
+      "monotonicTimeNanos": 31500198771
+    },
+    {
+      "articleId": "dfb09c56-55b8-4140-bfc5-8e4a20e7bd54",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901125212,
+      "recordedAt": 1791901127263,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 3,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 705,
+      "evidenceReferences": [
+        "04ab8185-7dfd-42d1-b0be-927541b620c9",
+        "473204fb-990f-4e81-9ba2-85fdbb40aadf"
+      ],
+      "monotonicTimeNanos": 32143114694
+    },
+    {
+      "articleId": "e8ee36a0-8de4-451c-9ad3-19ae067c939e",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901125271,
+      "recordedAt": 1791901127317,
+      "sourceId": "PLAYER_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "player_poke_ball_count_measured",
+        "visibleCount": 3,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 708,
+      "evidenceReferences": [
+        "72f6f61d-bbf9-4280-95d5-b66db0edba79",
+        "ef9e3f38-cc91-4833-ae2b-afb6dc38cc38"
+      ],
+      "monotonicTimeNanos": 32209347309
+    },
+    {
+      "articleId": "a73fd374-3869-4490-a50e-ecbb43227771",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901126223,
+      "recordedAt": 1791901128363,
+      "sourceId": "OPPONENT_SHIELDS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "SHIELDS",
+        "visibleCount": 2,
+        "maximumCount": 2
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 789,
+      "evidenceReferences": [
+        "b28927cd-51f6-493d-b669-2f174ceaa976",
+        "2aca1685-279e-4215-9d0d-7eb9c2d22a62"
+      ],
+      "monotonicTimeNanos": 33151801540
+    },
+    {
+      "articleId": "4ae12895-8570-4664-aadc-14fa35292cfe",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901126276,
+      "recordedAt": 1791901127804,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "c69bbbfc-3938-4140-9e8f-0484deacef73"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 33192001233
+    },
+    {
+      "articleId": "287a1ad9-b00e-42ff-9625-550d36681858",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901126276,
+      "recordedAt": 1791901127873,
+      "sourceId": "TEAM_SELECT_LEAD_INFERENCE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Galvantula",
+        "speciesId": 596
+      },
+      "predecessorIds": [
+        "4ae12895-8570-4664-aadc-14fa35292cfe"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 33192001233
+    },
+    {
+      "articleId": "2c3fbb0f-667e-4517-a300-ffea97243c7e",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901127043,
+      "recordedAt": 1791901129442,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 858,
+      "evidenceReferences": [
+        "7fe386a9-7e8b-43b6-ae02-5f68203a7eb2",
+        "982691e7-f92f-4f9c-a195-a2713b42baaf"
+      ],
+      "monotonicTimeNanos": 33977498771
+    },
+    {
+      "articleId": "580b810a-93ac-43f3-93cd-adbb519d9477",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901128098,
+      "recordedAt": 1791901130400,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:298cccea-d740-4754-baec-2ede02d0d55a",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "4ca63ac3-7466-4dc8-b61f-0676df9f2da3",
+        "a5face60-3f51-4538-9d4b-fa982496dc8f",
+        "298cccea-d740-4754-baec-2ede02d0d55a",
+        "39baacdb-1531-4e40-9000-a5cbc548b2b8",
+        "26b346b4-0d07-453c-805f-411dd15183c1"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 35040979694
+    },
+    {
+      "articleId": "c1cd6fe4-4f24-4b76-a9ef-9b637aeee576",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901128643,
+      "recordedAt": 1791901130530,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f35b7911-26b2-4d49-a6c0-e4b8fad27ddb",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f35b7911-26b2-4d49-a6c0-e4b8fad27ddb"
+      ],
+      "confidence": 0.765323,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 35584380617
+    },
+    {
+      "articleId": "84f09402-29a0-4e4c-9c6c-d6e246ccb640",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901129674,
+      "recordedAt": 1791901131489,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7a67e7d2-f67a-4790-808c-80175c6cc770",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7a67e7d2-f67a-4790-808c-80175c6cc770"
+      ],
+      "confidence": 0.76655614,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 36609011387
+    },
+    {
+      "articleId": "5c59d42b-f896-4eae-bb84-201a20c5ab4e",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901129839,
+      "recordedAt": 1791901132136,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:099aec30-7492-4367-9fe0-f0af2f4c0bd8",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "099aec30-7492-4367-9fe0-f0af2f4c0bd8",
+        "71936f9d-78ed-44f6-aa0a-fcd694148307",
+        "f363fafb-d1f2-4c1e-9dde-f4e0048ee574",
+        "a78f018d-5617-4dcd-bac4-dea2459efc26"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 36761586387
+    },
+    {
+      "articleId": "d05c7077-9c72-4641-bf03-ff0b4209c58f",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901130431,
+      "recordedAt": 1791901132255,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7e6090ba-6714-401c-b5d9-305d9b9b71db",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b17ccfe3-d03f-428f-8c1f-e52556ea2fc5",
+        "7e6090ba-6714-401c-b5d9-305d9b9b71db"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 37357324617
+    },
+    {
+      "articleId": "43ff6503-6f8b-4661-a06a-203756af3dc9",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901131629,
+      "recordedAt": 1791901133511,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:bbd2fbe5-c5f2-493e-a00b-ba1a7d3341c6",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "bbd2fbe5-c5f2-493e-a00b-ba1a7d3341c6"
+      ],
+      "confidence": 0.7594522,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 38550364002
+    },
+    {
+      "articleId": "d623d9b0-b0bc-48f9-a8f6-6c7f48f21f10",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901131897,
+      "recordedAt": 1791901134142,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4f497502-0c05-432f-99e1-e75305945e71",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "29118e05-7ff1-4d83-8054-8d2cb42ae3d0",
+        "4f497502-0c05-432f-99e1-e75305945e71",
+        "f5bd288c-047a-4de4-bc62-3b1330a525d6",
+        "68613730-2a31-4b08-b4f3-9a9230d30961",
+        "7e4a78af-0c5e-4db2-b71b-a780308bf0f3",
+        "028ff759-0b29-4a79-a86c-e1d6a90f81a3",
+        "97c1d601-1b03-4605-9403-956f8ccbc212",
+        "45bae5ac-1713-417e-bd91-342fecac1887"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 38830679925
+    },
+    {
+      "articleId": "949dbce0-3283-4147-a354-d31af3944253",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901132326,
+      "recordedAt": 1791901134150,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:c7507577-e1d7-4924-b15c-4c4df81a998a",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "c7507577-e1d7-4924-b15c-4c4df81a998a"
+      ],
+      "confidence": 0.7508705,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 39260951002
+    },
+    {
+      "articleId": "0b1deda6-d112-4ead-b630-6f56492b4f33",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901142912,
+      "recordedAt": 1791901145220,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:5d40b6e2-f8fe-4061-b60f-e96813307ee3",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "6ce95e69-9c8f-4141-be52-8d7b0234acb9",
+        "5d40b6e2-f8fe-4061-b60f-e96813307ee3",
+        "f5b7c1aa-ed34-40d7-a801-ff9b572d63a6"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 49847777464
+    },
+    {
+      "articleId": "eca38911-bfa3-468b-8118-4cefa9f2cf89",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901142912,
+      "recordedAt": 1791901147100,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1687,
+      "evidenceReferences": [
+        "6619b2fb-8a54-4012-a400-75e92e0a780c"
+      ],
+      "monotonicTimeNanos": 49847777464
+    },
+    {
+      "articleId": "c75b9201-7a72-48f7-8945-37fc7a31b6ca",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901143801,
+      "recordedAt": 1791901146066,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7370606c-0f6d-42c7-bb9d-df96ba7b8782",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7370606c-0f6d-42c7-bb9d-df96ba7b8782",
+        "e0065e18-b9e5-4cef-bed8-4b2ca7404303"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 50722062695
+    },
+    {
+      "articleId": "2bc2bcf6-1711-4711-8447-2b39a3fd3508",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901151655,
+      "recordedAt": 1791901153416,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:82cb2a72-c37c-45d6-a5d4-48c74f3a6f6c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "82cb2a72-c37c-45d6-a5d4-48c74f3a6f6c",
+        "0fb07021-547b-428e-bcc2-8cfd4b698f02",
+        "477daf74-cb54-44ab-a18d-5e0c5ab6033a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 58598906080
+    },
+    {
+      "articleId": "4836f560-761a-4536-b60b-95c0e0bbf63d",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901154581,
+      "recordedAt": 1791901156783,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7f4bbda4-8b77-4a66-b6d2-c8a95bbb6a65",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7f4bbda4-8b77-4a66-b6d2-c8a95bbb6a65",
+        "2ad0cafa-c192-4646-8b17-ac7ae164428c",
+        "e1080a02-7c3e-4bdf-8ed3-2bd097f2d576"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 61516364850
+    },
+    {
+      "articleId": "f519465d-0b3f-470b-857f-1245ea833117",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901156212,
+      "recordedAt": 1791901158445,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:86dc9370-a37e-400b-94b0-defef199d56e",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "86dc9370-a37e-400b-94b0-defef199d56e",
+        "e0280005-b0d2-4730-8623-788cbcb1377e",
+        "e3c9d416-a93e-4362-8788-a0fa916f9be2",
+        "0adacdf5-dfe5-4278-8091-9b5d18ed4506",
+        "237e56be-e9f8-4fbc-9b4b-807a10541c37"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 63151774388
+    },
+    {
+      "articleId": "f16f1b7e-1d6b-42ce-8cf2-9ed59bf4c13c",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901156310,
+      "recordedAt": 1791901158244,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4c549306-a967-49cf-b73f-9974dbd48c9d",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "4c549306-a967-49cf-b73f-9974dbd48c9d"
+      ],
+      "confidence": 0.77866745,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 63251131004
+    },
+    {
+      "articleId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901156766,
+      "recordedAt": 1791901158604,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2242,
+      "evidenceReferences": [
+        "c72fb901-9016-49cf-869b-cafd20f8b3fb"
+      ],
+      "monotonicTimeNanos": 63702969465
+    },
+    {
+      "articleId": "cf76cd60-ea2d-4ae0-841c-eaa09fec1d45",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901157349,
+      "recordedAt": 1791901158618,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f4567a25-ff94-4dcd-98c3-74045d3abd3b",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "attackerSpeciesName": "Combusken",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1ed8c64b-1ab6-46c4-a4bb-178c0cdd9ae4",
+        "80bbfb0f-7c06-4168-a4a8-9951337d1f96",
+        "f4567a25-ff94-4dcd-98c3-74045d3abd3b"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 64285282773
+    },
+    {
+      "articleId": "f398fecd-effc-4148-89e7-bf06aba46f42",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901158441,
+      "recordedAt": 1791901159155,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2278,
+      "evidenceReferences": [
+        "42d3c7c2-9716-4714-ae98-6c689aa29f08"
+      ],
+      "monotonicTimeNanos": 65370892234
+    },
+    {
+      "articleId": "e2acae5e-c210-4679-bb5b-d26dcc59ca91",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901158686,
+      "recordedAt": 1791901159359,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2289,
+      "evidenceReferences": [
+        "32ef71a8-1bf3-4498-b808-6ca08eaabc3c",
+        "95d8c0e3-a1c6-457c-a627-fabbe01636d1"
+      ],
+      "monotonicTimeNanos": 65628658388
+    },
+    {
+      "articleId": "83adb336-64f4-4a39-973a-7c4a182a559b",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901158686,
+      "recordedAt": 1791901159429,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2294,
+      "evidenceReferences": [
+        "2c831cb4-0d7c-4492-8a12-351a4bd9507e",
+        "bfe0e223-7a58-410e-99d8-4b62d6eb665e",
+        "e2acae5e-c210-4679-bb5b-d26dcc59ca91"
+      ],
+      "monotonicTimeNanos": 65628658388
+    },
+    {
+      "articleId": "3105877c-02f0-4926-a0db-f694614cf0ce",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901158893,
+      "recordedAt": 1791901160638,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:de7ae162-ad53-4192-be86-501ad11cc9e3",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "de7ae162-ad53-4192-be86-501ad11cc9e3"
+      ],
+      "confidence": 0.77053165,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 65822838388
+    },
+    {
+      "articleId": "2c193392-463f-4725-9f92-e8fbfb5def4b",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901159452,
+      "recordedAt": 1791901161249,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:87178d66-53c8-41ec-9b53-6a7c9c12adf5",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "87178d66-53c8-41ec-9b53-6a7c9c12adf5"
+      ],
+      "confidence": 0.73488075,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 66372323619
+    },
+    {
+      "articleId": "5865e541-eeac-44ae-9a7f-20a397263a28",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901159857,
+      "recordedAt": 1791901162207,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:8428cd75-93de-4a74-8bae-55599107d5ab",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "10086a8b-bfb1-4c43-ba39-873ec1105c8d",
+        "d4ff20c6-7bd0-4752-a61c-1c728c264737",
+        "8428cd75-93de-4a74-8bae-55599107d5ab",
+        "0fa325c5-43f3-4853-bbab-61e7a93727e6",
+        "f539d9e6-6e0d-415b-bc20-249f617415bd"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 66793216235
+    },
+    {
+      "articleId": "7709c6ea-71b1-4af6-a3b4-54c5ef989635",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901160467,
+      "recordedAt": 1791901162279,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:c1fbd36c-84b9-40d1-b38c-5e497ab868b9",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BAR_MOTION_COMPLETION",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "2207e68f-e83b-4833-b752-a11b8b10257f",
+        "e1f7cc54-c131-4883-be0d-82a29b6b5d66",
+        "960247e4-6a24-4538-895b-1c76f0f268e1",
+        "c1fbd36c-84b9-40d1-b38c-5e497ab868b9"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 67402911388
+    },
+    {
+      "articleId": "153806d0-161e-4450-b1e7-338a89942c26",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901161435,
+      "recordedAt": 1791901163222,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:26fcf201-9b72-4985-b784-07525cd12bea",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "26fcf201-9b72-4985-b784-07525cd12bea",
+        "5262b776-c6b5-4953-af5f-6b76c95eaa36"
+      ],
+      "confidence": 0.98646826,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 68365049158
+    },
+    {
+      "articleId": "0e4078d6-15a7-4655-b27b-4a24d5ceb4c0",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901161924,
+      "recordedAt": 1791901164242,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:234ef702-502d-420e-8407-a6818ca84e1a",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "287a1ad9-b00e-42ff-9625-550d36681858",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1a907d31-72b5-4462-b46a-d5fc258feaf6",
+        "234ef702-502d-420e-8407-a6818ca84e1a",
+        "b6e23ffb-f015-4da8-a116-1530148923db",
+        "6423a9fb-ae1f-4bdf-8884-2cf1f56e146e",
+        "dc09b5a9-15c8-4faf-a67d-aa5377064b51",
+        "f0bb4282-b48a-4382-be6f-9711bc1b64b5"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 68841223619
+    },
+    {
+      "articleId": "5e44e93f-09ac-469c-b002-1b586ce82f42",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901172185,
+      "recordedAt": 1791901174803,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Galvantula",
+        "moveName": "Lunge",
+        "energyCost": 45,
+        "basis": "ANNOUNCED_CHARGED_MOVE_AND_UNIQUE_ACTIVE_MOVEPOOL"
+      },
+      "predecessorIds": [
+        "e35d69af-257f-433e-855e-5dd014394548",
+        "f398fecd-effc-4148-89e7-bf06aba46f42",
+        "287a1ad9-b00e-42ff-9625-550d36681858"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 79098021543
+    },
+    {
+      "articleId": "b9f92de7-dd03-4217-8ed2-42b6cb4d4c7d",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901172185,
+      "recordedAt": 1791901174805,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2921,
+      "evidenceReferences": [
+        "e35d69af-257f-433e-855e-5dd014394548"
+      ],
+      "monotonicTimeNanos": 79098021543
+    },
+    {
+      "articleId": "b7b28b89-3593-4d7e-9479-e9e38f36bd1d",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901174977,
+      "recordedAt": 1791901175333,
+      "sourceId": "PLAYER_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "player_poke_ball_count_measured",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2971,
+      "evidenceReferences": [
+        "58476021-b25e-4d97-a556-6e16b5ecc7a6",
+        "a9305d8f-eeb1-4136-ad15-b49d23a0154b"
+      ],
+      "monotonicTimeNanos": 81914520543
+    },
+    {
+      "articleId": "da696c02-33f4-483d-8f7a-aea061e65e4d",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901174977,
+      "recordedAt": 1791901175334,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Galvantula",
+        "speciesId": 596,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2972,
+      "evidenceReferences": [
+        "287a1ad9-b00e-42ff-9625-550d36681858",
+        "99936c21-90ee-4f30-be60-a3cad19cb488",
+        "b7b28b89-3593-4d7e-9479-e9e38f36bd1d"
+      ],
+      "monotonicTimeNanos": 81914520543
+    },
+    {
+      "articleId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901175361,
+      "recordedAt": 1791901176415,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3044,
+      "evidenceReferences": [
+        "da696c02-33f4-483d-8f7a-aea061e65e4d",
+        "3112ec14-5712-43c3-9fc7-305651614e91"
+      ],
+      "monotonicTimeNanos": 82293476235
+    },
+    {
+      "articleId": "5293f784-a473-4a5f-93a2-72478500018c",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901176285,
+      "recordedAt": 1791901177288,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3109,
+      "evidenceReferences": [
+        "da696c02-33f4-483d-8f7a-aea061e65e4d",
+        "e30d4969-eb36-4789-8ddc-d973b043dc50"
+      ],
+      "monotonicTimeNanos": 83222337774
+    },
+    {
+      "articleId": "48508cec-af56-42ae-9abb-c4a1306eb8bf",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901176669,
+      "recordedAt": 1791901180807,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 3362,
+      "evidenceReferences": [
+        "a07d3f93-067b-462e-a9a8-428ba7be282e"
+      ],
+      "monotonicTimeNanos": 83580154082
+    },
+    {
+      "articleId": "eae370f6-3026-4397-b721-915b3672e050",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901178148,
+      "recordedAt": 1791901182462,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3489,
+      "evidenceReferences": [
+        "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "af290185-95fe-411d-b5ff-bf504014c8d9"
+      ],
+      "monotonicTimeNanos": 85062275082
+    },
+    {
+      "articleId": "52347eec-8b56-4f40-a86e-9f74d97dd3a5",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901178362,
+      "recordedAt": 1791901180678,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:963b2b49-ad40-4451-8c41-6eb175de96ea",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "08707229-181a-48f8-95ea-a506a9eabb8a",
+        "a3fe9660-e86e-436b-976b-00f38b5be5ac",
+        "963b2b49-ad40-4451-8c41-6eb175de96ea",
+        "19aefa72-d9d6-4f67-af2f-c31f721ef6ae"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 85237729851
+    },
+    {
+      "articleId": "50758500-6027-4c11-bf84-c4f02611d0d1",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901179189,
+      "recordedAt": 1791901181417,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.96320003,
+      "sequenceNumber": 3406,
+      "evidenceReferences": [
+        "34e72360-369f-4b3d-8d9f-0d466e7c8610"
+      ],
+      "monotonicTimeNanos": 86116863390
+    },
+    {
+      "articleId": "a6111d8c-406b-4f58-8655-196847083206",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901180272,
+      "recordedAt": 1791901182198,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:69d5e2c6-f6c5-44dc-9b70-305f34163dc5",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "69d5e2c6-f6c5-44dc-9b70-305f34163dc5",
+        "30e447e9-07fc-47e3-ae18-b903e9cb2d64",
+        "38dd7e23-e919-49e3-b16b-c838cd8677cb"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 87203723620
+    },
+    {
+      "articleId": "dd851bf6-f7b0-4947-bfeb-1b5e57b8c665",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901181051,
+      "recordedAt": 1791901182970,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:6e6d61b2-35e8-47c1-bb22-468c9ca30a7a",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "6e6d61b2-35e8-47c1-bb22-468c9ca30a7a",
+        "2fcad00a-00a2-4fa5-804f-306e9d8b8fff"
+      ],
+      "confidence": 0.9754394,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 87980784928
+    },
+    {
+      "articleId": "47ef93f0-7557-48b5-99e4-78d6bbd7e0c2",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901181051,
+      "recordedAt": 1791901183402,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b2f145a0-c143-4bc2-bece-1847865beeca",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b2f145a0-c143-4bc2-bece-1847865beeca"
+      ],
+      "confidence": 0.7221648,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 87980784928
+    },
+    {
+      "articleId": "632893c5-13ec-4edd-8e34-db1cd01417b1",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901182155,
+      "recordedAt": 1791901183897,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:100a8a38-1cc0-407a-a9d9-ce18b568c6e9",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "2bce15e0-aaee-40af-b08d-8a34926842f4",
+        "3455a5c3-7642-42e9-90fb-8b6f76914444",
+        "100a8a38-1cc0-407a-a9d9-ce18b568c6e9"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 89021143313
+    },
+    {
+      "articleId": "e64d62f5-8f06-475e-88b9-1915979afbea",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901183468,
+      "recordedAt": 1791901185775,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:77f50001-2658-4ee6-af70-49eae749f7d7",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "dc6d5f4e-93d6-45dc-8684-a52ac22d0339",
+        "77f50001-2658-4ee6-af70-49eae749f7d7"
+      ],
+      "confidence": 0.98606634,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 90402935697
+    },
+    {
+      "articleId": "1fc2ea91-c0f4-4aa1-ad9d-9497d4a76017",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901192307,
+      "recordedAt": 1791901194037,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:689fd0cc-2296-47e8-a680-1d61ba21f4eb",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "689fd0cc-2296-47e8-a680-1d61ba21f4eb"
+      ],
+      "confidence": 0.88143635,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 99230225467
+    },
+    {
+      "articleId": "6b3b0f50-3214-4c46-8dd0-049c70201135",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901194443,
+      "recordedAt": 1791901196747,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:a8a1d822-385a-431f-aacb-508604361997",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "a8a1d822-385a-431f-aacb-508604361997",
+        "11bf2d87-a1ed-4916-a2b2-fcbeb41c1f10"
+      ],
+      "confidence": 0.97668535,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 101340596852
+    },
+    {
+      "articleId": "d8341209-0b28-4de4-96ef-4b5a5db89c1f",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901195893,
+      "recordedAt": 1791901197762,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4e9bec21-0479-4196-9d53-da7fda7e969c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "4e9bec21-0479-4196-9d53-da7fda7e969c"
+      ],
+      "confidence": 0.7377951,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 102817509544
+    },
+    {
+      "articleId": "c08bae61-7d1b-445a-a264-b8c11db0accd",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901196374,
+      "recordedAt": 1791901198218,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:950dea04-7ffa-451d-949e-a4eab5f19da4",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "950dea04-7ffa-451d-949e-a4eab5f19da4"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 103317733852
+    },
+    {
+      "articleId": "a8815703-90f5-475e-ac07-6bd3f766ee39",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901196908,
+      "recordedAt": 1791901198678,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:631b4127-cbd1-4f33-b802-cc6091122e07",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "attackerSpeciesName": "Magcargo",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "631b4127-cbd1-4f33-b802-cc6091122e07"
+      ],
+      "confidence": 0.7047577,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 103828329852
+    },
+    {
+      "articleId": "f19dab5d-d370-4a8b-b81a-c1fbf3e43ae4",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901197488,
+      "recordedAt": 1791901201274,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 1,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4594,
+      "evidenceReferences": [
+        "071e198f-1ed9-44a5-9e6f-50064b870cc7",
+        "f86017b7-c07d-41bc-b556-2864a47504cd"
+      ],
+      "monotonicTimeNanos": 104415136621
+    },
+    {
+      "articleId": "c0001c12-e5f5-4313-a49c-84aaae7c082e",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901197488,
+      "recordedAt": 1791901201279,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 4595,
+      "evidenceReferences": [
+        "ced11779-15d0-4dd3-94f1-5741a904d141",
+        "c0660d8b-eca8-49b8-b560-d43dfeaccaf5",
+        "f19dab5d-d370-4a8b-b81a-c1fbf3e43ae4"
+      ],
+      "monotonicTimeNanos": 104415136621
+    },
+    {
+      "articleId": "4cf9acb0-2c15-4243-9c0f-5ead52e0dad9",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901198492,
+      "recordedAt": 1791901200788,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:c65c7b6d-c51c-4ad1-9d23-9f8f3193d10c",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_BAR_MOTION_COMPLETION",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "da5a6656-18f1-4fc4-8f45-340e1f908520",
+        "c65c7b6d-c51c-4ad1-9d23-9f8f3193d10c",
+        "124119df-d90a-4a3f-b773-9a28ba91a548"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 105435544006
+    },
+    {
+      "articleId": "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901198850,
+      "recordedAt": 1791901200955,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4566,
+      "evidenceReferences": [
+        "12053615-0e8f-4f94-a835-6b48811da134"
+      ],
+      "monotonicTimeNanos": 105793171083
+    },
+    {
+      "articleId": "0e58bef3-ba0d-4091-8355-c74dd8138fa7",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901200995,
+      "recordedAt": 1791901202498,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4658,
+      "evidenceReferences": [
+        "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+        "eae9995c-b933-4fb8-9bb5-bb072ff0ffbc"
+      ],
+      "monotonicTimeNanos": 107932012314
+    },
+    {
+      "articleId": "1310e271-0f43-4e9c-a842-91294cbb0a60",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901203877,
+      "recordedAt": 1791901206126,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:0a3853ff-f904-454c-9c6d-33350fb2c719",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "97b83821-2059-4328-b700-633e12957f2d",
+        "0a3853ff-f904-454c-9c6d-33350fb2c719",
+        "da49babf-fd86-4b3a-9e15-3a8c47d7de9d"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 110764865160
+    },
+    {
+      "articleId": "95ce0ecc-3813-4d2d-bc7c-bdb22f1091a3",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901204750,
+      "recordedAt": 1791901205986,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4890,
+      "evidenceReferences": [
+        "d27c1048-2352-40d0-8fc7-5c1bb9555944",
+        "91e4fecc-ba98-4933-a9ca-cd23f3e4afe4"
+      ],
+      "monotonicTimeNanos": 111687761545
+    },
+    {
+      "articleId": "39e3d273-197a-46fc-8c17-c8b11a4e217a",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901204750,
+      "recordedAt": 1791901207189,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4972,
+      "evidenceReferences": [
+        "d27c1048-2352-40d0-8fc7-5c1bb9555944",
+        "6eec9649-3759-4ab0-a729-279acad866d1"
+      ],
+      "monotonicTimeNanos": 111687761545
+    },
+    {
+      "articleId": "85d2e939-fc78-433b-aedb-359a6308e0de",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901205440,
+      "recordedAt": 1791901207739,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 5003,
+      "evidenceReferences": [
+        "d27c1048-2352-40d0-8fc7-5c1bb9555944",
+        "fdab054d-26ca-4bbd-818a-e9bd2dc2eff9"
+      ],
+      "monotonicTimeNanos": 112338940930
+    },
+    {
+      "articleId": "75668816-3999-4f67-be25-fbb16a6eb67c",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901206462,
+      "recordedAt": 1791901207351,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:442a2d4e-c972-43bb-bee6-4426719666fe",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "f47df02b-1301-4a6b-a46d-ea745976cc19",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "442a2d4e-c972-43bb-bee6-4426719666fe"
+      ],
+      "confidence": 0.78688264,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 113402531007
+    },
+    {
+      "articleId": "21c7d22e-969e-4d2c-8220-f1ae058d4d2b",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901206570,
+      "recordedAt": 1791901208376,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 5049,
+      "evidenceReferences": [
+        "d27c1048-2352-40d0-8fc7-5c1bb9555944",
+        "3991e3e7-137f-4911-baad-b2680a906540"
+      ],
+      "monotonicTimeNanos": 113505766160
+    },
+    {
+      "articleId": "49bcadd0-69f3-400a-bae3-8a40a29b0930",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901208591,
+      "recordedAt": 1791901210243,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:44901256-7229-45b9-9170-388fd66be839",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+        "attackerSpeciesName": "Flareon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "44901256-7229-45b9-9170-388fd66be839",
+        "76b859e5-885a-4ab5-b5e5-60f15236d884"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 115504727084
+    },
+    {
+      "articleId": "8598a86b-45a0-4a73-ab69-6a963fda0384",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901208906,
+      "recordedAt": 1791901211207,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4cfbff54-7dbd-42ac-b95f-a044a438f55b",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "39e3d273-197a-46fc-8c17-c8b11a4e217a",
+        "attackerSpeciesName": "Gourgeist",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "4cfbff54-7dbd-42ac-b95f-a044a438f55b"
+      ],
+      "confidence": 0.78072697,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 115828366084
+    },
+    {
+      "articleId": "defc6625-b21c-4f63-bdd9-e501edd90972",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901210692,
+      "recordedAt": 1791901212510,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b1162baf-bfe3-44c2-b07d-40b8003227bf",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+        "attackerSpeciesName": "Flareon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "394a63bf-eae4-4b08-b575-a97baa990d52",
+        "b1162baf-bfe3-44c2-b07d-40b8003227bf"
+      ],
+      "confidence": 0.986944,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 117613800545
+    },
+    {
+      "articleId": "e78cc1bd-b292-4e75-a813-f2318e3e4220",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901211443,
+      "recordedAt": 1791901213237,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:d042dd43-1bcc-4a13-9cdf-43676855726f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+        "attackerSpeciesName": "Flareon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "8f8ca967-0145-4905-bbe1-f2f81c961a47",
+        "d042dd43-1bcc-4a13-9cdf-43676855726f"
+      ],
+      "confidence": 0.9871901,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 118376849468
+    },
+    {
+      "articleId": "834099e4-557d-46f2-8bc7-793b0de6e976",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901211443,
+      "recordedAt": 1791901213761,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:1acb377b-47f6-497d-b237-77a8842e4395",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "39e3d273-197a-46fc-8c17-c8b11a4e217a",
+        "attackerSpeciesName": "Gourgeist",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1acb377b-47f6-497d-b237-77a8842e4395",
+        "32facced-7445-4e04-807d-e1a195961031"
+      ],
+      "confidence": 0.97339654,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 118376849468
+    },
+    {
+      "articleId": "fcc3df7f-b1d9-47da-8afa-2a4ca15ac61c",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901219828,
+      "recordedAt": 1791901221644,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:eadc46e0-c9ee-4dda-ba8a-210f31c21970",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "ea5ca4e4-ba48-44f4-99c4-9bae926100d2",
+        "attackerSpeciesName": "Flareon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "eadc46e0-c9ee-4dda-ba8a-210f31c21970"
+      ],
+      "confidence": 0.8014552,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 126764087700
+    },
+    {
+      "articleId": "16797f0e-ef4c-4c9e-baf4-c5b4aafc4517",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901226140,
+      "recordedAt": 1791901231906,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "0be459ee-dd69-48af-bf90-e2896bc33216"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 133078296008
+    },
+    {
+      "articleId": "76c6cf27-0839-4b2e-86b7-ee6182d8ef72",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901219828,
+      "recordedAt": 1791901220081,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 966,
+        "barRight": 231,
+        "barBottom": 983,
+        "filledFraction": 0.35978836,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.8033887,
+      "sequenceNumber": 5542,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 126764087700
+    },
+    {
+      "articleId": "02b554e2-f637-4ea7-ac30-7e44f9f80db1",
+      "matchId": "e0c666c8-4b6c-457e-b860-9e4faa5c3f24",
+      "perceivedAt": 1791901212809,
+      "recordedAt": 1791901212983,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 338,
+        "barTop": 651,
+        "barRight": 530,
+        "barBottom": 668,
+        "filledFraction": 0.5106383,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9245505,
+      "sequenceNumber": 5330,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 119737419622
+    }
+  ]
+}

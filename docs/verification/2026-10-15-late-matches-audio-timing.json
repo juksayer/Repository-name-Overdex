@@ -1,0 +1,457 @@
+{
+  "date": "2026-10-15",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "branch": "odx-recovery",
+  "device": {
+    "model": "MD_PH_001",
+    "serial": "MDPH00124112500414",
+    "physical_resolution": [
+      1080,
+      2400
+    ],
+    "capture_resolution": [
+      672,
+      1493
+    ]
+  },
+  "recorded_apks": {
+    "20-09-49": "1edf38eb5870dc1d061ee77c021bba52610127e8a14e0dc97113218adb7ad8be",
+    "20-23-57": "5b92805a69895976552ed1ae5aafd3ce634e214a5cb987ba5789fb48adb9313d"
+  },
+  "provenance_note": "Phone reports prior correction installed at 20:20:12, between these two recordings. APK attribution uses install chronology, not a per-archive embedded APK hash.",
+  "recordings": [
+    {
+      "filename": "2026-10-15_20-09-49_89c4715a-9394-4ecb-b56b-757efdb0c252.odxmatch.zip",
+      "sha256": "4ad402313022d9e6a692fad0e342b41ee6031587d17f941aa9354c28cddee4b9",
+      "bytes": 16093309,
+      "match_id": "89c4715a-9394-4ecb-b56b-757efdb0c252",
+      "articles": 3158,
+      "artifacts_verified": 593,
+      "source_span_s": 118.759,
+      "recorded_after_20_20_12_update": false,
+      "match_start_s": [
+        20.285
+      ],
+      "result": [
+        116.296
+      ],
+      "result_value": [
+        "WIN"
+      ],
+      "first_species_publications": {
+        "PLAYER:Abomasnow": {
+          "frame_s": 15.85,
+          "published_s": 17.365,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Sneasel": {
+          "frame_s": 19.463,
+          "published_s": 22.437,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sealeo": {
+          "frame_s": 55.916,
+          "published_s": 57.077,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Gourgeist": {
+          "frame_s": 76.422,
+          "published_s": 77.607,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Vaporeon": {
+          "frame_s": 80.202,
+          "published_s": 82.274,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "fast_move_identities": {
+        "PLAYER:Abomasnow": [
+          "Powder Snow"
+        ],
+        "OPPONENT:Sneasel": [
+          "Ice Shard"
+        ],
+        "OPPONENT:Sealeo": [
+          "Water Gun"
+        ],
+        "PLAYER:Gourgeist": [
+          "Incinerate"
+        ],
+        "OPPONENT:Vaporeon": [
+          "Water Gun"
+        ]
+      },
+      "recorded_fast_uses": {
+        "PLAYER:Abomasnow": 28,
+        "OPPONENT:Sneasel": 10,
+        "OPPONENT:Sealeo": 6,
+        "PLAYER:Gourgeist": 8,
+        "OPPONENT:Vaporeon": 20
+      },
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 676,
+          "median_ms": 182.0,
+          "p90_ms": 481,
+          "max_ms": 856
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 27,
+          "median_ms": 1849,
+          "p90_ms": 2974,
+          "max_ms": 4561
+        },
+        "fast_move_use_observed": {
+          "n": 72,
+          "median_ms": 1899.0,
+          "p90_ms": 2367,
+          "max_ms": 2752
+        },
+        "fast_move_sound_measured": {
+          "n": 65,
+          "median_ms": 5508,
+          "p90_ms": 9339,
+          "max_ms": 11257
+        },
+        "charge_move_used_announced": {
+          "n": 5,
+          "median_ms": 1142,
+          "p90_ms": 1696,
+          "max_ms": 1696
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1821,
+          "p90_ms": 1821,
+          "max_ms": 1821
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 97,
+          "median_ms": 1484,
+          "p90_ms": 2732,
+          "max_ms": 3845
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 158,
+          "median_ms": 1501.5,
+          "p90_ms": 2650,
+          "max_ms": 3215
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 11,
+          "median_ms": 1849,
+          "p90_ms": 2237,
+          "max_ms": 2974
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 2133.5,
+          "p90_ms": 3492,
+          "max_ms": 3492
+        }
+      },
+      "charged_moves": [
+        {
+          "at_s": 36.343,
+          "kind": "charged_move_energy_spent",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "moveName": "Foul Play",
+          "energyCost": 40,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at_s": 49.227,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Weather Ball (Ice)",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+        },
+        {
+          "at_s": 70.994,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Energy Ball",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at_s": 94.407,
+          "kind": "charged_move_energy_spent",
+          "side": "OPPONENT",
+          "speciesName": "Vaporeon",
+          "moveName": "Aqua Tail",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        },
+        {
+          "at_s": 110.731,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Gourgeist",
+          "moveName": "Seed Bomb",
+          "energyCost": 40,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "faints": [
+        {
+          "at_s": 54.054,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sneasel",
+          "speciesId": 215,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at_s": 77.735,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Sealeo",
+          "speciesId": 364,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "audio": {
+        "captured_clips": 81,
+        "fast_move_clips": 65,
+        "clips_starting_after_triggering_visual_hit": 23,
+        "median_start_relative_hit_ms": -88.512307,
+        "latest_start_relative_hit_ms": 446.461,
+        "median_analysis_publication_delay_after_capture_ms": 4259,
+        "maximum_analysis_publication_delay_after_capture_ms": 9977,
+        "accepted_reference_counts": {
+          "Ice Shard": 4,
+          "Powder Snow": 3,
+          "Water Gun": 21,
+          "Incinerate": 2
+        },
+        "win_music_corroboration": true
+      }
+    },
+    {
+      "filename": "2026-10-15_20-23-57_79a3ff84-d3cf-478a-bff0-4f0e8d5652ef.odxmatch.zip",
+      "sha256": "303c65178bf4b32654aee9e4b2f4b5be42f3fff01bfdf288a4587f88d7e0ac82",
+      "bytes": 7841788,
+      "match_id": "79a3ff84-d3cf-478a-bff0-4f0e8d5652ef",
+      "articles": 1553,
+      "artifacts_verified": 278,
+      "source_span_s": 94.134,
+      "recorded_after_20_20_12_update": true,
+      "match_start_s": [
+        26.015
+      ],
+      "result": [
+        90.844
+      ],
+      "result_value": [
+        "WIN"
+      ],
+      "first_species_publications": {
+        "PLAYER:Abomasnow": {
+          "frame_s": 24.155,
+          "published_s": 27.661,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Plusle": {
+          "frame_s": 26.568,
+          "published_s": 32.766,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Electrode": {
+          "frame_s": 48.775,
+          "published_s": 51.036,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Jolteon": {
+          "frame_s": 65.742,
+          "published_s": 70.829,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "frame_s": 78.409,
+          "published_s": 80.921,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "fast_move_identities": {
+        "PLAYER:Abomasnow": [
+          "Powder Snow"
+        ],
+        "OPPONENT:Plusle": [
+          "Spark"
+        ],
+        "OPPONENT:Jolteon": [
+          "Thunder Shock"
+        ],
+        "PLAYER:Camerupt": [
+          "Incinerate"
+        ]
+      },
+      "recorded_fast_uses": {
+        "PLAYER:Abomasnow": 23,
+        "OPPONENT:None": 1,
+        "OPPONENT:Plusle": 5,
+        "OPPONENT:Electrode": 3,
+        "OPPONENT:Jolteon": 8
+      },
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 263,
+          "median_ms": 287,
+          "p90_ms": 854,
+          "max_ms": 1902
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 15,
+          "median_ms": 4277,
+          "p90_ms": 7202,
+          "max_ms": 7246
+        },
+        "fast_move_use_observed": {
+          "n": 40,
+          "median_ms": 1896.5,
+          "p90_ms": 2836,
+          "max_ms": 3301
+        },
+        "fast_move_sound_measured": {
+          "n": 39,
+          "median_ms": 7698,
+          "p90_ms": 10848,
+          "max_ms": 12911
+        },
+        "charge_move_used_announced": {
+          "n": 2,
+          "median_ms": 2635.0,
+          "p90_ms": 4071,
+          "max_ms": 4071
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 2185,
+          "p90_ms": 2185,
+          "max_ms": 2185
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 34,
+          "median_ms": 2674.0,
+          "p90_ms": 6260,
+          "max_ms": 8456
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 56,
+          "median_ms": 2639.5,
+          "p90_ms": 6455,
+          "max_ms": 8430
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 4052.0,
+          "p90_ms": 7246,
+          "max_ms": 7246
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 5,
+          "median_ms": 3418,
+          "p90_ms": 6927,
+          "max_ms": 6927
+        }
+      },
+      "charged_moves": [
+        {
+          "at_s": 44.288,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Weather Ball (Ice)",
+          "energyCost": 35,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST_VISIBLE_MOVE_NAME_ALIAS"
+        },
+        {
+          "at_s": 63.013,
+          "kind": "charged_move_energy_spent",
+          "side": "PLAYER",
+          "speciesName": "Abomasnow",
+          "moveName": "Energy Ball",
+          "energyCost": 45,
+          "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+        }
+      ],
+      "faints": [
+        {
+          "at_s": 48.697,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Plusle",
+          "speciesId": 311,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        },
+        {
+          "at_s": 63.756,
+          "kind": "active_pokemon_fainted_witnessed",
+          "side": "OPPONENT",
+          "speciesName": "Electrode",
+          "speciesId": 101,
+          "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+        }
+      ],
+      "audio": {
+        "captured_clips": 45,
+        "fast_move_clips": 39,
+        "clips_starting_after_triggering_visual_hit": 21,
+        "median_start_relative_hit_ms": 27.652308,
+        "latest_start_relative_hit_ms": 1188.214461,
+        "median_analysis_publication_delay_after_capture_ms": 6458,
+        "maximum_analysis_publication_delay_after_capture_ms": 10963,
+        "accepted_reference_counts": {
+          "Spark": 9,
+          "Thunder Shock": 3,
+          "Incinerate": 2
+        },
+        "win_music_corroboration": true
+      }
+    }
+  ],
+  "user_observation": "User confirmed Pokemon GO itself slowed down in the Plusle/Electrode/Jolteon match. These delays cannot isolate Overdex cost from overall device/game slowdown.",
+  "finding": "CueCenteredPcmCollector previously centered on visual-testimony delivery and DroidballService stamped the snippet from its completion time. Forty-four of 104 clips began after the visual hit.",
+  "correction": {
+    "source_timestamp": "Fast Move, species-entry, countdown glyph and countdown-presence requests now carry their original monotonic timestamp.",
+    "buffer": "Eight seconds of bounded volatile 48 kHz mono PCM-16, 768000 bytes. Only the same 500 ms pre-roll + 700 ms post-roll window is persisted.",
+    "custody": "Returned PCM carries its original window start for wall and monotonic testimony times. Cue reference and raw timeline remain separate from move/side inference.",
+    "unavailable": "Absent time, expired history, full request queue and discontinuous input produce unavailable diagnostics rather than replacement audio. AudioCaptureWitness ignores cues belonging to a different Match.",
+    "scope": "No matcher thresholds, legal move pools, attack counts, species calibration or existing archives were changed."
+  },
+  "limitations": [
+    "This is not a clean live speed comparison because Pokemon GO slowed down in the newer match. No historical process crash was recorded after the 20:20 update.",
+    "HP and source audio timing still use the existing capture/read timestamps; this change does not calibrate hardware audiovisual latency.",
+    "Audio matching still has a backlog; median delay after AudioCaptured was 4.259 s and 6.458 s. Correct window selection does not prove that backlog resolved.",
+    "New match has no Sealeo, so it cannot validate the preceding Water Gun reversal fix live. The earlier match stayed Water Gun via independent audio evidence but predates that fix.",
+    "Latest archive has no resolved Electrode fast move and no player fast-use articles attributed to Camerupt after its late identity. Recorded counts are not verified complete real attack totals.",
+    "Both archives record the first two opponent faints but not a direct final-faint testimony. Existing replay result inference remains responsible for the final defeat pose.",
+    "Earlier match captured the final Gourgeist Seed Bomb. Newer match has two Abomasnow charged moves; no later named charge and no Get Ready testimony. Do not invent a final charged move.",
+    "The next live recording is required to validate cue coverage and sound identity after this correction."
+  ],
+  "validation": {
+    "unit": {
+      "tests": 850,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "apk_sha256": "cd9675bc35275184c536911a58f295da5e00df14c10fed98befd1c812b14c1ae",
+    "installed_sha256": "cd9675bc35275184c536911a58f295da5e00df14c10fed98befd1c812b14c1ae",
+    "calibration_files_unchanged": 13,
+    "device": "MDPH00124112500414",
+    "build": ":app:testDebugUnitTest :app:assembleDebug passed",
+    "new_timing_tests": 10,
+    "install": "adb install -r succeeded; installed SHA-256 matches build; launcher intent accepted",
+    "physical_live_battle_after_correction": "Not yet recorded",
+    "evidence_directory": "/tmp/overdex-review-20261015-2025"
+  }
+}

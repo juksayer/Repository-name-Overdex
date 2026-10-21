@@ -1,0 +1,4971 @@
+{
+  "schemaVersion": 1,
+  "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+  "articles": [
+    {
+      "articleId": "090c0a37-18e2-4843-bb28-29ad52e34b4b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930854928,
+      "recordedAt": 1791930854933,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Galvantula",
+        "speciesId": 596,
+        "fastMoveName": "Volt Switch",
+        "chargedMoveNames": [
+          "Discharge",
+          "Lunge"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -23398812232
+    },
+    {
+      "articleId": "e8d46e0b-0658-46e5-93dc-c56c0761b76a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930854928,
+      "recordedAt": 1791930854951,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -23398812232
+    },
+    {
+      "articleId": "f5f23feb-6078-4986-a4e1-88a056000ef4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930854928,
+      "recordedAt": 1791930854952,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -23398812232
+    },
+    {
+      "articleId": "b36994af-940c-4a2f-902b-2d9f5143fb5c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930864448,
+      "recordedAt": 1791930866134,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 166,
+      "evidenceReferences": [
+        "cd3307ce-26f6-454c-8a9c-afe2246352ff"
+      ],
+      "monotonicTimeNanos": -13892801154
+    },
+    {
+      "articleId": "8ac3c45d-ecbb-4115-9b53-3ea9a9ec1c58",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930865002,
+      "recordedAt": 1791930867640,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "CH\u1eccOSE YOUR LEAGUE",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 208,
+      "evidenceReferences": [
+        "2d58299d-b13b-4a15-a9a8-cc9b3c043668",
+        "4ae2ee07-d05f-4440-a936-40cd019c3bd5"
+      ],
+      "monotonicTimeNanos": -13348853846
+    },
+    {
+      "articleId": "0a883a58-226a-475e-a359-08c7aa637b1f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930867054,
+      "recordedAt": 1791930868725,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "L",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 236,
+      "evidenceReferences": [
+        "c8271bf7-5d84-4754-bdc1-f0c57a9f6b95",
+        "2559651c-2c9f-42c9-89a2-0c93bc16adc4"
+      ],
+      "monotonicTimeNanos": -11337595077
+    },
+    {
+      "articleId": "36fdb6f5-8031-4fab-8bb8-67edaf75da9a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930868329,
+      "recordedAt": 1791930869913,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "L",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 268,
+      "evidenceReferences": [
+        "7e325ce5-935c-4a4b-9b73-1db164ed5b28",
+        "cb7eb046-3a39-4f70-939b-64b936c5ea95"
+      ],
+      "monotonicTimeNanos": -10003585154
+    },
+    {
+      "articleId": "49e6bbcd-0459-49d0-90e9-5747bb8766fd",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930869714,
+      "recordedAt": 1791930871453,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "L",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 300,
+      "evidenceReferences": [
+        "63ed1b3b-6b68-493d-a78d-8c1d06ac7e76",
+        "5c894cb5-f164-4b79-ad12-18fe5530c7be"
+      ],
+      "monotonicTimeNanos": -8618788000
+    },
+    {
+      "articleId": "29552857-0f98-433f-8ca2-3aac89553447",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930867275,
+      "recordedAt": 1791930873267,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 351,
+      "evidenceReferences": [
+        "1b3205b7-8c60-4f66-ac01-e408bd1d3e5c"
+      ],
+      "monotonicTimeNanos": -11066718462
+    },
+    {
+      "articleId": "94c5cc5b-4277-4a33-b85d-253b720eb73b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930870702,
+      "recordedAt": 1791930874200,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 379,
+      "evidenceReferences": [
+        "6ee765fe-877a-4d0c-b997-d975d4d54437",
+        "c1307da3-a1b7-41f2-bae9-ea788785116e",
+        "d25850a5-4b87-437b-81f8-2321b3802b25"
+      ],
+      "monotonicTimeNanos": -7632344308
+    },
+    {
+      "articleId": "549d510f-958e-41a3-999c-9eb2a1b8c223",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930872884,
+      "recordedAt": 1791930876172,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 421,
+      "evidenceReferences": [
+        "d3315777-44f1-4096-9373-4bbcfada83fa"
+      ],
+      "monotonicTimeNanos": -5460441538
+    },
+    {
+      "articleId": "6207e5ed-292e-4975-9e2f-164eb8cb975f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930873923,
+      "recordedAt": 1791930876461,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 430,
+      "evidenceReferences": [
+        "dca625ea-c406-4160-b863-1f49e09eb68c",
+        "74a7698f-90a7-434d-afc6-dfd6cb2cb48e",
+        "bb06c238-61e1-458f-a71c-7b4b9c0ef27c"
+      ],
+      "monotonicTimeNanos": -4415799077
+    },
+    {
+      "articleId": "87a328aa-a0b6-4157-a2c4-6e7e72fa6f3a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930876296,
+      "recordedAt": 1791930878018,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go. Ps",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 478,
+      "evidenceReferences": [
+        "0becf440-924b-4f14-9500-c41f87f28d1f",
+        "26f46b1c-16bb-46e4-9b36-d5c09addda4d"
+      ],
+      "monotonicTimeNanos": -2057294461
+    },
+    {
+      "articleId": "0c2c5843-bcc7-4837-98ff-0ea01e41cd8a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930877728,
+      "recordedAt": 1791930879481,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Plusle!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 555,
+      "evidenceReferences": [
+        "bdcd48fc-4842-4217-a0d1-f79163d22c70",
+        "7dc43f48-5bab-4a6d-9186-5b2ea51f8d05"
+      ],
+      "monotonicTimeNanos": -655494769
+    },
+    {
+      "articleId": "048b55ea-01d9-450b-81c0-cd3b7bc62f5a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878361,
+      "recordedAt": 1791930879980,
+      "sourceId": "COUNTDOWN_AND_COMBAT_START_INFERENCE",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "f600b7ba-0c04-475b-8c55-e5080332c96b",
+        "babe39b3-555a-49e6-844f-bf59476b5bf1"
+      ],
+      "confidence": 0.75,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 0
+    },
+    {
+      "articleId": "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878361,
+      "recordedAt": 1791930880062,
+      "sourceId": "TEAM_SELECT_LEAD_INFERENCE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Galvantula",
+        "speciesId": 596
+      },
+      "predecessorIds": [
+        "048b55ea-01d9-450b-81c0-cd3b7bc62f5a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 0
+    },
+    {
+      "articleId": "50f16390-caf1-4a67-97e3-e8f183865c59",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878361,
+      "recordedAt": 1791930880187,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Galvantula",
+        "moveName": "Volt Switch",
+        "moveDurationNanos": 2000000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+        "090c0a37-18e2-4843-bb28-29ad52e34b4b"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 0
+    },
+    {
+      "articleId": "a844913b-b66a-4d7b-92ad-100634c01b7d",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930877728,
+      "recordedAt": 1791930880774,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "speciesId": 311
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 599,
+      "evidenceReferences": [
+        "0c2c5843-bcc7-4837-98ff-0ea01e41cd8a"
+      ],
+      "monotonicTimeNanos": -655494769
+    },
+    {
+      "articleId": "c1ac78c4-e0d9-42b2-b276-bd21efd824d7",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930879818,
+      "recordedAt": 1791930880913,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:babe39b3-555a-49e6-844f-bf59476b5bf1",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "7fc12fb8-c191-4279-8ab4-50d2bfabf108",
+        "attackerSpeciesName": null,
+        "evidenceKinds": [
+          "HP_BORDER_PULSE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "babe39b3-555a-49e6-844f-bf59476b5bf1"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 1482447770
+    },
+    {
+      "articleId": "42f853ac-5849-452a-91cb-f94f049ea97e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930880089,
+      "recordedAt": 1791930882350,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:565b709d-3a06-46e8-bf6f-5f39e37b8ac3",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "565b709d-3a06-46e8-bf6f-5f39e37b8ac3",
+        "2c609d82-35fc-452f-8473-53f46c5dbee3"
+      ],
+      "confidence": 0.94994664,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 1675273308
+    },
+    {
+      "articleId": "13387a39-6d0b-4fc7-9742-641fd2da3d3c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930880089,
+      "recordedAt": 1791930882351,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "42f853ac-5849-452a-91cb-f94f049ea97e",
+        "50f16390-caf1-4a67-97e3-e8f183865c59"
+      ],
+      "confidence": 0.9404472,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 1675273308
+    },
+    {
+      "articleId": "e902c17b-6a30-4765-bd8e-4d43ea011719",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930882999,
+      "recordedAt": 1791930885302,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f1ed1ead-26f6-48f8-af0b-2f1f81421589",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "efd67a2b-5cab-4e5a-a12d-a9321c47e4ab",
+        "f1ed1ead-26f6-48f8-af0b-2f1f81421589",
+        "50d77aa1-fd5f-4225-8402-ff8df2ebc9fc",
+        "a0bcab0d-abc9-40e4-82e5-e86409d00412"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 4631405309
+    },
+    {
+      "articleId": "c2819ff7-edcc-434b-9084-6c62642164ed",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930882999,
+      "recordedAt": 1791930885302,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "e902c17b-6a30-4765-bd8e-4d43ea011719",
+        "50f16390-caf1-4a67-97e3-e8f183865c59"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 4631405309
+    },
+    {
+      "articleId": "e028bad5-9ec7-48e4-b1f3-d8966f3242b1",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930880253,
+      "recordedAt": 1791930885419,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "LUNGE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 799,
+      "evidenceReferences": [
+        "091aaf0c-4fa9-4019-af1e-8c4836bb7b8b"
+      ],
+      "monotonicTimeNanos": 1866608924
+    },
+    {
+      "articleId": "9712dc07-3dd2-46b3-a02c-79597134b970",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878409,
+      "recordedAt": 1791930886865,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 876,
+      "evidenceReferences": [
+        "3b1292f1-68fe-4248-8fb3-c75e169c6748"
+      ],
+      "monotonicTimeNanos": 40977308
+    },
+    {
+      "articleId": "1b18986c-7283-4c90-9197-3dad698ab18e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878409,
+      "recordedAt": 1791930886867,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_RAW",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 877,
+      "evidenceReferences": [
+        "3b1292f1-68fe-4248-8fb3-c75e169c6748"
+      ],
+      "monotonicTimeNanos": 40977308
+    },
+    {
+      "articleId": "80cde792-5dd2-43f0-8b29-a836df311ae0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930878821,
+      "recordedAt": 1791930887307,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 902,
+      "evidenceReferences": [
+        "88dcc5d5-aeda-44b5-9701-3801eec54408",
+        "6a1e6b40-cd75-446b-a51b-68ff5ddded1f",
+        "6b66e2e7-5451-4dcf-9344-21db8356c915"
+      ],
+      "monotonicTimeNanos": 483937847
+    },
+    {
+      "articleId": "3127217d-a298-4cd0-b657-21b9b1a0a9cb",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930879865,
+      "recordedAt": 1791930887885,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "speciesId": 311
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 930,
+      "evidenceReferences": [
+        "0c2c5843-bcc7-4837-98ff-0ea01e41cd8a",
+        "ea3aa9cb-46f9-4e09-987b-5f95ed9622be"
+      ],
+      "monotonicTimeNanos": 1513154847
+    },
+    {
+      "articleId": "74a79165-a776-4b6e-ab1b-ede6686746ce",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930885900,
+      "recordedAt": 1791930888147,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:1baf1ab9-78fe-4941-9a82-8e5fcd04cfd4",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1baf1ab9-78fe-4941-9a82-8e5fcd04cfd4",
+        "5546fc38-d4a8-4863-ad0f-c11be509f788",
+        "8187baeb-9800-403a-b5cd-b119d4a31d13",
+        "a5573fb8-3fc5-4e4c-83c8-8c0c7f904ff3",
+        "ebcc07e1-6994-41ae-8613-27070d209d9f",
+        "d41a2f23-117d-4454-8ba5-041b19d34e66",
+        "38204a77-909f-4651-96e9-88353a49e3e4"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 7539491386
+    },
+    {
+      "articleId": "1744ab25-c1d8-422a-9f95-59dd7a1a3c10",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930885900,
+      "recordedAt": 1791930888148,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "74a79165-a776-4b6e-ab1b-ede6686746ce",
+        "50f16390-caf1-4a67-97e3-e8f183865c59"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 7539491386
+    },
+    {
+      "articleId": "bf343158-a349-4fe6-a8f0-fce6e6d97044",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930880253,
+      "recordedAt": 1791930889405,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "DISCHARGE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1012,
+      "evidenceReferences": [
+        "e756025f-f4ed-4649-bf93-86d1972fda28"
+      ],
+      "monotonicTimeNanos": 1866608924
+    },
+    {
+      "articleId": "d8fa6d64-c0bd-44e5-bfab-3155c6df7657",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888102,
+      "recordedAt": 1791930890318,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e0cbdae4-1fb6-4099-ac22-3973a7edc80b",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "bbd0676a-30d6-4ae4-ae64-54a1f241e7d3",
+        "attackerSpeciesName": "Galvantula",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "c4ad4d07-64cd-4a2c-a7b9-1de31da027fc",
+        "e0cbdae4-1fb6-4099-ac22-3973a7edc80b",
+        "b21ed2b4-8c77-4028-9163-ea7af408f535",
+        "b4deeaaf-4170-4069-9ddc-b14add82bfac"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 9744105309
+    },
+    {
+      "articleId": "34ec6358-c7ce-431c-b2e7-0fc00f018956",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888102,
+      "recordedAt": 1791930890319,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "d8fa6d64-c0bd-44e5-bfab-3155c6df7657",
+        "50f16390-caf1-4a67-97e3-e8f183865c59"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 9744105309
+    },
+    {
+      "articleId": "636f5fc8-692d-4225-b41b-7e34a179172a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888037,
+      "recordedAt": 1791930890403,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Gourgeist",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1061,
+      "evidenceReferences": [
+        "3e4e3373-00f5-4d94-a87f-5836e3ebd1ed"
+      ],
+      "monotonicTimeNanos": 9648526463
+    },
+    {
+      "articleId": "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888037,
+      "recordedAt": 1791930890790,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1079,
+      "evidenceReferences": [
+        "8bff6e81-cf36-4831-9595-28fff264c584",
+        "3e4e3373-00f5-4d94-a87f-5836e3ebd1ed"
+      ],
+      "monotonicTimeNanos": 9648526463
+    },
+    {
+      "articleId": "eec54180-ff7f-4a8b-ab01-a5e538ef72e5",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888037,
+      "recordedAt": 1791930890957,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "f5f23feb-6078-4986-a4e1-88a056000ef4"
+      ],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 9648526463
+    },
+    {
+      "articleId": "ef51b824-b804-468c-b0fd-94269b637927",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930888655,
+      "recordedAt": 1791930891270,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "speciesId": 311
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1110,
+      "evidenceReferences": [
+        "8bff6e81-cf36-4831-9595-28fff264c584",
+        "96d25f5b-c265-405c-8bb9-d7ff271a00f5"
+      ],
+      "monotonicTimeNanos": 10263485540
+    },
+    {
+      "articleId": "4ef3a2d0-0044-4714-82c7-d441afa019f3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930890613,
+      "recordedAt": 1791930892548,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1210,
+      "evidenceReferences": [
+        "36bf45dc-abe1-435b-a00a-8d3478915140"
+      ],
+      "monotonicTimeNanos": 12259988694
+    },
+    {
+      "articleId": "1e76c4f9-498b-4b2b-87fe-89d4b66ee14e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930890774,
+      "recordedAt": 1791930893088,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:fe01bbca-8c7f-4ebd-9ade-b4b2af18cb91",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "attackerSpeciesName": "Gourgeist",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "fe01bbca-8c7f-4ebd-9ade-b4b2af18cb91"
+      ],
+      "confidence": 0.79678607,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 12427976386
+    },
+    {
+      "articleId": "3980dbd3-fb23-48e0-b6e3-daa7a48649fd",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930890774,
+      "recordedAt": 1791930893095,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "1e76c4f9-498b-4b2b-87fe-89d4b66ee14e",
+        "eec54180-ff7f-4a8b-ab01-a5e538ef72e5"
+      ],
+      "confidence": 0.78085035,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 12427976386
+    },
+    {
+      "articleId": "89e34c9c-b665-4167-a1b2-c0e4b9af795b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930887090,
+      "recordedAt": 1791930894256,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1287,
+      "evidenceReferences": [
+        "c8c2719f-95da-4be6-b9c2-c56627fa3bf2",
+        "492f448d-e8ee-4ded-b55c-aea3fd8e62dd",
+        "527c0f7e-4a8f-411d-b024-5b735ebdbea2"
+      ],
+      "monotonicTimeNanos": 8748053616
+    },
+    {
+      "articleId": "03ab7d33-8bf1-4e08-a4ad-03ab75a93169",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930884989,
+      "recordedAt": 1791930896852,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1382,
+      "evidenceReferences": [
+        "8ae28972-1dcd-4c89-bc5c-84e1151df9f8"
+      ],
+      "monotonicTimeNanos": 6631742463
+    },
+    {
+      "articleId": "b753c348-3208-455d-9820-46b5af6df4bc",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930895434,
+      "recordedAt": 1791930897369,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:85924232-fc84-4b54-b6e5-61bb2a56fbe0",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "a844913b-b66a-4d7b-92ad-100634c01b7d",
+        "attackerSpeciesName": "Plusle",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1ab4fe53-2111-4c82-bb97-fddd8199fa4c",
+        "76755e09-c239-48fc-8866-35973c3a6658",
+        "85924232-fc84-4b54-b6e5-61bb2a56fbe0"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 17089421848
+    },
+    {
+      "articleId": "de64464e-3826-4ebd-b4b4-03790297d6e9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930893808,
+      "recordedAt": 1791930898303,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Plusle used Discharge!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1477,
+      "evidenceReferences": [
+        "ef7ca979-7e9b-4692-ae76-6298792d5932",
+        "d0ddfcfe-3b76-4c27-bec2-a20365ebf2c9"
+      ],
+      "monotonicTimeNanos": 15474340925
+    },
+    {
+      "articleId": "deeb95bc-3ec9-41c1-8a93-9c94d767d910",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930893808,
+      "recordedAt": 1791930898661,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "moveName": "Discharge",
+        "energyCost": 40,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "de64464e-3826-4ebd-b4b4-03790297d6e9"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 15474340925
+    },
+    {
+      "articleId": "8803c8a8-e71c-4253-98b1-1e22ab1ceb9a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930893808,
+      "recordedAt": 1791930898665,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1478,
+      "evidenceReferences": [
+        "de64464e-3826-4ebd-b4b4-03790297d6e9"
+      ],
+      "monotonicTimeNanos": 15474340925
+    },
+    {
+      "articleId": "fd2005be-f514-431f-9624-948911e96e54",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930893808,
+      "recordedAt": 1791930898708,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "speciesId": 311
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1486,
+      "evidenceReferences": [
+        "de64464e-3826-4ebd-b4b4-03790297d6e9"
+      ],
+      "monotonicTimeNanos": 15474340925
+    },
+    {
+      "articleId": "e78131ba-6eeb-4ba3-bb80-0f4304f3faf0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930896907,
+      "recordedAt": 1791930899108,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Gourgeist",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1518,
+      "evidenceReferences": [
+        "f6b5f06a-8c65-4d41-8b13-10f575ca9045"
+      ],
+      "monotonicTimeNanos": 18568056617
+    },
+    {
+      "articleId": "38f08117-c156-4c42-941a-1e6ba057d064",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930889305,
+      "recordedAt": 1791930901284,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1607,
+      "evidenceReferences": [
+        "b6341da7-0251-49a4-998d-04596305fa80"
+      ],
+      "monotonicTimeNanos": 10925591770
+    },
+    {
+      "articleId": "563f4e6c-abdc-4549-ac30-57f3b7251cc9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930897846,
+      "recordedAt": 1791930904762,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1696,
+      "evidenceReferences": [
+        "cb823775-b0fa-431c-8c86-320a13907ad1",
+        "d0d1ed5b-2c39-4c6e-a0e5-f0fa76055620",
+        "0b0d8f36-f871-4551-abbc-de1d135ed073"
+      ],
+      "monotonicTimeNanos": 19495761309
+    },
+    {
+      "articleId": "b761c716-23c6-45c0-93d9-30c715a0181f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930896653,
+      "recordedAt": 1791930905542,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1715,
+      "evidenceReferences": [
+        "3cd65cbc-0fc4-45c7-843f-d5f3f01f4d6b"
+      ],
+      "monotonicTimeNanos": 18317323386
+    },
+    {
+      "articleId": "af23255c-cd15-4a4c-a4dc-5c2761bb6e42",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930900852,
+      "recordedAt": 1791930905917,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1727,
+      "evidenceReferences": [
+        "0d6141ef-cfc2-49d5-a5de-e9d2069a1dc4"
+      ],
+      "monotonicTimeNanos": 22506495079
+    },
+    {
+      "articleId": "c2c3db4f-bbd2-4d65-8a51-d5961e6c101f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930904534,
+      "recordedAt": 1791930908730,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1806,
+      "evidenceReferences": [
+        "7a9937f9-b59f-437a-8302-e6857b271a76",
+        "33f2cb5f-85f4-42fd-9cc3-230e71841aa3",
+        "a12dae5f-3e8c-459f-892d-84a2468b099b"
+      ],
+      "monotonicTimeNanos": 26175232310
+    },
+    {
+      "articleId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930907810,
+      "recordedAt": 1791930909243,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1829,
+      "evidenceReferences": [
+        "88235a2c-7c88-4245-ac4f-aa11ac7946c8"
+      ],
+      "monotonicTimeNanos": 29462254233
+    },
+    {
+      "articleId": "54e9f7c8-e9b5-435e-8248-bc6f5a264987",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930909457,
+      "recordedAt": 1791930910222,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Plusle",
+        "speciesId": 311,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1880,
+      "evidenceReferences": [
+        "a844913b-b66a-4d7b-92ad-100634c01b7d",
+        "e2c67848-9863-4c90-8bc3-5c6fbb7980cc",
+        "e4794d7a-4c08-4b95-a089-7ad9b308658c"
+      ],
+      "monotonicTimeNanos": 31121725310
+    },
+    {
+      "articleId": "5be2e9e8-f978-414a-8367-e093e6135dcf",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930905030,
+      "recordedAt": 1791930910622,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1897,
+      "evidenceReferences": [
+        "37c564c0-80d7-46f9-b058-128d4138d9be"
+      ],
+      "monotonicTimeNanos": 26684373848
+    },
+    {
+      "articleId": "4511428d-f451-48f4-9758-8bcd62ef5bfb",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930909194,
+      "recordedAt": 1791930911343,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1946,
+      "evidenceReferences": [
+        "f7fe65d1-6528-4dc7-afc5-b904b0df5c88"
+      ],
+      "monotonicTimeNanos": 30853708310
+    },
+    {
+      "articleId": "3aa720ef-4c9a-4be2-a540-2ba3f6cad426",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930908568,
+      "recordedAt": 1791930912249,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Electrode!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1997,
+      "evidenceReferences": [
+        "68292790-2400-4162-8fb8-c57f786b807e",
+        "b2cc8f25-c89e-48ae-956d-53c9993017e1"
+      ],
+      "monotonicTimeNanos": 30237060618
+    },
+    {
+      "articleId": "712078c0-5723-4a9c-b054-071567aaa509",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930908568,
+      "recordedAt": 1791930912607,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 2025,
+      "evidenceReferences": [
+        "3aa720ef-4c9a-4be2-a540-2ba3f6cad426"
+      ],
+      "monotonicTimeNanos": 30237060618
+    },
+    {
+      "articleId": "5389980c-7e60-44b0-b94e-a6b30fc678ec",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930911103,
+      "recordedAt": 1791930912812,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2039,
+      "evidenceReferences": [
+        "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "bfce7cb4-dcfe-432e-a9d3-209ea3fba0cf"
+      ],
+      "monotonicTimeNanos": 32754828618
+    },
+    {
+      "articleId": "d1fc8089-4055-4178-92d0-76c57d4b63ac",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930911000,
+      "recordedAt": 1791930913243,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f20f4adb-7a23-4c54-99df-2c7bef9c0366",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "attackerSpeciesName": "Gourgeist",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_BAR_MOTION_COMPLETION",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f3a95dee-f342-42dc-affb-a2ef934af750",
+        "ae6a30c5-4e6a-4a22-8af7-aa85cdc57201",
+        "da9599ca-7a85-4421-a819-add3063dec94",
+        "f20f4adb-7a23-4c54-99df-2c7bef9c0366",
+        "9c125005-316b-43d5-9452-52c4e3cb62a1"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 32653884003
+    },
+    {
+      "articleId": "ea52eddc-6895-493e-9aac-d7df6fb376ce",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930911000,
+      "recordedAt": 1791930913253,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "d1fc8089-4055-4178-92d0-76c57d4b63ac",
+        "eec54180-ff7f-4a8b-ab01-a5e538ef72e5"
+      ],
+      "confidence": 0.9702,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 32653884003
+    },
+    {
+      "articleId": "07045fd4-f0ea-4fa1-8a09-6509b57023d4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930905524,
+      "recordedAt": 1791930914580,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2107,
+      "evidenceReferences": [
+        "bbb31c91-5b3a-4dbb-b5cb-a67cce12b39c"
+      ],
+      "monotonicTimeNanos": 27189524618
+    },
+    {
+      "articleId": "09ee9462-5dee-4538-a096-2c571f375171",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930912317,
+      "recordedAt": 1791930914603,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2110,
+      "evidenceReferences": [
+        "3aa720ef-4c9a-4be2-a540-2ba3f6cad426",
+        "21e25dcb-28bb-4625-9f10-8cde1fd8a243"
+      ],
+      "monotonicTimeNanos": 33969588080
+    },
+    {
+      "articleId": "9af791e3-a13b-4bd6-b554-6501df5af37b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930911907,
+      "recordedAt": 1791930916405,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready\nPOSI",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2196,
+      "evidenceReferences": [
+        "b8ef1b75-658a-4760-94e4-c80018f47937",
+        "5d488c22-c0f3-4608-a210-346c65088fe9"
+      ],
+      "monotonicTimeNanos": 33560291464
+    },
+    {
+      "articleId": "41a7b352-948b-4a4a-95a4-224df22a5836",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930911907,
+      "recordedAt": 1791930916418,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2197,
+      "evidenceReferences": [
+        "9af791e3-a13b-4bd6-b554-6501df5af37b"
+      ],
+      "monotonicTimeNanos": 33560291464
+    },
+    {
+      "articleId": "6a40ad75-22e6-4cbc-8932-4b05774ec69b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930910177,
+      "recordedAt": 1791930920427,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2296,
+      "evidenceReferences": [
+        "5f0ac796-7636-49e7-a1ce-3d2b80f66870"
+      ],
+      "monotonicTimeNanos": 31839490772
+    },
+    {
+      "articleId": "d1dac266-e4c2-4ba6-9896-c4742e505c69",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930914432,
+      "recordedAt": 1791930920458,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2297,
+      "evidenceReferences": [
+        "96869e21-3e22-4ea3-9b89-b208e370d8e5"
+      ],
+      "monotonicTimeNanos": 36074315464
+    },
+    {
+      "articleId": "8e3af1cc-b6ad-4d68-a75f-79c1053ed796",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930916156,
+      "recordedAt": 1791930921710,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2353,
+      "evidenceReferences": [
+        "5a4ce753-49c7-4323-a439-8b2beb6509a2",
+        "2acb96d5-a9a9-44ba-a597-027b757a470f",
+        "0d576541-165a-4ce7-9537-c160dd2d5862"
+      ],
+      "monotonicTimeNanos": 37825094464
+    },
+    {
+      "articleId": "149f179c-f1a9-4886-a53b-d49afd37d1ee",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930920145,
+      "recordedAt": 1791930922006,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2371,
+      "evidenceReferences": [
+        "4dd751e1-2d43-43af-ba42-84c7199d3c01"
+      ],
+      "monotonicTimeNanos": 41786897234
+    },
+    {
+      "articleId": "c055c17b-07a0-489c-888b-2fc1290dd1d9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930921577,
+      "recordedAt": 1791930923188,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2439,
+      "evidenceReferences": [
+        "7aaaf8eb-100c-4d8e-9d07-6ca7bf7d7f3d",
+        "30f5f131-be50-4bbb-9e37-84b34d4ab44a"
+      ],
+      "monotonicTimeNanos": 43233036695
+    },
+    {
+      "articleId": "ea70b502-cf51-4942-a3f0-04573c1c30ee",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930920940,
+      "recordedAt": 1791930923199,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f02390b8-65d2-43b7-a305-9aebcec315a0",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "attackerSpeciesName": "Gourgeist",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f02390b8-65d2-43b7-a305-9aebcec315a0"
+      ],
+      "confidence": 0.89260894,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 42596185926
+    },
+    {
+      "articleId": "bd712e43-e32c-47eb-9000-03b3ee9eacdc",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930920940,
+      "recordedAt": 1791930923203,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "ea70b502-cf51-4942-a3f0-04573c1c30ee",
+        "eec54180-ff7f-4a8b-ab01-a5e538ef72e5"
+      ],
+      "confidence": 0.87475675,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 42596185926
+    },
+    {
+      "articleId": "ec69bb59-14fd-4e2f-a2db-1eec4c945c82",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930920145,
+      "recordedAt": 1791930923327,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2452,
+      "evidenceReferences": [
+        "ecfa04ba-3bad-48e5-aff8-a39915338409"
+      ],
+      "monotonicTimeNanos": 41786897234
+    },
+    {
+      "articleId": "daf3143d-d8b8-4d28-a647-30a5598fc2ab",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930922939,
+      "recordedAt": 1791930926870,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2635,
+      "evidenceReferences": [
+        "b8041f71-fa38-4b21-8dc4-2a17df470d36",
+        "83a7c0e7-1dd8-4c8e-95bb-68210a8513e7"
+      ],
+      "monotonicTimeNanos": 44605138849
+    },
+    {
+      "articleId": "4804f8a8-5030-456a-8c99-70b2489d5b9b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930921784,
+      "recordedAt": 1791930928520,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2713,
+      "evidenceReferences": [
+        "5224318d-0784-416e-9739-3162dc34f6f0"
+      ],
+      "monotonicTimeNanos": 43423321234
+    },
+    {
+      "articleId": "4b146837-360d-442f-8449-b174aa96e4e4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930927128,
+      "recordedAt": 1791930928835,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:db6683cd-10dd-4fe6-9a0b-16dc0a5124ee",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "474c0a38-1bc9-45e4-91fc-b12440766eaa",
+        "db6683cd-10dd-4fe6-9a0b-16dc0a5124ee",
+        "e6927adb-5961-4712-8763-a0abdbc7f46a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 48795405542
+    },
+    {
+      "articleId": "cfbb26bc-12f4-406e-80fa-0b367d588bb5",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930926624,
+      "recordedAt": 1791930929050,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2730,
+      "evidenceReferences": [
+        "259726ba-a16b-4c0d-a2e6-09fc40384eaa",
+        "b79ec89e-028b-488d-a64b-8b541e98c864"
+      ],
+      "monotonicTimeNanos": 48275518465
+    },
+    {
+      "articleId": "5e134006-90f6-406a-b49f-a8e279b16e83",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930929210,
+      "recordedAt": 1791930929828,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "moveName": "Volt Switch",
+        "moveDurationNanos": 2000000000,
+        "observedMedianIntervalNanos": 2042678923,
+        "cadenceSampleCount": 2,
+        "basis": "RECIPIENT_VISUAL_ARTIFACT_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_EFFECTIVENESS"
+      },
+      "predecessorIds": [
+        "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "e6927adb-5961-4712-8763-a0abdbc7f46a",
+        "28458eb0-3428-44b0-af3a-e8a9c15d027c",
+        "78a1b78e-cce7-4a6a-bdd2-97b82920d950",
+        "917a9711-82a7-4b2d-bd4e-58f46fc33593"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 50861387773
+    },
+    {
+      "articleId": "221b9ab6-12cc-4359-9a2d-17dd0f119c9d",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930927128,
+      "recordedAt": 1791930929849,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "4b146837-360d-442f-8449-b174aa96e4e4",
+        "5e134006-90f6-406a-b49f-a8e279b16e83"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 48795405542
+    },
+    {
+      "articleId": "b65d9aa4-a575-4992-a30f-dba67ef7d885",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930922789,
+      "recordedAt": 1791930930278,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "SHADOW BALL"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2785,
+      "evidenceReferences": [
+        "f431a7b6-4168-4b47-bae3-54cfaa314a0d"
+      ],
+      "monotonicTimeNanos": 44450776619
+    },
+    {
+      "articleId": "573ae28a-d45c-4166-b120-bf23a182d435",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930929562,
+      "recordedAt": 1791930931740,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:c68180b5-0d38-4e6b-a791-7fc753933023",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "28458eb0-3428-44b0-af3a-e8a9c15d027c",
+        "3579ffa7-3a2a-478b-8176-af7b11ae00e9",
+        "c68180b5-0d38-4e6b-a791-7fc753933023",
+        "96c8720b-1da2-4067-bf76-812af967c305",
+        "ce4fc627-f906-4414-b3d1-1d8409d5abfe"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 51213833619
+    },
+    {
+      "articleId": "d763e31b-009a-4245-b9cf-255a8c772005",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930929562,
+      "recordedAt": 1791930931774,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "573ae28a-d45c-4166-b120-bf23a182d435",
+        "5e134006-90f6-406a-b49f-a8e279b16e83"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 51213833619
+    },
+    {
+      "articleId": "0e113113-007c-4a35-b919-b4c5c43f2709",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930931550,
+      "recordedAt": 1791930933694,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:93f1e685-ffb4-4c86-8e5c-f904f94ea578",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "2acccdca-af1b-44ec-9388-aa25ef8ca531",
+        "d47456b2-abe9-4447-a45d-eb27632ccaef",
+        "93f1e685-ffb4-4c86-8e5c-f904f94ea578",
+        "4896ab28-d48e-4425-9a99-b932083ce758"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 53218254158
+    },
+    {
+      "articleId": "9e1b715a-30ff-4134-9327-f976458ef69e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930931550,
+      "recordedAt": 1791930933695,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "0e113113-007c-4a35-b919-b4c5c43f2709",
+        "5e134006-90f6-406a-b49f-a8e279b16e83"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 53218254158
+    },
+    {
+      "articleId": "94a2a2bb-2ee2-4fdf-a280-66d002e9121a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930931550,
+      "recordedAt": 1791930933698,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "moveName": "Volt Switch",
+        "moveDurationNanos": 2000000000,
+        "observedMedianIntervalNanos": 2013259922,
+        "cadenceSampleCount": 2,
+        "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS"
+      },
+      "predecessorIds": [
+        "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "e6927adb-5961-4712-8763-a0abdbc7f46a",
+        "28458eb0-3428-44b0-af3a-e8a9c15d027c",
+        "78a1b78e-cce7-4a6a-bdd2-97b82920d950",
+        "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "573ae28a-d45c-4166-b120-bf23a182d435",
+        "0e113113-007c-4a35-b919-b4c5c43f2709",
+        "ce6cdc50-5307-4ca3-863c-fbcf27869544",
+        "a1dc0733-56a3-46b4-9d3c-ba8d570f9c41"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 53218254158
+    },
+    {
+      "articleId": "e01604dd-e8fc-4d12-a4b1-dac58f6797c6",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930928819,
+      "recordedAt": 1791930934236,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2977,
+      "evidenceReferences": [
+        "e9dfcb84-7293-4c6d-b6b7-eace0fc6a707",
+        "6b1b1032-d2ed-4fbf-8b2c-a2c10bc54373",
+        "c1446288-8d14-4b2b-b99e-f6ec942f2168"
+      ],
+      "monotonicTimeNanos": 50485033927
+    },
+    {
+      "articleId": "4d243dc3-b042-4996-98b0-a89f07ee611c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930932437,
+      "recordedAt": 1791930934642,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4e2b010b-0960-4151-8bb9-fbe21c542dcd",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f638ef3f-2f52-45dc-98e9-7501f43e1fff",
+        "4e2b010b-0960-4151-8bb9-fbe21c542dcd",
+        "ce6cdc50-5307-4ca3-863c-fbcf27869544"
+      ],
+      "confidence": 0.98966825,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 54101963696
+    },
+    {
+      "articleId": "c854be60-555b-420b-beb3-eeefb8644d73",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930932437,
+      "recordedAt": 1791930934647,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "4d243dc3-b042-4996-98b0-a89f07ee611c",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.97977155,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 54101963696
+    },
+    {
+      "articleId": "36e56ff2-bdda-4c75-8dba-977a25395b9c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930928128,
+      "recordedAt": 1791930936098,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3079,
+      "evidenceReferences": [
+        "af48c80b-fd72-4b97-9536-53eeb7db0eac"
+      ],
+      "monotonicTimeNanos": 49788743080
+    },
+    {
+      "articleId": "d7c54f8a-0b21-4a07-8be1-a193f21aadf1",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930934081,
+      "recordedAt": 1791930936872,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Attack incoming!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3116,
+      "evidenceReferences": [
+        "fdb8afe1-da6a-4a44-b788-c37c5461059b",
+        "43090128-e7b5-4cf5-8f5f-47f9ac708803"
+      ],
+      "monotonicTimeNanos": 55728986542
+    },
+    {
+      "articleId": "29cb398b-05d4-4e00-8e4a-684ba63a2629",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930934081,
+      "recordedAt": 1791930936989,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "attack_incoming"
+      },
+      "predecessorIds": [
+        "d8d46f64-4321-4811-978a-00d057f02e7c"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 55728986542
+    },
+    {
+      "articleId": "2e6cddd4-6552-49e4-b195-f4c169ae63fc",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930929782,
+      "recordedAt": 1791930938435,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "SHADOW BALL"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3215,
+      "evidenceReferences": [
+        "fbcf757f-63ec-46c3-81c9-4e612d448906"
+      ],
+      "monotonicTimeNanos": 51436733004
+    },
+    {
+      "articleId": "068e34ec-8951-45fa-bca0-9dc65a758198",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930936505,
+      "recordedAt": 1791930941507,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3381,
+      "evidenceReferences": [
+        "f856a9c8-edd3-443a-a3fe-0f58e0b0a829",
+        "a892e83c-bfaf-4a04-9777-e9b5e3bfe89f",
+        "55bde510-71c3-457a-8685-2f7c35a7b121"
+      ],
+      "monotonicTimeNanos": 58173264619
+    },
+    {
+      "articleId": "1cfd3141-4e57-4999-9e76-1d03c89ff2ac",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930936027,
+      "recordedAt": 1791930943572,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "NOW"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3469,
+      "evidenceReferences": [
+        "a550a04f-2b68-4ab3-bc71-5e33cb905b91"
+      ],
+      "monotonicTimeNanos": 57678486542
+    },
+    {
+      "articleId": "ae878a17-3bf6-458b-af2f-99319778bfd7",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930942431,
+      "recordedAt": 1791930944630,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f4996aa0-5025-4114-9b9c-f4a9ac33def2",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f4996aa0-5025-4114-9b9c-f4a9ac33def2"
+      ],
+      "confidence": 0.8694839,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 64088071081
+    },
+    {
+      "articleId": "4ee90549-8372-459e-a6e5-30ccd315682f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930942431,
+      "recordedAt": 1791930944631,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "ae878a17-3bf6-458b-af2f-99319778bfd7",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.86078906,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 64088071081
+    },
+    {
+      "articleId": "4fa00b1d-dee6-47f8-bbc6-944577d1cd10",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930941157,
+      "recordedAt": 1791930944720,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Electrode used Thunderbolt!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3544,
+      "evidenceReferences": [
+        "d3abb326-5bee-4889-949d-7c813388e725",
+        "513676ca-05dc-4a7c-8bdf-e93a45b15df4"
+      ],
+      "monotonicTimeNanos": 62812263389
+    },
+    {
+      "articleId": "d996922b-b9a5-4b12-9731-d3a69a29009f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930941157,
+      "recordedAt": 1791930944857,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "moveName": "Thunderbolt",
+        "energyCost": 55,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "4fa00b1d-dee6-47f8-bbc6-944577d1cd10"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 62812263389
+    },
+    {
+      "articleId": "c546d80d-2493-4907-9234-bc962aa9970f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930941157,
+      "recordedAt": 1791930944878,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3546,
+      "evidenceReferences": [
+        "4fa00b1d-dee6-47f8-bbc6-944577d1cd10"
+      ],
+      "monotonicTimeNanos": 62812263389
+    },
+    {
+      "articleId": "220e2df3-720d-42db-b720-d39e453caa4e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930941157,
+      "recordedAt": 1791930945073,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3558,
+      "evidenceReferences": [
+        "4fa00b1d-dee6-47f8-bbc6-944577d1cd10"
+      ],
+      "monotonicTimeNanos": 62812263389
+    },
+    {
+      "articleId": "315881be-b3ea-4678-b6f8-96d01df3c2d6",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930938110,
+      "recordedAt": 1791930947133,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "NOT"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3701,
+      "evidenceReferences": [
+        "99bdcd39-4318-416e-bbd3-923f4694346a"
+      ],
+      "monotonicTimeNanos": 59760859696
+    },
+    {
+      "articleId": "129de119-c497-4f83-ac7a-d3fc06323c15",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930944325,
+      "recordedAt": 1791930950869,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3884,
+      "evidenceReferences": [
+        "1052225e-ff57-45d3-84d5-59e813b3fec2",
+        "ac98955a-397f-4ef9-a487-6c91d917874f",
+        "d678d062-ee56-4023-927e-ee9be54db7db"
+      ],
+      "monotonicTimeNanos": 65986403774
+    },
+    {
+      "articleId": "25f0bdea-ec80-4a54-b4cc-97a294aea430",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930949101,
+      "recordedAt": 1791930951296,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:410fd436-935a-4a5e-b399-f3bfd2ebb01a",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b9d5bceb-8317-48a2-8b5f-323341207ae5",
+        "e43ee0cb-87ce-45f6-bab6-4c7ef516ae19",
+        "410fd436-935a-4a5e-b399-f3bfd2ebb01a"
+      ],
+      "confidence": 0.956289,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 70769723466
+    },
+    {
+      "articleId": "aa4a2806-bbc7-4539-b359-01e26bb641d2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930949101,
+      "recordedAt": 1791930951318,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "25f0bdea-ec80-4a54-b4cc-97a294aea430",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.9467261,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 70769723466
+    },
+    {
+      "articleId": "5fce59f7-d030-475d-9466-4fd265a33a04",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930943385,
+      "recordedAt": 1791930952298,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3966,
+      "evidenceReferences": [
+        "3fd9d4f1-9f4f-4d92-803e-2fdae466f49e"
+      ],
+      "monotonicTimeNanos": 65008885235
+    },
+    {
+      "articleId": "ff79c73a-4890-409f-9a8d-5d0836306174",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930951125,
+      "recordedAt": 1791930953272,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:5773091b-75c9-416d-b55d-f8d768201086",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1f1e5766-8599-4f2f-a7cf-89a0b2aed502",
+        "27bd617c-9e16-45d0-aa46-583e3590f239",
+        "5773091b-75c9-416d-b55d-f8d768201086"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 72777317236
+    },
+    {
+      "articleId": "89db0c24-e098-4534-926a-0d38b146d4bd",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930951125,
+      "recordedAt": 1791930953273,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "ff79c73a-4890-409f-9a8d-5d0836306174",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 72777317236
+    },
+    {
+      "articleId": "efb0ce68-a3a3-4da1-a4c4-24aec8d3de0a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930946946,
+      "recordedAt": 1791930954652,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "SHADOW BALL"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4092,
+      "evidenceReferences": [
+        "108e51e5-7547-4c3c-82ea-c23eead22ff4"
+      ],
+      "monotonicTimeNanos": 68601529312
+    },
+    {
+      "articleId": "0a04bcde-c6f5-47be-bf15-7a4b69c647ba",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930953250,
+      "recordedAt": 1791930955519,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b636178d-9c73-422c-9329-e86f42178364",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b99645b6-6c15-48ac-ad7f-f0404093dabf",
+        "bfb63afe-2ab1-4d2a-bca1-784ad4a7b2cb",
+        "b636178d-9c73-422c-9329-e86f42178364"
+      ],
+      "confidence": 0.9845428,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 74908606774
+    },
+    {
+      "articleId": "be75ff1c-6b24-490f-bf4f-3c93189b125a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930953250,
+      "recordedAt": 1791930955538,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "0a04bcde-c6f5-47be-bf15-7a4b69c647ba",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.97469735,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 74908606774
+    },
+    {
+      "articleId": "c41f0e4d-fbbc-4af2-8cce-7a384ed8e99b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930950154,
+      "recordedAt": 1791930955639,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4153,
+      "evidenceReferences": [
+        "f2339b0b-ac41-442c-8e66-11a68973a0f2",
+        "ed503c14-f5ff-4084-b6c4-0127390dbe30",
+        "8078cdcd-473e-4801-903f-e147a0f77613"
+      ],
+      "monotonicTimeNanos": 71822937851
+    },
+    {
+      "articleId": "d6979e3e-e5ca-4779-9602-53b6dd7dc533",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930955856,
+      "recordedAt": 1791930956292,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 4191,
+      "evidenceReferences": [
+        "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "4a1c5577-fbbb-485f-977c-7757c6cecbe2",
+        "0d6b0997-6522-4bcc-bef2-b24db14e138d"
+      ],
+      "monotonicTimeNanos": 77520734544
+    },
+    {
+      "articleId": "58aaa55a-a174-4737-b807-6782834090d0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930953797,
+      "recordedAt": 1791930956641,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "speciesId": 711
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4209,
+      "evidenceReferences": [
+        "1b3966c7-6142-452b-8357-eedd5d2f549b"
+      ],
+      "monotonicTimeNanos": 75459682851
+    },
+    {
+      "articleId": "c3277ce4-1c8e-4278-8d07-258aabba856c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930953797,
+      "recordedAt": 1791930956703,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Gourgeist",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "58aaa55a-a174-4737-b807-6782834090d0",
+        "f5f23feb-6078-4986-a4e1-88a056000ef4"
+      ],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 75459682851
+    },
+    {
+      "articleId": "4d94fbd5-47bc-4971-a5f2-9492ce2fd148",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930955104,
+      "recordedAt": 1791930957331,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:aad674df-400b-40de-9b3c-4fc540e788c4",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "478cb2bd-226f-49ee-a847-0582203a1b1c",
+        "c27b5097-2820-4cee-ba92-de6463c8c671",
+        "aad674df-400b-40de-9b3c-4fc540e788c4"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 76765113621
+    },
+    {
+      "articleId": "ac8de7c0-a8a4-447f-829d-d6dbd37e67a1",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930955104,
+      "recordedAt": 1791930957344,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "4d94fbd5-47bc-4971-a5f2-9492ce2fd148",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.98010004,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 76765113621
+    },
+    {
+      "articleId": "a32bc308-1374-4af1-9206-5ff792be15a3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930952134,
+      "recordedAt": 1791930960913,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4420,
+      "evidenceReferences": [
+        "a7d6917d-ab3a-47a4-a78a-6b2b393ed49a"
+      ],
+      "monotonicTimeNanos": 73790752928
+    },
+    {
+      "articleId": "938b44c0-b761-4dd4-9c48-972bf30344d2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930955104,
+      "recordedAt": 1791930961517,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4450,
+      "evidenceReferences": [
+        "4e267e7a-500a-4a4f-a213-2dcf31261dc8",
+        "3950e76f-9a09-42ef-ac15-8c10d56e6a3b",
+        "ede7217d-bbe7-4d7f-b2bb-42f2ba1504fe"
+      ],
+      "monotonicTimeNanos": 76765113621
+    },
+    {
+      "articleId": "18732f8f-8765-4f5a-88db-713f91b42316",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930954272,
+      "recordedAt": 1791930962883,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "SHADOW BALL"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4528,
+      "evidenceReferences": [
+        "b2ac4230-194b-4d73-a97d-2579f696f954"
+      ],
+      "monotonicTimeNanos": 75928350236
+    },
+    {
+      "articleId": "11b65ca3-ec1b-4be1-b50d-99846447a124",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930961289,
+      "recordedAt": 1791930965314,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4672,
+      "evidenceReferences": [
+        "31deced6-fadc-4522-a981-b6bc88929fb7",
+        "0d55d5d4-b31d-479c-a5bb-849553b25093",
+        "9afd7e9a-ffcd-4e29-a1ef-a0e2b939adee"
+      ],
+      "monotonicTimeNanos": 82948445236
+    },
+    {
+      "articleId": "4349d5bf-7d63-4a5b-b6ff-cb080613663d",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930964909,
+      "recordedAt": 1791930966257,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4716,
+      "evidenceReferences": [
+        "b6f209ab-2b1c-4979-8eaa-95daffd76698"
+      ],
+      "monotonicTimeNanos": 86570919390
+    },
+    {
+      "articleId": "2d8e1d50-706a-4576-8e94-3bba75460141",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930964909,
+      "recordedAt": 1791930966411,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4723,
+      "evidenceReferences": [
+        "b6f209ab-2b1c-4979-8eaa-95daffd76698"
+      ],
+      "monotonicTimeNanos": 86570919390
+    },
+    {
+      "articleId": "561bcbf2-da54-4644-becc-ccc5940afb10",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930964909,
+      "recordedAt": 1791930966466,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "2d8e1d50-706a-4576-8e94-3bba75460141",
+        "e8d46e0b-0658-46e5-93dc-c56c0761b76a"
+      ],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 86570919390
+    },
+    {
+      "articleId": "21b7c0a0-5268-4ca9-84f7-5db274b48f75",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930960603,
+      "recordedAt": 1791930966822,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4759,
+      "evidenceReferences": [
+        "a86fcaac-11b5-4665-b766-18474bfb011f"
+      ],
+      "monotonicTimeNanos": 82253925005
+    },
+    {
+      "articleId": "4504f661-0067-4e92-bb58-84ead4e17e85",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930966083,
+      "recordedAt": 1791930967154,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4787,
+      "evidenceReferences": [
+        "41157bb2-e03e-44a0-a4dd-693492fa733c"
+      ],
+      "monotonicTimeNanos": 87751912621
+    },
+    {
+      "articleId": "0b175bbc-8c11-4ec8-82bc-c130521143a9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930962717,
+      "recordedAt": 1791930969747,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "ROCK TOMB"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4920,
+      "evidenceReferences": [
+        "da1a655f-19c2-4d11-af69-fc3d2cc1aadd"
+      ],
+      "monotonicTimeNanos": 84371429006
+    },
+    {
+      "articleId": "600c2c1d-2207-4daa-a7c0-0ad81f5dc463",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930964909,
+      "recordedAt": 1791930970214,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4936,
+      "evidenceReferences": [
+        "c2f0cb36-bd6f-4be3-b9d5-e8caf1a9e25e",
+        "011b8511-262f-471e-823d-bc9b5df45343",
+        "727e9fb6-e135-4712-8d61-01e9e37aace7"
+      ],
+      "monotonicTimeNanos": 86570919390
+    },
+    {
+      "articleId": "5e1f18d9-12d5-4248-9a63-ab8e898a381b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930968403,
+      "recordedAt": 1791930970637,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:a8cca103-9e42-4522-8a05-e8ccd3cde6b5",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "a8cca103-9e42-4522-8a05-e8ccd3cde6b5"
+      ],
+      "confidence": 0.7700199,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 90071788083
+    },
+    {
+      "articleId": "b15371e1-14f7-4a6e-b2aa-aa432b97084f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930968403,
+      "recordedAt": 1791930970639,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "5e1f18d9-12d5-4248-9a63-ab8e898a381b",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.7623197,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 90071788083
+    },
+    {
+      "articleId": "ff66f1c6-3532-4523-bd46-bdef154124e9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930970287,
+      "recordedAt": 1791930972597,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:a5cbe536-5106-434f-a454-bfc74e6b827c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "a5cbe536-5106-434f-a454-bfc74e6b827c"
+      ],
+      "confidence": 0.7663796,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 91935926545
+    },
+    {
+      "articleId": "3f50d61e-bc52-4a45-b900-ec4ec57f4f1e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930970287,
+      "recordedAt": 1791930972601,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "ff66f1c6-3532-4523-bd46-bdef154124e9",
+        "94a2a2bb-2ee2-4fdf-a280-66d002e9121a"
+      ],
+      "confidence": 0.7587158,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 91935926545
+    },
+    {
+      "articleId": "2436b89f-d2af-4c94-b258-26e1f14a66cf",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930973561,
+      "recordedAt": 1791930973616,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "moveName": "Volt Switch",
+        "moveDurationNanos": 2000000000,
+        "observedMedianIntervalNanos": 1875963077,
+        "cadenceSampleCount": 3,
+        "basis": "BAR_MOTION_CADENCE_AND_REFERENCE_KNOWLEDGE_CORROBORATED_BY_BAR_MOTION+EFFECTIVENESS+OBSERVED_USES"
+      },
+      "predecessorIds": [
+        "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "e6927adb-5961-4712-8763-a0abdbc7f46a",
+        "28458eb0-3428-44b0-af3a-e8a9c15d027c",
+        "78a1b78e-cce7-4a6a-bdd2-97b82920d950",
+        "917a9711-82a7-4b2d-bd4e-58f46fc33593",
+        "573ae28a-d45c-4166-b120-bf23a182d435",
+        "0e113113-007c-4a35-b919-b4c5c43f2709",
+        "ce6cdc50-5307-4ca3-863c-fbcf27869544",
+        "a1dc0733-56a3-46b4-9d3c-ba8d570f9c41",
+        "5e1f18d9-12d5-4248-9a63-ab8e898a381b",
+        "ff66f1c6-3532-4523-bd46-bdef154124e9",
+        "50cb170b-442d-4bd5-8200-049794216c77",
+        "1e294f80-5285-4168-b48f-1e1d7989faf5",
+        "6c01d04f-8c3d-481f-921a-fe7466a66d29",
+        "58aaa55a-a174-4737-b807-6782834090d0",
+        "1db83525-e522-4f9c-ae54-3bca42a738b0",
+        "2d8e1d50-706a-4576-8e94-3bba75460141"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 95218990775
+    },
+    {
+      "articleId": "ebf3f6c5-37b6-4ac4-8e89-84c7aae4d749",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930966358,
+      "recordedAt": 1791930974280,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5100,
+      "evidenceReferences": [
+        "c9320a9c-2745-44b0-8f59-e4719662a583"
+      ],
+      "monotonicTimeNanos": 88020920390
+    },
+    {
+      "articleId": "0d31a3f8-8aef-4ef3-937d-5d39ab09e936",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930972710,
+      "recordedAt": 1791930974827,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:5927ccce-ba6c-40f8-bf4b-6cee72f92f86",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "5927ccce-ba6c-40f8-bf4b-6cee72f92f86",
+        "1e294f80-5285-4168-b48f-1e1d7989faf5"
+      ],
+      "confidence": 0.979657,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 94362048699
+    },
+    {
+      "articleId": "e60bfd68-8bb9-4b6f-a255-35ae6a901822",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930972710,
+      "recordedAt": 1791930974828,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "0d31a3f8-8aef-4ef3-937d-5d39ab09e936",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.96986043,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 94362048699
+    },
+    {
+      "articleId": "0d71281c-414b-4800-8da7-dd0e2969a3b9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930969896,
+      "recordedAt": 1791930975108,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5154,
+      "evidenceReferences": [
+        "2c58d7f9-d5cf-40d2-b6b9-5367a741350c",
+        "ddd75370-08cc-4801-aeab-9ef9a0d21f91",
+        "c5b7a36f-4d5a-484a-b03c-996969197325"
+      ],
+      "monotonicTimeNanos": 91544410160
+    },
+    {
+      "articleId": "0c50ddbf-f9f5-483a-a8eb-7bb0f4102906",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930974182,
+      "recordedAt": 1791930976382,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:9a47028b-17ef-4724-be98-5af297bd660a",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "9a47028b-17ef-4724-be98-5af297bd660a"
+      ],
+      "confidence": 0.75396746,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 95842604083
+    },
+    {
+      "articleId": "fae1ec98-92d9-4d30-9b57-5724864212da",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930974182,
+      "recordedAt": 1791930976388,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "0c50ddbf-f9f5-483a-a8eb-7bb0f4102906",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.7464278,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 95842604083
+    },
+    {
+      "articleId": "c26b7020-13f5-414d-ad0b-00ea185e81c6",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930969490,
+      "recordedAt": 1791930976614,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "ROCK TOMB"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5225,
+      "evidenceReferences": [
+        "65158348-25ba-4e57-a7bd-d34fcb0d1ae6"
+      ],
+      "monotonicTimeNanos": 91156232083
+    },
+    {
+      "articleId": "1f6c49d9-3c1c-46cf-a391-f68236fc891e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930975308,
+      "recordedAt": 1791930977500,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:da387eb4-a12b-45f6-b287-c99307db7995",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "HP_BAR_MOTION_COMPLETION"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "da387eb4-a12b-45f6-b287-c99307db7995",
+        "89689507-9ae2-41e1-a863-7c9ad306ad23"
+      ],
+      "confidence": 0.9816992,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 96972144314
+    },
+    {
+      "articleId": "0aa4d90d-a9ef-4a5e-8616-3195d00095ef",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930975308,
+      "recordedAt": 1791930977506,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "1f6c49d9-3c1c-46cf-a391-f68236fc891e",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.9718822,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 96972144314
+    },
+    {
+      "articleId": "01579b68-c3bf-4adc-ba67-12878a0ff8b0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930974877,
+      "recordedAt": 1791930980260,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5391,
+      "evidenceReferences": [
+        "03775369-bffa-4118-8634-6b9c80f168ab",
+        "7dde7c26-88b1-4b26-8a31-ddca5f72e654",
+        "79d53b78-15fd-4138-9128-fd2c39a924e0"
+      ],
+      "monotonicTimeNanos": 96539885852
+    },
+    {
+      "articleId": "6c8e69ae-2bae-457f-b2c5-56802ea470fb",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930974182,
+      "recordedAt": 1791930982240,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5514,
+      "evidenceReferences": [
+        "da10a22d-837d-4faa-af5e-046d49ddc1b5"
+      ],
+      "monotonicTimeNanos": 95842604083
+    },
+    {
+      "articleId": "b3a2dbde-b262-4614-8a3f-58e2a015b97e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980472,
+      "recordedAt": 1791930982616,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5526,
+      "evidenceReferences": [
+        "159e317a-3eaf-44c4-ae0c-94bfb62af0b7"
+      ],
+      "monotonicTimeNanos": 102117658853
+    },
+    {
+      "articleId": "01f00ac5-c84c-419e-8268-c8cd86211889",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980846,
+      "recordedAt": 1791930983113,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:ee2453c8-df23-4dda-981b-70f187ce3b0f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "ee2453c8-df23-4dda-981b-70f187ce3b0f"
+      ],
+      "confidence": 0.8784363,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 102498519391
+    },
+    {
+      "articleId": "4d54f8df-fd58-4689-b5be-bb5a545c1798",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980846,
+      "recordedAt": 1791930983125,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "01f00ac5-c84c-419e-8268-c8cd86211889",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.869652,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 102498519391
+    },
+    {
+      "articleId": "e7261b81-8c06-492a-aab7-057da1d0cb2a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980089,
+      "recordedAt": 1791930983773,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Electrode used Thunderbolt!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5602,
+      "evidenceReferences": [
+        "42d44b00-c34f-46b4-aa75-83e73d899155",
+        "385217f2-4473-403e-bd4b-4e0f0caf9dd0"
+      ],
+      "monotonicTimeNanos": 101757244314
+    },
+    {
+      "articleId": "01a014c4-4f1a-4e67-beac-76eaa0475333",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980089,
+      "recordedAt": 1791930983788,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "moveName": "Thunderbolt",
+        "energyCost": 55,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "e7261b81-8c06-492a-aab7-057da1d0cb2a"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 101757244314
+    },
+    {
+      "articleId": "5561d899-729b-4a1f-84d0-16d45fb006a8",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930980089,
+      "recordedAt": 1791930983809,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5605,
+      "evidenceReferences": [
+        "e7261b81-8c06-492a-aab7-057da1d0cb2a"
+      ],
+      "monotonicTimeNanos": 101757244314
+    },
+    {
+      "articleId": "bbec433d-3199-4688-9903-3f6f52de336e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930982187,
+      "recordedAt": 1791930985330,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5715,
+      "evidenceReferences": [
+        "8a78e7d0-2aaa-4abc-9c57-5eee14265878"
+      ],
+      "monotonicTimeNanos": 103852602238
+    },
+    {
+      "articleId": "011ec772-f06d-4eb9-b905-82269b6e066a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930976377,
+      "recordedAt": 1791930985539,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5726,
+      "evidenceReferences": [
+        "f4289924-a46d-4e55-9e5e-39c37154c997"
+      ],
+      "monotonicTimeNanos": 98027395083
+    },
+    {
+      "articleId": "245ce3f9-e683-4a54-b2c6-405cdcd37902",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930985598,
+      "recordedAt": 1791930987917,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b92cd621-2ac2-4e4b-9e7c-157d3633ab7b",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "2d8e1d50-706a-4576-8e94-3bba75460141",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "8485fe2b-a902-4333-9c24-9f158287e7f9",
+        "bc0aaee3-91ca-46d3-a7a8-5483198293ed",
+        "b92cd621-2ac2-4e4b-9e7c-157d3633ab7b",
+        "64d3c4f8-69f2-49e7-bca1-a71818377ff0",
+        "c0990029-0800-46f3-baee-4329c3af0d18"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 107254807699
+    },
+    {
+      "articleId": "94945186-c453-43f4-9987-305cd0314597",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930985598,
+      "recordedAt": 1791930987921,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "245ce3f9-e683-4a54-b2c6-405cdcd37902",
+        "561bcbf2-da54-4644-becc-ccc5940afb10"
+      ],
+      "confidence": 0.9702,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 107254807699
+    },
+    {
+      "articleId": "d1d651b3-a515-4cad-b60e-788c6043ca24",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930983406,
+      "recordedAt": 1791930987934,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5879,
+      "evidenceReferences": [
+        "78753c49-2d88-466a-94db-8aacf025b0f4"
+      ],
+      "monotonicTimeNanos": 105045075161
+    },
+    {
+      "articleId": "e083d14e-88d1-4aa6-ad6a-a8870717591e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930987151,
+      "recordedAt": 1791930989370,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:43da2078-5398-4b29-b963-6f300e5c0256",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "43da2078-5398-4b29-b963-6f300e5c0256"
+      ],
+      "confidence": 0.7250704,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 108820669853
+    },
+    {
+      "articleId": "597e846c-0570-4725-bf39-e5ab2aa7f9e5",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930987151,
+      "recordedAt": 1791930989385,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "e083d14e-88d1-4aa6-ad6a-a8870717591e",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.7178197,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 108820669853
+    },
+    {
+      "articleId": "db674f05-6f34-4784-a12f-eec3828d949a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930983506,
+      "recordedAt": 1791930989491,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5954,
+      "evidenceReferences": [
+        "eabe5ee8-dfb2-4294-abac-69c81c832b31",
+        "a92550ec-e731-4f8f-93c2-fbeb5de378c9",
+        "95a83402-9e00-4a23-9f9e-5e4a35999ef6"
+      ],
+      "monotonicTimeNanos": 105154131699
+    },
+    {
+      "articleId": "37facca3-3ae2-4e48-af95-92bb46f9e6ed",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930987433,
+      "recordedAt": 1791930989678,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:dbe89897-da19-4e23-82db-993ae161e6ac",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "dbe89897-da19-4e23-82db-993ae161e6ac"
+      ],
+      "confidence": 0.735316,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 109102201622
+    },
+    {
+      "articleId": "e00fbbdd-542b-4027-b9fb-a46763f2ae04",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930987433,
+      "recordedAt": 1791930989690,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "37facca3-3ae2-4e48-af95-92bb46f9e6ed",
+        "2436b89f-d2af-4c94-b258-26e1f14a66cf"
+      ],
+      "confidence": 0.72796285,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 109102201622
+    },
+    {
+      "articleId": "289fb3a5-2caf-4b2f-93bf-c02057c98110",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930982143,
+      "recordedAt": 1791930990473,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5989,
+      "evidenceReferences": [
+        "5cff9b9f-f9f6-44f5-bba3-04e973e725f8"
+      ],
+      "monotonicTimeNanos": 103803605007
+    },
+    {
+      "articleId": "d492a5cb-ee3c-4dc5-9c3b-6eaf2d1dc6a7",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930990447,
+      "recordedAt": 1791930991462,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6035,
+      "evidenceReferences": [
+        "503bcfc9-b8de-4384-b413-0f6f1a0f88b3"
+      ],
+      "monotonicTimeNanos": 112095185546
+    },
+    {
+      "articleId": "ad2f4d97-b9ff-4672-b197-1c0c470f085c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930985300,
+      "recordedAt": 1791930992869,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "ROCK TOMB"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6109,
+      "evidenceReferences": [
+        "4b74e3d2-f4a8-42d0-a408-ef3b210c5eb3"
+      ],
+      "monotonicTimeNanos": 106961978161
+    },
+    {
+      "articleId": "668c6d5a-fdf8-4fb4-b97e-09c479b9e594",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930989382,
+      "recordedAt": 1791930993197,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6132,
+      "evidenceReferences": [
+        "c65c8586-e9b2-4233-a640-6084c9edeec0",
+        "73f9fb49-dcac-4e20-b313-a56a007449a9",
+        "19fb0c1c-2245-4298-98ac-7a801010e201"
+      ],
+      "monotonicTimeNanos": 111039546469
+    },
+    {
+      "articleId": "4ffd870f-3509-49de-8711-1a783abed1f2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930990048,
+      "recordedAt": 1791930995412,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6241,
+      "evidenceReferences": [
+        "e7312211-c8c5-41fe-8efc-177671413b28"
+      ],
+      "monotonicTimeNanos": 111704087700
+    },
+    {
+      "articleId": "b120b7c0-e226-40b2-8309-447fa0258504",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930994918,
+      "recordedAt": 1791930996090,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Jolteon",
+        "speciesId": 135
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 6278,
+      "evidenceReferences": [
+        "763baad4-cd81-45d8-8d66-9e1b5f7bfe46"
+      ],
+      "monotonicTimeNanos": 116567590469
+    },
+    {
+      "articleId": "eeecbb9d-98c2-46d8-b97f-13cb1dd71852",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930995773,
+      "recordedAt": 1791930996113,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:fb44cff1-fe61-4be4-ac80-abf340976a3f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "attackerSpeciesName": "Electrode",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "fb44cff1-fe61-4be4-ac80-abf340976a3f"
+      ],
+      "confidence": 0.7311323,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 117400863161
+    },
+    {
+      "articleId": "650f1bc2-f3c0-4374-9c5c-9fa98af71f32",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930988569,
+      "recordedAt": 1791930996648,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Electrode",
+        "speciesId": 101,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 6308,
+      "evidenceReferences": [
+        "c72389e4-cc9a-48fa-a7a2-09e6197e10d2",
+        "f4143d1b-383e-4185-a090-b36842d1923e",
+        "9bd42cc1-dd16-408d-a4d0-8a4d0079b739"
+      ],
+      "monotonicTimeNanos": 110235776930
+    },
+    {
+      "articleId": "6919e457-e140-437d-ba69-7fb1323f21a9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930995849,
+      "recordedAt": 1791930996858,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Jolteon",
+        "speciesId": 135
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 6319,
+      "evidenceReferences": [
+        "aeba89c2-2c0e-4c7d-af75-e5491145861c"
+      ],
+      "monotonicTimeNanos": 117487658546
+    },
+    {
+      "articleId": "fa6d763d-d687-43ce-85a6-2d3bb2ea548f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930992988,
+      "recordedAt": 1791930996978,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6327,
+      "evidenceReferences": [
+        "df7fe2f0-5ef7-4daa-ac09-f8506cc595c4",
+        "e5647b90-0267-46dd-9866-50a5a3d4259c",
+        "227ccd69-c4e6-4f3a-87db-ac3cf6642208"
+      ],
+      "monotonicTimeNanos": 114651946238
+    },
+    {
+      "articleId": "99bbbfc4-bdbd-471c-95d1-e44615852a81",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930992669,
+      "recordedAt": 1791930998618,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "TOMR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6444,
+      "evidenceReferences": [
+        "a421b6f0-8ef8-41a6-ae31-730d4f6123fe"
+      ],
+      "monotonicTimeNanos": 114335272315
+    },
+    {
+      "articleId": "17867291-d1b6-411f-b0c0-489c3044dbd2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930997710,
+      "recordedAt": 1791930999557,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:06c7130c-1147-4364-ba94-bf00e01c5c0c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b120b7c0-e226-40b2-8309-447fa0258504",
+        "attackerSpeciesName": "Jolteon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "06c7130c-1147-4364-ba94-bf00e01c5c0c"
+      ],
+      "confidence": 0.7282549,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 119378919162
+    },
+    {
+      "articleId": "8b52a027-0f53-4db5-b375-667c046b3122",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931001115,
+      "recordedAt": 1791931001473,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 6620,
+      "evidenceReferences": [
+        "2d8e1d50-706a-4576-8e94-3bba75460141",
+        "dab2e1bd-2fab-46a9-b877-d4d00db3ca5f",
+        "d6636e39-78dd-4574-bb08-1b86dda8d9fb"
+      ],
+      "monotonicTimeNanos": 122778214162
+    },
+    {
+      "articleId": "53c0952b-4692-4648-a9cb-3a56c6e648a4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931000038,
+      "recordedAt": 1791931001825,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:ac3d74f6-990a-489e-adf9-ee678246a90f",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b120b7c0-e226-40b2-8309-447fa0258504",
+        "attackerSpeciesName": "Jolteon",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "ac3d74f6-990a-489e-adf9-ee678246a90f"
+      ],
+      "confidence": 0.72350335,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 121703981239
+    },
+    {
+      "articleId": "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931001558,
+      "recordedAt": 1791931002390,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 6678,
+      "evidenceReferences": [
+        "8b52a027-0f53-4db5-b375-667c046b3122",
+        "2dc4deb4-3820-480f-b188-35ffb80510ab"
+      ],
+      "monotonicTimeNanos": 123203464085
+    },
+    {
+      "articleId": "b9b75b38-a1f2-4a91-962d-2da2c6f3e548",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931001558,
+      "recordedAt": 1791931002418,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Incinerate",
+        "moveDurationNanos": 2500000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"
+      },
+      "predecessorIds": [
+        "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+        "e8d46e0b-0658-46e5-93dc-c56c0761b76a"
+      ],
+      "confidence": 0.98,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 123203464085
+    },
+    {
+      "articleId": "896b4d72-13d4-4457-9cb0-c605b31c6876",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930996595,
+      "recordedAt": 1791931002993,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6710,
+      "evidenceReferences": [
+        "1bf138c2-e4a7-47ba-aaf7-e2c05a17a204",
+        "95f4b07c-7764-4e9f-a96f-b1944a7ab3c6",
+        "ae55c02c-9819-4d9c-9e8e-876840f9c75e"
+      ],
+      "monotonicTimeNanos": 118244479700
+    },
+    {
+      "articleId": "935c38a0-4823-4ca7-bb73-ad110db5d0b9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931002281,
+      "recordedAt": 1791931004612,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6830,
+      "evidenceReferences": [
+        "1c070fad-0f8f-4a3d-aa5c-882d64944edf"
+      ],
+      "monotonicTimeNanos": 123933971162
+    },
+    {
+      "articleId": "033a5bab-12c0-401c-b05e-20547a7189f9",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931002281,
+      "recordedAt": 1791931004617,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_RAW",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6831,
+      "evidenceReferences": [
+        "1c070fad-0f8f-4a3d-aa5c-882d64944edf"
+      ],
+      "monotonicTimeNanos": 123933971162
+    },
+    {
+      "articleId": "7a64b959-63ce-4cd0-b7cb-f6b212da7f81",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930995366,
+      "recordedAt": 1791931004772,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6845,
+      "evidenceReferences": [
+        "75a0dd03-efa4-48a8-8bdf-98ff5f6a4e28"
+      ],
+      "monotonicTimeNanos": 117026943161
+    },
+    {
+      "articleId": "0d214b99-c782-4076-b279-169df5bb6f8d",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931002343,
+      "recordedAt": 1791931005451,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, gbl!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6883,
+      "evidenceReferences": [
+        "7c30d476-e0ab-48ff-abad-e99edfc395e4",
+        "d9fda508-82ce-4286-8511-45334488767e"
+      ],
+      "monotonicTimeNanos": 124005724393
+    },
+    {
+      "articleId": "ebef5795-4380-4413-8192-5703c71045e3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791930998489,
+      "recordedAt": 1791931007211,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "TOMR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7006,
+      "evidenceReferences": [
+        "dfcb4a19-499a-424d-ab21-d175fc6f3c54"
+      ],
+      "monotonicTimeNanos": 120140383700
+    },
+    {
+      "articleId": "e7625a9c-d98c-48b4-bff1-befea1f05ad0",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931005510,
+      "recordedAt": 1791931009606,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Jolteon",
+        "speciesId": 135
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 7184,
+      "evidenceReferences": [
+        "0d214b99-c782-4076-b279-169df5bb6f8d",
+        "2cacf0b2-cde3-473c-8d3f-d651c99b2d39"
+      ],
+      "monotonicTimeNanos": 127157300008
+    },
+    {
+      "articleId": "fa207a7b-aa62-45b1-a9e6-1c608463261e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931004686,
+      "recordedAt": 1791931010799,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7270,
+      "evidenceReferences": [
+        "7cb8dc39-6262-4bce-ba10-a2ee6bbad1b0",
+        "ca0102c2-98c0-4831-9d17-05e9eaccee77",
+        "322d3a06-9f2e-47ff-b39d-1ba58810fbe7"
+      ],
+      "monotonicTimeNanos": 126344700624
+    },
+    {
+      "articleId": "08faf346-5d0c-4b49-8cf5-20c1bc8b7be5",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931004282,
+      "recordedAt": 1791931011426,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "LUNGE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7291,
+      "evidenceReferences": [
+        "a78500bb-a1df-4e30-a9e6-60f697ce1ac1"
+      ],
+      "monotonicTimeNanos": 125920959393
+    },
+    {
+      "articleId": "81bb6d41-0c29-432a-adc6-9ab4f8642bb3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931006313,
+      "recordedAt": 1791931014065,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "DISCHARGE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7442,
+      "evidenceReferences": [
+        "c1cc9931-51c7-467a-9e41-1e2b379e26ca"
+      ],
+      "monotonicTimeNanos": 127958048931
+    },
+    {
+      "articleId": "25762776-9429-4951-bf40-843b6069ea36",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931013564,
+      "recordedAt": 1791931015630,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7540,
+      "evidenceReferences": [
+        "b2f902a7-cd75-47ef-9938-5a03fc2ec1a3"
+      ],
+      "monotonicTimeNanos": 135232889009
+    },
+    {
+      "articleId": "7cf733ef-6acc-431f-8405-1aeeeaa0e96d",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931010584,
+      "recordedAt": 1791931016226,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7568,
+      "evidenceReferences": [
+        "d2a3a595-5982-4d0d-a132-716adc541052",
+        "a3e82a7d-8586-4f9f-9f4c-8d797d9f617a",
+        "468d3104-3cdd-42bf-abd2-1ae7a3f44877"
+      ],
+      "monotonicTimeNanos": 132252730239
+    },
+    {
+      "articleId": "787ee28c-9142-41bf-bfad-705da591088e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931016403,
+      "recordedAt": 1791931020164,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7726,
+      "evidenceReferences": [
+        "071e7ded-af1b-4e00-baf3-acc3c19e0784"
+      ],
+      "monotonicTimeNanos": 138042537317
+    },
+    {
+      "articleId": "54a8415a-5c83-439e-b422-0832effed28f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931011028,
+      "recordedAt": 1791931021375,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7797,
+      "evidenceReferences": [
+        "f37f9cd3-fae2-4974-80e6-10804416d9e8"
+      ],
+      "monotonicTimeNanos": 132693888393
+    },
+    {
+      "articleId": "bc7eadcd-bcd9-4e05-a0d2-e9377a860f49",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931019370,
+      "recordedAt": 1791931021689,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:d9e0d26b-910b-4a8b-8f3b-e57f967938fc",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "d9e0d26b-910b-4a8b-8f3b-e57f967938fc",
+        "1ced2e3c-d769-4a54-9bee-18cec26a06fd"
+      ],
+      "confidence": 0.9562922,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 141022335394
+    },
+    {
+      "articleId": "677e37f8-97f9-4d99-aa1a-33293a4878e4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931019370,
+      "recordedAt": 1791931021701,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "bc7eadcd-bcd9-4e05-a0d2-e9377a860f49",
+        "b9b75b38-a1f2-4a91-962d-2da2c6f3e548"
+      ],
+      "confidence": 0.9371664,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 141022335394
+    },
+    {
+      "articleId": "2dcd290f-cee2-4f0b-aeb1-86ede9cc7412",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931021451,
+      "recordedAt": 1791931023735,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:e328d5ce-7611-4caa-a422-f37f9ccf7bb6",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "dd593881-063e-4e32-b5ba-ac615218938a",
+        "94e5a198-3249-42d6-959e-707bcde262b1",
+        "f0685fa9-5a9c-4fad-bee4-379418510b9d",
+        "2f36d8c7-f1e9-420c-a0e1-581c234a9b6f",
+        "e328d5ce-7611-4caa-a422-f37f9ccf7bb6",
+        "b49cc09b-8c0f-4dc9-a186-11600ef5d6bd",
+        "bc7034ea-3333-4806-92e4-62357aaa35ed"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 143117481625
+    },
+    {
+      "articleId": "628a50a7-d39b-4f1d-8d1a-1afddc3910b3",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931021451,
+      "recordedAt": 1791931023736,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "2dcd290f-cee2-4f0b-aeb1-86ede9cc7412",
+        "b9b75b38-a1f2-4a91-962d-2da2c6f3e548"
+      ],
+      "confidence": 0.9702,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 143117481625
+    },
+    {
+      "articleId": "5a379a2b-3779-4f2b-be39-dc06d3d6d533",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931015900,
+      "recordedAt": 1791931024387,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7925,
+      "evidenceReferences": [
+        "d4df72af-2798-46b3-928c-46fe670dcdc2",
+        "979b7923-f416-46f3-9385-f813e17f5945",
+        "fc209c22-3efd-4c0f-a606-fe9d75602704"
+      ],
+      "monotonicTimeNanos": 137566990778
+    },
+    {
+      "articleId": "d824e51f-7f97-41c2-be5a-7d2e9882a577",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931021587,
+      "recordedAt": 1791931024682,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_THRESHOLD_190_PADDED",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7935,
+      "evidenceReferences": [
+        "6dbf622a-56bf-481f-bc50-18a6e1428a50"
+      ],
+      "monotonicTimeNanos": 143234075701
+    },
+    {
+      "articleId": "6c1a23b8-2394-4d9a-b44b-e4af70efdd9b",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931021587,
+      "recordedAt": 1791931024690,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_RAW",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7936,
+      "evidenceReferences": [
+        "6dbf622a-56bf-481f-bc50-18a6e1428a50"
+      ],
+      "monotonicTimeNanos": 143234075701
+    },
+    {
+      "articleId": "70d4530f-6a87-437a-93fe-714e564f4196",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931013631,
+      "recordedAt": 1791931025205,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "NOT"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7947,
+      "evidenceReferences": [
+        "dfa0481d-2976-4b37-b8ca-c47d1d7516f4"
+      ],
+      "monotonicTimeNanos": 135300021009
+    },
+    {
+      "articleId": "9247dde6-5a3a-4995-9026-3994eb41727a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931031862,
+      "recordedAt": 1791931034275,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f2dfd3cc-4a63-40e2-9406-31a1d087cdc1",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "dfe0992d-455e-4508-992d-8935f779d2e8",
+        "f2dfd3cc-4a63-40e2-9406-31a1d087cdc1",
+        "03511a5a-481e-489b-80fa-04cdcd289299",
+        "50833905-9a8b-430b-9cdb-ce22fb314ea8"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 153520173625
+    },
+    {
+      "articleId": "0e0bf33f-8185-403a-858a-69d7233b0637",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931031862,
+      "recordedAt": 1791931034277,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "9247dde6-5a3a-4995-9026-3994eb41727a",
+        "b9b75b38-a1f2-4a91-962d-2da2c6f3e548"
+      ],
+      "confidence": 0.9702,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 153520173625
+    },
+    {
+      "articleId": "fd31eefb-f27b-4400-8d3c-1fb59eae4f67",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931032906,
+      "recordedAt": 1791931035178,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:f90d39b9-228c-4614-8ff8-aacf852270b1",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d1f9454c-2299-4f6e-9a8a-33a5bad9f3e0",
+        "attackerSpeciesName": "Camerupt",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "f90d39b9-228c-4614-8ff8-aacf852270b1"
+      ],
+      "confidence": 0.7502108,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 154568287702
+    },
+    {
+      "articleId": "bb397280-40d2-48f9-b5ef-a1b052340620",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931032906,
+      "recordedAt": 1791931035194,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "PLAYER",
+        "moveName": "Incinerate",
+        "observedCompletedUses": 1,
+        "energyPerUse": 20,
+        "totalEnergyGenerated": 20,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "fd31eefb-f27b-4400-8d3c-1fb59eae4f67",
+        "b9b75b38-a1f2-4a91-962d-2da2c6f3e548"
+      ],
+      "confidence": 0.7352066,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 154568287702
+    },
+    {
+      "articleId": "0fe5ba69-ba51-4c21-8425-7bf6cbea2689",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931024030,
+      "recordedAt": 1791931036401,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8353,
+      "evidenceReferences": [
+        "da0b16d4-4a54-434b-8702-e707ca548695",
+        "7743b3b2-4bf9-47e6-a6ba-23671db14862",
+        "0890fec1-d297-422a-b507-0e83f74e492e"
+      ],
+      "monotonicTimeNanos": 145676331163
+    },
+    {
+      "articleId": "96985313-1253-45e8-b62d-551515a8fd19",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931021058,
+      "recordedAt": 1791931038245,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8408,
+      "evidenceReferences": [
+        "3a5ce181-2794-4957-97bc-3ce3789ad289"
+      ],
+      "monotonicTimeNanos": 142681452701
+    },
+    {
+      "articleId": "fd54d3c2-37a1-4b0b-ae7c-4cb8115c352c",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931039234,
+      "recordedAt": 1791931041816,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8527,
+      "evidenceReferences": [
+        "4c929ad6-f2a6-4053-a8df-ca15c59c46ad"
+      ],
+      "monotonicTimeNanos": 160896277549
+    },
+    {
+      "articleId": "57e7adb1-fa41-4723-93fc-e11a38dc68c8",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931024767,
+      "recordedAt": 1791931042111,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8534,
+      "evidenceReferences": [
+        "85dee32f-92b7-4279-a6b2-9fca0fb55d7e"
+      ],
+      "monotonicTimeNanos": 146411964702
+    },
+    {
+      "articleId": "68ccbea3-5cc0-4732-ab39-22cfc6190bd6",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931035966,
+      "recordedAt": 1791931045010,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8613,
+      "evidenceReferences": [
+        "ec795980-b2c3-4fca-8336-b3da36cfc423",
+        "24289198-dcae-44c8-9909-998d84343262",
+        "8be13c64-6163-4142-b5fc-a05c0275b1cb"
+      ],
+      "monotonicTimeNanos": 157625181933
+    },
+    {
+      "articleId": "ee1f2ad4-49a8-4011-b7fe-5f3127a4e02a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931037959,
+      "recordedAt": 1791931049432,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8780,
+      "evidenceReferences": [
+        "976cc3b6-3492-4142-bc5a-3dd30f5e1c36"
+      ],
+      "monotonicTimeNanos": 159614692395
+    },
+    {
+      "articleId": "9f4e2df6-3c5b-41d5-a1bd-44758561813a",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931044563,
+      "recordedAt": 1791931050274,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8802,
+      "evidenceReferences": [
+        "29acb808-f1a2-4c8e-90d8-ded9a073d56b",
+        "26356c5c-713e-4d5c-ad08-96f77a336f30",
+        "7c5a3546-7583-4159-8896-c663f3ad2198"
+      ],
+      "monotonicTimeNanos": 166211355780
+    },
+    {
+      "articleId": "6283f725-527f-4067-aa82-cbb823bc2b62",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931042086,
+      "recordedAt": 1791931051187,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8820,
+      "evidenceReferences": [
+        "5ac90df3-2a58-42cc-82df-e53b9fc7c999"
+      ],
+      "monotonicTimeNanos": 163747020626
+    },
+    {
+      "articleId": "f1fb74ee-475b-4c55-a1cd-004cc6d38d4e",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931049871,
+      "recordedAt": 1791931053909,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8890,
+      "evidenceReferences": [
+        "82cb557a-f4e3-4028-832a-b5079d7993a9",
+        "451248f7-635a-4ded-b677-7f74dc30deb9",
+        "b6020d85-9414-465a-815a-8de80810909b"
+      ],
+      "monotonicTimeNanos": 171520237626
+    },
+    {
+      "articleId": "dea3ed6b-a6c8-4135-a6e6-4dfd1c6cc774",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931049093,
+      "recordedAt": 1791931054851,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8925,
+      "evidenceReferences": [
+        "963167e3-04fe-435e-81cd-8df99fe2d7ae"
+      ],
+      "monotonicTimeNanos": 170732530472
+    },
+    {
+      "articleId": "cab9e1dc-fa89-4148-b723-135a73677be1",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931050674,
+      "recordedAt": 1791931056701,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 8985,
+      "evidenceReferences": [
+        "79c53727-300e-467c-93a7-5fcddcc0c455"
+      ],
+      "monotonicTimeNanos": 172330345319
+    },
+    {
+      "articleId": "9c6aeee2-f172-42f4-8186-66d8d7e68e57",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931053160,
+      "recordedAt": 1791931057484,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9005,
+      "evidenceReferences": [
+        "b9d1e949-2b3f-4937-9e81-35d54cbb38ab",
+        "45f3fa24-e659-48fb-b31f-017161d8d1c4",
+        "09820d17-7af5-4062-a095-37f80fcb137c"
+      ],
+      "monotonicTimeNanos": 174802184011
+    },
+    {
+      "articleId": "81b94ebc-4487-4dd5-be60-d22909443f72",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931054348,
+      "recordedAt": 1791931059793,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9062,
+      "evidenceReferences": [
+        "f516e03a-63e3-44c6-9dfa-d6061ab640a0"
+      ],
+      "monotonicTimeNanos": 176010326242
+    },
+    {
+      "articleId": "db88edbc-6db4-4cde-9de3-b140e11a89ea",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931057348,
+      "recordedAt": 1791931060701,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9086,
+      "evidenceReferences": [
+        "514a5e57-af67-48e3-850d-52dafb7e09ea",
+        "d67f83a6-50ad-46e2-af42-cae48f6a62f6",
+        "550f2e7c-fc74-4270-b1d8-782f38534f9e"
+      ],
+      "monotonicTimeNanos": 179013122550
+    },
+    {
+      "articleId": "ef4315a7-7bdf-49a5-969b-b2a7e2fadb1f",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931056456,
+      "recordedAt": 1791931061478,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9111,
+      "evidenceReferences": [
+        "2369adf3-dc77-4ea9-929d-862a6ccbad49"
+      ],
+      "monotonicTimeNanos": 178116465319
+    },
+    {
+      "articleId": "78437ace-beca-49ea-91c7-bc557e071e32",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931060214,
+      "recordedAt": 1791931064596,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9222,
+      "evidenceReferences": [
+        "5ae515a9-7a8d-472f-b579-58bf7602e34f",
+        "9f7b63bb-bad9-4d78-856e-3c05b885094a",
+        "e3101460-26e7-48e5-b433-53dcfe817777"
+      ],
+      "monotonicTimeNanos": 181881230165
+    },
+    {
+      "articleId": "74832be0-14b7-4592-b9a6-7c80b14d9069",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931059555,
+      "recordedAt": 1791931065282,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9240,
+      "evidenceReferences": [
+        "b173f424-2579-497c-9e3b-ad36c4304edc"
+      ],
+      "monotonicTimeNanos": 181218100396
+    },
+    {
+      "articleId": "21dd48c1-cf23-4024-a91d-0ea5d8848832",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931061096,
+      "recordedAt": 1791931067329,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9290,
+      "evidenceReferences": [
+        "74939577-25cf-458f-b238-dd76199badf5"
+      ],
+      "monotonicTimeNanos": 182756719704
+    },
+    {
+      "articleId": "2a7da47b-e4c2-497b-88e5-3c72af5554f4",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931064394,
+      "recordedAt": 1791931068268,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9324,
+      "evidenceReferences": [
+        "19cdcdcb-7122-4b0f-9bbb-055af8191c78",
+        "a136e76e-e9ef-4612-8425-87f38e143d20",
+        "e93966a0-587b-407d-b36c-c46413e5d5e9"
+      ],
+      "monotonicTimeNanos": 186052537935
+    },
+    {
+      "articleId": "dc46260c-7322-4be3-abe2-d04367e29526",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931064906,
+      "recordedAt": 1791931071911,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9464,
+      "evidenceReferences": [
+        "246748fc-1a94-4657-8990-8943e9d0391c"
+      ],
+      "monotonicTimeNanos": 186571424704
+    },
+    {
+      "articleId": "7b9d3bfb-e2fb-4d05-b499-42d9ca2ad0dd",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931045962,
+      "recordedAt": 1791931072329,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "8822dfc7-cd84-4342-9ece-c90458c45167"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 167624791164
+    },
+    {
+      "articleId": "4380d61b-1b2e-434d-8fab-2de15cc4edc1",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931068030,
+      "recordedAt": 1791931072886,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9489,
+      "evidenceReferences": [
+        "368effc6-353d-4e59-bb75-d1dd9cb840ea",
+        "22b66a43-c76f-4501-8773-9ba3870c493d",
+        "3f003001-6883-44ef-ad21-afebaec38a0c"
+      ],
+      "monotonicTimeNanos": 189698682858
+    },
+    {
+      "articleId": "78dc2fd8-8b5f-425f-acc6-d5d0a797a5f2",
+      "matchId": "b5a66d17-1eef-437f-bd56-f9144da0591d",
+      "perceivedAt": 1791931067001,
+      "recordedAt": 1791931073174,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 9492,
+      "evidenceReferences": [
+        "33105c38-d6ef-4bf9-84a0-e1b88fd97795"
+      ],
+      "monotonicTimeNanos": 188655674550
+    }
+  ],
+  "artifacts": []
+}

@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-15",
+  "scope": "Direct Fast Move reference audio evidence, ownership separation, onset repair, bounded background analysis.",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "branch": "odx-recovery",
+  "baseline_commit": "b7330c64969f77d5f5a4605c9eac56b3f49f1bb5",
+  "working_tree_changes_uncommitted": true,
+  "references": {
+    "recordings": 72,
+    "move_name_labels": 71,
+    "bundled_bytes": 2872954,
+    "manifest": "app/src/main/assets/fast_move_sounds/manifest.json",
+    "source_assets_preserved": true
+  },
+  "defect": {
+    "old_sound_measurements": 59,
+    "old_distinct_pulse_acceptances": 5,
+    "rejections_with_threshold_above_peak": 54,
+    "cause": "First 200ms of already audible clips used as a silent baseline; threshold exceeded the entire recording."
+  },
+  "rules": [
+    "Use explicit downmix and rate-correct pulse timing; leading clipped sound does not invent an onset.",
+    "Compare a 416ms spectral segment against the full local catalogue, both original and background-suppressed spectra. Preserve leaders and competing scores.",
+    "A capture cue identifies the requesting HP observation, not acoustic ownership.",
+    "Require two distinct reference-aligned occurrences and exactly one legal active side; both active move pools must be known.",
+    "Retain mirror/shared-pool and ambiguous observations without forcing ownership.",
+    "Deduplicate overlapping recordings with reference alignment and the legal move duration; ignore pre-GO, charged guard intervals, stale appearances and post-result evidence.",
+    "Audio-backed identity can refine observed-use duration and energy per observed use; it creates no use or energy on its own.",
+    "Timeline measurements and audio references are retained; existing records are not rewritten."
+  ],
+  "acceptance_thresholds": {
+    "spectral_similarity": 0.93,
+    "spectral_margin": 0.008,
+    "changing_similarity": 0.8,
+    "changing_margin": 0.04
+  },
+  "recorded_regression": {
+    "fixture_manifest": "app/src/androidTest/assets/fast_move_20261015/manifest.json",
+    "clips": 11,
+    "accepted_reference_matches": 8,
+    "ambiguous": 3,
+    "note": "Selected acoustic regressions are not a human-labelled move count or accuracy estimate over all moves.",
+    "findings": [
+      "Two Electrode-section recordings independently match Spark; a simulated Tackle cadence is corrected and subsequent fragmented cadence cannot restore it.",
+      "Two overlapping Water Gun recordings align to the same occurrence, not two independent confirmations.",
+      "A player-cued clip can contain a clearer opponent sound; end-to-end phone test assigns Spark to the legal opponent."
+    ]
+  },
+  "validation": {
+    "unit_suite": {
+      "tests": 822,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "gradle_tasks": [
+      ":app:testDebugUnitTest",
+      ":app:assembleDebug",
+      ":app:assembleDebugAndroidTest"
+    ],
+    "gradle_final_result": "SUCCESS; final invocation up-to-date after all source and test changes",
+    "physical_device": "Moondrop MD_PH_001 / MDPH00124112500414",
+    "phone_tests_passed": 2,
+    "phone_methods": [
+      "recordedSpectraAreSeparatedOnTheMoondropWithoutBlockingCapture",
+      "preservedClipsReachTheTimelineAndIdentifyTheOpponentDespitePlayerCue"
+    ],
+    "timing_ms": {
+      "before_optimization_median": 339,
+      "after_optimization_median": 195,
+      "after_optimization_max": 302
+    },
+    "negative_cases": [
+      "silence",
+      "steady tone",
+      "16 music-only windows",
+      "5 battle cries",
+      "4 stat-change recordings",
+      "3 ambiguous battle clips"
+    ],
+    "installation": {
+      "apk_sha256": "242bf3279a83c23d9b12d30aeba496dd57f9b9fc83217abac974099db16a7efd",
+      "installed_apk_sha256": "242bf3279a83c23d9b12d30aeba496dd57f9b9fc83217abac974099db16a7efd",
+      "installed_matches_build": true,
+      "calibration_files_verified": 13,
+      "calibration_changes": []
+    }
+  },
+  "remaining_validation": [
+    "A fresh live battle is required to measure full HUD identification latency while screen capture and other witnesses compete for resources.",
+    "This remains visually cued audio recognition, not a continuous independent fast-move counter.",
+    "Catalogue filenames and controlled reference separation do not establish live accuracy for every move. Shared acoustic signatures and mirror ownership can remain unresolved."
+  ],
+  "local_logs": [
+    "/tmp/overdex-fast-audio-20261015/device-speed2.txt",
+    "/tmp/overdex-fast-audio-20261015/device-pipeline-final.txt",
+    "/tmp/overdex-fast-audio-build2.log",
+    "/tmp/overdex-fast-audio-test-build.log",
+    "/tmp/overdex-fast-audio-final-check.log"
+  ]
+}

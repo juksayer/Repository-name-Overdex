@@ -1,0 +1,295 @@
+{
+  "date": "2026-10-15",
+  "repository": "/home/sean/AndroidStudioProjects/Overdex",
+  "device": {
+    "serial": "MDPH00124112500414",
+    "model": "MD_PH_001",
+    "capture_resolution": [
+      672,
+      1493
+    ],
+    "physical_resolution": [
+      1080,
+      2400
+    ],
+    "active_calibration_profile_id": "0acedd05-88ee-41bb-97a8-a59ea43abc67"
+  },
+  "recorded_apk_sha256": "1edf38eb5870dc1d061ee77c021bba52610127e8a14e0dc97113218adb7ad8be",
+  "installed_correction_apk_sha256": "5b92805a69895976552ed1ae5aafd3ce634e214a5cb987ba5789fb48adb9313d",
+  "recordings": [
+    {
+      "filename": "2026-10-15_19-58-02_38c39532-cb00-41f4-ae2e-26db7c420a9e.odxmatch.zip",
+      "sha256": "ce70433aaddc6e8ad54693e534f3f62d3a8cb6036c13190bbcdf609ba2744860",
+      "bytes": 15138202,
+      "articles": 3391,
+      "source_span_seconds": 125.466,
+      "artifacts_verified": 602,
+      "one_match_start_and_one_win": true,
+      "first_species_publications": {
+        "PLAYER:Abomasnow": {
+          "first_publication_s": 20.305,
+          "source_frame_s": 18.204,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Sneasel": {
+          "first_publication_s": 24.554,
+          "source_frame_s": 21.978,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Sealeo": {
+          "first_publication_s": 60.391,
+          "source_frame_s": 58.984,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "PLAYER:Camerupt": {
+          "first_publication_s": 81.573,
+          "source_frame_s": 80.047,
+          "source": "PLAYER_SPECIES_OVERLAY_PIPELINE"
+        },
+        "OPPONENT:Vaporeon": {
+          "first_publication_s": 103.947,
+          "source_frame_s": 102.247,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        }
+      },
+      "recorded_fast_uses": {
+        "PLAYER:Abomasnow": 30,
+        "OPPONENT:Sneasel": 11,
+        "OPPONENT:Sealeo": 21,
+        "PLAYER:Camerupt": 8,
+        "OPPONENT:Vaporeon": 4
+      },
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 857,
+          "median_ms": 178,
+          "p90_ms": 428,
+          "max_ms": 1024
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 26,
+          "median_ms": 2216.5,
+          "p90_ms": 3006,
+          "max_ms": 3162
+        },
+        "fast_move_use_observed": {
+          "n": 74,
+          "median_ms": 1854.0,
+          "p90_ms": 2252,
+          "max_ms": 2564
+        },
+        "fast_move_sound_measured": {
+          "n": 69,
+          "median_ms": 4180,
+          "p90_ms": 9930,
+          "max_ms": 11935
+        },
+        "charge_move_used_announced": {
+          "n": 4,
+          "median_ms": 1763.5,
+          "p90_ms": 2581,
+          "max_ms": 2581
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 4361,
+          "p90_ms": 4361,
+          "max_ms": 4361
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 85,
+          "median_ms": 1785,
+          "p90_ms": 2836,
+          "max_ms": 4833
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 142,
+          "median_ms": 1750.5,
+          "p90_ms": 2769,
+          "max_ms": 4752
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 9,
+          "median_ms": 1958,
+          "p90_ms": 2576,
+          "max_ms": 2576
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 12,
+          "median_ms": 2224.5,
+          "p90_ms": 3123,
+          "max_ms": 3162
+        }
+      },
+      "type_measurements": 120,
+      "label_read_basis": {
+        "OCR": 5
+      },
+      "audio_clips": 80,
+      "fast_sound_measurements": 69,
+      "known_charged_moves": 4,
+      "faint_testimonies": 3,
+      "result_music": "WIN corroborated by two consecutive windows"
+    },
+    {
+      "filename": "2026-10-15_20-03-24_1cbbfbb2-ce0e-4e10-a37a-778419910fc1.odxmatch.zip",
+      "sha256": "e51429d533b031592890a1ae7de1fecab7a26a2988fc0a75f773f4982654a3fd",
+      "bytes": 15623401,
+      "articles": 3692,
+      "source_span_seconds": 138.019,
+      "artifacts_verified": 658,
+      "one_match_start_and_one_win": true,
+      "first_species_publications": {
+        "PLAYER:Abomasnow": {
+          "first_publication_s": 18.849,
+          "source_frame_s": 17.606,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Combusken": {
+          "first_publication_s": 23.996,
+          "source_frame_s": 21.624,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Gourgeist": {
+          "first_publication_s": 46.091,
+          "source_frame_s": 45.174,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Magcargo": {
+          "first_publication_s": 68.638,
+          "source_frame_s": 67.881,
+          "source": "OPPONENT_SPECIES_OVERLAY_PIPELINE"
+        },
+        "PLAYER:Camerupt": {
+          "first_publication_s": 100.091,
+          "source_frame_s": 98.525,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        },
+        "OPPONENT:Flareon": {
+          "first_publication_s": 116.979,
+          "source_frame_s": 115.934,
+          "source": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
+        }
+      },
+      "recorded_fast_uses": {
+        "PLAYER:Abomasnow": 7,
+        "OPPONENT:Combusken": 13,
+        "PLAYER:Gourgeist": 11,
+        "OPPONENT:Magcargo": 21,
+        "PLAYER:Camerupt": 6,
+        "OPPONENT:Flareon": 1
+      },
+      "latencies": {
+        "active_hp_bar_measured": {
+          "n": 949,
+          "median_ms": 147,
+          "p90_ms": 340,
+          "max_ms": 848
+        },
+        "active_pokemon_species_witnessed": {
+          "n": 24,
+          "median_ms": 1647.0,
+          "p90_ms": 8276,
+          "max_ms": 9280
+        },
+        "fast_move_use_observed": {
+          "n": 59,
+          "median_ms": 1819,
+          "p90_ms": 2415,
+          "max_ms": 2619
+        },
+        "fast_move_sound_measured": {
+          "n": 59,
+          "median_ms": 4064,
+          "p90_ms": 7423,
+          "max_ms": 9137
+        },
+        "charge_move_used_announced": {
+          "n": 6,
+          "median_ms": 1533.5,
+          "p90_ms": 3053,
+          "max_ms": 3053
+        },
+        "match_ended": {
+          "n": 1,
+          "median_ms": 1120,
+          "p90_ms": 1120,
+          "max_ms": 1120
+        },
+        "ANNOUNCEMENT_WITNESS": {
+          "n": 117,
+          "median_ms": 1423,
+          "p90_ms": 2280,
+          "max_ms": 3901
+        },
+        "ANNOUNCEMENT_WITNESS_OCR": {
+          "n": 189,
+          "median_ms": 1437,
+          "p90_ms": 2174,
+          "max_ms": 3828
+        },
+        "MATCH_OUTCOME_WITNESS": null,
+        "OPPONENT_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 1661.5,
+          "p90_ms": 8276,
+          "max_ms": 8276
+        },
+        "PLAYER_SPECIES_OVERLAY_PIPELINE": {
+          "n": 8,
+          "median_ms": 2162.0,
+          "p90_ms": 9280,
+          "max_ms": 9280
+        }
+      },
+      "type_measurements": 148,
+      "label_read_basis": {
+        "OCR": 22,
+        "UNCHANGED_LETTER_PIXELS": 4
+      },
+      "audio_clips": 75,
+      "fast_sound_measurements": 59,
+      "known_charged_moves": 6,
+      "faint_testimonies": 4,
+      "result_music": "WIN corroborated by two consecutive windows"
+    }
+  ],
+  "findings": [
+    "Both new completed archives are independently saved and hash-verified; each has one start and one WIN. System exit history shows no app exit during either match.",
+    "Opponent badge images and accepted testimony agree: Sneasel, Sealeo, Vaporeon in the first; Combusken, Magcargo, Flareon in the second. Player Abomasnow, Camerupt and Gourgeist remain on PLAYER side.",
+    "HP publication medians are 178 and 147 ms versus 299 and 235 ms in the preceding audit. Result publication is 4361 and 1120 ms versus 10945 and 14367 ms. These are different real matches, not a controlled CPU benchmark.",
+    "Active type measurements fell to 120 and 148 from 511 and 684 in the preceding two matches. The second recording contains four reused charge-label readings with explicit UNCHANGED_LETTER_PIXELS provenance.",
+    "Reference audio actually established opponent Sneasel Feint Attack and Magcargo Rock Throw. The two Fire Spin matches against Flareon align to the same sound occurrence, correctly insufficient for two independent confirmations.",
+    "Sealeo first resolved as Powder Snow from roughly one-second border gaps, then Water Gun from shorter direct-use spacing and bar motion, then incorrectly reverted when gaps grew. Larger spacing is compatible with missed shorter attacks.",
+    "Species source-to-publication delay remains over the 1.5 s target in several cases; repeated stale badge confirmations in the second match take up to 9.28 s. Raw crops are legible and correctly located in inspected examples.",
+    "Fast-sound median publication delays remain 4180 and 4064 ms, with maxima 11935 and 9137 ms. Useful identity evidence can still arrive late.",
+    "Final player Earth Power is named in the second archive. The first final QTE lacks a resolved finishing move. Neither archive observes the last opponent empty HP or final ball decrease; the decisive WIN supports the existing result-only defeat presentation without creating raw KO testimony."
+  ],
+  "correction": {
+    "file": "app/src/main/java/com/example/overdex/battle/inference/FastMoveCadenceInference.kt",
+    "behavior": "A larger integer-multiple cadence cannot replace an established faster move on one evidence family alone. Require two repeated independent families for that reversal; duplicate pulse/fused-use evidence counts once and unvalidated visual artifacts cannot decide it. Reference audio and repeated effectiveness retain their independent correction paths.",
+    "raw_history": "Unchanged. No added attack counts, invented damage or rewritten saved archives.",
+    "regression_fixture": "app/src/test/resources/battle/recorded-sealeo-cadence-20261015.json",
+    "fixture_articles": 242,
+    "fixture_scope": "Exact retained inference input articles from 38c39532-cb00-41f4-ae2e-26db7c420a9e in original publication order. Generated identity/energy outputs are excluded; original observed-use inputs remain.",
+    "red_green": "Four new checks failed before the fix and passed after. Recorded Sealeo sequence retains Water Gun after recognition, while independent contradictory cadence can still correct a noisy fast identity."
+  },
+  "validation": {
+    "tests": 841,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "debug_build": "passed",
+    "device_install": "passed",
+    "app_launch": "passed",
+    "calibration_files_unchanged": 13,
+    "new_live_match_after_correction": "pending"
+  },
+  "limits": [
+    "No independent frame-by-frame ground truth Fast Move total is available. 74 and 59 are canonical recorded uses, not proven complete counts.",
+    "The cadence correction does not repair old saved identity events or synthesize missed attacks.",
+    "No commit or push was performed."
+  ],
+  "review_working_files": "/tmp/overdex-review-20261015-2005"
+}

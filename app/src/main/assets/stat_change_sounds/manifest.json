@@ -1,0 +1,24 @@
+{
+  "references": [
+    {
+      "file": "buff_attack.wav",
+      "sha256": "cf7de6c0c78a8ad12e61572573c4d140c837e204d209d9e47211ba2f6b544fce",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/buff_attack.wav"
+    },
+    {
+      "file": "buff_defense.wav",
+      "sha256": "3d7693c9077520f51a7ab74080644140c541aaa2b9f8f472c6caf33e1586085b",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/buff_defense.wav"
+    },
+    {
+      "file": "debuff_attack.wav",
+      "sha256": "ab14d5a3f5a2676a3e26fbd3b9463a0868e191cf11f244520d080e500e077773",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/debuff_attack.wav"
+    },
+    {
+      "file": "debuff_defense.wav",
+      "sha256": "a73e059dc53f863b3678707a065b66ddb3a83416f0abc4b113fab53fd82eda4d",
+      "source": "/home/sean/Desktop/pogozip/pogo_assets-master/Sounds/Combat/debuff_defense.wav"
+    }
+  ]
+}

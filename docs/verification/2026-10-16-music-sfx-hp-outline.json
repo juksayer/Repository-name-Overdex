@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-16",
+  "device": {
+    "model": "Moondrop MD-PH-001",
+    "serial": "MDPH00124112500414"
+  },
+  "purpose": "Compare music-enabled and SFX-only battles; investigate latency before the earliest affordable charged move.",
+  "recordingBuildSha256": "77ff042157aafd0fe6616b31d17623992ba51323ceb302cdcc2f8c916200fc4a",
+  "archiveIntegrity": [
+    {
+      "archive": "2026-10-16_13-20-52_670f5c15-daa1-4add-ac35-8133badf99f8.odxmatch.zip",
+      "bytes": 10517951,
+      "sha256": "60c1880b5944f49ed837104f2236b17012c785d3db131633a87cc2d2720fe922",
+      "integrity_exit": 0
+    },
+    {
+      "archive": "2026-10-16_13-17-53_5d3d07b4-8ef2-43db-9dff-6d8aba99f7f1.odxmatch.zip",
+      "bytes": 11099821,
+      "sha256": "989398199fc2fb2e68ddbc040172325048d261f7cecb909422cba834175444ec",
+      "integrity_exit": 0
+    },
+    {
+      "archive": "2026-10-16_12-39-00_0f862229-ca2d-4ee6-ba53-eea5dde64e49.odxmatch.zip",
+      "bytes": 1097254,
+      "sha256": "3e7d0a4c30b6dc561f00bdc9b223773d721fb83d579921ab333c922d3fa64b68",
+      "integrity_exit": 0
+    }
+  ],
+  "matches": [
+    {
+      "archive": "2026-10-16_13-17-53_5d3d07b4-8ef2-43db-9dff-6d8aba99f7f1.odxmatch.zip",
+      "audioMode": "music enabled",
+      "audioModeSource": "User confirmed first had music, second SFX-only.",
+      "articleCount": 3240,
+      "durationSeconds": 137.58,
+      "firstSneaselCropToPublicationMs": 971,
+      "firstSneaselPublishedAfterInferredStartMs": 684,
+      "startBasis": "Countdown and later combat inference; GO itself was not witnessed.",
+      "fastMoveName": "Feint Attack",
+      "fastMoveBasis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE",
+      "fastMoveIdentityPublishedAfterInferredStartMs": 8373,
+      "identityLeadBeforeIncomingCueMs": 1137,
+      "openingPlayerHpGapsOver1250ms": [
+        1572
+      ],
+      "observedFastUses": {
+        "OPPONENT:Sneasel": 31
+      },
+      "soundMeasurements": 32,
+      "result": "LOSS",
+      "cryOnlySpeciesAccepted": 0
+    },
+    {
+      "archive": "2026-10-16_13-20-52_670f5c15-daa1-4add-ac35-8133badf99f8.odxmatch.zip",
+      "audioMode": "SFX only",
+      "audioModeSource": "User confirmed first had music, second SFX-only.",
+      "articleCount": 3344,
+      "durationSeconds": 157.796,
+      "firstSneaselCropToPublicationMs": 492,
+      "firstSneaselPublishedAfterInferredStartMs": -102,
+      "startBasis": "Countdown and later combat inference; GO itself was not witnessed.",
+      "fastMoveName": "Feint Attack",
+      "fastMoveBasis": "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE",
+      "fastMoveIdentityPublishedAfterInferredStartMs": 11577,
+      "identityLeadBeforeIncomingCueMs": -603,
+      "openingPlayerHpGapsOver1250ms": [
+        1567,
+        1682,
+        1660
+      ],
+      "observedFastUses": {
+        "OPPONENT:Sneasel": 17,
+        "PLAYER:Gourgeist": 9,
+        "OPPONENT:None": 1,
+        "OPPONENT:Vaporeon": 1
+      },
+      "soundMeasurements": 28,
+      "result": "WIN",
+      "cryOnlySpeciesAccepted": 0
+    }
+  ],
+  "interpretation": {
+    "species": "Sneasel resolved near the opening in both recordings; timing measures crop to publication, not first appearance to screen paint.",
+    "audio": "Feint Attack was independently supported by repeated accepted audio references in both recordings. The first SFX-only clip was rejected by the changing-spectrum margin; next accepted cue was delayed. Do not weaken audio thresholds based on these two matches.",
+    "energyDeadline": "Bundled Sneasel movepool permits a 40-energy move at 6 seconds via Ice Shard, 7 seconds via Feint Attack from zero uninterrupted energy. Exact move identification was later than this theoretical earliest deadline in both recordings.",
+    "forecast": "The separate elapsed-time energy hypothesis remains in place; this review does not measure its exact first HUD paint time. Do not equate observed-use energy with complete energy accounting.",
+    "hp": "White Abomasnow art generated nested candidates sharing the bottom HP edge. Top-only deduplication left more than two candidates, so the tracker rejected both sides. This is reproducible from retained raw frames; it does not establish the cause of every live measurement gap.",
+    "storage": "Compact keeps all measurement articles. Uncited whole-frame artifacts remain internally; sparse file modification time is not a capture timestamp."
+  },
+  "change": {
+    "file": "app/src/main/java/com/example/overdex/battle/observation/BattlefieldHpTracker.kt",
+    "behavior": "Collapse duplicate rectangles only when their end caps align, they share a top or bottom edge, and at least 75 percent of the smaller vertical interior overlaps. Keep the highest-confidence rectangle. Separate conflicting bars still reject.",
+    "notChanged": [
+      "calibration",
+      "audio acceptance thresholds",
+      "historical articles",
+      "energy inference thresholds"
+    ]
+  },
+  "recordedPixelComparison": {
+    "framesExamined": 24,
+    "bothBarsBefore": 3,
+    "bothBarsAfter": 14,
+    "recoveredPreviouslyRejectedFrames": [
+      "0ced42e52aba5cc3d27e6ec3c17656ea31a0a3f728e86e272bb5f349dae14adf.png",
+      "2b5b363cec06968fb02b1ccecac8eed444f8be01b0c1db7a733b46012e13e65b.png",
+      "368a10f05f2a2658829cca7bb3f2ca1f4b7ad3544d419f407021a4328ea19904.png",
+      "43c085a91684f1e6d828a104a3250dcb4faf1d69c966667384f6add03b628244.png",
+      "46651c0363adba07aea2c537b7c70c06a0873e369028d860ac125f97c8c501d6.png",
+      "5c4d188c3907ec9dd1875219ebdcf6515755420fc553fcec73a9539c2e27a912.png",
+      "7bd70eb4f0ed7f04108dfba39bfa17bbfe4361cff18d51eec63c1a1792a66961.png",
+      "d908de8853d88a07b15203619e3df23e91cf4ad6f4ce5fea8713644497ba4438.png",
+      "df146d8dd6c239f14592d2a6b4140b521b6298ef136dc9005378d38ac25300c1.png",
+      "e08654352cb8debfd686a94ac19831e75725802e9e51f77fe6a3e0a2fb119d90.png",
+      "ef41adc21e2c07ddf4c876e9e98cb07ab5744968e73cd4a0bda473cf1dfe65a8.png"
+    ],
+    "changedExistingMeasurements": []
+  },
+  "validation": {
+    "unitTests": {
+      "tests": 859,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "apkSha256": "8108c9b532057ecf663214a5347293549dcf31b87dbbb7b74d11079dd8a0def5",
+    "debugBuild": "passed",
+    "androidTestBuild": "passed",
+    "deviceRecordedPixelCheck": {
+      "tests": 4,
+      "failures": 0,
+      "durationSeconds": 5.578,
+      "newFramesWarmScannerMs": {
+        "median": 13.895308,
+        "p90": 16.752923,
+        "max": 19.235692
+      },
+      "scope": "Controlled recorded images through live shared locator, local recovery, and same-source two-side witness fanout. Not concurrent live Pokemon GO performance."
+    },
+    "installation": "passed; installed base.apk SHA256 equals built APK",
+    "calibrationFilesUnchanged": 13,
+    "launch": "MainActivity started"
+  },
+  "remainingAcceptance": "New live match must verify sustained measurements, individual fast-move counts, and timely identity/energy before the first charge. Recorded-pixel tests do not prove end-to-end live performance."
+}

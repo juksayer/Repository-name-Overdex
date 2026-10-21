@@ -1,0 +1,1791 @@
+{
+  "schemaVersion": 1,
+  "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+  "articles": [
+    {
+      "articleId": "9ea98042-7c4f-41e1-92db-fa79de3ab2c4",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939716826,
+      "recordedAt": 1791939716829,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Brutal Swing",
+          "Dragon Pulse"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -36754396387
+    },
+    {
+      "articleId": "0c8b7370-5cef-44d1-aed2-118e7b33ed83",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939716826,
+      "recordedAt": 1791939716838,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -36754396387
+    },
+    {
+      "articleId": "7d013dc3-c247-4387-9b55-92ed9b924191",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939716826,
+      "recordedAt": 1791939716839,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": -36754396387
+    },
+    {
+      "articleId": "c7387f2c-e944-4e2c-bba2-4d500cac1891",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939740398,
+      "recordedAt": 1791939742154,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "-",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 208,
+      "evidenceReferences": [
+        "f8ab10f5-6e93-4fb2-b045-1692d99eeffc",
+        "ebc44adf-020c-4aef-ab72-289b970f1f6b",
+        "ffb50ad2-7ac5-4404-b752-5bfee6c7ebe0"
+      ],
+      "monotonicTimeNanos": -13186933539
+    },
+    {
+      "articleId": "04426025-d35b-4a5c-a825-c418ef0d6c37",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939741595,
+      "recordedAt": 1791939743758,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 271,
+      "evidenceReferences": [
+        "bc27c510-6cb5-499c-824a-b5237e7284ff",
+        "e02fb7e5-7dd8-4ba3-9f49-cfeaf131d901",
+        "c86dc2b9-de6d-42d8-b5ac-e5f2968871e0"
+      ],
+      "monotonicTimeNanos": -12004348693
+    },
+    {
+      "articleId": "0b69cb4a-7ea0-4220-8168-af85948e199b",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939743507,
+      "recordedAt": 1791939744848,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "L",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 314,
+      "evidenceReferences": [
+        "ac3034bc-0df0-4c04-a51a-ee78a84039bd",
+        "bfd1b8e5-7c8f-4394-9f2b-e4fba61ef1de"
+      ],
+      "monotonicTimeNanos": -10100801847
+    },
+    {
+      "articleId": "6ff3f9d2-0a18-445b-8d76-cfc40cf280ba",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939744095,
+      "recordedAt": 1791939745571,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 343,
+      "evidenceReferences": [
+        "67e687dc-2a13-4fa6-81b5-ad57cd808425",
+        "fc58eb9a-b7d0-42a4-b141-75a67a0949ad",
+        "a0fb33d5-a0ca-4f78-a5ba-f9d9b4b9a5ad"
+      ],
+      "monotonicTimeNanos": -9527553923
+    },
+    {
+      "articleId": "930dd21c-89ef-44ef-855b-68b0d743c092",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939745340,
+      "recordedAt": 1791939746220,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 365,
+      "evidenceReferences": [
+        "fe4c9d86-b149-48ef-94fb-cc48dbccab49",
+        "39b8aee4-a7e8-4c4b-bea2-14b77c4fc010",
+        "7103c26f-42b8-4e43-b4d9-e42a5ec2347d"
+      ],
+      "monotonicTimeNanos": -8247222539
+    },
+    {
+      "articleId": "d64b4bdd-b4de-4a13-90b9-e5d63770c833",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939745784,
+      "recordedAt": 1791939748064,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 421,
+      "evidenceReferences": [
+        "069828fe-9485-4cdb-bfce-80b0e1b6146e",
+        "c475edad-4e12-43b7-8c56-bce1a6430ad4",
+        "24609a87-447c-4993-b526-3d2deccaf06d"
+      ],
+      "monotonicTimeNanos": -7810212616
+    },
+    {
+      "articleId": "3b4583a4-812d-48df-ae1d-11accb3e0254",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939747761,
+      "recordedAt": 1791939748983,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 455,
+      "evidenceReferences": [
+        "422e9cd5-6558-4485-b5f8-4c436ed8f4ca",
+        "c05def40-d319-4d47-9c0d-2a1ddf977014",
+        "f3d478e6-d7dd-46b2-8b58-7a666f8e30c3"
+      ],
+      "monotonicTimeNanos": -5831100616
+    },
+    {
+      "articleId": "b97dbe96-0f48-4e74-ac20-4d3d2fb907d2",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939748472,
+      "recordedAt": 1791939750219,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 482,
+      "evidenceReferences": [
+        "3634b2f7-5550-43c3-be9e-943be9e8fb56",
+        "b484807a-52fe-4def-b664-25ec2d1ef238",
+        "6c30236e-565f-44cb-862b-0c8b456665e5"
+      ],
+      "monotonicTimeNanos": -5120663077
+    },
+    {
+      "articleId": "44df4fe4-7965-4108-b033-bf77c9ad62fc",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939749694,
+      "recordedAt": 1791939751221,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Turtonator!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 515,
+      "evidenceReferences": [
+        "bca05694-e400-469f-bef9-abda08318dd5",
+        "54e922d8-177c-407d-b0aa-95e644ef53b9"
+      ],
+      "monotonicTimeNanos": -3901290769
+    },
+    {
+      "articleId": "2b83c65f-d6fc-4bfe-9804-354b4731834a",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939749694,
+      "recordedAt": 1791939751487,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 534,
+      "evidenceReferences": [
+        "44df4fe4-7965-4108-b033-bf77c9ad62fc"
+      ],
+      "monotonicTimeNanos": -3901290769
+    },
+    {
+      "articleId": "f2dedbd0-40b0-48d1-9305-a1a64b988656",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939750920,
+      "recordedAt": 1791939752392,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Turtonator!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 576,
+      "evidenceReferences": [
+        "4fdfbd90-3a11-48e8-997f-09f90f93e67c",
+        "a1cf11c3-7737-4f4a-b030-8245291e1213"
+      ],
+      "monotonicTimeNanos": -2671436385
+    },
+    {
+      "articleId": "b950ec2e-ac0c-41f3-9942-b2e5e9831664",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939752073,
+      "recordedAt": 1791939753353,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 639,
+      "evidenceReferences": [
+        "44df4fe4-7965-4108-b033-bf77c9ad62fc",
+        "8cd0d97d-d384-44b0-a16e-e8419290962d"
+      ],
+      "monotonicTimeNanos": -1527006538
+    },
+    {
+      "articleId": "5bf510aa-6105-40f0-8977-2170d582ca10",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939753689,
+      "recordedAt": 1791939754491,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "c1a7e3a3-0fdb-49c2-b87d-d3288be89da8"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 0
+    },
+    {
+      "articleId": "09d0589c-d85c-4a87-a682-f823d970ad80",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939753103,
+      "recordedAt": 1791939754577,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 736,
+      "evidenceReferences": [
+        "44df4fe4-7965-4108-b033-bf77c9ad62fc",
+        "5087e5ed-7633-4b8c-91a7-ec23f9be1ef0"
+      ],
+      "monotonicTimeNanos": -509477231
+    },
+    {
+      "articleId": "f2838e87-fb37-4801-ac1c-8c0205aec5a3",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939754112,
+      "recordedAt": 1791939755415,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 807,
+      "evidenceReferences": [
+        "44df4fe4-7965-4108-b033-bf77c9ad62fc",
+        "3edb6fb9-aa93-4684-99f1-f6f0e1987d63"
+      ],
+      "monotonicTimeNanos": 498548308
+    },
+    {
+      "articleId": "0aecee9d-7f70-402d-93a8-6eef3cfca294",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939751778,
+      "recordedAt": 1791939755591,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 828,
+      "evidenceReferences": [
+        "b9dc34b0-246c-4ad9-9d8b-1246b597ac5d",
+        "6b9348fa-8d61-4782-b721-376f25a0c500",
+        "343f5960-6b73-48af-8a29-5d6dfd5c1b34"
+      ],
+      "monotonicTimeNanos": -1812073231
+    },
+    {
+      "articleId": "30136c71-4236-4930-ad8d-16c8c7d2bb5d",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939754561,
+      "recordedAt": 1791939761031,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "BRUTAL SWING"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1258,
+      "evidenceReferences": [
+        "1cd2fb91-2293-40b1-a748-4fb63fea1b6e"
+      ],
+      "monotonicTimeNanos": 976793231
+    },
+    {
+      "articleId": "17116bd0-da51-490b-b9e8-ba7a6367ac34",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939755216,
+      "recordedAt": 1791939762317,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1336,
+      "evidenceReferences": [
+        "7f6cfc02-a916-4fe6-8dd8-0483b5067d90",
+        "a60b14c0-ce7d-43bb-945d-31b45271acc4",
+        "e6d9c826-21dd-4d60-845e-1a0b34d0dfd1"
+      ],
+      "monotonicTimeNanos": 1631349154
+    },
+    {
+      "articleId": "d1ec37a5-59ec-4a2c-98ef-857341b8e425",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939754561,
+      "recordedAt": 1791939763313,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "DRAGON PULSE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1371,
+      "evidenceReferences": [
+        "16b7e6b2-2ba7-47ad-a10a-cbc17c439a99"
+      ],
+      "monotonicTimeNanos": 976793231
+    },
+    {
+      "articleId": "7d672745-ca15-4ca4-ace5-6da449e50cc7",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939761988,
+      "recordedAt": 1791939768399,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1542,
+      "evidenceReferences": [
+        "454898cf-95fa-47f4-8896-3673ff45d56d",
+        "9336f662-a1af-4bc9-8cce-179e06b8f18e",
+        "37abc2da-09e3-42e7-bf67-f9a681b9fed3"
+      ],
+      "monotonicTimeNanos": 8393467616
+    },
+    {
+      "articleId": "c6fbee66-1458-4f5f-8908-c356da4a2f64",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939760894,
+      "recordedAt": 1791939770141,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1594,
+      "evidenceReferences": [
+        "267fa802-6ccb-4a4e-858d-ccee129ef119"
+      ],
+      "monotonicTimeNanos": 7299261539
+    },
+    {
+      "articleId": "9bf243bf-3987-4279-adaf-6f842d5e1ecf",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939762933,
+      "recordedAt": 1791939770964,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1625,
+      "evidenceReferences": [
+        "8ea6c9a7-eab6-408d-b09d-c0c1f63ed7f4"
+      ],
+      "monotonicTimeNanos": 9339325232
+    },
+    {
+      "articleId": "33ee20ba-f80a-4f0d-8289-6c714c3908bc",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939768113,
+      "recordedAt": 1791939771072,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1630,
+      "evidenceReferences": [
+        "5295271f-17f8-4535-988c-002fec1f888e",
+        "c312a9be-a8d2-4153-a4ff-06375ce2a5e0",
+        "91630729-6733-401f-866a-78d9ab8a8145"
+      ],
+      "monotonicTimeNanos": 14512422693
+    },
+    {
+      "articleId": "885d81a0-3373-4df4-bb0d-64b8dc1c4050",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939770928,
+      "recordedAt": 1791939772364,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Turtonator used Dragon Pulse!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1687,
+      "evidenceReferences": [
+        "2da01c6d-5d2f-42f3-9062-f88ea54365d8",
+        "9b15881b-3c34-40af-8697-e26ffa2d9be0"
+      ],
+      "monotonicTimeNanos": 17328705770
+    },
+    {
+      "articleId": "96939be2-11c2-4040-b0fd-3b210fb030a2",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939770928,
+      "recordedAt": 1791939772631,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "moveName": "Dragon Pulse",
+        "energyCost": 55,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "885d81a0-3373-4df4-bb0d-64b8dc1c4050"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 17328705770
+    },
+    {
+      "articleId": "d164ab8a-a526-4cfd-8b89-9ba5dcf23ecb",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939768027,
+      "recordedAt": 1791939772642,
+      "sourceId": "CHARGE_MOVE_QTE_VIBRATION_INTERPRETER",
+      "payload": {
+        "kind": "charge_move_qte_vibration_pattern_inferred",
+        "side": "PLAYER",
+        "pulseCount": 3,
+        "windowNanos": 2535528000,
+        "basis": "CHARGE_MOVE_ANNOUNCEMENT_LINKED_THREE_SHORT_DEVICE_MOTION_PULSES"
+      },
+      "predecessorIds": [
+        "a8102851-0498-48e1-9bfe-a334d78222a3",
+        "55af49a0-e9a1-40f2-84e7-061e00d096a4",
+        "56744d4f-c301-464e-b728-d95cb8773505",
+        "96939be2-11c2-4040-b0fd-3b210fb030a2"
+      ],
+      "confidence": 0.78,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 14233491924
+    },
+    {
+      "articleId": "9f20cc38-ea0d-4d26-9ecc-04d98161840a",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939770928,
+      "recordedAt": 1791939772672,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1688,
+      "evidenceReferences": [
+        "885d81a0-3373-4df4-bb0d-64b8dc1c4050"
+      ],
+      "monotonicTimeNanos": 17328705770
+    },
+    {
+      "articleId": "3bad765f-4d2f-4bcf-b039-edd0a1bac6b4",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939770928,
+      "recordedAt": 1791939772740,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1691,
+      "evidenceReferences": [
+        "885d81a0-3373-4df4-bb0d-64b8dc1c4050"
+      ],
+      "monotonicTimeNanos": 17328705770
+    },
+    {
+      "articleId": "3f1b15e2-191b-4e38-acbc-ad88167645c7",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939769852,
+      "recordedAt": 1791939773207,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1740,
+      "evidenceReferences": [
+        "a032beec-3cb8-461b-b847-0db31b05de47"
+      ],
+      "monotonicTimeNanos": 16253143617
+    },
+    {
+      "articleId": "92db4251-9c48-4827-bac2-3dde92823d97",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939772822,
+      "recordedAt": 1791939773327,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1756,
+      "evidenceReferences": [
+        "f2838e87-fb37-4801-ac1c-8c0205aec5a3",
+        "8b7ef72b-11d7-4adb-ae94-ee37c9a79be8",
+        "8e4cdc49-e134-4423-9abb-31f83385d94b"
+      ],
+      "monotonicTimeNanos": 19223446463
+    },
+    {
+      "articleId": "3c53f058-82a0-418c-a9de-cf21f58ede42",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939772081,
+      "recordedAt": 1791939773740,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Sealeo!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1781,
+      "evidenceReferences": [
+        "c7fa375b-d265-4052-93a1-3982e939303d",
+        "5e67993b-2093-4505-9c87-b102d71e7bf2"
+      ],
+      "monotonicTimeNanos": 18488205771
+    },
+    {
+      "articleId": "9c297421-0206-416c-ba31-678f16835c52",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939772081,
+      "recordedAt": 1791939773934,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 1800,
+      "evidenceReferences": [
+        "3c53f058-82a0-418c-a9de-cf21f58ede42"
+      ],
+      "monotonicTimeNanos": 18488205771
+    },
+    {
+      "articleId": "5d4eef65-86a0-414f-a8f8-0db95280b9d1",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939773430,
+      "recordedAt": 1791939774315,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1834,
+      "evidenceReferences": [
+        "92db4251-9c48-4827-bac2-3dde92823d97",
+        "88fe12c9-ef7a-49a1-a582-0ef1366d7f10"
+      ],
+      "monotonicTimeNanos": 19829288924
+    },
+    {
+      "articleId": "4551112c-59e0-4fd7-b311-1c0f5c9f3cb2",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939770399,
+      "recordedAt": 1791939775481,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1928,
+      "evidenceReferences": [
+        "75061d70-cd73-4eaf-95ed-4eae30c82d26"
+      ],
+      "monotonicTimeNanos": 16808130078
+    },
+    {
+      "articleId": "dfb4a052-7ebd-4bc9-b1e1-1db683e57af2",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939773760,
+      "recordedAt": 1791939775637,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1941,
+      "evidenceReferences": [
+        "3c53f058-82a0-418c-a9de-cf21f58ede42",
+        "6f06c8fd-58f2-481b-8603-6c9f80b3afc5"
+      ],
+      "monotonicTimeNanos": 20174979001
+    },
+    {
+      "articleId": "c58ce3d8-32c1-4b41-88c1-c3786883deb1",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939774137,
+      "recordedAt": 1791939776681,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2052,
+      "evidenceReferences": [
+        "92db4251-9c48-4827-bac2-3dde92823d97",
+        "acbb0069-a84e-4999-b8b9-4bd6cc1c3949"
+      ],
+      "monotonicTimeNanos": 20524552540
+    },
+    {
+      "articleId": "7b71ec16-4a6d-4372-bc3c-ca39805f4739",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939773261,
+      "recordedAt": 1791939777316,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Sealeo!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2107,
+      "evidenceReferences": [
+        "c1946c67-2f26-4dee-81b3-8ade12348253",
+        "4f17cc99-bae6-4dc1-968e-e9486456be57"
+      ],
+      "monotonicTimeNanos": 19652015924
+    },
+    {
+      "articleId": "f73994bf-f01f-4c20-a5a4-2656fa189a74",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939771682,
+      "recordedAt": 1791939779032,
+      "sourceId": "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS",
+      "payload": {
+        "kind": "player_charge_button_touch_witnessed",
+        "slot": 2,
+        "x": 707.0,
+        "y": 1905.0,
+        "displayWidth": 1080,
+        "displayHeight": 2400,
+        "rawText": "P:1/1 X:707.0 Y: 1905.0"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2229,
+      "evidenceReferences": [
+        "f7bfbd08-f0a9-471a-94d6-9a35a917bbd0"
+      ],
+      "monotonicTimeNanos": 18060565540
+    },
+    {
+      "articleId": "d4f28f3c-9053-4c0d-a718-6b8d62fe117f",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939773046,
+      "recordedAt": 1791939780225,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "BRUTAL SWING"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2330,
+      "evidenceReferences": [
+        "2bae5b6e-0f1b-4cb7-8634-d1560d040137"
+      ],
+      "monotonicTimeNanos": 19439508924
+    },
+    {
+      "articleId": "a2a4e63f-c161-49eb-a041-4cefa7e82bae",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939776954,
+      "recordedAt": 1791939781316,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2390,
+      "evidenceReferences": [
+        "37277e3c-3c73-4b82-864d-f5cdcf398445",
+        "21cf9d93-e0ee-4548-912c-f7c36d82bc8f",
+        "60b386d6-873a-4fe5-a43f-b27a8e76d0b7"
+      ],
+      "monotonicTimeNanos": 23368197540
+    },
+    {
+      "articleId": "2fb36341-02e0-46ed-bffe-31771b5eeb6b",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939775118,
+      "recordedAt": 1791939781825,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "DRAGON PULSE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2415,
+      "evidenceReferences": [
+        "a7874965-e316-451c-af63-39082bbb6fea"
+      ],
+      "monotonicTimeNanos": 21526336232
+    },
+    {
+      "articleId": "c841ee72-f08b-4c10-988d-cde5ea3941dd",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939781171,
+      "recordedAt": 1791939783422,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Camerupt!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2511,
+      "evidenceReferences": [
+        "92856202-8cdd-4eae-80f0-42b1240a08e8",
+        "b91289dd-2950-43cd-a8b9-7f8b1f1fdc4a"
+      ],
+      "monotonicTimeNanos": 27582131310
+    },
+    {
+      "articleId": "c9cde034-1765-4e92-9016-372b0e7bf3d1",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939781171,
+      "recordedAt": 1791939783708,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 2562,
+      "evidenceReferences": [
+        "c841ee72-f08b-4c10-988d-cde5ea3941dd"
+      ],
+      "monotonicTimeNanos": 27582131310
+    },
+    {
+      "articleId": "fb81e2ac-d0f7-457f-8943-9dfca7399a34",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939783487,
+      "recordedAt": 1791939785921,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2739,
+      "evidenceReferences": [
+        "c841ee72-f08b-4c10-988d-cde5ea3941dd",
+        "0d50ccfd-905e-46eb-891b-1de2d49ac67a"
+      ],
+      "monotonicTimeNanos": 29889249540
+    },
+    {
+      "articleId": "01a622aa-1f83-4f00-9df0-6bd41faf25f0",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939785153,
+      "recordedAt": 1791939787177,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2832,
+      "evidenceReferences": [
+        "c841ee72-f08b-4c10-988d-cde5ea3941dd",
+        "b1b9bbc9-8064-44e2-b36d-316a359eb1a6"
+      ],
+      "monotonicTimeNanos": 31524196617
+    },
+    {
+      "articleId": "d6e07175-bcbe-4b83-9018-ab3e3ba62137",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939779841,
+      "recordedAt": 1791939788179,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2906,
+      "evidenceReferences": [
+        "456fefee-143b-4124-bbf5-8cfc47402326"
+      ],
+      "monotonicTimeNanos": 26243710771
+    },
+    {
+      "articleId": "c5f4b188-4766-4367-8039-1151a85b1427",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939782678,
+      "recordedAt": 1791939789956,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2983,
+      "evidenceReferences": [
+        "3508da37-9cde-445c-86a2-8076366da5e6",
+        "6a94f598-4d2f-41fe-890a-9c1b21008670",
+        "996d8e47-f7aa-4aab-a546-59662327bf12"
+      ],
+      "monotonicTimeNanos": 29087766463
+    },
+    {
+      "articleId": "b25a1b93-1c56-49c2-9368-100a3488ab90",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939781530,
+      "recordedAt": 1791939790407,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2998,
+      "evidenceReferences": [
+        "a521e397-e47d-478c-a1c9-e4e81a44f15e"
+      ],
+      "monotonicTimeNanos": 27934746694
+    },
+    {
+      "articleId": "1e690b6b-be0d-4bce-ba03-d97982b0d515",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939789664,
+      "recordedAt": 1791939792934,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3078,
+      "evidenceReferences": [
+        "a00ea1a3-dbe8-4b8d-8b5a-b1c9d2cc93ef",
+        "bbd27dbf-665c-4b16-9d7f-9460a35bb37c",
+        "689f3863-a540-4a5a-85c5-4ec817bb1cc5"
+      ],
+      "monotonicTimeNanos": 36061558079
+    },
+    {
+      "articleId": "3b7814b4-fb86-4531-a9e6-6940bf044da5",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939787780,
+      "recordedAt": 1791939793217,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "MR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3090,
+      "evidenceReferences": [
+        "bca20a21-1439-437c-952d-d7b612f6c73c"
+      ],
+      "monotonicTimeNanos": 34185515002
+    },
+    {
+      "articleId": "0f05b7f3-6dd9-46a8-8312-b6c49f4057e2",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939789907,
+      "recordedAt": 1791939795373,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3174,
+      "evidenceReferences": [
+        "911f9457-8a72-4a5d-aa70-8bef46f4ac40"
+      ],
+      "monotonicTimeNanos": 36305551387
+    },
+    {
+      "articleId": "ca9b57a0-85bf-4962-9283-4794d7d00a84",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939792613,
+      "recordedAt": 1791939796414,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3217,
+      "evidenceReferences": [
+        "260b4354-1c70-4f9f-b66f-34de338e86be",
+        "b926f2f9-6d60-43c1-a467-f7eb236a0ecf",
+        "44da8722-0058-454d-8f3c-ce85dff64841"
+      ],
+      "monotonicTimeNanos": 38997155079
+    },
+    {
+      "articleId": "6918a8c3-05f4-41ce-aa38-2ab7a0704d4b",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939796229,
+      "recordedAt": 1791939798477,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt used Rock Tomb!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3282,
+      "evidenceReferences": [
+        "ef8ab904-45d5-488c-80c5-8722cf21108b",
+        "ee436696-3796-4cf2-9379-520c55c9afa6"
+      ],
+      "monotonicTimeNanos": 42611310695
+    },
+    {
+      "articleId": "53da0e7f-262b-4a4c-8f89-ccd90202d3c9",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939796229,
+      "recordedAt": 1791939798691,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "moveName": "Rock Tomb",
+        "energyCost": 50,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "6918a8c3-05f4-41ce-aa38-2ab7a0704d4b"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 42611310695
+    },
+    {
+      "articleId": "0e3011ed-7320-46e1-9274-b12dc01c17d0",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939796229,
+      "recordedAt": 1791939798714,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3284,
+      "evidenceReferences": [
+        "6918a8c3-05f4-41ce-aa38-2ab7a0704d4b"
+      ],
+      "monotonicTimeNanos": 42611310695
+    },
+    {
+      "articleId": "235582fb-e3cd-4ba5-b068-3e34dbbc0d2f",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939796229,
+      "recordedAt": 1791939798731,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3289,
+      "evidenceReferences": [
+        "6918a8c3-05f4-41ce-aa38-2ab7a0704d4b"
+      ],
+      "monotonicTimeNanos": 42611310695
+    },
+    {
+      "articleId": "33eb7b5d-b017-4ec1-816f-9e07c798eb18",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939793031,
+      "recordedAt": 1791939799282,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3323,
+      "evidenceReferences": [
+        "bc28db26-1184-4f39-a5f6-b794e35e1ba4"
+      ],
+      "monotonicTimeNanos": 39434328541
+    },
+    {
+      "articleId": "998bb5b3-9ca9-4b92-8a67-fb91bd8b5cd7",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939798646,
+      "recordedAt": 1791939799647,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 3350,
+      "evidenceReferences": [
+        "9c297421-0206-416c-ba31-678f16835c52",
+        "2c7bbc2b-c0c6-47fa-966f-70bda1ae3414",
+        "9b9195fd-5d38-403c-b5f8-d5c0772ef788"
+      ],
+      "monotonicTimeNanos": 45044582157
+    },
+    {
+      "articleId": "e4ef8474-998e-453d-a1a9-81966ed307dd",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939799656,
+      "recordedAt": 1791939800880,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3436,
+      "evidenceReferences": [
+        "998bb5b3-9ca9-4b92-8a67-fb91bd8b5cd7",
+        "5c81e6d0-32af-4343-8a67-e183adcd2f87"
+      ],
+      "monotonicTimeNanos": 46070577234
+    },
+    {
+      "articleId": "2667d3e2-7811-4d97-bf13-49ff7545805f",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939798346,
+      "recordedAt": 1791939801396,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Vanoreon!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3470,
+      "evidenceReferences": [
+        "af693e09-1892-4339-b104-6550aab7389f",
+        "230045a5-0a4e-406b-a16e-9c8af68899fc"
+      ],
+      "monotonicTimeNanos": 44731698388
+    },
+    {
+      "articleId": "61bf13cb-c011-4074-b92f-5f3686884170",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939800662,
+      "recordedAt": 1791939802101,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3535,
+      "evidenceReferences": [
+        "998bb5b3-9ca9-4b92-8a67-fb91bd8b5cd7",
+        "3af125b0-d74b-4fd5-9620-120e1eb62c0d"
+      ],
+      "monotonicTimeNanos": 47066763003
+    },
+    {
+      "articleId": "657e2c14-88b4-4509-804c-5e870b2bc436",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939795148,
+      "recordedAt": 1791939802545,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3574,
+      "evidenceReferences": [
+        "ec30a690-a0a0-485b-aa66-72b4540fd3e8"
+      ],
+      "monotonicTimeNanos": 41546289849
+    },
+    {
+      "articleId": "942134db-4180-42ff-9303-98c5febe3194",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939801422,
+      "recordedAt": 1791939802905,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3604,
+      "evidenceReferences": [
+        "2667d3e2-7811-4d97-bf13-49ff7545805f",
+        "3b721600-41ff-415d-bc21-51314b125714"
+      ],
+      "monotonicTimeNanos": 47831761234
+    },
+    {
+      "articleId": "bd02cfbf-2afe-40df-9433-7bc79f49dec8",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939802658,
+      "recordedAt": 1791939804900,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3735,
+      "evidenceReferences": [
+        "2667d3e2-7811-4d97-bf13-49ff7545805f",
+        "044cc933-32c9-4c75-8773-c2a3e4d5bd55"
+      ],
+      "monotonicTimeNanos": 49037568234
+    },
+    {
+      "articleId": "f5a8be96-a1e1-4e3f-a20a-8093a3a0df64",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939803219,
+      "recordedAt": 1791939805997,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3813,
+      "evidenceReferences": [
+        "e4ef8474-998e-453d-a1a9-81966ed307dd",
+        "d1a0f715-0c2e-4b87-8603-d09625c8bd48"
+      ],
+      "monotonicTimeNanos": 49614866157
+    },
+    {
+      "articleId": "202a7394-ceae-4ff7-aa40-41561c7c4b33",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939800986,
+      "recordedAt": 1791939811610,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4015,
+      "evidenceReferences": [
+        "5e6ce26c-4d18-47d7-a17c-898292ae0bbc",
+        "847be8e2-477e-42de-b223-a1ab77cb505a",
+        "1c29dad4-4bb3-4b96-83fc-8fe5ef6cad7d"
+      ],
+      "monotonicTimeNanos": 47371229542
+    },
+    {
+      "articleId": "256732b7-f369-4fed-9afb-351c7856fbbf",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939798796,
+      "recordedAt": 1791939813134,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "ROCK TOMB"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4058,
+      "evidenceReferences": [
+        "a237f46d-5a3b-4f44-84d0-8935aa5699a3"
+      ],
+      "monotonicTimeNanos": 45194372234
+    },
+    {
+      "articleId": "845b07e6-224b-4c70-9f43-2bbf7793413b",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939810971,
+      "recordedAt": 1791939815606,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4122,
+      "evidenceReferences": [
+        "d7cbec44-1574-4536-a16f-a02b1ca50cd4",
+        "b9d51fca-9486-4559-8515-704a8b7fe6e7"
+      ],
+      "monotonicTimeNanos": 57385660619
+    },
+    {
+      "articleId": "d3871f0f-ef45-49aa-abba-8bde86bd0bfd",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939801922,
+      "recordedAt": 1791939816227,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "EARTH POWER"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4139,
+      "evidenceReferences": [
+        "ad4f21bd-a680-4382-8c9e-4b5c6445bd76"
+      ],
+      "monotonicTimeNanos": 48304102388
+    },
+    {
+      "articleId": "0d869d19-9f51-456c-b743-2373d7a76495",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939815354,
+      "recordedAt": 1791939817796,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4202,
+      "evidenceReferences": [
+        "2fbe1b9f-a82b-42c3-b05f-2492cfb0b43f",
+        "6699d5a4-4902-48a2-ab42-460544f41dc4"
+      ],
+      "monotonicTimeNanos": 61766089850
+    },
+    {
+      "articleId": "ee0eaa22-f545-4156-b6e0-30ed0f2c8798",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939817585,
+      "recordedAt": 1791939819220,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4264,
+      "evidenceReferences": [
+        "6dcf427b-b277-42a7-a0dc-d0ce7e545836",
+        "87d200d5-3e54-4c3d-bf0c-d43e7728d85e"
+      ],
+      "monotonicTimeNanos": 63993563619
+    },
+    {
+      "articleId": "4aeae852-7acf-426e-8b12-a95259493c16",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939812898,
+      "recordedAt": 1791939820171,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4296,
+      "evidenceReferences": [
+        "e7c9ef62-d5e9-4e42-9e64-31a8f1d90d22"
+      ],
+      "monotonicTimeNanos": 59312423927
+    },
+    {
+      "articleId": "7086a9b8-84b7-494c-80dc-5143537b2c34",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939818901,
+      "recordedAt": 1791939821119,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4324,
+      "evidenceReferences": [
+        "7cc67f02-3c19-4e46-b5f0-ae610a7c97bf",
+        "919c4235-ce89-4fb2-820d-52c61f445839"
+      ],
+      "monotonicTimeNanos": 65311930081
+    },
+    {
+      "articleId": "22991b15-9e68-48b2-a6d1-925ce81d88bd",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939816114,
+      "recordedAt": 1791939821700,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4341,
+      "evidenceReferences": [
+        "ea27447f-48a7-4078-8835-28a70ef1d1ae"
+      ],
+      "monotonicTimeNanos": 62521489850
+    },
+    {
+      "articleId": "76087d16-7862-46c4-879d-7da9ccd4566c",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939820872,
+      "recordedAt": 1791939822357,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4362,
+      "evidenceReferences": [
+        "647c900e-9cab-40a9-a1b9-6b940c6e10cc",
+        "556005ce-973f-4834-9950-92c6087f314d"
+      ],
+      "monotonicTimeNanos": 67282816312
+    },
+    {
+      "articleId": "1b3f01ce-12ff-429a-a062-7133ed6aa259",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939822251,
+      "recordedAt": 1791939824387,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4437,
+      "evidenceReferences": [
+        "863c674e-4161-4c59-9f9d-93de2a0385c4",
+        "ad3d075e-7689-457f-8ad2-92f786d00b29"
+      ],
+      "monotonicTimeNanos": 68659071312
+    },
+    {
+      "articleId": "fc9cd293-c678-4acd-89ad-71bbc14b31b5",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939819788,
+      "recordedAt": 1791939824991,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4467,
+      "evidenceReferences": [
+        "b97f8d09-c6cc-44b0-bf1c-f30b7997c568"
+      ],
+      "monotonicTimeNanos": 66186653850
+    },
+    {
+      "articleId": "e33dd407-bbed-45d5-bcd4-8a3a075b0a60",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939824065,
+      "recordedAt": 1791939826158,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4511,
+      "evidenceReferences": [
+        "3b790bcd-9ee0-49d2-9105-1c1be36e543a",
+        "795bc083-ecaa-401f-9cc2-e5f15b47273a"
+      ],
+      "monotonicTimeNanos": 70459549543
+    },
+    {
+      "articleId": "08788bd8-53c3-44ac-854c-f9bd69a0ccc4",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939821369,
+      "recordedAt": 1791939826807,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4546,
+      "evidenceReferences": [
+        "a273997d-f2c8-4f8a-b950-8b2e91bd991f"
+      ],
+      "monotonicTimeNanos": 67778283312
+    },
+    {
+      "articleId": "c6a8618c-8aba-4bcb-bcea-2801d8114c30",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939825784,
+      "recordedAt": 1791939827670,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4573,
+      "evidenceReferences": [
+        "1044221d-c6f8-45d5-b33c-ea646011048b",
+        "ca57e647-f4b6-47e6-9f99-fe2881119714"
+      ],
+      "monotonicTimeNanos": 72196714774
+    },
+    {
+      "articleId": "60db9183-78eb-4d97-9f8e-ddd5f4804aa5",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939819260,
+      "recordedAt": 1791939829088,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "2d65f73b-e17c-4df5-a8a2-f6eed661d6a6"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 65669311620
+    },
+    {
+      "articleId": "324398bf-6a3f-4bc8-967e-b65576e87810",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939827482,
+      "recordedAt": 1791939829565,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4640,
+      "evidenceReferences": [
+        "fe198453-e99e-441d-830e-28d594a3678c",
+        "7e6028a3-d315-426b-a2e5-c61d3aee23fa"
+      ],
+      "monotonicTimeNanos": 73888962697
+    },
+    {
+      "articleId": "b8816594-1bdb-48a5-877a-ec2bd50ae2f6",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939824462,
+      "recordedAt": 1791939830081,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4649,
+      "evidenceReferences": [
+        "ec08b353-c5ff-48d9-9df5-2bd76883d70e"
+      ],
+      "monotonicTimeNanos": 70863779081
+    },
+    {
+      "articleId": "c1fa9326-1ed2-41c1-a030-802841fdab7c",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939829096,
+      "recordedAt": 1791939832180,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4670,
+      "evidenceReferences": [
+        "ac7eb57f-1fd8-4bb1-aee9-f3c32c055885",
+        "1b3d029b-c0d4-42c3-96a4-1404f0741284"
+      ],
+      "monotonicTimeNanos": 75496216312
+    },
+    {
+      "articleId": "7dab2839-4a9e-4817-8ca2-088f1566fa6f",
+      "matchId": "a49bdc77-367a-44f5-b654-8a967d8a135c",
+      "perceivedAt": 1791939826628,
+      "recordedAt": 1791939832585,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4677,
+      "evidenceReferences": [
+        "279957ac-fd94-425d-8fa1-10f2b6b28324"
+      ],
+      "monotonicTimeNanos": 73039400543
+    }
+  ]
+}

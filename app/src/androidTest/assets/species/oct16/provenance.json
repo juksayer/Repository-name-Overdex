@@ -1,0 +1,30 @@
+[
+  {
+    "file": "sneasel.png",
+    "archive": "2026-10-16_09-34-26_b9d6da22-93f1-403c-a017-b59ab2393240.odxmatch.zip",
+    "articleId": "54175f4c-6fd2-44d8-a03c-4bb477628a0d",
+    "sha256": "0a5dd40e1cd4a33bcc20ea2ab75fb7f8938d0f35d696b9e30534929cac5ff148",
+    "geometry": [
+      672,
+      1493,
+      493,
+      96,
+      650,
+      128
+    ]
+  },
+  {
+    "file": "vaporeon.png",
+    "archive": "2026-10-16_09-34-26_b9d6da22-93f1-403c-a017-b59ab2393240.odxmatch.zip",
+    "articleId": "100278c7-bb2c-424c-a0d8-9ffb8d8e79b5",
+    "sha256": "1a89a209e991094e08c7d3846d5f52a80e5bc57817d09a05e76fababe1d9fa40",
+    "geometry": [
+      672,
+      1493,
+      493,
+      96,
+      650,
+      128
+    ]
+  }
+]

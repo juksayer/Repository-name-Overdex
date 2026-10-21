@@ -1,0 +1,15 @@
+{
+  "source": "Native Android UiAutomation capture from BattleHudReadThroughDeviceTest, 2026-10-13",
+  "source_size": [
+    1080,
+    2400
+  ],
+  "source_sha256": "6c502fd38a4602462a6feeafb98a8f6482f19ad5891ef0e1e26da3c82fc7c8cf",
+  "hud_window": [
+    400,
+    280,
+    415,
+    470
+  ],
+  "note": "Actual Compose HUD over a retained GO announcement in a test Activity. Not a live Pokemon GO frame. Used for comparative text measurements only."
+}

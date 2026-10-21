@@ -1,0 +1,55 @@
+{
+  "device": "MOONDROP MD-PH-001",
+  "display": [
+    1080,
+    2400
+  ],
+  "capturedFrame": [
+    672,
+    1493
+  ],
+  "source": "Retained device frames copied on 2026-10-13; no exact capture times inferred from file modification times.",
+  "fixtures": [
+    {
+      "file": "pointer-down.png",
+      "sourceFrameSha256": "df6bd6bbca0ce1a9f83ad96a7bd0248b5390113691747c74e055d8794aa6098c",
+      "cropBounds": [
+        0,
+        51,
+        288,
+        79
+      ]
+    },
+    {
+      "file": "pointer-outside-controls.png",
+      "sourceFrameSha256": "155d5399d34e1a2820666141d84cb8141c7a0e3a7d5b4483562da40d86b6e706",
+      "cropBounds": [
+        0,
+        51,
+        288,
+        79
+      ]
+    },
+    {
+      "file": "left-label.png",
+      "sourceFrameSha256": "155d5399d34e1a2820666141d84cb8141c7a0e3a7d5b4483562da40d86b6e706",
+      "cropBounds": [
+        43,
+        1393,
+        330,
+        1434
+      ]
+    },
+    {
+      "file": "right-label.png",
+      "sourceFrameSha256": "155d5399d34e1a2820666141d84cb8141c7a0e3a7d5b4483562da40d86b6e706",
+      "cropBounds": [
+        342,
+        1393,
+        628,
+        1434
+      ]
+    }
+  ],
+  "testSequence": "The inference and concurrent witness tests construct synthetic timing and contacts from these real OCR crops. They are not a claimed reconstruction of this match."
+}

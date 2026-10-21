@@ -1,0 +1,1446 @@
+{
+  "schemaVersion": 1,
+  "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+  "articles": [
+    {
+      "articleId": "1df0b377-2da6-4bdc-a5ee-50cb499aebdc",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854947554,
+      "recordedAt": 1791854947556,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Galvantula",
+        "speciesId": 596,
+        "fastMoveName": "Volt Switch",
+        "chargedMoveNames": [
+          "Discharge",
+          "Lunge"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29532339367759
+    },
+    {
+      "articleId": "96f36dcd-5737-4e04-a26e-d4544413ba54",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854947554,
+      "recordedAt": 1791854947568,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29532339367759
+    },
+    {
+      "articleId": "c59d197f-7061-40d5-8357-61f48ec8a885",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854947554,
+      "recordedAt": 1791854947570,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29532339367759
+    },
+    {
+      "articleId": "9f5647ec-3e94-4a07-aca3-c98bbe91de8c",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854961914,
+      "recordedAt": 1791854964700,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "-"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 258,
+      "evidenceReferences": [
+        "3f1a26b5-de77-4c49-bf26-4aa895032db0"
+      ],
+      "monotonicTimeNanos": 29546688162145
+    },
+    {
+      "articleId": "405fa314-513c-40f4-ad96-4f9ee75ec1e5",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854964437,
+      "recordedAt": 1791854965954,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 311,
+      "evidenceReferences": [
+        "0e5709c9-650d-4c33-985e-cd4cda23f2c0"
+      ],
+      "monotonicTimeNanos": 29549211896376
+    },
+    {
+      "articleId": "efb6f85b-4953-4d1c-866e-eb9a55c21aea",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854965540,
+      "recordedAt": 1791854967042,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 369,
+      "evidenceReferences": [
+        "c4dffdb8-1714-49a1-bfa4-1efb08b9e97a"
+      ],
+      "monotonicTimeNanos": 29550315276376
+    },
+    {
+      "articleId": "8c63158d-b314-4276-aff1-f89683c8f467",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854966809,
+      "recordedAt": 1791854968718,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 413,
+      "evidenceReferences": [
+        "66276dbb-f530-4e64-8f02-7cae3ad0868a"
+      ],
+      "monotonicTimeNanos": 29551588515684
+    },
+    {
+      "articleId": "0ef01aba-85b5-4622-91eb-586eefc38dc6",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854968218,
+      "recordedAt": 1791854969444,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, gbl!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 432,
+      "evidenceReferences": [
+        "bea581ce-da45-45d9-be5d-cb41a15b31d6"
+      ],
+      "monotonicTimeNanos": 29552991737299
+    },
+    {
+      "articleId": "95665314-ebb6-4647-b227-63416ae24e37",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854969055,
+      "recordedAt": 1791854970816,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, gbl!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 500,
+      "evidenceReferences": [
+        "f4c8e5ea-9a36-4138-ad5e-042f5bdae58a"
+      ],
+      "monotonicTimeNanos": 29553802721222
+    },
+    {
+      "articleId": "f4fcfe7d-9a12-4a6e-b8bf-ee7c7016b55a",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854970109,
+      "recordedAt": 1791854971668,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Combusken!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 542,
+      "evidenceReferences": [
+        "eefb8c3a-bc48-47b7-946f-afff26785724"
+      ],
+      "monotonicTimeNanos": 29554885240376
+    },
+    {
+      "articleId": "6cc2dd64-551e-472e-9582-0c4eab631854",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854970109,
+      "recordedAt": 1791854971978,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 564,
+      "evidenceReferences": [
+        "f4fcfe7d-9a12-4a6e-b8bf-ee7c7016b55a"
+      ],
+      "monotonicTimeNanos": 29554885240376
+    },
+    {
+      "articleId": "d8c9dff7-3b7f-4e5c-bfbe-17230281c9bf",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854971798,
+      "recordedAt": 1791854972520,
+      "sourceId": "COUNTDOWN_GLYPH_WITNESS",
+      "payload": {
+        "kind": "countdown_glyph_witnessed",
+        "glyph": "GO",
+        "similarity": 0.96658957,
+        "frameIndex": 3,
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 130,
+        "cropTop": 600,
+        "cropRight": 590,
+        "cropBottom": 920,
+        "basis": "COUNTDOWN_GLYPH_NEUTRAL_BRIGHT_GEOMETRY"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 608,
+      "evidenceReferences": [
+        "3916819e-0a71-4cc0-948e-931270f67a04"
+      ],
+      "monotonicTimeNanos": 29556570614530
+    },
+    {
+      "articleId": "4de79328-d619-4e8a-81a8-a8e7b524ff1b",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854971047,
+      "recordedAt": 1791854972875,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Combusken!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 635,
+      "evidenceReferences": [
+        "bd4f1f68-0592-460d-887a-86d22c47635a"
+      ],
+      "monotonicTimeNanos": 29555824428607
+    },
+    {
+      "articleId": "10ed0c59-82e9-4acd-b75f-818e3eb1ef1e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854971649,
+      "recordedAt": 1791854975970,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Combusken!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 908,
+      "evidenceReferences": [
+        "2679ba59-8104-45a6-9054-d1695ec4d349"
+      ],
+      "monotonicTimeNanos": 29556415677299
+    },
+    {
+      "articleId": "7279d3cc-3b1e-4815-b1a7-2c7a4f6a6db8",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854974862,
+      "recordedAt": 1791854979392,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Combusken",
+        "speciesId": 256
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1163,
+      "evidenceReferences": [
+        "4a98ff53-7b69-492f-ab42-c700ce26a2a2",
+        "63c0515a-a4b9-4cea-8eed-910e21876a48"
+      ],
+      "monotonicTimeNanos": 29559637147146
+    },
+    {
+      "articleId": "5f9dbda1-1549-4058-89a7-572277509826",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854975663,
+      "recordedAt": 1791854982501,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1273,
+      "evidenceReferences": [
+        "342e2ecb-83da-4a8e-8d25-d8a5636f5494"
+      ],
+      "monotonicTimeNanos": 29560405243453
+    },
+    {
+      "articleId": "691304fe-502d-4dd1-827b-b41055eea349",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854982172,
+      "recordedAt": 1791854985303,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1359,
+      "evidenceReferences": [
+        "3b6bf2f6-0c55-4119-95ed-aa1f245355fc"
+      ],
+      "monotonicTimeNanos": 29566945079761
+    },
+    {
+      "articleId": "6d15e5b5-64b9-431d-a7ae-ac94168a73ab",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854985017,
+      "recordedAt": 1791854986959,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1415,
+      "evidenceReferences": [
+        "6b7a1afa-21d0-4448-b2fb-e3cbc22729a8"
+      ],
+      "monotonicTimeNanos": 29569787104992
+    },
+    {
+      "articleId": "48355655-41eb-4bfb-8052-3d719815edde",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854986843,
+      "recordedAt": 1791854987533,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "d Lunge!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1432,
+      "evidenceReferences": [
+        "18701689-88db-4e71-b7da-be6500801211"
+      ],
+      "monotonicTimeNanos": 29571616731454
+    },
+    {
+      "articleId": "e1b1b4db-a735-47a3-96d7-21d820112de5",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854986509,
+      "recordedAt": 1791854988139,
+      "sourceId": "STAT_CHANGE_AUDIO_CAPTURE",
+      "payload": {
+        "kind": "audio_captured",
+        "artifactPath": "artifacts/audio/sha256/7b7af272aa13d94b5c156874d83e22f0564aa59ee3a97b5e6acc5e9b50b24e8b.wav",
+        "sha256": "7b7af272aa13d94b5c156874d83e22f0564aa59ee3a97b5e6acc5e9b50b24e8b",
+        "byteCount": 24044,
+        "mediaType": "audio/wav",
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "durationNanos": 1500000000,
+        "cueKind": "STAT_CHANGE_SOUND",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "peakAmplitude": 0.32391357
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1473,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29571294916916
+    },
+    {
+      "articleId": "e3dc15b6-0266-4926-85bf-7420ab724604",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854987343,
+      "recordedAt": 1791854989190,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl used Lunge!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1549,
+      "evidenceReferences": [
+        "9a4a78d3-6170-4e8f-999d-f5a68417235a"
+      ],
+      "monotonicTimeNanos": 29572100303377
+    },
+    {
+      "articleId": "0b2dfb25-08a3-4754-9b21-9b1cf24c1b02",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854988682,
+      "recordedAt": 1791854993847,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1937,
+      "evidenceReferences": [
+        "0f864bd9-73d2-4c8d-b3f5-e05047a7b2af"
+      ],
+      "monotonicTimeNanos": 29573456709223
+    },
+    {
+      "articleId": "4d18d5eb-1031-4510-89ad-27e7b8812f8d",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854993443,
+      "recordedAt": 1791854999216,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2173,
+      "evidenceReferences": [
+        "1ee7eb4e-c355-4cf1-9267-b85c85216297"
+      ],
+      "monotonicTimeNanos": 29578208190531
+    },
+    {
+      "articleId": "3aa1218c-8d64-44ee-a4ff-32a16adbaefe",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791854998634,
+      "recordedAt": 1791855001632,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2253,
+      "evidenceReferences": [
+        "9adbbdb7-7b98-4106-9c86-9e78860b8d74"
+      ],
+      "monotonicTimeNanos": 29583411259378
+    },
+    {
+      "articleId": "a1fbfa50-ad52-44fc-9266-48e4dfc82601",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855001470,
+      "recordedAt": 1791855004823,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2348,
+      "evidenceReferences": [
+        "8397dff3-62ef-439a-b2af-523b90762194"
+      ],
+      "monotonicTimeNanos": 29586237557224
+    },
+    {
+      "articleId": "593045c3-1092-4388-b618-8c83019f147f",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855004578,
+      "recordedAt": 1791855005385,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "L"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2370,
+      "evidenceReferences": [
+        "046ad150-1369-4e13-b45b-58ae85e84363"
+      ],
+      "monotonicTimeNanos": 29589341142763
+    },
+    {
+      "articleId": "3f7b1571-12d5-43cf-87c4-ff8ad4bbbb13",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855005041,
+      "recordedAt": 1791855007252,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2439,
+      "evidenceReferences": [
+        "51348cd0-e7b6-486a-96f7-43165433428d"
+      ],
+      "monotonicTimeNanos": 29589817345224
+    },
+    {
+      "articleId": "fa38075b-e998-4f20-a212-4f3264ee8b27",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855007072,
+      "recordedAt": 1791855008248,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl used Lunge!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2493,
+      "evidenceReferences": [
+        "4584099f-e4ba-469e-bb67-37f73db4c260"
+      ],
+      "monotonicTimeNanos": 29591838789917
+    },
+    {
+      "articleId": "a2ad6475-be6d-4ca3-ba24-74d8d877389b",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855007860,
+      "recordedAt": 1791855012173,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2803,
+      "evidenceReferences": [
+        "400f8695-3ffe-4eec-a3b5-0a3e6314674a"
+      ],
+      "monotonicTimeNanos": 29592609727763
+    },
+    {
+      "articleId": "24565a2d-6821-4a2c-838b-ba9143c5ee32",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855009905,
+      "recordedAt": 1791855016024,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.82,
+      "sequenceNumber": 3029,
+      "evidenceReferences": [
+        "e9065f8e-41a2-48d1-92ea-855f8b97d3a9",
+        "36b74004-8187-4797-a782-587495a7fd6a"
+      ],
+      "monotonicTimeNanos": 29594672258763
+    },
+    {
+      "articleId": "cde4e5af-c2a5-4ea6-b3cb-468f4b26ddc4",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855011863,
+      "recordedAt": 1791855016268,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3034,
+      "evidenceReferences": [
+        "096bf7b5-cab9-4bd5-ab9f-20dd3e2e0391"
+      ],
+      "monotonicTimeNanos": 29596615945532
+    },
+    {
+      "articleId": "9637a3d1-556d-43e8-ad78-31c2601c52d6",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855012083,
+      "recordedAt": 1791855019222,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3191,
+      "evidenceReferences": [
+        "e9065f8e-41a2-48d1-92ea-855f8b97d3a9",
+        "3c89e14d-6abd-4782-8cda-88e717495a07"
+      ],
+      "monotonicTimeNanos": 29596845474532
+    },
+    {
+      "articleId": "70f5cc68-a12a-46da-9369-8dfa207e39d3",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855015361,
+      "recordedAt": 1791855019939,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3214,
+      "evidenceReferences": [
+        "a6433253-6eae-419a-89a4-5f6cd91d670a"
+      ],
+      "monotonicTimeNanos": 29600100392379
+    },
+    {
+      "articleId": "b440ea5e-ae43-4ee9-b880-a7d5ec6968a4",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855019644,
+      "recordedAt": 1791855023498,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3344,
+      "evidenceReferences": [
+        "af2c7305-d257-4299-ad92-85be509479b5"
+      ],
+      "monotonicTimeNanos": 29604366507687
+    },
+    {
+      "articleId": "21b001f2-7363-4d12-8b69-4d5cac136097",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855023308,
+      "recordedAt": 1791855025124,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl used Disch"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3431,
+      "evidenceReferences": [
+        "b83997f2-7754-4c6e-a997-01952f4998c4"
+      ],
+      "monotonicTimeNanos": 29608077531148
+    },
+    {
+      "articleId": "8d7ed035-a939-4416-83a6-9ab44db970ff",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855024669,
+      "recordedAt": 1791855029624,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3790,
+      "evidenceReferences": [
+        "c0c75e16-b696-40c7-b353-53fdd82cf55f"
+      ],
+      "monotonicTimeNanos": 29609448230841
+    },
+    {
+      "articleId": "32231d48-1afe-4594-8ab2-b905c9495de2",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855029101,
+      "recordedAt": 1791855034083,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4017,
+      "evidenceReferences": [
+        "8452964b-961e-4b84-9088-e5be2f751ec2"
+      ],
+      "monotonicTimeNanos": 29613859114533
+    },
+    {
+      "articleId": "bd92442a-bd8a-4537-b7d2-9ad2dcbdcac9",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855033764,
+      "recordedAt": 1791855036171,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4075,
+      "evidenceReferences": [
+        "7e859871-7509-4f2b-89bf-f2a30f5b6f24"
+      ],
+      "monotonicTimeNanos": 29618542601611
+    },
+    {
+      "articleId": "eb1a8818-e19d-4fc9-820e-d0a59daf8cf2",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855035922,
+      "recordedAt": 1791855036463,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4083,
+      "evidenceReferences": [
+        "90658ca0-afb4-4431-9690-583fbd7d53a1"
+      ],
+      "monotonicTimeNanos": 29620684436380
+    },
+    {
+      "articleId": "a75e428c-d6a7-4a01-b50c-a4df17eb2826",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855036165,
+      "recordedAt": 1791855037073,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4107,
+      "evidenceReferences": [
+        "ade0f6b7-17a3-4c63-ad3a-24e656e449c8"
+      ],
+      "monotonicTimeNanos": 29620937549918
+    },
+    {
+      "articleId": "246bd6ed-0df0-4039-8201-af1d538442ac",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855036892,
+      "recordedAt": 1791855037730,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4128,
+      "evidenceReferences": [
+        "c5e620bd-08e8-4939-8c3d-619292eb25ce"
+      ],
+      "monotonicTimeNanos": 29621650570457
+    },
+    {
+      "articleId": "79425ecc-716c-4422-b43f-0db4136bdec6",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855037218,
+      "recordedAt": 1791855038541,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4158,
+      "evidenceReferences": [
+        "58c7421c-9e51-4e26-a2d1-0f11b6b48111"
+      ],
+      "monotonicTimeNanos": 29621942136072
+    },
+    {
+      "articleId": "828f8515-332d-4060-8758-18bd333d33be",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855038393,
+      "recordedAt": 1791855039691,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4206,
+      "evidenceReferences": [
+        "71f916e5-0b71-4196-9163-be4288dedb4c"
+      ],
+      "monotonicTimeNanos": 29623173163149
+    },
+    {
+      "articleId": "f466c79b-2c51-47f6-8826-be4eeb157cb4",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855039222,
+      "recordedAt": 1791855040836,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl used Lunge!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4285,
+      "evidenceReferences": [
+        "eed9a4f2-f58a-40b8-b119-537f8eea1dce"
+      ],
+      "monotonicTimeNanos": 29624002800611
+    },
+    {
+      "articleId": "0886e2ad-31b6-4e8c-a7b2-5c8d67dacd68",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855039118,
+      "recordedAt": 1791855041091,
+      "sourceId": "STAT_CHANGE_AUDIO_CAPTURE",
+      "payload": {
+        "kind": "audio_captured",
+        "artifactPath": "artifacts/audio/sha256/00fc9bbc8d0a98ab3fdb2e0712317d7a2607b43044834240880db88ecf78465c.wav",
+        "sha256": "00fc9bbc8d0a98ab3fdb2e0712317d7a2607b43044834240880db88ecf78465c",
+        "byteCount": 24044,
+        "mediaType": "audio/wav",
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "durationNanos": 1500000000,
+        "cueKind": "STAT_CHANGE_SOUND",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "peakAmplitude": 0.37036133
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4286,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29623903601303
+    },
+    {
+      "articleId": "c59db0aa-4e84-4308-9470-3f5b32715dd7",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855040422,
+      "recordedAt": 1791855044766,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "gbl used Lunge!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4536,
+      "evidenceReferences": [
+        "73af2a19-f7a4-4f25-8746-c449a1614d0a"
+      ],
+      "monotonicTimeNanos": 29625172156611
+    },
+    {
+      "articleId": "cbf1d288-2dcc-4d2f-b14b-5c34d02086e1",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855041402,
+      "recordedAt": 1791855046123,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Magcargo",
+        "speciesId": 219
+      },
+      "predecessorIds": [],
+      "confidence": 0.96320003,
+      "sequenceNumber": 4630,
+      "evidenceReferences": [
+        "05cea845-9812-40a8-b0ad-8e4b4e86dd01"
+      ],
+      "monotonicTimeNanos": 29626182856996
+    },
+    {
+      "articleId": "13f9410c-b5fe-4c84-9553-ddb469d9857d",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855044136,
+      "recordedAt": 1791855050656,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Gq, Flareon!"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4793,
+      "evidenceReferences": [
+        "75d90d39-5efb-43de-98cd-2d182f5aa4e3"
+      ],
+      "monotonicTimeNanos": 29628885863688
+    },
+    {
+      "articleId": "6921f2ef-0fcf-4b43-b180-bb06c3cbb752",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855045873,
+      "recordedAt": 1791855051509,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4828,
+      "evidenceReferences": [
+        "dccc1a89-0e02-4b15-b2ee-8a81cd701f40",
+        "1e0817a7-c58d-4471-a22e-d4f1a3b62393"
+      ],
+      "monotonicTimeNanos": 29630610323765
+    },
+    {
+      "articleId": "fd43d67a-899b-4a47-98ae-47920a69cb19",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855050343,
+      "recordedAt": 1791855054244,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4967,
+      "evidenceReferences": [
+        "7786bcc9-9bcc-4fae-9d1c-edbb369f2a4a"
+      ],
+      "monotonicTimeNanos": 29635095116073
+    },
+    {
+      "articleId": "437d9786-8a4b-4020-82c8-ce831f4ce560",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855054520,
+      "recordedAt": 1791855056186,
+      "sourceId": "STAT_CHANGE_AUDIO_CAPTURE",
+      "payload": {
+        "kind": "audio_captured",
+        "artifactPath": "artifacts/audio/sha256/759f74eee1fec942ac77d17fa141f8ee98ab4f62aba64f41f7824ffe060e5493.wav",
+        "sha256": "759f74eee1fec942ac77d17fa141f8ee98ab4f62aba64f41f7824ffe060e5493",
+        "byteCount": 24044,
+        "mediaType": "audio/wav",
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "durationNanos": 1500000000,
+        "cueKind": "STAT_CHANGE_SOUND",
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "peakAmplitude": 0.3776245
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5081,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 29639305711689
+    },
+    {
+      "articleId": "10ad477d-a146-4940-a729-d9e7ba8abab7",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855053962,
+      "recordedAt": 1791855057258,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Flareon",
+        "speciesId": 136
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 5155,
+      "evidenceReferences": [
+        "6921f2ef-0fcf-4b43-b180-bb06c3cbb752",
+        "03316700-67f5-4b80-8699-3cd88dff3716"
+      ],
+      "monotonicTimeNanos": 29638730772304
+    },
+    {
+      "articleId": "b69866e3-a763-4bd5-835f-459564a010ca",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855053771,
+      "recordedAt": 1791855057381,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5171,
+      "evidenceReferences": [
+        "6b8b55f8-fc45-4a5b-8a6a-40f6c2e4ab91"
+      ],
+      "monotonicTimeNanos": 29638536244612
+    },
+    {
+      "articleId": "830211be-0a71-47ea-8c4f-047e1a4d6f00",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855057121,
+      "recordedAt": 1791855064566,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5634,
+      "evidenceReferences": [
+        "20c36fd8-d039-4d2c-bea3-a325d09adbbe"
+      ],
+      "monotonicTimeNanos": 29641865383997
+    },
+    {
+      "articleId": "88e4ed3f-e6f7-413f-861c-a4f316529c9e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855069190,
+      "recordedAt": 1791855071207,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 5972,
+      "evidenceReferences": [
+        "4985fa64-130d-4be7-8161-5119f4401f95"
+      ],
+      "monotonicTimeNanos": 29653916083382
+    },
+    {
+      "articleId": "3b59de5b-4ac1-48e2-bdd0-731c7f4250a4",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855064418,
+      "recordedAt": 1791855071856,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 5995,
+      "evidenceReferences": [
+        "67aa97b7-ba70-49f9-a427-42cfc5432d25"
+      ],
+      "monotonicTimeNanos": 29649182516920
+    },
+    {
+      "articleId": "ab3c7555-c848-4eb0-8842-ddc8dbfa3463",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855070861,
+      "recordedAt": 1791855073326,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 6102,
+      "evidenceReferences": [
+        "e80ac80c-a1c1-4e60-a121-8da9f64c6da7"
+      ],
+      "monotonicTimeNanos": 29655618832921
+    },
+    {
+      "articleId": "41461e96-e2a3-41c1-978b-e868d1de593e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855070942,
+      "recordedAt": 1791855077442,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6308,
+      "evidenceReferences": [
+        "9a3d5d7f-8787-4089-a658-ce83afcb5e02"
+      ],
+      "monotonicTimeNanos": 29655663283151
+    },
+    {
+      "articleId": "3499a234-41a8-4162-bc4c-f812957c7d16",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855077172,
+      "recordedAt": 1791855084165,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6531,
+      "evidenceReferences": [
+        "b65902fe-8ca1-43be-8531-2853e4b6b8c4"
+      ],
+      "monotonicTimeNanos": 29661953339459
+    },
+    {
+      "articleId": "cd9b4256-2841-4640-b90d-6b11145cbe3e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855084047,
+      "recordedAt": 1791855085720,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6559,
+      "evidenceReferences": [
+        "11ffe01d-40ab-4aed-82c0-596be2760bcf"
+      ],
+      "monotonicTimeNanos": 29668821168921
+    },
+    {
+      "articleId": "a9bcece8-8b0a-4d2a-ab0a-63c057ddfcf6",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855085292,
+      "recordedAt": 1791855087053,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6607,
+      "evidenceReferences": [
+        "833e9bfd-e62c-4314-9301-d44a84748215"
+      ],
+      "monotonicTimeNanos": 29670045373614
+    },
+    {
+      "articleId": "f95e2a9f-52e8-4e85-b834-9644523e65f3",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855086926,
+      "recordedAt": 1791855088233,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6648,
+      "evidenceReferences": [
+        "5dde5e53-a0be-4673-8776-ab40eb534ef6"
+      ],
+      "monotonicTimeNanos": 29671704490768
+    },
+    {
+      "articleId": "c89b2058-ca6e-47f5-a53a-28abb887f8c4",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855088063,
+      "recordedAt": 1791855089817,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6705,
+      "evidenceReferences": [
+        "ecdb63ca-8ccf-4efb-b636-4d878092468e"
+      ],
+      "monotonicTimeNanos": 29672832622845
+    },
+    {
+      "articleId": "4fd38acb-3112-465d-9363-8cfcc25ce148",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855089583,
+      "recordedAt": 1791855091301,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6755,
+      "evidenceReferences": [
+        "1b76c8cb-a87b-4b03-b2c1-e8466d272ca3"
+      ],
+      "monotonicTimeNanos": 29674334301922
+    },
+    {
+      "articleId": "3aad2fdb-900a-4f11-9840-24bfeafe2a8a",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855090949,
+      "recordedAt": 1791855092140,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6782,
+      "evidenceReferences": [
+        "2f159e36-daf1-4ebe-89f7-f1f9ddffccf6"
+      ],
+      "monotonicTimeNanos": 29675729470845
+    },
+    {
+      "articleId": "bd815c19-3c48-4eb9-b7b4-6fd7e96b0232",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855092010,
+      "recordedAt": 1791855093454,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6814,
+      "evidenceReferences": [
+        "4c3bf52d-6284-4088-b73e-dfccf74fb602"
+      ],
+      "monotonicTimeNanos": 29676779016076
+    },
+    {
+      "articleId": "75bb16ba-b611-40c1-85d4-460e49f91f3f",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855093290,
+      "recordedAt": 1791855094922,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6847,
+      "evidenceReferences": [
+        "8d394664-b65a-4058-a855-309f22154ed8"
+      ],
+      "monotonicTimeNanos": 29678063104306
+    },
+    {
+      "articleId": "f2ab75f2-aadd-4b55-bd69-b4ddcfa6339a",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855094744,
+      "recordedAt": 1791855096676,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6903,
+      "evidenceReferences": [
+        "570a7c9f-29a0-4340-bbe1-711083506807"
+      ],
+      "monotonicTimeNanos": 29679516686153
+    },
+    {
+      "articleId": "382d0a7c-26ce-4903-9f5d-3a7e75b6b525",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855096094,
+      "recordedAt": 1791855098426,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 6969,
+      "evidenceReferences": [
+        "5d7825d7-3895-451c-9b95-23fa2c49a95f"
+      ],
+      "monotonicTimeNanos": 29680863919153
+    },
+    {
+      "articleId": "ef691188-c72d-4b92-ae2c-abfa899fbe5e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855098265,
+      "recordedAt": 1791855100993,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7043,
+      "evidenceReferences": [
+        "cf2c390d-a692-4293-b8c0-fc3b3bbb2f01"
+      ],
+      "monotonicTimeNanos": 29683037521845
+    },
+    {
+      "articleId": "a5884664-b4d9-4c74-965a-3a5a3e9f7035",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855100647,
+      "recordedAt": 1791855102975,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7097,
+      "evidenceReferences": [
+        "a20452a7-619a-4d72-af5f-6b348d5de5d0"
+      ],
+      "monotonicTimeNanos": 29685422816692
+    },
+    {
+      "articleId": "df2910f6-a45a-4bbf-99a4-2afdcf4e5619",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855102893,
+      "recordedAt": 1791855105752,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7187,
+      "evidenceReferences": [
+        "0c60c431-9bee-43d7-8e3e-e23a9cf9a91a"
+      ],
+      "monotonicTimeNanos": 29687658856615
+    },
+    {
+      "articleId": "826d9210-7ad5-460f-a2d0-a7bec80dfd64",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855105549,
+      "recordedAt": 1791855107415,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7246,
+      "evidenceReferences": [
+        "884dba37-5d07-48bf-a1b2-040e31a18c70"
+      ],
+      "monotonicTimeNanos": 29690311137615
+    },
+    {
+      "articleId": "fcb0f1da-3787-4898-a1ff-83cd6a312048",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855107080,
+      "recordedAt": 1791855109174,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7299,
+      "evidenceReferences": [
+        "3a9ca652-73ca-49cf-9d6f-100ee0c3d4b7"
+      ],
+      "monotonicTimeNanos": 29691852445615
+    },
+    {
+      "articleId": "805ca63b-4ba2-4213-8e58-b4e64e60d86a",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855108743,
+      "recordedAt": 1791855110909,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7351,
+      "evidenceReferences": [
+        "37c4e420-40c2-4874-b132-ac24a9c2659b"
+      ],
+      "monotonicTimeNanos": 29693516597230
+    },
+    {
+      "articleId": "c65cac2d-3a35-4b60-b3b4-37df84c4d44e",
+      "matchId": "7be1ac8c-e90e-454b-b1bf-e75c403627b8",
+      "perceivedAt": 1791855110703,
+      "recordedAt": 1791855113256,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": ""
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 7437,
+      "evidenceReferences": [
+        "ce4d253b-565e-42e3-aa03-db2e14da4bc2"
+      ],
+      "monotonicTimeNanos": 29695476360000
+    }
+  ]
+}

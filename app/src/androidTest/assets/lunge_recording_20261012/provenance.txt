@@ -1,0 +1,4 @@
+Selected source articles and three unmodified retained WAVs from 2026-10-12_20-31-55.odxmatch.zip
+Match ID: 7be1ac8c-e90e-454b-b1bf-e75c403627b8
+Archive SHA-256: 51adb563f4d6f752528a0f9aa58ece1b0f2c9e20164e03cf1f2ef47c47b2a853
+Original capture times and publication order retained. This is a partial regression fixture, not a playable match archive. No derived species, charged moves, or stat effects are supplied to the test.
