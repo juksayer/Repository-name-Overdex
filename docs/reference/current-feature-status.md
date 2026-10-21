@@ -1,6 +1,6 @@
 # Current feature status and remaining work
 
-Reviewed October 20, 2026 against the working tree based on `1ba1c13`.
+Reviewed October 20, 2026; Trainer Comms updated after checkpoint `474bd5f`.
 This includes local untracked source. Source inspection establishes implementation
 boundaries; it does not establish live recognition accuracy.
 
@@ -16,7 +16,8 @@ boundaries; it does not establish live recognition accuracy.
   boundaries. A later report can supersede an older report's open issue.
 - [Trainer Comms sharing plan](../plans/trainer-comms-sharing.md): the agreed home
   for match/clip sharing, group conversations, coaching, and future tournament
-  coordination. This direction is recorded, not implemented by the checkpoint.
+  coordination. The conversation foundation is implemented; match and clip sharing
+  remain planned. See the [Comms verification](../verification/2026-10-20-trainer-comms-foundation.md).
 - `DexDox/unfinished.mds/` and `.artifacts/`: historical outlines and generated
   work plans, not a current prioritized backlog.
 
@@ -39,7 +40,7 @@ Signal Observatory, Timeline Viewer, Match Calibration, and Replay remain.
 | Replay editor | Named clips, whole-clip notes, independent source snapshots, ordered compilations, reordering, and bounded in-app playback. | Event-search supercuts, event-attached coaching notes, editing existing clip in/out points, continuous draft autosave, external compilation sharing, and video rendering/export. See [editor verification and remaining work](../verification/2026-10-20-replay-editor.md) and [ReplayEditorScreen](../../app/src/main/java/com/example/overdex/ui/screens/observatory/ReplayEditorScreen.kt). Draft persistence currently covers the Open Matches detour, not every edit before process death. |
 | Confidence and OCR review | Nullable article scores, honest "Not scored" display, method-specific matching scores, and an offline crop review desk. | Measure correctness on held-out, human-labeled matches/devices before calling scores probabilities. Review labels are separate evidence, not automatic ML Kit retraining. See [confidence review](../verification/2026-10-20-confidence-and-ocr-review.md); the [correction follow-up](../verification/2026-10-20-ocr-corrections-and-calibration.md) found crop position problems rather than a reason to blindly add text aliases. |
 | Assisted registration — paused | One adjustable field layout, explicit field reads, cry assistance, draft review, and saving an owned card. | Automatic scrolling/layout learning and automatic classification of manually confirmed image fields. [GuidedRegistrationController.readField](../../app/src/main/java/com/example/overdex/data/registration/GuidedRegistrationController.kt) still asks the user to confirm image icons. Keep the user's pause in effect while battle reliability is prioritized. |
-| Trainer Comms sharing | Pairwise text/system/Pokémon messages and local Replay Editor clips/compilations. | Add group conversations, reliable delivery, `.odxmatch` attachments, and portable clips under Profile → Trainer Comms. The current transport uses two trainer IDs; it has no file transfer or group membership. See the [agreed sharing plan](../plans/trainer-comms-sharing.md). |
+| Trainer Comms sharing | Required email/password account; discovery by 12-digit GO code; direct and named group text conversations (up to eight trainers); saved drafts/history and pending/sent/failed delivery with idempotent retry; preserved read-only legacy history. | `.odxmatch` transfer, portable clips/compilations, participant management, invitations/blocking/reporting, and a two-phone production conversation acceptance test. See the [sharing plan](../plans/trainer-comms-sharing.md) and [foundation verification](../verification/2026-10-20-trainer-comms-foundation.md). |
 
 ## Smaller gaps and deferred product decisions
 

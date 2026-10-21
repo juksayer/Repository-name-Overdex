@@ -2,7 +2,7 @@
 
 **Generated:** 2026-10-20
 
-**Base revision:** `1ba1c13`
+**Base revision:** `474bd5f`
 
 **Scope:** Current working tree, including untracked files
 
@@ -18,7 +18,7 @@ listed individually because sprite, cry, and reference collections would bury
 the source inventory. Asset licensing and catalog files remain discoverable from
 the asset roots.
 
-## Production Kotlin and Java (464)
+## Production Kotlin and Java (472)
 
 - [`app/src/main/java/com/example/overdex/BattleMemory.kt`](app/src/main/java/com/example/overdex/BattleMemory.kt)
 - [`app/src/main/java/com/example/overdex/BattleMemoryUpdater.kt`](app/src/main/java/com/example/overdex/BattleMemoryUpdater.kt)
@@ -258,6 +258,13 @@ the asset roots.
 - [`app/src/main/java/com/example/overdex/battle/witness/PlayerSpeciesWitness.kt`](app/src/main/java/com/example/overdex/battle/witness/PlayerSpeciesWitness.kt)
 - [`app/src/main/java/com/example/overdex/battle/witness/SpeciesWitness.kt`](app/src/main/java/com/example/overdex/battle/witness/SpeciesWitness.kt)
 - [`app/src/main/java/com/example/overdex/battle/witness/YouWinWitness.kt`](app/src/main/java/com/example/overdex/battle/witness/YouWinWitness.kt)
+- [`app/src/main/java/com/example/overdex/comms/CommsBackend.kt`](app/src/main/java/com/example/overdex/comms/CommsBackend.kt)
+- [`app/src/main/java/com/example/overdex/comms/CommsModels.kt`](app/src/main/java/com/example/overdex/comms/CommsModels.kt)
+- [`app/src/main/java/com/example/overdex/comms/CommsRepository.kt`](app/src/main/java/com/example/overdex/comms/CommsRepository.kt)
+- [`app/src/main/java/com/example/overdex/comms/FirebaseCommsBackend.kt`](app/src/main/java/com/example/overdex/comms/FirebaseCommsBackend.kt)
+- [`app/src/main/java/com/example/overdex/comms/LegacyCommsHistory.kt`](app/src/main/java/com/example/overdex/comms/LegacyCommsHistory.kt)
+- [`app/src/main/java/com/example/overdex/comms/PreferencesCommsStore.kt`](app/src/main/java/com/example/overdex/comms/PreferencesCommsStore.kt)
+- [`app/src/main/java/com/example/overdex/comms/TrainerCommsServices.kt`](app/src/main/java/com/example/overdex/comms/TrainerCommsServices.kt)
 - [`app/src/main/java/com/example/overdex/data/BattleCalibration.kt`](app/src/main/java/com/example/overdex/data/BattleCalibration.kt)
 - [`app/src/main/java/com/example/overdex/data/BattleCalibrationReferenceStore.kt`](app/src/main/java/com/example/overdex/data/BattleCalibrationReferenceStore.kt)
 - [`app/src/main/java/com/example/overdex/data/BattleHistoryRepository.kt`](app/src/main/java/com/example/overdex/data/BattleHistoryRepository.kt)
@@ -465,6 +472,7 @@ the asset roots.
 - [`app/src/main/java/com/example/overdex/ui/screens/SignalObservatoryScreen.kt`](app/src/main/java/com/example/overdex/ui/screens/SignalObservatoryScreen.kt)
 - [`app/src/main/java/com/example/overdex/ui/screens/SpecimenDetailScreen.kt`](app/src/main/java/com/example/overdex/ui/screens/SpecimenDetailScreen.kt)
 - [`app/src/main/java/com/example/overdex/ui/screens/SpecimensScreen.kt`](app/src/main/java/com/example/overdex/ui/screens/SpecimensScreen.kt)
+- [`app/src/main/java/com/example/overdex/ui/screens/TrainerCommsScreen.kt`](app/src/main/java/com/example/overdex/ui/screens/TrainerCommsScreen.kt)
 - [`app/src/main/java/com/example/overdex/ui/screens/TrainerProfileScreen.kt`](app/src/main/java/com/example/overdex/ui/screens/TrainerProfileScreen.kt)
 - [`app/src/main/java/com/example/overdex/ui/screens/observatory/EmptyState.kt`](app/src/main/java/com/example/overdex/ui/screens/observatory/EmptyState.kt)
 - [`app/src/main/java/com/example/overdex/ui/screens/observatory/EventInspectorPanel.kt`](app/src/main/java/com/example/overdex/ui/screens/observatory/EventInspectorPanel.kt)
@@ -502,7 +510,7 @@ These files are indexed separately because their placement under `app/src/main/j
 - [`app/src/main/java/com/example/overdex/data/observation/RegistrationWorkspace.md`](app/src/main/java/com/example/overdex/data/observation/RegistrationWorkspace.md)
 - [`app/src/main/java/com/example/overdex/model/BiuniPokemonList`](app/src/main/java/com/example/overdex/model/BiuniPokemonList)
 
-## Unit tests (175)
+## Unit tests (177)
 
 - [`app/src/test/java/com/example/overdex/BattleMemoryDerivationTest.kt`](app/src/test/java/com/example/overdex/BattleMemoryDerivationTest.kt)
 - [`app/src/test/java/com/example/overdex/BattleMemoryOutcomeTest.kt`](app/src/test/java/com/example/overdex/BattleMemoryOutcomeTest.kt)
@@ -653,6 +661,8 @@ These files are indexed separately because their placement under `app/src/main/j
 - [`app/src/test/java/com/example/overdex/battle/witness/AnnouncementWitnessTest.kt`](app/src/test/java/com/example/overdex/battle/witness/AnnouncementWitnessTest.kt)
 - [`app/src/test/java/com/example/overdex/battle/witness/GoodEffortWitnessTest.kt`](app/src/test/java/com/example/overdex/battle/witness/GoodEffortWitnessTest.kt)
 - [`app/src/test/java/com/example/overdex/battle/witness/YouWinWitnessTest.kt`](app/src/test/java/com/example/overdex/battle/witness/YouWinWitnessTest.kt)
+- [`app/src/test/java/com/example/overdex/comms/CommsRepositoryTest.kt`](app/src/test/java/com/example/overdex/comms/CommsRepositoryTest.kt)
+- [`app/src/test/java/com/example/overdex/comms/LegacyCommsHistoryTest.kt`](app/src/test/java/com/example/overdex/comms/LegacyCommsHistoryTest.kt)
 - [`app/src/test/java/com/example/overdex/data/BattleCalibrationReferenceStoreTest.kt`](app/src/test/java/com/example/overdex/data/BattleCalibrationReferenceStoreTest.kt)
 - [`app/src/test/java/com/example/overdex/data/BattleCalibrationTest.kt`](app/src/test/java/com/example/overdex/data/BattleCalibrationTest.kt)
 - [`app/src/test/java/com/example/overdex/data/CalibrationPersistenceTest.kt`](app/src/test/java/com/example/overdex/data/CalibrationPersistenceTest.kt)

@@ -71,9 +71,9 @@ fun TrainerProfileScreen(
                 add(ProfileFocus.LINK_DEBUG)
             } else {
                 add(ProfileFocus.VIEW_TIMELINE)
-                add(ProfileFocus.CHAT)
                 add(ProfileFocus.UNLINK)
             }
+            add(ProfileFocus.CHAT)
             add(ProfileFocus.BACK)
         }
     }
@@ -111,7 +111,7 @@ fun TrainerProfileScreen(
 
     val currentFocus = focusableItems.getOrElse(nav.selectedIndex) { ProfileFocus.BACK }
 
-    val bringIntoViewRequesters = remember {
+    val bringIntoViewRequesters = remember(focusableItems) {
         focusableItems.associateWith { BringIntoViewRequester() }
     }
 
@@ -290,11 +290,6 @@ fun TrainerProfileScreen(
                                 selected = currentFocus == ProfileFocus.VIEW_TIMELINE
                             )
                             TerminalButton(
-                                text = "chat",
-                                modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.CHAT]!!),
-                                selected = currentFocus == ProfileFocus.CHAT
-                            )
-                            TerminalButton(
                                 text = "unlink",
                                 modifier = Modifier.weight(1f).bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.UNLINK]!!),
                                 selected = currentFocus == ProfileFocus.UNLINK
@@ -329,17 +324,11 @@ fun TrainerProfileScreen(
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // Debug / System Status Section
-                TerminalSection(title = "system status") {
-                    val transportStatus = remember(trainerIdentity, partnerIdentity) {
-                        if (partnerIdentity == null) "IDLE (No Partner)"
-                        else {
-                            "FIREBASE ACTIVE"
-                        }
-                    }
-                    TerminalText(text = "TRANSPORT:", color = TerminalDimGreen, fontSize = 10.sp)
-                    TerminalText(text = transportStatus, fontSize = 12.sp, color = TerminalGreen)
-                }
+                TerminalButton(
+                    text = "Trainer Comms",
+                    selected = currentFocus == ProfileFocus.CHAT,
+                    modifier = Modifier.bringIntoViewRequester(bringIntoViewRequesters[ProfileFocus.CHAT]!!)
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 

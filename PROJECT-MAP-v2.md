@@ -451,6 +451,31 @@ The old `ObservationRecorder` / `MatchRecording` summary is no longer this route
 data source. Archive Article Details is also in the physical action cycle.
 
 
+## Trainer Comms
+
+`Profile → Trainer Comms` now routes to `TrainerCommsScreen`. `TrainerCommsServices`
+uses Firebase Authentication accounts; `CommsRepository` owns per-account
+conversation history, drafts, and the durable send queue. `FirebaseCommsBackend`
+reads/writes `trainerCommsProfiles`, `trainerCommsCodes`, and `trainerConversations`
+with immutable message subcollections. `firestore.rules` requires account access,
+explicit membership, and validated sender identity.
+
+The public discovery handle is a twelve-digit Pokemon GO trainer code. Stable
+account IDs, not those rerollable codes or local trainer UUIDs, own conversations.
+Account email/password never enter public profile/message documents. The code is
+self-reported, not proof of Pokemon GO account ownership.
+
+Direct conversations have deterministic account-pair IDs; groups have persistent
+UUIDs and 2–8 members. Group membership is immutable in this first release.
+Pending writes become sent only after a server acknowledgement. Failed retries
+reuse the original message ID. The legacy global local chat preferences are kept
+and exposed as read-only history without inventing old recipients/delivery.
+
+The former `ChatScreen`/`SharedPreferencesChatRepository`/`FirebaseChatTransport`
+remain source-only legacy components; MainActivity no longer starts or routes
+those transports. Match/clip attachments and member-management controls are not
+implemented yet. See the [sharing plan](docs/plans/trainer-comms-sharing.md).
+
 ## Parallel and legacy systems
 
 These names overlap with the canonical Match pipeline but do not mean the same

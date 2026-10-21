@@ -1,7 +1,10 @@
 # Trainer Comms: replay sharing and group conversations
 
-Direction agreed October 20, 2026. This checkpoint records the plan; it does not
-implement or deploy the sharing service.
+Direction agreed October 20, 2026. The source checkpoint is complete.
+Step 1 is implemented: account-based direct/group conversations, trainer-code
+discovery, saved history, and acknowledged delivery. Email/password sign-in and
+membership rules are deployed to the existing Firebase project. Match and clip
+attachments remain steps 2 and 3.
 
 ## Product home
 
@@ -16,24 +19,41 @@ retiring its remaining navigation and storage. Match Sight is independently
 removed in this checkpoint; the Reality Timeline remains the battle evidence
 record and is not a social feed.
 
-## Existing implementation
+## Current implementation
 
-- [ChatMessage](../../app/src/main/java/com/example/overdex/model/ChatMessage.kt)
-  supports text, system messages, and shared Pokémon records. It has no match or
-  clip attachment type.
-- [FirebaseChatTransport](../../app/src/main/java/com/example/overdex/data/FirebaseChatTransport.kt)
-  derives a conversation ID from two trainer IDs. Group membership and attachment
-  transfer are not implemented. Its current send path starts a Firestore write
-  without awaiting completion, so successful delivery also needs explicit handling.
+- [TrainerCommsScreen](../../app/src/main/java/com/example/overdex/ui/screens/TrainerCommsScreen.kt)
+  is accessible from Profile regardless of legacy partner linkage. Its CRT displays
+  history; the LCD and physical buttons operate conversations and the composer.
+- [TrainerCommsServices](../../app/src/main/java/com/example/overdex/comms/TrainerCommsServices.kt)
+  requires a Firebase email/password account. Email is private. Trainers discover
+  one another using their **12-digit Pokemon GO trainer codes**, preserving leading
+  zeroes and displaying three groups of four. Codes can be rerolled; conversations
+  belong to the stable account ID, not the mutable code.
+- A trainer code is self-reported. Overdex enforces uniqueness of the claim, but
+  cannot verify ownership of the Pokemon GO account. Passwords are handled by
+  Firebase Authentication and are never stored in the conversation/profile store.
+- [CommsRepository](../../app/src/main/java/com/example/overdex/comms/CommsRepository.kt)
+  persists separate account/conversation histories, drafts, and an outbox. Pending
+  means unacknowledged; sent means saved online, not read by every recipient. Failed
+  or interrupted sends retain their IDs for idempotent retry. There is no mock
+  transport fallback on this route.
+- Groups support up to eight registered trainers. Names and membership are fixed
+  at creation in this first version. Member management, leaving/blocking/reporting,
+  invitations, pagination/retention and production-scale abuse controls are later work.
+- Old `overdex_chat_prefs` records are retained intact and copied once into a
+  read-only history for the first account used on that device. Old records lack
+  recipient and delivery metadata, so those fields remain unknown. Legacy pair-ID
+  cloud documents remain denied; the former transport and ChatScreen are no longer
+  routed from MainActivity. Shared Timeline has not been deleted.
 - [Replay Editor](../verification/2026-10-20-replay-editor.md) already saves clips,
   ordered compilations, notes, and independent source snapshots locally. Those
   files are not yet a portable sharing package.
 - Existing archive import/export and Replay are the foundations for opening a
   shared `.odxmatch`; do not create a second battle-record format inside chat.
 
-## Proposed implementation order
+## Implementation order
 
-1. **Conversation foundation.** Give conversations stable IDs and explicit member
+1. **Conversation foundation — implemented.** Give conversations stable IDs and explicit member
    lists. Preserve existing direct-message history while adding group names,
    membership, and trainer/coach conversations. Show pending, sent, and failed
    delivery accurately; keep a failed send available for retry.
@@ -56,8 +76,10 @@ record and is not a social feed.
 
 ## Boundaries
 
-- The current step is the source checkpoint, not implementation of this entire
-  plan. No messages are sent and no cloud configuration is changed by recording it.
+- Account creation and cloud messaging require network access. Cached history and
+  drafts remain readable for the signed-in account while offline. Signing out hides
+  that account’s cached history. No real messages were sent during development;
+  integration tests use disposable local emulator accounts only.
 - Sharing a recording must not rewrite its source evidence or silently add it to
   the recipient's own battle statistics.
 - Keep local playback available after download and make missing attachments or

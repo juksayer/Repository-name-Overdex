@@ -52,10 +52,9 @@ import com.example.overdex.battle.observation.CountdownBurstRecorder
 import com.example.overdex.battle.observation.CountdownGlyphMatcher
 import com.example.overdex.battle.observation.CountdownSampleRecorder
 import com.example.overdex.battle.observation.DroidballService
-import com.example.overdex.data.ChatRepository
-import com.example.overdex.data.ChatTransportFactory
+import com.example.overdex.comms.TrainerCommsServices
+import com.example.overdex.ui.screens.TrainerCommsScreen
 import com.example.overdex.data.PartnerRepository
-import com.example.overdex.data.SharedPreferencesChatRepository
 import com.example.overdex.data.SharedPreferencesPartnerRepository
 import com.example.overdex.data.SharedPreferencesTimelineRepository
 import com.example.overdex.data.SharedTimelineRepository
@@ -64,7 +63,6 @@ import com.example.overdex.media.MediaManager
 import com.example.overdex.ui.screens.observatory.MatchArchiveDirectoryScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.example.overdex.model.ChatMessage
 import com.example.overdex.model.PartnerIdentity
 import com.example.overdex.model.Pokemon
 import com.example.overdex.model.OwnedPokemonBinder
@@ -85,7 +83,6 @@ import com.example.overdex.ui.screens.BattleHistoryScreen
 import com.example.overdex.ui.screens.BattlePreviewScreen
 import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
-import com.example.overdex.ui.screens.ChatScreen
 import com.example.overdex.ui.screens.CurrentBattleTeamScreen
 import com.example.overdex.ui.screens.DroidballReadinessScreen
 import com.example.overdex.ui.screens.EditSpecimenScreen
@@ -120,7 +117,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var trainerRepository: TrainerRepository
     private lateinit var partnerRepository: PartnerRepository
     private lateinit var timelineRepository: SharedTimelineRepository
-    private lateinit var chatRepository: ChatRepository
+    private lateinit var trainerComms: TrainerCommsServices
     private lateinit var archiveDirectoryManager: ArchiveDirectoryManager
     private var selectedRegion = CalibrationRegion.NONE
 
@@ -221,19 +218,8 @@ class MainActivity : ComponentActivity() {
         trainerRepository = TrainerRepository(this)
         timelineRepository = SharedPreferencesTimelineRepository(this)
         partnerRepository = SharedPreferencesPartnerRepository(this)
-        chatRepository = SharedPreferencesChatRepository(this)
+        trainerComms = TrainerCommsServices.get(this)
         archiveDirectoryManager = ArchiveDirectoryManager(this)
-
-        lifecycleScope.launch {
-            partnerRepository.partner.collect { partner ->
-                if (partner != null) {
-                    val myId = trainerRepository.getIdentity().trainerId.toString()
-                    val transport = ChatTransportFactory.create(this@MainActivity, myId, partner.trainerId)
-                    chatRepository.setTransport(transport)
-                    //("CHAT_TRANSPORT", "Repository transport updated: ${transport::class.java.simpleName}")
-                }
-            }
-        }
 
         val identity = trainerRepository.getIdentity()
         Log.d("TRAINER_IDENTITY", "Loaded Identity: ${identity.displayName} (${identity.trainerId})")
@@ -253,7 +239,6 @@ class MainActivity : ComponentActivity() {
             val trainerIdentity by trainerRepository.identity.collectAsState()
             val partnerIdentity by partnerRepository.partner.collectAsState()
             val timelineEvents by timelineRepository.events.collectAsState()
-            val chatMessages by chatRepository.messages.collectAsState()
 
             OverdexTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding: PaddingValues ->
@@ -264,11 +249,10 @@ class MainActivity : ComponentActivity() {
                         trainerRepository = trainerRepository,
                         partnerRepository = partnerRepository,
                         timelineRepository = timelineRepository,
-                        chatRepository = chatRepository,
+                        trainerComms = trainerComms,
                         trainerIdentity = trainerIdentity,
                         partnerIdentity = partnerIdentity,
                         timelineEvents = timelineEvents,
-                        chatMessages = chatMessages,
                         openedArchive = openedArchive,
                         openedArchiveUri = openedArchiveUri,
                         archiveLoadInProgress = archiveLoadInProgress,
@@ -409,11 +393,10 @@ fun PokedexApp(
     trainerRepository: TrainerRepository,
     partnerRepository: PartnerRepository,
     timelineRepository: SharedTimelineRepository,
-    chatRepository: ChatRepository,
+    trainerComms: TrainerCommsServices,
     trainerIdentity: TrainerIdentity?,
     partnerIdentity: PartnerIdentity?,
     timelineEvents: List<SharedEvent>,
-    chatMessages: List<ChatMessage>,
     openedArchive: MutableState<com.example.overdex.battle.archive.MatchArchive?>,
     openedArchiveUri: MutableState<Uri?>,
     archiveLoadInProgress: MutableState<Boolean>,
@@ -740,22 +723,10 @@ fun PokedexApp(
                 )
             }
             composable("private_chat") {
-                val collectionViewModel: MyCollectionViewModel = viewModel()
-                ChatScreen(
-                    trainerIdentity = trainerIdentity,
-                    partnerIdentity = partnerIdentity,
-                    messages = chatMessages,
-                    chatRepository = chatRepository,
-                    pokedexViewModel = viewModel,
-                    collectionViewModel = collectionViewModel,
-                    onPokemonClick = { id -> 
-                        viewModel.viewModelScope.launch {
-                            viewModel.getPokemonById(id)?.let {
-                                mediaManager.playSound(it.cryUrl)
-                            }
-                        }
-                        navController.navigate("detail/$id") 
-                    },
+                TrainerCommsScreen(
+                    services = trainerComms,
+                    trainerRepository = trainerRepository,
+                    viewModel = viewModel,
                     onBack = { navController.debugPopBackStack() }
                 )
             }

@@ -25,3 +25,10 @@ apikeys.properties
 __pycache__/
 *.py[cod]
 /docs/verification/evidence/
+
+# Local Firebase emulator state and test dependencies.
+/firebase-tests/node_modules/
+/.firebase/
+/firebase-debug.log*
+/firestore-debug.log*
+/ui-debug.log*

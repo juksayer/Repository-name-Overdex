@@ -93,6 +93,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
     
     // QR Code
     implementation("com.google.zxing:core:3.5.4")
