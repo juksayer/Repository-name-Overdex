@@ -422,6 +422,39 @@ internal data class ActiveHpBarDamageTickMeasurement(
 
 /** Measures one persistent HP-fill decrease without naming its cause. */
 internal class ActiveHpBarDamageTickDetector {
+    private var geometryAnchor: ActiveHpBarMeasurement? = null
+    private var geometrySettlingSince: Long? = null
+    private var lastGeometryAt: Long? = null
+
+    /** Reacquire a moved bar without calling the unseen change one attack. */
+    @Synchronized
+    fun accept(bar: ActiveHpBarMeasurement, at: Long): ActiveHpBarDamageTickMeasurement? {
+        if (!bar.filledFraction.isFinite() || bar.filledFraction !in 0f..1f) return null
+        if (lastGeometryAt?.let { at <= it } == true) return null
+        lastGeometryAt = at
+        val anchor = geometryAnchor
+        val relocated = anchor != null && (
+            kotlin.math.abs(bar.centerX - anchor.centerX) > max(4f, anchor.width * .03f) ||
+            kotlin.math.abs(bar.width - anchor.width) > max(4f, anchor.width * .10f) ||
+            kotlin.math.abs(bar.top - anchor.top) > max((anchor.bottom - anchor.top) * 3f, anchor.width * .20f)
+        )
+        if (anchor == null || relocated) {
+            geometryAnchor = bar
+            if (relocated) geometrySettlingSince = at
+        }
+        if (geometrySettlingSince != null) {
+            // Never compare fill from two camera positions. Normal vertical
+            // attack bobbing remains inside the geometry tolerance above.
+            baselineFraction = bar.filledFraction
+            pendingAfterFraction = null
+            pendingChangedAtNanos = null
+            lastSampleAtNanos = at
+            if (at - geometrySettlingSince!! >= 250_000_000L) geometrySettlingSince = null
+            return null
+        }
+        return accept(bar.filledFraction, bar.confidence, at, bar.width)
+    }
+
     private var baselineFraction: Float? = null
     private var pendingAfterFraction: Float? = null
     private var pendingChangedAtNanos: Long? = null
@@ -430,6 +463,9 @@ internal class ActiveHpBarDamageTickDetector {
 
     @Synchronized
     fun reset() {
+        geometryAnchor = null
+        geometrySettlingSince = null
+        lastGeometryAt = null
         baselineFraction = null
         pendingAfterFraction = null
         pendingChangedAtNanos = null
@@ -582,10 +618,8 @@ internal class LiveActiveHpBarDamageTickWitness(
                     frameHub.samples.collect { sample ->
                         val tick = synchronized(stateLock) {
                             detector.accept(
-                                sample.measurement.filledFraction,
-                                sample.measurement.confidence,
+                                sample.measurement,
                                 sample.capturedAtMonotonicTimeNanos,
-                                sample.measurement.width,
                             )
                         } ?: return@collect
                         match.custody.submitTestimony(

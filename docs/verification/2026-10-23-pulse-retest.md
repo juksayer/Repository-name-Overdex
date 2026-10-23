@@ -25,3 +25,13 @@ Pixel incoming-attack cues occur at 28.14, 80.27, 120.83 s, with the new shield-
 ## Next implementation targets
 
 Protect HP damage baselines across horizontal/camera relocation. Then use phase/HP settling evidence to close charged damage attribution instead of assuming all damage beyond 750 ms is Fast Move damage. Preserve raw measurements and distinguish inference revisions from archive edits. No additional user test is necessary to establish these two defects; this paired recording is sufficient for regression work.
+
+## Implemented HP continuity guard
+
+The live damage witness now passes the measured rectangle to its detector, rather than only fill and width. Horizontal displacement beyond 3% of the anchored bar width (minimum 4 px), width changes beyond 10%, or vertical relocation beyond the larger of three bar heights / 20% of width break continuity. The anchor does not follow successive small horizontal drifts. After relocation the detector waits for 250 ms of geometry stability and reacquires the current fill without publishing the difference as one hit. Smaller vertical bobbing and locator jitter remain continuous. Species reset clears the geometry and fill state together.
+
+Regression fixtures preserve the original Pixel numerical measurements, confidence, and GO-relative monotonic timestamps. The idle-camera fixture reproduces the old .9362265 false loss and emits no loss through the geometry-aware path. The opening player-HP fixture still yields all six Incinerate losses. A focused test also verifies real losses resume after reacquisition and ordinary bobbing does not erase them.
+
+This guard affects new derived damage/attack/energy evidence, not archived raw measurements. It deliberately does not attribute damage across an uncertain camera relocation to a single attack. It does not solve the separate charged-impact tail or missing charged-move OCR issue, and is not a retrospective repair of existing replay HP readings.
+
+Continuity validation: all 1,055 JVM tests passed (zero failures/errors/skips); debug APK build passed. New live-battle acceptance remains pending.

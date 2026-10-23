@@ -5,6 +5,43 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ActiveHpBarDamageTickDetectorTest {
+    private fun recorded(name: String): List<Pair<Long, ActiveHpBarMeasurement>> =
+        requireNotNull(javaClass.getResource("/battle/hp/2026-10-23/$name.tsv"))
+            .readText().lineSequence().filter { it.firstOrNull()?.isDigit() == true }.map { line ->
+                val r = line.split('\t')
+                r[0].toLong() to ActiveHpBarMeasurement(r[1].toInt(), r[2].toInt(),
+                    r[3].toInt(), r[4].toInt(), r[5].toFloat(), r[6].toFloat())
+            }.toList()
+
+    @Test fun `recorded camera relocation does not invent idle Swampert damage`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        val samples = recorded("idle-camera")
+        val ticks = samples.mapNotNull { (at, bar) -> detector.accept(bar, at) }
+        assertEquals(emptyList<ActiveHpBarDamageTickMeasurement>(), ticks)
+        val old = ActiveHpBarDamageTickDetector()
+        val withoutGeometry = samples.mapNotNull { (at, bar) -> old.accept(bar.filledFraction, bar.confidence, at, bar.width) }
+        assertEquals(1, withoutGeometry.size)
+        assertEquals(.9362265f, withoutGeometry.single().lostFraction, .001f)
+    }
+
+    @Test fun `recorded six Incinerates survive geometry continuity checks`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        val ticks = recorded("six-incinerates").mapNotNull { (at, bar) -> detector.accept(bar, at) }
+        assertEquals(6, ticks.size)
+    }
+
+    @Test fun `damage resumes after relocation while ordinary bobbing stays continuous`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        fun bar(x: Int, y: Int, hp: Float) = ActiveHpBarMeasurement(x, y, x + 192, y + 18, hp, .9f)
+        detector.accept(bar(334, 440, 1f), 0)
+        detector.accept(bar(281, 446, .5f), 100_000_000L)
+        assertNull(detector.accept(bar(281, 446, .5f), 400_000_000L))
+        detector.accept(bar(283, 460, .4f), 500_000_000L)
+        assertEquals(.1f, detector.accept(bar(282, 448, .4f), 650_000_000L)!!.lostFraction, .001f)
+        detector.reset()
+        assertNull(detector.accept(bar(334, 440, 1f), 700_000_000L))
+    }
+
     @Test fun `paired idle alt cannot damage full Abomasnow on either device`() {
         for (device in listOf("pixel", "moondrop")) {
             val detector = ActiveHpBarDamageTickDetector()
