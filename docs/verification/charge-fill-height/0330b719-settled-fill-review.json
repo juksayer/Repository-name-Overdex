@@ -1,0 +1,742 @@
+{
+  "match_id": "0330b719-8c57-45bc-9f41-247bf016a452",
+  "source_sha256": "114c1c20e7091d06ab5344d7ee01e5c1f4329c428eaa62bcd3b073d49120d7a2",
+  "archive_sha256": "8c7bb47a7163480633c7963880edf3806ceeb6f5f041779bbe065cd287470bac",
+  "alignment": [
+    {
+      "article": "686f5610-3969-49a6-b81a-44c5ea403ded",
+      "archive_seconds": 209.339658782,
+      "video_seconds": 122.62035555555556,
+      "difference": 1.8531666666666666,
+      "offset": 86.71930322644442
+    },
+    {
+      "article": "125987be-6856-4f22-9126-d6e28cec281e",
+      "archive_seconds": 222.096152244,
+      "video_seconds": 135.32373333333334,
+      "difference": 1.9734999999999998,
+      "offset": 86.77241891066666
+    },
+    {
+      "article": "19970d70-89c1-4264-957d-b0afea858351",
+      "archive_seconds": 269.876485478,
+      "video_seconds": 183.12303333333332,
+      "difference": 1.9846666666666668,
+      "offset": 86.75345214466668
+    }
+  ],
+  "bright_checkpoints": [
+    {
+      "seconds": 111.03587777777778,
+      "pts": 9993229,
+      "time_base": "1/90000",
+      "evidence": "frame-9993229.png",
+      "evidence_sha256": "dab857f5272b2448f48ae28d66d39b9512ebaf586045d7cdac604d6fc6226e4e",
+      "separator_offset_y": [
+        33.5,
+        7.0
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.683333333333334,
+            "low": 9.216666666666667,
+            "high": 10.15
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.68333333333333,
+            "low": 44.21666666666666,
+            "high": 45.15
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.68333333333334,
+            "low": 79.21666666666667,
+            "high": 80.15
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 24.933333333333334,
+            "low": 24.2,
+            "high": 25.666666666666668
+          },
+          {
+            "completed_layers": 1,
+            "energy": 79.93333333333334,
+            "low": 79.2,
+            "high": 80.66666666666667
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 79.21666666666667,
+          "high": 80.15,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "seconds": 112.06124444444444,
+      "pts": 10085512,
+      "time_base": "1/90000",
+      "evidence": "frame-10085512.png",
+      "evidence_sha256": "58f3fb24167c2b113ff258e489bb5a699f20afe5a8f01d2973e8733080fa16f3",
+      "separator_offset_y": [
+        33.5,
+        7.0
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.683333333333334,
+            "low": 9.216666666666667,
+            "high": 10.15
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.68333333333333,
+            "low": 44.21666666666666,
+            "high": 45.15
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.68333333333334,
+            "low": 79.21666666666667,
+            "high": 80.15
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 24.933333333333334,
+            "low": 24.2,
+            "high": 25.666666666666668
+          },
+          {
+            "completed_layers": 1,
+            "energy": 79.93333333333334,
+            "low": 79.2,
+            "high": 80.66666666666667
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 79.21666666666667,
+          "high": 80.15,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "seconds": 154.05176666666668,
+      "pts": 13864659,
+      "time_base": "1/90000",
+      "evidence": "frame-13864659.png",
+      "evidence_sha256": "b4e1d3c0db6554b3935ad7a900cad583b1468f48ab941cb6de492c4f4704ac25",
+      "separator_offset_y": [
+        -11.0,
+        -21.0
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 20.066666666666666,
+            "low": 19.6,
+            "high": 20.53333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 55.06666666666666,
+            "low": 54.599999999999994,
+            "high": 55.53333333333333
+          },
+          {
+            "completed_layers": 2,
+            "energy": 90.06666666666666,
+            "low": 89.6,
+            "high": 90.53333333333333
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 35.2,
+            "low": 34.46666666666667,
+            "high": 35.93333333333334
+          },
+          {
+            "completed_layers": 1,
+            "energy": 90.2,
+            "low": 89.46666666666667,
+            "high": 90.93333333333334
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 89.6,
+          "high": 90.53333333333333,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    }
+  ],
+  "contrast_trial": [
+    {
+      "seconds": 110.0246,
+      "evidence": "frame-9902214.png",
+      "separator_offsets": [
+        -33.5,
+        null
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 25.31666666666667,
+            "low": 24.850000000000005,
+            "high": 25.783333333333335
+          },
+          {
+            "completed_layers": 1,
+            "energy": 60.31666666666667,
+            "low": 59.85,
+            "high": 60.78333333333334
+          },
+          {
+            "completed_layers": 2,
+            "energy": 95.31666666666668,
+            "low": 94.85000000000001,
+            "high": 95.78333333333335
+          }
+        ],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 111.03587777777778,
+      "evidence": "frame-9993229.png",
+      "separator_offsets": [
+        34.5,
+        7.5
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.450000000000001,
+            "low": 8.983333333333334,
+            "high": 9.916666666666668
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.45,
+            "low": 43.983333333333334,
+            "high": 44.91666666666667
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.45,
+            "low": 78.98333333333333,
+            "high": 79.91666666666667
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 24.75,
+            "low": 24.016666666666666,
+            "high": 25.483333333333334
+          },
+          {
+            "completed_layers": 1,
+            "energy": 79.75,
+            "low": 79.01666666666667,
+            "high": 80.48333333333333
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 79.01666666666667,
+          "high": 79.91666666666667,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "seconds": 112.06124444444444,
+      "evidence": "frame-10085512.png",
+      "separator_offsets": [
+        34.5,
+        7.5
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.450000000000001,
+            "low": 8.983333333333334,
+            "high": 9.916666666666668
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.45,
+            "low": 43.983333333333334,
+            "high": 44.91666666666667
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.45,
+            "low": 78.98333333333333,
+            "high": 79.91666666666667
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 24.75,
+            "low": 24.016666666666666,
+            "high": 25.483333333333334
+          },
+          {
+            "completed_layers": 1,
+            "energy": 79.75,
+            "low": 79.01666666666667,
+            "high": 80.48333333333333
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 79.01666666666667,
+          "high": 79.91666666666667,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "seconds": 113.02593333333333,
+      "evidence": "frame-10172334.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 114.03197777777778,
+      "evidence": "frame-10262878.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 115.0403,
+      "evidence": "frame-10353627.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 124.0025111111111,
+      "evidence": "frame-11160226.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 125.082,
+      "evidence": "frame-11257380.png",
+      "separator_offsets": [
+        34.0,
+        null
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.566666666666666,
+            "low": 9.1,
+            "high": 10.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.56666666666667,
+            "low": 44.1,
+            "high": 45.03333333333334
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.56666666666666,
+            "low": 79.1,
+            "high": 80.03333333333333
+          }
+        ],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 126.06476666666667,
+      "evidence": "frame-11345829.png",
+      "separator_offsets": [
+        34.0,
+        null
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 9.566666666666666,
+            "low": 9.1,
+            "high": 10.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 44.56666666666667,
+            "low": 44.1,
+            "high": 45.03333333333334
+          },
+          {
+            "completed_layers": 2,
+            "energy": 79.56666666666666,
+            "low": 79.1,
+            "high": 80.03333333333333
+          }
+        ],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 127.1103,
+      "evidence": "frame-11439927.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 128.0264,
+      "evidence": "frame-11522376.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 137.04006666666666,
+      "evidence": "frame-12333606.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 138.07412222222223,
+      "evidence": "frame-12426671.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 139.04505555555556,
+      "evidence": "frame-12514055.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 140.06161111111112,
+      "evidence": "frame-12605545.png",
+      "separator_offsets": [
+        null,
+        null
+      ],
+      "hypotheses": [
+        [],
+        []
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 150.01302222222222,
+      "evidence": "frame-13501172.png",
+      "separator_offsets": [
+        null,
+        36.0
+      ],
+      "hypotheses": [
+        [],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 14.3,
+            "low": 13.566666666666668,
+            "high": 15.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 69.3,
+            "low": 68.56666666666666,
+            "high": 70.03333333333333
+          }
+        ]
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 151.0175111111111,
+      "evidence": "frame-13591576.png",
+      "separator_offsets": [
+        null,
+        36.0
+      ],
+      "hypotheses": [
+        [],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 14.3,
+            "low": 13.566666666666668,
+            "high": 15.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 69.3,
+            "low": 68.56666666666666,
+            "high": 70.03333333333333
+          }
+        ]
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 152.01084444444444,
+      "evidence": "frame-13680976.png",
+      "separator_offsets": [
+        null,
+        36.0
+      ],
+      "hypotheses": [
+        [],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 14.3,
+            "low": 13.566666666666668,
+            "high": 15.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 69.3,
+            "low": 68.56666666666666,
+            "high": 70.03333333333333
+          }
+        ]
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 153.0132111111111,
+      "evidence": "frame-13771189.png",
+      "separator_offsets": [
+        null,
+        36.0
+      ],
+      "hypotheses": [
+        [],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 14.3,
+            "low": 13.566666666666668,
+            "high": 15.033333333333333
+          },
+          {
+            "completed_layers": 1,
+            "energy": 69.3,
+            "low": 68.56666666666666,
+            "high": 70.03333333333333
+          }
+        ]
+      ],
+      "joint": []
+    },
+    {
+      "seconds": 154.05176666666668,
+      "evidence": "frame-13864659.png",
+      "separator_offsets": [
+        -10.5,
+        -21.0
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 19.95,
+            "low": 19.483333333333334,
+            "high": 20.416666666666664
+          },
+          {
+            "completed_layers": 1,
+            "energy": 54.949999999999996,
+            "low": 54.48333333333333,
+            "high": 55.416666666666664
+          },
+          {
+            "completed_layers": 2,
+            "energy": 89.94999999999999,
+            "low": 89.48333333333332,
+            "high": 90.41666666666666
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 35.2,
+            "low": 34.46666666666667,
+            "high": 35.93333333333334
+          },
+          {
+            "completed_layers": 1,
+            "energy": 90.2,
+            "low": 89.46666666666667,
+            "high": 90.93333333333334
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 89.48333333333332,
+          "high": 90.41666666666666,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    }
+  ],
+  "suspect_uses": [
+    {
+      "articleId": "48bcf94c-22ae-43a9-bddb-ce4c13feeefc",
+      "matchId": "0330b719-8c57-45bc-9f41-247bf016a452",
+      "perceivedAt": 1792796535497,
+      "recordedAt": 1792796537897,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:4a7b0fa9-5c96-43d6-b172-c448e3278a96",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "9bc7c42c-0636-4913-bcb1-fa3656b32aec",
+        "attackerSpeciesName": "Turtonator",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "PLAYER_CHARGE_FILL_INCREASE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "26c23612-f68c-4de3-b145-5cd649df848b",
+        "4a7b0fa9-5c96-43d6-b172-c448e3278a96",
+        "b8d7c6a2-0dc8-4d33-901d-a6fc18e67f25"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 35562412503658
+    },
+    {
+      "articleId": "8637afaf-0574-41b5-93b7-bc1fc5a66de0",
+      "matchId": "0330b719-8c57-45bc-9f41-247bf016a452",
+      "perceivedAt": 1792796536600,
+      "recordedAt": 1792796538979,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:b5875904-1ab2-4d60-af5a-55bd14c81105",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "9bc7c42c-0636-4913-bcb1-fa3656b32aec",
+        "attackerSpeciesName": "Turtonator",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "b5875904-1ab2-4d60-af5a-55bd14c81105"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 35563506459965
+    }
+  ],
+  "user_context": "Last match followed instructions more accurately. Connection issues mostly at beginning of last recording and end of earlier recording.",
+  "conclusion": "80-energy checkpoint supported. Later count/fill disagreement and close events need reconciliation; network-delayed visual updates remain possible. No testimony changed."
+}

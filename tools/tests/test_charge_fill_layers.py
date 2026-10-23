@@ -2,7 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from inspect_charge_fill_layers import energy_hypotheses, intersect_hypotheses, separator
+from inspect_charge_fill_layers import energy_hypotheses, intersect_hypotheses, separator, separator_by_contrast
 from PIL import Image,ImageDraw
 
 class FillLayersTest(unittest.TestCase):
@@ -24,6 +24,23 @@ class FillLayersTest(unittest.TestCase):
 
     def test_whole_bright_disk_is_not_separator(self):
         self.assertIsNone(separator(Image.new("RGB",(200,200),"white"),100,100))
+
+    def test_contrast_recovers_line_under_bright_upper_fill(self):
+        image=Image.new("RGB",(200,200),"#111122")
+        draw=ImageDraw.Draw(image)
+        draw.rectangle((0,0,199,120),fill="#aaaaaa")
+        draw.rectangle((20,120,180,123),fill="white")
+        self.assertIsNone(separator(image,100,100))
+        self.assertEqual(21.5,separator_by_contrast(image,100,100))
+
+    def test_contrast_rejects_uniform_bright_and_multiple_lines(self):
+        image=Image.new("RGB",(200,200),"white")
+        self.assertIsNone(separator_by_contrast(image,100,100))
+        image=Image.new("RGB",(200,200),"#111122")
+        draw=ImageDraw.Draw(image)
+        draw.line((20,80,180,80),fill="white",width=2)
+        draw.line((20,120,180,120),fill="white",width=2)
+        self.assertIsNone(separator_by_contrast(image,100,100))
 
     def test_single_line_outside_icon(self):
         image=Image.new("RGB",(200,200),"#003090")
