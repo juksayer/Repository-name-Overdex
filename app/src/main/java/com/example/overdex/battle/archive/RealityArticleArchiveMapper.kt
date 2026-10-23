@@ -103,13 +103,16 @@ object RealityArticleArchiveMapper {
                 speciesId = p.speciesId,
                 basis = p.basis
             )
+            is com.example.overdex.battle.custody.PlayerActiveIdentityResolved -> ArchivedPlayerActiveIdentityResolved(
+                p.observedSpeciesName, p.speciesName, p.speciesId, p.teamSlot, p.appearanceStartedAtNanos, p.basis)
             is com.example.overdex.battle.custody.SpeciesCheckMeasured -> ArchivedSpeciesCheckMeasured(
                 p.side.name, p.windowId, p.status, p.reason, p.triggerMonotonicNanos,
                 p.elapsedNanos, p.targetNanos, p.speciesName
             )
             is TeamSelectPartyWitnessed -> ArchivedTeamSelectPartyWitnessed
             is TeamSelectLeagueWitnessed -> ArchivedTeamSelectLeagueWitnessed(p.league, p.basis)
-            is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(p.slot, p.speciesName, p.speciesId)
+            is PlayerTeamRosterSlotWitnessed -> ArchivedPlayerTeamRosterSlotWitnessed(
+                p.slot, p.speciesName, p.speciesId, p.spriteVariant, p.distinctFormMargin)
             is PlayerTeamRosterConfirmation -> ArchivedPlayerTeamRosterConfirmation(p.confirmed, p.speciesBySlot)
             is PlayerTeamSlotConfigured -> ArchivedPlayerTeamSlotConfigured(
                 p.slot, p.speciesName, p.speciesId, p.fastMoveName, p.chargedMoveNames, p.ownedPokemon

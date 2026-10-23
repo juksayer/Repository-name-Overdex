@@ -50,9 +50,14 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         region.takeIf { wanted || rendered || at < clearAfter }
 
     @Synchronized fun update(bitmap: Bitmap, at: Long, playerPresent: Boolean, opponentPresent: Boolean,
-                             badgeRegion: AnchorRegion, width: Int, height: Int) {
+                             badgeRegion: AnchorRegion, width: Int, height: Int,
+                             observationScope: RetainedBadgeScope?, battleSurfaceEstablished: Boolean,
+                             hudRegion: AnchorRegion?) {
         if (closed) return
-        val decision = visibility.update(at, playerPresent, opponentPresent, exclusion(at) != null)
+        val decision = visibility.update(at, playerPresent, opponentPresent, exclusion(at) != null,
+            observationScope, battleSurfaceEstablished,
+            sourceOverlapsHud = !SpeciesCaptureVisibility.canRead(badgeRegion, hudRegion))
+        if (decision.discardOriginal) cached = null
         if (decision.cacheOriginal) {
             val bounds = BattleCropResolver.resolveRect(badgeRegion, bitmap.width, bitmap.height) ?: return
             // Keep only one small image, not a history of frames or PNG artifacts.

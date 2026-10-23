@@ -7,6 +7,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayChargedMoveLoadoutTest {
+    @Test fun `regional forms keep separate charge buttons and ambiguous bare appearance has neither loadout`() {
+        val trail = Move("Trailblaze", PokemonType.GRASS, 65, 50, false)
+        val brick = Move("Brick Break", PokemonType.FIGHTING, 40, 40, false)
+        val alolan = ReplayCombatant("Raichu (Alolan)", 26, 0, playerTeamSlot = 1)
+        val ordinary = ReplayCombatant("Raichu", 26, 10, playerTeamSlot = 2)
+        val loadout = ReplayChargedMoveLoadout(listOf(
+            event("a", ArchivedPlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26, "Spark", listOf("Trailblaze")), 0),
+            event("k", ArchivedPlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Brick Break")), 0),
+        ), mapOf("Raichu (Alolan)" to listOf(trail), "Raichu" to listOf(brick))) { _, at ->
+            if (at < 10) alolan else ordinary
+        }
+        assertEquals(listOf("Trailblaze"), loadout.movesFor(alolan).map { it.moveName })
+        assertEquals(listOf(PokemonType.GRASS), loadout.movesFor(alolan).map { it.type })
+        assertEquals(listOf("Brick Break"), loadout.movesFor(ordinary).map { it.moveName })
+        assertTrue(loadout.movesFor(ordinary.copy(playerTeamSlot = null)).isEmpty())
+        assertEquals(listOf("Trailblaze"), loadout.movesFor(alolan).map { it.moveName })
+    }
     private val earth = Move("Earth Power", PokemonType.GROUND, 90, 55, false)
     private val overheat = Move("Overheat", PokemonType.FIRE, 130, 55, false)
     private val quake = Move("Earthquake", PokemonType.GROUND, 110, 65, false)

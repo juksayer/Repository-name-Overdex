@@ -1,0 +1,1689 @@
+{
+  "schemaVersion": 1,
+  "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+  "mediaIncluded": true,
+  "articles": [
+    {
+      "articleId": "5bdc862f-eb06-4b74-8f14-a1c1db3de565",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697890201,
+      "recordedAt": 1792697890202,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2367219443679
+    },
+    {
+      "articleId": "4de5a80c-0cf2-427f-8bdf-1e7f21c34502",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697890201,
+      "recordedAt": 1792697890208,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Raichu (Alolan)",
+        "speciesId": 26,
+        "fastMoveName": "Spark",
+        "chargedMoveNames": [
+          "Trailblaze",
+          "Wild Charge"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2367220122833
+    },
+    {
+      "articleId": "81d1d2c8-e2ba-45c6-adc1-5718dab70e4e",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697890201,
+      "recordedAt": 1792697891442,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "fastMoveName": "Volt Switch",
+        "chargedMoveNames": [
+          "Brick Break",
+          "Thunder"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2367220122833
+    },
+    {
+      "articleId": "59966f2b-dbf5-4683-882c-b03c9388d418",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697890201,
+      "recordedAt": 1792697891443,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Obstagoon",
+        "speciesId": 862,
+        "fastMoveName": "Counter",
+        "chargedMoveNames": [
+          "Night Slash",
+          "Hyper Beam"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2367220122833
+    },
+    {
+      "articleId": "8f50eb0b-9d8a-4632-b8f7-00e8cc141727",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697909319,
+      "recordedAt": 1792697910163,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 160,
+      "evidenceReferences": [
+        "c518d781-70ac-4d5d-8cdf-283292eea274"
+      ],
+      "monotonicTimeNanos": 2386322074449
+    },
+    {
+      "articleId": "16463b29-ff2c-429f-90c8-e70461111690",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697909319,
+      "recordedAt": 1792697910882,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 174,
+      "evidenceReferences": [
+        "e50590eb-6979-4fd3-845d-c91dd239ace7"
+      ],
+      "monotonicTimeNanos": 2386322074449
+    },
+    {
+      "articleId": "aa2633b2-cf2d-4c83-a079-b9ef37d91c7a",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697914318,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_3_VISUAL_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 3,
+        "speciesName": "Obstagoon",
+        "speciesId": 862,
+        "spriteVariant": "base",
+        "distinctFormMargin": null
+      },
+      "predecessorIds": [],
+      "confidence": 0.94709826,
+      "sequenceNumber": 257,
+      "evidenceReferences": [
+        "16c8c7da-26a8-4c05-9f92-6aad96fba343"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "4e7300d9-cd5f-4ecd-b023-e8558bf74320",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697914365,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_1_VISUAL_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 1,
+        "speciesName": "Raichu (Alolan)",
+        "speciesId": 26,
+        "spriteVariant": "fALOLA.s",
+        "distinctFormMargin": 0.6750939
+      },
+      "predecessorIds": [],
+      "confidence": 0.9303624,
+      "sequenceNumber": 258,
+      "evidenceReferences": [
+        "1dc9a1f1-68ce-49e6-9702-beab628587e6"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "64fdf62b-2be6-45ed-9f66-308d8f19a01c",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697914403,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_2_VISUAL_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 2,
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "spriteVariant": "base",
+        "distinctFormMargin": 1.1254084
+      },
+      "predecessorIds": [],
+      "confidence": 0.92094433,
+      "sequenceNumber": 259,
+      "evidenceReferences": [
+        "4fd5d5b1-8afd-4c2a-b0e8-8c31e4c80edd"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "3be1e70e-a3a2-478c-b5ad-357bf4f0b00d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697915731,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_2_OCR_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 2,
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "spriteVariant": null,
+        "distinctFormMargin": null
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 313,
+      "evidenceReferences": [
+        "48538851-7c6e-4d66-8bc7-89472cffb09a"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "1b8a923a-d048-4ec1-a0d8-ed3dff26c6ec",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697916089,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_1_OCR_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 1,
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "spriteVariant": null,
+        "distinctFormMargin": null
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 322,
+      "evidenceReferences": [
+        "908f6e4a-e190-450d-b20a-eb8c962694bb"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "48639da9-e836-47b3-a6b3-860f1b0d9387",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697912344,
+      "recordedAt": 1792697917662,
+      "sourceId": "TEAM_SELECT_PLAYER_SLOT_3_OCR_WITNESS",
+      "payload": {
+        "kind": "player_team_roster_slot",
+        "slot": 3,
+        "speciesName": "Obstagoon",
+        "speciesId": 862,
+        "spriteVariant": null,
+        "distinctFormMargin": null
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 381,
+      "evidenceReferences": [
+        "6a9db8ba-a1bf-4972-b190-a97028960a6b"
+      ],
+      "monotonicTimeNanos": 2389357288680
+    },
+    {
+      "articleId": "9dd67b59-9e01-4f66-a31a-f215bc7de9c8",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697959258,
+      "recordedAt": 1792697959264,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Raichu (Alolan)",
+        "speciesId": 26,
+        "fastMoveName": "Spark",
+        "chargedMoveNames": [
+          "Trailblaze",
+          "Wild Charge"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 507,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2436276724375
+    },
+    {
+      "articleId": "0f3dc24f-9592-40be-9295-9479b6a34b1f",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697959258,
+      "recordedAt": 1792697959327,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "fastMoveName": "Volt Switch",
+        "chargedMoveNames": [
+          "Brick Break"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 508,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2436276724375
+    },
+    {
+      "articleId": "a5a34c41-cec1-4e93-a259-0c4bf11dec30",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697959258,
+      "recordedAt": 1792697959346,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Obstagoon",
+        "speciesId": 862,
+        "fastMoveName": "Counter",
+        "chargedMoveNames": [
+          "Night Slash",
+          "Cross Chop"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 509,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 2436276724375
+    },
+    {
+      "articleId": "c6087b5f-a38b-404f-91fd-b9b68e0ec579",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697963711,
+      "recordedAt": 1792697964365,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 654,
+      "evidenceReferences": [
+        "f36e57fa-1680-466a-b0f0-92e0d55e0f2f"
+      ],
+      "monotonicTimeNanos": 2440707656068
+    },
+    {
+      "articleId": "8d63ebc2-2ac3-4d00-89c5-e5ba1dcbb92d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697964244,
+      "recordedAt": 1792697965201,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 678,
+      "evidenceReferences": [
+        "73798efd-fd65-48ff-9022-79a3250c09c6"
+      ],
+      "monotonicTimeNanos": 2441252230453
+    },
+    {
+      "articleId": "3869767d-565e-4c08-aae0-eea416c73ceb",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697968662,
+      "recordedAt": 1792697969387,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 789,
+      "evidenceReferences": [
+        "3999b8cc-8e05-4bb2-a1ea-059396870253"
+      ],
+      "monotonicTimeNanos": 2445645823684
+    },
+    {
+      "articleId": "b39b2c68-28f5-4b07-b619-d277f6b60116",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697969678,
+      "recordedAt": 1792697970290,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 819,
+      "evidenceReferences": [
+        "49803c41-46a4-430e-93e5-e603eaa6145a"
+      ],
+      "monotonicTimeNanos": 2446691716684
+    },
+    {
+      "articleId": "1136b494-303c-44c1-ab87-ac1debe44144",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697971853,
+      "recordedAt": 1792697972680,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 887,
+      "evidenceReferences": [
+        "1a44d004-ee41-44bb-bc70-3a4b6b64b7f2"
+      ],
+      "monotonicTimeNanos": 2448860381838
+    },
+    {
+      "articleId": "915b8bc8-f981-4a27-9abb-731cb0bc2079",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697972467,
+      "recordedAt": 1792697973559,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 914,
+      "evidenceReferences": [
+        "3d830d97-6518-4641-9292-a6267c05241a"
+      ],
+      "monotonicTimeNanos": 2449455861838
+    },
+    {
+      "articleId": "bc03061b-09ce-4316-8d91-2830260efd5d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697975617,
+      "recordedAt": 1792697976622,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1035,
+      "evidenceReferences": [
+        "d9eef39d-0d25-41e9-86ba-8e9b236490ea"
+      ],
+      "monotonicTimeNanos": 2452628586146
+    },
+    {
+      "articleId": "fc99cf79-ad59-426e-8106-85ff2b5c513f",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697977740,
+      "recordedAt": 1792697978876,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1069,
+      "evidenceReferences": [
+        "1e3e8428-1850-4a8e-92c8-b54acdc8a4e1"
+      ],
+      "monotonicTimeNanos": 2454715413838
+    },
+    {
+      "articleId": "6ba257bf-8e45-4b7f-a4bf-17ca910e845b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697977900,
+      "recordedAt": 1792697980572,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Go, Raichu",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1142,
+      "evidenceReferences": [
+        "882c00b1-293c-4b7e-8dc1-957e17351d8d",
+        "9dd67b59-9e01-4f66-a31a-f215bc7de9c8",
+        "0f3dc24f-9592-40be-9295-9479b6a34b1f",
+        "a5a34c41-cec1-4e93-a259-0c4bf11dec30",
+        "4e7300d9-cd5f-4ecd-b023-e8558bf74320",
+        "3be1e70e-a3a2-478c-b5ad-357bf4f0b00d",
+        "48639da9-e836-47b3-a6b3-860f1b0d9387"
+      ],
+      "monotonicTimeNanos": 2454894696377
+    },
+    {
+      "articleId": "4a96d2b0-30bf-4b3a-8aea-9040bf20436f",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697977900,
+      "recordedAt": 1792697980602,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Raichu",
+        "speciesName": "Raichu (Alolan)",
+        "speciesId": 26,
+        "teamSlot": 1,
+        "appearanceStartedAtNanos": 2454894696377,
+        "basis": "OBSERVED_TEAM_SELECT_LEAD_AND_PLAYER_SPECIES"
+      },
+      "predecessorIds": [
+        "6ba257bf-8e45-4b7f-a4bf-17ca910e845b",
+        "4e7300d9-cd5f-4ecd-b023-e8558bf74320"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 2454894696377
+    },
+    {
+      "articleId": "1c87ddaf-012c-40c9-877e-5f3315e89a7f",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697980793,
+      "recordedAt": 1792697981817,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "734cf074-dec7-4e31-8860-fd57b23623a1"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 2457789391684
+    },
+    {
+      "articleId": "fd75e972-af07-47f9-9c63-674fae2a21e9",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697980575,
+      "recordedAt": 1792697982328,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raichu",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1202,
+      "evidenceReferences": [
+        "882c00b1-293c-4b7e-8dc1-957e17351d8d",
+        "22082d60-94b3-44f7-8962-3375340b19e1"
+      ],
+      "monotonicTimeNanos": 2457557622838
+    },
+    {
+      "articleId": "5a697bef-9b90-491f-a4ab-cda2f81da955",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697981720,
+      "recordedAt": 1792697982671,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1220,
+      "evidenceReferences": [
+        "882c00b1-293c-4b7e-8dc1-957e17351d8d",
+        "22889f1b-ad8d-4d48-918b-9ea0ea734e30"
+      ],
+      "monotonicTimeNanos": 2458677507992
+    },
+    {
+      "articleId": "12b2168c-3145-43c9-b508-f38c76505cff",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697982798,
+      "recordedAt": 1792697983993,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1272,
+      "evidenceReferences": [
+        "7c9227a5-5e70-4328-8326-332aacaa65b6"
+      ],
+      "monotonicTimeNanos": 2459799354454
+    },
+    {
+      "articleId": "c551ebcd-302d-4afd-9fd6-12b21afbf8eb",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697983470,
+      "recordedAt": 1792697984781,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raichu",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1309,
+      "evidenceReferences": [
+        "ca0bd8fb-9fde-4d9d-9424-7d77f25fb14c",
+        "a9ed149c-836b-430e-847f-dfce05ceaacd"
+      ],
+      "monotonicTimeNanos": 2460452317300
+    },
+    {
+      "articleId": "369d8a53-3fa2-4043-a368-9dd79ee5609f",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697983836,
+      "recordedAt": 1792697985102,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1322,
+      "evidenceReferences": [
+        "ca0bd8fb-9fde-4d9d-9424-7d77f25fb14c",
+        "960b054e-f2f6-4133-8906-d0a575278d97"
+      ],
+      "monotonicTimeNanos": 2460833815685
+    },
+    {
+      "articleId": "dc0c6a6a-560f-4e84-b6c5-9f8e1eb4d3c8",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697984583,
+      "recordedAt": 1792697986060,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1363,
+      "evidenceReferences": [
+        "325c1c4d-92ad-4e07-8d1c-787e0857baca"
+      ],
+      "monotonicTimeNanos": 2461596858531
+    },
+    {
+      "articleId": "94b718f2-e1d8-411a-9735-a23fc4309855",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697986181,
+      "recordedAt": 1792697987634,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1436,
+      "evidenceReferences": [
+        "efb43b5b-0269-4089-91d9-4642b8148dbd"
+      ],
+      "monotonicTimeNanos": 2463176997915
+    },
+    {
+      "articleId": "284a59a8-218d-40c2-9e68-d82904111445",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697986266,
+      "recordedAt": 1792697988160,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1452,
+      "evidenceReferences": [
+        "024345db-d173-45db-bfab-418e1f2ed2ff",
+        "ed47c4f8-43e1-4b95-b374-631cdfcc6629"
+      ],
+      "monotonicTimeNanos": 2463274137531
+    },
+    {
+      "articleId": "8b4b1c45-19f7-4098-acb4-a4e8e34fdd8d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697988884,
+      "recordedAt": 1792697989914,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1534,
+      "evidenceReferences": [
+        "a5d1e97e-5b54-478d-a412-55317fa7d73a"
+      ],
+      "monotonicTimeNanos": 2465892698223
+    },
+    {
+      "articleId": "9f016920-c35a-47f5-9d5f-e6d97af75967",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697986532,
+      "recordedAt": 1792697990047,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raich\u0173",
+        "ocrMatchBasis": "UNIQUE_OVERMON_PREFIX_MATCH"
+      },
+      "predecessorIds": [],
+      "confidence": 0.68,
+      "sequenceNumber": 1542,
+      "evidenceReferences": [
+        "024345db-d173-45db-bfab-418e1f2ed2ff",
+        "94e9538c-bc54-412f-8781-bc7e08a8e919"
+      ],
+      "monotonicTimeNanos": 2463531987377
+    },
+    {
+      "articleId": "13706f13-8102-4ee0-9d1a-cfb8a5161f44",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697980090,
+      "recordedAt": 1792697991584,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Go, Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1607,
+      "evidenceReferences": [
+        "624e0b1b-1814-4f4b-bddf-2436ecb914cc",
+        "284a59a8-218d-40c2-9e68-d82904111445"
+      ],
+      "monotonicTimeNanos": 2457080936915
+    },
+    {
+      "articleId": "b69325e6-113e-48fb-80ea-a2e93ab184f4",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697991615,
+      "recordedAt": 1792697992743,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1649,
+      "evidenceReferences": [
+        "6ccada05-1698-463d-9af6-e7ac82d9b853"
+      ],
+      "monotonicTimeNanos": 2468615231993
+    },
+    {
+      "articleId": "3f5f7959-dc3a-4c2e-ac9b-68dc13da3c8b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697992178,
+      "recordedAt": 1792697993058,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1669,
+      "evidenceReferences": [
+        "87946924-45a8-44ac-b165-3b356b9eaaac"
+      ],
+      "monotonicTimeNanos": 2469168894531
+    },
+    {
+      "articleId": "587bd492-fe1e-42d7-aa20-727374159a1c",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697995431,
+      "recordedAt": 1792697995957,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1785,
+      "evidenceReferences": [
+        "0c2db8c4-3007-43c8-8c16-aabca6b2b375"
+      ],
+      "monotonicTimeNanos": 2472433966839
+    },
+    {
+      "articleId": "02feed23-c85f-4616-b45d-2bfd527b2acf",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792697998068,
+      "recordedAt": 1792697999258,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1868,
+      "evidenceReferences": [
+        "bdfed464-77e1-4378-84dc-6dad480f942a"
+      ],
+      "monotonicTimeNanos": 2475077314455
+    },
+    {
+      "articleId": "dc544aab-4cf2-40fc-ab58-4bf7b51e63b9",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698001923,
+      "recordedAt": 1792698003426,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Go,\nRaichu!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2004,
+      "evidenceReferences": [
+        "9044df64-1ce6-4e03-9bed-4a9e5d7f5d8f",
+        "9f016920-c35a-47f5-9d5f-e6d97af75967"
+      ],
+      "monotonicTimeNanos": 2478926871455
+    },
+    {
+      "articleId": "b9f335f0-2ad1-49a4-93d5-34800186b42d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698001923,
+      "recordedAt": 1792698003433,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Raichu",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "teamSlot": null,
+        "appearanceStartedAtNanos": 2478926871455,
+        "basis": "PLAYER_SPECIES_WITH_UNRESOLVED_ROSTER_SLOT"
+      },
+      "predecessorIds": [
+        "dc544aab-4cf2-40fc-ab58-4bf7b51e63b9"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 2478926871455
+    },
+    {
+      "articleId": "9b4a2a69-2737-464e-85c3-7d8462b7d4c9",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698003072,
+      "recordedAt": 1792698004095,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2039,
+      "evidenceReferences": [
+        "cc65878e-817f-4da4-b19c-3920c334b453"
+      ],
+      "monotonicTimeNanos": 2480081957532
+    },
+    {
+      "articleId": "76fa377c-438f-4ceb-9d63-2480c69834aa",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698003423,
+      "recordedAt": 1792698004571,
+      "sourceId": "PLAYER_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "basis": "PLAYER_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY"
+      },
+      "predecessorIds": [],
+      "confidence": 0.99,
+      "sequenceNumber": 2076,
+      "evidenceReferences": [
+        "6ba257bf-8e45-4b7f-a4bf-17ca910e845b",
+        "c69919e7-517d-4cb3-839c-c055ab5226cf",
+        "c8619c96-cab4-4d90-b8f1-d1b44a7e37da",
+        "6a263931-d88e-46b2-a0cd-c31297858aec"
+      ],
+      "monotonicTimeNanos": 2480398674455
+    },
+    {
+      "articleId": "2efc38d4-1c61-4370-a224-83f419cc0c9b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698005591,
+      "recordedAt": 1792698006210,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2164,
+      "evidenceReferences": [
+        "9044df64-1ce6-4e03-9bed-4a9e5d7f5d8f",
+        "76884280-8882-4bc5-a6a8-2d65bc355583"
+      ],
+      "monotonicTimeNanos": 2482602249840
+    },
+    {
+      "articleId": "2786137f-38fc-4641-8ef7-8a2ebc8c4f6b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698003423,
+      "recordedAt": 1792698007041,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raich\u0173",
+        "ocrMatchBasis": "UNIQUE_OVERMON_PREFIX_MATCH"
+      },
+      "predecessorIds": [],
+      "confidence": 0.68,
+      "sequenceNumber": 2202,
+      "evidenceReferences": [
+        "9044df64-1ce6-4e03-9bed-4a9e5d7f5d8f",
+        "6cab3395-12a5-40af-aeda-ffbfaec9f80b"
+      ],
+      "monotonicTimeNanos": 2480398674455
+    },
+    {
+      "articleId": "2480664b-30d8-471f-831b-dc69263e59a1",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698006431,
+      "recordedAt": 1792698007624,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2252,
+      "evidenceReferences": [
+        "d651d684-18cc-4620-81c4-807125511b6e"
+      ],
+      "monotonicTimeNanos": 2483438639147
+    },
+    {
+      "articleId": "3fe1280c-9538-4ddd-8baf-66908bd9ad84",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698009069,
+      "recordedAt": 1792698010104,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2316,
+      "evidenceReferences": [
+        "6dafabcd-1b95-4a25-aa34-c768e75d2f72"
+      ],
+      "monotonicTimeNanos": 2486082624301
+    },
+    {
+      "articleId": "cca51f04-532e-4ce5-8e99-8234ea6c093b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698010139,
+      "recordedAt": 1792698010655,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2331,
+      "evidenceReferences": [
+        "334bdc74-5af0-41cc-8fc3-c26f89b2b4be"
+      ],
+      "monotonicTimeNanos": 2487142190532
+    },
+    {
+      "articleId": "bdbbb9c2-8694-4bf3-97b5-d85409bf28d9",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698011198,
+      "recordedAt": 1792698012068,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2362,
+      "evidenceReferences": [
+        "d87759f2-1fa7-4aa2-9205-106463be9695"
+      ],
+      "monotonicTimeNanos": 2488196176994
+    },
+    {
+      "articleId": "9c68f0f6-73f1-435f-9db5-769dc9a5abd6",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698015106,
+      "recordedAt": 1792698016274,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2455,
+      "evidenceReferences": [
+        "bdc07119-cf53-40b1-b4e6-594c56798195"
+      ],
+      "monotonicTimeNanos": 2492093790456
+    },
+    {
+      "articleId": "320b87eb-c448-4474-8c6c-3a1970c3de2a",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698015370,
+      "recordedAt": 1792698016965,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raichu used Brick Break!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2467,
+      "evidenceReferences": [
+        "3103647f-6bd0-44ef-9929-465237a70779"
+      ],
+      "monotonicTimeNanos": 2492380779071
+    },
+    {
+      "articleId": "7099d70e-4dc0-4891-ab82-41edb809e001",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698018050,
+      "recordedAt": 1792698019435,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "ocrText": "Sealeo",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2555,
+      "evidenceReferences": [
+        "ebbf0b2c-86cb-456f-9ff7-3e8b4c5eb854"
+      ],
+      "monotonicTimeNanos": 2495046060917
+    },
+    {
+      "articleId": "900a8198-dd69-47fb-9139-a836c8044048",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698018394,
+      "recordedAt": 1792698019655,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2565,
+      "evidenceReferences": [
+        "5a697bef-9b90-491f-a4ab-cda2f81da955",
+        "16ad44fa-c2d0-4ab9-ae02-dc44c5d5661f",
+        "d208ef83-6534-4be5-a879-77148ee50eed"
+      ],
+      "monotonicTimeNanos": 2495400194764
+    },
+    {
+      "articleId": "d854f2bc-179f-42b8-9aea-1e3c8ece92d9",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698019507,
+      "recordedAt": 1792698020423,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2596,
+      "evidenceReferences": [
+        "3e0ebe53-8f89-4688-8d6d-22a2d3706598"
+      ],
+      "monotonicTimeNanos": 2496495318456
+    },
+    {
+      "articleId": "e79fb13e-cb78-4b33-aa47-18fd2d67ecd3",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698019421,
+      "recordedAt": 1792698020707,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "ocrText": "Go, Sealeo!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2615,
+      "evidenceReferences": [
+        "89d409a2-6e45-4532-9290-58c22f853752",
+        "7099d70e-4dc0-4891-ab82-41edb809e001"
+      ],
+      "monotonicTimeNanos": 2496419498225
+    },
+    {
+      "articleId": "ea82bc26-78cd-44e2-a9e4-46b8ace8502c",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698020683,
+      "recordedAt": 1792698021937,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "ocrText": "Sealeo",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2689,
+      "evidenceReferences": [
+        "89d409a2-6e45-4532-9290-58c22f853752",
+        "95403570-2130-424b-9cac-5267b7bded03"
+      ],
+      "monotonicTimeNanos": 2497682695456
+    },
+    {
+      "articleId": "6e078ed8-dae6-4604-b6fa-a28f1a63791d",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698021978,
+      "recordedAt": 1792698022869,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raichu",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2736,
+      "evidenceReferences": [
+        "89d409a2-6e45-4532-9290-58c22f853752",
+        "d55c6aac-b14e-4086-929d-8c8d0e2cd597"
+      ],
+      "monotonicTimeNanos": 2498977594225
+    },
+    {
+      "articleId": "3857250e-bbfb-439a-98e6-a9483721e972",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698022759,
+      "recordedAt": 1792698023943,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2791,
+      "evidenceReferences": [
+        "358f1c60-e74f-45e7-8469-85ceefea1f93"
+      ],
+      "monotonicTimeNanos": 2499764513918
+    },
+    {
+      "articleId": "6d0a9af6-024f-4126-8a61-670919401b93",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698025421,
+      "recordedAt": 1792698026151,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2879,
+      "evidenceReferences": [
+        "1fc8ea89-7060-4958-9f88-a9b9bee5a730"
+      ],
+      "monotonicTimeNanos": 2502431628995
+    },
+    {
+      "articleId": "1d6815cd-0220-4df8-be2c-a8b33e77128b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698026493,
+      "recordedAt": 1792698027328,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2902,
+      "evidenceReferences": [
+        "2fc403b5-f6ec-4056-8137-5aa73d70e3b5"
+      ],
+      "monotonicTimeNanos": 2503501219687
+    },
+    {
+      "articleId": "fea7120c-93e5-4a3e-ba4a-45de35b48ed0",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698030835,
+      "recordedAt": 1792698032158,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2993,
+      "evidenceReferences": [
+        "a03a106c-a206-42d6-89ac-1e052f4485f5"
+      ],
+      "monotonicTimeNanos": 2507844800918
+    },
+    {
+      "articleId": "0f08c54b-1a97-4a5d-ad5d-947984ce14a7",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698033101,
+      "recordedAt": 1792698033823,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3020,
+      "evidenceReferences": [
+        "db09f092-f8dd-4867-a957-e2e4e33e77fc"
+      ],
+      "monotonicTimeNanos": 2510107892611
+    },
+    {
+      "articleId": "ead4ddf3-bba0-4025-83b0-dbd9ad1ffb33",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698039313,
+      "recordedAt": 1792698040268,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3277,
+      "evidenceReferences": [
+        "f4800417-bf9f-4516-99e5-afc3aa0c6d0f"
+      ],
+      "monotonicTimeNanos": 2516304095149
+    },
+    {
+      "articleId": "9d44f8b5-f03e-4805-993b-f2397cfe2d6a",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698041460,
+      "recordedAt": 1792698042663,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3343,
+      "evidenceReferences": [
+        "19ef443d-947b-4b7a-9dad-5f336cf65baa"
+      ],
+      "monotonicTimeNanos": 2518465865919
+    },
+    {
+      "articleId": "d7e38353-4100-4a90-9602-0b3686e42849",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698040777,
+      "recordedAt": 1792698043886,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 3384,
+      "evidenceReferences": [
+        "7099d70e-4dc0-4891-ab82-41edb809e001",
+        "fd3846df-2fc0-4225-9a8a-66ee99a7e9cb",
+        "b45323c1-8ffd-4a52-8dd9-8492a7af712d"
+      ],
+      "monotonicTimeNanos": 2517769456996
+    },
+    {
+      "articleId": "c2c4e0b5-acaf-47b3-8f64-434bcfce58e6",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698042587,
+      "recordedAt": 1792698043980,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134,
+        "ocrText": "Go, Vaporeon!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.9,
+      "sequenceNumber": 3390,
+      "evidenceReferences": [
+        "7fffd86d-1bf5-4d90-8d09-d77eac44afc4",
+        "d7e38353-4100-4a90-9602-0b3686e42849"
+      ],
+      "monotonicTimeNanos": 2519595762842
+    },
+    {
+      "articleId": "cc911ab6-625a-4e02-a2b7-a2a3b504592b",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698044122,
+      "recordedAt": 1792698045113,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134,
+        "ocrText": "Vaporeon",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3436,
+      "evidenceReferences": [
+        "7fffd86d-1bf5-4d90-8d09-d77eac44afc4",
+        "99e7197f-0f0b-4f1e-bb8c-d6e17526b5f7"
+      ],
+      "monotonicTimeNanos": 2521116574534
+    },
+    {
+      "articleId": "e778ed81-8e55-494a-bf50-d2be720a82e2",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698046958,
+      "recordedAt": 1792698047790,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3511,
+      "evidenceReferences": [
+        "95c652e4-12c1-4eeb-b36c-1f666fe08552"
+      ],
+      "monotonicTimeNanos": 2523927504996
+    },
+    {
+      "articleId": "ff1017dc-f96b-49bd-8ef0-94e267065584",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698044764,
+      "recordedAt": 1792698047938,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Raichu",
+        "speciesId": 26,
+        "ocrText": "Raichu",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3516,
+      "evidenceReferences": [
+        "7fffd86d-1bf5-4d90-8d09-d77eac44afc4",
+        "b6abc810-d9fd-45e1-94c0-07e8a596b3fb"
+      ],
+      "monotonicTimeNanos": 2521774800304
+    },
+    {
+      "articleId": "c1c2f3ea-b342-473c-97b6-1e4792988417",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698049073,
+      "recordedAt": 1792698049663,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3572,
+      "evidenceReferences": [
+        "4a71c010-37d3-4af6-9f0e-3ab9e4f33b58"
+      ],
+      "monotonicTimeNanos": 2526075224919
+    },
+    {
+      "articleId": "1880801b-45b4-4677-bf07-85ed6144787a",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698052877,
+      "recordedAt": 1792698053884,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3649,
+      "evidenceReferences": [
+        "ad64cf59-8e90-481a-ac04-6afe3487cc1f"
+      ],
+      "monotonicTimeNanos": 2529890978150
+    },
+    {
+      "articleId": "cffbaf59-9e43-4705-9ab0-989ae54844ef",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698058805,
+      "recordedAt": 1792698060098,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3890,
+      "evidenceReferences": [
+        "a4611936-0b48-49e0-bb28-754c3fc4d74f"
+      ],
+      "monotonicTimeNanos": 2535814676997
+    },
+    {
+      "articleId": "c23d492e-7916-43cb-91db-43c58e4253d2",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698059885,
+      "recordedAt": 1792698060835,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3911,
+      "evidenceReferences": [
+        "d0f09692-956b-484e-bc76-6ea2c6946ab0"
+      ],
+      "monotonicTimeNanos": 2536880364074
+    },
+    {
+      "articleId": "52a92a08-fe8a-4bfb-91f2-4c16748faf31",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698061985,
+      "recordedAt": 1792698062757,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3947,
+      "evidenceReferences": [
+        "479b4e55-f89a-487f-a6a6-8653746cac97"
+      ],
+      "monotonicTimeNanos": 2538979431689
+    },
+    {
+      "articleId": "d7ed4ff8-ae62-4407-ab34-6012a83bc302",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698070571,
+      "recordedAt": 1792698071560,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_1_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 1,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4099,
+      "evidenceReferences": [
+        "ca991a97-74b4-4bb9-b523-5428886e2cfb"
+      ],
+      "monotonicTimeNanos": 2547578257921
+    },
+    {
+      "articleId": "38f1b473-a379-4961-a95a-b11b0b424f44",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698073418,
+      "recordedAt": 1792698074467,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "7877b672-fbaf-4923-9edb-d327336f8a71"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 2550421201613
+    },
+    {
+      "articleId": "0e4cc55c-e09b-46b7-940b-9688b007e942",
+      "matchId": "62ee3f19-5101-467c-a1be-9133236e8a41",
+      "perceivedAt": 1792698074338,
+      "recordedAt": 1792698074865,
+      "sourceId": "PLAYER_CHARGE_MOVE_LABEL_2_WITNESS",
+      "payload": {
+        "kind": "player_charge_move_label_read",
+        "slot": 2,
+        "text": "",
+        "basis": "OCR"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4189,
+      "evidenceReferences": [
+        "15f680b7-4835-4973-9f26-8595667693cb"
+      ],
+      "monotonicTimeNanos": 2551347475382
+    }
+  ]
+}

@@ -13,8 +13,11 @@ import com.example.overdex.model.GameMasterMove
  * and elemental types for all Pokémon species.
  */
 class GameMasterLoader(
-    private val context: Context
+    private val readRawJson: () -> String
 ) {
+    constructor(context: Context) : this({
+        context.assets.open("gamemaster.json").bufferedReader().use { it.readText() }
+    })
     private val json = Json {
         ignoreUnknownKeys = true
     }
@@ -25,10 +28,7 @@ class GameMasterLoader(
     }
 
     fun loadRawJson(): String {
-        return context.assets
-            .open("gamemaster.json")
-            .bufferedReader()
-            .use { it.readText() }
+        return readRawJson()
     }
 
     fun getPokemon(speciesId: String): GameMasterPokemon? = gameMaster.pokemon.find { it.speciesId == speciesId }

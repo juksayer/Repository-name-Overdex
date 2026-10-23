@@ -25,6 +25,10 @@ internal class ReplayChargedMoveLoadout(
         key(species) to moves.filterNot(Move::isFast)
     }
     private val slotsBySpecies = mutableMapOf<String, List<ReplayChargedMoveSlot>>()
+    private val formsByBase = (movesBySpecies.keys + articles.mapNotNull {
+        (it.payload as? ArchivedPlayerTeamSlotConfigured)?.speciesName
+    }).distinct().groupBy(TeamRosterSpeciesAttributor::speciesKey)
+    private val baseByKey = formsByBase.flatMap { (base, forms) -> forms.map { key(it) to base } }.toMap()
 
     init {
         val start = articles.firstOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos
@@ -73,7 +77,11 @@ internal class ReplayChargedMoveLoadout(
         articles.forEach { article ->
             val spent = article.payload as? ArchivedChargedMoveEnergySpent ?: return@forEach
             if (spent.side != "PLAYER" || spent.moveName.isBlank()) return@forEach
-            val species = key(spent.speciesName)
+            val active = article.monotonicTimeNanos?.let { combatantAt("PLAYER", it)?.speciesName }
+            val species = key(active?.takeIf {
+                '(' !in spent.speciesName && TeamRosterSpeciesAttributor.speciesKey(it) ==
+                    TeamRosterSpeciesAttributor.speciesKey(spent.speciesName)
+            } ?: spent.speciesName)
             val slots = slotsBySpecies[species].orEmpty()
             if (slots.any { MoveTextAliases.matches(spent.moveName, it.moveName) } || slots.size >= 2) return@forEach
             val slot = (1..2).first { number -> slots.none { it.slot == number } }
@@ -82,10 +90,16 @@ internal class ReplayChargedMoveLoadout(
         }
     }
 
-    fun movesFor(combatant: ReplayCombatant?): List<ReplayChargedMoveSlot> =
-        combatant?.let { slotsBySpecies[key(it.speciesName)].orEmpty().sortedBy(ReplayChargedMoveSlot::slot) }.orEmpty()
+    fun movesFor(combatant: ReplayCombatant?): List<ReplayChargedMoveSlot> {
+        combatant ?: return emptyList()
+        val key = key(combatant.speciesName)
+        val candidates = slotsBySpecies.keys.filter { (baseByKey[it] ?: it) == (baseByKey[key] ?: key) }
+        if ('(' !in combatant.speciesName && combatant.playerTeamSlot == null && candidates.size > 1) return emptyList()
+        return (slotsBySpecies[key] ?: candidates.singleOrNull()?.let(slotsBySpecies::get)).orEmpty()
+            .sortedBy(ReplayChargedMoveSlot::slot)
+    }
 
-    private fun reference(species: String, name: String) = references[species].orEmpty()
+    private fun reference(species: String, name: String) = (references[species] ?: references[baseByKey[species]]).orEmpty()
         .singleOrNull { MoveTextAliases.matches(name, it.name) }
 
     private fun resolve(species: String, slot: Int, name: String, evidence: Set<String>): ReplayChargedMoveSlot {
@@ -94,5 +108,5 @@ internal class ReplayChargedMoveLoadout(
             move?.energy?.takeIf { it > 0 }, evidence)
     }
 
-    private fun key(species: String) = TeamRosterSpeciesAttributor.speciesKey(species)
+    private fun key(species: String) = species.uppercase().filter(Char::isLetterOrDigit)
 }

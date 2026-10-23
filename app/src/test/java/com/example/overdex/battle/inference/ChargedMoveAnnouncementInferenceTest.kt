@@ -16,6 +16,25 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ChargedMoveAnnouncementInferenceTest {
+    @Test fun `bare announcement spends the active regional forms legal charge`() = runBlocking {
+        val alolan = Pokemon(26, "Raichu (Alolan)", listOf(PokemonType.ELECTRIC, PokemonType.PSYCHIC), "Alola",
+            fastMoves = emptyList(), chargedMoves = listOf(Move("Trailblaze", PokemonType.GRASS, 65, 50, false)))
+        val ordinary = alolan.copy(name = "Raichu", types = listOf(PokemonType.ELECTRIC),
+            chargedMoves = listOf(Move("Thunder", PokemonType.ELECTRIC, 100, 60, false)))
+        val knowledge = object : PokemonKnowledge {
+            override suspend fun getPokemonByName(name: String) = listOf(alolan, ordinary).find { it.name == name }
+            override suspend fun getPokemonById(id: Int) = ordinary.takeIf { id == 26 }
+            override suspend fun getAllSpeciesNames() = setOf(alolan.name, ordinary.name)
+        }
+        val engine = ChargedMoveAnnouncementInference(knowledge)
+        engine.accept(article("resolved", SourceId("PLAYER_ACTIVE_IDENTITY_INFERENCE"),
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, alolan.name, 26, playerTeamSlot = 1)), ::noRosterSide)
+        val result = engine.accept(announcement("charge", "Raichu used Trailblaze!"), ::noRosterSide)
+        assertEquals("Raichu (Alolan)", result?.payload?.speciesName)
+        assertEquals("Trailblaze", result?.payload?.moveName)
+        assertEquals(50, result?.payload?.energyCost)
+        assertNull(engine.accept(announcement("impossible", "Raichu used Thunder!"), ::noRosterSide))
+    }
     private val pokemon = Pokemon(
         id = 776,
         name = "Turtonator",

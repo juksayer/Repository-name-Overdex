@@ -39,6 +39,7 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val attributedUseIds = mutableSetOf<String>()
     private val appearanceStarts = EnumMap<ActivePokemonSide, Long>(ActivePokemonSide::class.java)
     private val learnedIdentities = mutableMapOf<Pair<ActivePokemonSide, String>, Identity>()
+    private val playerAppearances = java.util.TreeMap<Long, ActivePokemonSpeciesWitnessed>()
 
     suspend fun accept(article: RealityArticle): List<FastMoveEnergyDerivation> {
         fainted.observe(article)
@@ -68,12 +69,16 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
 
             is ActivePokemonSpeciesWitnessed -> {
+                if (payload.side == ActivePokemonSide.PLAYER && payload.appearanceStartedAtNanos != null)
+                    playerAppearances[payload.appearanceStartedAtNanos] = payload
                 if (fainted.contains(payload.side, payload.speciesName)) return emptyList()
-                if (activeSpecies[payload.side]?.let(::normalize) != normalize(payload.speciesName)) {
+                if (activeSpecies[payload.side]?.let(::normalize) != normalize(payload.speciesName) ||
+                    (payload.appearanceStartedAtNanos != null && payload.appearanceStartedAtNanos != appearanceStarts[payload.side])) {
                     val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
                     if (at < (appearanceStarts[payload.side] ?: Long.MIN_VALUE)) return emptyList()
                     identities.remove(payload.side)
-                    if (activeSpecies.containsKey(payload.side)) appearanceStarts[payload.side] = at
+                    if (activeSpecies.containsKey(payload.side) || payload.appearanceStartedAtNanos != null)
+                        appearanceStarts[payload.side] = payload.appearanceStartedAtNanos ?: at
                     activeSpecies[payload.side] = payload.speciesName
                 }
                 return emptyList()
@@ -125,7 +130,9 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
                 val historical = (article.monotonicTimeNanos ?: Long.MAX_VALUE) <
                     (appearanceStarts[payload.attackingSide] ?: Long.MIN_VALUE)
                 val identity = if (historical) payload.attackerSpeciesName?.let {
-                    learnedIdentities[payload.attackingSide to normalize(it)]
+                    val resolved = if (payload.attackingSide == ActivePokemonSide.PLAYER)
+                        playerAppearances.floorEntry(article.monotonicTimeNanos ?: Long.MIN_VALUE)?.value else null
+                    learnedIdentities[payload.attackingSide to normalize(resolved?.speciesName ?: it)]
                 } else identities[payload.attackingSide]
                 val derived = identity?.let { derive(article, it) }
                 if (derived != null) return listOf(derived)
@@ -143,9 +150,19 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
         if (fainted.at(use.attackingSide, identity.payload.speciesName,
                 useArticle.monotonicTimeNanos ?: return null)) return null
         if (use.attackingSide != identity.payload.side) return null
-        if (use.attackerSpeciesName != null &&
-            normalize(use.attackerSpeciesName) != normalize(identity.payload.speciesName)
-        ) return null
+        val resolvedPlayer = if (use.attackingSide == ActivePokemonSide.PLAYER)
+            playerAppearances.floorEntry(useArticle.monotonicTimeNanos ?: return null)?.value else null
+        if (resolvedPlayer?.playerTeamSlot != null &&
+            normalize(resolvedPlayer.speciesName) != normalize(identity.payload.speciesName)) return null
+        if (use.attackerSpeciesName != null && normalize(use.attackerSpeciesName) != normalize(identity.payload.speciesName)) {
+            val resolved = resolvedPlayer
+            val sameResolvedAppearance = use.attackingSide == ActivePokemonSide.PLAYER && resolved?.playerTeamSlot != null &&
+                normalize(resolved.speciesName) == normalize(identity.payload.speciesName) &&
+                '(' !in use.attackerSpeciesName &&
+                com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(use.attackerSpeciesName) ==
+                com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(resolved.speciesName)
+            if (!sameResolvedAppearance) return null
+        }
         return FastMoveEnergyDerivation(
             payload = FastMoveEnergyDerived(
                 side = use.attackingSide,

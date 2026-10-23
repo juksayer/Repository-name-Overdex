@@ -6,6 +6,9 @@ boundaries; it does not establish live recognition accuracy.
 
 ## Where to find the plans
 
+- [Battle priorities](../plans/battle-priorities.md): current implementation order
+  agreed October 21, ranked by benefit before, during, and after battle. This
+  supersedes the historical roadmap's ordering, not its retained source material.
 - [Original roadmap](../../DexDox/roadmap.md): historical milestone plan. Its
   "next" lists predate implemented teams, binders, archives, and replay.
 - [Unfinished-code inventory](../../UNFINISHED_CODE_INVENTORY.md): cleanup,
@@ -31,6 +34,18 @@ Signal Observatory, Timeline Viewer, Match Calibration, and Replay remain.
 
 ## Important unfinished or partial features
 
+October 21 follow-up: [Team Select form preservation](../verification/2026-10-21-team-select-forms.md)
+now retains accepted sprite forms, checks within-species ambiguity, and uses the
+player form for reference/type lookup. The first Moondrop roster distinguished
+shiny Alolan Raichu and ordinary Raichu together; the user reported immediate
+recognition and correct move lists. The slot-swap/rescan check also passed,
+including ordinary Raichu's move list in its new first slot. The October 22
+[player form handoff](../verification/2026-10-22-player-form-handoff.md) now binds
+those forms to battle appearances in inference and Replay, with recorded and
+emulator checks passing; physical battle retention still needs validation.
+This does not complete opponent-form recognition, owned-card form storage, or
+form-specific artwork.
+
 | Area | What exists | Remaining work and evidence |
 | --- | --- | --- |
 | Type and regional-form identification | Species OCR, active-type badge matching, reference species/moves, and configured teams. | Preserve form identity through owned cards, recognition, inference, and replay. Fix and validate badge glyph scaling before using it to eliminate moves. The [paired-match review](../verification/2026-10-20-paired-self-match-review.md) documents Alolan Raichu treated as ordinary Raichu and incorrect type matches; the current [type matcher](../../app/src/main/java/com/example/overdex/battle/observation/PokemonGoTypeIconMatcher.kt) still uses the inspected normalization. [OwnedPokemon](../../app/src/main/java/com/example/overdex/model/OwnedPokemon.kt) carries species ID but no explicit regional-form field. |
@@ -41,6 +56,58 @@ Signal Observatory, Timeline Viewer, Match Calibration, and Replay remain.
 | Confidence and OCR review | Nullable article scores, honest "Not scored" display, method-specific matching scores, and an offline crop review desk. | Measure correctness on held-out, human-labeled matches/devices before calling scores probabilities. Review labels are separate evidence, not automatic ML Kit retraining. See [confidence review](../verification/2026-10-20-confidence-and-ocr-review.md); the [correction follow-up](../verification/2026-10-20-ocr-corrections-and-calibration.md) found crop position problems rather than a reason to blindly add text aliases. |
 | Assisted registration — paused | One adjustable field layout, explicit field reads, cry assistance, draft review, and saving an owned card. | Automatic scrolling/layout learning and automatic classification of manually confirmed image fields. [GuidedRegistrationController.readField](../../app/src/main/java/com/example/overdex/data/registration/GuidedRegistrationController.kt) still asks the user to confirm image icons. Keep the user's pause in effect while battle reliability is prioritized. |
 | Trainer Comms sharing | Required email/password account; discovery by 12-digit GO code; direct and named group text conversations (up to eight trainers); saved drafts/history and pending/sent/failed delivery with idempotent retry; preserved read-only legacy history. | `.odxmatch` transfer, portable clips/compilations, participant management, invitations/blocking/reporting, and a two-phone production conversation acceptance test. See the [sharing plan](../plans/trainer-comms-sharing.md) and [foundation verification](../verification/2026-10-20-trainer-comms-foundation.md). |
+
+### October 21 battle follow-up
+
+The [Raichu review and notification update](../verification/2026-10-21-raichu-and-notification-controls.md)
+adds Start, Stop, Next match, and return-to-Overdex actions to the existing
+Droidball notification. It also records a remaining mixed-form battle gap:
+Team Select recognizes both Raichu forms, but bare battle text does not identify
+which same-name slot is active. The update blocks selecting the ordinary slot's
+configured Fast Move by name alone. The October 22 handoff below adds player
+appearance binding; live mixed-form acceptance remains open. Actual type crops
+in this match contain a menu button or team-card content,
+so crop placement and non-icon rejection both need validation. Result OCR and
+victory music agreed on WIN. League/achievement medal references were located,
+but a summary-image result trigger has not been enabled.
+
+Starting Droidball in the overworld no longer qualifies badge-colored scenery
+for retention. Badge caching requires independently established battle context,
+excludes HUD overlap, and resets by match/observation attempt. Early HUD requests
+keep navigation controls accessible; Ignore/Rescan reset the attempt. Live
+validation also exposed false Team Select acceptance from terrain colors: party
+acceptance now requires page-specific text with supporting visual evidence, and
+league classification waits for that acceptance. A type-icon guess alone no
+longer opens the battle HUD. The saved Use This Party aperture was widened through
+Match Calibration without moving any other region. The reconnected phone check
+now confirms both Raichu forms and Obstagoon and passes Ignore/Rescan recovery
+within one session. That phone build took about 28–31 seconds from Scan.
+The [scheduling follow-up](../verification/2026-10-21-team-select-scheduling.md)
+removes serial fallback blocking, coalesces pending reads, correlates asynchronous
+anchors by source time, and defers roster-name OCR until surface acceptance.
+Four emulator tests and all 1,023 JVM tests pass. Recorded-image scans took
+3.0–4.0 seconds without competing battle OCR and 17.4–21.8 seconds under continuous
+OCR contention in the emulator-only bundled-model build. These are not a phone
+speed comparison: Moondrop latency and native badge/HUD handoff remain unverified
+on the new build.
+
+The [October 22 species-attention follow-up](../verification/2026-10-22-species-ocr-attention.md)
+keeps active-badge OCR out of menu scans until a native badge, recent battle cue,
+or established battle context admits it. Early announcements and cries remain
+available; a manually opened HUD alone does not admit species OCR. Twelve
+emulator tests pass, including pre-countdown wake-up, Ignore/Rescan, and existing
+switch/occlusion regressions. Three recorded Team Select attempts with continuous
+announcement OCR took 5.0–5.2 seconds and retained both Raichu forms in their slots.
+These are emulator diagnostics; the new phone response time remains open.
+
+The [player form handoff](../verification/2026-10-22-player-form-handoff.md) preserves
+the scanned lead's form and configured moves through bare badge reads, scopes
+later label evidence to its original appearance, and separates player forms in
+energy/faint tracking and Replay charge buttons. The saved Raichu fixture now
+replays Alolan Raichu with Spark. All 1,041 JVM tests and one emulator integration
+test pass. A same-name switch needs entry and slot/form evidence; no opponent
+form is inferred from the player's roster. Physical live validation, active-type
+crop quality and form-specific artwork remain open.
 
 ## Smaller gaps and deferred product decisions
 

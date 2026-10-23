@@ -9,6 +9,9 @@
 **Current feature gaps and roadmap review:** [Feature status](docs/reference/current-feature-status.md)
 (October 20, 2026; includes Match Sight retirement).
 
+**Current implementation priorities:** [Battle priorities](docs/plans/battle-priorities.md)
+(October 21, 2026; ordered by benefit before, during, and after battle).
+
 **Terms and component navigation:** [Verified navigation index](docs/reference/overdex-navigation-index.md)
 (code-checked October 12, 2026; includes the preserved supplied inventory and
 corrections to its method names and responsibilities).
@@ -165,9 +168,14 @@ before the accepted start even if delivered later.
 
 - [PersistedSpeciesWitness.kt](app/src/main/java/com/example/overdex/battle/observation/PersistedSpeciesWitness.kt) is the formal persisted-crop species Witness. Its accepted result enters Custody and the Timeline.
 - [LiveOverlaySpeciesPipeline.kt](app/src/main/java/com/example/overdex/battle/observation/LiveOverlaySpeciesPipeline.kt) owns the live active-badge OCR lane. It preserves its crop, waits for the corresponding Timeline article, then submits raw readings and accepted species testimony through Custody. At shared OCR admission it selects the newest preserved crop, skips already-confirmed checks, and records queue/native-read timing in `*_SPECIES_OVERLAY_PIPELINE_LATENCY` diagnostics. Superseded raw crop articles and source timestamps remain intact. The HUD and replay consume the same identity evidence.
+  Before battle context is established, this pipeline admits active-name crops only
+  after a native badge probe or a bounded species-check cue. Manual HUD presentation
+  and recovery timers alone do not admit menu scenery to OCR. Early announcements
+  remain independent; the probe never creates a Match-start or species Article.
 - [SpeciesNameRecognizer.kt](app/src/main/java/com/example/overdex/data/observation/SpeciesNameRecognizer.kt) uses one urgent turn in the shared Latin reader for its bounded treatments. There is no separate player/opponent mutex ahead of that queue; the backend still processes one read at a time and retains bitmap ownership through cancellation.
 - [PersistedAnnouncementSpeciesWitness.kt](app/src/main/java/com/example/overdex/battle/observation/PersistedAnnouncementSpeciesWitness.kt), team-roster testimony, and battle-cry candidates provide independent evidence that may support or refute identity.
 - [SpeciesCheckCoordinator.kt](app/src/main/java/com/example/overdex/battle/observation/SpeciesCheckCoordinator.kt) schedules burst checks around cues rather than treating species OCR as a permanent high-rate workload.
+- [PlayerActiveIdentityInference.kt](app/src/main/java/com/example/overdex/battle/inference/PlayerActiveIdentityInference.kt) binds player appearances to a scanned lead or corroborated roster slot. Match preserves raw names and appends a separate form/slot conclusion for move and energy consumers. [ReplayPlayerFormIdentity.kt](app/src/main/java/com/example/overdex/battle/replay/ReplayPlayerFormIdentity.kt) applies the same rules to old recordings and consumes new identity Articles. See [form handoff validation](docs/verification/2026-10-22-player-form-handoff.md); physical mixed-form battle acceptance remains pending.
 
 [SpeciesBadgeTextLocator.kt](app/src/main/java/com/example/overdex/battle/observation/SpeciesBadgeTextLocator.kt)
 can recover a nearby badge name row before OCR. It searches only within two
@@ -211,7 +219,8 @@ captured. See the [October 12 verification](docs/verification/2026-10-12-battle-
 - [AudioCaptureWitness.kt](app/src/main/java/com/example/overdex/battle/audio/AudioCaptureWitness.kt) preserves requested WAV artifacts before publishing `AudioCaptured`, records unavailable-window diagnostics, and excludes cues from other Matches. Missing retained audio is not replaced by sound from delivery time.
 - [PersistedBattleCryCandidateWitness.kt](app/src/main/java/com/example/overdex/battle/audio/PersistedBattleCryCandidateWitness.kt) preserves ranked cry candidates as evidence rather than silently promoting the strongest candidate to fact.
 - [PreparedCryReferenceIndex.kt](app/src/main/java/com/example/overdex/battle/audio/PreparedCryReferenceIndex.kt) verifies and prepares bundled cry references once per app process, off the UI thread. Only reference features are reused; live audio is independently preserved and measured. `BattleCryListeningCue` excludes result music, QTE bubbles and attack effects from species matching and species-check triggers. `WavPcm16` decodes samples in bulk rather than allocating a buffer per sample. Its separate bundled-reference reader finalizes the known zero-length PCM export headers in a temporary copy, after asset verification; captured WAV testimony remains strict and source assets remain unchanged.
-- [FastMoveSoundMeasurement.kt](app/src/main/java/com/example/overdex/battle/audio/FastMoveSoundMeasurement.kt) measures sound timing/type features that can corroborate visual cadence.
+- [LiveFastMoveSoundWitness.kt](app/src/main/java/com/example/overdex/battle/audio/LiveFastMoveSoundWitness.kt) reads the shared PCM stream independently of HP/visual cues. Any countdown glyph arms it; five distinct recorded faints, an accepted result, or a manual stop closes it. A bounded 1.2-second analysis window advances every 200 ms; one background worker skips stale overlapping windows under load and reports its work rate. Strong spectral matches preserve the analyzed mono audio before publishing measurements. The historical visually-cued reader in [FastMoveSoundMeasurement.kt](app/src/main/java/com/example/overdex/battle/audio/FastMoveSoundMeasurement.kt) remains available but is no longer registered for live matches.
+- Audio reference matches can identify a Fast Move after repeated distinct occurrences and unique legal side attribution. Entry/cry check boundaries allow recent sounds to precede readable species badges without assigning them to the departing combatant. Shared sounds remain unassigned; this reader does not itself emit attack counts or energy. Spectral similarity is not a measured accuracy probability. See the [October 20 audio verification](docs/verification/2026-10-20-independent-fast-move-audio.md).
 
 ## Presentation
 
@@ -222,6 +231,13 @@ to react quickly, but it is not the historical authority.
 The HUD can show known species and possible moves before a specific move has
 been identified. Hazard emphasis is derived from reference knowledge and the
 player's active typing. Presentation decisions never alter captured testimony.
+Opponent cards show sprites without repeated printed species names; GO's team
+badge supplies the active name. Cards are 44 dp high with a 42 dp sprite area
+(constrained by the available card width), replacing the 48 dp cards and 38 dp
+sprites. Species names remain in accessibility descriptions. Outside padding,
+badge alignment, faint marks, move confirmations, and long-press dragging remain.
+The HUD's cached image request trims fully transparent sprite margins at display
+time before fitting the picture into its card; bundled source artwork is unchanged.
 
 The battle HUD uses an 80%-opaque white surface with complementary upper corners
 and the same width-scaled 27/415 corner radius at its lower edge. Saved HUD Y
@@ -230,8 +246,8 @@ without rewriting the profile. The battle window is capturable rather than
 `FLAG_SECURE` (which created a black rectangle in whole-screen recordings).
 Registration/team editing retain their private-window/capture-pause behavior.
 `CapturedVisualFrame.overlayRegion` describes the visible presentation footprint;
-the active-species lane refuses name crops intersecting it so our own sprite-card
-labels cannot confirm identity. Announcement inference still requires game phrases,
+the active-species lane refuses name crops intersecting it to guard against
+capturing our own presentation. Announcement inference still requires game phrases,
 not isolated species/move names from the HUD. On-device tests can read retained
 species/announcement pixels through the 80% background, but overlapping HUD ink
 still obscures them; this is not proof of reliable live read-through.

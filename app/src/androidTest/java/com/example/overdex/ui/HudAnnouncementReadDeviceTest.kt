@@ -96,7 +96,7 @@ class HudAnnouncementReadDeviceTest {
             val visible = shot("visible")
             assertNotEquals("Wait for badge before drawing", background,
                 visible.getPixel(location[0] + 35, location[1] + 45))
-            for (label in listOf("POSSIBLE FAST", "POSSIBLE CHARGED", "POSITION", "QTE BOX", "DRAG HUD / SHELLS")) {
+            for (label in listOf("Sneasel", "POSSIBLE FAST", "POSSIBLE CHARGED", "POSITION", "QTE BOX", "DRAG HUD / SHELLS")) {
                 compose.onNodeWithText(label).assertDoesNotExist()
             }
             compose.onNodeWithContentDescription("Move HUD").assertDoesNotExist()
@@ -112,7 +112,7 @@ class HudAnnouncementReadDeviceTest {
             }
             val sprite = compose.onNodeWithContentDescription("Sneasel sprite", useUnmergedTree = true)
                 .fetchSemanticsNode().boundsInRoot
-            assertEquals(38f * compose.activity.resources.displayMetrics.density, sprite.width, 1f)
+            assertEquals(42f * compose.activity.resources.displayMetrics.density, sprite.height, 1f)
             val originalPosition = location.copyOf()
             val initialHeight = overlay.height
             compose.onNodeWithText("Triple Axel", useUnmergedTree = true).performTouchInput {

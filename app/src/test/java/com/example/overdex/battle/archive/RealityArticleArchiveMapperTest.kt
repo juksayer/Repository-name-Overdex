@@ -46,6 +46,35 @@ import org.junit.Test
 
 class RealityArticleArchiveMapperTest {
 
+    @Test fun `active form binding archives separately from the original bare badge`() {
+        val raw = RealityArticleArchiveMapper.map(article("badge", com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed(
+            com.example.overdex.battle.custody.ActivePokemonSide.PLAYER, "Raichu", 26), monotonicTimeNanos = 100L))
+        val bound = RealityArticleArchiveMapper.map(article("binding", com.example.overdex.battle.custody.PlayerActiveIdentityResolved(
+            "Raichu", "Raichu (Alolan)", 26, 1, 100L, "OBSERVED_TEAM_SELECT_LEAD_AND_PLAYER_SPECIES"),
+            monotonicTimeNanos = 100L).copy(predecessorIds = listOf(ArticleId("badge"), ArticleId("scan"))))
+        val archive = MatchArchive(matchId = "match-a", articles = listOf(raw, bound))
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        assertEquals("Raichu", (restored.articles.first().payload as ArchivedActivePokemonSpeciesWitnessed).speciesName)
+        assertEquals(1, (restored.articles.last().payload as ArchivedPlayerActiveIdentityResolved).teamSlot)
+        assertEquals(listOf("badge", "scan"), restored.articles.last().predecessorIds)
+    }
+
+    @Test fun `roster form and separation survive serialization and old roster records load`() {
+        val payload = com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed(
+            1, "Raichu (Alolan)", 26, "fALOLA.s", 0.22f)
+        val archived = RealityArticleArchiveMapper.map(article("form", payload,
+            evidenceReferences = listOf("sprite-crop"), monotonicTimeNanos = 123L))
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val decoded = json.decodeFromString(ArchivedRealityArticle.serializer(),
+            json.encodeToString(ArchivedRealityArticle.serializer(), archived))
+        assertEquals(archived, decoded)
+        assertEquals("fALOLA.s", (decoded.payload as ArchivedPlayerTeamRosterSlotWitnessed).spriteVariant)
+        val old = json.decodeFromString(ArchivedTestimonyPayload.serializer(),
+            """{"kind":"player_team_roster_slot","slot":1,"speciesName":"Raichu","speciesId":26}""")
+        assertEquals(ArchivedPlayerTeamRosterSlotWitnessed(1, "Raichu", 26), old)
+    }
+
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 

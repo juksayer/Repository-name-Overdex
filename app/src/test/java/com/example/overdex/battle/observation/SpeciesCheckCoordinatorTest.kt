@@ -6,6 +6,28 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SpeciesCheckCoordinatorTest {
+    @Test fun `prebattle wake requires a bounded battle cue not a recovery timer`() {
+        assertTrue(checks.captureEnabled(side))
+        assertFalse(checks.hasBattleCue(side))
+        for (reason in listOf("ENTRY", "CRY", "VS", "COUNTDOWN", "MATCH_START", "SWITCH", "FAINT")) {
+            checks.restartObservationAttempt()
+            checks.request(side, reason, "cue-$reason")
+            assertTrue(reason, checks.hasBattleCue(side))
+            assertFalse(checks.hasBattleCue(ActivePokemonSide.PLAYER))
+            time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS
+            assertFalse("Expired $reason must not keep menu OCR running", checks.hasBattleCue(side))
+        }
+    }
+
+    @Test fun `ignore rescan and stop retire prebattle wake cues`() {
+        checks.request(side, "CRY", "cry")
+        checks.restartObservationAttempt()
+        assertFalse(checks.hasBattleCue(side))
+        checks.request(side, "ENTRY", "entry")
+        checks.stop()
+        assertFalse(checks.hasBattleCue(side))
+    }
+
     @Test fun `confirmed window leaves queued pixels unread but a new entry is eligible`() {
         checks.request(side, "ENTRY", "sneasel")
         val first = checks.windowFor(side, time)!!

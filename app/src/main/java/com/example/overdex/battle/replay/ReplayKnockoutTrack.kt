@@ -18,6 +18,7 @@ internal class ReplayKnockoutTrack(
         if (current < 0) return@mapNotNull null
         fun matches(index: Int) = index >= 0 && key(appearances[index].speciesName) == key(name)
         val index = when {
+            matches(current - 1) && at - appearances[current].atNanos <= LATE_FAINT_NANOS -> current - 1
             matches(current) -> current
             // Badge counts sometimes arrive just after the replacement's name.
             // Only the immediately outgoing, explicitly named actor can qualify.

@@ -18,11 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
@@ -47,6 +48,7 @@ import com.example.overdex.battle.observation.OpponentMovePossibilities
 import com.example.overdex.battle.observation.ObservedOpponentSpecies
 import com.example.overdex.data.LocalSpriteProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.overdex.battle.observation.OverlayMovePossibility
 import com.example.overdex.battle.observation.DroidballService
 import kotlin.math.roundToInt
@@ -109,7 +111,7 @@ fun BattleOverlay(
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
 ) {
-    val mode by DroidballOverlayPresentation.mode.collectAsState()
+    val requestedMode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
     val diagnostics by DroidballService.captureDiagnostics.collectAsState()
     val opponentSpecies by DroidballOverlayPresentation.opponentSpecies.collectAsState()
@@ -119,6 +121,7 @@ fun BattleOverlay(
     val configuredPlayerTeam by DroidballOverlayPresentation.configuredPlayerTeam.collectAsState()
     val layoutEditing = false
     val badgeSeen by DroidballOverlayPresentation.battleBadgeSeen.collectAsState()
+    val mode = com.example.overdex.battle.observation.battleOverlayDisplayMode(requestedMode, badgeSeen)
     var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
     var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
     var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
@@ -495,46 +498,47 @@ private fun OverlayControl(label: String, action: () -> Unit) {
 
 @Composable
 private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
+    val context = LocalContext.current
+    val assets = context.assets
+    val spriteUrl = remember(assets, species?.speciesId) {
+        species?.speciesId?.let { LocalSpriteProvider(assets).getSpriteUrl(it) }
+            ?.takeIf(String::isNotBlank)
+    }
+    val spriteRequest = remember(context, spriteUrl) {
+        spriteUrl?.let {
+            ImageRequest.Builder(context).data(it).allowHardware(false)
+                .transformations(HudSpriteTrimTransformation).build()
+        }
+    }
     Box(
-        modifier = Modifier.weight(1f).height(48.dp)
+        modifier = Modifier.weight(1f).height(44.dp)
             .background(Color(0x18005E5B), RoundedCornerShape(6.dp))
             .border(1.dp, Color(0x55005E5B), RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
     ) {
-        if (species == null) {
+        if (species == null || spriteUrl == null) {
             Text("?", color = Color(0xFF397D77), fontSize = 14.sp, fontWeight = FontWeight.Bold)
         } else {
-            val spriteUrl = species.speciesId?.let { id ->
-                LocalSpriteProvider(LocalContext.current.assets).getSpriteUrl(id)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (spriteUrl != null) {
-                    AsyncImage(
-                        model = spriteUrl,
-                        contentDescription = "${species.speciesName} sprite",
-                        modifier = Modifier.size(38.dp).alpha(if (species.isFainted) 0.35f else 1f),
-                        colorFilter = if (species.isFainted) {
-                            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-                        } else null
-                    )
-                }
-                Text(
-                    species.speciesName,
-                    color = Color(0xFF397D77),
-                    fontSize = 6.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    lineHeight = 7.sp,
-                )
-            }
-            if (species.isFainted) {
-                Text(
-                    "×",
-                    color = Color(0xFFD32F2F),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black
-                )
-            }
+            // GO's badge already names the active Pokémon. Use the entire card
+            // for its picture, retaining the name for accessibility only.
+            AsyncImage(
+                model = spriteRequest,
+                contentDescription = "${species.speciesName} sprite",
+                modifier = Modifier.size(42.dp).alpha(if (species.isFainted) 0.35f else 1f)
+                    .semantics { stateDescription = if (species.isFainted) "Fainted" else "Not fainted" },
+                contentScale = ContentScale.Fit,
+                colorFilter = if (species.isFainted) {
+                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                } else null
+            )
+        }
+        if (species?.isFainted == true) {
+            Text(
+                "×",
+                color = Color(0xFFD32F2F),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black
+            )
         }
     }
 }

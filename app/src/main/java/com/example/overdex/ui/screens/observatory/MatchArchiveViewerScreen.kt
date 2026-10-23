@@ -333,6 +333,8 @@ private fun ArchiveArticleRow(
         }
 
         val payloadText = when (val p = article.payload) {
+            is com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved ->
+                "PLAYER IDENTITY: ${p.speciesName} [slot=${p.teamSlot ?: "unresolved"}; ${p.basis}]"
             is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}]"
             is com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (p.agrees) "AGREES" else "CONFLICTS"} [music=${p.musicTheme}; recorded=${p.recordedResult}]"
             is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"
@@ -454,6 +456,8 @@ private fun ArticleDetailsOverlay(
             DetailField(label = "SOURCE ID", value = article.sourceId)
             
             val payloadText = when (val p = article.payload) {
+                is com.example.overdex.battle.archive.ArchivedPlayerActiveIdentityResolved ->
+                    "PLAYER IDENTITY: ${p.speciesName}\nObserved label: ${p.observedSpeciesName}\nTeam slot: ${p.teamSlot ?: "unresolved"}\nAppearance: ${p.appearanceStartedAtNanos}\nBasis: ${p.basis}"
                 is com.example.overdex.battle.archive.ArchivedMatchResultMusicMeasured -> "RESULT MUSIC [${p.theme}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}; windows=${p.confirmingWindows}; reference=${p.referenceSha256}; reference offset=${p.referenceOffsetNanos}; duration=${p.durationNanos}]"
                 is com.example.overdex.battle.archive.ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (p.agrees) "AGREES" else "CONFLICTS"} [music=${p.musicTheme}; recorded=${p.recordedResult}]"
                 is com.example.overdex.battle.archive.ArchivedStatChangeSoundChecked -> "STAT SOUND CHECK [${p.status}; candidate=${p.candidateCue ?: "none"}; similarity=${p.similarity}; runner-up=${p.runnerUpSimilarity}]"

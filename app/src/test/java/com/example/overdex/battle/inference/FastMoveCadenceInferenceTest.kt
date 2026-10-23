@@ -28,6 +28,76 @@ import kotlinx.coroutines.runBlocking
 class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
 
+    @Test fun `resolved ordinary slot keeps Volt Switch when returning after Alolan Spark`() = runBlocking {
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
+        engine.accept(article("a-config", PlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26, "Spark", listOf("Wild Charge"))))
+        engine.accept(article("k-config", PlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Thunder"))))
+        fun identity(id: String, name: String, slot: Int, at: Long) = article(id,
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, name, 26,
+                playerTeamSlot = slot, appearanceStartedAtNanos = at)).copy(monotonicTimeNanos = at)
+        val alolan = engine.accept(identity("a", "Raichu (Alolan)", 1, 1))
+        assertEquals("Spark", (alolan.single().payload as FastMoveIdentified).moveName)
+        val ordinary = engine.accept(identity("k", "Raichu", 2, 10))
+        assertEquals("Volt Switch", (ordinary.single().payload as FastMoveIdentified).moveName)
+        assertTrue(engine.accept(identity("late", "Raichu (Alolan)", 1, 5)).isEmpty())
+        assertEquals("Volt Switch", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        val returning = engine.accept(identity("return", "Raichu (Alolan)", 1, 20))
+        assertEquals("Spark", (returning.single().payload as FastMoveIdentified).moveName)
+        engine.accept(article("a-ko", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.PLAYER, "Raichu (Alolan)", 26)).copy(monotonicTimeNanos = 25))
+        val surviving = engine.accept(identity("k-survives", "Raichu", 2, 30))
+        assertEquals("Volt Switch", (surviving.single().payload as FastMoveIdentified).moveName)
+    }
+
+    @Test fun `unresolved same name entry cannot retain previous ordinary forms move`() = runBlocking {
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
+        engine.accept(article("a-config", PlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26, "Spark", listOf("Wild Charge"))))
+        engine.accept(article("k-config", PlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Thunder"))))
+        engine.accept(article("known", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu", 26,
+            playerTeamSlot = 2, appearanceStartedAtNanos = 1)).copy(monotonicTimeNanos = 1))
+        val result = engine.accept(article("unknown", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu", 26,
+            appearanceStartedAtNanos = 10)).copy(monotonicTimeNanos = 10))
+        assertTrue(result.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+    }
+
+    @Test fun `explicit Alolan name selects its pool before shared dex number`() = runBlocking {
+        val alolan = raichu("Raichu (Alolan)", false)
+        val ordinary = raichu("Raichu", true)
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(alolan, ordinary))
+        engine.accept(article("alolan", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, alolan.name, 26)))
+        assertEquals(listOf("Spark", "Volt Switch"), engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.remainingMoveNames)
+    }
+
+    @Test fun `player roster form survives bare OCR without changing mirror opponent pool`() = runBlocking {
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
+        engine.accept(article("roster-form", com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed(
+            1, "Raichu (Alolan)", 26, "fALOLA", .2f)))
+        engine.accept(article("bare-roster", com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed(1, "Raichu", 26)))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu", 26)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu", 26)))
+        assertTrue(engine.candidateSnapshot(ActivePokemonSide.PLAYER)!!.remainingMoveNames.none { it == "Charm" })
+        assertTrue("Charm" in engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!.remainingMoveNames)
+    }
+
+    private fun raichu(name: String, charm: Boolean) = Pokemon(26, name,
+        if (charm) listOf(PokemonType.ELECTRIC) else listOf(PokemonType.ELECTRIC, PokemonType.PSYCHIC), "",
+        fastMoves = listOf(move("Spark", 2, 7, PokemonType.ELECTRIC), move("Volt Switch", 4, 16, PokemonType.ELECTRIC)) +
+            if (charm) listOf(move("Charm", 3, 6, PokemonType.FAIRY)) else emptyList(), chargedMoves = emptyList())
+
+    @Test fun `two configured Raichu forms do not let bare badge select ordinary slots move`() = runBlocking {
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
+        engine.accept(article("alolan-team", PlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26, "Spark", listOf("Wild Charge"))))
+        engine.accept(article("ordinary-team", PlayerTeamSlotConfigured(2, "Raichu", 26, "Volt Switch", listOf("Thunder"))))
+        val result = engine.accept(article("bare-badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu", 26)))
+        assertTrue(result.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        // Both forms remain possible until evidence identifies which teammate is active.
+        assertTrue("Spark" in engine.candidateSnapshot(ActivePokemonSide.PLAYER)!!.remainingMoveNames)
+        val explicit = engine.accept(article("form", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu (Alolan)", 26)))
+        assertEquals("Spark", (explicit.single().payload as FastMoveIdentified).moveName)
+    }
+
     @Test fun `damage and delayed flashes from two hits are one cadence sample not two independent votes`() = runBlocking {
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
@@ -96,6 +166,68 @@ class FastMoveCadenceInferenceTest {
         assertTrue(engine.accept(referenceSound("two", "Spark", 3_000_000_000L)).isEmpty())
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
         assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+    }
+
+    @Test fun `entry sound before readable badge waits for the incoming species and cites its boundary`() = runBlocking {
+        val player = Pokemon(460, "Abomasnow", listOf(PokemonType.ICE), "Sinnoh",
+            fastMoves = listOf(move("Powder Snow", 2, 8)), chargedMoves = emptyList())
+        val old = Pokemon(364, "Sealeo", listOf(PokemonType.WATER), "Hoenn",
+            fastMoves = listOf(move("Water Gun", 1, 3)), chargedMoves = emptyList())
+        val incoming = Pokemon(101, "Electrode", listOf(PokemonType.ELECTRIC), "Kanto",
+            fastMoves = listOf(move("Spark", 2, 8), move("Tackle", 1, 3)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(player, old, incoming))
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, player.name, player.id)))
+        engine.accept(article("old", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, old.name, old.id)))
+        engine.accept(entry("incoming-cry", ActivePokemonSide.OPPONENT, 3_000_000_000L))
+        assertTrue(engine.accept(referenceSound("early-one", "Spark", 3_100_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("early-two", "Spark", 4_100_000_000L)).isEmpty())
+        assertEquals("Sealeo", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.speciesName)
+        val result = engine.accept(article("new-badge", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, incoming.name, incoming.id)).copy(monotonicTimeNanos = 5_000_000_000L))
+            .single { (it.payload as? FastMoveIdentified)?.basis?.startsWith("AUDIO_REFERENCE") == true }
+        assertEquals("Spark", (result.payload as FastMoveIdentified).moveName)
+        assertEquals("Electrode", result.payload.speciesName)
+        assertTrue(result.predecessorIds.containsAll(listOf("incoming-cry", "new-badge", "early-one", "early-two").map(::ArticleId)))
+        // The audio boundary must not loosen stale badge rejection for any other witness.
+        engine.accept(article("stale-old", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, old.name, old.id))
+            .copy(monotonicTimeNanos = 4_000_000_000L))
+        assertEquals("Electrode", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.speciesName)
+    }
+
+    @Test fun `an unresolved entry cannot award sounds to the departing species even with a legal move`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(entry("switch", ActivePokemonSide.OPPONENT, 3_000_000_000L))
+        assertTrue(engine.accept(referenceSound("one", "Spark", 3_100_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("two", "Spark", 4_100_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("still-unresolved", "Spark", 7_100_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        // A false alarm can be resolved by a fresh confirmation of the unchanged badge.
+        val result = engine.accept(article("same-badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Electrode", 101))
+            .copy(monotonicTimeNanos = 8_500_000_000L)).single()
+        assertEquals("Spark", (result.payload as FastMoveIdentified).moveName)
+        assertTrue(ArticleId("same-badge") in result.predecessorIds)
+    }
+
+    @Test fun `pending sound from before an entry cannot be transferred to the replacement`() = runBlocking {
+        val sharedMoves = listOf(move("Spark", 2, 8), move("Tackle", 1, 3))
+        val old = Pokemon(26, "Raichu", listOf(PokemonType.ELECTRIC), "Kanto",
+            fastMoves = sharedMoves, chargedMoves = emptyList())
+        val opponent = Pokemon(101, "Electrode", listOf(PokemonType.ELECTRIC), "Kanto",
+            fastMoves = sharedMoves, chargedMoves = emptyList())
+        val incoming = Pokemon(460, "Abomasnow", listOf(PokemonType.ICE), "Sinnoh",
+            fastMoves = listOf(move("Powder Snow", 2, 8)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(old, opponent, incoming))
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(article("old-player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, old.name, old.id)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, opponent.name, opponent.id)))
+        assertTrue(engine.accept(referenceSound("old-one", "Spark", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("old-two", "Spark", 3_000_000_000L)).isEmpty())
+        engine.accept(entry("switch", ActivePokemonSide.PLAYER, 4_000_000_000L))
+        engine.accept(article("new-badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, incoming.name, incoming.id))
+            .copy(monotonicTimeNanos = 5_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
     }
 
     @Test fun `unknown player move pool cannot be treated as proof that only opponent can make sound`() = runBlocking {
@@ -951,8 +1083,8 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
-    fun `configured form name resolves by unambiguous species id`() = runBlocking {
-        val pokemon = Pokemon(711, "Gourgeist", listOf(PokemonType.GHOST, PokemonType.GRASS), "Kalos",
+    fun `configured form name resolves its exact reference from a bare badge`() = runBlocking {
+        val pokemon = Pokemon(711, "Gourgeist (Average)", listOf(PokemonType.GHOST, PokemonType.GRASS), "Kalos",
             fastMoves = listOf(move("Incinerate", 5, 20), move("Razor Leaf", 2, 4, PokemonType.GRASS)),
             chargedMoves = emptyList())
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
@@ -961,6 +1093,13 @@ class FastMoveCadenceInferenceTest {
             .single().payload as FastMoveIdentified
         assertEquals("Incinerate", identity.moveName)
         assertEquals("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES", identity.basis)
+    }
+
+    @Test fun `unavailable form reference never borrows moves from a shared dex number`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(raichu("Raichu", true)))
+        engine.accept(article("team", PlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26, "Charm", listOf("Thunder Punch"))))
+        assertTrue(engine.accept(article("badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu", 26))).isEmpty())
+        assertTrue(engine.candidateSnapshot(ActivePokemonSide.PLAYER)!!.remainingMoveNames.isEmpty())
     }
 
     @Test

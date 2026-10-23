@@ -50,6 +50,10 @@ class ChargedMoveAnnouncementInference(
         val isAnnouncement = article.sourceId.id == ANNOUNCEMENT_SOURCE && article.payload is RawTestimony
         if (!updatesControls && !isAnnouncement && article.payload !is ActivePokemonSpeciesWitnessed) return null
         (article.payload as? ActivePokemonSpeciesWitnessed)?.let {
+            if (it.appearanceStartedAtNanos != null) activeSpeciesHistory.removeAll { previous ->
+                (previous.payload as? ActivePokemonSpeciesWitnessed)?.side == it.side &&
+                    previous.monotonicTimeNanos == it.appearanceStartedAtNanos
+            }
             activeSpeciesHistory.addLast(article)
             while (activeSpeciesHistory.size > 128) activeSpeciesHistory.removeFirst()
         }
@@ -102,10 +106,16 @@ class ChargedMoveAnnouncementInference(
         val supportingIds: List<ArticleId>
         val basis: String
         if (speciesName != null) {
-            pokemon = pokemon(speciesName) ?: return null
-            val activeSides = activeSpeciesBySide.filterValues { normalize(it) == normalize(speciesName) }.keys
+            // GO's announcement uses the bare species label. Side selection
+            // compares that label; the selected appearance supplies the form's
+            // legal movepool. A mirror's player roster never supplies its opponent.
+            val activeSides = activeSpeciesBySide.filterValues {
+                com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(it) ==
+                    com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(speciesName)
+            }.keys
             val selection = if (ActivePokemonSide.PLAYER in activeSides) {
-                selectedPlayerMove(pokemon, moveName, at, requireReady = activeSides.size > 1)
+                val player = pokemon(activeSpeciesBySide.getValue(ActivePokemonSide.PLAYER)) ?: return null
+                selectedPlayerMove(player, moveName, at, requireReady = activeSides.size > 1)
             } else null
             side = when {
                 activeSides.size == 1 -> activeSides.single()
@@ -113,6 +123,7 @@ class ChargedMoveAnnouncementInference(
                 activeSides.isNotEmpty() -> null // Mirrors still need independent direction evidence.
                 else -> rosterSideForSpecies(speciesName)
             } ?: return null
+            pokemon = pokemon(activeSpeciesBySide[side] ?: speciesName) ?: return null
             val exact = bestMoveMatches(moveName, pokemon.chargedMoves).singleOrNull()?.move
             move = exact ?: selection?.move ?: return null
             if (exact == null || activeSides.size > 1) {

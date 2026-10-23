@@ -9,6 +9,26 @@ import org.junit.Test
 
 class PokemonRepositoryTest {
 
+    @Test fun `form survives repository lookup and sprite reference conversion`() = runBlocking {
+        val provider = object : SpriteProvider {
+            override fun getSpriteUrl(id: Int, isShiny: Boolean, isShadow: Boolean, isPurified: Boolean) = "sprite/$id"
+            override fun exists(id: Int, isShiny: Boolean) = true
+        }
+        val repository = PokemonRepository(FakePokemonDao(), provider,
+            GameMasterLoader { java.io.File("src/main/assets/gamemaster.json").readText() })
+        for (pokemon in listOf(repository.getPokemonByName("Raichu (Alolan)"),
+            repository.getPokemonBySpriteVariant(26, "fALOLA.s"))) {
+            assertEquals("Raichu (Alolan)", pokemon?.name)
+            org.junit.Assert.assertTrue(com.example.overdex.model.PokemonType.PSYCHIC in pokemon!!.types)
+            org.junit.Assert.assertFalse(pokemon.fastMoves.any { it.name == "Charm" })
+            org.junit.Assert.assertTrue(pokemon.fastMoves.any { it.name == "Spark" })
+        }
+        // The first form in a catalogue is not visual proof of that form.
+        assertEquals("Gourgeist", repository.getPokemonByName("Gourgeist")?.name)
+        assertEquals("Gourgeist", repository.getPokemonById(711)?.name)
+        assertEquals("Gourgeist (Super)", repository.getPokemonByName("Gourgeist (Super)")?.name)
+    }
+
     @Test
     fun `getPokemonById(4) returns Pokemon with correct sprite URL from SpriteProvider`() = runBlocking {
         // Arrange
@@ -53,7 +73,7 @@ class PokemonRepositoryTest {
             } else null
         }
 
-        override suspend fun getPokemonByName(name: String): PokemonEntity? = TODO()
+        override suspend fun getPokemonByName(name: String): PokemonEntity? = null
         override suspend fun getAllPokemonNames(): List<String> = TODO()
         override suspend fun getCount(): Int = 0
         override suspend fun insertAll(pokemon: List<PokemonEntity>) = TODO()

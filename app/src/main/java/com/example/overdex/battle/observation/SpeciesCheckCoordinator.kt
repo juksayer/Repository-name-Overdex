@@ -127,6 +127,13 @@ class SpeciesCheckCoordinator(
 
     @Synchronized fun isChecking(side: ActivePokemonSide): Boolean = states.getValue(side).window != null
 
+    /** A recovery timer is not evidence that navigation has reached a battlefield. */
+    @Synchronized fun hasBattleCue(side: ActivePokemonSide): Boolean {
+        if (stopped) return false
+        val window = states.getValue(side).window ?: return false
+        return window.reason in BATTLE_CUE_REASONS && now() - window.openedAt in 0 until MAX_WINDOW_NANOS
+    }
+
     /** Skip leftover crops from a confirmed/superseded check before native OCR starts. */
     @Synchronized fun needsReading(side: ActivePokemonSide, windowId: Long, capturedAt: Long): Boolean {
         if (stopped) return false
@@ -197,5 +204,6 @@ class SpeciesCheckCoordinator(
         const val RECOVERY_INTERVAL_NANOS = 5_000_000_000L
         const val MAX_RETAINED_WINDOWS = 8
         private val LIFECYCLE_REASONS = setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START")
+        private val BATTLE_CUE_REASONS = LIFECYCLE_REASONS + setOf("VS", "COUNTDOWN")
     }
 }

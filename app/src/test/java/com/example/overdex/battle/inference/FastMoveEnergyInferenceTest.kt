@@ -20,6 +20,33 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveEnergyInferenceTest {
+    @Test fun `delayed bare Raichu hits get energy from their resolved appearance only`() = runBlocking {
+        val spark = Move("Spark", PokemonType.ELECTRIC, 4, 7, true, 2)
+        val volt = Move("Volt Switch", PokemonType.ELECTRIC, 12, 16, true, 4)
+        val alolan = Pokemon(26, "Raichu (Alolan)", listOf(PokemonType.ELECTRIC, PokemonType.PSYCHIC), "",
+            fastMoves = listOf(spark, volt), chargedMoves = emptyList())
+        val engine = FastMoveEnergyInference(Knowledge(alolan, alolan.copy(name = "Raichu")))
+        fun appearance(name: String, slot: Int?, at: Long) = article("species-$at-$slot",
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, name, 26,
+                playerTeamSlot = slot, appearanceStartedAtNanos = at), at)
+        fun move(name: String, move: String, at: Long) = identity("move-$at", name, move, at,
+            "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES").let {
+                it.copy(payload = (it.payload as FastMoveIdentified).copy(side = ActivePokemonSide.PLAYER))
+            }
+        fun hit(id: String, at: Long) = article(id, FastMoveUseObserved(id, ActivePokemonSide.PLAYER,
+            ActivePokemonSide.OPPONENT, "appearance", "Raichu", listOf("HP_BORDER_PULSE")), at)
+        engine.accept(appearance("Raichu", null, 1))
+        assertTrue(engine.accept(hit("early", 2)).isEmpty())
+        engine.accept(appearance("Raichu (Alolan)", 1, 1))
+        assertEquals(7, engine.accept(move("Raichu (Alolan)", "Spark", 3)).single().payload.totalEnergyGenerated)
+        engine.accept(appearance("Raichu", 2, 10))
+        assertTrue(engine.accept(move("Raichu", "Volt Switch", 11)).isEmpty())
+        assertEquals(16, engine.accept(hit("ordinary", 12)).single().payload.totalEnergyGenerated)
+        assertEquals(7, engine.accept(hit("late-alolan", 4)).single().payload.totalEnergyGenerated)
+        engine.accept(appearance("Raichu (Alolan)", 1, 20))
+        engine.accept(move("Raichu (Alolan)", "Spark", 21))
+        assertEquals(7, engine.accept(hit("return", 22)).single().payload.totalEnergyGenerated)
+    }
     @Test fun `reference identity enables energy only for separately observed uses`() = runBlocking {
         val engine = FastMoveEnergyInference(Knowledge(sealeo))
         engine.accept(species("species", "Sealeo"))

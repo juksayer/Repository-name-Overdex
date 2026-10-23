@@ -92,6 +92,17 @@ data class ArchivedActivePokemonSpeciesWitnessed(
 ) : ArchivedTestimonyPayload
 
 @Serializable
+@SerialName("player_active_identity_resolved")
+data class ArchivedPlayerActiveIdentityResolved(
+    val observedSpeciesName: String,
+    val speciesName: String,
+    val speciesId: Int?,
+    val teamSlot: Int?,
+    val appearanceStartedAtNanos: Long,
+    val basis: String,
+) : ArchivedTestimonyPayload
+
+@Serializable
 @SerialName("active_pokemon_fainted_witnessed")
 data class ArchivedActivePokemonFaintedWitnessed(
     val side: String,
@@ -102,7 +113,13 @@ data class ArchivedActivePokemonFaintedWitnessed(
 
 @Serializable @SerialName("team_select_party") data object ArchivedTeamSelectPartyWitnessed : ArchivedTestimonyPayload
 @Serializable @SerialName("team_select_league") data class ArchivedTeamSelectLeagueWitnessed(val league: String, val basis: String) : ArchivedTestimonyPayload
-@Serializable @SerialName("player_team_roster_slot") data class ArchivedPlayerTeamRosterSlotWitnessed(val slot: Int, val speciesName: String, val speciesId: Int? = null) : ArchivedTestimonyPayload
+@Serializable @SerialName("player_team_roster_slot") data class ArchivedPlayerTeamRosterSlotWitnessed(
+    val slot: Int,
+    val speciesName: String,
+    val speciesId: Int? = null,
+    val spriteVariant: String? = null,
+    val distinctFormMargin: Float? = null,
+) : ArchivedTestimonyPayload
 @Serializable @SerialName("player_team_roster_confirmation") data class ArchivedPlayerTeamRosterConfirmation(val confirmed: Boolean, val speciesBySlot: List<String?>) : ArchivedTestimonyPayload
 @Serializable
 @SerialName("player_team_slot_configured")

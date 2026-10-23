@@ -39,6 +39,10 @@ class DroidballSession(val match: Match) {
     val firstLiveCombatArticle = _firstLiveCombatArticle.asStateFlow()
     val canEditTeam: Boolean get() = !hasCompletedMatch && match.matchStarted.replayCache.isEmpty() &&
         _phase.value !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
+    /** A manually armed HUD must not stop the scanner while still in the menus. */
+    val canObserveTeamSelect: Boolean get() = canEditTeam &&
+        (_phase.value in setOf(DroidballSessionPhase.SEEKING_TEAM_SELECT, DroidballSessionPhase.TEAM_SELECT_ACTIVE) ||
+            (_phase.value == DroidballSessionPhase.COUNTDOWN && !battleSurfaceEstablished.value))
     @Volatile private var countdownCaptureDeadlineNanos = Long.MIN_VALUE
     @Volatile private var countdownCaptureFinished = false
 
@@ -60,7 +64,7 @@ class DroidballSession(val match: Match) {
                 }
                 when (article.payload) {
                     is com.example.overdex.battle.custody.TeamSelectPartyWitnessed -> {
-                        if (_phase.value == DroidballSessionPhase.SEEKING_TEAM_SELECT) {
+                        if (canObserveTeamSelect && !battleSurfaceEstablished.value) {
                             _phase.value = DroidballSessionPhase.TEAM_SELECT_ACTIVE
                         }
                     }
@@ -75,7 +79,7 @@ class DroidballSession(val match: Match) {
                         _battleSurfaceEstablished.value = false
                         _phase.value = DroidballSessionPhase.NAVIGATION_IDLE
                     }
-                    else -> if (battleSurfaceConfirmation.observe(article.payload)) {
+                    else -> if (!hasCompletedMatch && battleSurfaceConfirmation.observe(article.payload)) {
                         _battleSurfaceEstablished.value = true
                     }
                 }
@@ -100,6 +104,8 @@ class DroidballSession(val match: Match) {
         if (_phase.value in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)) return false
         battleSurfaceConfirmation.reset()
         _battleSurfaceEstablished.value = false
+        _firstLiveCombatArticle.value = null
+        match.restartPreBattleObservationAttempt()
         _phase.value = DroidballSessionPhase.NAVIGATION_IDLE
         return true
     }

@@ -30,6 +30,12 @@ class FastMoveReferenceMatcherTest {
         }
     }
 
+    @Test fun `short unresolved Bite sample cannot be forced into a different move`() {
+        val bite = references.first { it.moveName == "Bite" }
+        val ranked = matcher.measureMono8k(StatChangeSoundMatcher.mono8k(bite.audio).copyOf(9_600))
+        assertFalse("${ranked.take(2)}", FastMoveReferenceMatcher.accepts(ranked))
+    }
+
     @Test fun `silence music only and a tone do not manufacture move identity`() {
         assertTrue(matcher.measure(Pcm16Audio(48_000, 1, ShortArray(57_600))).isEmpty())
         val tone = ShortArray(9_600) { (10_000 * kotlin.math.sin(it * 2 * Math.PI * 900 / 8000)).toInt().toShort() }

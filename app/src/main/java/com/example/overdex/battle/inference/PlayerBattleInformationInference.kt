@@ -29,9 +29,17 @@ internal class PlayerBattleInformationInference(private val knowledge: PokemonKn
                 statusOverride ?: if (expected == null) "OBSERVED" else if (confirmed) "CONFIRMED" else "DIFFERS", basis)
             if (emitted.add(payload)) output += PlayerInformationDerivation(payload, source, evidence.distinct())
         }
-        suspend fun configFor(species: String, speciesId: Int? = null): RealityArticle? = configured.values.filter {
-            matchesSpecies(it.payload as PlayerTeamSlotConfigured, species, speciesId)
-        }.singleOrNull() // Multiple owned copies cannot be distinguished by their name alone.
+        suspend fun configFor(species: String, speciesId: Int? = null, at: Long? = article.monotonicTimeNanos): RealityArticle? {
+            val active = at?.let { appearances.floorEntry(it)?.value?.payload as? ActivePokemonSpeciesWitnessed }
+            active?.playerTeamSlot?.let { slot ->
+                configured[slot]?.takeIf {
+                    key((it.payload as PlayerTeamSlotConfigured).speciesName) == key(species)
+                }?.let { return it }
+            }
+            return configured.values.filter {
+                matchesSpecies(it.payload as PlayerTeamSlotConfigured, species, speciesId)
+            }.singleOrNull() // Multiple owned copies cannot be distinguished by their name alone.
+        }
         when (val p = article.payload) {
             is PlayerTeamSlotConfigured -> configured[p.slot] = article
             is PlayerTeamRosterSlotWitnessed -> {
@@ -102,7 +110,7 @@ internal class PlayerBattleInformationInference(private val knowledge: PokemonKn
                 val most = candidates.values.maxOf { it.size }
                 val best = candidates.values.singleOrNull { it.size == most && it.size >= 2 } ?: return@forEach
                 val reading = best.maxBy { it.source.monotonicTimeNanos!! }
-                val config = configFor(reading.species)
+                val config = configFor(reading.species, at = reading.source.monotonicTimeNanos)
                 val expected = (config?.payload as? PlayerTeamSlotConfigured)?.chargedMoveNames
                 check(reading.species, "Charged move ${reading.slot}", expected?.joinToString(" / "), reading.name,
                     expected?.any { MoveTextAliases.matches(reading.name, it) } == true, "REPEATED_BUTTON_LABEL_OCR",

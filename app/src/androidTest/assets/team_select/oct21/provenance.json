@@ -1,0 +1,9 @@
+{
+  "archive": "/home/sean/overdex-device-backups/2026-10-21-badge-navigation-check/2026-10-21_15-55-17_99fd2f35-d4ec-4c92-9f3f-b4a0b2fda39c.odxmatch.zip",
+  "articleId": "3035d8bd-0d45-4e9c-9712-5c3c66388aba",
+  "sourceFrame": "artifacts/frames/sha256/11588730a733215a1c0a41c0c96c5167e4711b426f9ac636f12eb776cb2e97dd.png",
+  "sha256": "11588730a733215a1c0a41c0c96c5167e4711b426f9ac636f12eb776cb2e97dd",
+  "perceivedAt": 1792616293386,
+  "recordedAt": 1792616294408,
+  "note": "Preserved published pixels; corrected Use This Party width from the active Moondrop profile. Other apertures remain as measured, including clipped fallback text."
+}

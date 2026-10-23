@@ -7,7 +7,8 @@ import kotlin.math.min
 internal data class TeamSelectSignal(
     val articleId: String,
     val observedAtNanos: Long,
-    val confidence: Float
+    val confidence: Float,
+    val perceivedAtMillis: Long = 0L,
 )
 
 internal data class TeamSelectSurfaceEvidence(
@@ -21,15 +22,48 @@ internal data class TeamSelectSurfaceEvidence(
 internal data class TeamSelectSurfaceAcceptance(
     val basis: String,
     val confidence: Float,
-    val evidenceArticleIds: List<String>
+    val evidenceArticleIds: List<String>,
+    val latestSource: TeamSelectSignal,
 )
 
 /**
+ * Associate asynchronous readings by capture time, not completion order. Keep
+ * a bounded history of small measurements so a queued label can still find the
+ * badge/cards from its own frame. The original artifacts stay in the ledger.
+ */
+internal class TeamSelectSurfaceEvidenceWindow {
+    private val frames = java.util.TreeMap<Long, TeamSelectSurfaceEvidence>()
+
+    fun observe(
+        atNanos: Long,
+        update: (TeamSelectSurfaceEvidence) -> TeamSelectSurfaceEvidence,
+    ): TeamSelectSurfaceAcceptance? {
+        frames[atNanos] = update(frames[atNanos] ?: TeamSelectSurfaceEvidence())
+        while (frames.size > 32) frames.pollFirstEntry()
+        val nearby = frames.entries
+            .filter { kotlin.math.abs(it.key - atNanos) <= TeamSelectSurfaceContract.AGREEMENT_WINDOW_NANOS }
+            .sortedBy { kotlin.math.abs(it.key - atNanos) }
+            .map { it.value }
+        val aligned = TeamSelectSurfaceEvidence(
+            leagueText = nearby.firstNotNullOfOrNull { it.leagueText },
+            leagueBadge = nearby.firstNotNullOfOrNull { it.leagueBadge },
+            restrictions = nearby.firstNotNullOfOrNull { it.restrictions },
+            useThisParty = nearby.firstNotNullOfOrNull { it.useThisParty },
+            partyCards = (1..3).mapNotNull { slot ->
+                nearby.firstNotNullOfOrNull { it.partyCards[slot] }?.let { slot to it }
+            }.toMap(),
+        )
+        return TeamSelectSurfaceContract.evaluate(aligned)
+    }
+}
+
+/**
  * Downstream agreement contract for the independently preserved Team Select apertures.
- * An isolated OCR read remains on the Timeline but can never accept the surface.
+ * Color resemblance is only supporting evidence. Require page-specific words
+ * before accepting a party; overworld terrain also contains pale/green panels.
  */
 internal object TeamSelectSurfaceContract {
-    private const val AGREEMENT_WINDOW_NANOS = 2_000_000_000L
+    internal const val AGREEMENT_WINDOW_NANOS = 2_000_000_000L
 
     fun evaluate(evidence: TeamSelectSurfaceEvidence): TeamSelectSurfaceAcceptance? {
         val all = buildList {
@@ -56,26 +90,22 @@ internal object TeamSelectSurfaceContract {
             TeamSelectSurfaceAcceptance(
                 basis = basis,
                 confidence = min(confidence, signals.minOf { it.confidence }),
-                evidenceArticleIds = signals.map { it.articleId }.distinct()
+                evidenceArticleIds = signals.map { it.articleId }.distinct(),
+                latestSource = signals.maxBy { it.observedAtNanos },
             )
 
-        if (leagueText != null && cards.isNotEmpty()) {
-            return accepted("LEAGUE_TEXT_AND_PARTY_CARD", 0.98f, listOf(leagueText, cards.first().second))
-        }
-        if (leagueBadge != null && cards.size >= 2) {
-            return accepted("LEAGUE_BADGE_AND_TWO_PARTY_CARDS", 0.97f, listOf(leagueBadge) + cards.take(2).map { it.second })
-        }
-        if (cards.size == 3) {
-            return accepted("THREE_PARTY_CARD_GEOMETRY", 0.86f, cards.map { it.second })
-        }
         if (leagueText != null && useThisParty != null) {
             return accepted("LEAGUE_TEXT_AND_USE_PARTY_CONTROL", 0.97f, listOf(leagueText, useThisParty))
         }
         if (leagueBadge != null && useThisParty != null) {
             return accepted("LEAGUE_BADGE_AND_USE_PARTY_CONTROL", 0.96f, listOf(leagueBadge, useThisParty))
         }
-        if (leagueText != null && restrictions != null) {
-            return accepted("LEAGUE_TEXT_AND_RESTRICTION_TEXT", 0.95f, listOf(leagueText, restrictions))
+        if (useThisParty != null && cards.isNotEmpty()) {
+            return accepted("USE_PARTY_TEXT_AND_PARTY_CARD", 0.95f, listOf(useThisParty, cards.first().second))
+        }
+        if (leagueText != null && restrictions != null && cards.size >= 2) {
+            return accepted("LEAGUE_AND_RESTRICTION_TEXT_WITH_PARTY_CARDS", 0.95f,
+                listOf(leagueText, restrictions) + cards.take(2).map { it.second })
         }
         return null
     }
@@ -137,8 +167,7 @@ internal object TeamSelectSurfaceSignalDetector {
 
     fun isRestrictionText(rawText: String): Boolean {
         val normalized = rawText.uppercase().replace(Regex("[^A-Z0-9]+"), " ")
-        return ("MAX" in normalized && "CP" in normalized) ||
-            "NO LIMIT" in normalized || "POKEMON" in normalized || "POK MON" in normalized
+        return ("MAX" in normalized && "CP" in normalized) || "NO LIMIT" in normalized
     }
 
     fun isUsePartyText(rawText: String): Boolean {

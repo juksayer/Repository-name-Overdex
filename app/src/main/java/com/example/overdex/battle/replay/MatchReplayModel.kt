@@ -93,9 +93,9 @@ class MatchReplayModel(
         .mapNotNull { it.payload as? ArchivedPlayerTeamSlotConfigured }
         .associateBy { it.slot }.values
         .sortedBy { it.slot }
-    private val configuredPlayerMovesBySpecies = configuredPlayerMembers.associate {
-        TeamRosterSpeciesAttributor.speciesKey(it.speciesName) to it.fastMoveName
-    }
+    private val configuredPlayerMovesBySpecies = configuredPlayerMembers.groupBy {
+        normalizeSpeciesName(it.speciesName)
+    }.mapValues { (_, members) -> members.map { it.fastMoveName }.distinct().singleOrNull() }
 
     // A replay receives a completed archive, not a live stream. Build the identity
     // tracks once so every frame can use facts learned anywhere in that archive.
@@ -160,14 +160,14 @@ class MatchReplayModel(
             }
         }
     }
-    private val identifiedFastMoves = timedArticles
+    private val identifiedFastMoveArticles = timedArticles
         .filterNot { article ->
             val move = article.payload as? ArchivedFastMoveIdentified
             move?.basis?.startsWith("SIDE_LOCATED_EFFECTIVENESS_TEXT") == true &&
                 chargedEffectivenessWindow.contains(article.monotonicTimeNanos!!)
         }
-        .mapNotNull { it.payload as? ArchivedFastMoveIdentified }
-        .filterNot { it.basis.startsWith(CHARGE_FILL_BASIS) }
+        .filter { (it.payload as? ArchivedFastMoveIdentified)?.basis?.startsWith(CHARGE_FILL_BASIS) == false }
+    private val identifiedFastMoves = identifiedFastMoveArticles.map { it.payload as ArchivedFastMoveIdentified }
     private val possibleFastMoves = fastMovesBySpeciesName.entries.associate {
         normalizeSpeciesName(it.key) to it.value
     }
@@ -355,6 +355,15 @@ class MatchReplayModel(
             decisionTimer = decisionTimers.at(monotonicTimeNanos),
             qteMilestone = qteMilestone?.label,
             qteMilestoneSide = qteMilestone?.side,
+            announcement = articles.lastOrNull {
+                val age = monotonicTimeNanos - (it.monotonicTimeNanos ?: Long.MIN_VALUE)
+                age in 0..2_500_000_000L && it.sourceId == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" &&
+                    it.payload is ArchivedActivePokemonSpeciesWitnessed
+            }?.let { "Go, ${(it.payload as ArchivedActivePokemonSpeciesWitnessed).speciesName}!" }
+                ?: chargeMoveActions.lastOrNull { it.moveName != null }?.let {
+                    val actor = if (it.side == "PLAYER") player else opponent
+                    "${actor?.speciesName ?: it.side} used ${it.moveName}!"
+                },
             latestEvidenceLabel = latest?.payload?.let(::payloadLabel) ?: "Awaiting first timed evidence",
             playerHp = player?.let { replayHpAt("PLAYER", it, monotonicTimeNanos) },
             opponentHp = opponent?.let { replayHpAt("OPPONENT", it, monotonicTimeNanos) },
@@ -1028,7 +1037,21 @@ class MatchReplayModel(
             else -> null
         }
         if (side == "PLAYER" && speciesName != null) {
-            configuredPlayerMovesBySpecies[TeamRosterSpeciesAttributor.speciesKey(speciesName)]?.let { return it }
+            val active = playerIdentityTrack.combatantAt(atNanos)
+            val ambiguousBareName = '(' !in speciesName && active?.playerTeamSlot == null &&
+                configuredPlayerMembers.count {
+                    TeamRosterSpeciesAttributor.speciesKey(it.speciesName) == TeamRosterSpeciesAttributor.speciesKey(speciesName)
+                } > 1
+            if (!ambiguousBareName) configuredPlayerMovesBySpecies[normalizeSpeciesName(speciesName)]?.let { return it }
+            if (ambiguousBareName) {
+                val start = playerIdentityTrack.appearanceStartAt(atNanos)
+                val end = playerIdentityTrack.nextAppearanceAfter(atNanos) ?: Long.MAX_VALUE
+                return identifiedFastMoveArticles.filter { it.monotonicTimeNanos!! in start until end }
+                    .map { it.payload as ArchivedFastMoveIdentified }.lastOrNull {
+                        it.side == side && normalizeSpeciesName(it.speciesName) == normalizeSpeciesName(speciesName) &&
+                            !it.basis.startsWith("CONFIGURED_PLAYER_TEAM")
+                    }?.moveName
+            }
         }
         return identifiedFastMoves
             .asSequence()
@@ -1246,7 +1269,8 @@ private class ReplayIdentityTrack private constructor(
             observation.speciesName,
             observation.speciesId,
             observation.atNanos,
-            observation.basis
+            observation.basis,
+            playerTeamSlot = observation.playerTeamSlot,
         )
     }
 
@@ -1297,7 +1321,9 @@ private class ReplayIdentityTrack private constructor(
             // evidence paths. One accepted identity must not discard switches
             // recovered from archived crops or announcements. At the same
             // instant, stronger live testimony sorts last and therefore wins.
-            val combined = (reconstructed + timeAdjustedObserved).sortedWith(
+            val formIdentity = if (side == "PLAYER") ReplayPlayerFormIdentity(articles) else null
+            val combined = ((reconstructed + timeAdjustedObserved).map { formIdentity?.refine(it) ?: it } +
+                formIdentity?.observations().orEmpty()).sortedWith(
                 compareBy<ReplayIdentityObservation> { it.atNanos }
                     .thenBy { identityBasisPriority(it.basis) }
             )
@@ -1391,6 +1417,7 @@ private class ReplayIdentityTrack private constructor(
         private fun normalize(value: String): String = value.uppercase().filter(Char::isLetterOrDigit)
 
         private fun identityBasisPriority(basis: String): Int = when {
+            basis.startsWith("RESOLVED PLAYER IDENTITY") -> 4
             basis == "CURRENT TEAM CONFIGURATION" -> 0
             basis.contains("ANNOUNCEMENT") -> 1
             basis.contains("CROP") -> 2
@@ -1415,6 +1442,7 @@ data class ReplayIdentityObservation(
     val confidence: Float? = null,
     val articleId: String? = null,
     val evidenceArticleIds: List<String> = emptyList(),
+    val playerTeamSlot: Int? = null,
 )
 
 data class ReplayScene(
@@ -1441,6 +1469,7 @@ data class ReplayScene(
     val qteMilestone: String?,
     val qteMilestoneSide: String?,
     val latestEvidenceLabel: String,
+    val announcement: String? = null,
     val playerResources: ReplayTeamResources = ReplayTeamResources(),
     val opponentResources: ReplayTeamResources = ReplayTeamResources(),
     val playerEnergy: ReplayEnergyState? = null,
@@ -1534,6 +1563,7 @@ data class ReplayCombatant(
     val knockoutFinishByNanos: Long? = null,
     val knockoutBasis: String? = null,
     val knockoutSourceArticleIds: List<String> = emptyList(),
+    val playerTeamSlot: Int? = null,
 )
 
 private const val FAST_MOVE_VISUAL_NANOS = 450_000_000L

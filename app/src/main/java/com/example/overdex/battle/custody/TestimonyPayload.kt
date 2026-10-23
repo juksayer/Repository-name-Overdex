@@ -169,6 +169,19 @@ data class ActivePokemonSpeciesWitnessed(
     /** OCR input and repair rule; null for older articles and non-OCR witnesses. */
     val ocrText: String? = null,
     val ocrMatchBasis: String? = null,
+    /** Present only in the downstream identity projection, never supplied by OCR. */
+    val playerTeamSlot: Int? = null,
+    val appearanceStartedAtNanos: Long? = null,
+) : TestimonyPayload
+
+/** Joins a player appearance to its roster without replacing the original badge/cry testimony. */
+data class PlayerActiveIdentityResolved(
+    val observedSpeciesName: String,
+    val speciesName: String,
+    val speciesId: Int?,
+    val teamSlot: Int?,
+    val appearanceStartedAtNanos: Long,
+    val basis: String,
 ) : TestimonyPayload
 
 /** A stable opponent Poké Ball count decrease established that the active opponent fainted. */
@@ -192,7 +205,9 @@ data class TeamSelectLeagueWitnessed(
 data class PlayerTeamRosterSlotWitnessed(
     val slot: Int,
     val speciesName: String,
-    val speciesId: Int? = null
+    val speciesId: Int? = null,
+    val spriteVariant: String? = null,
+    val distinctFormMargin: Float? = null,
 ) : TestimonyPayload {
     init { require(slot in 1..3) }
 }
@@ -585,7 +600,7 @@ data class ChargedMoveEnergySpent(
 }
 
 /**
- * One acoustical measurement from a visually-cued fast-move window. It says
+ * One acoustical measurement from a live or visually-cued fast-move window. It says
  * only what was heard; matching it to a move reference remains downstream.
  */
 data class FastMoveSoundMeasured(

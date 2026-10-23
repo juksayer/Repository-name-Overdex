@@ -19,6 +19,11 @@ enum class DroidballOverlayMode {
     RESULT
 }
 
+/** Keep recovery controls reachable when the HUD was requested before a battle. */
+internal fun battleOverlayDisplayMode(mode: DroidballOverlayMode, badgeSeen: Boolean): DroidballOverlayMode =
+    if (!badgeSeen && mode in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE))
+        DroidballOverlayMode.PRE_BATTLE else mode
+
 data class ObservedOpponentSpecies(
     val speciesName: String,
     val speciesId: Int?,
@@ -138,7 +143,20 @@ object DroidballOverlayPresentation {
 
     /** An explicit rescan returns to the scanner even if the HUD was already opened. */
     fun showTeamSelectScan() {
+        _battleBadgeSeen.value = false
         _mode.value = DroidballOverlayMode.SEEKING_TEAM_SELECT
+        _expanded.value = true
+    }
+
+    /** A deliberate navigation boundary is not a late prebattle phase emission. */
+    fun showNavigationIdle() {
+        _battleBadgeSeen.value = false
+        _mode.value = DroidballOverlayMode.PRE_BATTLE
+    }
+
+    fun showAcceptedTeamSelect() {
+        _battleBadgeSeen.value = false
+        _mode.value = DroidballOverlayMode.TEAM_SELECT
         _expanded.value = true
     }
 

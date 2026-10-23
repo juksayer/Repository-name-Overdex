@@ -33,6 +33,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchReplayModelTest {
+    @Test fun `replay roster keeps form through bare OCR and clears it for a rescan`() {
+        val form = timed("form", com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed(
+            1, "Raichu (Alolan)", 26, "fALOLA", .2f), 1L)
+        val bare = timed("bare", com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed(1, "Raichu", 26), 2L)
+        assertEquals(listOf("Raichu (Alolan)"), latestArchivedPlayerRoster(listOf(form, bare), 3L))
+        val restart = timed("restart", com.example.overdex.battle.archive.ArchivedObservationRestartedByUser, 3L)
+        val ordinary = bare.copy(articleId = "new-scan", monotonicTimeNanos = 4L)
+        assertEquals(listOf("Raichu"), latestArchivedPlayerRoster(listOf(form, bare, restart, ordinary), 5L))
+    }
     @Test fun `separate canonical one-turn hits survive frame jitter in replay`() {
         val archive = MatchArchive(matchId = "match", articles = listOf(
             timed("one", canonicalHit("one"), 1_000_000_000L),

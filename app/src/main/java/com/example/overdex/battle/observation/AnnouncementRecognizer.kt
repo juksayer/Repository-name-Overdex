@@ -9,6 +9,7 @@ import com.example.overdex.data.observation.OcrWordGeometry
 import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrPriority
+import kotlinx.coroutines.CancellationException
 
 object AnnouncementRecognizer {
 
@@ -28,10 +29,10 @@ object AnnouncementRecognizer {
         } finally { prepared.recycle() }
     }
 
-    suspend fun recognize(bitmap: Bitmap): RecognitionResult<String> {
+    internal suspend fun recognize(bitmap: Bitmap, priority: OcrPriority = OcrPriority.NORMAL): RecognitionResult<String> {
         return try {
-            val directText = SharedLatinTextRecognizer.readText(bitmap)
-            val rawText = directText.takeIf { it.isNotBlank() } ?: recognizeHighContrast(bitmap)
+            val directText = SharedLatinTextRecognizer.read(bitmap, priority).text
+            val rawText = directText.takeIf { it.isNotBlank() } ?: recognizeHighContrast(bitmap, priority)
             val rawTextEscaped = rawText.replace("\n", "\\n")
             Log.d("ANNOUNCEMENT_RECOGNIZER", "source=${bitmap.width}x${bitmap.height} text=\"$rawTextEscaped\"")
 
@@ -40,6 +41,8 @@ object AnnouncementRecognizer {
                 confidence = null,
                 recognizer = "AnnouncementRecognizer"
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("ANNOUNCEMENT_RECOGNIZER", "Recognition failed", e)
 
@@ -65,9 +68,9 @@ object AnnouncementRecognizer {
             .distinct()
     }
 
-    private suspend fun recognizeHighContrast(bitmap: Bitmap): String {
+    private suspend fun recognizeHighContrast(bitmap: Bitmap, priority: OcrPriority = OcrPriority.NORMAL): String {
         val enlarged = highContrastInput(bitmap)
-        return try { SharedLatinTextRecognizer.readText(enlarged) }
+        return try { SharedLatinTextRecognizer.read(enlarged, priority).text }
         finally { enlarged.recycle() }
     }
 

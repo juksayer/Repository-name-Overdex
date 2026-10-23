@@ -10,6 +10,12 @@ internal class ReplayEnergyTrack(
     combatantAt: (String, Long) -> ReplayCombatant?,
     cycles: List<ReplayFastMoveCycle>,
 ) {
+    private fun appearanceName(side: String, name: String?, at: Long, combatantAt: (String, Long) -> ReplayCombatant?): String? {
+        val active = combatantAt(side, at)?.speciesName ?: return name
+        if (name == null) return active
+        return if (com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(name) ==
+            com.example.overdex.battle.observation.TeamRosterSpeciesAttributor.speciesKey(active) && '(' !in name) active else name
+    }
     private data class Entry(val at: Long, val side: String, val species: String, val gain: Int = 0,
                              val spend: Int = 0, val faint: Boolean = false)
     private val hasCanonicalUses = articles.any { it.payload is ArchivedFastMoveUseObserved }
@@ -38,13 +44,14 @@ internal class ReplayEnergyTrack(
                     // accepted cycle exactly once. Raw energy Articles stay intact.
                     val cycle = cycleByEvidence[useArticle?.articleId ?: article.articleId] ?: continue
                     if (cycle.witness.side != p.side || !creditedCycles.add(cycle)) continue
-                    val species = use?.attackerSpeciesName ?: combatantAt(p.side, at)?.speciesName ?: continue
+                    val species = appearanceName(p.side, use?.attackerSpeciesName, at, combatantAt) ?: continue
                     add(Entry(if (cycle.hasReferenceDuration) cycle.impactAtNanos else cycle.witness.observedAtNanos,
                         p.side, species, gain = p.energyPerUse.coerceAtLeast(0)))
                 }
-                is ArchivedChargedMoveEnergySpent -> add(Entry(at, p.side, p.speciesName, spend = p.energyCost.coerceAtLeast(0)))
+                is ArchivedChargedMoveEnergySpent -> add(Entry(at, p.side,
+                    appearanceName(p.side, p.speciesName, at, combatantAt) ?: p.speciesName, spend = p.energyCost.coerceAtLeast(0)))
                 is ArchivedActivePokemonFaintedWitnessed -> {
-                    val species = p.speciesName ?: combatantAt(p.side, at)?.speciesName ?: continue
+                    val species = appearanceName(p.side, p.speciesName, at, combatantAt) ?: continue
                     add(Entry(at, p.side, species, faint = true))
                 }
                 else -> Unit

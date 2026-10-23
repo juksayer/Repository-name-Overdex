@@ -13,13 +13,14 @@ internal class FaintedCombatants {
         val faint = article.payload as? ActivePokemonFaintedWitnessed ?: return
         val name = faint.speciesName ?: return
         val at = article.monotonicTimeNanos ?: return
-        val key = faint.side to key(name)
+        val key = faint.side to key(faint.side, name)
         faintTimes[key] = minOf(at, faintTimes[key] ?: at)
     }
 
-    fun contains(side: ActivePokemonSide, name: String) = faintTimes.containsKey(side to key(name))
+    fun contains(side: ActivePokemonSide, name: String) = faintTimes.containsKey(side to key(side, name))
     fun at(side: ActivePokemonSide, name: String, time: Long): Boolean =
-        faintTimes[side to key(name)]?.let { time >= it } == true
+        faintTimes[side to key(side, name)]?.let { time >= it } == true
 
-    private fun key(name: String) = TeamRosterSpeciesAttributor.speciesKey(name)
+    private fun key(side: ActivePokemonSide, name: String) = if (side == ActivePokemonSide.PLAYER)
+        name.uppercase().filter(Char::isLetterOrDigit) else TeamRosterSpeciesAttributor.speciesKey(name)
 }

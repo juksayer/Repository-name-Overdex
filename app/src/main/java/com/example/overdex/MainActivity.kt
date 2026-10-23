@@ -141,12 +141,14 @@ class MainActivity : ComponentActivity() {
             .putInt(INITIAL_CAPABILITY_PASS_VERSION, CAPABILITY_PASS_VERSION)
             .apply()
         Log.i("OVERDEX_CAPABILITIES", "Initial capability pass: $grants")
+        com.example.overdex.battle.observation.showIdleDroidballNotification(this)
     }
 
     // In-memory storage for the opened archive
     private var openedArchive = mutableStateOf<com.example.overdex.battle.archive.MatchArchive?>(null)
     private var openedArchiveUri = mutableStateOf<Uri?>(null)
     private var archiveLoadInProgress = mutableStateOf(false)
+    private var notificationStartRequest = mutableStateOf(0)
 
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -257,6 +259,7 @@ class MainActivity : ComponentActivity() {
                         openedArchiveUri = openedArchiveUri,
                         archiveLoadInProgress = archiveLoadInProgress,
                         archiveDirectoryManager = archiveDirectoryManager,
+                        notificationStartRequest = notificationStartRequest.value,
                         onOpenArchive = {
                             if (!archiveLoadInProgress.value) {
                                 archiveLoadInProgress.value = true
@@ -305,6 +308,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         requestInitialOptionalCapabilities()
+        consumeDroidballNotificationIntent(intent)
     }
 
     /**
@@ -347,6 +351,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         pokedexViewModel.isOverdexVisible = true
+        com.example.overdex.battle.observation.showIdleDroidballNotification(this)
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onResume()")
     }
 
@@ -370,7 +375,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
+        consumeDroidballNotificationIntent(intent)
         if (intent.getBooleanExtra("open_guided_registration", false)) pokedexViewModel.openGuidedRegistration()
+    }
+
+    private fun consumeDroidballNotificationIntent(intent: Intent?) {
+        if (intent?.action != com.example.overdex.battle.observation.DROIDBALL_START_ACTION) return
+        intent.action = null
+        if (!DroidballService.isRunning()) notificationStartRequest.value++
     }
 
     private companion object {
@@ -403,6 +416,7 @@ fun PokedexApp(
     archiveDirectoryManager: ArchiveDirectoryManager,
     onOpenArchive: () -> Unit = {},
     onStartObservation: () -> Unit = {},
+    notificationStartRequest: Int = 0,
 
 ){
     val navController = rememberNavController()
@@ -416,6 +430,13 @@ fun PokedexApp(
     val interruptedObservationNotice by viewModel.interruptedObservationNotice.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(notificationStartRequest) {
+        if (notificationStartRequest > 0 && !DroidballService.isRunning()) {
+            viewModel.markBooted()
+            navController.navigate("droidball_readiness") { launchSingleTop = true }
+        }
+    }
 
     LaunchedEffect(Unit) {
         val activity = context as? android.app.Activity

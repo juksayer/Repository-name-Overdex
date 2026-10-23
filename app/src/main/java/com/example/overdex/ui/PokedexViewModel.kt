@@ -98,7 +98,6 @@ import com.example.overdex.battle.artifact.FileAudioArtifactStore
 import com.example.overdex.battle.audio.AudioCaptureWitness
 import com.example.overdex.battle.audio.PersistedBattleCryCandidateWitness
 import com.example.overdex.battle.audio.PersistedCountdownCryCueWitness
-import com.example.overdex.battle.audio.PersistedFastMoveSoundWitness
 import com.example.overdex.battle.archive.ArchiveDirectoryManager
 import com.example.overdex.battle.archive.MatchArchiveExportMode
 import com.example.overdex.battle.archive.MatchArchiveSource
@@ -430,6 +429,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         val session = DroidballSession(match)
         DroidballOverlayPresentation.clearOpponentSpecies()
+        DroidballOverlayPresentation.showNavigationIdle()
         // A battle HUD is evidence before GO and remains evidence afterward. GO
         // changes the match boundary; it must not decide whether visible battle
         // information is preserved.
@@ -458,12 +458,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballOverlayPresentation.showSessionPhase(session.phase.value)
         viewModelScope.launch {
             session.phase.collect { phase ->
+                if (_droidballSession.value !== session) return@collect
                 DroidballOverlayPresentation.showSessionPhase(phase)
                 if (!session.canEditTeam) fieldTeamEditor.close()
             }
         }
         viewModelScope.launch {
             match.articles.collect { article ->
+                if (article.payload is com.example.overdex.battle.custody.TeamSelectPartyWitnessed &&
+                    _droidballSession.value === session && session.canEditTeam &&
+                    !session.battleSurfaceEstablished.value) {
+                    DroidballOverlayPresentation.showAcceptedTeamSelect()
+                }
                 if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed")
                 // Result music and OCR can arrive seconds apart. Preserve late comparisons
                 // in the same completed archive instead of losing them after the first save.
@@ -549,9 +555,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         val matchOutcomeCaptureGate = MatchOutcomeCaptureGate()
         val speciesCaptureAllowed = {
-            // Begin looking while the user approaches Team Select. Screens
-            // without a badge name cannot resolve against the species catalogue,
-            // while the first readable battle badge can reach the HUD at once.
+            // Before battle, the pipeline probes for a native badge or an entry
+            // cue without repeatedly sending menu scenery through species OCR.
             session.phase.value in setOf(
                 com.example.overdex.battle.observation.DroidballSessionPhase.SEEKING_TEAM_SELECT,
                 com.example.overdex.battle.observation.DroidballSessionPhase.TEAM_SELECT_ACTIVE,
@@ -560,17 +565,27 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 com.example.overdex.battle.observation.DroidballSessionPhase.CALIBRATING
             )
         }
+        val speciesBattleContextEstablished = {
+            // Opening the HUD manually is presentation intent, not evidence
+            // that battle badges have appeared. Actual cues can wake OCR before GO.
+            session.battleSurfaceEstablished.value || session.phase.value in setOf(
+                com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE,
+                com.example.overdex.battle.observation.DroidballSessionPhase.CALIBRATING,
+            )
+        }
         val fastPlayerSpeciesOverlay = LiveOverlaySpeciesPipeline.player(
             input,
             calibration,
             cropArtifactStore,
-            speciesCaptureAllowed
+            battleContextEstablished = speciesBattleContextEstablished,
+            captureAllowed = speciesCaptureAllowed,
         )
         val fastOpponentSpeciesOverlay = LiveOverlaySpeciesPipeline.opponent(
             input,
             calibration,
             cropArtifactStore,
-            speciesCaptureAllowed
+            battleContextEstablished = speciesBattleContextEstablished,
+            captureAllowed = speciesCaptureAllowed,
         )
         PokemonGoTypeIconMatcher.initialize(getApplication())
 
@@ -629,21 +644,20 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             calibration = teamSelectCalibration,
             contracts = listOf(
                 TeamSelectCropContracts.leagueBadge,
-                TeamSelectCropContracts.leagueText,
+                // Publish the decisive label before optional/clipped text and
+                // roster OCR can queue. All apertures still cite this one frame.
+                TeamSelectCropContracts.useThisParty,
                 TeamSelectCropContracts.playerRosterSlot1,
                 TeamSelectCropContracts.playerRosterSlot2,
                 TeamSelectCropContracts.playerRosterSlot3,
                 TeamSelectCropContracts.playerRosterName1,
                 TeamSelectCropContracts.playerRosterName2,
                 TeamSelectCropContracts.playerRosterName3,
+                TeamSelectCropContracts.leagueText,
                 TeamSelectCropContracts.restrictions,
-                TeamSelectCropContracts.useThisParty,
             ),
             artifactStore = cropArtifactStore,
-            isEnabled = {
-                session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.SEEKING_TEAM_SELECT ||
-                    session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.TEAM_SELECT_ACTIVE
-            },
+            isEnabled = { session.canObserveTeamSelect },
             observerId = ObserverId("TEAM_SELECT_SNAPSHOT_CAPTURE", ObserverSource.SCREEN_CAPTURE),
             name = "Team Select Snapshot Capture Witness",
         ))
@@ -675,7 +689,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )
             observationDispatcher.register(PersistedBattleCryCandidateWitness(getApplication(), getApplication<Application>().filesDir))
             observationDispatcher.register(DecisiveBattleCrySpeciesWitness())
-            observationDispatcher.register(PersistedFastMoveSoundWitness(getApplication<Application>().filesDir, getApplication()))
+            observationDispatcher.register(com.example.overdex.battle.audio.LiveFastMoveSoundWitness(
+                getApplication(), audioArtifactStore))
             observationDispatcher.register(com.example.overdex.battle.audio.StatChangeSoundWitness(
                 getApplication(), audioArtifactStore, getApplication<Application>().filesDir,
                 isEnabled = { battleEvidenceLive() && session.phase.value !in setOf(
@@ -1177,6 +1192,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     }
                     is DroidballSignal.IgnoreCurrentScreenRequested -> {
                         if (session.ignoreCurrentScreen()) {
+                            DroidballOverlayPresentation.clearInferredPlayerTeam()
+                            DroidballOverlayPresentation.clearOpponentSpecies()
+                            DroidballOverlayPresentation.showNavigationIdle()
+                            observationDispatcher.restartWhere(match) { it.name.startsWith("Team Select") }
+                            submitCurrentTeamConfiguration(match)
                             match.custody.submitTestimony(SourceId("DROIDBALL_USER_CONTROL"), ScreenIgnoredByUser, System.currentTimeMillis(), 1f, emptyList(), System.nanoTime())
                         }
                     }
@@ -1209,6 +1229,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             match.release()
                             startFreshMatch(resultCode, data, startCaptureService = false)
                         }
+                    }
+                    is DroidballSignal.BeginNextMatchRequested -> {
+                        if (_activeMatch.value?.matchId != signal.matchId || match.matchId != signal.matchId ||
+                            !DroidballService.isRunning()) return@collect
+                        // A manual boundary saves an incomplete match honestly when result OCR
+                        // was missed. Reuse the live projection, never its token for a new display.
+                        observationDispatcher.stopAll()
+                        retainAndArchiveMatch(match, "next match requested")
+                        fieldTeamEditor.close()
+                        session.end()
+                        match.release()
+                        startFreshMatch(resultCode, data, startCaptureService = false)
                     }
                 }
             }
@@ -1293,6 +1325,15 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 Log.e("MATCH_ARCHIVE", "Unable to auto-save $reason match ${source.matchId.value}", error)
             }
         }
+    }
+
+    fun stopObservationFromNotification(expectedMatchId: String?) {
+        if (_activeMatch.value?.matchId != expectedMatchId || !DroidballService.isRunning()) return
+        _activeMatch.value?.custody?.submitTestimony(
+            SourceId("DROIDBALL_USER_CONTROL"), ObservationSessionStoppedByUser,
+            System.currentTimeMillis(), 1f, emptyList(), System.nanoTime()
+        )
+        stopObservation()
     }
 
     fun stopObservation() {

@@ -474,12 +474,19 @@ fun MatchReplayScreen(
         }
     }
 
-    ReplayBattlefield(scene, cursor, context, speciesTypes)
+    val playerTypeReference = remember(archive, scene.player?.speciesName) {
+        scene.player?.speciesName?.let { name ->
+            com.example.overdex.data.PokemonFormReference.playerReferenceName(name,
+                com.example.overdex.battle.replay.latestArchivedPlayerRoster(archive.articles, Long.MAX_VALUE))
+        }
+    }
+    ReplayBattlefield(scene, cursor, context, speciesTypes, playerTypeReference)
 }
 
 @Composable
 internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Context,
-                               speciesTypes: Map<String, List<PokemonType>> = emptyMap()) {
+                               speciesTypes: Map<String, List<PokemonType>> = emptyMap(),
+                               playerTypeReference: String? = null) {
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -537,7 +544,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     if (scene.player != null) ReplayResourceBadge(scene.playerResources, "Player", scene.playerEnergy,
-                        types = speciesTypes[scene.player.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
+                        types = speciesTypes[(playerTypeReference ?: scene.player.speciesName).uppercase().filter(Char::isLetterOrDigit)].orEmpty())
                     else Box(Modifier.width(114.dp))
                     if (scene.opponent != null) ReplayResourceBadge(scene.opponentResources, "Opponent", scene.opponentEnergy, mirrored = true,
                         types = speciesTypes[scene.opponent.speciesName.uppercase().filter(Char::isLetterOrDigit)].orEmpty())
@@ -594,6 +601,13 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.Center).offset(y = (-76).dp),
                     )
+                }
+                scene.announcement?.takeIf { scene.outcome == null }?.let { announcement ->
+                    Text(announcement, color = Color.White, fontSize = 12.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)
+                            .background(Color(0xCC233545), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp))
                 }
                 scene.outcome?.let { outcome ->
                     Box(

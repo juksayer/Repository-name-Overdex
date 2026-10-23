@@ -7,6 +7,30 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
+    @Test fun `an early HUD request keeps navigation controls visible until a native badge arrives`() {
+        DroidballOverlayPresentation.reset()
+        DroidballOverlayPresentation.showBattleHud()
+        assertEquals(DroidballOverlayMode.PRE_BATTLE, battleOverlayDisplayMode(
+            DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+        DroidballOverlayPresentation.recordBattleBadgePresent()
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, battleOverlayDisplayMode(
+            DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+    }
+
+    @Test fun `explicit navigation and rescan clear a wrongly opened badge without a relaunch`() {
+        for ((reset, mode) in listOf(
+            DroidballOverlayPresentation::showNavigationIdle to DroidballOverlayMode.PRE_BATTLE,
+            DroidballOverlayPresentation::showTeamSelectScan to DroidballOverlayMode.SEEKING_TEAM_SELECT,
+            DroidballOverlayPresentation::showAcceptedTeamSelect to DroidballOverlayMode.TEAM_SELECT,
+        )) {
+            DroidballOverlayPresentation.recordBattleBadgePresent()
+            DroidballOverlayPresentation.showBattleHud()
+            reset()
+            assertEquals(mode, DroidballOverlayPresentation.mode.value)
+            assertEquals(false, DroidballOverlayPresentation.battleBadgeSeen.value)
+        }
+    }
+
     @Test fun `resolved fast moves receive checkmarks and survive a switch`() {
         val moves = listOf("Quick Attack" to PokemonType.NORMAL, "Spark" to PokemonType.ELECTRIC)
         DroidballOverlayPresentation.recordOpponentSpecies("Plusle", 311, moves, emptyList())

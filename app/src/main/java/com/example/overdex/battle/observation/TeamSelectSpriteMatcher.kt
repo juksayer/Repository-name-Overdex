@@ -3,6 +3,7 @@ package com.example.overdex.battle.observation
 import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.Color
+import com.example.overdex.data.PokemonFormReference
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -19,12 +20,13 @@ data class TeamSelectSpriteMatch(
     val score: Float,
     val distinctSpeciesMargin: Float,
     val confidence: Float,
+    val distinctFormMargin: Float? = null,
 )
 
 /**
  * Translation-tolerant matcher for the exact Pokémon GO art shown inside a
- * Team Select card. Normal, shiny, and regional references all resolve to one
- * Pokédex ID. It is independent of OCR, so nicknames and symbol-only names do
+ * Team Select card. Shiny/gender references share a form, while regional and
+ * other forms require their own separation. It is independent of OCR, so names do
  * not prevent the player roster from being identified.
  */
 class TeamSelectSpriteMatcher(assetManager: AssetManager) {
@@ -40,6 +42,7 @@ class TeamSelectSpriteMatcher(assetManager: AssetManager) {
         private const val CATALOG_ASSET = "team_select_sprite_catalog.tsv"
         private const val MAX_ACCEPTED_SCORE = 1.05f
         private const val MIN_DISTINCT_SPECIES_MARGIN = 0.05f
+        private const val MIN_DISTINCT_FORM_MARGIN = 0.05f
 
         fun parseCatalogue(lines: Sequence<String>): List<TeamSelectSpriteDescriptor> = lines
             .filterNot { it.isBlank() || it.startsWith('#') }
@@ -66,9 +69,19 @@ class TeamSelectSpriteMatcher(assetManager: AssetManager) {
             val runnerUp = ranked.firstOrNull { it.first.speciesId != best.first.speciesId } ?: return null
             val margin = runnerUp.second - best.second
             if (best.second > MAX_ACCEPTED_SCORE || margin < MIN_DISTINCT_SPECIES_MARGIN) return null
+            val form = PokemonFormReference.spriteForm(best.first.variant)
+            val competingForm = ranked.firstOrNull {
+                it.first.speciesId == best.first.speciesId &&
+                    PokemonFormReference.spriteForm(it.first.variant) != form
+            }
+            val formMargin = competingForm?.let { it.second - best.second }
+            // A clear species is not proof of a regional form. Retain the source
+            // crop for review and let OCR/manual selection proceed on ambiguity.
+            if (formMargin != null && formMargin < MIN_DISTINCT_FORM_MARGIN) return null
+            val identityMargin = minOf(margin, formMargin ?: margin)
             val confidence = (
                 0.84f +
-                    (margin.coerceAtMost(0.45f) / 0.45f) * 0.08f +
+                    (identityMargin.coerceAtMost(0.45f) / 0.45f) * 0.08f +
                     ((MAX_ACCEPTED_SCORE - best.second).coerceAtLeast(0f) / MAX_ACCEPTED_SCORE) * 0.06f
                 ).coerceIn(0.84f, 0.98f)
             return TeamSelectSpriteMatch(
@@ -77,6 +90,7 @@ class TeamSelectSpriteMatcher(assetManager: AssetManager) {
                 score = best.second,
                 distinctSpeciesMargin = margin,
                 confidence = confidence,
+                distinctFormMargin = formMargin,
             )
         }
 

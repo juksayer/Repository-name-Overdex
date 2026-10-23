@@ -23,10 +23,20 @@ class PokemonRepository(
     suspend fun getRegistrationCatalogue(): List<Pokemon> = pokemonDao.getRegistrationCatalogue()
         .filterNot { it.id == DroidballDexEntry.ID }.map { it.toDomain() }
     override suspend fun getPokemonById(id: Int): Pokemon? =
-        pokemonDao.getPokemonById(id)?.toDomain() ?: gameMasterLoader?.getPokemonByDex(id)?.toDomain()
+        pokemonDao.getPokemonById(id)?.toDomain() ?: gameMasterLoader?.getPokemonByDex(id)?.toDomain(preserveFormName = false)
 
-    override suspend fun getPokemonByName(name: String): Pokemon? =
-        pokemonDao.getPokemonByName(name)?.toDomain() ?: gameMasterPokemonFor(name)?.toDomain()
+    override suspend fun getPokemonByName(name: String): Pokemon? {
+        // Room's Pokédex IDs identify species, not regional forms.
+        if ('(' in name) return gameMasterPokemonFor(name)?.toDomain()
+            ?: pokemonDao.getPokemonByName(name)?.toDomain()
+        return pokemonDao.getPokemonByName(name)?.toDomain()
+            ?: gameMasterPokemonFor(name)?.toDomain(preserveFormName = false)
+    }
+
+    override suspend fun getPokemonBySpriteVariant(id: Int, variant: String): Pokemon? {
+        val catalogue = gameMasterLoader?.allPokemon() ?: return super.getPokemonBySpriteVariant(id, variant)
+        return PokemonFormReference.bySprite(id, variant, catalogue)?.toDomain()
+    }
 
     /**
      * Recognition must use the same current catalogue as battle interpretation.
@@ -40,14 +50,10 @@ class PokemonRepository(
     }
 
     private fun gameMasterPokemonFor(name: String): com.example.overdex.model.GameMasterPokemon? {
-        val normalized = normalizedSpeciesName(name)
-        return gameMasterLoader?.allPokemon()?.firstOrNull { candidate ->
-            normalizedSpeciesName(candidate.speciesName) == normalized ||
-                normalizedSpeciesName(candidate.speciesName.substringBefore(" (")) == normalized
-        }
+        return gameMasterLoader?.allPokemon()?.let { PokemonFormReference.byName(name, it) }
     }
 
-    private fun com.example.overdex.model.GameMasterPokemon.toDomain(): Pokemon {
+    private fun com.example.overdex.model.GameMasterPokemon.toDomain(preserveFormName: Boolean = true): Pokemon {
         fun type(value: String) = runCatching { PokemonType.valueOf(value.uppercase()) }.getOrNull()
         fun move(id: String, fast: Boolean): Move? = gameMasterLoader?.getMove(id)?.let { source ->
             val moveType = type(source.type) ?: return@let null
@@ -60,10 +66,10 @@ class PokemonRepository(
                 turns = if (fast) source.turns else null
             )
         }
-        val baseName = speciesName.substringBefore(" (")
         return Pokemon(
             id = dex,
-            name = baseName,
+            // A bare OCR name/number is not evidence of the first catalogue form.
+            name = if (preserveFormName) speciesName else speciesName.substringBefore(" ("),
             types = types.mapNotNull(::type),
             region = "",
             fastMoves = fastMoves.mapNotNull { move(it, fast = true) },
@@ -75,9 +81,6 @@ class PokemonRepository(
             baseStamina = baseStats?.hp ?: 0
         )
     }
-
-    private fun normalizedSpeciesName(value: String): String =
-        value.uppercase().filter(Char::isLetterOrDigit)
 
     fun search(
         query: String,

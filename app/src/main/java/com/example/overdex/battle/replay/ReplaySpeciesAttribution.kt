@@ -32,13 +32,19 @@ internal fun archivedNamedMoveSide(name: String, at: Long, articles: List<Archiv
 
 /** A contradicted saved team must not make every unlisted player an opponent. */
 internal fun latestArchivedPlayerRoster(articles: List<ArchivedRealityArticle>, at: Long): List<String> {
-    val roster = articles.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }.mapNotNull {
+    val bySlot = mutableMapOf<Int, String>()
+    articles.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }
+        .sortedBy { it.monotonicTimeNanos }.forEach {
         when (val payload = it.payload) {
-            is ArchivedPlayerTeamSlotConfigured -> payload.slot to payload.speciesName
-            is ArchivedPlayerTeamRosterSlotWitnessed -> payload.slot to payload.speciesName
-            else -> null
+            ArchivedObservationRestartedByUser, ArchivedScreenIgnoredByUser -> bySlot.clear()
+            is ArchivedPlayerTeamSlotConfigured -> bySlot[payload.slot] = payload.speciesName
+            is ArchivedPlayerTeamRosterSlotWitnessed -> bySlot[payload.slot] =
+                com.example.overdex.data.PokemonFormReference.mergeRosterName(
+                    bySlot[payload.slot], payload.speciesName, payload.spriteVariant != null)
+            else -> Unit
         }
-    }.toMap().values.toList()
+    }
+    val roster = bySlot.values.toList()
     val keys = roster.map(::key).toSet()
     // Completed replay can use later badge evidence to reject a stale roster.
     val contradicted = articles.any { article ->

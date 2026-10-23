@@ -2,7 +2,6 @@ package com.example.overdex.battle.observation
 
 import android.app.Activity
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
@@ -109,8 +108,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     SensorEventListener {
 
     companion object {
-        private const val NOTIFICATION_ID = 197
-        private const val CHANNEL_ID = "droidball_observation"
         /**
          * Battle regions are normalized, so their calibration remains valid at this
          * capture scale.  Keeping the source at three quarters of display resolution
@@ -139,6 +136,19 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val runtimeState = _runtimeState.asStateFlow()
 
         fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
+
+        internal fun handleNotificationControl(action: String?, sessionId: String?, matchId: String?) {
+            val service = activeService ?: return
+            if (!droidballNotificationTargetsCurrentSession(sessionId, service.notificationSessionId,
+                    matchId, service.fieldViewModel.activeMatch.value?.matchId)) return
+            when (action) {
+                DROIDBALL_STOP_ACTION -> service.fieldViewModel.stopObservationFromNotification(matchId)
+                DROIDBALL_NEXT_ACTION -> if (!service.registrationMode && matchId != null &&
+                    runtimeState.value == DroidballRuntimeState.ACTIVE) {
+                    _signals.tryEmit(DroidballSignal.BeginNextMatchRequested(matchId))
+                }
+            }
+        }
         suspend fun captureRegistrationCry(): com.example.overdex.battle.audio.Pcm16Audio {
             val service = activeService?.takeIf { it.registrationMode } ?: error("Start a registration scan first.")
             check(service.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -329,6 +339,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private val lifecycleRegistry = LifecycleRegistry(this)
     override val lifecycle: Lifecycle get() = lifecycleRegistry
     override val viewModelStore = ViewModelStore()
+    private val notificationSessionId = java.util.UUID.randomUUID().toString()
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
 
@@ -340,7 +351,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         battleHudLayoutStore = BattleHudLayoutStore(this)
         activeService = this
-        createNotificationChannel()
+        createDroidballNotificationChannel(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -357,9 +368,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     } else {
                         0
                     }
-                startForeground(NOTIFICATION_ID, createNotification(), serviceTypes)
+                startForeground(DROIDBALL_NOTIFICATION_ID, createNotification(), serviceTypes)
             } else {
-                startForeground(NOTIFICATION_ID, createNotification())
+                startForeground(DROIDBALL_NOTIFICATION_ID, createNotification())
             }
             observeNotificationState()
             runCatching {
@@ -544,20 +555,26 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     }
 
                     val capturedAtWallTimeMillis = System.currentTimeMillis()
-                    // Show the fixed HUD on the first battlefield badge frame,
-                    // without waiting for OCR. Once seen, keep it available when
-                    // GO hides its badges during camera cuts or charged moves.
+                    // VS/countdown or corroborated battle witnesses must establish
+                    // the surface first. Overworld colors cannot open the HUD or
+                    // become a retained badge, even after a manual HUD request.
+                    val badgeSession = if (registrationMode) null else fieldViewModel.droidballSession.value
+                    val battleSurfaceEstablished = badgeSession?.battleSurfaceEstablished?.value == true &&
+                        !badgeSession.hasCompletedMatch
+                    val badgeScope = badgeSession?.let {
+                        RetainedBadgeScope(it.match.matchId, it.match.observationAttemptStartedAtNanos)
+                    }
                     val badgeExclusionBefore = retainedOpponentBadge.exclusion(receivedAtNanos)
                     val nativeFrame = CapturedVisualFrame(bitmap, capturedAtWallTimeMillis, receivedAtNanos,
                         overlayRegion = capturedOverlayRegion, retainedBadgeRegion = badgeExclusionBefore)
-                    val playerBadgeRegion = if (registrationMode) badgeCalibration.playerTeamInfoRegion else
+                    val playerBadgeRegion = if (!battleSurfaceEstablished) badgeCalibration.playerTeamInfoRegion else
                         TeamBadgeCropLocator.locate(BattleRegionId.PLAYER_TEAM_INFO, badgeCalibration, nativeFrame)
-                    val opponentBadgeRegion = if (registrationMode || badgeExclusionBefore != null)
+                    val opponentBadgeRegion = if (!battleSurfaceEstablished || badgeExclusionBefore != null)
                         badgeCalibration.opponentTeamInfoRegion else
                         TeamBadgeCropLocator.locate(BattleRegionId.OPPONENT_TEAM_INFO, badgeCalibration, nativeFrame)
-                    val playerBadgePresent = !registrationMode &&
+                    val playerBadgePresent = battleSurfaceEstablished &&
                         TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, playerBadgeRegion)
-                    val opponentBadgePresent = !registrationMode && badgeExclusionBefore == null &&
+                    val opponentBadgePresent = battleSurfaceEstablished && badgeExclusionBefore == null &&
                         TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, opponentBadgeRegion)
                     if (!registrationMode && !DroidballOverlayPresentation.battleBadgeSeen.value &&
                         playerBadgePresent && opponentBadgePresent) {
@@ -565,10 +582,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         DroidballOverlayPresentation.showBattleHud()
                         emitSignal(DroidballSignal.BattleHudWitnessed)
                     }
-                    if (!registrationMode && DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
-                        DroidballOverlayPresentation.battleBadgeSeen.value) {
+                    if (!registrationMode) {
                         retainedOpponentBadge.update(bitmap, receivedAtNanos, playerBadgePresent, opponentBadgePresent,
-                            opponentBadgeRegion, width, height)
+                            opponentBadgeRegion, width, height, badgeScope,
+                            battleSurfaceEstablished &&
+                                DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
+                                DroidballOverlayPresentation.battleBadgeSeen.value,
+                            capturedOverlayRegion)
                     }
                     val capturedAtMonotonicTimeNanos = receivedAtNanos
                     lastPublishedFrameNanos?.let { previous ->
@@ -917,7 +937,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
         _frames.resetReplayCache()
         if (open) {
-            params.flags = params.flags or WindowManager.LayoutParams.FLAG_SECURE
+            // Let Android screenshots include the editor. fieldEditorBlocksCapture
+            // pauses our visual readers, so its text cannot become game evidence.
             if (fieldEditorOriginalPosition == null) fieldEditorOriginalPosition = params.x to params.y
             // Keep GO's start button behind the editor while visual capture is
             // paused. USE THIS TEAM or CLOSE returns touch input to the game.
@@ -927,7 +948,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.x = (displayBounds().width() * .04f).roundToInt()
             params.y = (displayBounds().height() * .12f).roundToInt()
         } else {
-            if (!registrationMode) params.flags = params.flags and WindowManager.LayoutParams.FLAG_SECURE.inv()
             fieldEditorOriginalPosition?.let { (x, y) -> params.x = x; params.y = y }
             fieldEditorOriginalPosition = null
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -1108,30 +1128,20 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             )
         }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Droidball Observation",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-    }
-
     private fun createNotification(state: DroidballNotificationState = DroidballNotificationState.IDLE): Notification =
-        buildDroidballNotification(this, CHANNEL_ID, state, registrationMode)
+        buildDroidballNotification(this, DROIDBALL_CHANNEL_ID, state, registrationMode,
+            sessionId = notificationSessionId, matchId = fieldViewModel.activeMatch.value?.matchId)
 
     private fun observeNotificationState() {
         notificationStateJob?.cancel()
         notificationStateJob = serviceScope.launch {
-            combine(runtimeState, instrumentVisible, DroidballOverlayPresentation.mode) { runtime, visible, mode ->
-                droidballNotificationState(runtime, visible, mode, registrationMode)
-            }.distinctUntilChanged().collect { state ->
+            combine(runtimeState, instrumentVisible, DroidballOverlayPresentation.mode,
+                fieldViewModel.activeMatch) { runtime, visible, mode, match ->
+                droidballNotificationState(runtime, visible, mode, registrationMode) to match?.matchId
+            }.distinctUntilChanged().collect { (state, _) ->
                 // Never recreate a foreground notification after capture has stopped.
                 if (_runtimeState.value != DroidballRuntimeState.STOPPED) {
-                    getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, createNotification(state))
+                    getSystemService(NotificationManager::class.java).notify(DROIDBALL_NOTIFICATION_ID, createNotification(state))
                 }
             }
         }
@@ -1226,6 +1236,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         Log.d("FRAME_DELIVERY", "Final Summary [Stop]: attempts=$publicationAttempts, emitSucceeded=$successEmitCount, rejected=$rejectedEmitCount, subscribers=$subs")
 
         serviceScope.cancel()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        showIdleDroidballNotification(this)
         super.onDestroy()
     }
 
@@ -1251,5 +1263,7 @@ sealed class DroidballSignal {
     data object ConfirmInferredPlayerTeamRequested : DroidballSignal()
     data object RejectInferredPlayerTeamRequested : DroidballSignal()
     data object BeginNextMatch : DroidballSignal()
+    /** A stale notification cannot close the replacement match. */
+    data class BeginNextMatchRequested(val matchId: String) : DroidballSignal()
     data class VisualCaptureGap(val durationNanos: Long) : DroidballSignal()
 }

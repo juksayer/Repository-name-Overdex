@@ -208,7 +208,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 if (fainted.contains(payload.side, payload.speciesName)) return flushExpired(watermarkNanos)
                 val earlier = appearances[payload.side]
                 if (atNanos >= (earlier?.atNanos ?: Long.MIN_VALUE) &&
-                    !payload.speciesName.equals(earlier?.speciesName, ignoreCase = true)) {
+                    (!payload.speciesName.equals(earlier?.speciesName, ignoreCase = true) ||
+                        (payload.appearanceStartedAtNanos != null && payload.appearanceStartedAtNanos != earlier?.atNanos))) {
                     val appearance = Appearance(article.id.value, payload.speciesName, atNanos)
                     appearances[payload.side] = appearance
                     recordAppearanceBoundary(payload.side, appearance)

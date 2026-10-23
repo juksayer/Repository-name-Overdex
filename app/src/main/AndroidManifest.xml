@@ -50,6 +50,10 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".battle.observation.DroidballNotificationReceiver"
+            android:exported="false" />
+
         <service
             android:name=".battle.observation.DroidballService"
             android:foregroundServiceType="mediaProjection|microphone"

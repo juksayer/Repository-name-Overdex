@@ -48,10 +48,14 @@ class RetainedOpponentBadgeDeviceTest {
         try {
             val before = shot("native")
             val t = System.nanoTime()
-            retained.update(source, t, true, true, opponent, width, height)
+            val scope = RetainedBadgeScope("badge-retention-test", t)
+            fun update(bitmap: Bitmap, at: Long, playerPresent: Boolean, opponentPresent: Boolean) =
+                retained.update(bitmap, at, playerPresent, opponentPresent, opponent, width, height,
+                    scope, battleSurfaceEstablished = true, hudRegion = null)
+            update(source, t, true, true)
             assertNull(retained.exclusion(t))
-            retained.update(source, t + 1, false, false, opponent, width, height)
-            retained.update(source, t + 150_000_000, false, false, opponent, width, height)
+            update(source, t + 1, false, false)
+            update(source, t + 150_000_000, false, false)
             val shown = shot("retained")
             assertEquals(opponent, retained.exclusion(System.nanoTime()))
             val x = ((opponent.x + opponent.width * .5f) * width).toInt()
@@ -74,9 +78,9 @@ class RetainedOpponentBadgeDeviceTest {
             assertTrue(frame.canObserve(AnchorRegion(.2f, .5f, .6f, .05f)))
 
             // Our copy is visible in this capture. It must not cause hide/cache cycling.
-            retained.update(shown, System.nanoTime(), false, true, opponent, width, height)
+            update(shown, System.nanoTime(), false, true)
             assertNotNull(retained.exclusion(System.nanoTime()))
-            retained.update(source, System.nanoTime(), true, true, opponent, width, height)
+            update(source, System.nanoTime(), true, true)
             assertNotNull("Queued captures remain excluded after hiding", retained.exclusion(System.nanoTime()))
             val cleared = shot("returned")
             assertEquals("Player badge return removes our copy", cleared.getPixel(100, height / 2), cleared.getPixel(x, y))

@@ -72,20 +72,15 @@ class Match(
     private val countdownMatchStartInference = com.example.overdex.battle.inference.CountdownMatchStartInference()
     private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
     private val playerInformationInference = com.example.overdex.battle.inference.PlayerBattleInformationInference(pokemonKnowledge)
+    private val playerIdentityInference = com.example.overdex.battle.inference.PlayerActiveIdentityInference()
     private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge)
     private val opponentEnergyForecast = com.example.overdex.battle.forecast.OpponentEnergyForecast()
 
     internal fun observeForecastBattlefield(at: Long, bothBarsVisible: Boolean) {
         opponentEnergyForecast.observeBattlefield(at, bothBarsVisible)
     }
-    private val fastMoveUseInference = FastMoveUseInference { impact ->
-        // Capture the sound when the first raw impact arrives, without waiting
-        // for the bounded corroboration buffer to publish the fused use.
-        DroidballService.requestCueCenteredAudio(
-            impact.id.value, com.example.overdex.battle.audio.BattleCryCueKind.FAST_MOVE_IMPACT,
-            impact.monotonicTimeNanos
-        )
-    }
+    // Fast Move sound analysis now follows the shared PCM stream independently.
+    private val fastMoveUseInference = FastMoveUseInference()
     private val chargedMoveAnnouncementInference = ChargedMoveAnnouncementInference(pokemonKnowledge)
     private val chargeMoveQteVibrationInference = ChargeMoveQteVibrationInference()
 
@@ -348,9 +343,13 @@ class Match(
                 }
 
                 (testimony.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
-                    playerRosterBySlot[rosterEntry.slot] = rosterEntry.speciesName
+                    val name = com.example.overdex.data.PokemonFormReference.mergeRosterName(
+                        playerRosterBySlot[rosterEntry.slot].takeIf { playerRosterArticleBySlot.containsKey(rosterEntry.slot) },
+                        rosterEntry.speciesName,
+                        explicitSprite = rosterEntry.spriteVariant != null)
+                    playerRosterBySlot[rosterEntry.slot] = name
                     rosterEntry.speciesId?.let { playerRosterIdBySlot[rosterEntry.slot] = it }
-                    DroidballOverlayPresentation.recordInferredPlayerRosterSlot(rosterEntry.slot, rosterEntry.speciesName)
+                    DroidballOverlayPresentation.recordInferredPlayerRosterSlot(rosterEntry.slot, name)
                 }
                 (testimony.payload as? PlayerTeamSlotConfigured)?.let { configured ->
                     if (playerRosterBySlot[configured.slot]?.let(TeamRosterSpeciesAttributor::speciesKey) !=
@@ -376,7 +375,12 @@ class Match(
                     monotonicTimeNanos = testimony.monotonicTimeNanos
                 )
                 (article.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
-                    playerRosterArticleBySlot[rosterEntry.slot] = article.id
+                    // A later bare OCR label must not replace the evidence that
+                    // supplied the retained regional form.
+                    if (playerRosterBySlot[rosterEntry.slot] == rosterEntry.speciesName ||
+                        !playerRosterArticleBySlot.containsKey(rosterEntry.slot)) {
+                        playerRosterArticleBySlot[rosterEntry.slot] = article.id
+                    }
                 }
                 (article.payload as? PlayerTeamSlotConfigured)?.let {
                     configuredRosterArticleBySlot[it.slot] = article.id
@@ -413,6 +417,7 @@ class Match(
                 realityTimeline.append(article)
                 cueSpeciesChecks(article)
                 _articles.tryEmit(article)
+                appendPlayerIdentityDerivations(article)
                 val capturedCropName = (article.payload as? com.example.overdex.battle.custody.CropCaptured)
                     ?.cropProvenance?.cropName
                 if (capturedCropName == BattleCropContracts.playerActiveSpeciesText.cropName ||
@@ -426,7 +431,6 @@ class Match(
                     _activeHpCropArticles.tryEmit(article)
                 }
                 if (article.payload is ActivePokemonSpeciesWitnessed ||
-                    article.payload is ActivePokemonTypesWitnessed ||
                     article.payload is AttackIncoming ||
                     article.payload is GetReadyWitnessed ||
                     article.payload is ChargeMoveUsedAnnounced
@@ -440,7 +444,10 @@ class Match(
                 (article.payload as? ActivePokemonSpeciesWitnessed)?.let { witnessed ->
                     if ((article.monotonicTimeNanos ?: Long.MAX_VALUE) <
                         (activeSpeciesAtBySide[witnessed.side] ?: Long.MIN_VALUE)) return@let
-                    val species = pokemonKnowledge.getPokemonByName(witnessed.speciesName)
+                    val referenceName = if (witnessed.side == ActivePokemonSide.PLAYER)
+                        playerIdentityInference.at(article.monotonicTimeNanos ?: Long.MIN_VALUE)?.payload?.speciesName
+                            ?: witnessed.speciesName else witnessed.speciesName
+                    val species = pokemonKnowledge.getPokemonByName(referenceName)
                     if (witnessed.side == ActivePokemonSide.PLAYER) {
                         DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
                     } else {
@@ -469,7 +476,7 @@ class Match(
                     }
                 }
                 (article.payload as? PlayerTeamSlotConfigured)
-                    ?.takeIf { it.slot == 1 }
+                    ?.takeIf { it.slot == 1 && activeSpeciesBySide[ActivePokemonSide.PLAYER] == null }
                     ?.let { configuredLead ->
                         val species = pokemonKnowledge.getPokemonByName(configuredLead.speciesName)
                         DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
@@ -518,30 +525,7 @@ class Match(
 
                 appendFastMoveCadenceDerivations(article)
 
-                chargedMoveAnnouncementInference
-                    .accept(article, ::sideForRosterKnownSpecies)
-                    ?.let { derivation ->
-                        val derivedArticle = RealityArticle(
-                            id = ArticleId(UUID.randomUUID().toString()),
-                            perceivedAt = derivation.observedArticle.perceivedAt,
-                            recordedAt = System.currentTimeMillis(),
-                            sourceId = SourceId("CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER"),
-                            payload = derivation.payload,
-                            predecessorIds = derivation.predecessorIds,
-                            matchId = MatchId(matchId),
-                            monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
-                        )
-                        realityTimeline.append(derivedArticle)
-                        _articles.tryEmit(derivedArticle)
-                        battleMemory.timeline.record(derivedArticle)
-                        appendChargeMoveQteDerivation(derivedArticle)
-                        if (derivation.payload.side == ActivePokemonSide.OPPONENT) {
-                            DroidballOverlayPresentation.recordOpponentChargedMove(
-                                derivation.payload.speciesName,
-                                derivation.payload.moveName,
-                            )
-                        }
-                    }
+                appendChargedMoveAnnouncement(article)
 
                 interpreter.interpretAttackIncoming(article)?.let { derivedArticle ->
                     realityTimeline.append(derivedArticle)
@@ -608,8 +592,68 @@ class Match(
         }
     }
 
+    private suspend fun appendChargedMoveAnnouncement(article: RealityArticle) {
+        chargedMoveAnnouncementInference
+            .takeUnless { isRawPlayerSpecies(article) }
+            ?.accept(playerIdentityInference.projectFaint(article), ::sideForRosterKnownSpecies)
+            ?.let { derivation ->
+                val derivedArticle = RealityArticle(
+                    id = ArticleId(UUID.randomUUID().toString()),
+                    perceivedAt = derivation.observedArticle.perceivedAt,
+                    recordedAt = System.currentTimeMillis(),
+                    sourceId = SourceId("CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER"),
+                    payload = derivation.payload,
+                    predecessorIds = derivation.predecessorIds,
+                    matchId = MatchId(matchId),
+                    monotonicTimeNanos = derivation.observedArticle.monotonicTimeNanos
+                )
+                realityTimeline.append(derivedArticle)
+                _articles.tryEmit(derivedArticle)
+                battleMemory.timeline.record(derivedArticle)
+                appendChargeMoveQteDerivation(derivedArticle)
+                if (derivation.payload.side == ActivePokemonSide.OPPONENT) {
+                    DroidballOverlayPresentation.recordOpponentChargedMove(
+                        derivation.payload.speciesName,
+                        derivation.payload.moveName,
+                    )
+                }
+            }
+    }
+
+    private fun isRawPlayerSpecies(article: RealityArticle): Boolean =
+        (article.payload as? ActivePokemonSpeciesWitnessed)?.side == ActivePokemonSide.PLAYER &&
+            article.sourceId.id != "PLAYER_ACTIVE_IDENTITY_INFERENCE"
+
+    private suspend fun appendPlayerIdentityDerivations(article: RealityArticle) {
+        playerIdentityInference.accept(article).forEach { resolution ->
+            val derived = RealityArticle(
+                ArticleId(UUID.randomUUID().toString()), resolution.source.perceivedAt, System.currentTimeMillis(),
+                SourceId("PLAYER_ACTIVE_IDENTITY_INFERENCE"), resolution.payload,
+                predecessorIds = resolution.evidence, matchId = MatchId(matchId),
+                monotonicTimeNanos = resolution.payload.appearanceStartedAtNanos,
+            )
+            realityTimeline.append(derived)
+            _articles.tryEmit(derived)
+            battleMemory.timeline.record(derived)
+            val projected = resolution.speciesProjection(derived)
+            // Historical label OCR can refine an old interval without rolling
+            // the currently active battler back to the departed Pokemon.
+            appendChargedMoveAnnouncement(projected)
+            appendPlayerInformationChecks(projected)
+            if (playerIdentityInference.resolutions().lastOrNull()?.payload?.appearanceStartedAtNanos ==
+                resolution.payload.appearanceStartedAtNanos) {
+                appendFastMoveUseDerivations(projected)
+                appendFastMoveEnergyDerivations(projected)
+                appendFastMoveCadenceDerivations(projected)
+                val species = pokemonKnowledge.getPokemonByName(resolution.payload.speciesName)
+                DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
+            }
+        }
+    }
+
     private suspend fun appendPlayerInformationChecks(article: RealityArticle) {
-        playerInformationInference.accept(article).forEach { check ->
+        if (isRawPlayerSpecies(article)) return
+        playerInformationInference.accept(playerIdentityInference.projectFaint(article)).forEach { check ->
             val derived = RealityArticle(
                 id = ArticleId(UUID.randomUUID().toString()),
                 perceivedAt = check.observedArticle.perceivedAt,
@@ -625,7 +669,8 @@ class Match(
     }
 
     private suspend fun appendFastMoveUseDerivations(article: RealityArticle) {
-        fastMoveUseInference.accept(article).forEach { derivation ->
+        if (isRawPlayerSpecies(article)) return
+        fastMoveUseInference.accept(playerIdentityInference.projectFaint(article)).forEach { derivation ->
             val derivedArticle = RealityArticle(
                 id = ArticleId(UUID.randomUUID().toString()),
                 perceivedAt = derivation.observedArticle.perceivedAt,
@@ -665,7 +710,8 @@ class Match(
     }
 
     private suspend fun appendFastMoveEnergyDerivations(article: RealityArticle) {
-        fastMoveEnergyInference.accept(article).forEach { derivation ->
+        if (isRawPlayerSpecies(article)) return
+        fastMoveEnergyInference.accept(playerIdentityInference.projectFaint(article)).forEach { derivation ->
             val derivedArticle = RealityArticle(
                 id = ArticleId(UUID.randomUUID().toString()),
                 perceivedAt = derivation.observedArticle.perceivedAt,
@@ -692,11 +738,15 @@ class Match(
         // A saved slot is a move/roster configuration, not an observation of the
         // lead selected in GO. Never fabricate that appearance at the countdown.
         if (playerRosterContradicted || !playerRosterArticleBySlot.containsKey(1)) return
-        val speciesName = playerRosterBySlot[1] ?: return
+        val rosterName = playerRosterBySlot[1] ?: return
+        // Keep the battle identity aligned with GO's bare badge label. The cited
+        // roster retains the form for knowledge lookups; a later "Raichu" OCR
+        // reading must not look like a switch away from "Raichu (Alolan)".
+        val speciesName = rosterName.substringBefore(" (")
         // A late GO result can arrive after the player has already switched.
         // Team Select may fill an unknown lead; it must not replace a witnessed active species.
         if (activeSpeciesBySide[ActivePokemonSide.PLAYER] != null) return
-        val species = pokemonKnowledge.getPokemonByName(speciesName)
+        val species = pokemonKnowledge.getPokemonByName(rosterName)
         val leadArticle = RealityArticle(
             id = ArticleId(UUID.randomUUID().toString()),
             perceivedAt = matchStartArticle.perceivedAt,
@@ -719,20 +769,16 @@ class Match(
         cueSpeciesChecks(leadArticle)
         _articles.tryEmit(leadArticle)
         battleMemory.timeline.record(leadArticle)
+        appendPlayerIdentityDerivations(leadArticle)
         speciesChecks.delivered(ActivePokemonSide.PLAYER, speciesName, leadArticle.id.value)
         DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
         DroidballOverlayPresentation.showBattleHud()
         DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
-        fastMoveUseInference.accept(leadArticle)
-        // This identity is derived locally rather than received through custody.
-        // Charged-move attribution needs the same lead that Fast Move inference sees.
-        chargedMoveAnnouncementInference.accept(leadArticle, ::sideForRosterKnownSpecies)
-        appendFastMoveEnergyDerivations(leadArticle)
-        appendFastMoveCadenceDerivations(leadArticle)
     }
 
     private suspend fun appendFastMoveCadenceDerivations(article: RealityArticle) {
-        val derivations = fastMoveCadenceInference.accept(article)
+        if (isRawPlayerSpecies(article)) return
+        val derivations = fastMoveCadenceInference.accept(playerIdentityInference.projectFaint(article))
         fastMoveCadenceInference.candidateSnapshot(ActivePokemonSide.OPPONENT)?.let { candidates ->
             opponentEnergyForecast.restrictCandidates(candidates.speciesName, candidates.remainingMoveNames)
             DroidballOverlayPresentation.recordOpponentFastMoveCandidates(

@@ -60,7 +60,7 @@ class RecordedIdleReplayTest {
 
         for (second in 98L..129L) {
             val scene = model.sceneAt(second * 1_000_000_000 + 200_000_000)
-            assertEquals("At $second s", "Gourgeist", scene.player?.speciesName)
+            assertEquals("At $second s", "Gourgeist", scene.player?.speciesName?.substringBefore(" ("))
             assertEquals("At $second s", "Sealeo", scene.opponent?.speciesName)
         }
         assertEquals("Vaporeon", model.sceneAt(133_000_000_000L).opponent?.speciesName)

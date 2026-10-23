@@ -1,0 +1,98 @@
+// Trainer Comms v1 data model:
+// trainerCommsProfiles/{account UID}: public displayName, twelve-digit trainerCode, updatedAt.
+// trainerCommsCodes/{trainerCode}: unique discovery index -> accountId, claimed atomically with profile.
+// trainerConversations/{stable ID}: immutable kind/title/ownerId/memberIds (2-8)/createdAt.
+// trainerConversations/{ID}/messages/{stable ID}: immutable text, senderId/name, client sentAt,
+//   serverSentAt. Read/list requires membership; create binds sender to authenticated UID.
+// Email/password exist only in Firebase Authentication, never in public profile documents.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function own(uid) { return signedIn() && request.auth.uid == uid; }
+    function shortText(value, max) { return value is string && value.size() > 0 && value.size() <= max; }
+    function uid(value) { return value is string && value.matches('[A-Za-z0-9_-]{1,128}'); }
+    function code(value) { return value is string && value.matches('[0-9]{12}'); }
+    function profile(uid) { return /databases/$(database)/documents/trainerCommsProfiles/$(uid); }
+    function codeRef(value) { return /databases/$(database)/documents/trainerCommsCodes/$(value); }
+    function room(id) { return /databases/$(database)/documents/trainerConversations/$(id); }
+    function member(id) { return signedIn() && request.auth.uid in get(room(id)).data.memberIds; }
+
+    function validProfile(d, id) {
+      return d.keys().hasAll(['accountId', 'trainerCode', 'displayName', 'updatedAt'])
+        && d.keys().hasOnly(['accountId', 'trainerCode', 'displayName', 'updatedAt'])
+        && d.accountId == id && uid(d.accountId) && code(d.trainerCode)
+        && shortText(d.displayName, 40) && d.updatedAt is timestamp
+        && d.updatedAt == request.time
+        && getAfter(codeRef(d.trainerCode)).data.accountId == id;
+    }
+    match /trainerCommsProfiles/{id} {
+      allow get: if signedIn();
+      allow list, delete: if false;
+      allow create: if own(id) && validProfile(request.resource.data, id);
+      allow update: if own(id) && validProfile(request.resource.data, id)
+        && (request.resource.data.trainerCode == resource.data.trainerCode
+          || !existsAfter(codeRef(resource.data.trainerCode)));
+    }
+    // Codes are discovery handles. The immutable account ID owns conversations.
+    // Claiming a code is not proof of ownership of a Pokemon GO account.
+    match /trainerCommsCodes/{value} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && code(value)
+        && request.resource.data.keys().hasAll(['accountId'])
+        && request.resource.data.keys().hasOnly(['accountId'])
+        && request.resource.data.accountId == request.auth.uid
+        && getAfter(profile(request.auth.uid)).data.trainerCode == value;
+      allow update: if own(resource.data.accountId) && request.resource.data == resource.data;
+      allow delete: if own(resource.data.accountId)
+        && getAfter(profile(request.auth.uid)).data.trainerCode != value;
+    }
+
+    function registeredMember(members, index) {
+      return members.size() <= index || (uid(members[index]) && exists(profile(members[index])));
+    }
+    function validConversation(d) {
+      return d.keys().hasAll(['title', 'kind', 'memberIds', 'ownerId', 'createdAt'])
+        && d.keys().hasOnly(['title', 'kind', 'memberIds', 'ownerId', 'createdAt'])
+        && shortText(d.title, 80) && d.kind in ['DIRECT', 'GROUP']
+        && uid(d.ownerId) && d.ownerId == request.auth.uid
+        && d.memberIds is list && d.memberIds.size() >= 2 && d.memberIds.size() <= 8
+        && d.memberIds.toSet().size() == d.memberIds.size()
+        && request.auth.uid in d.memberIds
+        && (d.kind != 'DIRECT' || d.memberIds.size() == 2)
+        && registeredMember(d.memberIds, 0) && registeredMember(d.memberIds, 1)
+        && registeredMember(d.memberIds, 2) && registeredMember(d.memberIds, 3)
+        && registeredMember(d.memberIds, 4) && registeredMember(d.memberIds, 5)
+        && registeredMember(d.memberIds, 6) && registeredMember(d.memberIds, 7)
+        && d.createdAt is timestamp && d.createdAt == request.time;
+    }
+    function validMessage(d) {
+      return d.keys().hasAll(['senderId', 'senderName', 'text', 'sentAt', 'serverSentAt'])
+        && d.keys().hasOnly(['senderId', 'senderName', 'text', 'sentAt', 'serverSentAt'])
+        && d.senderId == request.auth.uid && uid(d.senderId)
+        && shortText(d.senderName, 40) && d.senderName == get(profile(request.auth.uid)).data.displayName
+        && shortText(d.text, 4000) && d.sentAt is int && d.sentAt >= 0
+        && d.sentAt <= request.time.toMillis() + 300000
+        && d.serverSentAt is timestamp && d.serverSentAt == request.time;
+    }
+    match /trainerConversations/{id} {
+      // A transaction may check a proposed ID before its first creation.
+      allow get: if signedIn() && (!exists(room(id)) || request.auth.uid in resource.data.memberIds);
+      allow list: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if signedIn() && id.matches('[A-Za-z0-9_-]{1,80}') && validConversation(request.resource.data);
+      // First release has immutable membership. No client can add itself to another room.
+      allow update, delete: if false;
+      match /messages/{messageId} {
+        allow get, list: if member(id);
+        allow create: if member(id) && messageId.matches('[A-Za-z0-9_-]{1,80}') && validMessage(request.resource.data);
+        // Retry reads the same ID in a transaction; messages are never overwritten.
+        allow update, delete: if false;
+      }
+    }
+    // Includes the obsolete unauthenticated pair-ID chat paths.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

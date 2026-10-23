@@ -13,6 +13,28 @@ import org.junit.Test
 import java.io.File
 
 class DroidballNotificationDeviceTest {
+    @Test fun stoppedAndRunningNotificationsExposeTheCorrectControls() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val idle = buildDroidballNotification(context, "droidball_observation",
+            DroidballNotificationState.IDLE, registrationMode = false, sessionActive = false)
+        assertEquals(listOf("Start", "Overdex"), idle.actions.map { it.title.toString() })
+        assertEquals(0, idle.flags and Notification.FLAG_ONGOING_EVENT)
+        assertTrue(idle.actions.all { it.actionIntent.isActivity })
+        val running = buildDroidballNotification(context, "droidball_observation",
+            DroidballNotificationState.IDLE, registrationMode = false,
+            sessionId = "session-1", matchId = "match-1")
+        assertEquals(listOf("Stop", "Next match", "Overdex"), running.actions.map { it.title.toString() })
+        assertTrue(running.actions[0].actionIntent.isBroadcast)
+        assertTrue(running.actions[1].actionIntent.isBroadcast)
+        assertTrue(running.actions[2].actionIntent.isActivity)
+        assertEquals(context.packageName, running.actions[0].actionIntent.creatorPackage)
+        assertTrue(running.flags and Notification.FLAG_ONGOING_EVENT != 0)
+        val next = buildDroidballNotification(context, "droidball_observation",
+            DroidballNotificationState.IDLE, registrationMode = false,
+            sessionId = "session-1", matchId = "match-2")
+        assertNotEquals(running.actions[1].actionIntent, next.actions[1].actionIntent)
+    }
+
     @Test fun systemNotificationChangesEyesInPlaceWithoutSound() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val manager = context.getSystemService(NotificationManager::class.java)

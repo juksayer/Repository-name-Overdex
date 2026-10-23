@@ -4,6 +4,32 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DroidballNotificationStateTest {
+    @Test fun stoppedCaptureOffersStartAndReturnWithoutKeepingAServiceAlive() {
+        assertEquals(listOf(DroidballNotificationControl.START, DroidballNotificationControl.OVERDEX),
+            droidballNotificationControls(sessionActive = false, registrationMode = false, matchId = null))
+    }
+
+    @Test fun closedEyesDuringAnOpenSessionStillOfferStopAndNextMatch() {
+        assertEquals(DroidballNotificationState.IDLE, state(visible = true))
+        assertEquals(listOf(DroidballNotificationControl.STOP, DroidballNotificationControl.NEXT_MATCH,
+            DroidballNotificationControl.OVERDEX),
+            droidballNotificationControls(sessionActive = true, registrationMode = false, matchId = "match-1"))
+    }
+
+    @Test fun registrationAndStartingWithoutAMatchDoNotOfferNextMatch() {
+        val expected = listOf(DroidballNotificationControl.STOP, DroidballNotificationControl.OVERDEX)
+        assertEquals(expected, droidballNotificationControls(true, true, "old-match"))
+        assertEquals(expected, droidballNotificationControls(true, false, null))
+    }
+
+    @Test fun oldNotificationCannotStopANewerSessionOrAdvanceANewerMatch() {
+        assertEquals(true, droidballNotificationTargetsCurrentSession("session-1", "session-1", "match-1", "match-1"))
+        assertEquals(false, droidballNotificationTargetsCurrentSession("session-1", "session-2", "match-1", "match-1"))
+        assertEquals(false, droidballNotificationTargetsCurrentSession("session-1", "session-1", "match-1", "match-2"))
+        assertEquals(false, droidballNotificationTargetsCurrentSession(null, "session-1", null, null))
+        assertEquals(true, droidballNotificationTargetsCurrentSession("session-1", "session-1", null, null))
+    }
+
     private fun state(
         runtime: DroidballRuntimeState = DroidballRuntimeState.ACTIVE,
         visible: Boolean = false,

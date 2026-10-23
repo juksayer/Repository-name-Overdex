@@ -61,7 +61,8 @@ internal class LiveOverlaySpeciesPipeline(
     private val side: ActivePokemonSide,
     private val captureAllowed: () -> Boolean,
     override val observerId: ObserverId,
-    override val name: String
+    override val name: String,
+    private val battleContextEstablished: () -> Boolean = { true },
 ) : Observer {
     override val managesAvailability: Boolean = true
 
@@ -115,17 +116,27 @@ internal class LiveOverlaySpeciesPipeline(
             // freshest strip while the prior sample is being preserved.
             pipelineScope.launch(Dispatchers.Default) {
                 input.supplyFrames { frame ->
-                    // Always let the coordinator advance its recovery clock while
-                    // the battle surface is visible. Short-circuiting here on the
-                    // previous successful recognition prevented recovery windows
-                    // from ever opening when a switch cue was missed.
                     val calibratedRegion = cropContract.crop.region.regionIn(calibration)
-                    val scheduled = captureAllowed() && match.speciesChecks.captureEnabled(side)
-                    if (scheduled && lastSampledAtNanos > 0L &&
+                    val allowed = captureAllowed()
+                    if (allowed && lastSampledAtNanos > 0L &&
                         frame.capturedAtMonotonicTimeNanos - lastSampledAtNanos <
                         SpeciesCheckCoordinator.SAMPLE_INTERVAL_NANOS
                     ) return@supplyFrames
-                    if (scheduled) lastSampledAtNanos = frame.capturedAtMonotonicTimeNanos
+                    if (allowed) lastSampledAtNanos = frame.capturedAtMonotonicTimeNanos
+                    // Menu scenery should not occupy the urgent OCR lane. Keep
+                    // a cheap native-badge probe so the first pre-GO name can
+                    // still wake its own reader when VS/entry OCR was missed.
+                    // This only admits pixels; it establishes no battle event.
+                    val battleAttention = allowed && (battleContextEstablished() ||
+                        match.speciesChecks.hasBattleCue(side) || run {
+                            val badgeId = if (side == ActivePokemonSide.PLAYER)
+                                BattleRegionId.PLAYER_TEAM_INFO else BattleRegionId.OPPONENT_TEAM_INFO
+                            val badge = TeamBadgeCropLocator.locate(badgeId, calibration, frame)
+                            TeamBadgeCropLocator.nativeBadgePresent(frame, badge)
+                        })
+                    // Once a battlefield is established, retain periodic recovery
+                    // checks even if a switch cue or transient badge is missed.
+                    val scheduled = battleAttention && match.speciesChecks.captureEnabled(side)
                     // A system-inset change can leave the saved strip inside our
                     // HUD while the native name is clear just above it. Recover
                     // the actual row first, excluding every presentation window.
@@ -243,7 +254,9 @@ internal class LiveOverlaySpeciesPipeline(
                                 sample = newer
                                 replacedCrops++
                             }
-                            if (!match.speciesChecks.needsReading(side, sample.speciesCheckWindowId,
+                            if (!captureAllowed() ||
+                                sample.capturedAtMonotonicTimeNanos < match.observationAttemptStartedAtNanos ||
+                                !match.speciesChecks.needsReading(side, sample.speciesCheckWindowId,
                                     sample.capturedAtMonotonicTimeNanos)) return@withReadingTurn null
                             val context = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
                             recognizeCandidates(sample.bitmap, context, heightProfile) { rawText ->
@@ -384,6 +397,7 @@ internal class LiveOverlaySpeciesPipeline(
             input: ObservationInput,
             calibration: BattleCalibration,
             artifactStore: FileCropArtifactStore,
+            battleContextEstablished: () -> Boolean = { true },
             captureAllowed: () -> Boolean
         ) = LiveOverlaySpeciesPipeline(
             input,
@@ -392,13 +406,15 @@ internal class LiveOverlaySpeciesPipeline(
             ActivePokemonSide.PLAYER,
             captureAllowed,
             ObserverId("PLAYER_SPECIES_OVERLAY_PIPELINE", ObservationSource.SCREEN_CAPTURE),
-            "Player Species Overlay Pipeline"
+            "Player Species Overlay Pipeline",
+            battleContextEstablished,
         )
 
         fun opponent(
             input: ObservationInput,
             calibration: BattleCalibration,
             artifactStore: FileCropArtifactStore,
+            battleContextEstablished: () -> Boolean = { true },
             captureAllowed: () -> Boolean
         ) = LiveOverlaySpeciesPipeline(
             input,
@@ -407,7 +423,8 @@ internal class LiveOverlaySpeciesPipeline(
             ActivePokemonSide.OPPONENT,
             captureAllowed,
             ObserverId("OPPONENT_SPECIES_OVERLAY_PIPELINE", ObservationSource.SCREEN_CAPTURE),
-            "Opponent Species Overlay Pipeline"
+            "Opponent Species Overlay Pipeline",
+            battleContextEstablished,
         )
     }
 }
