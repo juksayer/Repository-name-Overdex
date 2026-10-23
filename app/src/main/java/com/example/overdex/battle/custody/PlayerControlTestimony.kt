@@ -30,3 +30,21 @@ data class PlayerBattleInformationChecked(
     val speciesName: String, val field: String, val configuredValue: String?,
     val observedValue: String, val status: String, val basis: String,
 ) : TestimonyPayload
+
+/** Experimental fill HEIGHT, in captured crop pixels; null means unknown, never zero energy. */
+data class PlayerChargeButtonFillHeightMeasured(
+    val slot: Int,
+    val status: String,
+    val centerX: Int?,
+    val centerY: Int?,
+    val radius: Int?,
+    val separatorY: Float?,
+    val fillHeightFraction: Float?,
+    val pixelTolerance: Float,
+    val cropLeft: Int,
+    val cropTop: Int,
+    val cropWidth: Int,
+    val cropHeight: Int,
+    val sourceWidth: Int,
+    val sourceHeight: Int
+) : TestimonyPayload

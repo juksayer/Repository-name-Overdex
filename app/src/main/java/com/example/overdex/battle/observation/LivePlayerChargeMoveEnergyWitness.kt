@@ -46,11 +46,14 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
     private var lastSpeciesName: String? = null
     private val stateLock = Any()
     private val detector = PlayerChargeMoveEnergyFillDetector()
+    private var lastHeightSampleNanos: Long? = null
+    private val heightSource = SourceId(BattleWitnessContracts.playerChargeButtonFillHeight.witnessId)
 
     override fun start(match: Match) {
         if (scope != null) return
         activeMatch = match
         lastEnabled = null
+        lastHeightSampleNanos = null
         lastSpeciesName = null
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
@@ -73,11 +76,13 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
             witnessScope.launch {
                 try {
                     match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
+                    match.custody.submitAvailability(heightSource, true, System.currentTimeMillis())
                     lastEnabled = true
                     input.supplyFrames { frame ->
                         val enabled = isEnabled()
                         if (lastEnabled != enabled) {
                             match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
+                            match.custody.submitAvailability(heightSource, enabled, frame.capturedAtWallTimeMillis)
                             lastEnabled = enabled
                             if (!enabled) synchronized(stateLock) { detector.reset() }
                         }
@@ -85,6 +90,29 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                         val crop = BattleCropContracts.playerChargeMoveControls
                             .resolve(calibration, frame) ?: return@supplyFrames
                         try {
+                            // Share the already-resolved controls crop; no extra OCR or PNG encoding.
+                            val now = frame.capturedAtMonotonicTimeNanos
+                            if (lastHeightSampleNanos == null || now - lastHeightSampleNanos!! >= 500_000_000L) {
+                                lastHeightSampleNanos = now
+                                val bitmap = crop.bitmap
+                                val pixels = IntArray(bitmap.width * bitmap.height)
+                                bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                                for (slot in 0..1) {
+                                    val reading = ChargeButtonFillHeightReader.measure(bitmap.width, bitmap.height, pixels, slot)
+                                    val provenance = crop.provenance
+                                    match.custody.submitTestimony(
+                                        sourceId = heightSource,
+                                        payload = com.example.overdex.battle.custody.PlayerChargeButtonFillHeightMeasured(
+                                            slot + 1, reading?.status ?: "UNKNOWN_RIM",
+                                            reading?.centerX, reading?.centerY, reading?.radius,
+                                            reading?.separatorY, reading?.fraction, max(6f, bitmap.width * 6f / 665f),
+                                            provenance.bounds.left, provenance.bounds.top, bitmap.width, bitmap.height,
+                                            provenance.sourceWidth, provenance.sourceHeight),
+                                        timestamp = frame.capturedAtWallTimeMillis,
+                                        confidence = null,
+                                        evidenceReferences = emptyList(), monotonicTimeNanos = now)
+                                }
+                            }
                             val levels = PlayerChargeMoveEnergyFillSampler.measure(crop.bitmap)
                             val measurement = synchronized(stateLock) {
                                 detector.accept(levels, frame.capturedAtMonotonicTimeNanos)
@@ -110,6 +138,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                 } finally {
                     if (lastEnabled == true) {
                         match.custody.submitAvailability(sourceId, false, System.currentTimeMillis())
+                        match.custody.submitAvailability(heightSource, false, System.currentTimeMillis())
                     }
                     lastEnabled = false
                 }
@@ -120,6 +149,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
     override fun stop() {
         if (lastEnabled == true) {
             activeMatch?.custody?.submitAvailability(SourceId(observerId.id), false, System.currentTimeMillis())
+            activeMatch?.custody?.submitAvailability(heightSource, false, System.currentTimeMillis())
         }
         activeMatch = null
         scope?.cancel("Player charge-move energy fill witness stopped")

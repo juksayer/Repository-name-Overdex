@@ -396,6 +396,11 @@ object BattleWitnessContracts {
         crop = BattleCropContracts.opponentHpEvidence,
         testimonyType = ActiveHpBarMotionCadenceMeasured::class
     )
+    val playerChargeButtonFillHeight = BattleWitnessContract(
+        witnessId = "PLAYER_CHARGE_BUTTON_FILL_HEIGHT_WITNESS",
+        crop = BattleCropContracts.playerChargeMoveControls,
+        testimonyType = com.example.overdex.battle.custody.PlayerChargeButtonFillHeightMeasured::class
+    )
     val playerChargeMoveEnergyFill = BattleWitnessContract(
         witnessId = "PLAYER_CHARGE_MOVE_ENERGY_FILL_WITNESS",
         crop = BattleCropContracts.playerChargeMoveControls,

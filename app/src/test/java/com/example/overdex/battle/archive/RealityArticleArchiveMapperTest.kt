@@ -45,6 +45,22 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 class RealityArticleArchiveMapperTest {
+    @Test fun `experimental fill height and unknown values survive archive serialization`() {
+        val measured = com.example.overdex.battle.custody.PlayerChargeButtonFillHeightMeasured(
+            1, "EXPERIMENTAL_SEPARATOR", 180, 140, 72, 155f, 57f/144f, 2f,
+            75, 1461, 665, 230, 816, 1808)
+        val unknown = measured.copy(slot=2, status="UNKNOWN_RIM", centerX=null, centerY=null,
+            radius=null, separatorY=null, fillHeightFraction=null)
+        val archive = MatchArchive(matchId="match-a", articles=listOf(
+            RealityArticleArchiveMapper.map(article("height", measured, monotonicTimeNanos=123L)),
+            RealityArticleArchiveMapper.map(article("unknown", unknown, monotonicTimeNanos=123L))))
+        val restored=MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive,restored)
+        val value=restored.articles.last().payload as ArchivedPlayerChargeButtonFillHeightMeasured
+        assertEquals(null,value.fillHeightFraction)
+        assertEquals("UNKNOWN_RIM",value.status)
+    }
+
 
     @Test fun `active form binding archives separately from the original bare badge`() {
         val raw = RealityArticleArchiveMapper.map(article("badge", com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed(

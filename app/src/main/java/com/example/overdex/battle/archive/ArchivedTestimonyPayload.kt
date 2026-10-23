@@ -507,3 +507,22 @@ data class ArchivedAudioInputStatus(
     val captureSource: String, val state: String,
     val sampleRateHz: Int? = null, val channelCount: Int? = null,
 ) : ArchivedTestimonyPayload
+
+@Serializable
+@SerialName("player_charge_button_fill_height_measured")
+data class ArchivedPlayerChargeButtonFillHeightMeasured(
+    val slot: Int,
+    val status: String,
+    val centerX: Int?,
+    val centerY: Int?,
+    val radius: Int?,
+    val separatorY: Float?,
+    val fillHeightFraction: Float?,
+    val pixelTolerance: Float,
+    val cropLeft: Int,
+    val cropTop: Int,
+    val cropWidth: Int,
+    val cropHeight: Int,
+    val sourceWidth: Int,
+    val sourceHeight: Int
+) : ArchivedTestimonyPayload

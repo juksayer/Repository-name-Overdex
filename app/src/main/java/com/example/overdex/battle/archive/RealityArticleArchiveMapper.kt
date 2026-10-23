@@ -242,6 +242,22 @@ object RealityArticleArchiveMapper {
                 afterFraction = p.afterFraction,
                 lostFraction = p.lostFraction
             )
+            is com.example.overdex.battle.custody.PlayerChargeButtonFillHeightMeasured -> ArchivedPlayerChargeButtonFillHeightMeasured(
+                slot = p.slot,
+                status = p.status,
+                centerX = p.centerX,
+                centerY = p.centerY,
+                radius = p.radius,
+                separatorY = p.separatorY,
+                fillHeightFraction = p.fillHeightFraction,
+                pixelTolerance = p.pixelTolerance,
+                cropLeft = p.cropLeft,
+                cropTop = p.cropTop,
+                cropWidth = p.cropWidth,
+                cropHeight = p.cropHeight,
+                sourceWidth = p.sourceWidth,
+                sourceHeight = p.sourceHeight,
+            )
             is PlayerChargeMoveEnergyFillIncreased -> ArchivedPlayerChargeMoveEnergyFillIncreased(
                 beforeBySlot = p.beforeBySlot,
                 afterBySlot = p.afterBySlot,
