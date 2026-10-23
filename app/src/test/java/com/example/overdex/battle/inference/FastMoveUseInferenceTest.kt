@@ -25,6 +25,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `shield text fallback gates late pulse evidence and releases post charge attacks`() {
+        val inference = startedInference()
+        val shieldText = com.example.overdex.battle.observation.ShieldDecisionTextEvidence()
+        assertEquals(null, shieldText.accept(2, "NOW", "OCR", 60_400_000_000L, 60400, "now"))
+        val signal = shieldText.accept(1, "NOT", "OCR", 62_030_000_000L, 62030, "not")!!
+        inference.accept(article("shield-text", signal.at, AttackIncoming))
+        // Delayed measurements retain capture time, even after the pause is recognized.
+        for (at in listOf(60_640_000_000L, 61_160_000_000L, 62_300_000_000L)) {
+            assertTrue(inference.accept(article("pulse-$at", at, pulse(ActivePokemonSide.PLAYER))).isEmpty())
+        }
+        assertTrue(inference.flush().isEmpty())
+        inference.accept(article("impact", 64_580_000_000L, ChargeMoveUsedAnnounced))
+        inference.accept(article("resumed", 68_000_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(listOf("fast-move-use:resumed"), inference.flush().map { it.payload.useId })
+    }
+
     @Test fun `measured combat enables counting when all countdown glyphs were missed`() {
         val inference = FastMoveUseInference()
         inference.accept(article("name", 20_000_000_000L,

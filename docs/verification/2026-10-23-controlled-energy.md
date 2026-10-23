@@ -44,3 +44,13 @@ Next: inspect Pixel shield-decision/HP crops and bound energy credit by supporte
 ## Validation
 
 Focused Team Select tests passed. Full JVM suite: 1,046 tests, zero failures/errors/skips. Debug APK build passed. Not installed: the Moondrop still has an active Droidball service; leave that session intact. No new battle has yet validated this gate.
+
+## Shield-prompt fallback (October 23)
+
+The Pixel announcement crop at +59.77 s contains scenery and an HP bar, not the incoming-attack warning. Its existing charge-button OCR separately reads `NOW` in slot 2 at +60.40 s and `NOT` in slot 1 at +62.03 s. These are reusable shield-decision evidence without scheduling another OCR pass.
+
+`ShieldDecisionTextEvidence` accepts exact `NOT NOW`, or exact `NOT` / `NOW` from different button regions within two seconds of source capture time. Cached readings, a lone fragment, stale pairs, and effectiveness text do not qualify. During an established battle the witness publishes AttackIncoming with the supporting article IDs and earliest supporting capture timestamp. Impact and match boundaries reset the detector; repeated prompt readings are suppressed. Raw OCR articles remain untouched.
+
+A regression test checks those recorded fragment times and a downstream test checks suppression of delayed pulse measurements at +60.64, +61.16 and +62.30 s, then resumed counting after the +64.58 s impact. This does not establish live recall: already published FastMoveUse articles are not retracted, and the +58.80/+59.96 s false uses precede the first supporting fragment. Existing archives are not rewritten or automatically repaired. Earlier pause detection and border-only false positives remain separate work.
+
+Fallback validation: full JVM suite passed (1,051 tests, zero failures/errors/skips), and debug APK built. Installed successfully on the idle Pixel 4. Moondrop update deferred because its Droidball service is active. A new recorded battle is still needed to validate live behavior.
