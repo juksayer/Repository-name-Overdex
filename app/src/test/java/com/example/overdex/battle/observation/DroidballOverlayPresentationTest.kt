@@ -4,6 +4,7 @@ import com.example.overdex.model.PokemonType
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
@@ -52,7 +53,33 @@ class DroidballOverlayPresentationTest {
         DroidballOverlayPresentation.recordOpponentSpecies("Plusle", 311, moves, emptyList())
         assertEquals(true, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
         DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Plusle", listOf("Quick Attack"))
-        assertEquals(false, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
+        assertEquals("Spark", DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().name)
+        assertEquals(true, DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().isConfirmed)
+        DroidballOverlayPresentation.recordOpponentFastMove(identity("Quick Attack"))
+        assertEquals("Quick Attack", DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single().name)
+    }
+
+    @Test fun readinessUsesEnergyCostAndOneWholeFastMove() {
+        assertEquals(HudChargeReadiness.BUILDING, hudChargeReadiness(50, 39, 10))
+        assertEquals(HudChargeReadiness.ONE_FAST_MOVE_AWAY, hudChargeReadiness(50, 40, 10))
+        assertEquals(HudChargeReadiness.READY, hudChargeReadiness(50, 50, 10))
+        assertEquals(HudChargeReadiness.BUILDING, hudChargeReadiness(50, null, 10))
+        assertEquals(HudChargeReadiness.BUILDING, hudChargeReadiness(50, 40, null))
+        assertEquals(HudChargeReadiness.READY, hudChargeReadiness(50, 60, null))
+        assertEquals(HudChargeReadiness.BUILDING, hudChargeReadiness(101, 95, 20))
+    }
+
+    @Test fun confirmedFastMoveMatchesPunctuationAndPublishesEnergy() {
+        DroidballOverlayPresentation.recordOpponentSpecies("Example", 1,
+            listOf("Lock-On" to PokemonType.NORMAL), listOf("Body Slam" to PokemonType.NORMAL),
+            moveEnergy = mapOf("Lock-On" to 5, "Body Slam" to 35))
+        DroidballOverlayPresentation.recordOpponentFastMove(com.example.overdex.battle.custody.FastMoveIdentified(
+            com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT, "Example", "Lock On",
+            500_000_000L, null, 0, "AUDIO_REFERENCE"))
+        val moves = DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!
+        assertTrue(moves.fastMoves.single().isConfirmed)
+        assertEquals(5, moves.fastMoves.single().energy)
+        assertEquals(35, moves.chargedMoves.single().energy)
     }
 
     @After

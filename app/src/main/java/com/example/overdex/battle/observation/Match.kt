@@ -300,6 +300,13 @@ class Match(
                         loadedSpecies += name
                     }
                 }
+                when (val move = article.payload) {
+                    is FastMoveIdentified -> DroidballOverlayPresentation.recordOpponentFastMove(move)
+                    is com.example.overdex.battle.custody.ChargedMoveEnergySpent ->
+                        if (move.side == ActivePokemonSide.OPPONENT)
+                            DroidballOverlayPresentation.recordOpponentChargedMove(move.speciesName, move.moveName)
+                    else -> Unit
+                }
                 opponentEnergyForecast.observe(article)
             }
         }
@@ -459,6 +466,8 @@ class Match(
                                 ?.map { it.name to it.type }
                                 .orEmpty(),
                             possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty(),
+                            moveEnergy = (species?.fastMoves.orEmpty() + species?.chargedMoves.orEmpty())
+                                .associate { it.name to it.energy },
                             provisional = article.sourceId.id == "DECISIVE_BATTLE_CRY_SPECIES_WITNESS",
                             observedAtNanos = article.monotonicTimeNanos,
                         )

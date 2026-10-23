@@ -398,7 +398,11 @@ private fun OverlayPanel(
                         assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
                 }
                 if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk)
+                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
+                        energy = estimate?.energy,
+                        fastGain = opponentMoves.fastMoves.firstOrNull {
+                            it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
+                        }?.energy)
                 }
             }
             OpponentHudStatus(estimate)
@@ -546,24 +550,40 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 @Composable
 private fun MovePossibilityLine(
     moves: List<OverlayMovePossibility>, color: Color, assumedMove: String? = null,
+    energy: Int? = null, fastGain: Int? = null,
 ) {
     moves.forEach { move ->
+        val readiness = com.example.overdex.battle.observation.hudChargeReadiness(move.energy, energy, fastGain)
+        val readinessColor = when (readiness) {
+            com.example.overdex.battle.observation.HudChargeReadiness.READY -> Color(0xFFFF0000)
+            com.example.overdex.battle.observation.HudChargeReadiness.ONE_FAST_MOVE_AWAY -> Color(0xFFFFA000)
+            else -> color
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = buildAnnotatedString {
-                    if (move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
+                    if (!move.isConfirmed && move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
                     if (move.isConfirmed) append("✓ ")
                     if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
                         append("⚠ +${move.damageIncreasePercent}% ")
                     }
                     append(move.name)
                 },
-                modifier = Modifier.weight(1f),
-                color = color,
+                modifier = Modifier.weight(1f).semantics {
+                    stateDescription = buildString {
+                        append(if (move.isConfirmed) "Confirmed move" else "Possible move")
+                        when (readiness) {
+                            com.example.overdex.battle.observation.HudChargeReadiness.READY -> append("; estimated ready")
+                            com.example.overdex.battle.observation.HudChargeReadiness.ONE_FAST_MOVE_AWAY -> append("; estimated one Fast Move away")
+                            else -> Unit
+                        }
+                    }
+                },
+                color = readinessColor,
                 fontSize = 8.sp,
                 lineHeight = 10.sp,
                 textAlign = TextAlign.End,
-                fontWeight = if (move.hazardous || move.isConfirmed) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (move.hazardous || move.isConfirmed || energy != null && readiness != com.example.overdex.battle.observation.HudChargeReadiness.BUILDING) FontWeight.Bold else FontWeight.Normal,
                 fontFamily = FontFamily.Monospace
             )
         }

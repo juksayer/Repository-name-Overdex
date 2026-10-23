@@ -48,6 +48,7 @@ data class OverlayMovePossibility(
     /** Damage multiplier from this move's type against the currently observed player types. */
     val effectivenessMultiplier: Double,
     val isConfirmed: Boolean = false,
+    val energy: Int? = null,
 ) {
     val hazardous: Boolean get() = effectivenessMultiplier > 1.0
     /** The increase over neutral damage, for a compact live HUD warning. */
@@ -108,6 +109,7 @@ object DroidballOverlayPresentation {
     private var activeOpponentFastMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentChargedMoves: List<Pair<String, PokemonType>> = emptyList()
     private var activeOpponentSpeciesName: String? = null
+    private var activeMoveEnergy: Map<String, Int> = emptyMap()
     private val confirmedFastMovesBySpecies = mutableMapOf<String, String>()
     private var opponentFastMoveCandidateNames: Set<String>? = null
     private val confirmedChargedMovesBySpecies = mutableMapOf<String, MutableSet<String>>()
@@ -214,6 +216,7 @@ object DroidballOverlayPresentation {
         possibleChargedMoves: List<Pair<String, PokemonType>>,
         provisional: Boolean = false,
         observedAtNanos: Long? = null,
+        moveEnergy: Map<String, Int> = emptyMap(),
     ) {
         val existing = _opponentSpecies.value.firstOrNull {
             it.speciesName.equals(speciesName, ignoreCase = true)
@@ -271,6 +274,7 @@ object DroidballOverlayPresentation {
         activeOpponentSpeciesName = speciesName
         activeOpponentFastMoves = possibleFastMoves
         activeOpponentChargedMoves = possibleChargedMoves
+        activeMoveEnergy = moveEnergy.mapKeys { normalizeMoveName(it.key) }
         publishMovePossibilities()
     }
 
@@ -313,10 +317,8 @@ object DroidballOverlayPresentation {
         val candidates = moveNames.map(::normalizeMoveName).filter(String::isNotBlank).toSet()
         if (candidates.isEmpty() && activeOpponentFastMoves.isNotEmpty()) return
         opponentFastMoveCandidateNames = candidates
-        val speciesKey = normalizeMoveName(speciesName)
-        if (confirmedFastMovesBySpecies[speciesKey]?.let { normalizeMoveName(it) !in candidates } == true) {
-            confirmedFastMovesBySpecies.remove(speciesKey)
-        }
+        // Candidate pruning is provisional. Only a new resolved identity replaces
+        // an evidence-confirmed move; a transient candidate set must not erase it.
         publishMovePossibilities()
     }
 
@@ -338,16 +340,16 @@ object DroidballOverlayPresentation {
         val confirmedCharged = confirmedChargedMovesBySpecies[normalizeMoveName(speciesName)].orEmpty()
         val identifiedOpponentFastMove = confirmedFastMovesBySpecies[normalizeMoveName(speciesName)]
         fun scored(moves: List<Pair<String, PokemonType>>) = moves.map { (name, type) ->
-            OverlayMovePossibility(name, type, effectivenessAgainstPlayer(type))
+            OverlayMovePossibility(name, type, effectivenessAgainstPlayer(type), energy = activeMoveEnergy[normalizeMoveName(name)])
         }
         val fastMoves = identifiedOpponentFastMove?.let { identified ->
-            activeOpponentFastMoves.filter { it.first.equals(identified, ignoreCase = true) }
+            activeOpponentFastMoves.filter { normalizeMoveName(it.first) == normalizeMoveName(identified) }
         } ?: opponentFastMoveCandidateNames?.let { candidates ->
             activeOpponentFastMoves.filter { normalizeMoveName(it.first) in candidates }
         } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
             speciesName,
-            scored(fastMoves).map { it.copy(isConfirmed = it.name.equals(identifiedOpponentFastMove, ignoreCase = true)) },
+            scored(fastMoves).map { it.copy(isConfirmed = identifiedOpponentFastMove != null && normalizeMoveName(it.name) == normalizeMoveName(identifiedOpponentFastMove)) },
             scored(activeOpponentChargedMoves.filter { confirmedCharged.size < 2 || normalizeMoveName(it.first) in confirmedCharged })
                 .map { it.copy(isConfirmed = normalizeMoveName(it.name) in confirmedCharged) }
         )
@@ -380,4 +382,14 @@ object DroidballOverlayPresentation {
         clearInferredPlayerTeam()
         setConfiguredPlayerTeam(emptyList())
     }
+}
+
+/** Readiness is presentation based on the labeled energy estimate, not testimony. */
+enum class HudChargeReadiness { BUILDING, ONE_FAST_MOVE_AWAY, READY }
+
+fun hudChargeReadiness(cost: Int?, energy: Int?, fastGain: Int?): HudChargeReadiness {
+    if (cost == null || cost <= 0 || cost > 100 || energy == null) return HudChargeReadiness.BUILDING
+    if (energy >= cost) return HudChargeReadiness.READY
+    return if (fastGain != null && fastGain > 0 && (energy + fastGain).coerceAtMost(100) >= cost)
+        HudChargeReadiness.ONE_FAST_MOVE_AWAY else HudChargeReadiness.BUILDING
 }
