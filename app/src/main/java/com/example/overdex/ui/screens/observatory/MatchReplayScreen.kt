@@ -719,7 +719,7 @@ internal fun ReplayCombatantSlot(
         combatant?.speciesId?.let { speciesId ->
             AsyncImage(
                 model = LocalSpriteProvider(context.assets).let { sprites ->
-                    if (useBackSprite) sprites.getBackSpriteUrl(speciesId) else sprites.getSpriteUrl(speciesId)
+                    sprites.getReplaySpriteUrl(speciesId, combatant.speciesName, useBackSprite)
                 },
                 contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted"
                     else if (down) "${combatant.speciesName}, defeated" else combatant.speciesName,

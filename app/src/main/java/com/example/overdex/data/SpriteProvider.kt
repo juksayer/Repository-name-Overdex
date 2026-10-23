@@ -68,6 +68,15 @@ class LocalSpriteProvider(private val assetManager: AssetManager) : SpriteProvid
         return getSpriteUrl(id)
     }
 
+    /** Regional forms share a dex number; never substitute ordinary Raichu artwork. */
+    fun getReplaySpriteUrl(id: Int, speciesName: String, back: Boolean): String {
+        if (id == 26 && speciesName.contains("(Alolan)", ignoreCase = true)) {
+            val view = if (back) "back/" else ""
+            return "file:///android_asset/sprites/pokemon/forms/${view}26-alolan.png"
+        }
+        return if (back) getBackSpriteUrl(id) else getSpriteUrl(id)
+    }
+
     private fun backSpriteExists(id: Int): Boolean = try {
         assetManager.open("sprites/pokemon/back/$id.png").use { }
         true
