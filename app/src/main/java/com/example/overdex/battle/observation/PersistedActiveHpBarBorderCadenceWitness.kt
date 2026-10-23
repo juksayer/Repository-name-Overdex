@@ -135,8 +135,10 @@ internal data class ActiveHpBarBorderAppearance(
     val orangeFraction: Float,
     val whiteFraction: Float,
     val blueFraction: Float = 0f,
+    // Blue scenery along only one horizontal edge is not a blue outline.
+    val pairedBlueFraction: Float = blueFraction,
 ) {
-    val pulseFraction: Float get() = orangeFraction + blueFraction
+    val pulseFraction: Float get() = orangeFraction + pairedBlueFraction
 }
 
 /** Blue flashes are visible on Sneasel's bar in the Oct 14 Powder Snow recording. */
@@ -158,6 +160,9 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
         var blue = 0L
         var orange = 0
         var blueOutline = 0
+        var topBlue = 0
+        var bottomBlue = 0
+        var horizontalSamples = 0
         var white = 0
         var count = 0
         fun sample(x: Int, y: Int) {
@@ -177,6 +182,15 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
         for (x in bar.left until bar.right) {
             sample(x, bar.top)
             sample(x, bar.bottom)
+            if (x in 0 until width && bar.top in 0 until height && bar.bottom in 0 until height) {
+                fun blueAt(y: Int): Boolean {
+                    val color = pixelAt(x, y)
+                    return isBlueHpBarBorder(color ushr 16 and 0xff, color ushr 8 and 0xff, color and 0xff)
+                }
+                if (blueAt(bar.top)) topBlue++
+                if (blueAt(bar.bottom)) bottomBlue++
+                horizontalSamples++
+            }
         }
         for (y in bar.top + 1 until bar.bottom) {
             sample(bar.left, y)
@@ -194,6 +208,11 @@ internal object ActiveHpBarBorderAppearanceMeasurer {
             orangeFraction = orange.toFloat() / count,
             whiteFraction = white.toFloat() / count,
             blueFraction = blueOutline.toFloat() / count,
+            pairedBlueFraction = if (horizontalSamples == 0) 0f else minOf(
+                blueOutline.toFloat() / count,
+                topBlue.toFloat() / horizontalSamples,
+                bottomBlue.toFloat() / horizontalSamples,
+            ),
         )
     }
 
@@ -362,6 +381,7 @@ internal class ActiveHpBarBorderPulseDetector {
             orangeFraction = old.orangeFraction * 0.9f + appearance.orangeFraction * 0.1f,
             whiteFraction = old.whiteFraction * 0.9f + appearance.whiteFraction * 0.1f,
             blueFraction = old.blueFraction * 0.9f + appearance.blueFraction * 0.1f,
+            pairedBlueFraction = old.pairedBlueFraction * 0.9f + appearance.pairedBlueFraction * 0.1f,
         )
         baselineSamples++
     }

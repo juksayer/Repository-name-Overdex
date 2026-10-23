@@ -54,3 +54,11 @@ The Pixel announcement crop at +59.77 s contains scenery and an HP bar, not the 
 A regression test checks those recorded fragment times and a downstream test checks suppression of delayed pulse measurements at +60.64, +61.16 and +62.30 s, then resumed counting after the +64.58 s impact. This does not establish live recall: already published FastMoveUse articles are not retracted, and the +58.80/+59.96 s false uses precede the first supporting fragment. Existing archives are not rewritten or automatically repaired. Earlier pause detection and border-only false positives remain separate work.
 
 Fallback validation: full JVM suite passed (1,051 tests, zero failures/errors/skips), and debug APK built. Installed successfully on the idle Pixel 4. Moondrop update deferred because its Droidball service is active. A new recorded battle is still needed to validate live behavior.
+
+## Blue edge contamination guard
+
+All five Pixel pulse onsets during the +57–68 s charged phase report zero orange fraction and approximately 0.456–0.459 color distance from a white baseline. At +58.801 s the player bar changes from `(38,706)-(231,723)` to `(38,706)-(230,724)` in the 672x1419 captured surface. HP changes only from .7407407 to .7446808, then returns to the earlier geometry and value at +58.911 s. This is consistent with sampling blue scenery at a displaced outline edge; the exact source pixels were not retained, so that cause is not established conclusively.
+
+The border appearance sampler now retains aggregate blue coverage but requires blue coverage on both horizontal edges before using it as pulse evidence. A synthetic regression using the recorded dimensions proves that either top-only or bottom-only blue contamination (over 35% of the whole outline) cannot emit a pulse. The retained October 14 real blue-border fixture still produces a pulse, and orange-border tests remain unchanged. This is a geometry guard, not a move-duration assumption, and adds no OCR reader. It affects future observation; old raw articles are unchanged.
+
+Blue-edge validation: 1,052 JVM tests passed with zero failures/errors/skips; debug APK build passed. Physical battle validation remains pending; Moondrop is still running an active capture session.

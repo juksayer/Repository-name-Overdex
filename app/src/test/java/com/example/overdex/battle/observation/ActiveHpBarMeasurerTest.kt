@@ -7,6 +7,28 @@ import org.junit.Test
 
 class ActiveHpBarMeasurerTest {
     @Test
+    fun `blue scenery on one displaced horizontal edge cannot become a hit`() {
+        val bar = ActiveHpBarMeasurement(38, 706, 230, 724, .7446808f, .9f)
+        val white = 0xffeeeeee.toInt()
+        val sky = 0xff3388ee.toInt()
+        fun appearance(blueEdge: Int?) = requireNotNull(
+            ActiveHpBarBorderAppearanceMeasurer.measure(672, 1419, bar) { _, y ->
+                if (y == blueEdge) sky else white
+            })
+        // October 23 Pixel geometry: one-row changes at pulse onset; roughly
+        // 46 percent blue is enough to fool an aggregate-only border sampler.
+        for (edge in listOf(bar.top, bar.bottom)) {
+            val detector = ActiveHpBarBorderPulseDetector()
+            repeat(4) { detector.acceptPulse("white-$it", it * 100_000_000L, appearance(null)) }
+            val displaced = appearance(edge)
+            assertTrue(displaced.blueFraction > .35f)
+            assertEquals(0f, displaced.pairedBlueFraction, .001f)
+            assertEquals(null, detector.acceptPulse("displaced", 500_000_000L, displaced))
+            assertEquals(null, detector.acceptPulse("restored", 600_000_000L, appearance(null)))
+        }
+    }
+
+    @Test
     fun `recorded player bar survives a tightly calibrated box`() {
         val image = javax.imageio.ImageIO.read(javaClass.getResource("/battle/hp/player-tight.png"))
         val bars = ActiveHpBarMeasurer.measureAll(image.width, image.height, image::getRGB)
