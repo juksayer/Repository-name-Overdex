@@ -1,0 +1,177 @@
+{
+  "match_id": "99fe41cb-a61f-40bd-994a-e6d7a6301a59",
+  "source_sha256": "766511b95718e0912a7f2551d95239d43d7737c27b2bc90060750c5c14e4e68e",
+  "latest_export_sha256": "006a97b5d72049c243194567303402e90463bde8964a9de5930b381dc6d0bbfa",
+  "status": "EXPERIMENTAL_DISAGREEMENT_DURING_CHARGE_BUTTON_INTERACTION",
+  "frames": [
+    {
+      "folder": "second-fill-audit",
+      "seconds": 86.01391111111111,
+      "pts": 7741252,
+      "time_base": "1/90000",
+      "evidence": "frame-7741252.png",
+      "evidence_sha256": "b0db9b1df739afcad441253421b41bb90c8d8e6768827a60d21b3ff8ee822b84",
+      "separator_offset_y": [
+        54.5,
+        21.5
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 4.783333333333333,
+            "low": 4.316666666666666,
+            "high": 5.25
+          },
+          {
+            "completed_layers": 1,
+            "energy": 39.78333333333333,
+            "low": 39.31666666666666,
+            "high": 40.25
+          },
+          {
+            "completed_layers": 2,
+            "energy": 74.78333333333333,
+            "low": 74.31666666666666,
+            "high": 75.25
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 19.616666666666667,
+            "low": 18.883333333333333,
+            "high": 20.35
+          },
+          {
+            "completed_layers": 1,
+            "energy": 74.61666666666667,
+            "low": 73.88333333333334,
+            "high": 75.35000000000001
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 74.31666666666666,
+          "high": 75.25,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "folder": "second-fill-transition",
+      "seconds": 85.7375888888889,
+      "pts": 7716383,
+      "time_base": "1/90000",
+      "evidence": "frame-7716383.png",
+      "evidence_sha256": "63c2c7c940f24d6bcaedd17a669766c31086015bf2fef29ef4700ee66ac3a26a",
+      "separator_offset_y": [
+        54.0,
+        21.5
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 4.9,
+            "low": 4.433333333333334,
+            "high": 5.366666666666667
+          },
+          {
+            "completed_layers": 1,
+            "energy": 39.900000000000006,
+            "low": 39.43333333333334,
+            "high": 40.366666666666674
+          },
+          {
+            "completed_layers": 2,
+            "energy": 74.9,
+            "low": 74.43333333333334,
+            "high": 75.36666666666667
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 19.616666666666667,
+            "low": 18.883333333333333,
+            "high": 20.35
+          },
+          {
+            "completed_layers": 1,
+            "energy": 74.61666666666667,
+            "low": 73.88333333333334,
+            "high": 75.35000000000001
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 74.43333333333334,
+          "high": 75.35000000000001,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    },
+    {
+      "folder": "second-fill-transition",
+      "seconds": 86.11275555555555,
+      "pts": 7750148,
+      "time_base": "1/90000",
+      "evidence": "frame-7750148.png",
+      "evidence_sha256": "e03c4b1fcfca2a5f4aa8ad6daf6de32445808cc3f965a04862ee2e6e6b324a46",
+      "separator_offset_y": [
+        54.5,
+        21.5
+      ],
+      "hypotheses": [
+        [
+          {
+            "completed_layers": 0,
+            "energy": 4.783333333333333,
+            "low": 4.316666666666666,
+            "high": 5.25
+          },
+          {
+            "completed_layers": 1,
+            "energy": 39.78333333333333,
+            "low": 39.31666666666666,
+            "high": 40.25
+          },
+          {
+            "completed_layers": 2,
+            "energy": 74.78333333333333,
+            "low": 74.31666666666666,
+            "high": 75.25
+          }
+        ],
+        [
+          {
+            "completed_layers": 0,
+            "energy": 19.616666666666667,
+            "low": 18.883333333333333,
+            "high": 20.35
+          },
+          {
+            "completed_layers": 1,
+            "energy": 74.61666666666667,
+            "low": 73.88333333333334,
+            "high": 75.35000000000001
+          }
+        ]
+      ],
+      "joint": [
+        {
+          "low": 74.31666666666666,
+          "high": 75.25,
+          "left_layers": 2,
+          "right_layers": 1
+        }
+      ]
+    }
+  ],
+  "note": "Do not treat inferred layer energy as ground truth. Press effects, immediate display spend versus delayed announcement spending, and layer mapping remain unresolved. No timeline changes."
+}
