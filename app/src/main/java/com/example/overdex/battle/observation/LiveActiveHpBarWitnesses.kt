@@ -423,7 +423,6 @@ internal data class ActiveHpBarDamageTickMeasurement(
 /** Measures one persistent HP-fill decrease without naming its cause. */
 internal class ActiveHpBarDamageTickDetector {
     private var geometryAnchor: ActiveHpBarMeasurement? = null
-    private var geometrySettlingSince: Long? = null
     private var lastGeometryAt: Long? = null
 
     /** Reacquire a moved bar without calling the unseen change one attack. */
@@ -438,18 +437,16 @@ internal class ActiveHpBarDamageTickDetector {
             kotlin.math.abs(bar.width - anchor.width) > max(4f, anchor.width * .10f) ||
             kotlin.math.abs(bar.top - anchor.top) > max((anchor.bottom - anchor.top) * 3f, anchor.width * .20f)
         )
-        if (anchor == null || relocated) {
+        if (anchor == null) geometryAnchor = bar
+        if (relocated) {
             geometryAnchor = bar
-            if (relocated) geometrySettlingSince = at
-        }
-        if (geometrySettlingSince != null) {
-            // Never compare fill from two camera positions. Normal vertical
-            // attack bobbing remains inside the geometry tolerance above.
+            // Reset only at the discontinuity. A later drop at the new position
+            // still goes through normal HP settling; do not absorb it into a
+            // quarter-second rolling baseline while the player is attacking.
             baselineFraction = bar.filledFraction
             pendingAfterFraction = null
             pendingChangedAtNanos = null
             lastSampleAtNanos = at
-            if (at - geometrySettlingSince!! >= 250_000_000L) geometrySettlingSince = null
             return null
         }
         return accept(bar.filledFraction, bar.confidence, at, bar.width)
@@ -464,7 +461,6 @@ internal class ActiveHpBarDamageTickDetector {
     @Synchronized
     fun reset() {
         geometryAnchor = null
-        geometrySettlingSince = null
         lastGeometryAt = null
         baselineFraction = null
         pendingAfterFraction = null

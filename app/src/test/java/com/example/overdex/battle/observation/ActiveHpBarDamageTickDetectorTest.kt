@@ -13,6 +13,13 @@ class ActiveHpBarDamageTickDetectorTest {
                     r[3].toInt(), r[4].toInt(), r[5].toFloat(), r[6].toFloat())
             }.toList()
 
+    @Test fun `recorded hit just after Flareon relocation is not absorbed into the baseline`() {
+        val detector = ActiveHpBarDamageTickDetector()
+        val ticks = recorded("flareon-entry").mapNotNull { (at, bar) -> detector.accept(bar, at) }
+        val landingHit = ticks.single { it.observedAtNanos in 42_200_000_000L..42_400_000_000L }
+        assertEquals(.0572f, landingHit.lostFraction, .002f)
+    }
+
     @Test fun `recorded camera relocation does not invent idle Swampert damage`() {
         val detector = ActiveHpBarDamageTickDetector()
         val samples = recorded("idle-camera")
