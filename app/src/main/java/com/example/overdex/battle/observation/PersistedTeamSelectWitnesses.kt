@@ -190,15 +190,18 @@ class PersistedPlayerTeamRosterSlotWitness(
     override fun start(match: Match) {
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { s -> s.launch {
-            var surfaceAccepted = false
+            val rosterWindow = TeamSelectRosterWindow()
             var accepted = false
             var pendingCrop: com.example.overdex.battle.reality.RealityArticle? = null
             val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
             match.articles.collect { a ->
+                if (a.payload is VsScreenWitnessed || a.payload is CountdownGlyphWitnessed || a.payload is MatchEnded || a.payload == MatchStarted) {
+                    a.monotonicTimeNanos?.let(rosterWindow::close)
+                }
                 if (accepted) return@collect
                 if ((a.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                 if (a.payload is TeamSelectPartyWitnessed) {
-                    surfaceAccepted = true
+                    rosterWindow.confirm(a.monotonicTimeNanos ?: return@collect)
                 } else {
                     val incoming = a.payload as? CropCaptured ?: return@collect
                     if (incoming.cropProvenance.cropName != cropName) return@collect
@@ -206,8 +209,8 @@ class PersistedPlayerTeamRosterSlotWitness(
                 }
                 // These names cannot establish the surface. Retain the newest
                 // source, then spend OCR time once the party check has succeeded.
-                if (!surfaceAccepted) return@collect
                 val source = pendingCrop ?: return@collect
+                if (!rosterWindow.allows(source.monotonicTimeNanos ?: return@collect)) return@collect
                 val crop = source.payload as CropCaptured
                 val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                 val readings = try {
@@ -256,14 +259,17 @@ class PersistedPlayerTeamRosterSpriteWitness(
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                var surfaceAccepted = false
+                val rosterWindow = TeamSelectRosterWindow()
                 var accepted = false
                 var pending: PendingRosterSlot? = null
                 match.articles.collect { article ->
+                    if (article.payload is VsScreenWitnessed || article.payload is CountdownGlyphWitnessed || article.payload is MatchEnded || article.payload == MatchStarted) {
+                        article.monotonicTimeNanos?.let(rosterWindow::close)
+                    }
                     if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                     if (article.payload is TeamSelectPartyWitnessed) {
-                        surfaceAccepted = true
-                        pending?.let { candidate ->
+                        rosterWindow.confirm(article.monotonicTimeNanos ?: return@collect)
+                        pending?.takeIf { rosterWindow.allows(it.monotonicTimeNanos) }?.let { candidate ->
                             accepted = true
                             submitRosterCandidate(match, candidate)
                         }
@@ -290,7 +296,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
                         evidenceArticleIds = listOf(article.id.value),
                         monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect,
                     )
-                    if (surfaceAccepted) {
+                    if (rosterWindow.allows(candidate.monotonicTimeNanos)) {
                         accepted = true
                         submitRosterCandidate(match, candidate)
                     } else {
