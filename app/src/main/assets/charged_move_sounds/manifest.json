@@ -1,0 +1,930 @@
+{
+  "version": 1,
+  "source": "User supplied Pokemon GO asset collection; original files preserved.",
+  "notes": "Exact normalized filename/catalogue matches for reconstructed replay sound, not observed audio testimony.",
+  "references": [
+    {
+      "file": "007-0_fire_punch.wav",
+      "moveName": "Fire Punch",
+      "sha256": "650588c86a05b3ca7470bee47a0372a7d57f6709ff5aaf04b7265dda7c736012"
+    },
+    {
+      "file": "008-0_ice_punch.wav",
+      "moveName": "Ice Punch",
+      "sha256": "ba27b8c47427b0c70e0987e44fc7840a36cd3bb17ecbfa4321baa059f499f604"
+    },
+    {
+      "file": "009-0_thunder_punch.wav",
+      "moveName": "Thunder Punch",
+      "sha256": "479fe4ac44f9785b1e9e0978eca0ed368aa751129c49f2b3d3279064ea61aed1"
+    },
+    {
+      "file": "018-0_darkest_lariat.wav",
+      "moveName": "Darkest Lariat",
+      "sha256": "f53d77652a440774693ddac79a8e8b64bcc34130e34754244c466522f61d1795"
+    },
+    {
+      "file": "019-0_fly.wav",
+      "moveName": "Fly",
+      "sha256": "d5a6e656c00bae38b008274f3781243b8f45e64b267305aec7d41ced1acfeac4"
+    },
+    {
+      "file": "023-0_stomp.wav",
+      "moveName": "Stomp",
+      "sha256": "38e13fef026e10612c2a673e218909913fdba73b08b96de24c0204f71aa31d17"
+    },
+    {
+      "file": "030-0_horn_attack.wav",
+      "moveName": "Horn Attack",
+      "sha256": "16036f3722c670612105fcad9c705f00244c43714e6cf8db3b57d5d8363388da"
+    },
+    {
+      "file": "034-0_body_slam.wav",
+      "moveName": "Body Slam",
+      "sha256": "7579a38b7bdb37c0fd66a41e50e9a722a8ef61b7db74dd0465bdeca51f1f1d0b"
+    },
+    {
+      "file": "035-0_wrap.wav",
+      "moveName": "Wrap",
+      "sha256": "3498fbc7e94967cc2b94492eded9a796d051ba27023fbc00360845f0812c318d"
+    },
+    {
+      "file": "053-0_flamethrower.wav",
+      "moveName": "Flamethrower",
+      "sha256": "790ad2c9f81735d3acf5a61b9df67e9c7e17758a7cbfac933ab441f4a26e99a1"
+    },
+    {
+      "file": "056-0_hydro_pump.wav",
+      "moveName": "Hydro Pump",
+      "sha256": "08b0acac603cfa655bfcea3ae1670ed1a80de2d09cac66aa7f6a0241da5ded29"
+    },
+    {
+      "file": "057-0_surf.wav",
+      "moveName": "Surf",
+      "sha256": "d3b7e2baa6597b128e32af01cbdd8226f678194304cd41df2a6fdbb406b9089f"
+    },
+    {
+      "file": "058-0_ice_beam.wav",
+      "moveName": "Ice Beam",
+      "sha256": "8831573e0eaaf1b37562feb315757314256418486051c7fea7b993742190ff9d"
+    },
+    {
+      "file": "059-0_blizzard.wav",
+      "moveName": "Blizzard",
+      "sha256": "e032411d1d522b4bd5b4b672aeeeb5c04764a893e7a4b70782c582f931d46dca"
+    },
+    {
+      "file": "060-0_psybeam.wav",
+      "moveName": "Psybeam",
+      "sha256": "bc82e695ecb097fdf5ab60ca782b43f4c18b43d487902fafef5f8a6a14c33807"
+    },
+    {
+      "file": "061-0_bubble_beam.wav",
+      "moveName": "Bubble Beam",
+      "sha256": "10493051f22a74949da68c913377c83aca865271a0059fe070f48c2c7f926b91"
+    },
+    {
+      "file": "062-0_aurora_beam.wav",
+      "moveName": "Aurora Beam",
+      "sha256": "862593ffb3e39cf04d41ecded980a66effa24a30b9e7225ede1d963f19f7635d"
+    },
+    {
+      "file": "063-0_hyper_beam.wav",
+      "moveName": "Hyper Beam",
+      "sha256": "3bb7b3590a2e3d230ec1ddf228adcfac8735048146e11c7ee272e843d7b73154"
+    },
+    {
+      "file": "065-0_drill_peck.wav",
+      "moveName": "Drill Peck",
+      "sha256": "2528393dfcb07d3b994d2cdfb9e7f39f0581f313a0f5f9ac3bfab3b23ea79ab2"
+    },
+    {
+      "file": "066-0_submission.wav",
+      "moveName": "Submission",
+      "sha256": "4db1077231a2ae88b379e5441d504ee2b40478b0a683ad59cc476ec202da142f"
+    },
+    {
+      "file": "072-0_mega_drain.wav",
+      "moveName": "Mega Drain",
+      "sha256": "202a28a07c3ddc8fcc2ee64941476783d8067ce554ed82eabe61422c9d42f036"
+    },
+    {
+      "file": "076-0_solar_beam.wav",
+      "moveName": "Solar Beam",
+      "sha256": "52738dc753130f0a50135dc8b82c4fe459ca6124df065f2e19444d9a0e0d867b"
+    },
+    {
+      "file": "085-0_thunderbolt.wav",
+      "moveName": "Thunderbolt",
+      "sha256": "9528c66e63d730c683ca6b8dafe3f39112c3213f0b06be8bad38059cfcce7543"
+    },
+    {
+      "file": "087-0_thunder.wav",
+      "moveName": "Thunder",
+      "sha256": "7caf1aa77b180485bf074eec4c214952c92783533b455244342f89979fe9b648"
+    },
+    {
+      "file": "089-0_earthquake.wav",
+      "moveName": "Earthquake",
+      "sha256": "fd096b8bb6485d4583cbb4fe5506977250f373cebe1938c6ec31461df5b125a5"
+    },
+    {
+      "file": "091-0_dig.wav",
+      "moveName": "Dig",
+      "sha256": "9a13879ff59d2d657f710362b1193c7095aa004f806c31d02b8a336dd3e8492a"
+    },
+    {
+      "file": "094-0_psychic.wav",
+      "moveName": "Psychic",
+      "sha256": "c9e97ecf098c2066e4a52a3e355cdc5fa609b5e3b06297f90692a593cc113445"
+    },
+    {
+      "file": "101-0_night_shade.wav",
+      "moveName": "Night Shade",
+      "sha256": "567d84957d88fc635ae4892b2bf3db1ccb7384deb5c3bb5a9c66cd7502936668"
+    },
+    {
+      "file": "124-0_sludge.wav",
+      "moveName": "Sludge",
+      "sha256": "17180977f37e516e19dea734574514ace6702a943a5bb49996a99d15e0c8e148"
+    },
+    {
+      "file": "125-0_bone_club.wav",
+      "moveName": "Bone Club",
+      "sha256": "0bac718b13f39af991b41361b5ccf7ff952f0b96c4301b7f12415795093a5a49"
+    },
+    {
+      "file": "126-0_fire_blast.wav",
+      "moveName": "Fire Blast",
+      "sha256": "a4b22de46d71ebffb04ab93efbfc8ae35c68938dd68a747024758c0563078d96"
+    },
+    {
+      "file": "129-0_swift.wav",
+      "moveName": "Swift",
+      "sha256": "26dd7273e57432ea725bd2846fedc6033bc8697ea3564d3ed4728fa1ccbf7f4a"
+    },
+    {
+      "file": "136-0_high_jump_kick.wav",
+      "moveName": "High Jump Kick",
+      "sha256": "b6028d1581f838e9ae522dcf10b238e667c37510973b965cfa3c726e7d86e109"
+    },
+    {
+      "file": "143-0_sky_attack.wav",
+      "moveName": "Sky Attack",
+      "sha256": "3ab79a473de5b54b1ba4c21457562f21dae4e85fffb379c451adbb29139c98db"
+    },
+    {
+      "file": "152-0_crabhammer.wav",
+      "moveName": "Crabhammer",
+      "sha256": "1b28e8a1ad3d34e9d837e94c543fb4a5e12ed1474caa1054ad59fdc47dd64691"
+    },
+    {
+      "file": "156-0_rest.wav",
+      "moveName": "Rest",
+      "sha256": "c5d6daac7824e189e288ecf8e547d1d3b5725e7ac27ca1843f3d4acd8d5afb07"
+    },
+    {
+      "file": "157-0_rock_slide.wav",
+      "moveName": "Rock Slide",
+      "sha256": "3052457a8b25d7149aceb27836b7c8c94a7354a235b4ccb6de74a247a0299366"
+    },
+    {
+      "file": "158-0_hyper_fang.wav",
+      "moveName": "Hyper Fang",
+      "sha256": "dff287d53b56be5de823544a91c08ad6c67e3e9a93fd3336d0e066323b4b3b56"
+    },
+    {
+      "file": "161-0_tri_attack.wav",
+      "moveName": "Tri Attack",
+      "sha256": "7206e9b223f4282da4bc7d0e3c00809b1310e210a63a6614682f14a715637c72"
+    },
+    {
+      "file": "165-0_struggle.wav",
+      "moveName": "Struggle",
+      "sha256": "dfa45c49c0bbdd9a1333b38e89ba703813710a68f6754f4b1a983b11db40ecb0"
+    },
+    {
+      "file": "170-0_aeroblast.wav",
+      "moveName": "Aeroblast",
+      "sha256": "d2dee988eb2e76da8cf5498790fd3c0686d67ae6e864f674914dc49025add066"
+    },
+    {
+      "file": "172-0_flame_wheel.wav",
+      "moveName": "Flame Wheel",
+      "sha256": "2ad65fd5e668e430d4dbd23d2e1c0c8d04f17a62d0b1ed9604821d87a10b13b8"
+    },
+    {
+      "file": "188-0_sludge_bomb.wav",
+      "moveName": "Sludge Bomb",
+      "sha256": "c14737dfbf580e4b14584bbafabf6a9a79828a27a8b29b3606adacaf78191c0e"
+    },
+    {
+      "file": "190-0_octazooka.wav",
+      "moveName": "Octazooka",
+      "sha256": "174f59ad55ed394c7c68516485541f078199028f9bc759a8321181a2aa3d83c8"
+    },
+    {
+      "file": "192-0_zap_cannon.wav",
+      "moveName": "Zap Cannon",
+      "sha256": "4dbae3bd690e5377c3c424012e8ead8c313e5f15c65e0f5370a62184832341af"
+    },
+    {
+      "file": "196-0_icy_wind.wav",
+      "moveName": "Icy Wind",
+      "sha256": "55040d8a1024c2e00fb12c0e483b3f8e63b8a12399787b75b2753af0fc5ec7a3"
+    },
+    {
+      "file": "200-0_outrage.wav",
+      "moveName": "Outrage",
+      "sha256": "add5ad4ff2ae92d34a12b75786b786d910fe5a966c2f34358539587b5c18054b"
+    },
+    {
+      "file": "202-0_giga_drain.wav",
+      "moveName": "Giga Drain",
+      "sha256": "a87ad57882d8d2b2dae189b08263a16e8668b374ca3356aed87dd299d9cc254a"
+    },
+    {
+      "file": "216-0_return.wav",
+      "moveName": "Return",
+      "sha256": "f17ca8cc1924eb3a7b3c4fd7a5f63b3a385df69dfb6e10f406024df15ed4f3ec"
+    },
+    {
+      "file": "218-0_frustration.wav",
+      "moveName": "Frustration",
+      "sha256": "d9ee085f318a9107c14bac2fabf519661d4ccfe38380b1168e4925b8ef059353"
+    },
+    {
+      "file": "221-0_sacred_fire.wav",
+      "moveName": "Sacred Fire",
+      "sha256": "59c9c7bd9165fc007e0b2061d023ad84d893ce237a7b466494249a33856511fd"
+    },
+    {
+      "file": "223-0_dynamic_punch.wav",
+      "moveName": "Dynamic Punch",
+      "sha256": "4d2ef4c1e2a1eb1c907d8c136a51bffab9d2b0c8ef9ad2913eb564b163d85ed1"
+    },
+    {
+      "file": "224-0_megahorn.wav",
+      "moveName": "Megahorn",
+      "sha256": "4ace60910effeb6f93609c43fb8bf97de247c6018ac31ec7999b785b2e72e8e8"
+    },
+    {
+      "file": "238-0_cross_chop.wav",
+      "moveName": "Cross Chop",
+      "sha256": "bebed5f866cc6fb09f7cca1dc7adb81e2e2f22b39f5024a6c90f9dd8d5f0c62c"
+    },
+    {
+      "file": "239-0_twister.wav",
+      "moveName": "Twister",
+      "sha256": "09ed773aea001190d244f8ed09b262e0e7fa1afd3bb9220ece99614b5fc2893b"
+    },
+    {
+      "file": "242-0_crunch.wav",
+      "moveName": "Crunch",
+      "sha256": "1e9ac0ddacd0db401a71dbdd366bad5ae149550aa96df1fab47bac5d131d2f21"
+    },
+    {
+      "file": "243-0_mirror_coat.wav",
+      "moveName": "Mirror Coat",
+      "sha256": "d8a7b5afeadaa9004fdd3a905e7daa80fce7f017ef9215c8490cb5454244bfe3"
+    },
+    {
+      "file": "246-0_ancient_power.wav",
+      "moveName": "Ancient Power",
+      "sha256": "0df91f62819df4758183a62fc46ffc00fd0635ff8cbcc5e96d192836f26019f1"
+    },
+    {
+      "file": "247-0_shadow_ball.wav",
+      "moveName": "Shadow Ball",
+      "sha256": "34272b0016462f5eb83d0c35d99b6197faba133720453fe392414d2beb802f5e"
+    },
+    {
+      "file": "248-0_future_sight.wav",
+      "moveName": "Future Sight",
+      "sha256": "30b3928a66c38e5ef3618346ebe16af25c3bdc67253c26d53b9d799e40984342"
+    },
+    {
+      "file": "257-0_heat_wave.wav",
+      "moveName": "Heat Wave",
+      "sha256": "5ba2636f7a0e3a2c633a7017bf8e029f264cd9fee742f16143dc9b6439a13fd0"
+    },
+    {
+      "file": "276-0_super_power.wav",
+      "moveName": "Superpower",
+      "sha256": "6cb07adb7a6ee64173b06e12a72ece72d836e6c58bbcd3c1d288f6c9923b4419"
+    },
+    {
+      "file": "280-0_brick_break.wav",
+      "moveName": "Brick Break",
+      "sha256": "7f98b2172e5bb3b2536109029f27be761f8ac59332ee2f7ff6e9301656fae57b"
+    },
+    {
+      "file": "295-0_luster_purge.wav",
+      "moveName": "Luster Purge",
+      "sha256": "fe7cfb86bf1afb0194d6b664f01c4eb0e0eeb90d5c86595d9a127da78784f8f7"
+    },
+    {
+      "file": "296-0_mist_ball.wav",
+      "moveName": "Mist Ball",
+      "sha256": "9a682e4093aae798a20f0ae39d766fd90c7febe84dce60ca5c8456e44509145e"
+    },
+    {
+      "file": "297-0_aqua_step.wav",
+      "moveName": "Aqua Step",
+      "sha256": "480901e1fd0ea975deac33d24e741d4d11d001a05e5a5c4dcee0657c58540358",
+      "sourceSha256": "93fc04bf1b42e0329f9ac9b9e26fca09a8dd253e6d30c986781adbb21a3a9804",
+      "repair": "Filled missing RIFF and PCM data lengths; audio samples unchanged."
+    },
+    {
+      "file": "297-0_feather_dance.wav",
+      "moveName": "Feather Dance",
+      "sha256": "3d70c3d37ba7ef15e1eb53be1c251cd5bb3fe672e5a7493ede3dfc56d6879c43"
+    },
+    {
+      "file": "299-0_blaze_kick.wav",
+      "moveName": "Blaze Kick",
+      "sha256": "10f55b27428065f972aca08d4eea9199c7e849be0023efd36b0c6ee8e63ff67e"
+    },
+    {
+      "file": "305-0_poison_fang.wav",
+      "moveName": "Poison Fang",
+      "sha256": "91eaaa6264b2f680dbf5260bc9bdc40ffedb5ed1a73a354785b3740f14269fd9"
+    },
+    {
+      "file": "307-0_blast_burn.wav",
+      "moveName": "Blast Burn",
+      "sha256": "1df5b6bcac7d6ae921f6d24af1187ba66ebec771113befd1d891a925d6f6480e"
+    },
+    {
+      "file": "308-0_hydro_cannon.wav",
+      "moveName": "Hydro Cannon",
+      "sha256": "20d9d4d5d794c2f74fa7c33cecf07eff44e7f1b20b5ac2b35b9ccbb4cfc3be0e"
+    },
+    {
+      "file": "309-0_meteor_mash.wav",
+      "moveName": "Meteor Mash",
+      "sha256": "47ae7b66a47b9aec527eae205a5e50f3402d86378bf9fc2edd02dc24d0a6f0b3"
+    },
+    {
+      "file": "314-0_air_cutter.wav",
+      "moveName": "Air Cutter",
+      "sha256": "a206bcc525065ce177cf4c59fd81ee178e6c9ce9eebbb7b5418aaf82ff98d5c0"
+    },
+    {
+      "file": "315-0_overheat.wav",
+      "moveName": "Overheat",
+      "sha256": "2fcf2271423266a883e9100496166fed9bf7485fd5eb10267380a4f782456177"
+    },
+    {
+      "file": "317-0_rock_tomb.wav",
+      "moveName": "Rock Tomb",
+      "sha256": "6a133842178ad47da84f5040a1ef30697aa601e0a2678c70077526e88f805d76"
+    },
+    {
+      "file": "318-0_silver_wind.wav",
+      "moveName": "Silver Wind",
+      "sha256": "33a161ce9417a049d3abb4b7fbb190ab2bc26843b48a0db253cd0eb3e6e1d5b3"
+    },
+    {
+      "file": "324-0_signal_beam.wav",
+      "moveName": "Signal Beam",
+      "sha256": "8060c9410165d61f3c6165e0523ffa904dd5139ef14938d59c7f2d0267f2b38d"
+    },
+    {
+      "file": "325-0_shadow_punch.wav",
+      "moveName": "Shadow Punch",
+      "sha256": "d086d45e9154debd9a022a4803abcbeb581dc8603c5a31f451f9f5d976e6244c"
+    },
+    {
+      "file": "328-0_sand_tomb.wav",
+      "moveName": "Sand Tomb",
+      "sha256": "c33729a7797e2841bedb58e0f33f1ed945aca4436ca1905cfa00161f90f52ea5"
+    },
+    {
+      "file": "330-0_muddy_water.wav",
+      "moveName": "Muddy Water",
+      "sha256": "87c47a2126f239318a91e721824f451c5c7e951a20b3c765fa99243d700747da"
+    },
+    {
+      "file": "332-0_aerial_ace.wav",
+      "moveName": "Aerial Ace",
+      "sha256": "35cb6d1336fb1f58cad06fbf4a7277204778fa886f2753497ef2ffb697e0d61d"
+    },
+    {
+      "file": "333-0_icicle_spear.wav",
+      "moveName": "Icicle Spear",
+      "sha256": "381f6f858ce3638639cd5e922104ee8ecacabd95f914e6ad17a1db12024c7f39"
+    },
+    {
+      "file": "337-0_dragon_claw.wav",
+      "moveName": "Dragon Claw",
+      "sha256": "7cc2ea4dc797951466f1b6d57bca8a5f11dbf51efe840c10910e16e4edec3e93"
+    },
+    {
+      "file": "338-0_frenzy_plant.wav",
+      "moveName": "Frenzy Plant",
+      "sha256": "108314c7abcd64126c4423718283a9834102cd34232286711f311b2e46951890"
+    },
+    {
+      "file": "344-0_volt_tackle.wav",
+      "moveName": "Volt Tackle",
+      "sha256": "21dc7c9fa00e67ae20d11f1609f22c709edd15aca0b65325f69bf03f771c3fde"
+    },
+    {
+      "file": "348-0_leaf_blade.wav",
+      "moveName": "Leaf Blade",
+      "sha256": "ce0f9c51eaf45b128c04007bacbcaf8538c12870baee566aa21c7005e2bb65ac"
+    },
+    {
+      "file": "350-0_rock_blast.wav",
+      "moveName": "Rock Blast",
+      "sha256": "a662396ff3407e5170153adb92cd9ccdaac4e87c817cdc1a8ef150267a3bc3ad"
+    },
+    {
+      "file": "352-0_water_pulse.wav",
+      "moveName": "Water Pulse",
+      "sha256": "798fbe0dc86431cac900077590e49a6c36883e9329d80bfe91b20e5640202566"
+    },
+    {
+      "file": "353-0_doom_desire.wav",
+      "moveName": "Doom Desire",
+      "sha256": "13994a91271c10063e8e09291e5c8e6af3e5f5cbada62eb5b7cf671f4b846c77"
+    },
+    {
+      "file": "354-0_psycho_boost.wav",
+      "moveName": "Psycho Boost",
+      "sha256": "194402f46be5af5cbc7f4d6b26e174ddcbb31df902cbc65b288f7db24d74f48d"
+    },
+    {
+      "file": "360-0_gyro_ball.wav",
+      "moveName": "Gyro Ball",
+      "sha256": "31819331ef2e55db9a4c4350304b1a72610bd197d987eff001e53faa4a57f2e0"
+    },
+    {
+      "file": "362-0_brine.wav",
+      "moveName": "Brine",
+      "sha256": "c1151afc57143361f50b21698862f46b7fb32ddccb654702fd21cbb9d42789ff"
+    },
+    {
+      "file": "370-0_close_combat.wav",
+      "moveName": "Close Combat",
+      "sha256": "4fd4bc4593d110162a389cf6c2c57243df1042fafa812e685b098f0bf73c61d7"
+    },
+    {
+      "file": "371-0_payback.wav",
+      "moveName": "Payback",
+      "sha256": "af7858ee32961e1e235dd29b29d091fcf6e88f4b49c035dd16649eb98c8b78c1"
+    },
+    {
+      "file": "379-0_breaking_swipe.wav",
+      "moveName": "Breaking Swipe",
+      "sha256": "5a9bfcdc1bc5c0d41a80d07632196fe7d9e92dfbe9416c669f95c78134d49164"
+    },
+    {
+      "file": "384-0_last_resort.wav",
+      "moveName": "Last Resort",
+      "sha256": "184680f8636ce3c13e9127fc1d27fa99b1f46a73b4c5a495ea45747b149ae7c8"
+    },
+    {
+      "file": "396-0_aura_sphere.wav",
+      "moveName": "Aura Sphere",
+      "sha256": "985b8989a93873b3309bde39f3f57ef45b963e47a7f2748161f068f087bea914"
+    },
+    {
+      "file": "399-0_dark_pulse.wav",
+      "moveName": "Dark Pulse",
+      "sha256": "ed027edbdb3d532ce329bd3e6b67a5309ff1e5587aabd88f534e68c54e0fe35a"
+    },
+    {
+      "file": "400-0_night_slash.wav",
+      "moveName": "Night Slash",
+      "sha256": "83402e79ab61eed523706edcd427304b03b6a7b2ba57414cd2b991d08c2a4862"
+    },
+    {
+      "file": "401-0_aqua_tail.wav",
+      "moveName": "Aqua Tail",
+      "sha256": "f29fbee0cac977b841001d707bff866df53c915f6ed225c2108d215f9ab73f6d"
+    },
+    {
+      "file": "402-0_seed_bomb.wav",
+      "moveName": "Seed Bomb",
+      "sha256": "a32448d78738af6214c9abe24c0703c1b9b868de061d214ad86ed15415d1d7a0"
+    },
+    {
+      "file": "404-0_x_scissor.wav",
+      "moveName": "X-Scissor",
+      "sha256": "55d45805bd6fff4b08f6fba7b15239f6c611cf182eccabea24f4e0c4c5e9227c"
+    },
+    {
+      "file": "405-0_bug_buzz.wav",
+      "moveName": "Bug Buzz",
+      "sha256": "0561a80e564fc0f523e3b999def46f678ce2ece252772b27feb4a75e9f2dafa0"
+    },
+    {
+      "file": "406-0_dragon_pulse.wav",
+      "moveName": "Dragon Pulse",
+      "sha256": "3e6c23898abb0c142c977b5e9ef869431985b9fc0f47c0b064642b1417e2a6e8"
+    },
+    {
+      "file": "408-0_power_gem.wav",
+      "moveName": "Power Gem",
+      "sha256": "8c24d30cecaff258077af147d6ee0451dfe844a6cf9314d6c504362837bb85d9"
+    },
+    {
+      "file": "409-0_drain_punch.wav",
+      "moveName": "Drain Punch",
+      "sha256": "bc20993a8ab9a2ad91b1c33659e2b3d22272fe206a46884c992ff7f31297770b"
+    },
+    {
+      "file": "411-0_focus_blast.wav",
+      "moveName": "Focus Blast",
+      "sha256": "999ac5e3af757a76084f2a20e94d295191d8ed996660c5f1b2edd9fb21dc5776"
+    },
+    {
+      "file": "412-0_energy_ball.wav",
+      "moveName": "Energy Ball",
+      "sha256": "1ab3e2a11b83e9fdd990a4cf3dddc6b40c74a2fa91e86847706ffa45f422241c"
+    },
+    {
+      "file": "413-0_brave_bird.wav",
+      "moveName": "Brave Bird",
+      "sha256": "611d75f8cc5f12d049fda9ae10ad56533e22615aab5c5bfc3f7e81ee02b9eebf"
+    },
+    {
+      "file": "414-0_earth_power.wav",
+      "moveName": "Earth Power",
+      "sha256": "527f938a872bc4cb6e97a7b79e4d248ab342327f3928fd4de54b878069aee4f1"
+    },
+    {
+      "file": "416-0_giga_impact.wav",
+      "moveName": "Giga Impact",
+      "sha256": "a8cbc31c1bae7e48976bf969d04ff52c7c33e149c3a7e966248405380b9d5fe9"
+    },
+    {
+      "file": "419-0_avalanche.wav",
+      "moveName": "Avalanche",
+      "sha256": "8024e3dbb392f6bbedbf3c514fb3dc32bfa9e4ef3e207d6dea7a5409b3a16eb3"
+    },
+    {
+      "file": "425-0_shadow_sneak.wav",
+      "moveName": "Shadow Sneak",
+      "sha256": "9ecc6a861d3c6eafefd38981b3ae9ba8e66d93dcbf6274bc3b0a5464eca82be2"
+    },
+    {
+      "file": "426-0_mud_bomb.wav",
+      "moveName": "Mud Bomb",
+      "sha256": "042278da421b3815039fcf7864d9c29abfff76791a79fc51c4d602e80c999502"
+    },
+    {
+      "file": "429-0_mirror_shot.wav",
+      "moveName": "Mirror Shot",
+      "sha256": "3edc7226f7de0b0593135736e8e6c848acd9fda990ec709bd21d6f0374d312a5"
+    },
+    {
+      "file": "430-0_flash_cannon.wav",
+      "moveName": "Flash Cannon",
+      "sha256": "bb7051daf1f5fca502dc24d14a240fa41b9d22931e77389d8bbd80e7b37da2d1"
+    },
+    {
+      "file": "434-0_draco_meteor.wav",
+      "moveName": "Draco Meteor",
+      "sha256": "3388fca2d43b9cf1417b75e9e9b09a4115c4499bca8a0112320fac1d8ea0b2c9"
+    },
+    {
+      "file": "435-0_discharge.wav",
+      "moveName": "Discharge",
+      "sha256": "3151cf03cc01a62eed4ffcff14fd9a874c70bb2255ab39aec1556e95d6c3ef35"
+    },
+    {
+      "file": "437-0_leaf_storm.wav",
+      "moveName": "Leaf Storm",
+      "sha256": "fa7465599624fed437ece9c89d32ee38f500eed79b8779e75862fa2d5e92d9a5"
+    },
+    {
+      "file": "438-0_power_whip.wav",
+      "moveName": "Power Whip",
+      "sha256": "89d148932bfbb88de7d837df260a7873751ccb6616698e7f0a6cd0644ef408ed"
+    },
+    {
+      "file": "439-0_rock_wrecker.wav",
+      "moveName": "Rock Wrecker",
+      "sha256": "fb3823faed4867e8f671c0e6c22d472ade95cab8d48bc09fa4bf91e418828321"
+    },
+    {
+      "file": "440-0_cross_poison.wav",
+      "moveName": "Cross Poison",
+      "sha256": "8c343cdbca0ea708e1da9534e73def97875e2fb08191b59c704b320a0214cea3"
+    },
+    {
+      "file": "441-0_gunk_shot.wav",
+      "moveName": "Gunk Shot",
+      "sha256": "b1fcc400bb33d0c88da62a578d457a4a4a4c65704507947e2917ae7d0802b5f1"
+    },
+    {
+      "file": "442-0_double_iron_bash.wav",
+      "moveName": "Double Iron Bash",
+      "sha256": "8bd5d2163b2064ea05f3f4ff27950770430fa80bcf80a199b8635c443c7f7980"
+    },
+    {
+      "file": "442-0_iron_head.wav",
+      "moveName": "Iron Head",
+      "sha256": "1122684a169e40e8d4197669f80670b1e314142beb7198918a5d8eaa38f38c08"
+    },
+    {
+      "file": "443-0_magnet_bomb.wav",
+      "moveName": "Magnet Bomb",
+      "sha256": "aee63548c12138709f6eba512ad8ead90cf2974eaeb87d35d1acc71143bd8f50"
+    },
+    {
+      "file": "444-0_stone_edge.wav",
+      "moveName": "Stone Edge",
+      "sha256": "93730231021640a4d121f7dccf2c187d3ac4b4062f5cbfafb6ad1d126a31d9fb"
+    },
+    {
+      "file": "447-0_grass_knot.wav",
+      "moveName": "Grass Knot",
+      "sha256": "da5762139e1a251b70c949dee3e92f4882d56af583c2000eb9409b4c27812c1f"
+    },
+    {
+      "file": "453-0_aqua_jet.wav",
+      "moveName": "Aqua Jet",
+      "sha256": "3b2dfd47e0ed9346db65b7448f23db809213fb0e174d6fce7eb37f7459f5710a"
+    },
+    {
+      "file": "456-0_roar_of_time.wav",
+      "moveName": "Roar of Time",
+      "sha256": "fa248ef43fae83db6bc76ed205a2dd949aabe26a96241ecfa8fe6d06e50aaa63"
+    },
+    {
+      "file": "460-0_spacial_rend.wav",
+      "moveName": "Spacial Rend",
+      "sha256": "065379d94b62c4dc34801e8a83420fc7a1363519cfaf63398e7aa2ac1feda5b8"
+    },
+    {
+      "file": "463-0_magma_storm.wav",
+      "moveName": "Magma Storm",
+      "sha256": "d2aa254cc303ccc4b53c115855bdbab19c5059625a74569b85b878b4348b3eb8"
+    },
+    {
+      "file": "465-0_seed_flare.wav",
+      "moveName": "Seed Flare",
+      "sha256": "1a1b4ba22f504ba8f8850c67b9fbc740ae48c4f4a541d5268043af01b57662e8"
+    },
+    {
+      "file": "466-0_ominous_wind.wav",
+      "moveName": "Ominous Wind",
+      "sha256": "23bc9eaefe89614c969c35a40036c29cfda6b9b2d60ce13a289153b6ba2deb01"
+    },
+    {
+      "file": "467-0_shadow_force.wav",
+      "moveName": "Shadow Force",
+      "sha256": "9739104179fcf7a8dc5e613da38bdf68a9e38398ab8ea6bff37c5efefefea160"
+    },
+    {
+      "file": "473-0_psyshock.wav",
+      "moveName": "Psyshock",
+      "sha256": "94f89be98c1fe44a5a8082560fc79ad748e80036c03aed989800c85d20fbbb79"
+    },
+    {
+      "file": "481-0_flame_burst.wav",
+      "moveName": "Flame Burst",
+      "sha256": "2b2196190aab6bb7fca5fa661386151c01b0fb51a593859fa4eeb074e3508a73"
+    },
+    {
+      "file": "482-0_sludge_wave.wav",
+      "moveName": "Sludge Wave",
+      "sha256": "61e99f7dea0be8bd25cd51e4a5982f6460637fb3680541647071d9e50f50b139"
+    },
+    {
+      "file": "484-0_heavy_slam.wav",
+      "moveName": "Heavy Slam",
+      "sha256": "9e2c29309a5adaaf66a986ee6ace57cba99251395ae71159488de4dd134fb3e9"
+    },
+    {
+      "file": "485-0_synchronoise.wav",
+      "moveName": "Synchronoise",
+      "sha256": "76e1588544a7135f5d9f3501b81599c4a807b6c55c0bcaacebc11df55ef98c97"
+    },
+    {
+      "file": "488-0_flame_charge.wav",
+      "moveName": "Flame Charge",
+      "sha256": "0a95fa7e9ac6b66e841fc56d51b6828504ba0c422a93d0af4a4e78cca7a24895"
+    },
+    {
+      "file": "490-0_low_sweep.wav",
+      "moveName": "Low Sweep",
+      "sha256": "0e4a32c06b1949c6f417fff05a7d392376cf1d7b2880b3741228fa42ca1d3a7f"
+    },
+    {
+      "file": "491-0_acid_spray.wav",
+      "moveName": "Acid Spray",
+      "sha256": "8d0a3997b9c4a4021d64d10af7a84c3d164365b435c5e0f45c3fdcf3248c09bb"
+    },
+    {
+      "file": "492-0_foul_play.wav",
+      "moveName": "Foul Play",
+      "sha256": "fd3c95d2ec2d2ed15faf7c901323a2490be93e5458b463667a332e7ea8c5739e"
+    },
+    {
+      "file": "503-0_scald.wav",
+      "moveName": "Scald",
+      "sha256": "4aa81a6df48ae869760607b17a19163d9b7315af3fe08311a0d872aa0682d1f6"
+    },
+    {
+      "file": "512-0_acrobatics.wav",
+      "moveName": "Acrobatics",
+      "sha256": "bd53f164e02618ad27f5e47412447ba0c13e6f1561912d043488a1e7ec0ae509"
+    },
+    {
+      "file": "523-0_bulldoze.wav",
+      "moveName": "Bulldoze",
+      "sha256": "c7cd6493bbcd1e648bc8e93986db120fdcd406da00f1e6181735cf28e84c47a7"
+    },
+    {
+      "file": "528-0_wild_charge.wav",
+      "moveName": "Wild Charge",
+      "sha256": "f80bd811d6724579d554ec41b06abb348f753fdda5ee223ee0175199e47c5bb6"
+    },
+    {
+      "file": "529-0_drill_run.wav",
+      "moveName": "Drill Run",
+      "sha256": "8fb8aca13e2d1fb3a55126dbf3122a872ebfbb63fa77208a26e816b2b3df1668"
+    },
+    {
+      "file": "531-0_heart_stamp.wav",
+      "moveName": "Heart Stamp",
+      "sha256": "bc07344c77017ee6d17c79083138a1b706b1e3fdeb7971234b278d1380a33c88"
+    },
+    {
+      "file": "533-0_sacred_sword.wav",
+      "moveName": "Sacred Sword",
+      "sha256": "9f06373508aaf301361bfb1d7fd5533abb26fdc66a5c75bfb68278f363246959"
+    },
+    {
+      "file": "534-0_razor_shell.wav",
+      "moveName": "Razor Shell",
+      "sha256": "e2dec4c592c82969461c81d3243c395ee9cfb56204c21708338471847020f9b3"
+    },
+    {
+      "file": "536-0_leaf_tornado.wav",
+      "moveName": "Leaf Tornado",
+      "sha256": "c295baf6ed2432b770769cd992f9d5aa6d86ef149846d71556f7cd34c075fee9"
+    },
+    {
+      "file": "540-0_psystrike.wav",
+      "moveName": "Psystrike",
+      "sha256": "af5b81120674e2f316ad04673c19053c44b078cbdb5d9ac082585cf644706978"
+    },
+    {
+      "file": "542-0_hurricane.wav",
+      "moveName": "Hurricane",
+      "sha256": "9cc63b561549528a32b74ca796ee652e5c4c9937af60391147a29fbb7cc5f19c"
+    },
+    {
+      "file": "543-0_high_horsepower.wav",
+      "moveName": "High Horsepower",
+      "sha256": "07ef22174b2d7621becc192f720f8cb52b241d6cae659e9f7b04a95321c442b7"
+    },
+    {
+      "file": "548-0_secret_sword.wav",
+      "moveName": "Secret Sword",
+      "sha256": "dd704d1c1a59a0f9b913541b0c6a4cfbf56b7afba5848617a2def76d678ce4bd",
+      "sourceSha256": "1005c7cd78e64eca696583fc50c4d22001f65aff74dfdaf62d7e9e7ff34c52a2",
+      "repair": "Filled missing RIFF and PCM data lengths; audio samples unchanged."
+    },
+    {
+      "file": "549-0_glaciate.wav",
+      "moveName": "Glaciate",
+      "sha256": "a02dc26168dd7f1cbd5c121064626e6455b49fb95fa6d31e86cee424967ea6f6"
+    },
+    {
+      "file": "553-0_freeze_shock.wav",
+      "moveName": "Freeze Shock",
+      "sha256": "34ba3a10803128a09bea6acbb0bb27bcd7357ce50d076bfb0ce179562908ca6d"
+    },
+    {
+      "file": "554-0_ice_burn.wav",
+      "moveName": "Ice Burn",
+      "sha256": "f2b4c39fb6cb2b1a070cb0ce152ea461cf1b58ef2a911f5a321566f3ddfc3315"
+    },
+    {
+      "file": "557-0_v_create.wav",
+      "moveName": "V-Create",
+      "sha256": "7e7f95949fb371bd3c40bfd03f904e810e7003bce5281cabe89a86bf2786db54"
+    },
+    {
+      "file": "558-0_fusion_flare.wav",
+      "moveName": "Fusion Flare",
+      "sha256": "fbcd80354144e4c426f42381810d22ce5ad81b336d9a0dd50b1ccb6a3c991687"
+    },
+    {
+      "file": "559-0_fusion_bolt.wav",
+      "moveName": "Fusion Bolt",
+      "sha256": "81fe958293fc6df129e30eadef78f6af1fd21ef7780919d873d7eeacd1b2e3ee"
+    },
+    {
+      "file": "560-0_flying_press.wav",
+      "moveName": "Flying Press",
+      "sha256": "a700a4c37d6bf22328426dced6a2c7cb8c2b46dd655ad1f1bb4ec8fb9af5fc84"
+    },
+    {
+      "file": "565-0_fell_stinger.wav",
+      "moveName": "Fell Stinger",
+      "sha256": "6ccab80a7011a5c53663f9401203776e875489ebd6aca33c25765d7dfdfaa682"
+    },
+    {
+      "file": "570-0_parabolic_charge.wav",
+      "moveName": "Parabolic Charge",
+      "sha256": "218766f4c177075acd9e7832dde36a147219bbb9f4c14100f9414f08b4537784"
+    },
+    {
+      "file": "572-0_petal_blizzard.wav",
+      "moveName": "Petal Blizzard",
+      "sha256": "c9e89097ce6b28e6c112f2731e0c65e09c328d7e09e17d825bc8d707a16bcf35"
+    },
+    {
+      "file": "574-0_disarming_voice.wav",
+      "moveName": "Disarming Voice",
+      "sha256": "ff1ee1a79a5e138686c8ba7c3d8ebb77c07b0f0f2c899524bb39e5f18777b64e"
+    },
+    {
+      "file": "577-0_draining_kiss.wav",
+      "moveName": "Draining Kiss",
+      "sha256": "471a95e4d6f953a284fb2d87d2cdf718d877bfda0d2638e60bb9fb468fc36da9"
+    },
+    {
+      "file": "583-0_play_rough.wav",
+      "moveName": "Play Rough",
+      "sha256": "18b5ff0bc6a918984ab5d405a5846063e7e05d6506ebe5815f46da20ff5b43be"
+    },
+    {
+      "file": "585-0_moonblast.wav",
+      "moveName": "Moonblast",
+      "sha256": "6dbe988c85b84cbc78e9edc11e01d3dcf81a9b377f93cfb62e8c4067a846b4ef"
+    },
+    {
+      "file": "586-0_boomburst.wav",
+      "moveName": "Boomburst",
+      "sha256": "185bafe808d83dc472be5123ad2fc7ccc664aebec7289f2dc7896bb0988b44f6"
+    },
+    {
+      "file": "587-0_gigaton_hammer.wav",
+      "moveName": "Gigaton Hammer",
+      "sha256": "88c927f8ca7646100f0bc6a0b2b5041f03141bc270ea6fc9ae0694fbd97cb98c",
+      "sourceSha256": "0beca42b498760731bb3c1c56f048bfb18822a1f8b6ea390abc9a240619a2391",
+      "repair": "Filled missing RIFF and PCM data lengths; audio samples unchanged."
+    },
+    {
+      "file": "595-0_mystical_fire.wav",
+      "moveName": "Mystical Fire",
+      "sha256": "8e904fc09e4ac6a62c8235cd308de0ca82fb500153197b311eeaad6b647846a0"
+    },
+    {
+      "file": "605-0_dazzling_gleam.wav",
+      "moveName": "Dazzling Gleam",
+      "sha256": "d1330422ec0182040d3ae5018ac41c66848ae559d71f09e7ddde55cfdf338148"
+    },
+    {
+      "file": "612-0_power-up_punch.wav",
+      "moveName": "Power-Up Punch",
+      "sha256": "b48dafc5bdff79f557c72dee17477c292dce5863acab337ef4720c8d6900883e"
+    },
+    {
+      "file": "613-0_oblivion_wing.wav",
+      "moveName": "Oblivion Wing",
+      "sha256": "7a418683985dc2656078c38a2a0a67784c1ebbfd1646702b712071a38887217b"
+    },
+    {
+      "file": "618-0_origin_pulse.wav",
+      "moveName": "Origin Pulse",
+      "sha256": "fcc42cab6b90ac2cf32ec54bd552f3b6c5bf4354031a82203f01251792fae0ef"
+    },
+    {
+      "file": "619-0_precipice_blades.wav",
+      "moveName": "Precipice Blades",
+      "sha256": "8b29a662b122b2e071290bce2699de6e36aead513909b02644a479235196225d"
+    },
+    {
+      "file": "620-0_dragon_ascent.wav",
+      "moveName": "Dragon Ascent",
+      "sha256": "6ca2c83ff51dca90918b7167550ec834f86c030b3e880f5658da6ac635d79be1"
+    },
+    {
+      "file": "621-0_poltergeist.wav",
+      "moveName": "Poltergeist",
+      "sha256": "660d2c4460e0061801e1989481070fe939193955320d3d754294382249910c9a"
+    },
+    {
+      "file": "622-0_behemoth_bash.wav",
+      "moveName": "Behemoth Bash",
+      "sha256": "a4b22de46d71ebffb04ab93efbfc8ae35c68938dd68a747024758c0563078d96"
+    },
+    {
+      "file": "744-0_dynamax_cannon.wav",
+      "moveName": "Dynamax Cannon",
+      "sha256": "4c5d98b63e863662823bf9ebc44060404d9806f7dd7414960876ab0742faee3d",
+      "sourceSha256": "4eecc85d713bcf1cfb8502661f50b2dc4daa5097610336bde1ab239bec3e16b6",
+      "repair": "Filled missing RIFF and PCM data lengths; audio samples unchanged."
+    }
+  ]
+}

@@ -84,6 +84,8 @@ import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayHpState
 import com.example.overdex.battle.replay.ReplayFaintPose
+import com.example.overdex.battle.replay.ReplayAttackSounds
+import com.example.overdex.battle.replay.replayAttackSoundsBetween
 import com.example.overdex.battle.replay.ReplayTransportSounds
 import com.example.overdex.battle.replay.ReplayPlaybackClock
 import com.example.overdex.data.LocalSpriteProvider
@@ -272,12 +274,20 @@ fun MatchReplayScreen(
     var eventBlipsEnabled by remember(replayPreferences) {
         mutableStateOf(replayPreferences.getBoolean("event_blips_enabled", true))
     }
+    var attackSfxEnabled by remember(replayPreferences) {
+        mutableStateOf(replayPreferences.getBoolean("attack_sfx_enabled", true))
+    }
+    val currentAttackSfxEnabled by rememberUpdatedState(attackSfxEnabled)
+    val attackSounds = remember(context) { ReplayAttackSounds(context) }
+    LaunchedEffect(model, attackSounds) { attackSounds.prepare(model.attackSoundEvents) }
+    LaunchedEffect(playing, attackSfxEnabled, playbackSpeed) { attackSounds.stop() }
     val currentEventBlipsEnabled by rememberUpdatedState(eventBlipsEnabled)
     val transportSounds = remember { ReplayTransportSounds(context) }
     val replayHaptics = remember { ReplayHaptics(context) }
 
-    DisposableEffect(transportSounds, replayHaptics) {
+    DisposableEffect(transportSounds, replayHaptics, attackSounds) {
         onDispose {
+            attackSounds.release()
             transportSounds.release()
             replayHaptics.release()
         }
@@ -290,6 +300,7 @@ fun MatchReplayScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         playing = false
         transportSounds.endScrub()
+        attackSounds.stop()
         replayHaptics.release()
     }
 
@@ -421,6 +432,16 @@ fun MatchReplayScreen(
                     modifier = Modifier.weight(1.5f).semantics { contentDescription = "Replay event blips" },
                     selected = eventBlipsEnabled,
                 )
+                MatchLcdTextButton(
+                    label = "SFX ${if (attackSfxEnabled) "ON" else "OFF"}",
+                    onClick = {
+                        attackSfxEnabled = !attackSfxEnabled
+                        if (!attackSfxEnabled) attackSounds.stop()
+                        replayPreferences.edit().putBoolean("attack_sfx_enabled", attackSfxEnabled).apply()
+                    },
+                    modifier = Modifier.weight(1.25f).semantics { contentDescription = "Replay attack sounds" },
+                    selected = attackSfxEnabled,
+                )
                 MatchLcdTextButton("BACK", { if (!savingClip) { playing = false; transportSounds.stop(); onBack() } }, Modifier.weight(1f))
             }
             if (allowClipSave) {
@@ -463,6 +484,11 @@ fun MatchReplayScreen(
             val previous = cursor
             cursor = clock.positionAt(frameNanos)
             if (currentEventBlipsEnabled && currentModel.crossedArticleBoundary(previous, cursor)) transportSounds.tick()
+            if (currentAttackSfxEnabled) {
+                replayAttackSoundsBetween(currentModel.attackSoundEvents, previous, cursor).forEach {
+                    attackSounds.play(it, playbackSpeed)
+                }
+            }
             currentModel.hapticEventsBetween(previous, cursor).forEach { event ->
                 replayHaptics.play(event.pulseCount)
             }

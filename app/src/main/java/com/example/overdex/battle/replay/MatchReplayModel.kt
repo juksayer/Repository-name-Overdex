@@ -238,6 +238,21 @@ class MatchReplayModel(
     }
 
     /** Haptic testimony crossed during forward playback. Scrubbing stays silent. */
+    /** Presentation-only sounds share the animation schedule; unknown names stay silent. */
+    val attackSoundEvents: List<ReplayAttackSoundEvent> by lazy {
+        (fastMoveCycles.mapNotNull { cycle ->
+            val name = cycle.witness.moveName ?: return@mapNotNull null
+            if (!canPerformReplayAction(cycle.witness.side, cycle.startedAtNanos, cycle.startedAtNanos)) return@mapNotNull null
+            ReplayAttackSoundEvent(cycle.startedAtNanos, name, false)
+        } + recordedChargedMoveUses.mapNotNull { use ->
+            val name = use.moveName ?: return@mapNotNull null
+            val endedAt = timedArticles.firstOrNull { it.payload is ArchivedMatchEnded }?.monotonicTimeNanos
+            if (endedAt != null && use.animationAtNanos > endedAt) return@mapNotNull null
+            if (!use.isCompleted || !canPerformReplayAction(use.side, use.preparationAtNanos, use.animationAtNanos)) return@mapNotNull null
+            ReplayAttackSoundEvent(use.animationAtNanos, name, true)
+        }).sortedBy { it.atNanos }
+    }
+
     fun hapticEventsBetween(fromExclusiveNanos: Long, toInclusiveNanos: Long): List<ReplayHapticEvent> {
         if (toInclusiveNanos <= fromExclusiveNanos) return emptyList()
         return replayHapticEvents.filter { event ->

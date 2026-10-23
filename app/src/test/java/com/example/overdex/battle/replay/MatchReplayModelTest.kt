@@ -33,6 +33,27 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MatchReplayModelTest {
+    @Test fun attackAudioWaitsForCompletedNamedCharge() {
+        val preparation = timed("ready-audio", ArchivedGetReadyWitnessed, 1_000_000_000L)
+        val open = MatchReplayModel(MatchArchive(matchId = "audio", articles = listOf(preparation)))
+        assertTrue(open.attackSoundEvents.isEmpty())
+        val completed = MatchReplayModel(MatchArchive(matchId = "audio", articles = listOf(
+            preparation,
+            timed("spent-audio", ArchivedChargedMoveEnergySpent("PLAYER", "Raichu", "Thunder Punch", 35, "ANNOUNCEMENT"), 5_000_000_000L),
+        )))
+        val sound = completed.attackSoundEvents.single()
+        assertEquals("Thunder Punch", sound.moveName)
+        assertTrue(sound.charged)
+        assertTrue(sound.atNanos > 1_000_000_000L)
+    }
+
+    @Test fun unidentifiedFastMovesRemainSilent() {
+        val model = MatchReplayModel(MatchArchive(matchId = "audio", articles = listOf(
+            timed("unknown-audio", canonicalHit("unknown"), 1_000_000_000L)
+        )))
+        assertTrue(model.attackSoundEvents.isEmpty())
+    }
+
     @Test fun `replay roster keeps form through bare OCR and clears it for a rescan`() {
         val form = timed("form", com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed(
             1, "Raichu (Alolan)", 26, "fALOLA", .2f), 1L)
