@@ -81,10 +81,3 @@ object PrioritySpeciesTextRecognizer {
         SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text
     suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
 }
-
-/** Result reads share the urgent lane; routine OCR cannot overtake the next result candidate. */
-object OutcomeTextRecognizer {
-    suspend fun readText(bitmap: Bitmap): String =
-        SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text
-    suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
-}

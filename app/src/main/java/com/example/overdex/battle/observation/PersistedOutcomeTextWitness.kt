@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.Channel
 import com.example.overdex.battle.reality.RealityArticle
+import com.example.overdex.model.observation.OcrTextEvidence
 
 /** Reads preserved result candidates promptly; typed outcome witnesses consume the source-timed text. */
 class PersistedOutcomeTextWitness(
@@ -45,34 +46,66 @@ class PersistedOutcomeTextWitness(
             witnessScope.launch { OutcomeTextRecognizer.warmUp() }
             witnessScope.launch {
                 for (signal in wake) {
-                    while (true) {
-                        val article = pending.poll() ?: break
-                        val crop = article.payload as CropCaptured
-                        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: continue
-                        // Keep even blank frames on the reserved result lane.
-                        // Retrying them via AnnouncementRecognizer queues the
-                        // whole result stream behind unrelated battlefield OCR:
-                        // October 12 evidence arrived 30-35 seconds late that way.
-                        // Older crops stay queued even when a newer frame is tried first.
-                        val text = try {
-                            OutcomeTextRecognizer.readText(bitmap).trim()
+                    while (pending.size() > 0) {
+                        var sample: RealityArticle? = null
+                        val queuedAt = System.nanoTime()
+                        var admittedAt = queuedAt
+                        var nativeReadNanos = 0L
+                        var passes = 0
+                        var pendingCount = 0
+                        val readings: List<OcrTextEvidence> = try {
+                            OutcomeTextRecognizer.withReadingTurn {
+                                admittedAt = System.nanoTime()
+                                // Choose after admission so a fresh result arriving
+                                // during other OCR work can take the current turn.
+                                val article = pending.poll() ?: return@withReadingTurn emptyList()
+                                sample = article
+                                pendingCount = pending.size()
+                                val crop = article.payload as CropCaptured
+                                val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance)
+                                    ?: return@withReadingTurn emptyList()
+                                try {
+                                    recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null }
+                                } finally {
+                                    nativeReadNanos = this.nativeReadNanos
+                                    passes = readCount
+                                    bitmap.recycle()
+                                }
+                            }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
                             // A failed frame must not terminate the result reader
                             // for the remainder of this Match.
-                            Log.e("OutcomeTextWitness", "Result OCR failed for ${article.id.value}", error)
-                            null
-                        } finally {
-                            bitmap.recycle()
-                        }?.takeIf { it.isNotBlank() } ?: continue
+                            Log.e("OutcomeTextWitness", "Result OCR failed for ${sample?.id?.value}", error)
+                            emptyList()
+                        }
+                        val article = sample ?: continue
+                        val capturedAt = article.monotonicTimeNanos ?: continue
+                        val completedAt = System.nanoTime()
+                        // Separate backlog, backend wait, and native OCR time.
+                        // Blank-read diagnostics do not retain extra PNGs in compact exports.
                         match.custody.submitTestimony(
-                            sourceId, RawTestimony(text), article.perceivedAt, null,
-                            listOf(article.id.value), article.monotonicTimeNanos ?: continue
+                            SourceId("${observerId.id}_LATENCY"),
+                            RawTestimony("cropId=${article.id.value} queueMs=${(admittedAt - queuedAt) / 1_000_000} " +
+                                "captureToAdmissionMs=${(admittedAt - capturedAt) / 1_000_000} " +
+                                "nativeReadMs=${nativeReadNanos / 1_000_000} " +
+                                "processingMs=${(completedAt - admittedAt) / 1_000_000} " +
+                                "totalMs=${(completedAt - capturedAt) / 1_000_000} " +
+                                "passes=$passes pending=$pendingCount nonblank=${readings.any { it.rawText.isNotBlank() }}"),
+                            article.perceivedAt, null, emptyList(), capturedAt,
                         )
+                        readings.filter { it.rawText.isNotBlank() }.forEach { reading ->
+                            // Keep the unsuccessful native reading as well as the
+                            // treated reading, with the same original crop/time.
+                            match.custody.submitTestimony(
+                                sourceId, RawTestimony(reading.rawText, reading), article.perceivedAt, null,
+                                listOf(article.id.value), capturedAt,
+                            )
+                        }
                         // One decisive result is sufficient. The unused source crops are
                         // still in the immutable Timeline, available to forensic review.
-                        if (MatchOutcomeTextResolver.resolve(text) != null) return@launch
+                        if (readings.any { MatchOutcomeTextResolver.resolve(it.rawText) != null }) return@launch
                     }
                 }
             }

@@ -5,6 +5,7 @@ internal class FreshEvidenceQueue<T> {
     private val pending = ArrayDeque<T>()
     private var newest = true
     @Synchronized fun offer(value: T) { pending.addLast(value) }
+    @Synchronized fun size(): Int = pending.size
     @Synchronized fun poll(): T? {
         if (pending.isEmpty()) return null
         val value = if (newest) pending.removeLast() else pending.removeFirst()

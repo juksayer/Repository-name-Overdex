@@ -1,0 +1,212 @@
+{
+  "150.054-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "3666571d-6e1c-487b-9133-399e129de50e",
+    "perceivedAt": 1792857113329,
+    "monotonicTimeNanos": 53358503534564,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/f7d6b99fa77f6e5280d3e6d6e593738a68bef8b7b04061ac3b3d7b6455f5f455.png",
+      "sha256": "f7d6b99fa77f6e5280d3e6d6e593738a68bef8b7b04061ac3b3d7b6455f5f455",
+      "byteCount": 120026,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "151.187-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "fffde481-df42-427b-968a-22259f790667",
+    "perceivedAt": 1792857114464,
+    "monotonicTimeNanos": 53359636835103,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/496ec102403a971d386939e61ff4266d5da2a487c1eabdea50098600ee03e7ad.png",
+      "sha256": "496ec102403a971d386939e61ff4266d5da2a487c1eabdea50098600ee03e7ad",
+      "byteCount": 109387,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "143.980-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "dcee6a2b-67fa-4a1d-849c-3ba93532200d",
+    "perceivedAt": 1792857107283,
+    "monotonicTimeNanos": 53352430398795,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/23b0f26698f44b97f483faeb57fc867c680a06a03ca8060eebc806f5bacf9000.png",
+      "sha256": "23b0f26698f44b97f483faeb57fc867c680a06a03ca8060eebc806f5bacf9000",
+      "byteCount": 114204,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "159.104-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "1f6fbc17-85c4-4ce7-8921-842026640351",
+    "perceivedAt": 1792857122375,
+    "monotonicTimeNanos": 53367553876642,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/fa4e4569048fe59df70fd67f2294bd70969b4a489193e65ab7daae97dc88ee85.png",
+      "sha256": "fa4e4569048fe59df70fd67f2294bd70969b4a489193e65ab7daae97dc88ee85",
+      "byteCount": 109736,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "157.816-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "456022f9-8b62-4b9d-b0c7-48144ee072c5",
+    "perceivedAt": 1792857121093,
+    "monotonicTimeNanos": 53366266162565,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/324f29b0668bde7aec9d5692b372065351f53788f6b47e3e2c10a668bdcf5d8b.png",
+      "sha256": "324f29b0668bde7aec9d5692b372065351f53788f6b47e3e2c10a668bdcf5d8b",
+      "byteCount": 121565,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "150.685-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "35b78b6a-7544-4a81-9e53-083d3c9e080a",
+    "perceivedAt": 1792857113967,
+    "monotonicTimeNanos": 53359134661949,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/73a92f52c38a68ab4d1de91b6ab6cc0eacc85396ac9fdfa040ae0bd15c9144d8.png",
+      "sha256": "73a92f52c38a68ab4d1de91b6ab6cc0eacc85396ac9fdfa040ae0bd15c9144d8",
+      "byteCount": 111304,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "144.421-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "90747329-9389-46c5-ae44-c89d44fd8daa",
+    "perceivedAt": 1792857107712,
+    "monotonicTimeNanos": 53352871104333,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/e8ed29c097a079407a14e41641194520f64469bdde31495bfa6f817c2d692c71.png",
+      "sha256": "e8ed29c097a079407a14e41641194520f64469bdde31495bfa6f817c2d692c71",
+      "byteCount": 100038,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "158.280-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "09f74cf5-7d35-4037-ae43-26a4a823c842",
+    "perceivedAt": 1792857121555,
+    "monotonicTimeNanos": 53366729605026,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/219236f4ad1ee6eb041588ff1ebbaa4426a168f23ea99c647e3e6f969946e289.png",
+      "sha256": "219236f4ad1ee6eb041588ff1ebbaa4426a168f23ea99c647e3e6f969946e289",
+      "byteCount": 125405,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "135.535-MatchOutcomeCrop.png": {
+    "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+    "articleId": "197b8b28-38ca-482f-92f0-25e733a29ed3",
+    "perceivedAt": 1792857098815,
+    "monotonicTimeNanos": 53343984842871,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/d87d869541b7f89c5bcb9a200cd4eeb2633f7e9472df6220a2a9e2cbd8f4d1d3.png",
+      "sha256": "d87d869541b7f89c5bcb9a200cd4eeb2633f7e9472df6220a2a9e2cbd8f4d1d3",
+      "byteCount": 103698,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1493,
+      "cropLeft": 100,
+      "cropTop": 627,
+      "cropRight": 568,
+      "cropBottom": 888,
+      "overlayBounds": null
+    }
+  },
+  "good-effort-pixel.png": {
+    "matchId": "dbbd8461-df71-4417-8dbb-47bbff80df20",
+    "articleId": "3ea24f0d-afe4-4217-bddd-e3076d3e25e7",
+    "perceivedAt": 1792774393781,
+    "monotonicTimeNanos": 11231536229856,
+    "crop": {
+      "kind": "crop_captured",
+      "artifactPath": "artifacts/crops/sha256/559e55c034e4d24f181b1b325692eb5947865b86070a702695219c93ad673701.png",
+      "sha256": "559e55c034e4d24f181b1b325692eb5947865b86070a702695219c93ad673701",
+      "byteCount": 136812,
+      "mediaType": "image/png",
+      "cropName": "MatchOutcomeCrop",
+      "sourceWidth": 672,
+      "sourceHeight": 1419,
+      "cropLeft": 97,
+      "cropTop": 595,
+      "cropRight": 569,
+      "cropBottom": 828,
+      "overlayBounds": null
+    }
+  }
+}

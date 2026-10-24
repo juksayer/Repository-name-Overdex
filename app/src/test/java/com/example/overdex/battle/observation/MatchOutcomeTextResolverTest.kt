@@ -20,4 +20,10 @@ class MatchOutcomeTextResolverTest {
     @Test fun `outcome phrase rejects appended unrelated words`() {
         assertNull(MatchOutcomeTextResolver.resolve("YOU WIN SOMETHING"))
     }
+
+    @Test fun `recorded garbled result and reward counters require a new reading`() {
+        listOf("iNIAA NOA", "1/4", "4/6", "D\n4/6", "L").forEach {
+            assertNull(it, MatchOutcomeTextResolver.resolve(it))
+        }
+    }
 }
