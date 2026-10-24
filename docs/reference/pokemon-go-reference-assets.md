@@ -183,3 +183,75 @@ No runtime code or calibration changed in this inventory pass. No Android build
 or phone install was needed. The audit verifies available reference material and
 current code paths; new recognition behavior still needs implementation and real
 recording validation.
+
+
+## October 24 supplement: effect textures and animation atlases
+
+A follow-up inspection found a relevant directory omitted from the October 21
+inventory: `Images/Effects`. The earlier inventory and its validation boundaries
+remain historical findings; this supplement adds source coverage, not a live
+Fast Move recognizer.
+
+The directory contains **228 PNG files totaling 7,263,268 bytes (6.93 MiB)**.
+It contains particle/effect texture candidates in addition to decorative and
+non-battle effects. Useful candidates include:
+
+| File under `Images/Effects` | Verified dimensions | Potential reference use |
+| --- | --- | --- |
+| `snowflake.png` | 64 × 64 | Snowflake silhouette. |
+| `tx_snowflake_far.png` | 128 × 128 | A second snowflake reference. |
+| `ice_shard.png` | 128 × 128 | Ice-shard shape. |
+| `electric_beam.png` | 128 × 128 | Electric-beam shape. |
+| `arc_lightning_anim.png` | 512 × 512 | Visually inspected 4 × 4 atlas of blue lightning-arc stages. |
+| `Fire_6x6.png` | 512 × 512 | Visually inspected 6 × 6 atlas of grayscale puff/fire stages. |
+| `flame_ball.png` | 64 × 64 | Flame-ball shape. |
+| `mud_splash.png` | 128 × 128 | Mud-splash shape. |
+| `leaf.png` | 64 × 64 | Leaf silhouette. |
+| `leaf_3x3.png` | 512 × 512 | Named atlas candidate; exact stage interpretation needs validation. |
+| `fire2_6x3Seq.png` | 512 × 512 | Named sequence candidate; exact stage interpretation needs validation. |
+| `WaterSeq3x4.png` | 256 × 256 | Named sequence candidate; exact stage interpretation needs validation. |
+| `HitYelSeq.png` | 512 × 256 | Named impact sequence candidate; exact stage interpretation needs validation. |
+
+Other filenames include `electric_bolt_additive.png`, `mud_drop.png`,
+`bubble.png`, `infestation.png`, `psychic_fangs.png`, and
+`Bubbles_all_2x3_0.png` through `Bubbles_all_2x3_5.png`. Their names are candidate
+labels, not verified mappings to particular Fast Moves. The 228-file count is
+not a count of unique moves or of confirmed battle-relevant templates.
+
+### What the source does and does not establish
+
+The inspected PNGs provide useful shape references and, for the visually
+verified atlases, a set of effect stages. Selected PNG metadata contained only
+ordinary DPI/color information. No inspected metadata maps these textures to
+exact moves, runtime playback speed, particle lifespan, tint, trajectory,
+attacking side, or screen placement. A grayscale Fire atlas and a blue lightning
+atlas also show why source RGB values must not be assumed to equal the colors
+rendered during a match.
+
+A filename/extension inventory of the collection found no loose `.prefab`,
+`.anim`, `.mat`, `.controller`, `.shader`, or `.asset` files. There are **264 raw
+`.bundle` files** elsewhere, principally named for Pokémon and clothing, plus a
+props bundle. Their contents were not unpacked in this audit, so additional
+metadata inside those bundles remains unknown. This is not a claim that the
+original game lacks effect definitions.
+
+### Recognition use and next validation
+
+- Use alpha silhouettes and verified atlas stages as candidates for matching
+  effect shapes in real captured sequences, with scale, rotation, partial
+  visibility, and background variation represented in the examples.
+- Establish rendered color, motion, and side attribution from controlled live
+  captures. A snowflake can support an Ice-effect hypothesis without proving
+  Powder Snow or identifying who performed it.
+- Keep effect-stage timing separate from PvP turn duration. Neither a PNG's
+  dimensions nor its atlas frame count establishes playback rate or Fast Move
+  duration.
+- Test isolated attacks from each side, idle periods, camera motion, switches,
+  and overlapping attacks before promoting a shape match to move evidence.
+  Retain unresolved and competing explanations instead of forcing every effect
+  into a move type.
+- Preserve this source collection and its filenames. Derive only the small
+  reference set justified by recorded-match evaluation for runtime use.
+
+This supplement records source discovery only. It changes no runtime detector,
+calibration, bundled asset, or recognition threshold.
