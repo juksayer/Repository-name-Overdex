@@ -15,7 +15,13 @@ import java.io.File
 import java.nio.file.Files
 
 class LiveFastMoveSoundWitnessTest {
-    @Test fun `countdown audio reaches custody without species HP or visual triggers and overlaps are not new sounds`() = runBlocking {
+    @Test fun `countdown audio reaches custody without species HP or visual triggers and overlaps are not new sounds`() =
+        captureAfter(CountdownGlyphWitnessed("2", .99f, 1))
+
+    @Test fun `late charged phase records subsequent audio without fabricating match start`() =
+        captureAfter(GetReadyWitnessed)
+
+    private fun captureAfter(opening: TestimonyPayload) = runBlocking {
         val references = listOf("Spark" to "209-0_spark.wav", "Tackle" to "033-0_tackle.wav").map { (name, file) ->
             FastMoveSoundReference(name, file, requireNotNull(WavPcm16.decode(
                 File("src/main/assets/fast_move_sounds/$file").readBytes())))
@@ -37,9 +43,9 @@ class LiveFastMoveSoundWitnessTest {
             witness.start(match)
             withTimeout(4000) { while (input.subscriptionCount.value == 0) delay(10) }
             val base = System.nanoTime()
-            custody.submitTestimony(SourceId("TEST"), CountdownGlyphWitnessed("2", .99f, 1),
+            custody.submitTestimony(SourceId("TEST"), opening,
                 1000, null, emptyList(), base)
-            withTimeout(4000) { while (timeline.getArticles().none { it.payload is CountdownGlyphWitnessed }) delay(10) }
+            withTimeout(4000) { while (timeline.getArticles().none { it.payload == opening }) delay(10) }
             for (index in 0 until 80) {
                 input.emit(LivePcmChunk(Pcm16Audio(8000, 1, samples.copyOfRange(index * 160, (index + 1) * 160)),
                     index.toLong(), base + (index + 1) * 20_000_000L, 1000 + (index + 1) * 20L, "PLAYBACK_POKEMON_GO"))
@@ -62,6 +68,8 @@ class LiveFastMoveSoundWitnessTest {
             assertEquals(1_200_000_000L, audio.durationNanos)
             assertTrue(File(root, audio.artifact.relativePath).isFile)
             assertTrue(articles.none { it.payload is FastMoveUseObserved })
+            assertTrue(articles.none { it.payload is MatchStarted })
+            assertEquals(listOf(articles.single { it.payload == opening }.id.value), capture.evidenceReferences)
         } finally { witness.stop(); match.release(); root.deleteRecursively() }
     }
 }

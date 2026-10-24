@@ -19,6 +19,7 @@ import com.example.overdex.battle.custody.TestimonyPayload
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.audio.FastMoveReferenceMatcher
+import com.example.overdex.battle.audio.FastMoveListeningGate
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
@@ -134,13 +135,18 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private val pendingEffectiveness = mutableListOf<RealityArticle>()
     private val recentUses = mutableListOf<RealityArticle>()
     private var cadenceFloorNanos = Long.MIN_VALUE
-    private var audioBattleStartNanos: Long? = null
+    private val audioIdentityGate = FastMoveListeningGate()
     private val pendingReferenceSounds = mutableListOf<RealityArticle>()
     private val audioEntryCues = mutableMapOf<ActivePokemonSide, Pair<Long, ArticleId>>()
     private val chargedEffectivenessWindow = ChargedMoveEffectivenessWindow()
 
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        // Capture starts at countdown, but fast-move identity needs GO or a
+        // witnessed in-progress phase when observation began late.
+        if (article.payload !is com.example.overdex.battle.custody.CountdownGlyphWitnessed) {
+            audioIdentityGate.observe(article.payload, article.monotonicTimeNanos, article.id.value)
+        }
         if (article.payload is com.example.overdex.battle.custody.ObservationRestartedByUser ||
             article.payload is com.example.overdex.battle.custody.ScreenIgnoredByUser) playerReferenceSlots.clear()
         (article.payload as? PlayerTeamRosterSlotWitnessed)?.let { roster ->
@@ -151,10 +157,8 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             playerReferenceSlots[roster.slot] = name to
                 if (name != roster.speciesName && previous != null) previous.second else article.id
         }
-        if (article.payload is MatchStarted) audioBattleStartNanos = article.monotonicTimeNanos
         if (article.payload is MatchEnded || article.payload is com.example.overdex.battle.custody.ScreenIgnoredByUser ||
             article.payload is com.example.overdex.battle.custody.ObservationRestartedByUser) {
-            audioBattleStartNanos = null
             pendingReferenceSounds.clear()
             audioEntryCues.clear()
             states.values.forEach { it.referenceSounds.clear() }
@@ -462,13 +466,13 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
 
     /** The microphone contains BOTH attackers. The visual requester does not establish ownership. */
     private fun acceptReferenceSound(article: RealityArticle, sound: FastMoveSoundMeasured): List<FastMoveCadenceDerivation> {
-        val go = audioBattleStartNanos ?: return emptyList()
         if (!sound.referenceMatchAccepted || !FastMoveReferenceMatcher.accepts(sound.referenceCandidates)) return emptyList()
         val candidate = sound.referenceCandidates.maxBy { it.similarity }
         val clipAt = article.monotonicTimeNanos ?: return emptyList()
         val segmentAt = clipAt + candidate.matchingOffsetNanos
         val alignedStart = segmentAt - candidate.referenceOffsetNanos
-        if (segmentAt < maxOf(go, cadenceFloorNanos) || alignedStart < go) return emptyList()
+        if (segmentAt < cadenceFloorNanos || !audioIdentityGate.allows(segmentAt) ||
+            !audioIdentityGate.allows(alignedStart)) return emptyList()
         fun retainUnassigned(): List<FastMoveCadenceDerivation> {
             if (pendingReferenceSounds.none { it.id == article.id }) pendingReferenceSounds += article
             pendingReferenceSounds.removeAll { segmentAt - (it.monotonicTimeNanos ?: segmentAt) > 12_000_000_000L }

@@ -31,8 +31,9 @@ internal class FastMoveListeningGate {
             is CountdownGlyphWitnessed -> if (payload.glyph.uppercase() in setOf("3", "2", "1", "GO", "GO!")) {
                 open(at, articleId)
             }
-            // Recovery if every glyph was missed but the Match boundary was established elsewhere.
-            MatchStarted -> open(at, articleId)
+            // A late observer can miss every glyph. A witnessed charged phase
+            // establishes that battle is underway, not when the match began.
+            MatchStarted, AttackIncoming, GetReadyWitnessed, ChargeMoveUsedAnnounced -> open(at, articleId)
             is MatchEnded -> if (at != null) end = minOf(end ?: at, at)
             is ActivePokemonSpeciesWitnessed -> {
                 val name = payload.speciesName.lowercase().trim()

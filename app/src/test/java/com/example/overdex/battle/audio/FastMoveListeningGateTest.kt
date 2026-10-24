@@ -6,6 +6,28 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class FastMoveListeningGateTest {
+    @Test fun `late charged phase opens listening at its witnessed time without a countdown`() {
+        for (cue in listOf(AttackIncoming, GetReadyWitnessed, ChargeMoveUsedAnnounced)) {
+            val gate = FastMoveListeningGate()
+            gate.observe(ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Dragonair"), 50, "species")
+            assertFalse("A species alone can be visible before battle", gate.allows(99))
+            gate.observe(cue, 100, "late-phase")
+            assertFalse(gate.allows(99))
+            assertTrue(gate.accepts(100, 200, gate.generation))
+            assertEquals(listOf("late-phase"), gate.triggerIds())
+            gate.observe(MatchEnded(BattleResult.WIN), 300)
+            gate.observe(cue, 400, "late-after-result")
+            assertFalse(gate.allows(400))
+            gate.observe(ObservationRestartedByUser, 500)
+            assertFalse(gate.allows(501))
+            gate.observe(cue, 600)
+            assertTrue(gate.allows(600))
+            gate.observe(ObservationSessionStoppedByUser, 700)
+            gate.observe(cue, 800)
+            assertFalse(gate.allows(800))
+        }
+    }
+
     @Test fun `any countdown glyph opens audio without requiring GO a species or a visual hit`() {
         for (glyph in listOf("3", "2", "1", "GO")) {
             val gate = FastMoveListeningGate()
