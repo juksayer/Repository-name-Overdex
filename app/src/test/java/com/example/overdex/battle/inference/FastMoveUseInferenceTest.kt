@@ -11,6 +11,7 @@ import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.FastMoveRecipientVisualArtifactMeasured
+import com.example.overdex.battle.custody.FastMoveIdentified
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchStarted
 import com.example.overdex.battle.custody.RawTestimony
@@ -511,6 +512,37 @@ class FastMoveUseInferenceTest {
         inference.accept(article("loss", 72_798_000_000L,
             ActiveHpBarDamageTickMeasured(ActivePokemonSide.PLAYER, .6f, .5f, .1f)))
         inference.accept(article("flash", 73_453_000_000L, pulse(ActivePokemonSide.PLAYER)))
+        assertEquals(2, inference.flush().size)
+    }
+
+    @Test fun `known long duration does not erase distinct compressed impact cycles`() {
+        val inference = startedInference()
+        inference.accept(article("turtonator", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Turtonator", 776)))
+        inference.observeIdentity(FastMoveIdentified(ActivePokemonSide.PLAYER, "Turtonator", "Incinerate",
+            2_500_000_000L, null, 0, "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"))
+        // Separate losses and onsets may be observed close together after lag.
+        // A known duration is a fusion aid, not a minimum-interval deletion rule.
+        repeat(2) { i ->
+            val at = 1_000_000_000L + i * 420_000_000L
+            inference.accept(article("loss-$i", at,
+                ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f - i * .1f, .7f - i * .1f, .1f)))
+            inference.accept(article("flash-$i", at + 100_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        }
+        val uses = inference.flush()
+        assertEquals(2, uses.size)
+        uses.forEachIndexed { i, use ->
+            assertEquals(setOf("loss-$i", "flash-$i"), use.predecessorIds.map { it.value }.toSet())
+        }
+    }
+
+    @Test fun `long move phase allowance does not join evidence beyond half its cycle`() {
+        val inference = startedInference()
+        inference.accept(article("turtonator", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Turtonator", 776)))
+        inference.observeIdentity(FastMoveIdentified(ActivePokemonSide.PLAYER, "Turtonator", "Incinerate",
+            2_500_000_000L, null, 0, "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"))
+        inference.accept(article("loss", 1_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .7f, .1f)))
+        inference.accept(article("later-flash", 2_300_000_000L, pulse(ActivePokemonSide.OPPONENT)))
         assertEquals(2, inference.flush().size)
     }
 

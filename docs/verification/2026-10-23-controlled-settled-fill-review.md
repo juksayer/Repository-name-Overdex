@@ -83,3 +83,9 @@ That install does not retrofit height measurements into these older archives.
 Next: investigate the close damage/fill versus border-only use pair, while making
 settled-button comparison tolerate light fills and leave connection-affected
 transitions uncertain. Existing recordings are sufficient to start that work.
+
+Follow-up: the [late-flash investigation](2026-10-23-incinerate-late-flash.md)
+reviewed the video and reproduced this pair as a duplicate caused by the fixed
+fusion ceiling. The regression now produces five uses for the five HP-loss cycles
+in the selected interval; the recomputed 90-energy checkpoint agrees with the
+two-button measurement. The original archive remains unchanged.

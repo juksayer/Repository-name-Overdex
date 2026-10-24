@@ -323,10 +323,16 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         val duration = use.appearance?.speciesName?.let { knownDurations[use.attackingSide to it.lowercase()] }
         // Recorded Water Shuriken losses precede their border flashes by up to
         // 1.002 s in the October 20 paired match's monotonic source times.
-        // Allow this measured phase gap plus a small capture tolerance, still
-        // below a full cycle and never from an energy-preference hypothesis.
-        // Distinct losses and distinct pulse onsets remain distinct uses.
-        return duration?.let { (it * 70 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, 1_050_000_000L) } ?: USE_CLUSTER_WINDOW_NANOS
+        // Keep that allowance for short moves. The October 23 Incinerate clip
+        // shows one loss followed by its flash 1.093 s later: the fixed 1.05 s
+        // ceiling split it into two energy awards. For longer known moves,
+        // allow up to half a cycle (1.25 s for Incinerate) instead of clipping
+        // every duration to the shorter move's measured phase gap.
+        // This joins different witnesses, never two losses or two onsets.
+        // Unknown/assumed durations still get only the default window.
+        return duration?.let {
+            (it * 70 / 100).coerceIn(USE_CLUSTER_WINDOW_NANOS, max(1_050_000_000L, it / 2))
+        } ?: USE_CLUSTER_WINDOW_NANOS
     }
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {

@@ -69,6 +69,12 @@ different supporting signals. Resolve that ambiguity before trusting exact
 energy or adding more readers. The [live fill reader](../verification/2026-10-23-live-charge-fill-height.md)
 and offline analysis already exist; automatic energy correction is not accepted.
 
+October 23 progress: the [Incinerate late-flash fix](../verification/2026-10-23-incinerate-late-flash.md)
+joins the demonstrated duplicate while preserving distinct compressed hits. All
+1,070 tests pass; real-battle acceptance and the broader count/gap checks above
+remain open. The next comparison should check the updated count against settled
+fill measurements without automatically replacing the recorded ledger.
+
 ### 2. Recording and device reliability
 
 - [ ] Start before entering GO battle menus, then select a team and battle without

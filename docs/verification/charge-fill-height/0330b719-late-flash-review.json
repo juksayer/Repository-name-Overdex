@@ -1,0 +1,157 @@
+{
+  "match_id": "0330b719-8c57-45bc-9f41-247bf016a452",
+  "archive_sha256": "8c7bb47a7163480633c7963880edf3806ceeb6f5f041779bbe065cd287470bac",
+  "video_sha256": "114c1c20e7091d06ab5344d7ee01e5c1f4329c428eaa62bcd3b073d49120d7a2",
+  "fixture": "app/src/test/resources/battle/2026-10-23-incinerate-late-flash.json",
+  "fixture_sha256": "89a56676546d6368bb1d5a748c376af5492046a026755bace3e607941f1710c3",
+  "fixture_articles": 455,
+  "archive_window_seconds": [
+    226,
+    245.1
+  ],
+  "context_article_prefixes": [
+    "9bc7c42c",
+    "8253809a",
+    "5abe3ea4",
+    "884ec7f2"
+  ],
+  "damage_article": "4a7b0fa9-5c96-43d6-b172-c448e3278a96",
+  "flash_article": "b5875904-1ab2-4d60-af5a-55bd14c81105",
+  "damage_monotonic_nanos": 35562412503658,
+  "flash_monotonic_nanos": 35563506459965,
+  "separation_seconds": 1.093956307,
+  "old_fusion_ceiling_seconds": 1.05,
+  "incinerate_fusion_ceiling_seconds": 1.25,
+  "hp_samples_archive_232_3_to_236_3": {
+    "total": 42,
+    "near_0_328_to_0_330": 41,
+    "upward_outlier": {
+      "at_seconds": 234.951,
+      "fraction": 0.44973546
+    }
+  },
+  "video_review": {
+    "local_directory": "/home/sean/overdex-device-backups/2026-10-23-settled-fill/incinerate-pair",
+    "sample_interval_seconds": 0.25,
+    "conclusion": "One visible Incinerate attack and HP-loss cycle, followed by the border flash while Turtonator is idle; next attack begins near video 147.5 s.",
+    "frames": [
+      {
+        "name": "143.051.png",
+        "sha256": "bef8622cb6b55ef1f889cc3ddbd6185d1d05e80192027f33d0aa85a245c33a4d"
+      },
+      {
+        "name": "143.277.png",
+        "sha256": "7543206826840d4e74e7bb62a5eccf4b1d8dbe536e75fe7e0c675e32e31062a4"
+      },
+      {
+        "name": "143.542.png",
+        "sha256": "3e8cb72ba5d592dd37a1f64347d6008e8726564acb32f9563e342ea00b352e9e"
+      },
+      {
+        "name": "143.805.png",
+        "sha256": "5f0868d1f259b23960751fad4bbf61b9ea86d1984724f0cd406732fe1868ce2e"
+      },
+      {
+        "name": "144.016.png",
+        "sha256": "b3804143e298ce175d1a8ab2dc62d33e709f9b32172e1e8d6e518dc9854552eb"
+      },
+      {
+        "name": "144.273.png",
+        "sha256": "86fe421cf1a7b936f68c3713b1ada039135e1f135850ca4da8a2934b113414d3"
+      },
+      {
+        "name": "144.513.png",
+        "sha256": "6b9cb053d5a3ff39bd0c872319d2e3f4aa1ceabf38f56db9812422062708c940"
+      },
+      {
+        "name": "144.783.png",
+        "sha256": "524280399201ab5267911594c44ef8c9c3d8833668419339e3f1bb791061b2b8"
+      },
+      {
+        "name": "145.024.png",
+        "sha256": "affed59c58414db5fb4e69da361ad111dcbd908b446814ea94cc942122aa8411"
+      },
+      {
+        "name": "145.264.png",
+        "sha256": "0b1357c37fde513cdf309d68f17b1a497bced9178bd6e1817909fd12353f163c"
+      },
+      {
+        "name": "145.554.png",
+        "sha256": "850f89e347ea70820f31bb22c10034f293a6b8555e48f873b48a3c61272e1755"
+      },
+      {
+        "name": "145.816.png",
+        "sha256": "941a6da48fda6ab81e61d9d60c5f28fe5eb725fe590b499555b599a9dfd3123a"
+      },
+      {
+        "name": "146.031.png",
+        "sha256": "1a5056445f3e9992da52fe626a92b9d7a7952a1e8d9c839935a84f6ad1ca369a"
+      },
+      {
+        "name": "146.260.png",
+        "sha256": "920b8eddd656d4d68a29099997a74ef487348dbe2a3205ad8605fdfdcd509aa6"
+      },
+      {
+        "name": "146.521.png",
+        "sha256": "3aeb7228b0e3896ffc76376201630e44d52726ddb7b7b73b19640a45b5a8c5f0"
+      },
+      {
+        "name": "146.769.png",
+        "sha256": "621fa4dab6c1fded9604f286fb846c0eabbc6db0ef961a370a6c72e36d304942"
+      },
+      {
+        "name": "147.021.png",
+        "sha256": "71dc626b1ded627480464413b86fb170e21f95de7d2de644af372fa2f4514038"
+      },
+      {
+        "name": "147.267.png",
+        "sha256": "927279563a3933c7425af044a8328dd96b4edafe4ef2450f358c4e8f10a3a56d"
+      },
+      {
+        "name": "147.509.png",
+        "sha256": "f03afb146ca1d9f3254b2133c8135a5361ced77c56661d252140ec11ea34606a"
+      },
+      {
+        "name": "147.802.png",
+        "sha256": "70f8154618ce7992e2e25032867b7c9fbf89c36dc90b85cf3ab19f41656faf10"
+      },
+      {
+        "name": "148.019.png",
+        "sha256": "014e489d81800942d2b44f50f10e7ab479a27b725f2d20ec1f9f836ae3f0e12f"
+      }
+    ]
+  },
+  "regression": {
+    "before_uses": 6,
+    "after_uses": 5,
+    "before_generated_energy": 120,
+    "after_generated_energy": 100,
+    "raw_articles_unchanged": true,
+    "source_times_preserved": true
+  },
+  "energy_cross_checks": [
+    {
+      "video_seconds": 111.03587777777778,
+      "old_accounting": 80,
+      "recomputed_without_duplicate": 80,
+      "independent_joint_fill_range": [
+        79.21666666666667,
+        80.15
+      ]
+    },
+    {
+      "video_seconds": 154.05176666666668,
+      "old_accounting": 100,
+      "recomputed_without_duplicate": 90,
+      "independent_joint_fill_range": [
+        89.6,
+        90.53333333333333
+      ]
+    }
+  ],
+  "limits": [
+    "Recomputed accounting is offline analysis, not a rewrite of the archive or its Replay.",
+    "No new live battle acceptance yet. Other capture gaps or unmatched evidence remain unresolved.",
+    "Fusion hold for known 5-turn moves can increase by 200 ms; source event time is unchanged."
+  ]
+}
