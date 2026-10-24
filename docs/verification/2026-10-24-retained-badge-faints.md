@@ -63,11 +63,16 @@ Installed APK SHA256:
 `62586e83e48140fdccec7608bf547ab7bb0087a60d722c48ed89deaa1eb4f914`.
 
 Screenshots and preference hashes are in the backup directory's `install/`
-subdirectory. The Pixel was not connected and was not updated. A new live battle
-is still the acceptance boundary: after each faint, a disappearing native badge
-must not bring back an older name or extra bright Poké Ball.
+subdirectory. The Pixel was not connected and was not updated. At installation,
+a new live battle remained the acceptance boundary: after each faint, a
+disappearing native badge must not bring back an older name or extra bright
+Poké Ball.
 
-## Separate unresolved result delay
+The subsequent 11:45:50 Moondrop recording passes that check in its preserved
+full frames, retaining Magcargo with two bright balls and Flareon with one.
+See [the live retest](2026-10-24-live-result-retest.md) for evidence and limits.
+
+## Separate result delay in the original recording
 
 The recording contains a win, but `YOU WIN!` from a crop at archive 143.980
 seconds was only published around 206.35 seconds, followed by `MatchEnded` at
@@ -75,3 +80,6 @@ seconds was only published around 206.35 seconds, followed by `MatchEnded` at
 The long delay needs a separate result/OCR queue investigation. This patch fixes
 the stale retained image; it does not claim timely live match-end recognition or
 an observed final zero-ball measurement.
+
+The subsequent [result-reader change](2026-10-24-outcome-latency.md) and live
+retest address that separate delay; no final zero-ball observation is claimed.

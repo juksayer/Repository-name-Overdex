@@ -93,10 +93,11 @@ recorded timing table, and startup screenshot are under
 All five calibration/team/HUD/profile preference hashes matched before and after;
 owned/team preference files and the complete match-index inventory also matched.
 
-## Live acceptance still needed
+## Live acceptance
 
-Record a normal battle on the updated Moondrop and leave the result visible
-briefly. Check both the preceding retained-badge faint fix and prompt transition
-to the result state. Inspect the new result timing diagnostics and evidence chain.
-The old archive's measured delay is established; a live latency improvement is
-not yet established by these recorded-frame checks.
+The subsequent 11:45:50 Moondrop battle recorded one WIN **1.782 seconds after
+its result source frame**, with the correct retained 3 → 2 → 1 ball counts.
+See [the live retest](2026-10-24-live-result-retest.md) for source/publication
+times, queue diagnostics, independent full-frame checks, and remaining limits.
+This establishes improvement for that live recording; final overlay clearing
+after result publication was not preserved in its full frames.
