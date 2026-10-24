@@ -475,13 +475,13 @@ class Match(
                 }
                 (article.payload as? ActivePokemonFaintedWitnessed)?.let { witnessed ->
                     if (witnessed.side == ActivePokemonSide.OPPONENT) {
-                        DroidballOverlayPresentation.markOpponentFainted(witnessed.speciesName)
+                        DroidballOverlayPresentation.markOpponentFainted(witnessed.speciesName, article.monotonicTimeNanos ?: System.nanoTime())
                     }
                 }
                 (article.payload as? com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured)?.let { measured ->
                     DroidballOverlayPresentation.recordOpponentResources(measured, article.monotonicTimeNanos ?: 0L)
                     if (measured.resource == com.example.overdex.battle.custody.OpponentBattleResource.POKE_BALLS && measured.visibleCount == 0) {
-                        DroidballOverlayPresentation.markOpponentTeamFainted()
+                        DroidballOverlayPresentation.markOpponentTeamFainted(article.monotonicTimeNanos ?: System.nanoTime())
                     }
                 }
                 (article.payload as? PlayerTeamSlotConfigured)

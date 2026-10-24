@@ -58,6 +58,14 @@ data class OverlayMovePossibility(
 }
 
 object DroidballOverlayPresentation {
+    private val _opponentBadgeContent = MutableStateFlow(RetainedBadgeContent())
+    internal val opponentBadgeContent = _opponentBadgeContent.asStateFlow()
+
+    private fun invalidateOpponentBadge(at: Long) {
+        val old = _opponentBadgeContent.value
+        _opponentBadgeContent.value = RetainedBadgeContent(old.revision + 1, maxOf(old.changedAtNanos, at))
+    }
+
     private val _opponentResources = MutableStateFlow(HudOpponentResources())
     val opponentResources = _opponentResources.asStateFlow()
     private val resourceTimes = mutableMapOf<OpponentBattleResource, Long>()
@@ -87,6 +95,7 @@ object DroidballOverlayPresentation {
             OpponentBattleResource.POKE_BALLS -> old.copy(pokeBalls = count.visibleCount)
             OpponentBattleResource.SHIELDS -> old.copy(shields = count.visibleCount)
         }
+        if (_opponentResources.value != old) invalidateOpponentBadge(at)
         recordBattleBadgePresent()
     }
     private val _mode = MutableStateFlow(DroidballOverlayMode.PRE_BATTLE)
@@ -174,6 +183,7 @@ object DroidballOverlayPresentation {
     }
 
     @Synchronized fun clearOpponentSpecies() {
+        _opponentBadgeContent.value = RetainedBadgeContent(_opponentBadgeContent.value.revision + 1)
         _opponentResources.value = HudOpponentResources()
         resourceTimes.clear()
         _opponentEnergyEstimate.value = null
@@ -273,6 +283,7 @@ object DroidballOverlayPresentation {
             }
         }
         if (activeOpponentSpeciesName != speciesName) {
+            invalidateOpponentBadge(observedAtNanos ?: System.nanoTime())
             opponentFastMoveCandidateNames = null
             opponentAudioFavoredMoveName = null
         }
@@ -285,9 +296,9 @@ object DroidballOverlayPresentation {
 
     private const val PROVISIONAL_CORRECTION_WINDOW_NANOS = 4_000_000_000L
 
-    @Synchronized fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName) {
+    @Synchronized fun markOpponentFainted(speciesName: String? = activeOpponentSpeciesName, at: Long = System.nanoTime()) {
         val target = speciesName ?: return
-        faintedSpeciesNames += normalizeMoveName(target)
+        if (faintedSpeciesNames.add(normalizeMoveName(target))) invalidateOpponentBadge(at)
         _opponentSpecies.value = _opponentSpecies.value.map { observed ->
             if (observed.speciesName.equals(target, ignoreCase = true)) {
                 observed.copy(isFainted = true)
@@ -299,7 +310,8 @@ object DroidballOverlayPresentation {
     }
 
     /** Only a visible, validated badge showing zero remaining balls calls this. */
-    @Synchronized fun markOpponentTeamFainted() {
+    @Synchronized fun markOpponentTeamFainted(at: Long = System.nanoTime()) {
+        if (_opponentSpecies.value.any { !it.isFainted }) invalidateOpponentBadge(at)
         _opponentSpecies.value.forEach { faintedSpeciesNames += normalizeMoveName(it.speciesName) }
         _opponentSpecies.value = _opponentSpecies.value.map { it.copy(isFainted = true) }
         _activeOpponentMovePossibilities.value = null

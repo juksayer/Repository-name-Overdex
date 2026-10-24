@@ -588,7 +588,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                             battleSurfaceEstablished &&
                                 DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
                                 DroidballOverlayPresentation.battleBadgeSeen.value,
-                            capturedOverlayRegion)
+                            capturedOverlayRegion, DroidballOverlayPresentation.opponentBadgeContent.value)
                     }
                     val capturedAtMonotonicTimeNanos = receivedAtNanos
                     lastPublishedFrameNanos?.let { previous ->
@@ -869,6 +869,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         serviceScope.launch(Dispatchers.Main) {
             instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
+        }
+        if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
+            DroidballOverlayPresentation.opponentBadgeContent.collect(retainedOpponentBadge::contentChanged)
         }
         if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
             combine(instrumentVisible, DroidballOverlayPresentation.mode, DroidballOverlayPresentation.battleBadgeSeen) {

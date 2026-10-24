@@ -1,0 +1,19 @@
+{
+  "matchId": "f843fe0c-23a5-4fc2-8981-6acc8292e827",
+  "sourceSize": [
+    672,
+    1493
+  ],
+  "band": [
+    0,
+    80,
+    672,
+    250
+  ],
+  "sourceFrameSha256": {
+    "three": "505c40fed05eeffbf8393b9bc6408f07bddc133692e86b758d518ee4c4e91430",
+    "two": "06fe0c51d52b4ac639c94a190ce325f28c9bbef05799b64e44a59039dd7e7053",
+    "one": "4bfecf2c839a818198e93f75137ae8b8ccedeedbcad5d375ea9c6f7b87624a89"
+  },
+  "hudBounds": "manually annotated from archived crop provenance: x400.08887, y144.323334; width258.22223; height varies"
+}

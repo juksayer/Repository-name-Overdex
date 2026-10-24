@@ -28,17 +28,20 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
     private var region: AnchorRegion? = null
     private var displayWidth = 0
     private var displayHeight = 0
+    private var content = RetainedBadgeContent()
+    private var fullBadgeHeight = 1f
     @Volatile private var wanted = false
     @Volatile private var rendered = false
     @Volatile private var clearAfter = Long.MIN_VALUE
     @Volatile private var closed = false
     private val view = object : View(context) {
         var image: Bitmap? = null
+        var fullHeightRatio = 1f
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         override fun onDraw(canvas: Canvas) {
             val image = image ?: return
             val r = width * 27f / 415f
-            val shape = Path().apply { addRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), r, r, Path.Direction.CW) }
+            val shape = Path().apply { addRoundRect(RectF(0f, 0f, width.toFloat(), height * fullHeightRatio), r, r, Path.Direction.CW) }
             val save = canvas.save()
             canvas.clipPath(shape)
             canvas.drawBitmap(image, null, Rect(0, 0, width, height), paint)
@@ -52,23 +55,36 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
     @Synchronized fun update(bitmap: Bitmap, at: Long, playerPresent: Boolean, opponentPresent: Boolean,
                              badgeRegion: AnchorRegion, width: Int, height: Int,
                              observationScope: RetainedBadgeScope?, battleSurfaceEstablished: Boolean,
-                             hudRegion: AnchorRegion?) {
-        if (closed) return
+                             hudRegion: AnchorRegion?, currentContent: RetainedBadgeContent = RetainedBadgeContent()) {
+        if (closed || currentContent.revision < content.revision) return
+        contentChanged(currentContent)
+        // A queued pre-change frame cannot refill the cache after a faint/switch.
+        if (at < content.changedAtNanos) return
+        val cleanSource = retainedBadgeSource(badgeRegion, hudRegion)
         val decision = visibility.update(at, playerPresent, opponentPresent, exclusion(at) != null,
             observationScope, battleSurfaceEstablished,
-            sourceOverlapsHud = !SpeciesCaptureVisibility.canRead(badgeRegion, hudRegion))
+            sourceOverlapsHud = cleanSource == null)
         if (decision.discardOriginal) cached = null
         if (decision.cacheOriginal) {
-            val bounds = BattleCropResolver.resolveRect(badgeRegion, bitmap.width, bitmap.height) ?: return
+            val area = cleanSource ?: return
+            val bounds = BattleCropResolver.resolveRect(area, bitmap.width, bitmap.height) ?: return
             // Keep only one small image, not a history of frames or PNG artifacts.
             cached = Bitmap.createBitmap(bitmap, bounds.left, bounds.top, bounds.width(), bounds.height())
-            region = badgeRegion
+            region = area
+            fullBadgeHeight = badgeRegion.height / area.height
             displayWidth = width; displayHeight = height
         }
         if (wanted != decision.showRetained) {
             wanted = decision.showRetained
             main.post(::render)
         }
+    }
+
+    /** Also called without a new capture, so a known faint cannot leave an old image visible. */
+    @Synchronized fun contentChanged(updated: RetainedBadgeContent) {
+        if (updated.revision <= content.revision) return
+        content = updated
+        reset()
     }
 
     @Synchronized fun reset() {
@@ -89,7 +105,8 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         }
         val area = region ?: return
         view.image = cached ?: return
-        if (view.isAttachedToWindow) return
+        view.fullHeightRatio = fullBadgeHeight
+        if (view.isAttachedToWindow) { view.invalidate(); return }
         val params = WindowManager.LayoutParams(
             (area.width * displayWidth).roundToInt(), (area.height * displayHeight).roundToInt(),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
