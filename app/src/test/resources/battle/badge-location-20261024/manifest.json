@@ -1,0 +1,125 @@
+[
+  {
+    "case": "one",
+    "sourceFrame": "34b36a00554d8df16fafdb85e4bffd0652efec113ecedf85c06549e04f439202.png",
+    "sourceSha256": "34b36a00554d8df16fafdb85e4bffd0652efec113ecedf85c06549e04f439202",
+    "sourceWidth": 672,
+    "sourceHeight": 1419,
+    "expectedNativeCount": 1,
+    "unmaskedHudFalseCount": 2,
+    "crops": [
+      {
+        "file": "one-assigned-hud.png",
+        "bounds": [
+          544,
+          165,
+          660,
+          201
+        ],
+        "sha256": "2512a311c44ba61bcfdfab711004cf87567b699e473f84dfdc0dcab00910945a"
+      },
+      {
+        "file": "one-native.png",
+        "bounds": [
+          544,
+          123,
+          660,
+          159
+        ],
+        "sha256": "b95312a3ce83aaa4f4c4d32df3aeb36ef1b511dcb989565e7155016206b593f8"
+      }
+    ],
+    "androidTestBand": {
+      "file": "one-badge-band.png",
+      "bounds": [
+        0,
+        90,
+        672,
+        230
+      ],
+      "sha256": "484e84d519954e1ebe1510c6a668e5235ef21386e0a396bf4bd62db15132d7c9"
+    }
+  },
+  {
+    "case": "two",
+    "sourceFrame": "74adfaeef35d4058ead76135ed8374db9f83672cda074e0eb6f57e1d557f8f65.png",
+    "sourceSha256": "74adfaeef35d4058ead76135ed8374db9f83672cda074e0eb6f57e1d557f8f65",
+    "sourceWidth": 672,
+    "sourceHeight": 1419,
+    "expectedNativeCount": 2,
+    "unmaskedHudFalseCount": 0,
+    "crops": [
+      {
+        "file": "two-assigned-hud.png",
+        "bounds": [
+          544,
+          165,
+          660,
+          201
+        ],
+        "sha256": "ed898999cd6b23d73082e487bb197ebe024b91a1613ac582194a81b5db128175"
+      },
+      {
+        "file": "two-native.png",
+        "bounds": [
+          544,
+          123,
+          660,
+          159
+        ],
+        "sha256": "84e52f417102370898343f7c6c1f85e7b5ca42befcaab03c7ab1d9ed301a30c9"
+      }
+    ],
+    "androidTestBand": {
+      "file": "two-badge-band.png",
+      "bounds": [
+        0,
+        90,
+        672,
+        230
+      ],
+      "sha256": "60a10301583f6dc287659144a91fdf9f81699f9e222e1101e4a80ee32d452ba6"
+    }
+  },
+  {
+    "case": "three",
+    "sourceFrame": "b1f63f803e0448f5bbb84221779d81668ca9196015c22e1ad20a365d0bdf29fc.png",
+    "sourceSha256": "b1f63f803e0448f5bbb84221779d81668ca9196015c22e1ad20a365d0bdf29fc",
+    "sourceWidth": 672,
+    "sourceHeight": 1419,
+    "expectedNativeCount": 3,
+    "unmaskedHudFalseCount": 0,
+    "crops": [
+      {
+        "file": "three-assigned-hud.png",
+        "bounds": [
+          544,
+          165,
+          660,
+          201
+        ],
+        "sha256": "f39cc7fa0d0965436aa2549791a4880f64f3f00dae173cbed23dc069588c641d"
+      },
+      {
+        "file": "three-native.png",
+        "bounds": [
+          544,
+          123,
+          660,
+          159
+        ],
+        "sha256": "71a02db258301e8675f7d590ba455915839b6a07e46b7b725580cbd9f07dce90"
+      }
+    ],
+    "androidTestBand": {
+      "file": "three-badge-band.png",
+      "bounds": [
+        0,
+        90,
+        672,
+        230
+      ],
+      "sha256": "fc909f3e22dbf01c1db85ca01434fcf9aaee210c4fafcb6a54192e8af202e904"
+    }
+  }
+]

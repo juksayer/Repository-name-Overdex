@@ -75,6 +75,13 @@ joins the demonstrated duplicate while preserving distinct compressed hits. All
 remain open. The next comparison should check the updated count against settled
 fill measurements without automatically replacing the recorded ledger.
 
+October 24 progress: the [four-match Pixel review](../verification/2026-10-24-pixel-match-review.md)
+found HUD sprite cards preventing native Poké Ball crop recovery. Location
+validation now excludes those pixels just like the downstream witness. The next
+live check must confirm resource/faint/result updates; the recorded cases also
+expose a separate Dragon Breath/Iron Tail cadence ambiguity and a centered
+single-charge-button gap. These remain open before trusting precise energy.
+
 ### 2. Recording and device reliability
 
 - [ ] Start before entering GO battle menus, then select a team and battle without

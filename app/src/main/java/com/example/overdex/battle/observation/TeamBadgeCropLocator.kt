@@ -48,12 +48,28 @@ internal object TeamBadgeCropLocator {
         }
         val bitmap = frame.bitmap
         val rect = BattleCropResolver.resolveRect(area, bitmap.width, bitmap.height) ?: return false
+        val provenance = BattleCropProvenance(region.name, bitmap.width, bitmap.height,
+            BattleCropBounds(rect.left, rect.top, rect.right, rect.bottom))
         val pixel: (Int, Int) -> Int = { x, y -> bitmap.getPixel(rect.left + x, rect.top + y) }
+        return containsResourceShape(region, provenance, frame.overlayRegion, pixel)
+    }
+
+    internal fun containsResourceShape(
+        region: BattleRegionId,
+        provenance: BattleCropProvenance,
+        overlayRegion: AnchorRegion?,
+        pixel: (Int, Int) -> Int
+    ): Boolean {
+        val width = provenance.bounds.right - provenance.bounds.left
+        val height = provenance.bounds.bottom - provenance.bounds.top
+        // Use the same visibility contract as the resource witness. Otherwise HUD
+        // cards can pass this check, prevent relocation, then be rejected downstream.
+        val overlayBounds = provenance.overlayBounds(overlayRegion)
         return when (region) {
             BattleRegionId.PLAYER_POKE_BALLS, BattleRegionId.OPPONENT_POKE_BALLS ->
-                OpponentBattleResourceCounter.pokeBallCount(rect.width(), rect.height(), pixel) != null
+                OpponentBattleResourceCounter.pokeBallCount(width, height, overlayBounds, pixel) != null
             BattleRegionId.PLAYER_SHIELDS, BattleRegionId.OPPONENT_SHIELDS ->
-                OpponentBattleResourceCounter.shieldCount(rect.width(), rect.height(), pixel) != null
+                OpponentBattleResourceCounter.shieldCount(width, height, overlayBounds, pixel) != null
             else -> false
         }
     }
