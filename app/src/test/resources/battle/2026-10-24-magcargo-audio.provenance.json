@@ -1,0 +1,27 @@
+{
+  "sourceArchiveName": "2026-10-24_11-45-50_d8b9fd1b-47d1-46b6-83f2-61a1cc2efb88.odxmatch.zip",
+  "sourceArchiveSha256": "a7c14d2ec0af6d0c15d47bd51ae3cfb2acb4d904832ff03ea46aa9492851a55b",
+  "sourceMatchId": "d8b9fd1b-47d1-46b6-83f2-61a1cc2efb88",
+  "originalArticleCount": 1973,
+  "retainedArticleCount": 220,
+  "payloadKinds": [
+    "active_hp_bar_border_cadence_measured",
+    "active_hp_bar_motion_cadence_measured",
+    "active_pokemon_fainted_witnessed",
+    "active_pokemon_species_witnessed",
+    "attack_incoming",
+    "charge_move_used_announced",
+    "fast_move_effectiveness_witnessed",
+    "fast_move_recipient_visual_cadence_measured",
+    "fast_move_sound_measured",
+    "fast_move_use_observed",
+    "get_ready_witnessed",
+    "match_ended",
+    "match_started",
+    "player_active_identity_resolved",
+    "player_team_slot_configured",
+    "species_check_measured"
+  ],
+  "selection": "Unchanged input Articles in original publication order. Excludes old derived identities/energy, PNG/WAV bytes, and unrelated measurements. Raw player species are present but the test feeds the resolved player appearance, matching live Match.",
+  "fixtureSha256": "80a2081dea3d38105009b767ada7411dfbde17b5b665e0e471b4c470edb8581a"
+}

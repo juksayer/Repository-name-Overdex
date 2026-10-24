@@ -157,6 +157,18 @@ internal class PlayerActiveIdentityInference {
     fun at(time: Long): Resolution? = appearanceAt(time)?.resolution
     fun lastIdentityAt(time: Long): Resolution? = appearances.floorEntry(time)?.value?.resolution
 
+    /** Reuse a fresh badge as confirmation without losing the resolved form/slot or starting a new appearance. */
+    fun projectSpeciesReconfirmation(article: RealityArticle): RealityArticle? {
+        val species = article.payload as? ActivePokemonSpeciesWitnessed ?: return null
+        if (species.side != ActivePokemonSide.PLAYER) return null
+        val resolution = article.monotonicTimeNanos?.let(::at) ?: return null
+        if (base(species.speciesName) != base(resolution.payload.speciesName) ||
+            ('(' in species.speciesName && key(species.speciesName) != key(resolution.payload.speciesName))) return null
+        return resolution.speciesProjection(article).copy(
+            predecessorIds = (article.predecessorIds + resolution.evidence).filter { it != article.id }.distinct(),
+        )
+    }
+
     fun projectFaint(article: RealityArticle): RealityArticle {
         val p = article.payload as? ActivePokemonFaintedWitnessed ?: return article
         if (p.side != ActivePokemonSide.PLAYER) return article

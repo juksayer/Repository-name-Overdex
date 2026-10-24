@@ -786,8 +786,12 @@ class Match(
     }
 
     private suspend fun appendFastMoveCadenceDerivations(article: RealityArticle) {
-        if (isRawPlayerSpecies(article)) return
-        val derivations = fastMoveCadenceInference.accept(playerIdentityInference.projectFaint(article))
+        // The raw badge cannot replace a resolved form, but its fresh source time
+        // must still clear entry/cry checks that are waiting to attribute audio.
+        val input = if (isRawPlayerSpecies(article))
+            playerIdentityInference.projectSpeciesReconfirmation(article) ?: return
+        else playerIdentityInference.projectFaint(article)
+        val derivations = fastMoveCadenceInference.accept(input)
         fastMoveCadenceInference.candidateSnapshot(ActivePokemonSide.OPPONENT)?.let { candidates ->
             opponentEnergyForecast.restrictCandidates(candidates.speciesName, candidates.remainingMoveNames)
             DroidballOverlayPresentation.recordOpponentFastMoveCandidates(

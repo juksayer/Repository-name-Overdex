@@ -5,6 +5,10 @@ candidate but cannot confirm it. The Battle HUD now adds **Favored · low confid
 under that candidate, aligned right. Other remaining moves stay visible. A later
 confirmed identity replaces the label with the existing checkmark.
 
+Follow-up: [strict first-sample preferences and player reconfirmation](2026-10-24-fast-audio-attribution.md)
+extend this initial two-window policy. The rules and validation below document
+the original implementation.
+
 ## Evidence and presentation boundaries
 
 - The live audio witness retains plausible comparisons at most once per 1.5 seconds,

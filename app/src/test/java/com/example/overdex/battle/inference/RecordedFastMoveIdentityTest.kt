@@ -15,6 +15,50 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RecordedFastMoveIdentityTest {
+    @Test fun `October 24 Magcargo sound favors Rock Throw without certifying it or creating attacks`() = runBlocking {
+        val archive = MatchArchiveSerializer.deserialize(checkNotNull(javaClass.getResource(
+            "/battle/2026-10-24-magcargo-audio.json")).readText())
+        val before = MatchArchiveSerializer.serialize(archive)
+        val engine = FastMoveCadenceInference(Knowledge)
+        val playerIdentity = PlayerActiveIdentityInference()
+        val energy = FastMoveEnergyInference(Knowledge)
+        val identities = mutableListOf<FastMoveIdentified>()
+        val preferences = mutableListOf<FastMoveAudioPreference>()
+        val awards = mutableListOf<FastMoveEnergyDerivation>()
+        for (a in archive.articles) {
+            // Rebuild the player's canonical identity, then forward fresh badge
+            // confirmations through the same form-preserving projection as Match.
+            if (a.payload is ArchivedPlayerActiveIdentityResolved) continue
+            val input = live(a)
+            val resolutions = playerIdentity.accept(input)
+            val projected = resolutions.map { it.speciesProjection(input) }
+            val rawPlayer = (input.payload as? ActivePokemonSpeciesWitnessed)?.side == ActivePokemonSide.PLAYER
+            val confirmation = if (rawPlayer) playerIdentity.projectSpeciesReconfirmation(input) else null
+            val inputs = projected + if (rawPlayer) listOfNotNull(confirmation) else listOf(playerIdentity.projectFaint(input))
+            (projected + if (rawPlayer) emptyList() else listOf(input)).forEach { awards += energy.accept(it) }
+            for (derived in inputs.flatMap { engine.accept(it) }) {
+                assertTrue("Identity analysis cannot manufacture a use", derived.payload is FastMoveIdentified)
+                identities += derived.payload as FastMoveIdentified
+                awards += energy.accept(derived.observedArticle.copy(payload = derived.payload,
+                    predecessorIds = derived.predecessorIds, confidence = derived.confidence))
+            }
+            val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)
+            if (snapshot?.speciesName == "Magcargo") snapshot.audioPreference?.let {
+                preferences += it
+                assertNull(snapshot.identifiedMoveName)
+                assertTrue(snapshot.remainingMoveNames.containsAll(listOf("Ember", "Rock Throw", "Incinerate")))
+            }
+        }
+        assertTrue("The retained strict Rock Throw match should reach presentation", preferences.isNotEmpty())
+        assertEquals(setOf("Rock Throw"), preferences.map { it.moveName }.toSet())
+        val sound = archive.articles.single { a -> (a.payload as? ArchivedFastMoveSoundMeasured)
+            ?.referenceCandidates?.firstOrNull()?.moveName == "Rock Throw" }
+        assertTrue(preferences.all { ArticleId(sound.articleId) in it.evidenceIds })
+        assertTrue("One sound is not a confirmed Magcargo identity", identities.none { it.speciesName == "Magcargo" })
+        assertTrue("A preference awards no exact opponent energy", awards.none { it.payload.side == ActivePokemonSide.OPPONENT })
+        assertEquals(before, MatchArchiveSerializer.serialize(archive))
+    }
+
     @Test fun `October 24 sparse Dragonair impacts cannot certify Iron Tail or award its energy`() = runBlocking {
         val archive = MatchArchiveSerializer.deserialize(checkNotNull(javaClass.getResource(
             "/battle/2026-10-24-dragonair-sparse-impact.json")).readText())
@@ -125,6 +169,16 @@ class RecordedFastMoveIdentityTest {
         private fun move(name: String, type: PokemonType, turns: Int, energy: Int) = Move(
             name = name, type = type, damage = 1, energy = energy, isFast = true, turns = turns)
         private val pokemon = listOf(
+            Pokemon(776, "Turtonator", listOf(PokemonType.FIRE, PokemonType.DRAGON), "Alola",
+                fastMoves = listOf(move("Ember", PokemonType.FIRE, 2, 9), move("Fire Spin", PokemonType.FIRE, 3, 10),
+                    move("Incinerate", PokemonType.FIRE, 5, 20)), chargedMoves = emptyList()),
+            Pokemon(256, "Combusken", listOf(PokemonType.FIRE, PokemonType.FIGHTING), "Hoenn",
+                fastMoves = listOf(move("Ember", PokemonType.FIRE, 2, 9), move("Peck", PokemonType.FLYING, 2, 8)), chargedMoves = emptyList()),
+            Pokemon(219, "Magcargo", listOf(PokemonType.FIRE, PokemonType.ROCK), "Johto",
+                fastMoves = listOf(move("Ember", PokemonType.FIRE, 2, 9), move("Rock Throw", PokemonType.ROCK, 2, 5),
+                    move("Incinerate", PokemonType.FIRE, 5, 20)), chargedMoves = emptyList()),
+            Pokemon(136, "Flareon", listOf(PokemonType.FIRE), "Kanto",
+                fastMoves = listOf(move("Ember", PokemonType.FIRE, 2, 9), move("Fire Spin", PokemonType.FIRE, 3, 10)), chargedMoves = emptyList()),
             Pokemon(148, "Dragonair", listOf(PokemonType.DRAGON), "Kanto",
                 fastMoves = listOf(move("Dragon Breath", PokemonType.DRAGON, 1, 4),
                     move("Iron Tail", PokemonType.STEEL, 3, 7)), chargedMoves = emptyList()),

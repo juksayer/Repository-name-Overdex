@@ -15,15 +15,17 @@ internal data class AudioPreferenceCombatant(
     val legalMoveNames: List<String>,
 )
 
-/** Two disjoint analysis windows favoring one legal side, with an explicitly heuristic margin. */
+/** One strict match or two disjoint weaker comparisons can favor one uniquely legal side. */
 internal class FastMoveAudioPreferenceTracker {
-    private data class Sample(val side: ActivePokemonSide, val name: String, val at: Long, val id: ArticleId)
+    private data class Sample(val side: ActivePokemonSide, val name: String, val at: Long,
+        val evidenceIds: List<ArticleId>, val strict: Boolean)
     private var context = emptyList<AudioPreferenceCombatant>()
     private val samples = mutableListOf<Sample>()
 
     fun clear() { samples.clear(); context = emptyList() }
 
-    fun observe(id: ArticleId, at: Long, candidates: List<FastMoveSoundCandidate>, combatants: List<AudioPreferenceCombatant>) {
+    fun observe(id: ArticleId, at: Long, candidates: List<FastMoveSoundCandidate>, combatants: List<AudioPreferenceCombatant>,
+        referenceMatchAccepted: Boolean = false, contextEvidence: List<ArticleId> = emptyList()) {
         if (context != combatants) { clear(); context = combatants }
         if (combatants.size != 2 || combatants.any { it.legalMoveNames.isEmpty() }) { samples.clear(); return }
         val previous = samples.lastOrNull()
@@ -33,9 +35,12 @@ internal class FastMoveAudioPreferenceTracker {
         val legalNames = combatants.flatMap { it.legalMoveNames }.map(::key).toSet()
         val measured = candidates.associateBy { key(it.moveName) }
         val otherLegal = candidates.filter { key(it.moveName) in legalNames && key(it.moveName) != key(best?.moveName.orEmpty()) }
-        // A shared move has no safe owner; missing references and close legal alternatives stay unresolved.
-        if (best == null || owners.size != 1 || !measured.keys.containsAll(legalNames) ||
-            otherLegal.any { best.similarity - it.similarity < .015f || best.changingSimilarity <= it.changingSimilarity }) {
+        // Accepted captures retain the global spectrum/changing-spectrum leaders, not every
+        // low-ranking legal move. Recheck that strict margin; do not apply the weaker path's
+        // complete-catalogue requirement to an already accepted global comparison.
+        val strict = referenceMatchAccepted && FastMoveReferenceMatcher.accepts(candidates)
+        if (best == null || owners.size != 1 || (!strict && (!measured.keys.containsAll(legalNames) ||
+            otherLegal.any { best.similarity - it.similarity < .015f || best.changingSimilarity <= it.changingSimilarity }))) {
             samples.clear(); return
         }
         if (at < combatants.maxOf { it.appearanceStartedAtNanos }) return
@@ -45,15 +50,16 @@ internal class FastMoveAudioPreferenceTracker {
         }
         // Overlapping 1.2-second captures are one comparison, not repeated corroboration.
         if (samples.lastOrNull()?.let { at - it.at < WINDOW_DURATION } == true) return
-        samples += Sample(owner.side, best.moveName, at, id)
+        samples += Sample(owner.side, best.moveName, at, (listOf(id) + contextEvidence).distinct(), strict)
         while (samples.size > 2) samples.removeAt(0)
     }
 
     fun preference(side: ActivePokemonSide, combatants: List<AudioPreferenceCombatant>, now: Long): FastMoveAudioPreference? {
-        if (context != combatants || samples.size < 2) return null
-        val last = samples.last()
+        if (context != combatants) return null
+        val last = samples.lastOrNull() ?: return null
+        if (samples.size < 2 && !last.strict) return null
         if (last.side != side || now - last.at !in 0..MAX_AGE) return null
-        return FastMoveAudioPreference(last.name, samples.map { it.id })
+        return FastMoveAudioPreference(last.name, samples.flatMap { it.evidenceIds }.distinct())
     }
 
     private fun key(name: String) = name.uppercase().filter(Char::isLetterOrDigit)

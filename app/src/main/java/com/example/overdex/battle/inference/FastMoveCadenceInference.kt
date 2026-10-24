@@ -287,7 +287,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 if (cue != null && (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= cue.first) {
                     audioEntryCues.remove(species.side)
                     val confirmed = priorState.copy(appearanceEvidence =
-                        (priorState.appearanceEvidence + cue.second + article.id).distinct().takeLast(8))
+                        (priorState.appearanceEvidence + article.predecessorIds + cue.second + article.id).distinct().takeLast(8))
                     states[species.side] = confirmed
                     combatants[species.side to normalize(species.speciesName)] = confirmed
                     val sounds = pendingReferenceSounds.toList().also { pendingReferenceSounds.clear() }
@@ -496,7 +496,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         // Delayed analysis cannot assign a previous fighter's tail to its replacement.
         if (states.values.any { alignedStart < it.audioActiveSinceNanos }) return emptyList()
         if (states.values.any { it.possibleMoves.isEmpty() }) return retainUnassigned()
-        audioPreferences.observe(article.id, clipAt, sound.referenceCandidates, audioPreferenceContext())
+        val supportingContext = states.values.flatMap { listOf(it.speciesArticleId) + it.appearanceEvidence } +
+            configuredPlayerSlots.values.map { it.second.articleId }
+        audioPreferences.observe(article.id, clipAt, sound.referenceCandidates, audioPreferenceContext(),
+            referenceMatchAccepted = sound.referenceMatchAccepted, contextEvidence = supportingContext)
         if (!sound.referenceMatchAccepted || !FastMoveReferenceMatcher.accepts(sound.referenceCandidates)) return emptyList()
         val owners = states.entries.filter { (_, state) ->
             state.possibleMoves.any { normalize(it.name) == normalize(candidate.moveName) }
@@ -505,8 +508,6 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val owner = owners.singleOrNull() ?: return retainUnassigned()
         val state = owner.value
         val move = state.possibleMoves.single { normalize(it.name) == normalize(candidate.moveName) }
-        val supportingContext = states.values.flatMap { listOf(it.speciesArticleId) + it.appearanceEvidence } +
-            configuredPlayerSlots.values.map { it.second.articleId }
         val history = state.referenceSounds
         history.removeAll { segmentAt - it.segmentStartNanos > 12_000_000_000L }
         val minimumDistinctStart = maxOf(300_000_000L, move.turns!! * TURN_NANOS * 85 / 100)
@@ -824,13 +825,16 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         )
 
         val identified = state.identifiedMove
-        val remaining = if (identified != null) {
+        // An energy tie-break must not hide equally compatible moves or suppress
+        // their audio preference. It still remains a forecast hypothesis.
+        val remaining = if (identified != null && !state.assumedHigherEnergyTieBreak) {
             listOf(identified)
         } else {
             candidateMovesFromEvidence(state)
         }
         val remainingKeys = remaining.map { normalize(it.name) }.toSet()
-        val preference = if (identified == null && audioEntryCues.isEmpty() && audioIdentityGate.allows(latestEvidenceAtNanos)) {
+        val preference = if ((identified == null || state.assumedHigherEnergyTieBreak) &&
+            audioEntryCues.isEmpty() && audioIdentityGate.allows(latestEvidenceAtNanos)) {
             audioPreferences.preference(side, audioPreferenceContext(), latestEvidenceAtNanos)
                 ?.takeIf { normalize(it.moveName) in remainingKeys }
         } else null

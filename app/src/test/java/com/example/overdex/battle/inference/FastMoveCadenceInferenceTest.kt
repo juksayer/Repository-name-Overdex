@@ -166,6 +166,46 @@ class FastMoveCadenceInferenceTest {
         assertTrue(engine.accept(referenceSound("two", "Spark", 3_000_000_000L)).isEmpty())
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
         assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.audioPreference)
+    }
+
+    @Test fun `one strong sound reaches HUD with side evidence but no identity or new attack`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        val sound = referenceSound("one", "Spark", 2_000_000_000L)
+        assertTrue(engine.accept(sound).isEmpty())
+        val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
+        assertEquals("Spark", snapshot.audioPreference?.moveName)
+        assertEquals(setOf(ArticleId("one"), ArticleId("player"), ArticleId("opponent")),
+            snapshot.audioPreference?.evidenceIds?.toSet())
+        assertNull(snapshot.identifiedMoveName)
+        assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.audioPreference)
+        // The raw measurement is still unassigned; ownership is a derived preference.
+        assertNull((sound.payload as FastMoveSoundMeasured).attackingSide)
+        engine.accept(article("get-ready", com.example.overdex.battle.custody.GetReadyWitnessed)
+            .copy(monotonicTimeNanos = 3_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+    }
+
+    @Test fun `higher energy tie-break does not hide alternatives or a lower energy audio favorite`() = runBlocking {
+        val player = Pokemon(460, "Abomasnow", listOf(PokemonType.ICE), "Sinnoh",
+            fastMoves = listOf(move("Powder Snow", 2, 8, PokemonType.ICE)), chargedMoves = emptyList())
+        val opponent = Pokemon(311, "Plusle", listOf(PokemonType.ELECTRIC), "Hoenn",
+            fastMoves = listOf(move("Quick Attack", 2, 9), move("Spark", 2, 8, PokemonType.ELECTRIC)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(player, opponent))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, player.name)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, opponent.name)))
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(borderCadence("cadence1", 1_000_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
+        val assumed = engine.accept(borderCadence("cadence2", 1_000_000_000L).copy(monotonicTimeNanos = 3_000_000_000L))
+        assertTrue((assumed.single().payload as FastMoveIdentified).basis.contains("TIE_BREAK"))
+        assertTrue(engine.accept(referenceSound("spark", "Spark", 4_000_000_000L)).isEmpty())
+        val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
+        assertEquals("Quick Attack", snapshot.identifiedMoveName) // The labeled forecast has not been revised.
+        assertEquals(setOf("Quick Attack", "Spark"), snapshot.remainingMoveNames.toSet())
+        assertEquals("Spark", snapshot.audioPreference?.moveName)
     }
 
     @Test fun `entry sound before readable badge waits for the incoming species and cites its boundary`() = runBlocking {
@@ -297,7 +337,8 @@ class FastMoveCadenceInferenceTest {
         assertTrue(engine.accept(weakReferenceSound("weak2", 3_500_000_000L)).isEmpty())
         val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
         assertEquals("Spark", snapshot.audioPreference?.moveName)
-        assertEquals(listOf(ArticleId("weak1"), ArticleId("weak2")), snapshot.audioPreference?.evidenceIds)
+        assertEquals(setOf(ArticleId("weak1"), ArticleId("weak2"), ArticleId("player"), ArticleId("opponent")),
+            snapshot.audioPreference?.evidenceIds?.toSet())
         assertNull(snapshot.identifiedMoveName)
         assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
         engine.accept(article("get-ready", com.example.overdex.battle.custody.GetReadyWitnessed).copy(monotonicTimeNanos = 4_000_000_000L))

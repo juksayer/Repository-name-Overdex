@@ -18,6 +18,37 @@ class FastMoveAudioPreferenceTrackerTest {
     private fun observe(t: FastMoveAudioPreferenceTracker, at: Long, scores: List<FastMoveSoundCandidate> = weak,
         fighters: List<AudioPreferenceCombatant> = context) = t.observe(ArticleId("clip-$at"), at, scores, fighters)
 
+    @Test fun `one accepted global match favors its unique side even when saved shortlist omits low ranks`() {
+        val t = FastMoveAudioPreferenceTracker()
+        val strong = listOf(candidate("Dragon Breath", .98f, .94f), candidate("Bug Bite", .86f, .70f))
+        t.observe(ArticleId("strong"), 1_000_000_000, strong, context, referenceMatchAccepted = true,
+            contextEvidence = listOf(ArticleId("player-species"), ArticleId("opponent-species")))
+        assertEquals("Dragon Breath", t.preference(PLAYER, context, 1_000_000_000)?.moveName)
+        assertEquals(listOf(ArticleId("strong"), ArticleId("player-species"), ArticleId("opponent-species")),
+            t.preference(PLAYER, context, 1_000_000_000)?.evidenceIds)
+        assertNull(t.preference(OPPONENT, context, 1_000_000_000))
+        assertNull(t.preference(PLAYER, context, 7_000_000_001))
+    }
+
+    @Test fun `strict flag cannot bypass score checks shared ownership or unknown combatant pool`() {
+        val strong = listOf(candidate("Dragon Breath", .98f, .94f), candidate("Bug Bite", .86f, .70f))
+        val cases = listOf(
+            weak to context,
+            strong to context.map { it.copy(legalMoveNames = listOf("Dragon Breath")) },
+            strong to context.map { if (it.side == OPPONENT) it.copy(legalMoveNames = emptyList()) else it },
+            strong to context.take(1),
+            strong.map { it.copy(similarity = .5f) } to context,
+        )
+        for ((scores, fighters) in cases) {
+            val t = FastMoveAudioPreferenceTracker()
+            t.observe(ArticleId("strict"), 1_000_000_000, scores, fighters, referenceMatchAccepted = true)
+            assertNull(t.preference(PLAYER, fighters, 1_000_000_000))
+        }
+        val unaccepted = FastMoveAudioPreferenceTracker()
+        unaccepted.observe(ArticleId("unaccepted"), 1_000_000_000, strong, context)
+        assertNull(unaccepted.preference(PLAYER, context, 1_000_000_000))
+    }
+
     @Test fun `two disjoint comparisons provide an expiring preference without converting scores to probability`() {
         val t = FastMoveAudioPreferenceTracker()
         observe(t, 1_000_000_000)

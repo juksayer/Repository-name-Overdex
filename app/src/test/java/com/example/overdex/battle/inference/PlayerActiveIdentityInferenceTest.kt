@@ -19,6 +19,26 @@ class PlayerActiveIdentityInferenceTest {
             engine.accept(article("scan-k", PlayerTeamRosterSlotWitnessed(2, "Raichu", 26, "normal", .2f), 1))
         }
     }
+
+    @Test fun `fresh bare badge confirms the resolved form without a new appearance and stops after faint`() {
+        team()
+        val first = engine.accept(species("lead", "Raichu", 3)).single()
+        val recheck = species("recheck", "Raichu", 8)
+        assertTrue(engine.accept(recheck).isEmpty())
+        val projected = engine.projectSpeciesReconfirmation(recheck)!!
+        val p = projected.payload as ActivePokemonSpeciesWitnessed
+        assertEquals("Raichu (Alolan)", p.speciesName)
+        assertEquals(1, p.playerTeamSlot)
+        assertEquals(first.payload.appearanceStartedAtNanos, p.appearanceStartedAtNanos)
+        assertEquals(recheck.monotonicTimeNanos, projected.monotonicTimeNanos)
+        assertEquals(recheck.id, projected.id)
+        assertTrue(projected.predecessorIds.containsAll(first.evidence))
+        assertEquals("Raichu", (recheck.payload as ActivePokemonSpeciesWitnessed).speciesName)
+        assertNull(engine.projectSpeciesReconfirmation(species("wrong", "Obstagoon", 8)))
+        assertNull(engine.projectSpeciesReconfirmation(species("wrong-form", "Raichu (Hisuian)", 8)))
+        engine.accept(article("faint", ActivePokemonFaintedWitnessed(ActivePokemonSide.PLAYER, "Raichu"), 10))
+        assertNull(engine.projectSpeciesReconfirmation(species("lingering", "Raichu", 11)))
+    }
     private fun species(id: String, name: String, seconds: Long, entry: Boolean = false) =
         article(id, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, name, if (name == "Obstagoon") 862 else 26),
             seconds, if (entry) "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS" else "PLAYER_SPECIES_OVERLAY_PIPELINE")
