@@ -67,4 +67,8 @@ This update also includes the sparse-impact and late-start listening fixes.
 Pixel `99261FFAZ0017J` rejected the preceding update with
 `INSTALL_FAILED_INSUFFICIENT_STORAGE` (approximately 1 GB free). Its configuration
 hashes also remain unchanged; no uninstall, data clear or match deletion was used.
-It still needs additional free space and the new APK. No new live battle was run.
+After the user freed space, the Pixel reported 2.6 GB available and no active
+Overdex service. The same tested APK installed in place successfully on October
+24, 2026, at 09:27:32. MainActivity launched and resumed. Fresh before/after hashes
+match for both calibrations, current team, selected calibration profile and HUD
+layout. Both phones now have this update. No new live battle was run.

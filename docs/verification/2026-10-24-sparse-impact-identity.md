@@ -50,8 +50,9 @@ does not feed historical move identities or energy conclusions back as evidence.
 
 The full suite passes **1,078 tests** with no failures, errors or skips. The debug
 APK builds. This fix is included in the subsequent
-[combined Moondrop update](2026-10-24-low-confidence-fast-audio.md); the Pixel update
-was refused for insufficient storage.
+[combined device update](2026-10-24-low-confidence-fast-audio.md) on both phones.
+The Pixel initially refused installation for insufficient storage, then succeeded
+after the user freed space.
 
 ## Remaining boundary
 

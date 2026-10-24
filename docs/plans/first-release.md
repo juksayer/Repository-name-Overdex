@@ -91,7 +91,7 @@ then opens listening from a witnessed charged phase without inventing MatchStart
 not meet confirmation thresholds. The [low-confidence preference display](../verification/2026-10-24-low-confidence-fast-audio.md)
 now distinguishes favored candidates from confirmation without narrowing energy
 possibilities; 1,090 unit tests and one emulator HUD test pass. These fixes are
-installed on the Moondrop; the Pixel update needs more free space. A new battle
+installed on the Moondrop and Pixel, with saved configuration hashes unchanged. A new battle
 check and exact attack/energy acceptance remain open.
 
 ### 2. Recording and device reliability
