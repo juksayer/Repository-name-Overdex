@@ -88,9 +88,14 @@ Debug APK SHA-256:
 
 ## Remaining live boundary
 
-Neither physical phone was visible over USB during verification, so the update
-is built and emulator-tested but not installed on the Moondrop or Pixel.
-After installation, a new battle should check that a supported audio preference
+The tested APK was installed in place on the Moondrop at 12:34:24 on October 24.
+The Directory Tree opened normally; Droidball remained stopped. Calibration,
+team settings, owned-card database files and all 50 archive filenames survived
+unchanged. The only changed file in the 267-file settings/data comparison was
+the Firestore cache. See the [installation and two-match review](2026-10-24-audio-install-and-form-review.md).
+The Pixel was not connected and has not received this update.
+
+A new battle on the updated build should check that a supported audio preference
 appears on the correct side, clears during QTE/entry checks, and becomes a
 checkmark only when the existing confirmation requirements are met.
 
