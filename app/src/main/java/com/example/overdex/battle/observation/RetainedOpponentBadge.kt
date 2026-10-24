@@ -4,10 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
-import android.graphics.RectF
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -29,23 +27,17 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
     private var displayWidth = 0
     private var displayHeight = 0
     private var content = RetainedBadgeContent()
-    private var fullBadgeHeight = 1f
+    private var cachedHudRegion: AnchorRegion? = null
     @Volatile private var wanted = false
     @Volatile private var rendered = false
     @Volatile private var clearAfter = Long.MIN_VALUE
     @Volatile private var closed = false
     private val view = object : View(context) {
         var image: Bitmap? = null
-        var fullHeightRatio = 1f
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
         override fun onDraw(canvas: Canvas) {
             val image = image ?: return
-            val r = width * 27f / 415f
-            val shape = Path().apply { addRoundRect(RectF(0f, 0f, width.toFloat(), height * fullHeightRatio), r, r, Path.Direction.CW) }
-            val save = canvas.save()
-            canvas.clipPath(shape)
             canvas.drawBitmap(image, null, Rect(0, 0, width, height), paint)
-            canvas.restoreToCount(save)
         }
     }
 
@@ -58,6 +50,9 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
                              hudRegion: AnchorRegion?, currentContent: RetainedBadgeContent = RetainedBadgeContent()) {
         if (closed || currentContent.revision < content.revision) return
         contentChanged(currentContent)
+        // A moved/resized HUD has a different cutout. Do not lay the old copy
+        // over its new position or reuse a queued frame containing our copy.
+        if (cached != null && cachedHudRegion != hudRegion) reset()
         // A queued pre-change frame cannot refill the cache after a faint/switch.
         if (at < content.changedAtNanos) return
         val cleanSource = retainedBadgeSource(badgeRegion, hudRegion)
@@ -67,11 +62,10 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         if (decision.discardOriginal) cached = null
         if (decision.cacheOriginal) {
             val area = cleanSource ?: return
-            val bounds = BattleCropResolver.resolveRect(area, bitmap.width, bitmap.height) ?: return
             // Keep only one small image, not a history of frames or PNG artifacts.
-            cached = Bitmap.createBitmap(bitmap, bounds.left, bounds.top, bounds.width(), bounds.height())
+            cached = retainedBadgeImage(bitmap, area, hudRegion) ?: return
             region = area
-            fullBadgeHeight = badgeRegion.height / area.height
+            cachedHudRegion = hudRegion
             displayWidth = width; displayHeight = height
         }
         if (wanted != decision.showRetained) {
@@ -105,7 +99,6 @@ internal class RetainedOpponentBadge(context: Context, private val windows: Wind
         }
         val area = region ?: return
         view.image = cached ?: return
-        view.fullHeightRatio = fullBadgeHeight
         if (view.isAttachedToWindow) { view.invalidate(); return }
         val params = WindowManager.LayoutParams(
             (area.width * displayWidth).roundToInt(), (area.height * displayHeight).roundToInt(),

@@ -39,8 +39,8 @@ internal class RetainedBadgeVisibility {
         if (sourceCovered) return Decision()
         if (playerPresent && opponentPresent) {
             missingSince = null
-            // Masking our HUD during detection does not remove it from the
-            // bitmap. The entire cached rectangle must be unobstructed.
+            // Detection alone does not make a source safe. A readable upper
+            // badge and the curved HUD mask must leave enough native content.
             if (sourceOverlapsHud) return Decision()
             hasOriginal = true
             return Decision(cacheOriginal = true)

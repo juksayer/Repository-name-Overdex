@@ -13,14 +13,12 @@ class RetainedBadgeSourceTest {
         assertEquals(badge, retainedBadgeSource(badge, AnchorRegion(.1f, .06f, .2f, .2f)))
     }
 
-    @Test fun `HUD at lower seam permits a fresh exposed strip without its artwork`() {
+    @Test fun `HUD at lower seam admits the full badge for curved masking`() {
         val hud = AnchorRegion(.59f, .10f, .38f, .2f)
         val source = requireNotNull(retainedBadgeSource(badge, hud))
-        assertEquals(badge.x, source.x)
-        assertEquals(badge.y, source.y)
-        assertEquals(badge.width, source.width)
-        assertEquals(hud.y, source.y + source.height, .000001f)
-        assertTrue(SpeciesCaptureVisibility.canRead(source, hud))
+        assertEquals(badge, source)
+        assertTrue("The image mask must preserve native pixels below the rectangular seam",
+            source.y + source.height > hud.y)
     }
 
     @Test fun `HUD covering the name or resource band cannot supply a retained badge`() {

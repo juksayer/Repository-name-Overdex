@@ -97,10 +97,17 @@ class RecordedRetainedBadgeDeviceTest {
                 hideNative(bitmap)
                 shot("${3 - index}-balls").also {
                     assertEquals("Refreshed native badge must retain the current count", 3 - index, countShown(it))
+                    // The lower rims of the balls sit below the HUD window's
+                    // rectangular top but inside its transparent curved opening.
+                    val x = (636f / 672 * width).toInt()
+                    val y = (150f / 1493 * height).toInt()
+                    assertNotEquals("The last ball must not be sliced at the HUD seam",
+                        it.getPixel(100, height / 2), it.getPixel(x, y))
                     it.recycle()
                 }
                 val excluded = requireNotNull(retained.exclusion(System.nanoTime()))
-                assertTrue("Cached pixels do not contain HUD artwork", SpeciesCaptureVisibility.canRead(excluded, hud))
+                assertTrue("The retained footprint includes the native curved opening",
+                    excluded.y + excluded.height > hud.y)
                 assertFalse("Our retained pixels stay excluded from witnesses",
                     CapturedVisualFrame(bitmap, 1L, System.nanoTime(), retainedBadgeRegion = excluded).canObserve(excluded))
             }
