@@ -51,6 +51,17 @@ object PokemonFormReference {
             .ifEmpty { listOf(observed) }
     }
 
+    /**
+     * GO badges/announcements omit regional and other form labels. A bare name
+     * therefore names a family of possible battle references, not its base form.
+     * A qualified form remains exact; never fall back from an unknown qualifier.
+     */
+    fun observedReferenceNames(observed: String, catalogueNames: Collection<String>): List<String> {
+        if ('(' in observed) return listOf(observed)
+        return catalogueNames.filter { baseKey(it) == baseKey(observed) }.distinctBy(::key)
+            .ifEmpty { listOf(observed) }
+    }
+
     private fun baseKey(value: String) = key(value.substringBefore(" ("))
     private fun key(value: String) = value.uppercase().filter(Char::isLetterOrDigit)
 }

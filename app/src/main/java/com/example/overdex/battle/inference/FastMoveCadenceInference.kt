@@ -24,6 +24,8 @@ import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.data.PokemonFormReference
+import com.example.overdex.data.PokemonFormKnowledge
+import com.example.overdex.data.PokemonFormCandidates
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
@@ -63,7 +65,10 @@ data class FastMoveCandidateSnapshot(
  * It labels energy as derived and records when equal-duration resolution used
  * the explicit higher-energy assumption.
  */
-class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
+class FastMoveCadenceInference(
+    private val pokemonKnowledge: PokemonKnowledge,
+    private val opponentFormReferences: PokemonFormKnowledge = PokemonFormKnowledge(pokemonKnowledge),
+) {
     private enum class CadenceBasis {
         OBSERVED_USES,
         BORDER_PULSE,
@@ -88,7 +93,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private data class EffectivenessEvidence(
         val article: RealityArticle,
         val effectiveness: FastMoveEffectiveness,
-        val defenderTypes: List<PokemonType>,
+        val defenderTypeOptions: List<List<PokemonType>>,
         val defenderArticleId: ArticleId,
     )
 
@@ -96,7 +101,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val speciesName: String,
         val speciesArticleId: ArticleId,
         val activeSinceNanos: Long,
-        val types: List<PokemonType>,
+        // Each inner list describes one compatible form. Combining the lists
+        // would invent a Ground/Electric/Steel Stunfisk instead of alternatives.
+        val typeOptions: List<List<PokemonType>>,
         val possibleMoves: List<Move>,
         val playerTeamSlot: Int? = null,
         val audioActiveSinceNanos: Long = activeSinceNanos,
@@ -227,6 +234,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 it.isFast && it.turns != null
             }.distinctBy { normalize(it.name) }
             val updated = active.copy(
+                typeOptions = listOf(pokemon?.types.orEmpty()),
                 possibleMoves = moves, identifiedMove = moves.singleOrNull { normalize(it.name) == normalize(configured.fastMoveName) },
                 cadenceEvidence = mutableListOf(), selectedBasis = null,
                 lastDirectUseArticles = mutableMapOf(),
@@ -310,22 +318,23 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 article.monotonicTimeNanos ?: Long.MIN_VALUE
             }
             if (priorState != null) appearanceStarts[species.side] = activeSince
+            val opponentReferences = if (species.side == ActivePokemonSide.OPPONENT)
+                opponentFormReferences.forObservedName(species.speciesName, species.speciesId) else null
             val referenceNames = if (species.side == ActivePokemonSide.PLAYER && species.playerTeamSlot != null)
                 listOf(species.speciesName)
                 else if (species.side == ActivePokemonSide.PLAYER)
                 PokemonFormReference.playerReferenceNames(species.speciesName, playerReferenceSlots.values.map { it.first })
-                else listOf(species.speciesName)
+                else requireNotNull(opponentReferences).names
             val referenceName = referenceNames.singleOrNull()
-            val formEvidence = if (referenceNames != listOf(species.speciesName))
+            val formEvidence = if (species.side == ActivePokemonSide.PLAYER &&
+                referenceNames != listOf(species.speciesName))
                 playerReferenceSlots.values.filter { it.first in referenceNames }.map { it.second } else emptyList()
-            val referencePokemon = referenceNames.mapNotNull { name ->
+            val referencePokemon = opponentReferences?.pokemon ?: referenceNames.map { name ->
                 pokemonKnowledge.getPokemonByName(name)
                     ?: species.speciesId?.takeIf { '(' !in name }?.let { pokemonKnowledge.getPokemonById(it) }
             }
-            val pokemon = referencePokemon.singleOrNull().takeIf { referenceNames.size == 1 }
-            val possibleMoves = referencePokemon.flatMap { it.fastMoves }
-                .filter { it.isFast && it.turns != null }
-                .distinctBy { normalize(it.name) }
+            val typeOptions = referencePokemon.map { it?.types.orEmpty() }.distinct()
+            val possibleMoves = (opponentReferences ?: PokemonFormCandidates(referenceNames, referencePokemon)).fastMoves
             val configuredMove = if (species.side == ActivePokemonSide.PLAYER && referenceName != null) {
                 configuredPlayerMoves[normalize(referenceName)]
             } else null
@@ -335,13 +344,17 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             }
             val referenceIdentity = configuredIdentity ?: candidateMoves.singleOrNull()
             val combatantKey = species.side to normalize(species.speciesName)
-            val remembered = combatants[combatantKey].takeIf { referenceNames.size == 1 }
+            // Shadow/cosmetic alternatives with identical typing and Fast Move
+            // pools must not erase a learned move whenever that combatant returns.
+            val oneBattleReference = referencePokemon.isNotEmpty() && referencePokemon.none { it == null } &&
+                referencePokemon.filterNotNull().map { it.types.toSet() to it.fastMoves.toSet() }.distinct().size == 1
+            val remembered = combatants[combatantKey].takeIf { oneBattleReference }
             val retainedMove = remembered?.identifiedMove?.takeIf { it in candidateMoves }
             val state = SideState(
                 speciesName = species.speciesName,
                 speciesArticleId = article.id,
                 activeSinceNanos = activeSince,
-                types = pokemon?.types.orEmpty(),
+                typeOptions = typeOptions,
                 possibleMoves = candidateMoves,
                 playerTeamSlot = species.playerTeamSlot,
                 audioActiveSinceNanos = entryCue?.let { maxOf(it.first, explicitAppearanceStart ?: Long.MIN_VALUE) }
@@ -731,7 +744,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         val attributableSides = attackingSides.filter { side ->
             val attacker = states[side] ?: return@filter false
             val defender = states[side.opposite()] ?: return@filter false
-            attacker.possibleMoves.any { effectivenessMatches(it.type, defender.types, witnessed.effectiveness) }
+            // Incomplete reference types are absence of evidence, not positive
+            // effectiveness support or evidence for assigning unsided text.
+            if (defender.typeOptions.isEmpty() || defender.typeOptions.any { it.isEmpty() }) return@filter false
+            attacker.possibleMoves.any { effectivenessCompatible(it.type, defender.typeOptions, witnessed.effectiveness) }
         }
         // Unsided text during simultaneous hits cannot narrow both combatants.
         if (witnessed.damagedSide == null && attributableSides.size != 1) return emptyList()
@@ -751,12 +767,12 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 // cannot evict the constraints learned against earlier defenders.
                 val lastTwo = attacker.effectivenessEvidence.takeLast(2)
                 if (lastTwo.size == 2 && lastTwo.all {
-                    it.effectiveness == witnessed.effectiveness && it.defenderTypes == defender.types
+                    it.effectiveness == witnessed.effectiveness && it.defenderTypeOptions == defender.typeOptions
                 }) attacker.effectivenessEvidence.removeAt(attacker.effectivenessEvidence.lastIndex)
                 attacker.effectivenessEvidence += EffectivenessEvidence(
                     article = article,
                     effectiveness = witnessed.effectiveness,
-                    defenderTypes = defender.types,
+                    defenderTypeOptions = defender.typeOptions,
                     defenderArticleId = defender.speciesArticleId,
                 )
                 if (attacker.effectivenessEvidence.size > MAX_EFFECTIVENESS_HISTORY) {
@@ -764,7 +780,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 }
             }
             candidateMovesFromEffectiveness(attacker)
-                .filter { move -> effectivenessMatches(move.type, defender.types, witnessed.effectiveness) }
+                .filter { move -> effectivenessCompatible(move.type, defender.typeOptions, witnessed.effectiveness) }
                 .map { move -> EffectivenessMoveCandidate(attackingSide, move, attacker, defender) }
         }
         val candidate = candidates.singleOrNull() ?: return emptyList()
@@ -1018,7 +1034,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         var conflicting: EffectivenessEvidence? = null
         state.effectivenessEvidence.forEach { evidence ->
             val matches = state.possibleMoves.filter { move ->
-                effectivenessMatches(move.type, evidence.defenderTypes, evidence.effectiveness)
+                effectivenessCompatible(move.type, evidence.defenderTypeOptions, evidence.effectiveness)
             }
             if (matches.isEmpty()) return@forEach
             val intersection = remaining.filter { it in matches }
@@ -1030,7 +1046,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 val previousAt = previous?.article?.monotonicTimeNanos
                 val at = evidence.article.monotonicTimeNanos
                 if (previous != null && previous.effectiveness == evidence.effectiveness &&
-                    previous.defenderTypes == evidence.defenderTypes && previousAt != null && at != null &&
+                    previous.defenderTypeOptions == evidence.defenderTypeOptions && previousAt != null && at != null &&
                     at - previousAt >= EFFECTIVENESS_RECHECK_NANOS
                 ) {
                     remaining = matches
@@ -1053,7 +1069,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             predecessors.addAll(it.predecessorIds)
         }
         state.effectivenessEvidence.filter { evidence ->
-            effectivenessMatches(resolved.move.move.type, evidence.defenderTypes, evidence.effectiveness)
+            effectivenessCompatible(resolved.move.move.type, evidence.defenderTypeOptions, evidence.effectiveness)
         }.forEach { evidence ->
             labels += "EFFECTIVENESS"
             predecessors += evidence.article.id
@@ -1073,6 +1089,17 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
             abs(effectivenessAt - useAt) <= EFFECTIVENESS_USE_ALIGNMENT_NANOS &&
                 (witnessed.damagedSide == null || witnessed.damagedSide == use.damagedSide)
         }
+    }
+
+    /** Keep a move when any still-possible form could explain the witnessed text. */
+    private fun effectivenessCompatible(
+        attackType: PokemonType,
+        defenderTypeOptions: List<List<PokemonType>>,
+        witnessed: FastMoveEffectiveness,
+    ): Boolean = defenderTypeOptions.isEmpty() || defenderTypeOptions.any { types ->
+        // Missing type knowledge cannot rule a move out. With complete knowledge,
+        // ambiguity is removed only when every compatible form contradicts it.
+        types.isEmpty() || effectivenessMatches(attackType, types, witnessed)
     }
 
     private fun effectivenessMatches(

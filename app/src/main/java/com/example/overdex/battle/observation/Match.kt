@@ -70,10 +70,11 @@ class Match(
 ) {
     private val interpreter = BattleInterpreter(pokemonKnowledge)
     private val countdownMatchStartInference = com.example.overdex.battle.inference.CountdownMatchStartInference()
-    private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge)
+    private val opponentFormReferences = com.example.overdex.data.PokemonFormKnowledge(pokemonKnowledge)
+    private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge, opponentFormReferences)
     private val playerInformationInference = com.example.overdex.battle.inference.PlayerBattleInformationInference(pokemonKnowledge)
     private val playerIdentityInference = com.example.overdex.battle.inference.PlayerActiveIdentityInference()
-    private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge)
+    private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge, opponentFormReferences)
     private val opponentEnergyForecast = com.example.overdex.battle.forecast.OpponentEnergyForecast()
 
     internal fun observeForecastBattlefield(at: Long, bothBarsVisible: Boolean) {
@@ -295,10 +296,9 @@ class Match(
                     else -> null
                 }
                 if (name != null && name !in loadedSpecies) {
-                    pokemonKnowledge.getPokemonByName(name)?.let { species ->
-                        opponentEnergyForecast.registerMoves(name, species.fastMoves)
-                        loadedSpecies += name
-                    }
+                    val references = opponentFormReferences.forObservedName(name)
+                    opponentEnergyForecast.registerMoves(name, references.fastMoves)
+                    loadedSpecies += name
                 }
                 when (val move = article.payload) {
                     is FastMoveIdentified -> DroidballOverlayPresentation.recordOpponentFastMove(move)
@@ -454,19 +454,20 @@ class Match(
                     val referenceName = if (witnessed.side == ActivePokemonSide.PLAYER)
                         playerIdentityInference.at(article.monotonicTimeNanos ?: Long.MIN_VALUE)?.payload?.speciesName
                             ?: witnessed.speciesName else witnessed.speciesName
-                    val species = pokemonKnowledge.getPokemonByName(referenceName)
                     if (witnessed.side == ActivePokemonSide.PLAYER) {
+                        val species = pokemonKnowledge.getPokemonByName(referenceName)
                         DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())
                     } else {
+                        // A bare badge cannot shrink a regional form to the
+                        // ordinary move pool in either the HUD or its forecast.
+                        val references = opponentFormReferences.forObservedName(referenceName, witnessed.speciesId)
                         DroidballOverlayPresentation.recordOpponentSpecies(
                             speciesName = witnessed.speciesName,
-                            speciesId = witnessed.speciesId ?: species?.id,
-                            possibleFastMoves = species?.fastMoves
-                                ?.filter { it.isFast && it.turns != null }
-                                ?.map { it.name to it.type }
-                                .orEmpty(),
-                            possibleChargedMoves = species?.chargedMoves?.map { it.name to it.type }.orEmpty(),
-                            moveEnergy = (species?.fastMoves.orEmpty() + species?.chargedMoves.orEmpty())
+                            speciesId = witnessed.speciesId ?: references.pokemon.filterNotNull()
+                                .map { it.id }.distinct().singleOrNull(),
+                            possibleFastMoves = references.fastMoves.map { it.name to it.type },
+                            possibleChargedMoves = references.chargedMoves.map { it.name to it.type },
+                            moveEnergy = (references.fastMoves + references.chargedMoves)
                                 .associate { it.name to it.energy },
                             provisional = article.sourceId.id == "DECISIVE_BATTLE_CRY_SPECIES_WITNESS",
                             observedAtNanos = article.monotonicTimeNanos,

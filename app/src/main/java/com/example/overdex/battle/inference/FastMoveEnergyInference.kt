@@ -10,6 +10,7 @@ import com.example.overdex.battle.custody.SpeciesCheckMeasured
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.PokemonKnowledge
+import com.example.overdex.data.PokemonFormKnowledge
 import java.util.EnumMap
 
 data class FastMoveEnergyDerivation(
@@ -25,7 +26,10 @@ data class FastMoveEnergyDerivation(
  * Knowledge. Cadence measurements never count uses here, so several witnesses
  * describing one hit cannot generate duplicate energy.
  */
-class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
+class FastMoveEnergyInference(
+    private val pokemonKnowledge: PokemonKnowledge,
+    private val opponentFormReferences: PokemonFormKnowledge = PokemonFormKnowledge(pokemonKnowledge),
+) {
     private data class Identity(
         val article: RealityArticle,
         val payload: FastMoveIdentified,
@@ -94,8 +98,10 @@ class FastMoveEnergyInference(private val pokemonKnowledge: PokemonKnowledge) {
                     identities.remove(payload.side)
                     return emptyList()
                 }
-                val pokemon = pokemonKnowledge.getPokemonByName(payload.speciesName)
-                val move = pokemon?.fastMoves?.firstOrNull {
+                val possibleMoves = if (payload.side == ActivePokemonSide.OPPONENT)
+                    opponentFormReferences.forObservedName(payload.speciesName).fastMoves
+                else pokemonKnowledge.getPokemonByName(payload.speciesName)?.fastMoves.orEmpty()
+                val move = possibleMoves.firstOrNull {
                     normalize(it.name) == normalize(payload.moveName)
                 } ?: return emptyList()
                 val identity = Identity(article, payload, move.energy)
