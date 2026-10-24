@@ -88,8 +88,11 @@ The Dragonair regression stays unresolved instead of certifying Iron Tail;
 1,078 tests pass. The [late-start audio fix](../verification/2026-10-24-late-start-fast-audio.md)
 then opens listening from a witnessed charged phase without inventing MatchStarted;
 1,082 tests pass. The retained audio favors Dragon Breath over Iron Tail but does
-not meet confirmation thresholds. A low-confidence preference display and a new
-battle check are next; exact attack/energy acceptance remains open.
+not meet confirmation thresholds. The [low-confidence preference display](../verification/2026-10-24-low-confidence-fast-audio.md)
+now distinguishes favored candidates from confirmation without narrowing energy
+possibilities; 1,090 unit tests and one emulator HUD test pass. These fixes are
+installed on the Moondrop; the Pixel update needs more free space. A new battle
+check and exact attack/energy acceptance remain open.
 
 ### 2. Recording and device reliability
 

@@ -562,16 +562,21 @@ private fun MovePossibilityLine(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = buildAnnotatedString {
-                    if (!move.isConfirmed && move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
+                    if (!move.isConfirmed && !move.isAudioFavored && move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
                     if (move.isConfirmed) append("✓ ")
                     if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
                         append("⚠ +${move.damageIncreasePercent}% ")
                     }
                     append(move.name)
+                    if (move.isAudioFavored && !move.isConfirmed) append("\nFavored · low confidence")
                 },
                 modifier = Modifier.weight(1f).semantics {
                     stateDescription = buildString {
-                        append(if (move.isConfirmed) "Confirmed move" else "Possible move")
+                        append(when {
+                            move.isConfirmed -> "Confirmed move"
+                            move.isAudioFavored -> "Audio favors this move; low confidence, not confirmed"
+                            else -> "Possible move"
+                        })
                         when (readiness) {
                             com.example.overdex.battle.observation.HudChargeReadiness.READY -> append("; estimated ready")
                             com.example.overdex.battle.observation.HudChargeReadiness.ONE_FAST_MOVE_AWAY -> append("; estimated one Fast Move away")

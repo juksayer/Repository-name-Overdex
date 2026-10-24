@@ -8,6 +8,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
+    @Test fun `audio favorite keeps alternatives and never receives a confirmation checkmark`() {
+        val moves = listOf("Dragon Breath" to PokemonType.DRAGON, "Iron Tail" to PokemonType.STEEL)
+        DroidballOverlayPresentation.recordOpponentSpecies("Dragonair", 148, moves, emptyList())
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Dragonair", moves.map { it.first }, "Dragon Breath")
+        val shown = DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves
+        assertEquals(2, shown.size)
+        assertEquals("Dragon Breath", shown.single { it.isAudioFavored }.name)
+        assertTrue(shown.none { it.isConfirmed })
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Dragonair", moves.map { it.first })
+        assertTrue(DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.none { it.isAudioFavored })
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Dragonair", moves.map { it.first }, "Dragon Breath")
+        DroidballOverlayPresentation.recordOpponentSpecies("Other", 1, moves, emptyList())
+        assertTrue(DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.none { it.isAudioFavored })
+        DroidballOverlayPresentation.recordOpponentSpecies("Dragonair", 148, moves, emptyList())
+        DroidballOverlayPresentation.recordOpponentFastMoveCandidates("Dragonair", moves.map { it.first }, "Dragon Breath")
+        DroidballOverlayPresentation.recordOpponentFastMove(com.example.overdex.battle.custody.FastMoveIdentified(
+            com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT, "Dragonair", "Dragon Breath", 500_000_000, null, 0, "AUDIO_REFERENCE"))
+        val confirmed = DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.fastMoves.single()
+        assertTrue(confirmed.isConfirmed)
+        assertEquals(false, confirmed.isAudioFavored)
+    }
+
     @Test fun `an early HUD request keeps navigation controls visible until a native badge arrives`() {
         DroidballOverlayPresentation.reset()
         DroidballOverlayPresentation.showBattleHud()

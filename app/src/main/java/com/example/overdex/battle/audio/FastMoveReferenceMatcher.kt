@@ -94,6 +94,15 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
         private const val HOP_NANOS = 16_000_000L
         private const val MATCH_FRAMES = 25
 
+        /** Retention/presentation floor only, never a confirmed match or a probability. */
+        fun plausibleCandidate(candidates: List<FastMoveSoundCandidate>): FastMoveSoundCandidate? {
+            if (candidates.size < 2) return null
+            return candidates.maxByOrNull { it.similarity }?.takeIf {
+                it.similarity.isFinite() && it.changingSimilarity.isFinite() &&
+                    it.similarity >= .85f && it.changingSimilarity >= .65f
+            }
+        }
+
         /** Scores are similarities, not probabilities. Unknown and mixed sounds can be rejected. */
         fun accepts(candidates: List<FastMoveSoundCandidate>): Boolean {
             val ranked = candidates.sortedByDescending { it.similarity }

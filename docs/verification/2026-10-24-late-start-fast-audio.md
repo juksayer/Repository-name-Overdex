@@ -66,8 +66,9 @@ debug APK builds. APK SHA256:
 `f0ef90ea1deb9faac08435734da68e54cbcd20e0b2f9d4f650f8b39a77dbc002`.
 
 Both phones had no active Overdex service. The Pixel rejected its in-place update
-with `INSTALL_FAILED_INSUFFICIENT_STORAGE`; no data was deleted. Installation is
-deferred while adding the user's requested low-confidence move preference display.
+with `INSTALL_FAILED_INSUFFICIENT_STORAGE`; no data was deleted. This fix is now
+included in the [low-confidence display update](2026-10-24-low-confidence-fast-audio.md)
+installed on the Moondrop. The Pixel remains pending storage space.
 
 ## Remaining acceptance
 

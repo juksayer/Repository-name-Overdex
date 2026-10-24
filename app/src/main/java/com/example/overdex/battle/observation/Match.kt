@@ -793,6 +793,7 @@ class Match(
             DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
                 speciesName = candidates.speciesName,
                 moveNames = candidates.remainingMoveNames,
+                audioFavoredMoveName = candidates.audioPreference?.moveName,
             )
         }
         derivations.forEach { derivation ->

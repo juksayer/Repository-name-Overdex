@@ -49,6 +49,8 @@ data class OverlayMovePossibility(
     val effectivenessMultiplier: Double,
     val isConfirmed: Boolean = false,
     val energy: Int? = null,
+    /** Repeated weak audio favors this candidate, without confirmation or energy attribution. */
+    val isAudioFavored: Boolean = false,
 ) {
     val hazardous: Boolean get() = effectivenessMultiplier > 1.0
     /** The increase over neutral damage, for a compact live HUD warning. */
@@ -112,6 +114,7 @@ object DroidballOverlayPresentation {
     private var activeMoveEnergy: Map<String, Int> = emptyMap()
     private val confirmedFastMovesBySpecies = mutableMapOf<String, String>()
     private var opponentFastMoveCandidateNames: Set<String>? = null
+    private var opponentAudioFavoredMoveName: String? = null
     private val confirmedChargedMovesBySpecies = mutableMapOf<String, MutableSet<String>>()
     private val faintedSpeciesNames = mutableSetOf<String>()
 
@@ -183,6 +186,7 @@ object DroidballOverlayPresentation {
         activeOpponentSpeciesName = null
         confirmedFastMovesBySpecies.clear()
         opponentFastMoveCandidateNames = null
+        opponentAudioFavoredMoveName = null
         confirmedChargedMovesBySpecies.clear()
         faintedSpeciesNames.clear()
     }
@@ -270,6 +274,7 @@ object DroidballOverlayPresentation {
         }
         if (activeOpponentSpeciesName != speciesName) {
             opponentFastMoveCandidateNames = null
+            opponentAudioFavoredMoveName = null
         }
         activeOpponentSpeciesName = speciesName
         activeOpponentFastMoves = possibleFastMoves
@@ -312,11 +317,12 @@ object DroidballOverlayPresentation {
      * Narrows the visible move pool without discarding Reference Knowledge.
      * A later, contradictory observation may expand or replace this set.
      */
-    @Synchronized fun recordOpponentFastMoveCandidates(speciesName: String, moveNames: List<String>) {
+    @Synchronized fun recordOpponentFastMoveCandidates(speciesName: String, moveNames: List<String>, audioFavoredMoveName: String? = null) {
         if (!activeOpponentSpeciesName.equals(speciesName, ignoreCase = true)) return
         val candidates = moveNames.map(::normalizeMoveName).filter(String::isNotBlank).toSet()
         if (candidates.isEmpty() && activeOpponentFastMoves.isNotEmpty()) return
         opponentFastMoveCandidateNames = candidates
+        opponentAudioFavoredMoveName = audioFavoredMoveName?.let(::normalizeMoveName)?.takeIf { it in candidates }
         // Candidate pruning is provisional. Only a new resolved identity replaces
         // an evidence-confirmed move; a transient candidate set must not erase it.
         publishMovePossibilities()
@@ -349,7 +355,10 @@ object DroidballOverlayPresentation {
         } ?: activeOpponentFastMoves
         _activeOpponentMovePossibilities.value = OpponentMovePossibilities(
             speciesName,
-            scored(fastMoves).map { it.copy(isConfirmed = identifiedOpponentFastMove != null && normalizeMoveName(it.name) == normalizeMoveName(identifiedOpponentFastMove)) },
+            scored(fastMoves).map { it.copy(
+                isConfirmed = identifiedOpponentFastMove != null && normalizeMoveName(it.name) == normalizeMoveName(identifiedOpponentFastMove),
+                isAudioFavored = identifiedOpponentFastMove == null && normalizeMoveName(it.name) == opponentAudioFavoredMoveName,
+            ) },
             scored(activeOpponentChargedMoves.filter { confirmedCharged.size < 2 || normalizeMoveName(it.first) in confirmedCharged })
                 .map { it.copy(isConfirmed = normalizeMoveName(it.name) in confirmedCharged) }
         )

@@ -21,10 +21,13 @@ class LiveFastMoveSoundWitnessTest {
     @Test fun `late charged phase records subsequent audio without fabricating match start`() =
         captureAfter(GetReadyWitnessed)
 
-    private fun captureAfter(opening: TestimonyPayload) = runBlocking {
+    @Test fun `ambiguous comparison keeps its PCM and rejected status while overlapping windows are rate limited`() =
+        captureAfter(CountdownGlyphWitnessed("2", .99f, 1), ambiguous = true)
+
+    private fun captureAfter(opening: TestimonyPayload, ambiguous: Boolean = false) = runBlocking {
         val references = listOf("Spark" to "209-0_spark.wav", "Tackle" to "033-0_tackle.wav").map { (name, file) ->
             FastMoveSoundReference(name, file, requireNotNull(WavPcm16.decode(
-                File("src/main/assets/fast_move_sounds/$file").readBytes())))
+                File("src/main/assets/fast_move_sounds/${if (ambiguous) "209-0_spark.wav" else file}").readBytes())))
         }
         val matcher = FastMoveReferenceMatcher(references)
         val samples = StatChangeSoundMatcher.mono8k(references.first().audio).copyOf(12_800)
@@ -58,7 +61,7 @@ class LiveFastMoveSoundWitnessTest {
             val capture = articles.single { it.payload is AudioCaptured }
             val audio = capture.payload as AudioCaptured
             val measured = sound.payload as FastMoveSoundMeasured
-            assertTrue(measured.referenceMatchAccepted)
+            assertEquals(!ambiguous, measured.referenceMatchAccepted)
             assertEquals("Spark", measured.referenceCandidates.first().moveName)
             assertNull(measured.attackingSide)
             assertNull(measured.cueAttackingSide)
@@ -68,6 +71,7 @@ class LiveFastMoveSoundWitnessTest {
             assertEquals(1_200_000_000L, audio.durationNanos)
             assertTrue(File(root, audio.artifact.relativePath).isFile)
             assertTrue(articles.none { it.payload is FastMoveUseObserved })
+            assertTrue(articles.none { it.payload is FastMoveIdentified })
             assertTrue(articles.none { it.payload is MatchStarted })
             assertEquals(listOf(articles.single { it.payload == opening }.id.value), capture.evidenceReferences)
         } finally { witness.stop(); match.release(); root.deleteRecursively() }

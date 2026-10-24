@@ -49,8 +49,9 @@ does not feed historical move identities or energy conclusions back as evidence.
   charge-boundary regressions continue to pass.
 
 The full suite passes **1,078 tests** with no failures, errors or skips. The debug
-APK builds. Device installation is deferred until the related late-start audio
-gate correction is complete, avoiding two consecutive replacements on each phone.
+APK builds. This fix is included in the subsequent
+[combined Moondrop update](2026-10-24-low-confidence-fast-audio.md); the Pixel update
+was refused for insufficient storage.
 
 ## Remaining boundary
 
@@ -60,6 +61,7 @@ another witness supplies distinguishing evidence. Separate best-play estimates
 remain estimates. The saved historical match is unchanged.
 
 The same late-start recording had audio but no Fast Move audio analysis: the
-listener required a countdown or MatchStarted. Recovering listening from a
-witnessed in-progress charged phase is the next bounded fix. Audio comparison
-against the retained clip and a fresh live battle remain separate checks.
+listener required a countdown or MatchStarted. The subsequent
+[late-start audio fix](2026-10-24-late-start-fast-audio.md) recovers listening from
+a witnessed in-progress charged phase and documents the retained-clip comparison.
+A fresh live battle remains a separate acceptance check.

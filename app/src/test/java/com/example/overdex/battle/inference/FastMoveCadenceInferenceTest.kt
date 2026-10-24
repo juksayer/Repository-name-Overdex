@@ -290,6 +290,43 @@ class FastMoveCadenceInferenceTest {
         }
     }
 
+    @Test fun `repeated ambiguous audio favors a HUD candidate without identity energy or removing alternatives`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        assertTrue(engine.accept(weakReferenceSound("weak1", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(weakReferenceSound("weak2", 3_500_000_000L)).isEmpty())
+        val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
+        assertEquals("Spark", snapshot.audioPreference?.moveName)
+        assertEquals(listOf(ArticleId("weak1"), ArticleId("weak2")), snapshot.audioPreference?.evidenceIds)
+        assertNull(snapshot.identifiedMoveName)
+        assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
+        engine.accept(article("get-ready", com.example.overdex.battle.custody.GetReadyWitnessed).copy(monotonicTimeNanos = 4_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        engine.accept(weakReferenceSound("qte1", 5_000_000_000L))
+        engine.accept(weakReferenceSound("qte2", 6_500_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+    }
+
+    @Test fun `a weak preference expires and later confirmed audio replaces the low confidence status`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        engine.accept(weakReferenceSound("weak1", 2_000_000_000L)); engine.accept(weakReferenceSound("weak2", 3_500_000_000L))
+        engine.accept(article("tick", com.example.overdex.battle.custody.RawTestimony("next frame")).copy(monotonicTimeNanos = 10_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        engine.accept(referenceSound("strong1", "Spark", 11_000_000_000L))
+        assertEquals("Spark", (engine.accept(referenceSound("strong2", "Spark", 12_000_000_000L)).single().payload as FastMoveIdentified).moveName)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+    }
+
+    private fun weakReferenceSound(id: String, at: Long): RealityArticle {
+        val original = referenceSound(id, "Spark", at)
+        val sound = original.payload as FastMoveSoundMeasured
+        val best = sound.referenceCandidates.first().copy(similarity = .89f, changingSimilarity = .74f)
+        return original.copy(payload = sound.copy(referenceMatchAccepted = false, referenceCandidates = listOf(
+            best, best.copy(moveName = "Tackle", similarity = .82f, changingSimilarity = .68f),
+            best.copy(moveName = "Powder Snow", similarity = .81f, changingSimilarity = .67f))))
+    }
+
     private fun referenceSound(id: String, name: String, at: Long): RealityArticle {
         val candidate = com.example.overdex.battle.custody.FastMoveSoundCandidate(name, "reference-hash", .98f, .94f,
             100_000_000L, 0, 416_000_000L)

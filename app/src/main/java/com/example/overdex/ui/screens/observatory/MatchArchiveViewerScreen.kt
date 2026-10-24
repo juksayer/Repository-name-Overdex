@@ -596,7 +596,7 @@ private fun articleConfidenceLabel(confidence: Float?): String =
 private fun fastMoveSoundDescription(sound: ArchivedFastMoveSoundMeasured): String {
     val best = sound.referenceCandidates.firstOrNull()
     if (best != null) return "FAST MOVE AUDIO [${best.moveName}: " +
-        (if (sound.referenceMatchAccepted) "reference match, side unassigned" else "ambiguous candidate") +
+        (if (sound.referenceMatchAccepted) "reference match, side unassigned" else "low-confidence comparison, not confirmed; side unassigned") +
         "; spectrum=${String.format(Locale.ROOT, "%.3f", best.similarity)}, " +
         "changing=${String.format(Locale.ROOT, "%.3f", best.changingSimilarity)}]"
     return if (sound.audible) "FAST MOVE SOUND [onset=${sound.onsetOffsetNanos?.div(1_000_000)} ms, " +

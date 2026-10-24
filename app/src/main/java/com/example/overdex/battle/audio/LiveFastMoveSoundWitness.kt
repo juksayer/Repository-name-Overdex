@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 
 /** Recognizes independent audio windows from countdown through the final faint/result.
- * Strong matches retain their analyzed PCM; all other audio is volatile. One background worker
+ * Strong matches and rate-limited plausible comparisons retain their analyzed PCM. One background worker
  * and a conflated queue prevent the catalogue search from blocking capture or creating a backlog.
  */
 class LiveFastMoveSoundWitness(
@@ -90,6 +90,8 @@ class LiveFastMoveSoundWitness(
                 val recognizer = matcher.await()
                 prepared = true
                 val retained = ArrayDeque<Pair<String, Long>>()
+                var retainedGeneration = gate.generation
+                var lastComparisonAt: Long? = null
                 var previousSequence: Long? = null
                 var scans = 0
                 var skipped = 0L
@@ -98,12 +100,17 @@ class LiveFastMoveSoundWitness(
                 var reportAt = Long.MIN_VALUE
                 for (window in windows) {
                     if (!gate.accepts(window.startNanos, window.endNanos, window.generation)) continue
+                    if (retainedGeneration != window.generation) {
+                        retained.clear(); lastComparisonAt = null; retainedGeneration = window.generation
+                    }
                     previousSequence?.let { skipped += (window.sequence - it - 1).coerceAtLeast(0) }
                     previousSequence = window.sequence
                     if (System.nanoTime() - window.endNanos > 2_000_000_000L) continue
                     val started = System.nanoTime()
                     val candidates = recognizer.measureMono8k(window.samples)
                     val accepted = FastMoveReferenceMatcher.accepts(candidates)
+                    val keepComparison = !accepted && FastMoveReferenceMatcher.plausibleCandidate(candidates) != null &&
+                        (lastComparisonAt == null || window.startNanos - lastComparisonAt!! >= 1_500_000_000L)
                     val elapsed = System.nanoTime() - started
                     scans++; totalNanos += elapsed; maximumNanos = maxOf(maximumNanos, elapsed)
                     if (reportAt == Long.MIN_VALUE || window.endNanos - reportAt >= 5_000_000_000L) {
@@ -116,7 +123,7 @@ class LiveFastMoveSoundWitness(
                         ), window.endWallMillis, null, gate.triggerIds(), window.endNanos)
                         reportAt = window.endNanos
                     }
-                    if (accepted && pending.size < 16 && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
+                    if ((accepted || keepComparison) && pending.size < 16 && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
                         val best = candidates.first()
                         val alignedAt = window.startNanos + best.matchingOffsetNanos - best.referenceOffsetNanos
                         if (retained.none { it.first == best.moveName && abs(it.second - alignedAt) < 250_000_000L }) {
@@ -132,9 +139,11 @@ class LiveFastMoveSoundWitness(
                                 val measured = FastMoveSoundAnalyzer.measureMono8k(window.samples)
                                 pending[artifact.sha256 to window.startNanos] = PendingSound(window, measured.copy(
                                     analysisVersion = FastMoveReferenceMatcher.VERSION,
-                                    referenceCandidates = (candidates.take(3) + candidates.sortedByDescending { it.changingSimilarity }.take(3))
-                                        .distinctBy { it.moveName }.sortedByDescending { it.similarity },
-                                    referenceMatchAccepted = true,
+                                    // Ambiguous comparisons need every legal alternative's score, including low ranks.
+                                    referenceCandidates = if (keepComparison) candidates else
+                                        (candidates.take(3) + candidates.sortedByDescending { it.changingSimilarity }.take(3))
+                                            .distinctBy { it.moveName }.sortedByDescending { it.similarity },
+                                    referenceMatchAccepted = accepted,
                                     soundOnsetMonotonicNanos = measured.onsetOffsetNanos?.let { window.startNanos + it },
                                 ))
                                 match.custody.submitTestimony(SourceId("FAST_MOVE_STREAM_AUDIO_CAPTURE"),
@@ -143,6 +152,7 @@ class LiveFastMoveSoundWitness(
                                     window.endWallMillis - window.durationNanos / 1_000_000, null,
                                     gate.triggerIds(), window.startNanos)
                                 retained += best.moveName to alignedAt
+                                if (keepComparison) lastComparisonAt = window.startNanos
                                 while (retained.size > 64) retained.removeFirst()
                             } else if (artifact == null) {
                                 match.custody.submitInputAvailability(source, false, window.endWallMillis)
