@@ -10,6 +10,24 @@ JAVA_HOME="$PWD/.jbr" ./gradlew :app:testDebugUnitTest
 
 If `.jbr/` is absent on another machine, point `JAVA_HOME` at an installed compatible JDK, such as Android Studio's bundled `jbr` directory. Keep the JDK path machine-local; do not commit the runtime.
 
+## Debug-only diagnostics
+
+The accessibility probe service and its Android configuration live under
+`app/src/debug`. Release builds omit the service, its permission-bound component,
+its menu entries and its navigation route. Signal Observatory's Timeline Viewer
+and Match Calibration remain available. The probe is not a live battle input.
+
+To check this boundary, build both variants in addition to running the unit suite:
+
+```sh
+JAVA_HOME="$PWD/.jbr" ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease
+```
+
+Inspect the resulting merged manifests or packaged APKs: debug must include
+`AccessibilityProbeService`; release must not include it or its configuration.
+An unsigned release APK is a packaging check, not a publishable signed release.
+See the [first-release checklist](docs/plans/first-release.md) for remaining gates.
+
 ## Testing on a phone with existing data
 
 Back up the entire private app directory before running instrumentation tests on

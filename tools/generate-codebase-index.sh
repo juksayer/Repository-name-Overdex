@@ -106,6 +106,7 @@ the asset roots.
 EOF
 
 append_code_files "Production Kotlin and Java" "$repo_root/app/src/main/java"
+append_files "Debug-only diagnostics" "$repo_root/app/src/debug"
 append_unexpected_source_files "$repo_root/app/src/main/java"
 append_code_files "Unit tests" "$repo_root/app/src/test/java"
 append_code_files "Instrumentation tests" "$repo_root/app/src/androidTest/java"

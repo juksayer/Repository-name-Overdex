@@ -18,6 +18,13 @@ This document records cleanup candidates, intentional legacy systems, and known
 feature gaps. It is evidence for a later decision, not an instruction to delete
 files. Runtime ownership is documented in [PROJECT-MAP-v2.md](PROJECT-MAP-v2.md).
 
+**October 23 release boundary:** Accessibility Probe's service, manifest declaration
+and configuration now live in `app/src/debug`; release menus, focus order and
+navigation exclude the probe. The shared diagnostic event model/manager remain
+in source, but no release accessibility service receives events. Timeline Viewer
+and Match Calibration are unaffected. See the
+[first-release checklist](docs/plans/first-release.md) for the current release scope.
+
 ## Classification
 
 | Classification | Meaning |

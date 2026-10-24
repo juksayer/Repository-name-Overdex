@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens
 
+import com.example.overdex.BuildConfig
 import com.example.overdex.ui.components.rememberHandheldFocusManager
 import com.example.overdex.ui.components.HandheldFocusSync
 import com.example.overdex.ui.components.FilterSettings
@@ -58,7 +59,9 @@ fun SignalObservatoryScreen(
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
 ) {
-    val focusManager = rememberHandheldFocusManager(SignalObservatoryFocus.PROBE)
+    val focusManager = rememberHandheldFocusManager(
+        if (BuildConfig.DEBUG) SignalObservatoryFocus.PROBE else SignalObservatoryFocus.OBSERVATORY
+    )
 
     val visibleItems = remember {
         listOf(
@@ -70,7 +73,7 @@ fun SignalObservatoryScreen(
             SignalObservatoryFocus.CURVATURE,
             SignalObservatoryFocus.NOISE,
             SignalObservatoryFocus.CLOSE
-        )
+        ).filter { BuildConfig.DEBUG || it != SignalObservatoryFocus.PROBE }
     }
 
     LaunchedEffect(visibleItems) {
@@ -127,7 +130,7 @@ fun SignalObservatoryScreen(
         }
         onA {
             when (focusManager.currentItem) {
-                SignalObservatoryFocus.PROBE -> currentOnLaunchProbe()
+                SignalObservatoryFocus.PROBE -> if (BuildConfig.DEBUG) currentOnLaunchProbe()
                 SignalObservatoryFocus.OBSERVATORY -> currentOnLaunchObservatory()
                 SignalObservatoryFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
                 SignalObservatoryFocus.FILTERS_ENABLED -> currentOnFilterSettingsChange(
@@ -166,12 +169,14 @@ fun SignalObservatoryScreen(
             Text("LAUNCH", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            LauncherBox(
-                label = "Accessibility Probe",
-                selected = focusManager.currentItem == SignalObservatoryFocus.PROBE,
-                requester = bringIntoViewRequesters[SignalObservatoryFocus.PROBE]!!
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            if (BuildConfig.DEBUG) {
+                LauncherBox(
+                    label = "Accessibility Probe",
+                    selected = focusManager.currentItem == SignalObservatoryFocus.PROBE,
+                    requester = bringIntoViewRequesters[SignalObservatoryFocus.PROBE]!!
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
             LauncherBox(
                 label = "Timeline Viewer",
@@ -275,7 +280,9 @@ fun ResearcherModeOverlay(
     onA: (() -> Unit) -> Unit = {},
     onB: (() -> Unit) -> Unit = {},
 ) {
-    val focusManager = rememberHandheldFocusManager(ResearcherFocus.PROBE)
+    val focusManager = rememberHandheldFocusManager(
+        if (BuildConfig.DEBUG) ResearcherFocus.PROBE else ResearcherFocus.OBSERVATORY
+    )
     
     val visibleItems = remember {
         listOf(
@@ -283,7 +290,7 @@ fun ResearcherModeOverlay(
             ResearcherFocus.OBSERVATORY,
             ResearcherFocus.MATCH_CALIBRATION,
             ResearcherFocus.CLOSE
-        )
+        ).filter { BuildConfig.DEBUG || it != ResearcherFocus.PROBE }
     }
 
     LaunchedEffect(visibleItems) {
@@ -310,7 +317,7 @@ fun ResearcherModeOverlay(
         onDown { focusManager.moveDown() }
         onA {
             when (focusManager.currentItem) {
-                ResearcherFocus.PROBE -> currentOnLaunchProbe()
+                ResearcherFocus.PROBE -> if (BuildConfig.DEBUG) currentOnLaunchProbe()
                 ResearcherFocus.OBSERVATORY -> currentOnLaunchObservatory()
                 ResearcherFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
                 ResearcherFocus.CLOSE -> currentOnClose()
@@ -344,12 +351,14 @@ fun ResearcherModeOverlay(
             Text("LAUNCH", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            LauncherBox(
-                label = "Accessibility Probe",
-                selected = focusManager.currentItem == ResearcherFocus.PROBE,
-                requester = bringIntoViewRequesters[ResearcherFocus.PROBE]!!
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            if (BuildConfig.DEBUG) {
+                LauncherBox(
+                    label = "Accessibility Probe",
+                    selected = focusManager.currentItem == ResearcherFocus.PROBE,
+                    requester = bringIntoViewRequesters[ResearcherFocus.PROBE]!!
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             
             LauncherBox(
                 label = "Timeline Viewer",

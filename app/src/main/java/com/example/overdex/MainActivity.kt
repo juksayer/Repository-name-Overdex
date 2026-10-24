@@ -420,6 +420,9 @@ fun PokedexApp(
 
 ){
     val navController = rememberNavController()
+    val launchAccessibilityProbe: () -> Unit = {
+        if (BuildConfig.DEBUG) navController.navigate("accessibility_probe")
+    }
     var openPokedexSearchOnList by remember { mutableStateOf(false) }
     val hasBootedInSession by viewModel.hasBootedInSession.collectAsState()
     var filterSettings by remember { mutableStateOf(FilterSettings()) }
@@ -480,7 +483,7 @@ fun PokedexApp(
                 InstrumentCommand.OpenProfile -> navController.navigate("trainer_profile")
                 InstrumentCommand.OpenTimeline -> navController.navigate("shared_timeline")
                 InstrumentCommand.OpenChat -> navController.navigate("private_chat")
-                InstrumentCommand.OpenAccessibilityProbe -> navController.navigate("accessibility_probe")
+                InstrumentCommand.OpenAccessibilityProbe -> launchAccessibilityProbe()
                 InstrumentCommand.OpenSignalObservatory -> navController.navigate("signal_observatory")
                 InstrumentCommand.OpenMatchCalibration -> navController.navigate("match_calibration")
                 InstrumentCommand.OpenBattlePreview -> navController.navigate("battle_preview")
@@ -574,7 +577,7 @@ fun PokedexApp(
                         }
                     },
                     onSelect = { if (phase == MainMenuPhase.READY) registration.select() },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     isLogoInteractive = true
@@ -603,7 +606,7 @@ fun PokedexApp(
                     onFilterSettingsChange = { filterSettings = it },
                     onStart = { viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -640,7 +643,7 @@ fun PokedexApp(
                     onB = { if (bHandler != null) bHandler?.invoke() else navController.debugPopBackStack() },
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -708,7 +711,7 @@ fun PokedexApp(
                     onB = { navController.debugPopBackStack() },
                     onStart = { viewModel.toggleObservation() },
                     onSelect = { /* Reserved */ },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -817,7 +820,7 @@ fun PokedexApp(
                     onSelect = { selectHandler?.invoke() },
                     onStart = { startHandler?.invoke() },
                     onKeyActivated = { keyActivatedHandler?.invoke(it) },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     deploymentState = deploymentState,
                     frameCount = frameCount,
@@ -921,7 +924,7 @@ fun PokedexApp(
                         onEvolutionClick = { evolutionId ->
                             navController.navigate("detail/$evolutionId?binder=$binderMode")
                         },
-                        onLaunchProbe = { navController.navigate("accessibility_probe") },
+                        onLaunchProbe = launchAccessibilityProbe,
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         isBinderMode = binderMode,
                         viewModel = viewModel
@@ -978,7 +981,7 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -1129,47 +1132,49 @@ fun PokedexApp(
                     onTeamLibrary = { navController.navigate("team_library") },
                 )
             }
-            composable("accessibility_probe") {
-                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                
-                var probeTitle by remember { mutableStateOf("PROBE") }
-                var probeBreadcrumb by remember { mutableStateOf("/signal_observatory/accessibility_probe/") }
-                var probeLcdLines by remember { mutableStateOf(emptyList<String>()) }
+            if (BuildConfig.DEBUG) {
+                composable("accessibility_probe") {
+                    var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-                ODXFiShell(
-                    showBattleOverlay = false,
-                    viewModel = viewModel,
-                    filterSettings = filterSettings,
-                    onFilterSettingsChange = { filterSettings = it },
-                    title = probeTitle,
-                    breadcrumb = probeBreadcrumb,
-                    lcdLines = probeLcdLines,
-                    onUp = { upHandler?.invoke() },
-                    onDown = { downHandler?.invoke() },
-                    onA = { aHandler?.invoke() },
-                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
-                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
-                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
-                    deploymentState = deploymentState,
-                    frameCount = frameCount
-                ) {
-                    AccessibilityProbeScreen(
-                        onBack = { navController.debugPopBackStack() },
-                        onUp = { upHandler = it },
-                        onDown = { downHandler = it },
-                        onA = { aHandler = it },
-                        onB = { bHandler = it },
+                    var probeTitle by remember { mutableStateOf("PROBE") }
+                    var probeBreadcrumb by remember { mutableStateOf("/signal_observatory/accessibility_probe/") }
+                    var probeLcdLines by remember { mutableStateOf(emptyList<String>()) }
+
+                    ODXFiShell(
+                        showBattleOverlay = false,
+                        viewModel = viewModel,
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { filterSettings = it },
+                        title = probeTitle,
+                        breadcrumb = probeBreadcrumb,
+                        lcdLines = probeLcdLines,
+                        onUp = { upHandler?.invoke() },
+                        onDown = { downHandler?.invoke() },
+                        onA = { aHandler?.invoke() },
+                        onB = { bHandler?.invoke() ?: navController.debugPopBackStack() },
+                        onLaunchProbe = launchAccessibilityProbe,
+                        onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                        onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                         deploymentState = deploymentState,
-                        onUpdateInfo = { title, breadcrumb, lines ->
-                            probeTitle = title
-                            probeBreadcrumb = breadcrumb
-                            probeLcdLines = lines
-                        }
-                    )
+                        frameCount = frameCount
+                    ) {
+                        AccessibilityProbeScreen(
+                            onBack = { navController.debugPopBackStack() },
+                            onUp = { upHandler = it },
+                            onDown = { downHandler = it },
+                            onA = { aHandler = it },
+                            onB = { bHandler = it },
+                            deploymentState = deploymentState,
+                            onUpdateInfo = { title, breadcrumb, lines ->
+                                probeTitle = title
+                                probeBreadcrumb = breadcrumb
+                                probeLcdLines = lines
+                            }
+                        )
+                    }
                 }
             }
             composable("signal_observatory") {
@@ -1191,7 +1196,7 @@ fun PokedexApp(
                     onRight = { rightHandler?.invoke() },
                     onA = { aHandler?.invoke() },
                     onB = { bHandler?.invoke() ?: navController.debugPopBackStack() },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -1200,7 +1205,7 @@ fun PokedexApp(
                     SignalObservatoryScreen(
                         filterSettings = filterSettings,
                         onFilterSettingsChange = { filterSettings = it },
-                        onLaunchProbe = { navController.navigate("accessibility_probe") },
+                        onLaunchProbe = launchAccessibilityProbe,
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                         onBack = { navController.debugPopBackStack() },
@@ -1229,7 +1234,7 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -1276,7 +1281,7 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -1356,7 +1361,7 @@ fun PokedexApp(
                         onB = { bHandler?.invoke() },
                         onLcdDrag = { lcdDragHandler?.invoke(it) },
                         onLcdTap = { lcdTapHandler?.invoke() },
-                        onLaunchProbe = { navController.navigate("accessibility_probe") },
+                        onLaunchProbe = launchAccessibilityProbe,
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
                         onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                         deploymentState = deploymentState,
@@ -1505,7 +1510,7 @@ fun PokedexApp(
                     startLabel = "SAVE AS",
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,
@@ -1544,7 +1549,7 @@ fun PokedexApp(
                     viewModel = viewModel,
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = { navController.navigate("accessibility_probe") },
+                    onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
                     deploymentState = deploymentState,

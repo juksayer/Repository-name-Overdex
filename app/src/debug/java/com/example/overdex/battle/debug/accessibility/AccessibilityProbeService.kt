@@ -14,6 +14,7 @@ import com.example.overdex.battle.debug.observatory.RectData
  * and broadcasts events when the [AccessibilityProbeManager] is in an active 
  * recording state.
  */
+// This service is compiled and registered only in debug builds.
 class AccessibilityProbeService : AccessibilityService() {
 
     /**

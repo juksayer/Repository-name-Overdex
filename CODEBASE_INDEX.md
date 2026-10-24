@@ -18,7 +18,7 @@ listed individually because sprite, cry, and reference collections would bury
 the source inventory. Asset licensing and catalog files remain discoverable from
 the asset roots.
 
-## Production Kotlin and Java (472)
+## Production Kotlin and Java (471)
 
 - [`app/src/main/java/com/example/overdex/BattleMemory.kt`](app/src/main/java/com/example/overdex/BattleMemory.kt)
 - [`app/src/main/java/com/example/overdex/BattleMemoryUpdater.kt`](app/src/main/java/com/example/overdex/BattleMemoryUpdater.kt)
@@ -82,7 +82,6 @@ the asset roots.
 - [`app/src/main/java/com/example/overdex/battle/debug/ObservationPipelineDemo.kt`](app/src/main/java/com/example/overdex/battle/debug/ObservationPipelineDemo.kt)
 - [`app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeManager.kt`](app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeManager.kt)
 - [`app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeModel.kt`](app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeModel.kt)
-- [`app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeService.kt`](app/src/main/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeService.kt)
 - [`app/src/main/java/com/example/overdex/battle/debug/observatory/EvidenceSource.kt`](app/src/main/java/com/example/overdex/battle/debug/observatory/EvidenceSource.kt)
 - [`app/src/main/java/com/example/overdex/battle/debug/observatory/EvidenceSourceType.kt`](app/src/main/java/com/example/overdex/battle/debug/observatory/EvidenceSourceType.kt)
 - [`app/src/main/java/com/example/overdex/battle/debug/observatory/MatchMetadata.kt`](app/src/main/java/com/example/overdex/battle/debug/observatory/MatchMetadata.kt)
@@ -493,6 +492,12 @@ the asset roots.
 - [`app/src/main/java/com/example/overdex/ui/theme/Theme.kt`](app/src/main/java/com/example/overdex/ui/theme/Theme.kt)
 - [`app/src/main/java/com/example/overdex/ui/theme/Type.kt`](app/src/main/java/com/example/overdex/ui/theme/Type.kt)
 
+## Debug-only diagnostics (3)
+
+- [`app/src/debug/AndroidManifest.xml`](app/src/debug/AndroidManifest.xml)
+- [`app/src/debug/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeService.kt`](app/src/debug/java/com/example/overdex/battle/debug/accessibility/AccessibilityProbeService.kt)
+- [`app/src/debug/res/xml/accessibility_service_config.xml`](app/src/debug/res/xml/accessibility_service_config.xml)
+
 ## Non-source files inside the production code tree (12)
 
 These files are indexed separately because their placement under `app/src/main/java` needs review.
@@ -758,7 +763,7 @@ These files are indexed separately because their placement under `app/src/main/j
 - [`app/src/androidTest/java/com/example/overdex/ui/ReplayOpeningHpDeviceTest.kt`](app/src/androidTest/java/com/example/overdex/ui/ReplayOpeningHpDeviceTest.kt)
 - [`app/src/androidTest/java/com/example/overdex/ui/ReplayStatChangeDeviceTest.kt`](app/src/androidTest/java/com/example/overdex/ui/ReplayStatChangeDeviceTest.kt)
 
-## Android resources (44)
+## Android resources (43)
 
 - [`app/src/main/res/drawable-nodpi/countdown_glyph_1.png`](app/src/main/res/drawable-nodpi/countdown_glyph_1.png)
 - [`app/src/main/res/drawable-nodpi/countdown_glyph_2.png`](app/src/main/res/drawable-nodpi/countdown_glyph_2.png)
@@ -800,7 +805,6 @@ These files are indexed separately because their placement under `app/src/main/j
 - [`app/src/main/res/values/colors.xml`](app/src/main/res/values/colors.xml)
 - [`app/src/main/res/values/strings.xml`](app/src/main/res/values/strings.xml)
 - [`app/src/main/res/values/themes.xml`](app/src/main/res/values/themes.xml)
-- [`app/src/main/res/xml/accessibility_service_config.xml`](app/src/main/res/xml/accessibility_service_config.xml)
 - [`app/src/main/res/xml/archive_file_paths.xml`](app/src/main/res/xml/archive_file_paths.xml)
 - [`app/src/main/res/xml/backup_rules.xml`](app/src/main/res/xml/backup_rules.xml)
 - [`app/src/main/res/xml/data_extraction_rules.xml`](app/src/main/res/xml/data_extraction_rules.xml)

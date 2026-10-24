@@ -6,6 +6,9 @@ boundaries; it does not establish live recognition accuracy.
 
 ## Where to find the plans
 
+- [First-release checklist](../plans/first-release.md): October 23 scope for a
+  dependable training/recording beta, with acceptance gates and release preparation.
+  It limits the initial release without discarding the broader backlog.
 - [Battle priorities](../plans/battle-priorities.md): current implementation order
   agreed October 21, ranked by benefit before, during, and after battle. This
   supersedes the historical roadmap's ordering, not its retained source material.

@@ -4,6 +4,8 @@ Updated October 22, 2026. User direction: prioritize improvements that help befo
 during, or after a battle. Correct observations and timely decisions take priority
 over unrelated presentation work. This is the active ordered backlog; the
 [feature inventory](../reference/current-feature-status.md) records broader gaps.
+The [first-release checklist](first-release.md), added October 23, defines which
+of these capabilities need to be dependable for the initial training/recording beta.
 
 ## Work order
 
