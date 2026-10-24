@@ -1,0 +1,3089 @@
+{
+  "schemaVersion": 1,
+  "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+  "mediaIncluded": false,
+  "articles": [
+    {
+      "articleId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844734534,
+      "recordedAt": 1792844735083,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "speciesId": 205,
+        "ocrText": "Forretress",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2938,
+      "evidenceReferences": [
+        "dd8fda32-7e8b-454d-9feb-0346f903ceda"
+      ],
+      "monotonicTimeNanos": 47576851217711
+    },
+    {
+      "articleId": "d4d80039-9905-4846-8aec-d4e3484140db",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747064,
+      "recordedAt": 1792844747101,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 32,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 666381368,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3368,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d"
+      ],
+      "monotonicTimeNanos": 47589393225679
+    },
+    {
+      "articleId": "fcf3cf34-42af-40d4-a554-4930774afdbe",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747064,
+      "recordedAt": 1792844747109,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 33,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 666465483,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3369,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d"
+      ],
+      "monotonicTimeNanos": 47589393301252
+    },
+    {
+      "articleId": "e4cce82b-8226-43ea-9e4b-0546de4a2c20",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748030,
+      "recordedAt": 1792844748085,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 32,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 1632615631,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3423,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d",
+        "b28189a8-5284-4937-9b8e-e808737efc76"
+      ],
+      "monotonicTimeNanos": 47590359467910
+    },
+    {
+      "articleId": "04855c57-f570-46a5-9018-ab80a9ed7f39",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747166,
+      "recordedAt": 1792844748125,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Dragonair",
+        "speciesId": 148,
+        "ocrText": "Dragonair",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3424,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d",
+        "b28189a8-5284-4937-9b8e-e808737efc76"
+      ],
+      "monotonicTimeNanos": 47589464783082
+    },
+    {
+      "articleId": "d35b27be-1946-4440-9624-876ca55c9164",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747166,
+      "recordedAt": 1792844748139,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Dragonair",
+        "speciesName": "Dragonair",
+        "speciesId": 148,
+        "teamSlot": null,
+        "appearanceStartedAtNanos": 47589464783082,
+        "basis": "PLAYER_SPECIES_WITH_UNRESOLVED_ROSTER_SLOT"
+      },
+      "predecessorIds": [
+        "04855c57-f570-46a5-9018-ab80a9ed7f39"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47589464783082
+    },
+    {
+      "articleId": "6e978c0f-2597-41eb-a53f-e224b04e55e1",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748310,
+      "recordedAt": 1792844748338,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 32,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 1912458940,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3433,
+      "evidenceReferences": [
+        "04855c57-f570-46a5-9018-ab80a9ed7f39"
+      ],
+      "monotonicTimeNanos": 47590639326220
+    },
+    {
+      "articleId": "abb0c22d-f434-4868-b490-53653c1eeffc",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747419,
+      "recordedAt": 1792844748469,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.64021164,
+        "afterFraction": 0.6137566,
+        "lostFraction": 0.026455045
+      },
+      "predecessorIds": [],
+      "confidence": 0.69637525,
+      "sequenceNumber": 3443,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47589667679821
+    },
+    {
+      "articleId": "f9661f78-3130-4787-b39d-2b5bd1ac9c59",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748473,
+      "recordedAt": 1792844748490,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 33,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 2075601561,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3444,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d",
+        "d910fcef-07e3-4732-8f57-2862f40d17a6"
+      ],
+      "monotonicTimeNanos": 47590802448580
+    },
+    {
+      "articleId": "ec584150-5216-42ec-bd19-988b26d7f9cc",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747637,
+      "recordedAt": 1792844748513,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "speciesId": 205,
+        "ocrText": "Forretress",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3445,
+      "evidenceReferences": [
+        "fa741ade-5470-4a10-91ec-6e3f0cdf1d5d",
+        "d910fcef-07e3-4732-8f57-2862f40d17a6"
+      ],
+      "monotonicTimeNanos": 47589935474691
+    },
+    {
+      "articleId": "66ce9449-d46f-46b1-a341-cc62bf0ed90f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748534,
+      "recordedAt": 1792844748664,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 33,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47588726829050,
+        "elapsedNanos": 2136015004,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3448,
+      "evidenceReferences": [
+        "ec584150-5216-42ec-bd19-988b26d7f9cc"
+      ],
+      "monotonicTimeNanos": 47590862863533
+    },
+    {
+      "articleId": "08c36040-e6c0-455c-995e-9adfdb6d5cf6",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748755,
+      "recordedAt": 1792844748779,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 34,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 1842414558,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3456,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529"
+      ],
+      "monotonicTimeNanos": 47591083620014
+    },
+    {
+      "articleId": "4f120645-5c2a-45f8-bf05-776f3d4e47ce",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748755,
+      "recordedAt": 1792844748786,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 35,
+        "status": "OPENED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 1842481277,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3457,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529"
+      ],
+      "monotonicTimeNanos": 47591083676941
+    },
+    {
+      "articleId": "92503932-48ba-408b-84ca-ce84c2e10bce",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748570,
+      "recordedAt": 1792844749105,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.9417989,
+        "afterFraction": 0.8941799,
+        "lostFraction": 0.047619045
+      },
+      "predecessorIds": [],
+      "confidence": 0.7613051,
+      "sequenceNumber": 3481,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47590859980929
+    },
+    {
+      "articleId": "12e0bc90-f4bb-4c39-828c-899df91708e5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748570,
+      "recordedAt": 1792844749124,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.6137566,
+        "afterFraction": 0.5638298,
+        "lostFraction": 0.049926817
+      },
+      "predecessorIds": [],
+      "confidence": 0.74034786,
+      "sequenceNumber": 3484,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47590859980929
+    },
+    {
+      "articleId": "a24fb740-590e-4b5c-9ade-47be5bb9a346",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749126,
+      "recordedAt": 1792844749658,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.8730159,
+        "afterFraction": 0.84656084,
+        "lostFraction": 0.026455045
+      },
+      "predecessorIds": [],
+      "confidence": 0.73810977,
+      "sequenceNumber": 3510,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47591380278220
+    },
+    {
+      "articleId": "59077924-37fa-42bf-a785-e822df65eb32",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747419,
+      "recordedAt": 1792844749690,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:abb0c22d-f434-4868-b490-53653c1eeffc",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "abb0c22d-f434-4868-b490-53653c1eeffc"
+      ],
+      "confidence": 0.69637525,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47589667679821
+    },
+    {
+      "articleId": "dca607dd-03e4-4464-a2fb-c762aef15564",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749451,
+      "recordedAt": 1792844749868,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 511925207,
+        "peakColorDistance": 0.919,
+        "sampleCount": 5,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.91899997
+      },
+      "predecessorIds": [],
+      "confidence": 0.99189997,
+      "sequenceNumber": 3523,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47591714149191
+    },
+    {
+      "articleId": "ff6dfdfa-1c9f-42d7-8dc9-f7e4190e8774",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844747835,
+      "recordedAt": 1792844749913,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": null,
+        "recognizedText": "Go, Dragonair!\nNOT VERY EFFECTIVE."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3533,
+      "evidenceReferences": [
+        "25758283-5dd4-4efe-8316-10e5b3c2dcbf"
+      ],
+      "monotonicTimeNanos": 47590151566640
+    },
+    {
+      "articleId": "939d655f-26de-4a8c-be2e-46753dcd412b",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749810,
+      "recordedAt": 1792844749942,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 34,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 2898193414,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3537,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529",
+        "fce8deb0-a178-4c83-8103-c794a98d8323"
+      ],
+      "monotonicTimeNanos": 47592139412827
+    },
+    {
+      "articleId": "88f59ce6-445a-4f0b-bdbb-489c1f18a9d0",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748905,
+      "recordedAt": 1792844749957,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Dragonair",
+        "speciesId": 148,
+        "ocrText": "Dragonair",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3538,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529",
+        "fce8deb0-a178-4c83-8103-c794a98d8323"
+      ],
+      "monotonicTimeNanos": 47591202223984
+    },
+    {
+      "articleId": "55d78b79-587c-40e5-a19b-f47a10615bef",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750067,
+      "recordedAt": 1792844750121,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 34,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 3154488387,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3547,
+      "evidenceReferences": [
+        "88f59ce6-445a-4f0b-bdbb-489c1f18a9d0"
+      ],
+      "monotonicTimeNanos": 47592395706915
+    },
+    {
+      "articleId": "54bb9e99-12c8-4d0b-8bd9-ae84bb80b2ed",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750230,
+      "recordedAt": 1792844750230,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 35,
+        "status": "CONFIRMED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 3317440226,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3551,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529",
+        "db65c923-963e-4016-a7b8-db69e8bd37a5"
+      ],
+      "monotonicTimeNanos": 47592558653702
+    },
+    {
+      "articleId": "e085cc30-391f-42bb-837e-dcd2614d597e",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748570,
+      "recordedAt": 1792844750240,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:92503932-48ba-408b-84ca-ce84c2e10bce",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "92503932-48ba-408b-84ca-ce84c2e10bce",
+        "2e288304-6100-4d47-a1bc-24d142f57139"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47590859980929
+    },
+    {
+      "articleId": "78cd9d37-878b-4c5c-973c-5db9035c502c",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749143,
+      "recordedAt": 1792844750247,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "speciesId": 205,
+        "ocrText": "Forretress",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3552,
+      "evidenceReferences": [
+        "babb5c8f-52cd-41d2-abe7-76270cdc3529",
+        "db65c923-963e-4016-a7b8-db69e8bd37a5"
+      ],
+      "monotonicTimeNanos": 47591380278220
+    },
+    {
+      "articleId": "3144d913-a7d2-46ac-b504-2194157d60e5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748570,
+      "recordedAt": 1792844750459,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:12e0bc90-f4bb-4c39-828c-899df91708e5",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "12e0bc90-f4bb-4c39-828c-899df91708e5",
+        "41fc0241-3bb6-4ed4-8502-ef18d468b044"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47590859980929
+    },
+    {
+      "articleId": "14c8b0a4-7a5a-4d62-a65e-46d6f239c7c0",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749582,
+      "recordedAt": 1792844750470,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.5638298,
+        "afterFraction": 0.53723407,
+        "lostFraction": 0.026595712
+      },
+      "predecessorIds": [],
+      "confidence": 0.7158515,
+      "sequenceNumber": 3554,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47591856513945
+    },
+    {
+      "articleId": "ce73917e-7f1d-42b3-8c57-76b77d16795f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750298,
+      "recordedAt": 1792844750486,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 35,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "ENTRY",
+        "triggerMonotonicNanos": 47589241188945,
+        "elapsedNanos": 3386128670,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3557,
+      "evidenceReferences": [
+        "78cd9d37-878b-4c5c-973c-5db9035c502c"
+      ],
+      "monotonicTimeNanos": 47592627346626
+    },
+    {
+      "articleId": "db25210c-c791-4dd3-95e0-83308ff043de",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750044,
+      "recordedAt": 1792844750556,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.84656084,
+        "afterFraction": 0.8031915,
+        "lostFraction": 0.043369353
+      },
+      "predecessorIds": [],
+      "confidence": 0.75262684,
+      "sequenceNumber": 3568,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47592337293837
+    },
+    {
+      "articleId": "bb5f29f7-e6fd-44d1-ac03-1e513c538135",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749714,
+      "recordedAt": 1792844750651,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 1058010886
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 3583,
+      "evidenceReferences": [
+        "41fc0241-3bb6-4ed4-8502-ef18d468b044",
+        "7f9b382b-38b3-458b-a3b9-070a3622f727"
+      ],
+      "monotonicTimeNanos": 47591994970573
+    },
+    {
+      "articleId": "81b8549a-6852-4a11-ae9b-b7a559b67603",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748794,
+      "recordedAt": 1792844750656,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": null,
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3584,
+      "evidenceReferences": [
+        "5da19a07-f08c-42d0-ac5c-d119dcd400b4"
+      ],
+      "monotonicTimeNanos": 47591084540691
+    },
+    {
+      "articleId": "edb14a11-8032-42a9-a81d-c7ff1a4766e8",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750645,
+      "recordedAt": 1792844750724,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 36,
+        "status": "OPENED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 3322341028,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3587,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d"
+      ],
+      "monotonicTimeNanos": 47592973925619
+    },
+    {
+      "articleId": "37af7bb5-c662-414b-9869-edba275b69de",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748905,
+      "recordedAt": 1792844750747,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:ea1b5def-92ea-4a00-9e77-cc93f9f84a85",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "ea1b5def-92ea-4a00-9e77-cc93f9f84a85",
+        "a24fb740-590e-4b5c-9ade-47be5bb9a346",
+        "e4681170-b11d-4d5d-83de-da2db7e23802"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591202223984
+    },
+    {
+      "articleId": "4fb269a4-cdd6-46d2-a19e-dda75339b427",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750645,
+      "recordedAt": 1792844750753,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 37,
+        "status": "OPENED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 3322570976,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3588,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d"
+      ],
+      "monotonicTimeNanos": 47592974136244
+    },
+    {
+      "articleId": "40af46b0-8158-41f4-8a5c-53eb764feeab",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750520,
+      "recordedAt": 1792844750763,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1044876042,
+        "peakColorDistance": 0.9271,
+        "sampleCount": 6,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9271
+      },
+      "predecessorIds": [],
+      "confidence": 0.99271,
+      "sequenceNumber": 3591,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47592759025233
+    },
+    {
+      "articleId": "56773851-9bd2-4ba0-80f9-ed723cdc2c94",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750705,
+      "recordedAt": 1792844751014,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.53723407,
+        "afterFraction": 0.5053192,
+        "lostFraction": 0.03191489
+      },
+      "predecessorIds": [],
+      "confidence": 0.718744,
+      "sequenceNumber": 3617,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47592963052701
+    },
+    {
+      "articleId": "11f4b184-1982-482e-9cc5-60372f503b07",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749301,
+      "recordedAt": 1792844751136,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": null,
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3621,
+      "evidenceReferences": [
+        "13511030-ae6b-4d60-8848-8a7ba4a4d209"
+      ],
+      "monotonicTimeNanos": 47591556257092
+    },
+    {
+      "articleId": "f407f2f9-ae92-42d3-9f85-f73710fa3dbe",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749301,
+      "recordedAt": 1792844751142,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "moveName": "Volt Switch",
+        "moveDurationNanos": 2000000000,
+        "observedMedianIntervalNanos": null,
+        "cadenceSampleCount": 0,
+        "basis": "EFFECTIVENESS_TEXT_AND_ACTIVE_SPECIES_REFERENCE_KNOWLEDGE_UNIQUE_DIRECTION"
+      },
+      "predecessorIds": [
+        "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "d35b27be-1946-4440-9624-876ca55c9164",
+        "5d212a4d-923b-45ed-bf36-8c086a920ee6",
+        "21b9f594-a577-48b2-a54a-20d9ff83df22",
+        "fcf3cf34-42af-40d4-a554-4930774afdbe",
+        "ec584150-5216-42ec-bd19-988b26d7f9cc",
+        "4f120645-5c2a-45f8-bf05-776f3d4e47ce",
+        "78cd9d37-878b-4c5c-973c-5db9035c502c",
+        "d4d80039-9905-4846-8aec-d4e3484140db",
+        "11f4b184-1982-482e-9cc5-60372f503b07"
+      ],
+      "confidence": 0.88199997,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591556257092
+    },
+    {
+      "articleId": "d0429560-9700-42cb-acda-106b67ebf76c",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748570,
+      "recordedAt": 1792844751231,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "e085cc30-391f-42bb-837e-dcd2614d597e",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47590859980929
+    },
+    {
+      "articleId": "3d63a516-330c-4d15-8f8e-90546569e41d",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844748905,
+      "recordedAt": 1792844751239,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "37af7bb5-c662-414b-9869-edba275b69de",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591202223984
+    },
+    {
+      "articleId": "c49e46cb-0f90-422e-9829-2817b5fc31e0",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750952,
+      "recordedAt": 1792844751270,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 482317444,
+        "peakColorDistance": 0.93439,
+        "sampleCount": 7,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.93439
+      },
+      "predecessorIds": [],
+      "confidence": 0.99343896,
+      "sequenceNumber": 3626,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47593241342677
+    },
+    {
+      "articleId": "7805aed6-92d3-4080-8313-b27b95ca8dff",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750964,
+      "recordedAt": 1792844751338,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.8031915,
+        "afterFraction": 0.75132275,
+        "lostFraction": 0.051868737
+      },
+      "predecessorIds": [],
+      "confidence": 0.75488,
+      "sequenceNumber": 3636,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47593241342677
+    },
+    {
+      "articleId": "9a4f04c9-dde8-423b-b3e0-9fb71c60d58e",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750691,
+      "recordedAt": 1792844751474,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 968082128
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 3651,
+      "evidenceReferences": [
+        "7f9b382b-38b3-458b-a3b9-070a3622f727",
+        "0b77306a-a3c2-4798-9970-3ecec7c5d4e6"
+      ],
+      "monotonicTimeNanos": 47592963052701
+    },
+    {
+      "articleId": "822c5b4b-57f0-499f-8ecc-856e20f110ce",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749582,
+      "recordedAt": 1792844751734,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:14c8b0a4-7a5a-4d62-a65e-46d6f239c7c0",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "14c8b0a4-7a5a-4d62-a65e-46d6f239c7c0",
+        "7f9b382b-38b3-458b-a3b9-070a3622f727",
+        "bb5f29f7-e6fd-44d1-ac03-1e513c538135"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591856513945
+    },
+    {
+      "articleId": "ab799d76-d2d4-4759-b388-6e3427b6701f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751466,
+      "recordedAt": 1792844751748,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 504418279,
+        "peakColorDistance": 0.9468559,
+        "sampleCount": 9,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9468559
+      },
+      "predecessorIds": [],
+      "confidence": 0.9946856,
+      "sequenceNumber": 3659,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47593745760956
+    },
+    {
+      "articleId": "0961edb3-e316-46f4-9758-8330c6cd7303",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751515,
+      "recordedAt": 1792844751864,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.5053192,
+        "afterFraction": 0.47089946,
+        "lostFraction": 0.034419715
+      },
+      "predecessorIds": [],
+      "confidence": 0.71869326,
+      "sequenceNumber": 3667,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47593745760956
+    },
+    {
+      "articleId": "7de231dd-86f9-47af-8628-505e1792c67f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749451,
+      "recordedAt": 1792844751910,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:1654cfad-1924-478c-a3cb-0c33cb1bb248",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1654cfad-1924-478c-a3cb-0c33cb1bb248",
+        "dca607dd-03e4-4464-a2fb-c762aef15564"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591714149191
+    },
+    {
+      "articleId": "179b9498-0f98-427e-b7af-547377f8312a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844749451,
+      "recordedAt": 1792844751913,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "7de231dd-86f9-47af-8628-505e1792c67f",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47591714149191
+    },
+    {
+      "articleId": "92820258-8e25-436c-b414-771397decdaf",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751921,
+      "recordedAt": 1792844752056,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 419192333,
+        "peakColorDistance": 0.9521703,
+        "sampleCount": 10,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9521703
+      },
+      "predecessorIds": [],
+      "confidence": 0.995217,
+      "sequenceNumber": 3680,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47594164953289
+    },
+    {
+      "articleId": "4b7b14f7-2562-4eed-9212-864bdbbf15c5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751629,
+      "recordedAt": 1792844752086,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 909335091
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 3684,
+      "evidenceReferences": [
+        "0b77306a-a3c2-4798-9970-3ecec7c5d4e6",
+        "7cb6dd27-32d5-44b0-8e99-0843a8108293"
+      ],
+      "monotonicTimeNanos": 47593872387792
+    },
+    {
+      "articleId": "4a5002d3-060f-446a-90f8-77f218a1dee3",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752141,
+      "recordedAt": 1792844752152,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 37,
+        "status": "CONFIRMED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 4818749510,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3687,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d",
+        "5be0609c-d6aa-4642-8161-d760c1dd4e20"
+      ],
+      "monotonicTimeNanos": 47594470316080
+    },
+    {
+      "articleId": "93d87dc4-f2eb-40d5-bbac-602d5c9c3e82",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751119,
+      "recordedAt": 1792844752164,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "speciesId": 205,
+        "ocrText": "Forretress",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3688,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d",
+        "5be0609c-d6aa-4642-8161-d760c1dd4e20"
+      ],
+      "monotonicTimeNanos": 47593396963578
+    },
+    {
+      "articleId": "0b8021e6-b13c-4261-b995-f748412f0829",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752168,
+      "recordedAt": 1792844752367,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 36,
+        "status": "TIMED_OUT",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 4845551961,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3693,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d"
+      ],
+      "monotonicTimeNanos": 47594497135458
+    },
+    {
+      "articleId": "43923d50-99ff-469e-923d-f7faa0b6bbd2",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752183,
+      "recordedAt": 1792844752374,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 37,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 4859909566,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3695,
+      "evidenceReferences": [
+        "93d87dc4-f2eb-40d5-bbac-602d5c9c3e82"
+      ],
+      "monotonicTimeNanos": 47594511494574
+    },
+    {
+      "articleId": "b25b1740-a225-40fb-b64b-70d7c80c02dd",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752010,
+      "recordedAt": 1792844752394,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.75132275,
+        "afterFraction": 0.7287234,
+        "lostFraction": 0.02259934
+      },
+      "predecessorIds": [],
+      "confidence": 0.7282632,
+      "sequenceNumber": 3699,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47594303012262
+    },
+    {
+      "articleId": "5aed4807-58a2-4c4b-8860-311b42ea8504",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750044,
+      "recordedAt": 1792844752504,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:db25210c-c791-4dd3-95e0-83308ff043de",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "db25210c-c791-4dd3-95e0-83308ff043de",
+        "40af46b0-8158-41f4-8a5c-53eb764feeab",
+        "d02b454e-0a9b-4bc6-839c-aa547ebc7a2e"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47592337293837
+    },
+    {
+      "articleId": "e3e9dc5b-4f40-410c-8b70-175afb617afd",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750044,
+      "recordedAt": 1792844752508,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "5aed4807-58a2-4c4b-8860-311b42ea8504",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47592337293837
+    },
+    {
+      "articleId": "744b3d3c-55b1-4b6f-b805-c3bdb56927f8",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750705,
+      "recordedAt": 1792844752513,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:56773851-9bd2-4ba0-80f9-ed723cdc2c94",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "0b77306a-a3c2-4798-9970-3ecec7c5d4e6",
+        "56773851-9bd2-4ba0-80f9-ed723cdc2c94",
+        "9a4f04c9-dde8-423b-b3e0-9fb71c60d58e"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47592963052701
+    },
+    {
+      "articleId": "0f53b6b4-7dc1-4f3e-ae8e-989f533ed3e8",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752548,
+      "recordedAt": 1792844752575,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 36,
+        "status": "CONFIRMED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 5225282780,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3716,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d",
+        "4fc8bdd1-a937-4e5b-a5c9-591982bbd26b"
+      ],
+      "monotonicTimeNanos": 47594876862319
+    },
+    {
+      "articleId": "8cf3851e-6a1e-4606-91f0-7072906f9baf",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751773,
+      "recordedAt": 1792844752584,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Dragonair",
+        "speciesId": 148,
+        "ocrText": "Dragonair",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3717,
+      "evidenceReferences": [
+        "32d430a0-0201-494f-97b5-a82b4ed3806d",
+        "4fc8bdd1-a937-4e5b-a5c9-591982bbd26b"
+      ],
+      "monotonicTimeNanos": 47594033276401
+    },
+    {
+      "articleId": "0d9fc0b2-2d9d-4cee-b6d5-53d10b593fa5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752600,
+      "recordedAt": 1792844752632,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 36,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "CRY",
+        "triggerMonotonicNanos": 47589651549591,
+        "elapsedNanos": 5277717629,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3721,
+      "evidenceReferences": [
+        "8cf3851e-6a1e-4606-91f0-7072906f9baf"
+      ],
+      "monotonicTimeNanos": 47594929291595
+    },
+    {
+      "articleId": "7e0f5b1b-abfe-4f64-9220-c4a3709d9377",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752471,
+      "recordedAt": 1792844752676,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 594372820,
+        "peakColorDistance": 0.96125793,
+        "sampleCount": 12,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.96125793
+      },
+      "predecessorIds": [],
+      "confidence": 0.99612576,
+      "sequenceNumber": 3724,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47594759326109
+    },
+    {
+      "articleId": "b755a00c-4bb0-4a16-9638-e88a072c9407",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752458,
+      "recordedAt": 1792844752765,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.7287234,
+        "afterFraction": 0.7074468,
+        "lostFraction": 0.021276593
+      },
+      "predecessorIds": [],
+      "confidence": 0.7245928,
+      "sequenceNumber": 3733,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47594759326109
+    },
+    {
+      "articleId": "8e274863-4c20-4aa2-8c21-ffd985b8e7b4",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750342,
+      "recordedAt": 1792844752990,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": null,
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3746,
+      "evidenceReferences": [
+        "98e7eaca-cea6-4723-be3d-be6b2231f83e"
+      ],
+      "monotonicTimeNanos": 47592623230011
+    },
+    {
+      "articleId": "26ee10cf-3a75-407c-82ab-8da99e21c700",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752674,
+      "recordedAt": 1792844753216,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": null,
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3758,
+      "evidenceReferences": [
+        "c517c44c-e403-4f7d-b447-2e13d332e0b8"
+      ],
+      "monotonicTimeNanos": 47594990354465
+    },
+    {
+      "articleId": "d3cf3320-e44a-41de-a3de-eea570db8dd5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751515,
+      "recordedAt": 1792844753357,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:0961edb3-e316-46f4-9758-8330c6cd7303",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "0961edb3-e316-46f4-9758-8330c6cd7303",
+        "4b7b14f7-2562-4eed-9212-864bdbbf15c5",
+        "7cb6dd27-32d5-44b0-8e99-0843a8108293"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47593745760956
+    },
+    {
+      "articleId": "397c09ee-9db9-410f-80da-5bd5227e7e96",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750964,
+      "recordedAt": 1792844753377,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7805aed6-92d3-4080-8313-b27b95ca8dff",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "7805aed6-92d3-4080-8313-b27b95ca8dff",
+        "7be3b430-7643-466d-ae61-792f00330aa3",
+        "c49e46cb-0f90-422e-9829-2817b5fc31e0"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47593241342677
+    },
+    {
+      "articleId": "ba0062be-41e0-4431-9574-580d945bc7c3",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750964,
+      "recordedAt": 1792844753381,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "397c09ee-9db9-410f-80da-5bd5227e7e96",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47593241342677
+    },
+    {
+      "articleId": "8ba0f046-aa73-4698-a913-8a690154a8ce",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844753322,
+      "recordedAt": 1792844753992,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3783,
+      "evidenceReferences": [
+        "744d8053-e1de-423e-9235-f453974a4e4b"
+      ],
+      "monotonicTimeNanos": 47595631544946
+    },
+    {
+      "articleId": "dd3c7dfc-80f8-4027-a54e-bd0e18ab3059",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751466,
+      "recordedAt": 1792844754002,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:9b9b00b5-51de-4e84-9c0b-98f50ac42629",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "9b9b00b5-51de-4e84-9c0b-98f50ac42629",
+        "ab799d76-d2d4-4759-b388-6e3427b6701f",
+        "92820258-8e25-436c-b414-771397decdaf"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47593745760956
+    },
+    {
+      "articleId": "b8373f71-2d80-4f86-9fb5-1592a25262a1",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751466,
+      "recordedAt": 1792844754005,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "dd3c7dfc-80f8-4027-a54e-bd0e18ab3059",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47593745760956
+    },
+    {
+      "articleId": "05540d07-2019-4f27-8faa-f68783375322",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751921,
+      "recordedAt": 1792844754025,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:8c71e6e0-50e0-484c-9897-ca2bf8d940fa",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "8c71e6e0-50e0-484c-9897-ca2bf8d940fa",
+        "b25b1740-a225-40fb-b64b-70d7c80c02dd"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47594164953289
+    },
+    {
+      "articleId": "f8b9afea-373b-41d2-98a6-e43a81d8ab65",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844751921,
+      "recordedAt": 1792844754034,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "05540d07-2019-4f27-8faa-f68783375322",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47594164953289
+    },
+    {
+      "articleId": "dc46bb91-619b-4672-bfdc-c7350eb82b83",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752471,
+      "recordedAt": 1792844754048,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:30c2fb07-87a1-496e-90bf-f3c661afe4d7",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "30c2fb07-87a1-496e-90bf-f3c661afe4d7",
+        "7e0f5b1b-abfe-4f64-9220-c4a3709d9377",
+        "b755a00c-4bb0-4a16-9638-e88a072c9407"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47594759326109
+    },
+    {
+      "articleId": "f941ed39-0138-42cc-81e5-d6115ebf5c1a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844752471,
+      "recordedAt": 1792844754072,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "dc46bb91-619b-4672-bfdc-c7350eb82b83",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47594759326109
+    },
+    {
+      "articleId": "f66a4a3c-fdde-4764-b3fa-d8d6dacb153b",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844750694,
+      "recordedAt": 1792844754269,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": "OPPONENT",
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3794,
+      "evidenceReferences": [
+        "233bd1d5-4fe3-44c8-a591-ab0b5ab3ad7c"
+      ],
+      "monotonicTimeNanos": 47592963052701
+    },
+    {
+      "articleId": "243defe9-201a-4fce-94e9-fe72d9819b00",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844757330,
+      "recordedAt": 1792844757331,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 38,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47599658250712,
+        "elapsedNanos": 346510,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3858,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47599658618108
+    },
+    {
+      "articleId": "c7b37696-ccc8-4cc8-8199-365d3dbc0a77",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844757773,
+      "recordedAt": 1792844757884,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 39,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47600101667423,
+        "elapsedNanos": 111406,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3875,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47600101813152
+    },
+    {
+      "articleId": "953c3011-3c7c-42d0-b309-79464a56e40a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844758388,
+      "recordedAt": 1792844758389,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 38,
+        "status": "CONFIRMED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47599658250712,
+        "elapsedNanos": 1059097136,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3891,
+      "evidenceReferences": [
+        "38fd78f3-80ae-49cf-a42f-8ccb7be08d00"
+      ],
+      "monotonicTimeNanos": 47600717364567
+    },
+    {
+      "articleId": "61beacb3-b3cf-48b8-afd4-4e8c11dd7be1",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844758865,
+      "recordedAt": 1792844758865,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 39,
+        "status": "CONFIRMED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47600101667423,
+        "elapsedNanos": 1092329223,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3906,
+      "evidenceReferences": [
+        "8c876fe8-9789-46c5-a301-396020a59933"
+      ],
+      "monotonicTimeNanos": 47601194051750
+    },
+    {
+      "articleId": "eb4d4454-8a00-45cd-8406-accad471192b",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844760647,
+      "recordedAt": 1792844761633,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3961,
+      "evidenceReferences": [
+        "d42c1eb4-1a17-4e7a-889a-ab143ec5b66a"
+      ],
+      "monotonicTimeNanos": 47602952959373
+    },
+    {
+      "articleId": "6b788181-00aa-408d-8c7a-9991ea028b0d",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844760647,
+      "recordedAt": 1792844761646,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Dragonair",
+        "speciesId": 148,
+        "ocrText": "Dragonair used Wrap!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3964,
+      "evidenceReferences": [
+        "d42c1eb4-1a17-4e7a-889a-ab143ec5b66a"
+      ],
+      "monotonicTimeNanos": 47602952959373
+    },
+    {
+      "articleId": "d0be510b-d203-41a5-9fb1-2d10a126c517",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844761661,
+      "recordedAt": 1792844761691,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 39,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47600101667423,
+        "elapsedNanos": 3888567991,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3969,
+      "evidenceReferences": [
+        "6b788181-00aa-408d-8c7a-9991ea028b0d"
+      ],
+      "monotonicTimeNanos": 47603990255675
+    },
+    {
+      "articleId": "ecb2d066-c3c0-422c-91d0-5dac32235762",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844763449,
+      "recordedAt": 1792844763450,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 40,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47605777489498,
+        "elapsedNanos": 67032,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4040,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47605777576634
+    },
+    {
+      "articleId": "67861257-51ca-41f0-9fb4-ddaab4e3719b",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844764023,
+      "recordedAt": 1792844764037,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 41,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47606351545441,
+        "elapsedNanos": 60833,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4057,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47606351623983
+    },
+    {
+      "articleId": "48372f45-f8d9-45f9-9957-858ab77f1a0d",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844764958,
+      "recordedAt": 1792844764959,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 40,
+        "status": "TIMED_OUT",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47605777489498,
+        "elapsedNanos": 1509814057,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4089,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47607287323034
+    },
+    {
+      "articleId": "2dd99c79-1504-4515-89ac-9372dda53db3",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844765536,
+      "recordedAt": 1792844765537,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 41,
+        "status": "TIMED_OUT",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47606351545441,
+        "elapsedNanos": 1513594838,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4121,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47607865162779
+    },
+    {
+      "articleId": "fd417868-771a-45e7-bd29-cb77fa0ae030",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844766458,
+      "recordedAt": 1792844766458,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 40,
+        "status": "EXPIRED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47605777489498,
+        "elapsedNanos": 3009049936,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4158,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47608786578027
+    },
+    {
+      "articleId": "580c8687-c115-4b55-b181-7810fb7edf65",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844765806,
+      "recordedAt": 1792844767015,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 16724643646
+      },
+      "predecessorIds": [],
+      "confidence": 0.76686513,
+      "sequenceNumber": 4178,
+      "evidenceReferences": [
+        "e4681170-b11d-4d5d-83de-da2db7e23802",
+        "06e57572-3a04-488e-a5f4-c69b393fb453"
+      ],
+      "monotonicTimeNanos": 47608104921866
+    },
+    {
+      "articleId": "fe388262-d991-41bc-a8c9-014502df8d7e",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844767031,
+      "recordedAt": 1792844767031,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 41,
+        "status": "EXPIRED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47606351545441,
+        "elapsedNanos": 3008245248,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4180,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47609359822876
+    },
+    {
+      "articleId": "a71f2f60-589e-4a6b-9384-27d30a74d0c7",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844767713,
+      "recordedAt": 1792844768634,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 16117736189
+      },
+      "predecessorIds": [],
+      "confidence": 0.6264434,
+      "sequenceNumber": 4251,
+      "evidenceReferences": [
+        "7cb6dd27-32d5-44b0-8e99-0843a8108293",
+        "8d61ff00-1133-4adc-a1b5-9b66e850c6f9"
+      ],
+      "monotonicTimeNanos": 47609990123981
+    },
+    {
+      "articleId": "7ff0397b-1a48-451a-a7da-8a33224cefa1",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844767969,
+      "recordedAt": 1792844768990,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 2139603702
+      },
+      "predecessorIds": [],
+      "confidence": 0.69232684,
+      "sequenceNumber": 4266,
+      "evidenceReferences": [
+        "06e57572-3a04-488e-a5f4-c69b393fb453",
+        "634bff42-dece-4de1-9fb0-e5e5494cae16"
+      ],
+      "monotonicTimeNanos": 47610244525568
+    },
+    {
+      "articleId": "faece288-88b8-4290-84cb-5f0b7e9ebb77",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844770250,
+      "recordedAt": 1792844771364,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4339,
+      "evidenceReferences": [
+        "def0a90b-00c3-47ff-a866-2a830fe634a6"
+      ],
+      "monotonicTimeNanos": 47612537113661
+    },
+    {
+      "articleId": "1b54121d-7878-4a69-824d-93e1a4756eb2",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844770250,
+      "recordedAt": 1792844771397,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Forretress",
+        "speciesId": 205,
+        "ocrText": "Forretress used MIrorShọt!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4341,
+      "evidenceReferences": [
+        "def0a90b-00c3-47ff-a866-2a830fe634a6"
+      ],
+      "monotonicTimeNanos": 47612537113661
+    },
+    {
+      "articleId": "956bf1fd-7069-46dc-8561-22ddb63da3ec",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844771428,
+      "recordedAt": 1792844771779,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 38,
+        "status": "IDENTITY_DELIVERED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47599658250712,
+        "elapsedNanos": 14098541925,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4345,
+      "evidenceReferences": [
+        "1b54121d-7878-4a69-824d-93e1a4756eb2"
+      ],
+      "monotonicTimeNanos": 47613756813262
+    },
+    {
+      "articleId": "959ee15e-ff07-4f57-9dc7-165ee10f8cb3",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844771562,
+      "recordedAt": 1792844771829,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 42,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47613891303380,
+        "elapsedNanos": 62812,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4351,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47613891384734
+    },
+    {
+      "articleId": "1d8e6da2-6beb-4bf1-93db-a67858d950a0",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844772095,
+      "recordedAt": 1792844772150,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 43,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47614423950985,
+        "elapsedNanos": 75573,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4367,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47614424050412
+    },
+    {
+      "articleId": "13897d9c-939c-492b-a21d-a44ad75eee0a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844772609,
+      "recordedAt": 1792844772615,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 42,
+        "status": "CONFIRMED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47613891303380,
+        "elapsedNanos": 1046398646,
+        "targetNanos": 1500000000,
+        "speciesName": "Forretress"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4387,
+      "evidenceReferences": [
+        "9d8035de-bdeb-48ac-a5e5-f61db2963e38"
+      ],
+      "monotonicTimeNanos": 47614937716036
+    },
+    {
+      "articleId": "6afb6cad-d611-4562-8086-370cac8fd163",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773037,
+      "recordedAt": 1792844773038,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "PLAYER",
+        "windowId": 43,
+        "status": "CONFIRMED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47614423950985,
+        "elapsedNanos": 941830614,
+        "targetNanos": 1500000000,
+        "speciesName": "Dragonair"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4398,
+      "evidenceReferences": [
+        "45ede9a1-3772-43bb-bf49-f5f78b1cb77f"
+      ],
+      "monotonicTimeNanos": 47615365813318
+    },
+    {
+      "articleId": "7fe45213-fba3-4414-8a10-9c040778202a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773585,
+      "recordedAt": 1792844774077,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.25396827,
+        "afterFraction": 0.23404256,
+        "lostFraction": 0.019925714
+      },
+      "predecessorIds": [],
+      "confidence": 0.6918728,
+      "sequenceNumber": 4441,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47615897204413
+    },
+    {
+      "articleId": "0760fcac-367f-4d97-b631-52ad4a875f25",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773937,
+      "recordedAt": 1792844774658,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.47089946,
+        "afterFraction": 0.44680852,
+        "lostFraction": 0.024090946
+      },
+      "predecessorIds": [],
+      "confidence": 0.711831,
+      "sequenceNumber": 4461,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47616239191530
+    },
+    {
+      "articleId": "87c37b1b-903e-4c70-bf08-84cd2c1afd64",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774512,
+      "recordedAt": 1792844774753,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.44680852,
+        "afterFraction": 0.3968254,
+        "lostFraction": 0.049983114
+      },
+      "predecessorIds": [],
+      "confidence": 0.72996587,
+      "sequenceNumber": 4467,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47616810368983
+    },
+    {
+      "articleId": "fee24c5e-73d0-4ad1-9c8e-777b2ebb3cb6",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774867,
+      "recordedAt": 1792844775001,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 1349331697,
+        "peakColorDistance": 0.99993736,
+        "sampleCount": 73,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9943661
+      },
+      "predecessorIds": [],
+      "confidence": 0.9994366,
+      "sequenceNumber": 4482,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47617165629643
+    },
+    {
+      "articleId": "66e621f3-37cc-43b6-981f-631b42ad7ab2",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773535,
+      "recordedAt": 1792844775365,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:672c099c-5474-4061-ba00-9dee3a8b1e39",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "672c099c-5474-4061-ba00-9dee3a8b1e39",
+        "7fe45213-fba3-4414-8a10-9c040778202a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47615816297946
+    },
+    {
+      "articleId": "7128bae3-bf77-42cf-87ab-44c5a423eb9c",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774974,
+      "recordedAt": 1792844775511,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.23404256,
+        "afterFraction": 0.1861702,
+        "lostFraction": 0.04787235
+      },
+      "predecessorIds": [],
+      "confidence": 0.71403915,
+      "sequenceNumber": 4502,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47617268080383
+    },
+    {
+      "articleId": "697ee4c8-afcf-4f8d-820e-903833f1dada",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774974,
+      "recordedAt": 1792844775515,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 7277956402
+      },
+      "predecessorIds": [],
+      "confidence": 0.6264434,
+      "sequenceNumber": 4504,
+      "evidenceReferences": [
+        "8d61ff00-1133-4adc-a1b5-9b66e850c6f9",
+        "c577117e-09fc-4eed-bd76-9525ddf46e8b"
+      ],
+      "monotonicTimeNanos": 47617268080383
+    },
+    {
+      "articleId": "25b8e62b-6781-4ab2-8aad-8416193d872a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775061,
+      "recordedAt": 1792844775738,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 7101975812
+      },
+      "predecessorIds": [],
+      "confidence": 0.69232684,
+      "sequenceNumber": 4516,
+      "evidenceReferences": [
+        "634bff42-dece-4de1-9fb0-e5e5494cae16",
+        "b94dc2df-0c5a-403e-9dc7-ad0bc1c86c90"
+      ],
+      "monotonicTimeNanos": 47617346501380
+    },
+    {
+      "articleId": "33455126-0d19-461e-bbd4-d7fd834fc642",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775488,
+      "recordedAt": 1792844775773,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 614467353,
+        "peakColorDistance": 0.9999436,
+        "sampleCount": 74,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9949295
+      },
+      "predecessorIds": [],
+      "confidence": 0.99949294,
+      "sequenceNumber": 4521,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47617780096996
+    },
+    {
+      "articleId": "385f3924-f4ad-465a-8e8f-31f18c002be6",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775503,
+      "recordedAt": 1792844775799,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.3968254,
+        "afterFraction": 0.37037036,
+        "lostFraction": 0.026455045
+      },
+      "predecessorIds": [],
+      "confidence": 0.70816076,
+      "sequenceNumber": 4525,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47617780096996
+    },
+    {
+      "articleId": "141c6c89-a621-4ad7-872a-04f5b48ab6d2",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773601,
+      "recordedAt": 1792844776076,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": "OPPONENT",
+        "recognizedText": "NOT VERY EFFECTIVE..."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4536,
+      "evidenceReferences": [
+        "4e4c0583-a5ce-432f-96a3-eca8686b4b8f"
+      ],
+      "monotonicTimeNanos": 47615897204413
+    },
+    {
+      "articleId": "24fad016-1832-419f-920e-5087f0d93c93",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773535,
+      "recordedAt": 1792844776192,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:3742a88c-639a-4d47-b5f8-69ea7fb0c5cb",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "3742a88c-639a-4d47-b5f8-69ea7fb0c5cb",
+        "0760fcac-367f-4d97-b631-52ad4a875f25"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47615816297946
+    },
+    {
+      "articleId": "b3c8f4e9-e27c-48fa-9cd0-a90056256901",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844773535,
+      "recordedAt": 1792844776196,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "24fad016-1832-419f-920e-5087f0d93c93",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47615816297946
+    },
+    {
+      "articleId": "18b134a0-e829-41fd-8094-d94c317ea459",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775522,
+      "recordedAt": 1792844776223,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 512016613
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 4540,
+      "evidenceReferences": [
+        "c577117e-09fc-4eed-bd76-9525ddf46e8b",
+        "8b2953db-f8a1-4bd4-b5dd-d3747cd541fd"
+      ],
+      "monotonicTimeNanos": 47617780096996
+    },
+    {
+      "articleId": "1a3ac325-8cc8-4f9e-a6af-8f8380fde92c",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776098,
+      "recordedAt": 1792844776348,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.37037036,
+        "afterFraction": 0.34920636,
+        "lostFraction": 0.021164
+      },
+      "predecessorIds": [],
+      "confidence": 0.7021752,
+      "sequenceNumber": 4548,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47618359476637
+    },
+    {
+      "articleId": "229e424d-4b0c-477b-a88b-ac9703d5f62f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775587,
+      "recordedAt": 1792844776471,
+      "sourceId": "PLAYER_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "PLAYER",
+        "intervalNanos": 545021773
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 4555,
+      "evidenceReferences": [
+        "b94dc2df-0c5a-403e-9dc7-ad0bc1c86c90",
+        "6cedda9e-1cf9-4060-aad6-040fe1ea4a24"
+      ],
+      "monotonicTimeNanos": 47617891523153
+    },
+    {
+      "articleId": "f53c2d34-40b6-46a9-81e0-64aa758b18a4",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776448,
+      "recordedAt": 1792844776619,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_CADENCE_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_border_cadence_measured",
+        "damagedBarSide": "PLAYER",
+        "intervalNanos": 947756865,
+        "peakColorDistance": 0.99995434,
+        "sampleCount": 76,
+        "peakOrangeFraction": 1.0,
+        "baselineWhiteFraction": 0.9958929
+      },
+      "predecessorIds": [],
+      "confidence": 0.99958926,
+      "sequenceNumber": 4565,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "8507fcce-c2b5-4504-8e17-8c5b025dbad0",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844776785,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "PLAYER",
+        "beforeFraction": 0.34920636,
+        "afterFraction": 0.3015873,
+        "lostFraction": 0.047619045
+      },
+      "predecessorIds": [],
+      "confidence": 0.7230194,
+      "sequenceNumber": 4571,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "fa6d8587-8018-47ed-9b07-49ffb9b50d2a",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844776813,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_DAMAGE_TICK_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_damage_tick_measured",
+        "damagedSide": "OPPONENT",
+        "beforeFraction": 0.1861702,
+        "afterFraction": 0.15957446,
+        "lostFraction": 0.026595742
+      },
+      "predecessorIds": [],
+      "confidence": 0.69318223,
+      "sequenceNumber": 4573,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "0a008027-1ab9-4d51-a218-fa7f79d9c6e2",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776304,
+      "recordedAt": 1792844776875,
+      "sourceId": "OPPONENT_FAST_MOVE_RECIPIENT_VISUAL_CADENCE_WITNESS",
+      "payload": {
+        "kind": "fast_move_recipient_visual_cadence_measured",
+        "damagedSide": "OPPONENT",
+        "intervalNanos": 837068573
+      },
+      "predecessorIds": [],
+      "confidence": 1.0,
+      "sequenceNumber": 4577,
+      "evidenceReferences": [
+        "8b2953db-f8a1-4bd4-b5dd-d3747cd541fd",
+        "fe2f7bae-309d-42ad-a613-42283b00e986"
+      ],
+      "monotonicTimeNanos": 47618617165569
+    },
+    {
+      "articleId": "f553b1c2-c8c5-4267-b871-1d0a4c53686b",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774974,
+      "recordedAt": 1792844776936,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:7128bae3-bf77-42cf-87ab-44c5a423eb9c",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "697ee4c8-afcf-4f8d-820e-903833f1dada",
+        "7128bae3-bf77-42cf-87ab-44c5a423eb9c",
+        "c577117e-09fc-4eed-bd76-9525ddf46e8b"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47617268080383
+    },
+    {
+      "articleId": "e228afb0-3e0d-45ed-8e2a-94d282d6081f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774512,
+      "recordedAt": 1792844777024,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:87c37b1b-903e-4c70-bf08-84cd2c1afd64",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "87c37b1b-903e-4c70-bf08-84cd2c1afd64",
+        "332d3742-1459-45e5-8fd2-d4063720daef",
+        "fee24c5e-73d0-4ad1-9c8e-777b2ebb3cb6",
+        "25b8e62b-6781-4ab2-8aad-8416193d872a",
+        "b94dc2df-0c5a-403e-9dc7-ad0bc1c86c90"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47616810368983
+    },
+    {
+      "articleId": "842ed883-f461-4542-b7d0-26ea02bf76d5",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844774512,
+      "recordedAt": 1792844777025,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "e228afb0-3e0d-45ed-8e2a-94d282d6081f",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47616810368983
+    },
+    {
+      "articleId": "6062e44e-6eda-4fb7-a24c-579aed88212f",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844777760,
+      "recordedAt": 1792844777761,
+      "sourceId": "SPECIES_CHECK_COORDINATOR",
+      "payload": {
+        "kind": "species_check_measured",
+        "side": "OPPONENT",
+        "windowId": 44,
+        "status": "OPENED",
+        "reason": "RECOVERY",
+        "triggerMonotonicNanos": 47620089022226,
+        "elapsedNanos": 68490,
+        "targetNanos": 1500000000,
+        "speciesName": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4612,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 47620089109257
+    },
+    {
+      "articleId": "34ec542e-e822-41d1-9705-593e05b60e5c",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775488,
+      "recordedAt": 1792844777766,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:10ca4442-f951-4ff3-a6e5-e4c612c53eee",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "HP_BORDER_CADENCE",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "10ca4442-f951-4ff3-a6e5-e4c612c53eee",
+        "33455126-0d19-461e-bbd4-d7fd834fc642",
+        "385f3924-f4ad-465a-8e8f-31f18c002be6",
+        "229e424d-4b0c-477b-a88b-ac9703d5f62f",
+        "6cedda9e-1cf9-4060-aad6-040fe1ea4a24"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47617780096996
+    },
+    {
+      "articleId": "8416791c-2d24-4ef9-9bf0-f0e2fa25ecd4",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775488,
+      "recordedAt": 1792844777772,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "34ec542e-e822-41d1-9705-593e05b60e5c",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47617780096996
+    },
+    {
+      "articleId": "2c8acc3d-cd74-4c72-9709-dc51dbe1f724",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844778272,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:fa6d8587-8018-47ed-9b07-49ffb9b50d2a",
+        "attackingSide": "PLAYER",
+        "damagedSide": "OPPONENT",
+        "appearanceId": "d35b27be-1946-4440-9624-876ca55c9164",
+        "attackerSpeciesName": "Dragonair",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK",
+          "RECIPIENT_VISUAL_ARTIFACT",
+          "RECIPIENT_VISUAL_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "0a008027-1ab9-4d51-a218-fa7f79d9c6e2",
+        "fe2f7bae-309d-42ad-a613-42283b00e986",
+        "fa6d8587-8018-47ed-9b07-49ffb9b50d2a"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "9888a9ee-38b9-44b0-a3c1-f8da249a1128",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844778309,
+      "sourceId": "FAST_MOVE_CADENCE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_identified",
+        "side": "PLAYER",
+        "speciesName": "Dragonair",
+        "moveName": "Iron Tail",
+        "moveDurationNanos": 1500000000,
+        "observedMedianIntervalNanos": 1455777957,
+        "cadenceSampleCount": 2,
+        "basis": "OBSERVED_USES_CADENCE_AND_REFERENCE_KNOWLEDGE_CONSISTENT_IMPACT_STREAM"
+      },
+      "predecessorIds": [
+        "d35b27be-1946-4440-9624-876ca55c9164",
+        "d4d80039-9905-4846-8aec-d4e3484140db",
+        "66e621f3-37cc-43b6-981f-631b42ad7ab2",
+        "f553b1c2-c8c5-4267-b871-1d0a4c53686b",
+        "2c8acc3d-cd74-4c72-9709-dc51dbe1f724"
+      ],
+      "confidence": 0.97051865,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "1ee0fe60-4ece-4372-954a-5ed5792f0058",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776098,
+      "recordedAt": 1792844778545,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:1a3ac325-8cc8-4f9e-a6af-8f8380fde92c",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE",
+          "HP_DAMAGE_TICK",
+          "HP_BORDER_CADENCE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "1a3ac325-8cc8-4f9e-a6af-8f8380fde92c",
+        "1394553e-a67a-4ed3-9f28-ff079be3d7f6",
+        "f53c2d34-40b6-46a9-81e0-64aa758b18a4"
+      ],
+      "confidence": 0.99,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618359476637
+    },
+    {
+      "articleId": "f6a7de88-289d-456e-90f3-65ae26f1ad86",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776098,
+      "recordedAt": 1792844778550,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "1ee0fe60-4ece-4372-954a-5ed5792f0058",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.87318,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618359476637
+    },
+    {
+      "articleId": "5a552640-12b0-4984-a778-0b06d7691aca",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844778837,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:8507fcce-c2b5-4504-8e17-8c5b025dbad0",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "b60e64d6-606a-465e-9b86-1b24048ce9e4",
+        "attackerSpeciesName": "Forretress",
+        "evidenceKinds": [
+          "HP_DAMAGE_TICK"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "8507fcce-c2b5-4504-8e17-8c5b025dbad0"
+      ],
+      "confidence": 0.7230194,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "87544ba8-fc60-4714-baba-8a6f493f8fa3",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844776414,
+      "recordedAt": 1792844778838,
+      "sourceId": "FAST_MOVE_ENERGY_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_energy_derived",
+        "side": "OPPONENT",
+        "moveName": "Volt Switch",
+        "observedCompletedUses": 1,
+        "energyPerUse": 16,
+        "totalEnergyGenerated": 16,
+        "basis": "OBSERVED_FAST_MOVE_USE_TIMES_IDENTIFIED_MOVE_REFERENCE_ENERGY"
+      },
+      "predecessorIds": [
+        "5a552640-12b0-4984-a778-0b06d7691aca",
+        "f407f2f9-ae92-42d3-9f85-f73710fa3dbe"
+      ],
+      "confidence": 0.6377031,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 47618727853861
+    },
+    {
+      "articleId": "7ac0d289-1a32-4377-93b6-26917e890493",
+      "matchId": "8952313d-385b-4cc0-ae33-1259faf1827f",
+      "perceivedAt": 1792844775972,
+      "recordedAt": 1792844779689,
+      "sourceId": "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "fast_move_effectiveness_witnessed",
+        "effectiveness": "NOT_VERY_EFFECTIVE",
+        "damagedSide": "OPPONENT",
+        "recognizedText": "NOT VERY EFFECTIVE.."
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4678,
+      "evidenceReferences": [
+        "a5b23e2c-9ce3-42c5-b6c1-a48760681404"
+      ],
+      "monotonicTimeNanos": 47618271256941
+    }
+  ]
+}

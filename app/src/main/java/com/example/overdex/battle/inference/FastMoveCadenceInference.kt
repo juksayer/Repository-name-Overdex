@@ -29,6 +29,7 @@ import com.example.overdex.model.PokemonType
 import java.util.EnumMap
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.roundToLong
 
 data class FastMoveCadenceDerivation(
     val payload: TestimonyPayload,
@@ -837,7 +838,10 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private data class CadenceVote(
         val basis: CadenceBasis,
         val family: EvidenceFamily,
+        /** Includes faster moves whose intermediate impacts may have been missed. */
         val candidates: List<Move>,
+        /** Only direct cycle matches can establish identity or corroborate energy. */
+        val directCandidates: List<Move>,
         val evidence: List<CadenceEvidence>,
     )
 
@@ -873,8 +877,14 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
                 else -> resolveMove(eligible, intervals)?.supportingIndices?.map(evidence::get)
                     ?: listOf(evidence.last())
             }
-            val candidates = eligible.filter { move -> supporting.all { intervalMatchesMove(it.intervalNanos, move) } }
-            candidates.takeIf { it.isNotEmpty() }?.let { CadenceVote(key.first, key.second, it, supporting) }
+            val directCandidates = eligible.filter { move -> supporting.all { intervalMatchesMove(it.intervalNanos, move) } }
+            val candidates = eligible.filter { move -> supporting.all {
+                intervalMatchesMove(it.intervalNanos, move) ||
+                    (key.second == EvidenceFamily.IMPACT && intervalMayContainMissedImpacts(it.intervalNanos, move))
+            } }
+            candidates.takeIf { it.isNotEmpty() }?.let {
+                CadenceVote(key.first, key.second, it, directCandidates, supporting)
+            }
         }
         // Recipient-region transients still lack a validated direction/type
         // catalogue. Keep their existing fallback hypothesis, but do not let
@@ -901,7 +911,9 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         // Different durations with equal support remain unresolved. An energy
         // preference is only allowed within one measured duration.
         if (candidates.map { it.turns }.distinct().size != 1) return null
-        val matchingVotes = votes.filter { vote -> candidates.any { it in vote.candidates } }
+        // Compatible gaps keep a move in contention, but do not testify to its
+        // duration or create independent support for an energy award.
+        val matchingVotes = votes.filter { vote -> candidates.any { it in vote.directCandidates } }
         val families = matchingVotes.groupBy { it.family }
         val enoughSamples = matchingVotes.any { it.evidence.size >= REQUIRED_INTERVALS }
         if (!enoughSamples && families.size < 2) return null
@@ -912,7 +924,7 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
         }
         val chosen = configuredCandidate?.let { MoveResolution(it, false, emptySet()) }
             ?: chooseMove(candidates, emptySet()) ?: return null
-        val supporting = matchingVotes.filter { chosen.move in it.candidates }
+        val supporting = matchingVotes.filter { chosen.move in it.directCandidates }
             .groupBy { it.family }.values.map { group ->
                 group.maxWith(compareBy<CadenceVote> { it.evidence.size }.thenBy { -it.basis.ordinal })
             }
@@ -1113,6 +1125,15 @@ class FastMoveCadenceInference(private val pokemonKnowledge: PokemonKnowledge) {
     private fun intervalMatchesMove(intervalNanos: Long, move: Move): Boolean {
         val expected = (move.turns ?: return false) * TURN_NANOS
         return intervalMatchesExpected(intervalNanos, expected)
+    }
+
+    private fun intervalMayContainMissedImpacts(intervalNanos: Long, move: Move): Boolean {
+        val expected = (move.turns ?: return false) * TURN_NANOS
+        if (expected <= 0L) return false
+        val cycles = (intervalNanos.toDouble() / expected).roundToLong()
+        // A regular 1.5-second damage gap can contain three 0.5-second attacks.
+        // This is compatibility only: neither the cycles nor absent hits are recorded.
+        return cycles >= 2 && intervalMatchesExpected(intervalNanos, expected * cycles)
     }
 
     private fun intervalMatchesExpected(intervalNanos: Long, expectedNanos: Long): Boolean {

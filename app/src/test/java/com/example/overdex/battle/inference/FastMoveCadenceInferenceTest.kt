@@ -1227,6 +1227,51 @@ class FastMoveCadenceInferenceTest {
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
     }
 
+    @Test fun `unidentified sparse impacts retain both speeds until independent motion resolves the slower move`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        for (index in 0..4) {
+            val at = 10_000_000_000L + index * 1_000_000_000L
+            assertTrue(engine.accept(borderCadence("pulse-$index", 1_000_000_000L).copy(monotonicTimeNanos = at)).isEmpty())
+            assertTrue(engine.accept(fastUseAt("same-impact-$index", at)).isEmpty())
+        }
+        assertEquals(setOf("Water Gun", "Powder Snow"), engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!.remainingMoveNames.toSet())
+        // Repeated motion is independent of the pulse/use stream.
+        for (index in 0..1) engine.accept(article("motion-$index",
+            ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 1_000_000_000L, 20f, 6))
+            .copy(monotonicTimeNanos = 15_000_000_000L + index * 1_000_000_000L))
+        assertEquals("Powder Snow", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `compatible gaps alone cannot confirm the faster move or supply its second cadence sample`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        for (index in 0..2) engine.accept(borderCadence("gap-$index", 2_000_000_000L)
+            .copy(monotonicTimeNanos = 10_000_000_000L + index * 2_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertTrue(engine.accept(article("motion1",
+            ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6))
+            .copy(monotonicTimeNanos = 15_000_000_000L)).isEmpty())
+        val identified = engine.accept(article("motion2",
+            ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6))
+            .copy(monotonicTimeNanos = 15_500_000_000L)).single()
+        assertEquals("Water Gun", (identified.payload as FastMoveIdentified).moveName)
+        assertTrue(identified.predecessorIds.none { it.value.startsWith("gap-") })
+    }
+
+    @Test fun `reference audio resolves sparse impact ambiguity without shortening the recorded gaps`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        for (index in 0..2) engine.accept(borderCadence("gap-$index", 1_000_000_000L)
+            .copy(monotonicTimeNanos = 10_000_000_000L + index * 1_000_000_000L))
+        assertEquals(setOf("Tackle", "Spark"), engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!.remainingMoveNames.toSet())
+        assertTrue(engine.accept(referenceSound("sound1", "Spark", 13_000_000_000L)).isEmpty())
+        val identity = engine.accept(referenceSound("sound2", "Spark", 14_000_000_000L)).single()
+        assertEquals("Spark", (identity.payload as FastMoveIdentified).moveName)
+        assertTrue(identity.payload.basis.startsWith("AUDIO_REFERENCE"))
+        assertTrue(identity.predecessorIds.containsAll(listOf(ArticleId("sound1"), ArticleId("sound2"))))
+    }
+
     private fun testSealeo() = Pokemon(364, "Sealeo", listOf(PokemonType.ICE, PokemonType.WATER), "Hoenn",
         fastMoves = listOf(move("Water Gun", 1, 3, PokemonType.WATER), move("Powder Snow", 2, 8, PokemonType.ICE)),
         chargedMoves = emptyList())

@@ -15,6 +15,37 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RecordedFastMoveIdentityTest {
+    @Test fun `October 24 sparse Dragonair impacts cannot certify Iron Tail or award its energy`() = runBlocking {
+        val archive = MatchArchiveSerializer.deserialize(checkNotNull(javaClass.getResource(
+            "/battle/2026-10-24-dragonair-sparse-impact.json")).readText())
+        val before = MatchArchiveSerializer.serialize(archive)
+        val engine = FastMoveCadenceInference(Knowledge)
+        val energy = FastMoveEnergyInference(Knowledge)
+        val identities = mutableListOf<FastMoveIdentified>()
+        val awards = mutableListOf<FastMoveEnergyDerivation>()
+        for (a in archive.articles) {
+            // Keep the old conclusion and its measurements for audit. As in Match,
+            // use the resolved player appearance rather than raw duplicate labels.
+            if (a.payload is ArchivedFastMoveIdentified || a.payload is ArchivedFastMoveEnergyDerived ||
+                a.payload is ArchivedActiveHpBarDamageTickMeasured ||
+                (a.payload is ArchivedActivePokemonSpeciesWitnessed && a.payload.side == "PLAYER")) continue
+            val input = live(a)
+            awards += energy.accept(input)
+            for (derived in engine.accept(input)) {
+                (derived.payload as? FastMoveIdentified)?.let { identities += it }
+                awards += energy.accept(derived.observedArticle.copy(payload = derived.payload,
+                    predecessorIds = derived.predecessorIds, confidence = derived.confidence))
+            }
+        }
+        assertTrue(archive.articles.any { (it.payload as? ArchivedFastMoveIdentified)?.moveName == "Iron Tail" })
+        assertTrue("Sparse HP gaps do not identify Dragonair's move: $identities",
+            identities.none { it.side == ActivePokemonSide.PLAYER })
+        assertEquals(setOf("Dragon Breath", "Iron Tail"),
+            engine.candidateSnapshot(ActivePokemonSide.PLAYER)!!.remainingMoveNames.toSet())
+        assertTrue("Unresolved move must not generate exact player energy", awards.none { it.payload.side == ActivePokemonSide.PLAYER })
+        assertEquals(before, MatchArchiveSerializer.serialize(archive))
+    }
+
     @Test fun `October 19 idle Camerupt retains Incinerate despite recipient effect rhythm`() = runBlocking {
         // User confirmed all three player Pokemon were idle in this match.
         // These are unchanged input articles in their original publication order.
@@ -52,6 +83,10 @@ class RecordedFastMoveIdentityTest {
     private fun live(a: ArchivedRealityArticle): RealityArticle {
         val p = a.payload
         val payload = when (p) {
+            is ArchivedPlayerActiveIdentityResolved -> ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER,
+                p.speciesName, p.speciesId, playerTeamSlot = p.teamSlot, appearanceStartedAtNanos = p.appearanceStartedAtNanos)
+            is ArchivedSpeciesCheckMeasured -> SpeciesCheckMeasured(side(p.side), p.windowId, p.status, p.reason,
+                p.triggerMonotonicNanos, p.elapsedNanos, p.targetNanos, p.speciesName)
             is ArchivedActivePokemonSpeciesWitnessed -> ActivePokemonSpeciesWitnessed(side(p.side), p.speciesName, p.speciesId)
             is ArchivedActivePokemonFaintedWitnessed -> ActivePokemonFaintedWitnessed(side(p.side), p.speciesName, p.speciesId, p.basis)
             is ArchivedPlayerTeamSlotConfigured -> PlayerTeamSlotConfigured(p.slot, p.speciesName, p.speciesId,
@@ -90,6 +125,12 @@ class RecordedFastMoveIdentityTest {
         private fun move(name: String, type: PokemonType, turns: Int, energy: Int) = Move(
             name = name, type = type, damage = 1, energy = energy, isFast = true, turns = turns)
         private val pokemon = listOf(
+            Pokemon(148, "Dragonair", listOf(PokemonType.DRAGON), "Kanto",
+                fastMoves = listOf(move("Dragon Breath", PokemonType.DRAGON, 1, 4),
+                    move("Iron Tail", PokemonType.STEEL, 3, 7)), chargedMoves = emptyList()),
+            Pokemon(205, "Forretress", listOf(PokemonType.BUG, PokemonType.STEEL), "Johto",
+                fastMoves = listOf(move("Bug Bite", PokemonType.BUG, 1, 3), move("Struggle Bug", PokemonType.BUG, 3, 8),
+                    move("Volt Switch", PokemonType.ELECTRIC, 4, 16)), chargedMoves = emptyList()),
             Pokemon(460, "Abomasnow", listOf(PokemonType.GRASS, PokemonType.ICE), "Sinnoh",
                 fastMoves = listOf(move("Powder Snow", PokemonType.ICE, 2, 8)), chargedMoves = emptyList()),
             Pokemon(215, "Sneasel", listOf(PokemonType.DARK, PokemonType.ICE), "Johto",

@@ -1,0 +1,37 @@
+{
+  "sourceArchive": "2026-10-24_07-23-38_8952313d-385b-4cc0-ae33-1259faf1827f.odxmatch.zip",
+  "sourceSha256": "4c0478c55720663074eb8170b3b8fc65c07c4d86dfeb8e22f763fe68f7271d3c",
+  "archiveOriginMonotonicNanos": 47460368068581,
+  "sourceRangeSeconds": [
+    129,
+    160
+  ],
+  "additionalContextArticleIds": [
+    "b60e64d6-606a-465e-9b86-1b24048ce9e4"
+  ],
+  "includedKinds": [
+    "active_hp_bar_border_cadence_measured",
+    "active_hp_bar_damage_tick_measured",
+    "active_hp_bar_motion_cadence_measured",
+    "active_pokemon_fainted_witnessed",
+    "active_pokemon_species_witnessed",
+    "attack_incoming",
+    "charge_move_used_announced",
+    "fast_move_effectiveness_witnessed",
+    "fast_move_energy_derived",
+    "fast_move_identified",
+    "fast_move_recipient_visual_cadence_measured",
+    "fast_move_sound_measured",
+    "fast_move_use_observed",
+    "get_ready_witnessed",
+    "player_active_identity_resolved",
+    "species_check_measured"
+  ],
+  "articleCount": 132,
+  "fixtureSha256": "d3f8cf7ee34fd8002551dba8ebcf7a54dfc4ff47c2e99cb780053c542365e3c1",
+  "userGroundTruth": {
+    "playerMove": "Dragon Breath",
+    "attackingContinuously": true
+  },
+  "note": "Unchanged selected Articles in original publication order. Raw player labels are retained for audit; the test projects PlayerActiveIdentityResolved as Match does. Old move identities and energy conclusions are retained but not fed into fresh inference. The user ground truth is an assertion, not input to the inference."
+}

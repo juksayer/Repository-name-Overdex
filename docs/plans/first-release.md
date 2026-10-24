@@ -82,6 +82,11 @@ live check must confirm resource/faint/result updates; the recorded cases also
 expose a separate Dragon Breath/Iron Tail cadence ambiguity and a centered
 single-charge-button gap. These remain open before trusting precise energy.
 
+The [sparse-impact identity fix](../verification/2026-10-24-sparse-impact-identity.md)
+now retains faster candidates when damage intervals can contain missed hits.
+The Dragonair regression stays unresolved instead of certifying Iron Tail;
+1,078 tests pass. Late-start audio listening and a new battle check remain next.
+
 ### 2. Recording and device reliability
 
 - [ ] Start before entering GO battle menus, then select a team and battle without
