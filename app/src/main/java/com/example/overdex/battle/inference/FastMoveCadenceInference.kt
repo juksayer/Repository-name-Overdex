@@ -82,6 +82,8 @@ class FastMoveCadenceInference(
         val basis: CadenceBasis,
         val predecessorIds: List<ArticleId> = listOf(article.id),
         val useEvidenceKind: String? = null,
+        val supportingArticles: List<RealityArticle> = emptyList(),
+        val supportingImpactSpan: Pair<Long, Long>? = null,
     )
     private data class ConfiguredPlayerMove(
         val speciesId: Int?,
@@ -98,9 +100,13 @@ class FastMoveCadenceInference(
     )
 
     private data class SideState(
+        val side: ActivePokemonSide,
         val speciesName: String,
         val speciesArticleId: ArticleId,
         val activeSinceNanos: Long,
+        // First readable identity may arrive after several attacks. Only an
+        // actual entry/switch/faint boundary can exclude those earlier inputs.
+        val appearanceBoundaryNanos: Long?,
         // Each inner list describes one compatible form. Combining the lists
         // would invent a Ground/Electric/Steel Stunfisk instead of alternatives.
         val typeOptions: List<List<PokemonType>>,
@@ -351,9 +357,12 @@ class FastMoveCadenceInference(
             val remembered = combatants[combatantKey].takeIf { oneBattleReference }
             val retainedMove = remembered?.identifiedMove?.takeIf { it in candidateMoves }
             val state = SideState(
+                side = species.side,
                 speciesName = species.speciesName,
                 speciesArticleId = article.id,
                 activeSinceNanos = activeSince,
+                appearanceBoundaryNanos = species.appearanceStartedAtNanos ?:
+                    if (priorState != null) activeSince else explicitAppearanceStart,
                 typeOptions = typeOptions,
                 possibleMoves = candidateMoves,
                 playerTeamSlot = species.playerTeamSlot,
@@ -440,7 +449,13 @@ class FastMoveCadenceInference(
             } else {
                 emptyList()
             }
-            return effectivenessResults + acceptObservedUseCadence(article, use)
+            val cadenceResults = acceptObservedUseCadence(article, use)
+            // Fused impact testimony can arrive after the raw motion. Revisit
+            // those retained samples even when this is the first use in a stream.
+            val delayedMotionResults = if (cadenceResults.isEmpty()) {
+                states[use.attackingSide]?.let { publishCadenceIdentity(article, it) }.orEmpty()
+            } else emptyList()
+            return effectivenessResults + cadenceResults + delayedMotionResults
         }
 
         val sound = article.payload as? FastMoveSoundMeasured
@@ -596,7 +611,7 @@ class FastMoveCadenceInference(
         if (use.evidenceKinds.none(DIRECT_USE_EVIDENCE_KINDS::contains)) return emptyList()
         val state = states[use.attackingSide] ?: return emptyList()
         val at = article.monotonicTimeNanos ?: return emptyList()
-        if (at < cadenceFloorNanos) return emptyList()
+        if (at < cadenceFloorNanos || !useBelongsTo(state, article, use)) return emptyList()
         val streams = use.evidenceKinds.filter { it in IMPACT_USE_EVIDENCE_KINDS }
             .ifEmpty { use.evidenceKinds.filter { it in DIRECT_USE_EVIDENCE_KINDS } }.distinct()
         return streams.flatMap { kind ->
@@ -649,6 +664,14 @@ class FastMoveCadenceInference(
         )
         if (state.cadenceEvidence.size > MAX_CADENCE_HISTORY) state.cadenceEvidence.removeAt(0)
 
+        return publishCadenceIdentity(article, state)
+    }
+
+    private fun publishCadenceIdentity(
+        article: RealityArticle,
+        state: SideState,
+    ): List<FastMoveCadenceDerivation> {
+        val attackingSide = state.side
         val resolved = resolveCombinedCadence(state)
         val corroboration = resolved?.let { corroborationFor(state, it) }
         val previousLabels = state.corroborationSignature.split('+').filter { it.isNotBlank() }.toSet()
@@ -725,7 +748,10 @@ class FastMoveCadenceInference(
                 ),
                 predecessorIds = predecessors,
                 confidence = timingConfidence.also { state.identityConfidence = it },
-                observedArticle = article
+                // Late impact testimony must not date the conclusion before
+                // a later motion sample that was needed to resolve it.
+                observedArticle = (resolved.evidence.flatMap { listOf(it.article) + it.supportingArticles } + article)
+                    .maxBy { it.monotonicTimeNanos ?: Long.MIN_VALUE }
             )
         }
         return output
@@ -902,14 +928,83 @@ class FastMoveCadenceInference(
         }
     }
 
+    private data class ImpactEndpoint(val at: Long, val predecessorIds: List<ArticleId>, val article: RealityArticle)
+
+    private fun useBelongsTo(state: SideState, article: RealityArticle, use: FastMoveUseObserved): Boolean {
+        val at = article.monotonicTimeNanos ?: return false
+        if (use.attackingSide != state.side || at < maxOf(state.appearanceBoundaryNanos ?: Long.MIN_VALUE, cadenceFloorNanos)) return false
+        val name = use.attackerSpeciesName ?: return true
+        if (normalize(name) == normalize(state.speciesName)) return true
+        // A bare game label can corroborate its resolved form, but two distinct
+        // qualified forms or another species cannot borrow each other's hits.
+        return ('(' !in name || '(' !in state.speciesName) &&
+            normalize(name.substringBefore(" (")) == normalize(state.speciesName.substringBefore(" ("))
+    }
+
+    /**
+     * A victim can bob with every incoming hit. Motion is useful for timing only
+     * when this side independently dealt damage at both ends of that cycle.
+     * Bound the proof to source time and this appearance, not arrival order or a
+     * historical attack elsewhere in the match. Raw measurements stay retained.
+     */
+    private fun motionImpactEndpoints(state: SideState): List<ImpactEndpoint> {
+        val floor = maxOf(state.appearanceBoundaryNanos ?: Long.MIN_VALUE, cadenceFloorNanos)
+        return buildList {
+            state.cadenceEvidence.filter { family(it) == EvidenceFamily.IMPACT }.forEach { evidence ->
+                val end = evidence.article.monotonicTimeNanos ?: return@forEach
+                add(ImpactEndpoint(end, evidence.predecessorIds, evidence.article))
+                add(ImpactEndpoint(end - evidence.intervalNanos, evidence.predecessorIds, evidence.article))
+            }
+            recentUses.forEach { article ->
+                val use = article.payload as FastMoveUseObserved
+                val at = article.monotonicTimeNanos ?: return@forEach
+                if (useBelongsTo(state, article, use) && use.evidenceKinds.any(IMPACT_USE_EVIDENCE_KINDS::contains)) {
+                    add(ImpactEndpoint(at, listOf(article.id), article))
+                }
+            }
+        }.filter { it.at >= floor }.distinctBy { it.at }
+    }
+
+    private fun supportedMotion(evidence: CadenceEvidence, impacts: List<ImpactEndpoint>): CadenceEvidence? {
+        val end = evidence.article.monotonicTimeNanos ?: return null
+        val start = end - evidence.intervalNanos
+        val starts = impacts.filter { abs(it.at - start) <= MOTION_IMPACT_ALIGNMENT_NANOS }
+        val ends = impacts.filter { abs(it.at - end) <= MOTION_IMPACT_ALIGNMENT_NANOS }
+        var best: Pair<ImpactEndpoint, ImpactEndpoint>? = null
+        var bestDistance = Long.MAX_VALUE
+        for (first in starts) for (last in ends) {
+            // One hit (or its nearly coincident fused copy) cannot prove two endpoints.
+            val span = last.at - first.at
+            if (span < MIN_USE_INTERVAL_NANOS || !intervalMatchesExpected(span, evidence.intervalNanos)) continue
+            val distance = abs(first.at - start) + abs(last.at - end)
+            if (distance < bestDistance) {
+                best = first to last
+                bestDistance = distance
+            }
+        }
+        val pair = best ?: return null
+        return evidence.copy(
+            predecessorIds = (evidence.predecessorIds + pair.first.predecessorIds + pair.second.predecessorIds).distinct(),
+            supportingArticles = listOf(pair.first.article, pair.second.article).distinctBy { it.id },
+            supportingImpactSpan = pair.first.at to pair.second.at,
+        )
+    }
+
     /** Each measurement family gets one vote, even when a fused use repeats it. */
     private fun cadenceVotes(state: SideState): List<CadenceVote> {
         val eligible = candidateMovesForCadence(state)
         val latestAt = state.cadenceEvidence.maxOfOrNull { it.article.monotonicTimeNanos ?: 0L } ?: 0L
+        val impacts = motionImpactEndpoints(state)
         val votes = state.cadenceEvidence.filter {
             latestAt - (it.article.monotonicTimeNanos ?: latestAt) <= CADENCE_WINDOW_NANOS
+        }.mapNotNull { evidence ->
+            if (family(evidence) == EvidenceFamily.MOTION) supportedMotion(evidence, impacts) else evidence
         }.groupBy { Triple(it.basis, family(it), it.useEvidenceKind) }.mapNotNull { (key, samples) ->
-            val evidence = samples.sortedBy { it.article.monotonicTimeNanos }
+            // Two reaction cycles cannot reuse the same observed hit pair as
+            // two independently supported cadence samples.
+            val evidence = samples.asReversed()
+                .distinctBy { it.supportingImpactSpan ?: it.article.id }
+                .asReversed().sortedBy { it.article.monotonicTimeNanos }
             val intervals = evidence.map { it.intervalNanos }
             val recent = evidence.takeLast(REQUIRED_INTERVALS)
             val matching = eligible.filter { move -> recent.all { intervalMatchesMove(it.intervalNanos, move) } }
@@ -1251,6 +1346,7 @@ class FastMoveCadenceInference(
         const val MAX_EFFECTIVENESS_HISTORY = 16
         const val MAX_USE_HISTORY = 16
         const val EFFECTIVENESS_USE_ALIGNMENT_NANOS = 500_000_000L
+        const val MOTION_IMPACT_ALIGNMENT_NANOS = 450_000_000L
         const val MIN_USE_INTERVAL_NANOS = 300_000_000L
         const val MIN_TOLERANCE_NANOS = 160_000_000L
         const val RELATIVE_TOLERANCE = 0.15

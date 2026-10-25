@@ -92,6 +92,17 @@ sides in another stretch. Keep the actual move and variant documented. Retain a
 screen recording plus each device's Overdex archive; SFX-only audio is useful if
 available. Do not spend TMs or collect special variants for this first pass.
 
+For Fire Fang, label the **attacker's effects and recipient's effects separately**.
+The October 25 repeat video shows a pale expanding tooth ring near Mawile and
+closing jaws followed by fire near the recipient. Those are candidate visual
+distinctions, not an implemented shape classifier. Particles near both Pokémon
+are compatible with just one Pokémon attacking. An idle recipient's hit reaction
+can also move its HP bar; proximity,
+color, and bar movement alone do not establish ownership. The paired archive
+[review](../verification/2026-10-25-fire-fang-paired.md) records the resulting
+identity failure separately from attack-use counts. Mark the actual visible
+shape in the notes rather than labeling every transient as another attack.
+
 ## Checks
 
 ```sh

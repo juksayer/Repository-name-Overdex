@@ -107,20 +107,28 @@ class RecordedFastMoveIdentityTest {
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
 
-    @Test fun `October 15 missed hits do not undo Sealeo Water Gun`() = runBlocking {
-        // Unaltered input articles from 38c39532-cb00-41f4-ae2e-26db7c420a9e,
-        // retained in publication order, including delayed and contradictory reads.
+    @Test fun `October 15 sparse Sealeo evidence stays unconfirmed without promoting reaction motion`() = runBlocking {
+        // Unaltered articles from 38c39532-cb00-41f4-ae2e-26db7c420a9e.
+        // Its short motion cycle does not align with two independent own hits;
+        // the old Water Gun guess depended on that uncorroborated movement.
         val archive = MatchArchiveSerializer.deserialize(checkNotNull(javaClass.getResource(
             "/battle/recorded-sealeo-cadence-20261015.json")).readText())
         val before = MatchArchiveSerializer.serialize(archive)
         val engine = FastMoveCadenceInference(Knowledge)
-        val identities = archive.articles.flatMap { engine.accept(live(it)) }
-            .filter { (it.payload as? FastMoveIdentified)?.speciesName == "Sealeo" }
-        val firstWater = identities.indexOfFirst { (it.payload as FastMoveIdentified).moveName == "Water Gun" }
-        assertTrue("The recording must still identify Water Gun", firstWater >= 0)
-        assertTrue("Later gaps must not reinstate Powder Snow: ${identities.map { it.payload }}",
-            identities.drop(firstWater).all { (it.payload as FastMoveIdentified).moveName == "Water Gun" })
-        assertTrue(identities[firstWater].predecessorIds.isNotEmpty())
+        val identities = mutableListOf<FastMoveCadenceDerivation>()
+        val snapshots = mutableListOf<FastMoveCandidateSnapshot>()
+        for (a in archive.articles) {
+            identities += engine.accept(live(a))
+                .filter { (it.payload as? FastMoveIdentified)?.speciesName == "Sealeo" }
+            engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.takeIf { it.speciesName == "Sealeo" }
+                ?.let { snapshots += it }
+        }
+        assertTrue("Actual Sealeo attacks are retained", archive.articles.any {
+            (it.payload as? ArchivedFastMoveUseObserved)?.attackerSpeciesName == "Sealeo" })
+        assertTrue(snapshots.isNotEmpty())
+        assertTrue("Noisy provisional candidates must not become a confirmed move",
+            snapshots.all { it.identifiedMoveName == null })
+        assertTrue("Uncorroborated motion cannot certify either duration: $identities", identities.isEmpty())
         assertEquals(before, MatchArchiveSerializer.serialize(archive))
     }
 

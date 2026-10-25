@@ -388,8 +388,8 @@ class FastMoveCadenceInferenceTest {
         val engine = FastMoveCadenceInference(MapPokemonKnowledge(gourgeist, sealeo))
         engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Gourgeist", 711)))
         engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
-        engine.accept(cadence("bob1", 2_500_000_000L).copy(monotonicTimeNanos = 50_000_000_000L))
-        engine.accept(cadence("bob2", 2_500_000_000L).copy(monotonicTimeNanos = 52_500_000_000L))
+        engine.accept(playerImpactCadence("bob1", 2_500_000_000L).copy(monotonicTimeNanos = 50_000_000_000L))
+        engine.accept(playerImpactCadence("bob2", 2_500_000_000L).copy(monotonicTimeNanos = 52_500_000_000L))
         assertEquals("Incinerate", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
         engine.accept(article("seed", com.example.overdex.battle.custody.RawTestimony("Gourgeist used Seed Bomb!"))
             .copy(sourceId = SourceId("ANNOUNCEMENT_WITNESS"), monotonicTimeNanos = 63_270_000_000L))
@@ -559,15 +559,15 @@ class FastMoveCadenceInferenceTest {
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Turtonator", 776)))
 
-        assertEquals(0, engine.accept(cadence("c1", 2_450_000_000L)).size)
-        val resolved = engine.accept(cadence("c2", 2_510_000_000L))
+        assertEquals(0, engine.accept(playerImpactCadence("c1", 2_450_000_000L)).size)
+        val resolved = engine.accept(playerImpactCadence("c2", 2_510_000_000L))
 
         assertEquals(1, resolved.count { it.payload is FastMoveIdentified })
         assertEquals(
             ActivePokemonSide.PLAYER,
             (resolved.first { it.payload is FastMoveIdentified }.payload as FastMoveIdentified).side
         )
-        val next = engine.accept(cadence("c4", 2_490_000_000L))
+        val next = engine.accept(playerImpactCadence("c4", 2_490_000_000L))
         assertTrue(next.isEmpty())
     }
 
@@ -669,9 +669,9 @@ class FastMoveCadenceInferenceTest {
             chargedMoves = emptyList())
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(pokemon))
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Samurott", 503)))
-        engine.accept(cadence("f1", 463_000_000L))
-        engine.accept(cadence("noise", 1_962_000_000L))
-        val resolved = engine.accept(cadence("f2", 367_000_000L))
+        engine.accept(playerImpactCadence("f1", 463_000_000L))
+        engine.accept(playerImpactCadence("noise", 1_962_000_000L))
+        val resolved = engine.accept(playerImpactCadence("f2", 367_000_000L))
 
         assertEquals("Fury Cutter", (resolved.first { it.payload is FastMoveIdentified }.payload as FastMoveIdentified).moveName)
         assertEquals(1, resolved.size)
@@ -1099,10 +1099,10 @@ class FastMoveCadenceInferenceTest {
     fun `one hit interval and one independent motion interval combine immediately`() = runBlocking {
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
-        assertTrue(engine.accept(borderCadence("hit", 500_000_000L)).isEmpty())
+        assertTrue(engine.accept(borderCadence("hit", 500_000_000L).copy(monotonicTimeNanos = 10_000_000_000L)).isEmpty())
         val result = engine.accept(article("motion", ActiveHpBarMotionCadenceMeasured(
             ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6,
-        ))).single()
+        )).copy(monotonicTimeNanos = 10_000_000_000L)).single()
         val identity = result.payload as FastMoveIdentified
         assertEquals("Water Gun", identity.moveName)
         assertTrue(identity.basis.contains("CORROBORATED_BY_BAR_MOTION"))
@@ -1128,8 +1128,9 @@ class FastMoveCadenceInferenceTest {
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
         engine.accept(borderCadence("b1", 1_000_000_000L))
         engine.accept(borderCadence("b2", 1_000_000_000L))
-        engine.accept(article("m1", ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6)))
-        engine.accept(article("m2", ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6)))
+        engine.accept(borderCadence("actual-half-second-hit", 500_000_000L).copy(monotonicTimeNanos = 10_000_000_000L))
+        engine.accept(article("m1", ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6)).copy(monotonicTimeNanos = 10_000_000_000L))
+        engine.accept(article("m2", ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6)).copy(monotonicTimeNanos = 10_000_000_000L))
         engine.accept(sound("a1", 1_000_000_000L))
         engine.accept(sound("a2", 1_500_000_000L))
         assertEquals("Water Gun", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
@@ -1213,8 +1214,8 @@ class FastMoveCadenceInferenceTest {
         engine.accept(article("team", PlayerTeamSlotConfigured(1, "Sealeo", 364, "Water Gun", listOf("Surf"))))
         val initial = engine.accept(article("ours", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Sealeo", 364))).single()
         energy.accept(article("initial", initial.payload))
-        engine.accept(cadence("c1", 500_000_000L))
-        val refined = engine.accept(cadence("c2", 500_000_000L)).single()
+        engine.accept(playerImpactCadence("c1", 500_000_000L))
+        val refined = engine.accept(playerImpactCadence("c2", 500_000_000L)).single()
         energy.accept(article("refined", refined.payload))
         val result = energy.accept(fastUse("use", ActivePokemonSide.PLAYER, "Sealeo"))
         assertEquals(3, result.single().payload.totalEnergyGenerated)
@@ -1272,7 +1273,7 @@ class FastMoveCadenceInferenceTest {
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
         engine.accept(borderCadence("fast1", 500_000_000L).copy(monotonicTimeNanos = 2_000_000_000L))
         engine.accept(borderCadence("fast2", 500_000_000L).copy(monotonicTimeNanos = 2_500_000_000L))
-        repeat(2) { index ->
+        repeat(3) { index ->
             engine.accept(borderCadence("slow-$index", 1_000_000_000L)
                 .copy(monotonicTimeNanos = 20_000_000_000L + index * 1_000_000_000L))
         }
@@ -1343,7 +1344,7 @@ class FastMoveCadenceInferenceTest {
         // Repeated motion is independent of the pulse/use stream.
         for (index in 0..1) engine.accept(article("motion-$index",
             ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 1_000_000_000L, 20f, 6))
-            .copy(monotonicTimeNanos = 15_000_000_000L + index * 1_000_000_000L))
+            .copy(monotonicTimeNanos = 13_000_000_000L + index * 1_000_000_000L))
         assertEquals("Powder Snow", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
     }
 
@@ -1356,11 +1357,11 @@ class FastMoveCadenceInferenceTest {
         assertTrue(engine.accept(article("motion1",
             ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6))
             .copy(monotonicTimeNanos = 15_000_000_000L)).isEmpty())
-        val identified = engine.accept(article("motion2",
+        val unresolved = engine.accept(article("motion2",
             ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.OPPONENT, 500_000_000L, 20f, 6))
-            .copy(monotonicTimeNanos = 15_500_000_000L)).single()
-        assertEquals("Water Gun", (identified.payload as FastMoveIdentified).moveName)
-        assertTrue(identified.predecessorIds.none { it.value.startsWith("gap-") })
+            .copy(monotonicTimeNanos = 15_500_000_000L))
+        assertTrue(unresolved.isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
     }
 
     @Test fun `reference audio resolves sparse impact ambiguity without shortening the recorded gaps`() = runBlocking {
@@ -1428,6 +1429,9 @@ class FastMoveCadenceInferenceTest {
         ActiveHpBarMotionCadenceMeasured(ActivePokemonSide.PLAYER, intervalNanos, 40f, 6)
     )
 
+    private fun playerImpactCadence(id: String, intervalNanos: Long) = article(id,
+        ActiveHpBarBorderCadenceMeasured(ActivePokemonSide.OPPONENT, intervalNanos, 0.3f, 6))
+
     private fun borderCadence(id: String, intervalNanos: Long) = article(
         id,
         // A pulse on the player's damaged bar was caused by the opponent.
@@ -1481,7 +1485,7 @@ class FastMoveCadenceInferenceTest {
             attackingSide = ActivePokemonSide.OPPONENT,
             damagedSide = ActivePokemonSide.PLAYER,
             appearanceId = "appearance",
-            attackerSpeciesName = "Sneasel",
+            attackerSpeciesName = null,
             evidenceKinds = evidenceKinds,
         )
     ).copy(monotonicTimeNanos = at)
