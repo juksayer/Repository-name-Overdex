@@ -443,19 +443,20 @@ internal class ActiveHpBarDamageTickDetector {
             // Reset only at the discontinuity. A later drop at the new position
             // still goes through normal HP settling; do not absorb it into a
             // quarter-second rolling baseline while the player is attacking.
-            baselineFraction = bar.filledFraction
-            pendingAfterFraction = null
-            pendingChangedAtNanos = null
-            lastSampleAtNanos = at
+            reacquire(bar.filledFraction, at, bar)
             return null
         }
-        return accept(bar.filledFraction, bar.confidence, at, bar.width)
+        return acceptSample(bar.filledFraction, bar.confidence, at, bar.width, bar)
     }
 
     private var baselineFraction: Float? = null
+    private var baselineMeasurement: ActiveHpBarMeasurement? = null
     private var pendingAfterFraction: Float? = null
     private var pendingChangedAtNanos: Long? = null
     private var pendingConfidence = 0f
+    private var pendingMeasurement: ActiveHpBarMeasurement? = null
+    private var pendingSmallLoss = false
+    private var pendingSampleCount = 0
     private var lastSampleAtNanos: Long? = null
 
     @Synchronized
@@ -463,9 +464,8 @@ internal class ActiveHpBarDamageTickDetector {
         geometryAnchor = null
         lastGeometryAt = null
         baselineFraction = null
-        pendingAfterFraction = null
-        pendingChangedAtNanos = null
-        pendingConfidence = 0f
+        baselineMeasurement = null
+        clearPending()
         lastSampleAtNanos = null
     }
 
@@ -475,6 +475,16 @@ internal class ActiveHpBarDamageTickDetector {
         measurementConfidence: Float,
         monotonicTimeNanos: Long,
         measuredBarWidth: Int? = null,
+    ): ActiveHpBarDamageTickMeasurement? = acceptSample(
+        filledFraction, measurementConfidence, monotonicTimeNanos, measuredBarWidth, null
+    )
+
+    private fun acceptSample(
+        filledFraction: Float,
+        measurementConfidence: Float,
+        monotonicTimeNanos: Long,
+        measuredBarWidth: Int?,
+        measurement: ActiveHpBarMeasurement?,
     ): ActiveHpBarDamageTickMeasurement? {
         if (!filledFraction.isFinite() || filledFraction !in 0f..1f) return null
         val current = filledFraction
@@ -484,14 +494,12 @@ internal class ActiveHpBarDamageTickDetector {
         if (lastAt != null && monotonicTimeNanos - lastAt > MAX_SAMPLE_GAP_NANOS) {
             // A gap may contain many fast/charged attacks or a camera cut.
             // Reacquire HP without calling the whole unseen loss one new hit.
-            baselineFraction = current
-            pendingAfterFraction = null
-            pendingChangedAtNanos = null
+            reacquire(current, monotonicTimeNanos, measurement)
             return null
         }
         val baseline = baselineFraction
         if (baseline == null) {
-            baselineFraction = current
+            reacquire(current, monotonicTimeNanos, measurement)
             return null
         }
         // The same active combatant cannot heal. An orange hit frame or a
@@ -502,16 +510,55 @@ internal class ActiveHpBarDamageTickDetector {
         // was counted as an attack on a full, undamaged Abomasnow in the paired
         // idle test. Express this uncertainty in source pixels, not a fixed HP
         // percentage. Border pulses remain independent evidence for tiny hits.
-        val minimumLoss = measuredBarWidth?.takeIf { it > 4 }?.let { width ->
-            val innerWidth = width - 2 * max(2, width / 80)
-            max(MIN_DAMAGE_FRACTION, EDGE_UNCERTAINTY_PIXELS / innerWidth)
+        val innerWidth = measuredBarWidth?.takeIf { it > 4 }?.let { width ->
+            width - 2 * max(2, width / 80)
+        }
+        if (measurement != null && innerWidth != null &&
+            kotlin.math.abs(baseline - current) * innerWidth < .5f) {
+            // An unchanged fill can establish the current end caps after entry
+            // geometry settles by a pixel. Keep the HP baseline itself: a real
+            // rebound or a lower fill must never refresh it into another hit.
+            baselineMeasurement = measurement
+        }
+        val minimumLoss = innerWidth?.let {
+            max(MIN_DAMAGE_FRACTION, EDGE_UNCERTAINTY_PIXELS / it)
         } ?: MIN_DAMAGE_FRACTION
         if (baseline - current < minimumLoss) {
-            pendingAfterFraction = null
-            pendingChangedAtNanos = null
-            return null
+            // The paired Fire Fang recording contains real, repeated three-pixel
+            // plateaus. The scalar uncertainty floor alone swallowed five of
+            // them. Only relax it when both end caps still occupy the baseline's
+            // exact X positions, so a changed denominator cannot mimic HP loss.
+            // Require a longer three-sample plateau; an isolated low edge is not
+            // an attack. Y may move with ordinary Pokémon bobbing.
+            val stableBounds = measurement != null && baselineMeasurement?.let {
+                it.left == measurement.left && it.right == measurement.right
+            } == true
+            val smallLoss = stableBounds && innerWidth != null &&
+                baseline - current >= MIN_DAMAGE_FRACTION &&
+                (baseline - current) * innerWidth >= PERSISTENT_SMALL_LOSS_PIXELS
+            if (!smallLoss) {
+                clearPending()
+                return null
+            }
+            val pending = pendingAfterFraction
+            val changedAt = pendingChangedAtNanos
+            if (!pendingSmallLoss || pending == null || changedAt == null ||
+                kotlin.math.abs(current - pending) > UPDATE_EPSILON) {
+                beginPending(current, measurementConfidence, monotonicTimeNanos, measurement, smallLoss = true)
+                return null
+            }
+            pendingSampleCount++
+            pendingConfidence = minOf(pendingConfidence, measurementConfidence)
+            if (pendingSampleCount < SMALL_LOSS_SAMPLES ||
+                monotonicTimeNanos - changedAt < SMALL_LOSS_SETTLE_NANOS) return null
+            val tick = settled(baseline, minOf(pending, current), changedAt)
+            clearPending()
+            return tick
         }
 
+        // A deeper loss must not retroactively certify a small plateau that
+        // failed its independent persistence requirement.
+        if (pendingSmallLoss) clearPending()
         val pending = pendingAfterFraction
         val changedAt = pendingChangedAtNanos
         if (pending != null && changedAt != null && current < pending - UPDATE_EPSILON &&
@@ -520,29 +567,56 @@ internal class ActiveHpBarDamageTickDetector {
             // capture missed its identical plateau frames. Keep both steps,
             // instead of extending the pending loss until the Pokémon is dead.
             val tick = settled(baseline, pending, changedAt)
-            pendingAfterFraction = current
-            pendingChangedAtNanos = monotonicTimeNanos
-            pendingConfidence = measurementConfidence
+            beginPending(current, measurementConfidence, monotonicTimeNanos, measurement)
             return tick
         }
         if (pending == null || kotlin.math.abs(current - pending) > UPDATE_EPSILON) {
-            pendingAfterFraction = current
-            pendingChangedAtNanos = monotonicTimeNanos
-            pendingConfidence = measurementConfidence
+            beginPending(current, measurementConfidence, monotonicTimeNanos, measurement)
             return null
         }
         if (changedAt == null) return null
         if (monotonicTimeNanos - changedAt < SETTLE_NANOS) return null
 
-        val after = minOf(pending, current)
+        val tick = settled(baseline, minOf(pending, current), changedAt)
+        clearPending()
+        return tick
+    }
+
+    private fun clearPending() {
         pendingAfterFraction = null
         pendingChangedAtNanos = null
-        return settled(baseline, after, changedAt)
+        pendingConfidence = 0f
+        pendingMeasurement = null
+        pendingSmallLoss = false
+        pendingSampleCount = 0
+    }
+
+    private fun beginPending(
+        after: Float,
+        confidence: Float,
+        at: Long,
+        measurement: ActiveHpBarMeasurement?,
+        smallLoss: Boolean = false,
+    ) {
+        pendingAfterFraction = after
+        pendingChangedAtNanos = at
+        pendingConfidence = confidence
+        pendingMeasurement = measurement
+        pendingSmallLoss = smallLoss
+        pendingSampleCount = 1
+    }
+
+    private fun reacquire(fraction: Float, at: Long, measurement: ActiveHpBarMeasurement?) {
+        baselineFraction = fraction
+        baselineMeasurement = measurement
+        clearPending()
+        lastSampleAtNanos = at
     }
 
     private fun settled(before: Float, after: Float, observedAt: Long): ActiveHpBarDamageTickMeasurement {
         val lost = (before - after).coerceIn(0f, 1f)
         baselineFraction = after
+        baselineMeasurement = pendingMeasurement
         return ActiveHpBarDamageTickMeasurement(
             beforeFraction = before,
             afterFraction = after,
@@ -555,6 +629,10 @@ internal class ActiveHpBarDamageTickDetector {
     private companion object {
         const val MIN_DAMAGE_FRACTION = 0.006f
         const val EDGE_UNCERTAINTY_PIXELS = 3.5f
+        // Half-pixel boundary tolerates fraction rounding for a three-pixel edge.
+        const val PERSISTENT_SMALL_LOSS_PIXELS = 2.5f
+        const val SMALL_LOSS_SAMPLES = 3
+        const val SMALL_LOSS_SETTLE_NANOS = 350_000_000L
         // One fill pixel on the approximately 190 px captured bar is 0.0053.
         const val UPDATE_EPSILON = 0.006f
         const val SETTLE_NANOS = 90_000_000L

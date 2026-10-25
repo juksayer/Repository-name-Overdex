@@ -233,3 +233,82 @@ frames, and actual impacts separately. Align it using independently observable
 events and preserve uncertainty. Keep visual shape/color, audio, HP loss, and
 cadence as independent measurements. Do not infer ownership from particle
 proximity, or treat the diagnostic centroid arrow as tracked particle motion.
+
+## Follow-up: small HP steps and sampling gaps
+
+Closer inspection distinguishes two causes that must not be combined into a
+single "missed frames" diagnosis. All five large Aegislash losses on the Pixel
+have retained intermediate three-pixel HP plateaus. The existing 3.5-pixel edge
+uncertainty floor rejects these smaller losses even when several samples show
+them, and then absorbs them into a later larger loss.
+
+Before tick `7bbf5aec-04bf-4061-b816-8d2f7a44e14e`, the opponent bar stays at
+horizontal bounds `[336, 528]` (inner width 188 pixels) while its vertical position
+bobs. Its recorded fill changes from `0.9893617` to `0.9734042`, a three-pixel
+loss. Three samples retain that intermediate plateau across roughly 770 ms;
+the old detector waits until `0.9468085` and records the combined loss. No
+interpolation or expected attack schedule is needed to recover the already
+measured intermediate level. Any correction must still reject outline jitter
+and undamaged Pokémon in the idle recordings.
+
+The Flygon sampling gap is a different limitation. Between the Pixel's opponent
+HP readings at 105.850 and 107.610 seconds, its shared HP reader produces
+player-only measurements at 106.867 and 107.209. The HP worker therefore ran on
+those frames but could not publish an opponent measurement. Those exact source
+pixels were not retained, so this does not establish a specific locator defect.
+Other readers also observed frames inside the gap, and neither archive records
+a battle-time global capture outage over the current 750 ms threshold.
+
+Over the stable Flygon interval (99–168 seconds), Pixel has 196 source timestamps
+with at least one HP measurement: 65 with both bars and 131 with just one. The
+Moondrop has 490, all with both bars. Successful HP-bearing frames alone cannot
+distinguish subscriber drops from inspections that found neither bar. A later
+bounded diagnostic should record source sequence gaps, reader processing time,
+and per-side successful/unsuccessful inspection counts without retaining a new
+stream of screenshots. Increasing capture rate or widening calibration is not
+justified by these counts alone.
+
+The detector correction keeps the ordinary 3.5-pixel uncertainty floor and adds
+a geometry-qualified path for a persistent three-pixel-sized loss (a 2.5-pixel
+rounding boundary). It requires unchanged horizontal end caps relative to the
+accepted baseline and at least three lower-plateau samples spanning 350 ms.
+Vertical bobbing is allowed. Rebounds out of that qualifying plateau, changed
+horizontal bounds, a long sample gap, relocation, and reset clear the candidate.
+A deeper loss cannot retroactively validate a small plateau that failed these
+checks. The source timestamp remains the first qualifying lower reading.
+After entry settles, effectively unchanged HP (less than half a source pixel)
+may refresh the reference end caps without changing the HP baseline. This avoids
+permanently rejecting later losses because an initial end cap was one pixel
+away from its settled position. It does not permit the baseline HP to ratchet.
+
+The five positive excerpts and the undamaged Mawile sequences preserve 1,766
+original HP measurements, including Article IDs. Every copied field and the
+publication ordering were verified against the source archives. All five
+positive excerpts produce two distinct measured losses, while all 274 Pixel and
+1,437 Moondrop undamaged Mawile samples produce zero damage ticks. The earlier
+Abomasnow noise and geometry-free measurement safeguards remain covered.
+The complete 281-measurement Aegislash appearance, including its initial entry
+geometry, was then verified against the source and replayed through the detector.
+It produces 40 measured losses versus 35 originally archived ticks, retaining
+all five intermediate losses at their original source times. The focused suite
+passes 27 tests (14 existing and 13 new).
+These checks establish the measured HP-step correction; they do not equate
+either original 94/104 attack total with a validated true count. Source archives
+are unchanged, and the suspected 674.8 ms flash/loss duplication remains open.
+
+The separate repeat video provides one count-consistent control. In video
+84–96 seconds, an idle lead-in is followed by five distinct closing-jaw/fire
+episodes, then idle again. Their approximate jaw-onset brackets are
+87.508–87.643, 88.295–88.384, 89.258–89.375, 90.145–90.263, and 91.160–91.278
+seconds. The matching repeat archive records five Mawile uses at video-relative
+87.571, 88.967, 89.421, 90.841, and 91.581 seconds. This supports that short
+segment's count, not frame-exact timing. HP afterimages and bar movement make
+individual loss boundaries less clearly readable than the jaw sequences.
+
+Final validation for the small-loss correction: `:app:testDebugUnitTest` and
+`:app:assembleDebug` succeeded. All **1,148 tests across 197 suites** passed,
+with zero failures, errors, or skips. Independent review and
+`git diff --check` passed. APK SHA-256:
+`2946d0e1bfa4911c246c01be2547bd1f13610c0ec853359086da4faaa12ec348`.
+This is recorded-evidence validation; the new capture behavior still needs a
+post-install battle before live accuracy can be claimed.
