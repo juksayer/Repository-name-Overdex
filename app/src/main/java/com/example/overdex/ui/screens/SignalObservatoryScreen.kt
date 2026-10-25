@@ -37,13 +37,6 @@ enum class SignalObservatoryFocus {
     CLOSE
 }
 
-enum class ResearcherFocus {
-    PROBE,
-    OBSERVATORY,
-    MATCH_CALIBRATION,
-    CLOSE
-}
-
 @Composable
 fun SignalObservatoryScreen(
     filterSettings: FilterSettings,
@@ -179,7 +172,7 @@ fun SignalObservatoryScreen(
             }
 
             LauncherBox(
-                label = "Timeline Viewer",
+                label = "Match Summary",
                 selected = focusManager.currentItem == SignalObservatoryFocus.OBSERVATORY,
                 requester = bringIntoViewRequesters[SignalObservatoryFocus.OBSERVATORY]!!
             )
@@ -263,115 +256,6 @@ fun SignalObservatoryScreen(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ResearcherModeOverlay(
-    onLaunchProbe: () -> Unit = {},
-    onLaunchObservatory: () -> Unit = {},
-    onLaunchMatchCalibration: () -> Unit = {},
-    onClose: () -> Unit,
-    onUp: (() -> Unit) -> Unit = {},
-    onDown: (() -> Unit) -> Unit = {},
-    onLeft: (() -> Unit) -> Unit = {},
-    onRight: (() -> Unit) -> Unit = {},
-    onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {},
-) {
-    val focusManager = rememberHandheldFocusManager(
-        if (BuildConfig.DEBUG) ResearcherFocus.PROBE else ResearcherFocus.OBSERVATORY
-    )
-    
-    val visibleItems = remember {
-        listOf(
-            ResearcherFocus.PROBE,
-            ResearcherFocus.OBSERVATORY,
-            ResearcherFocus.MATCH_CALIBRATION,
-            ResearcherFocus.CLOSE
-        ).filter { BuildConfig.DEBUG || it != ResearcherFocus.PROBE }
-    }
-
-    LaunchedEffect(visibleItems) {
-        focusManager.updateItems(visibleItems)
-    }
-
-    val bringIntoViewRequesters = remember {
-        visibleItems.associateWith { BringIntoViewRequester() }
-    }
-
-    HandheldFocusSync(
-        selectedIndex = visibleItems.indexOf(focusManager.currentItem),
-        items = visibleItems,
-        requesters = bringIntoViewRequesters
-    )
-
-    val currentOnLaunchProbe by rememberUpdatedState(onLaunchProbe)
-    val currentOnLaunchObservatory by rememberUpdatedState(onLaunchObservatory)
-    val currentOnLaunchMatchCalibration by rememberUpdatedState(onLaunchMatchCalibration)
-    val currentOnClose by rememberUpdatedState(onClose)
-
-    DisposableEffect(Unit) {
-        onUp { focusManager.moveUp() }
-        onDown { focusManager.moveDown() }
-        onA {
-            when (focusManager.currentItem) {
-                ResearcherFocus.PROBE -> if (BuildConfig.DEBUG) currentOnLaunchProbe()
-                ResearcherFocus.OBSERVATORY -> currentOnLaunchObservatory()
-                ResearcherFocus.MATCH_CALIBRATION -> currentOnLaunchMatchCalibration()
-                ResearcherFocus.CLOSE -> currentOnClose()
-                else -> {}
-            }
-        }
-        onB { currentOnClose() }
-
-        onDispose {
-            onUp {}
-            onDown {}
-            onA {}
-            onB {}
-        }
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = TerminalBlack.copy(alpha = 0.95f),
-        contentColor = TerminalGreen
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Text("SIGNAL OBSERVATORY", fontWeight = FontWeight.Bold, color = TerminalPurple, fontSize = 22.sp)
-
-            Spacer(modifier = Modifier.height(26.dp))
-            Text("LAUNCH", color = TerminalPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            if (BuildConfig.DEBUG) {
-                LauncherBox(
-                    label = "Accessibility Probe",
-                    selected = focusManager.currentItem == ResearcherFocus.PROBE,
-                    requester = bringIntoViewRequesters[ResearcherFocus.PROBE]!!
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            
-            LauncherBox(
-                label = "Timeline Viewer",
-                selected = focusManager.currentItem == ResearcherFocus.OBSERVATORY,
-                requester = bringIntoViewRequesters[ResearcherFocus.OBSERVATORY]!!
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LauncherBox(
-                label = "Match Calibration",
-                selected = focusManager.currentItem == ResearcherFocus.MATCH_CALIBRATION,
-                requester = bringIntoViewRequesters[ResearcherFocus.MATCH_CALIBRATION]!!
-            )
         }
     }
 }

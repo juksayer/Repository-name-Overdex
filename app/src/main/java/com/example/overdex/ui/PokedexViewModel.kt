@@ -260,6 +260,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _latestMatchArchiveSource =
         MutableStateFlow<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
     val latestMatchArchiveSource = _latestMatchArchiveSource.asStateFlow()
+    private val summaryHandoff = com.example.overdex.ui.navigation.MatchSummaryHandoff()
+    val pendingMatchSummary = summaryHandoff.pending
+
+    fun acknowledgeMatchSummary(matchId: MatchId) = summaryHandoff.acknowledge(matchId)
 
     fun getFieldNotes(pokemonId: Int) = flow {
         emit(fieldNoteRepository.getFieldNotesForPokemon(pokemonId))
@@ -417,6 +421,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun startFreshMatch(resultCode: Int, data: android.content.Intent, startCaptureService: Boolean): Match {
+        summaryHandoff.clearForNewMatch()
         _deploymentState.value = InstrumentDeploymentState.DEPLOYING
         
         // Initialize Match
@@ -1281,12 +1286,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private fun retainAndArchiveMatch(match: Match, reason: String) {
         if (!retainedMatchIds.add(match.matchId)) return
-        activeCheckpointJob?.cancel()
-        activeCheckpointJob = null
+        if (_activeMatch.value === match) {
+            activeCheckpointJob?.cancel()
+            activeCheckpointJob = null
+        }
         match.speciesChecks.stop()
         val source = MatchArchiveSource(MatchId(match.matchId), match.realityTimeline)
         fieldMatchLedger.complete(source)
-        _latestMatchArchiveSource.value = source
+        // A late result from a released match may still be archived, but must
+        // not replace the current match or reopen its summary during the next one.
+        if (_activeMatch.value === match) {
+            _latestMatchArchiveSource.value = source
+            summaryHandoff.offer(source)
+        }
         archiveCompletedMatch(source, reason)
     }
 

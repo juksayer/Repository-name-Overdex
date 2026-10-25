@@ -38,7 +38,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import com.example.overdex.ResearcherManager
 import com.example.overdex.model.PokemonType
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
@@ -49,7 +48,6 @@ import com.example.overdex.presentation.TacticalEvidence
 import com.example.overdex.ui.ODXFi.InstrumentButton
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.lcdDisplayEffect
-import com.example.overdex.ui.screens.ResearcherModeOverlay
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
@@ -660,165 +658,6 @@ fun AndroidPokeballLogo(
             strokeWidth = 4.dp.toPx(),
             cap = StrokeCap.Round
         )
-    }
-}
-
-enum class FilterFocus {
-    ENABLED,
-    SCANLINES,
-    CURVATURE,
-    NOISE,
-    RESEARCHER,
-    CLOSE
-}
-
-@Composable
-fun FilterSettingsOverlay(
-    settings: FilterSettings,
-    onSettingsChange: (FilterSettings) -> Unit,
-    isResearcherUnlocked: Boolean = false,
-    onOpenResearcher: () -> Unit = {},
-    onClose: () -> Unit,
-    onUp: (() -> Unit) -> Unit = {},
-    onDown: (() -> Unit) -> Unit = {},
-    onLeft: (() -> Unit) -> Unit = {},
-    onRight: (() -> Unit) -> Unit = {},
-    onA: (() -> Unit) -> Unit = {},
-    onB: (() -> Unit) -> Unit = {}
-) {
-    val focusManager = rememberHandheldFocusManager(FilterFocus.ENABLED)
-    
-    val visibleItems = remember(settings.isEnabled, isResearcherUnlocked) {
-        buildList {
-            add(FilterFocus.ENABLED)
-            if (settings.isEnabled) {
-                add(FilterFocus.SCANLINES)
-                add(FilterFocus.CURVATURE)
-                add(FilterFocus.NOISE)
-            }
-            if (isResearcherUnlocked) {
-                add(FilterFocus.RESEARCHER)
-            }
-            add(FilterFocus.CLOSE)
-        }
-    }
-
-    LaunchedEffect(visibleItems) {
-        focusManager.updateItems(visibleItems)
-    }
-
-    SideEffect {
-
-        onUp { focusManager.moveUp() }
-        onDown { focusManager.moveDown() }
-        onLeft {
-            if (settings.isEnabled) {
-                when (focusManager.currentItem) {
-                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity - 0.05f).coerceIn(0f, 1f)))
-                    FilterFocus.CURVATURE -> onSettingsChange(settings.copy(crtCurvature = (settings.crtCurvature - 0.05f).coerceIn(0f, 0.5f)))
-                    FilterFocus.NOISE -> onSettingsChange(settings.copy(noiseIntensity = (settings.noiseIntensity - 0.05f).coerceIn(0f, 0.5f)))
-                    else -> {}
-                }
-            }
-        }
-        onRight {
-            if (settings.isEnabled) {
-                when (focusManager.currentItem) {
-                    FilterFocus.SCANLINES -> onSettingsChange(settings.copy(scanlineIntensity = (settings.scanlineIntensity + 0.05f).coerceIn(0f, 0.5f)))
-                    FilterFocus.CURVATURE -> onSettingsChange(settings.copy(crtCurvature = (settings.crtCurvature + 0.05f).coerceIn(0f, 0.5f)))
-                    FilterFocus.NOISE -> onSettingsChange(settings.copy(noiseIntensity = (settings.noiseIntensity + 0.05f).coerceIn(0f, 0.5f)))
-                    else -> {}
-                }
-            }
-        }
-        onA {
-            when (focusManager.currentItem) {
-                FilterFocus.ENABLED -> onSettingsChange(settings.copy(isEnabled = !settings.isEnabled))
-                FilterFocus.RESEARCHER -> onOpenResearcher()
-                FilterFocus.CLOSE -> onClose()
-                else -> {}
-            }
-        }
-        onB { onClose() }
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = TerminalBlack.copy(alpha = 0.95f),
-        contentColor = TerminalGreen
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val closeSelected = focusManager.currentItem == FilterFocus.CLOSE
-                Text("FILTER SETTINGS", fontWeight = FontWeight.Bold, color = TerminalPurple)
-                Text(
-                    text = if (closeSelected) "[ CLOSE ]" else "  CLOSE  ",
-                    color = if (closeSelected) TerminalGreen else TerminalDimGreen,
-                    modifier = Modifier.padding(4.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingToggle(
-                label = "Enabled", 
-                value = settings.isEnabled, 
-                selected = focusManager.currentItem == FilterFocus.ENABLED
-            ) { onSettingsChange(settings.copy(isEnabled = it)) }
-
-            if (settings.isEnabled) {
-                SettingSlider(
-                    label = "Scanlines", 
-                    value = settings.scanlineIntensity, 
-                    min = 0f, 
-                    max = 1f, 
-                    selected = focusManager.currentItem == FilterFocus.SCANLINES
-                ) { onSettingsChange(settings.copy(scanlineIntensity = it)) }
-                
-                SettingSlider(
-                    label = "Curvature", 
-                    value = settings.crtCurvature, 
-                    min = 0f, 
-                    max = 1.0f,
-                    selected = focusManager.currentItem == FilterFocus.CURVATURE
-                ) { onSettingsChange(settings.copy(crtCurvature = it)) }
-                
-                SettingSlider(
-                    label = "Noise", 
-                    value = settings.noiseIntensity, 
-                    min = 0f, 
-                    max = 1.0f,
-                    selected = focusManager.currentItem == FilterFocus.NOISE
-                ) { onSettingsChange(settings.copy(noiseIntensity = it)) }
-            } else {
-                Text("FILTERS DISABLED", color = TerminalDimGreen, fontSize = 12.sp, modifier = Modifier.padding(vertical = 16.dp))
-            }
-
-            if (isResearcherUnlocked) {
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = TerminalPurple.copy(alpha = 0.3f))
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(if (focusManager.currentItem == FilterFocus.RESEARCHER) TerminalPurple.copy(alpha = 0.2f) else Color.Transparent)
-                        .border(1.dp, if (focusManager.currentItem == FilterFocus.RESEARCHER) TerminalPurple else Color.Transparent)
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("OPEN RESEARCHER MODE", fontWeight = FontWeight.Bold, color = TerminalPurple)
-                }
-            }
-        }
     }
 }
 

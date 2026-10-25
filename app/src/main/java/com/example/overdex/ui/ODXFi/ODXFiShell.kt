@@ -1,9 +1,5 @@
 package com.example.overdex.ui.ODXFi
 
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -56,7 +52,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.ResearcherManager
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.presentation.InstrumentLifecycle
@@ -68,7 +63,6 @@ import com.example.overdex.ui.components.BreathingLED
 import com.example.overdex.ui.components.Droidball
 import com.example.overdex.ui.components.EnemyTeamMemoryOverlay
 import com.example.overdex.ui.components.FilterSettings
-import com.example.overdex.ui.components.FilterSettingsOverlay
 import com.example.overdex.ui.components.InstrumentLCD
 import com.example.overdex.ui.components.LiveMoveAnalysisPanel
 import com.example.overdex.ui.components.OverlayState
@@ -76,13 +70,10 @@ import com.example.overdex.ui.components.StatusIndicator
 import com.example.overdex.ui.components.TerminalKeyboardController
 import com.example.overdex.ui.components.glassShield
 import com.example.overdex.ui.lcdDisplayEffect
-import com.example.overdex.ui.screens.ResearcherModeOverlay
 import com.example.overdex.ui.theme.PokedexGreen
 import com.example.overdex.ui.theme.PokedexScreen
 import com.example.overdex.ui.theme.TerminalGreen
-import kotlinx.coroutines.delay
 import java.util.UUID
-import kotlin.time.Duration.Companion.milliseconds
 
 
 @Composable
@@ -353,8 +344,6 @@ fun ODXFiShell(
     val activeMatch by viewModel?.activeMatch?.collectAsState() ?: remember { mutableStateOf(null) }
     val battleMemory = activeMatch?.battleMemory
 
-    var showSettings by remember { mutableStateOf(false) }
-    var showResearcherSettings by remember { mutableStateOf(false) }
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
 
     val currentRoute = com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute.current
@@ -373,21 +362,6 @@ fun ODXFiShell(
         }
     }
 
-    // Overlay Input Registration
-    var settingsUp by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var settingsDown by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var settingsLeft by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var settingsRight by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var settingsA by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var settingsB by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-    var researcherUp by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var researcherDown by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var researcherA by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var researcherB by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-
-
     val currentState = instrumentState ?: ObservationSessionState.IDLE
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
@@ -399,41 +373,7 @@ fun ODXFiShell(
     val crtTopBezel = 28.dp
 
     val context = LocalContext.current
-    val researcherManager = remember { ResearcherManager(context) }
-    var isResearcherUnlocked by remember { mutableStateOf(researcherManager.isUnlocked()) }
-
-    // Konami Code Detection
-    val konamiCode = remember { listOf("UP", "UP", "DOWN", "DOWN", "LEFT", "RIGHT", "LEFT", "RIGHT", "B", "A") }
-    var currentSequence by remember { mutableStateOf(emptyList<String>()) }
-    var unlockMessage by remember { mutableStateOf<String?>(null) }
-
-    // BattleMemory - Restore local lifecycle
     var currentDecision by remember { mutableStateOf<com.example.overdex.model.DecisionAnalysis?>(null) }
-
-    val handleInput = { input: String ->
-        val nextSequence = currentSequence + input
-        if (konamiCode.take(nextSequence.size) == nextSequence) {
-            currentSequence = nextSequence
-            // Konami Code access disabled: trigger condition permanently false
-            if (false && currentSequence.size == konamiCode.size) {
-                researcherManager.setUnlocked(true)
-                isResearcherUnlocked = true
-                showSettings = true
-                unlockMessage = "ACCESS LEVEL UPDATED\nRESEARCHER MODE ENABLED"
-                currentSequence = emptyList()
-            }
-        } else {
-            // Reset if sequence broken, but allow starting new sequence with 'UP'
-            currentSequence = if (input == "UP") listOf("UP") else emptyList()
-        }
-    }
-
-    LaunchedEffect(unlockMessage) {
-        if (unlockMessage != null) {
-            delay(30.milliseconds)
-            unlockMessage = null
-        }
-    }
 
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
@@ -629,73 +569,6 @@ fun ODXFiShell(
                     }
                 }
 
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showSettings,
-                    enter = fadeIn() + expandIn(),
-                    exit = fadeOut() + shrinkOut()
-                ) {
-                    FilterSettingsOverlay(
-                        settings = filterSettings,
-                        onSettingsChange = onFilterSettingsChange,
-                        isResearcherUnlocked = isResearcherUnlocked,
-                        onOpenResearcher = {
-                            showSettings = false
-                            showResearcherSettings = true
-                        },
-                        onClose = { showSettings = false },
-                        onUp = { settingsUp = it },
-                        onDown = { settingsDown = it },
-                        onLeft = { settingsLeft = it },
-                        onRight = { settingsRight = it },
-                        onA = { settingsA = it },
-                        onB = { settingsB = it }
-                    )
-                }
-
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showResearcherSettings,
-                    enter = fadeIn() + expandIn(),
-                    exit = fadeOut() + shrinkOut()
-                ) {
-                    ResearcherModeOverlay(
-                        onLaunchProbe = {
-                            showResearcherSettings = false
-                            onLaunchProbe()
-                        },
-                        onLaunchObservatory = {
-                            showResearcherSettings = false
-                            onLaunchObservatory()
-                        },
-                        onLaunchMatchCalibration = {
-                            showResearcherSettings = false
-                            onLaunchMatchCalibration()
-                        },
-                        onClose = { showResearcherSettings = false },
-                        onUp = { researcherUp = it },
-                        onDown = { researcherDown = it },
-                        onA = { researcherA = it },
-                        onB = { researcherB = it }
-                    )
-                }
-
-                // Unlock Message Overlay
-                if (unlockMessage != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.8f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = unlockMessage!!,
-                            color = TerminalGreen,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                        )
-                    }
-                }
                 }
             }
         }
@@ -723,58 +596,32 @@ fun ODXFiShell(
                     icon = Icons.Default.ArrowDropUp,
                     contentDescription = "Up",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        handleInput("UP")
-                        if (showResearcherSettings) researcherUp?.invoke()
-                        else if (showSettings) settingsUp?.invoke()
-                        else onUp()
-                    },
-                    onLongClick = {
-                        if (!showResearcherSettings && !showSettings) onUpLong()
-                    },
+                    onClick = onUp,
+                    onLongClick = onUpLong,
                     onPressChanged = onUpPressChanged,
                 )
                 InstrumentButton(
                     icon = Icons.Default.ArrowDropDown,
                     contentDescription = "Down",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        handleInput("DOWN")
-                        if (showResearcherSettings) researcherDown?.invoke()
-                        else if (showSettings) settingsDown?.invoke()
-                        else onDown()
-                    },
-                    onLongClick = {
-                        if (!showResearcherSettings && !showSettings) onDownLong()
-                    },
+                    onClick = onDown,
+                    onLongClick = onDownLong,
                     onPressChanged = onDownPressChanged,
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowLeft,
                     contentDescription = "Left",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        handleInput("LEFT")
-                        if (showSettings) settingsLeft?.invoke()
-                        else onLeft()
-                    },
-                    onLongClick = {
-                        if (!showResearcherSettings && !showSettings) onLeftLong()
-                    },
+                    onClick = onLeft,
+                    onLongClick = onLeftLong,
                     onPressChanged = if (isBinderMode) onLeftPressChanged else null
                 )
                 InstrumentButton(
                     icon = Icons.AutoMirrored.Filled.ArrowRight,
                     contentDescription = "Right",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        handleInput("RIGHT")
-                        if (showSettings) settingsRight?.invoke()
-                        else onRight()
-                    },
-                    onLongClick = {
-                        if (!showResearcherSettings && !showSettings) onRightLong()
-                    },
+                    onClick = onRight,
+                    onLongClick = onRightLong,
                     onPressChanged = if (isBinderMode) onRightPressChanged else null
                 )
             }
@@ -810,33 +657,19 @@ fun ODXFiShell(
                 InstrumentButton(
                     label = "A",
                     labelRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        handleInput("A")
-                        if (showResearcherSettings) researcherA?.invoke()
-                        else if (showSettings) settingsA?.invoke()
-                        else onA()
-                    },
-                    onLongClick = {
-                        if (!showResearcherSettings && !showSettings) {
-                            onALong()
-                        }
-                    }
+                    onClick = onA,
+                    onLongClick = onALong
                 )
                 InstrumentButton(
                     label = "B",
                     labelRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
-                        handleInput("B")
-                        if (showResearcherSettings) researcherB?.invoke()
-                        else if (showSettings) settingsB?.invoke()
-                        else {
-                            val isOwner = currentRoute == owningRoute
-                            com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
-                            if (isOwner) {
-                                onB()
-                            } else {
-                                android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
-                            }
+                        val isOwner = currentRoute == owningRoute
+                        com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
+                        if (isOwner) {
+                            onB()
+                        } else {
+                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
                         }
                     }
                 )
@@ -845,10 +678,7 @@ fun ODXFiShell(
                     icon = if (isBinderMode) Icons.Default.Search else null,
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
-                    onClick = {
-                        handleInput(if (isBinderMode) "SEARCH" else "SELECT")
-                        onSelect()
-                    },
+                    onClick = onSelect,
                     onLongClick = onSelectLong
                 )
                 InstrumentButton(
@@ -858,11 +688,9 @@ fun ODXFiShell(
                         InstrumentDeploymentState.READY -> "STOP"
                         else -> "START"
                     }, 
-                    onClick = {
-                        handleInput("START")
-                        if (keyboardController?.isVisible != true && serviceMode) showSettings = true
-                        onStart()
-                    }
+                    // START/STOP belongs to this screen. Settings are reached
+                    // explicitly through Signal Observatory, never by session state.
+                    onClick = onStart
                 )
             }
         }

@@ -433,6 +433,17 @@ fun PokedexApp(
     val interruptedObservationNotice by viewModel.interruptedObservationNotice.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    com.example.overdex.ui.navigation.MatchSummaryReturnEffect(
+        pending = viewModel.pendingMatchSummary,
+        onOpenSummary = {
+            viewModel.markBooted()
+            navController.navigate("timeline_viewer") {
+                popUpTo("main_menu") { inclusive = false }
+                launchSingleTop = true
+            }
+        },
+        onHandled = { viewModel.acknowledgeMatchSummary(it) },
+    )
 
     LaunchedEffect(notificationStartRequest) {
         if (notificationStartRequest > 0 && !DroidballService.isRunning()) {
