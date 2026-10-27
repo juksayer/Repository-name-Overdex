@@ -1,0 +1,239 @@
+{
+  "sourceVideo": "Screen_recording_20261027_094319.mp4",
+  "sourceVideoSha256": "a4cb0134c0c62d1b9e833e4385ca82a20b068b3a15185c4cb7cb3a33b7a0858c",
+  "sourceVideoSize": [
+    816,
+    1712
+  ],
+  "scaledSize": [
+    672,
+    1419
+  ],
+  "transform": "PyAV source frame at listed presentation timestamp; Pillow bilinear resize to live capture dimensions, then lossless PNG crop. No intentional recoloring. Bilinear scaling changes sampled colors; these are video-derived proxies, not native MediaProjection frames.",
+  "sourceMatch": "f5f37550-c4a1-478d-9ae4-dadf31a8fe0c",
+  "pixelRecordMinusVideoSeconds": 45.3,
+  "pixelAlignmentUncertaintySeconds": 0.1,
+  "notes": "Frames are locator regressions, not ground-truth attack counts. Shadow Gardevoir is attacking; Melmetal receives. Music was on for this Pixel recording. The two unresolved fragmented-blue phases remain absent; no gap or color thresholds expanded.",
+  "fixtures": [
+    {
+      "file": "bar-28.113322.png",
+      "videoTimeSeconds": 28.113322222222223,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-28.644667.png",
+      "videoTimeSeconds": 28.644666666666666,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-29.216789.png",
+      "videoTimeSeconds": 29.21678888888889,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-29.684933.png",
+      "videoTimeSeconds": 29.684933333333333,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-30.302922.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-31.126744.png",
+      "videoTimeSeconds": 31.126744444444444,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-31.486967.png",
+      "videoTimeSeconds": 31.486966666666667,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-32.660622.png",
+      "videoTimeSeconds": 32.66062222222222,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-34.662433.png",
+      "videoTimeSeconds": 34.66243333333333,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-35.947722.png",
+      "videoTimeSeconds": 35.947722222222225,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "white and blue phases of recipient HP bar"
+    },
+    {
+      "file": "bar-40.021411.png",
+      "videoTimeSeconds": 40.021411111111114,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "idle HP plateau"
+    },
+    {
+      "file": "bar-41.519600.png",
+      "videoTimeSeconds": 41.5196,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "idle HP plateau"
+    },
+    {
+      "file": "bar-42.023956.png",
+      "videoTimeSeconds": 42.02395555555555,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "idle HP plateau"
+    },
+    {
+      "file": "negative-blue-sky.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        270,
+        270,
+        580,
+        390
+      ],
+      "role": "blue sky and tree artwork, no HP bar"
+    },
+    {
+      "file": "negative-shadow-aura.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        0,
+        525,
+        310,
+        655
+      ],
+      "role": "shadow Gardevoir aura and Melmetal artwork, no HP bar"
+    },
+    {
+      "file": "negative-pokemon-art.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        60,
+        1000,
+        370,
+        1200
+      ],
+      "role": "white Gardevoir artwork and purple shadow aura, no HP bar"
+    },
+    {
+      "file": "negative-touch-ring.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        240,
+        790,
+        550,
+        990
+      ],
+      "role": "white touch ring, no HP bar"
+    },
+    {
+      "file": "bar-36.005678.png",
+      "videoTimeSeconds": 36.00567777777778,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "Blue-outline bar with interrupted saturated fill; left fragment is not a valid HP endpoint"
+    },
+    {
+      "file": "bar-36.104333.png",
+      "videoTimeSeconds": 36.10433333333334,
+      "sourceScaledCrop": [
+        270,
+        450,
+        580,
+        570
+      ],
+      "role": "Blue-outline bar with interrupted saturated fill; left fragment is not a valid HP endpoint"
+    },
+    {
+      "file": "full-band-30.302922.png",
+      "videoTimeSeconds": 30.30292222222222,
+      "sourceScaledCrop": [
+        0,
+        450,
+        672,
+        750
+      ],
+      "role": "Full-width source band containing both active HP bars; exercises live recovery scan gap/edge tolerances"
+    }
+  ]
+}

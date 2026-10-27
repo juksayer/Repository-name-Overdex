@@ -1,0 +1,180 @@
+{
+  "source": "/home/sean/Desktop/Screen_recording_20261027_094319.mp4",
+  "source_sha256": "a4cb0134c0c62d1b9e833e4385ca82a20b068b3a15185c4cb7cb3a33b7a0858c",
+  "timestamp_basis": "Actual decoded video PTS multiplied by time_base; seconds from video start. No archive offset applied.",
+  "source_dimensions": [
+    816,
+    1712
+  ],
+  "review_method": "Manual inspection of original-color source frames sampled at 8fps; first two recipient onsets inspected at20fps. Independent of archive event counts.",
+  "audio_present": false,
+  "go_first_visible_interval_seconds": [
+    21.216,
+    21.317
+  ],
+  "go_cleared_by_seconds": 22.115,
+  "attacker": "Player Shadow Gardevoir",
+  "recipient": "Opponent Melmetal",
+  "move": "Charm",
+  "contact_definition": "First pale pointed ring / blue-white glints on Melmetal head/neck followed by descending points, after a distinct rising-heart sequence around Gardevoir. This is a visible contact effect, not a claim of server damage timestamp.",
+  "contact_onsets": [
+    {
+      "block": 1,
+      "cycle": 1,
+      "onset_after_seconds": 28.592,
+      "onset_by_seconds": 28.619,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 2,
+      "onset_after_seconds": 29.865,
+      "onset_by_seconds": 29.926,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 3,
+      "onset_after_seconds": 31.127,
+      "onset_by_seconds": 31.265,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 4,
+      "onset_after_seconds": 32.634,
+      "onset_by_seconds": 32.777,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 5,
+      "onset_after_seconds": 34.169,
+      "onset_by_seconds": 34.25,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 6,
+      "onset_after_seconds": 35.761,
+      "onset_by_seconds": 35.898,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 1,
+      "cycle": 7,
+      "onset_after_seconds": 37.151,
+      "onset_by_seconds": 37.253,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 1,
+      "onset_after_seconds": 43.144,
+      "onset_by_seconds": 43.25,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 2,
+      "onset_after_seconds": 44.751,
+      "onset_by_seconds": 44.879,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 3,
+      "onset_after_seconds": 46.265,
+      "onset_by_seconds": 46.377,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 4,
+      "onset_after_seconds": 47.628,
+      "onset_by_seconds": 47.754,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 5,
+      "onset_after_seconds": 49.128,
+      "onset_by_seconds": 49.255,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 6,
+      "onset_after_seconds": 50.765,
+      "onset_by_seconds": 50.898,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    },
+    {
+      "block": 2,
+      "cycle": 7,
+      "onset_after_seconds": 52.133,
+      "onset_by_seconds": 52.274,
+      "completed_visible_cycle": true,
+      "count_confidence": "high",
+      "onset_precision": "sample bracket"
+    }
+  ],
+  "block_completed_counts": [
+    7,
+    7
+  ],
+  "settled_idle_controls_seconds": [
+    [
+      22.3,
+      26.9
+    ],
+    [
+      38.0,
+      41.9
+    ],
+    [
+      53.0,
+      58.0
+    ]
+  ],
+  "not_counted": [
+    "White expanding touch rings are user input, not attacks.",
+    "Purple shadow aura remains active during settled idle.",
+    "Repeated hearts within one animation are one cycle, not separate attacks.",
+    "Recipient idle bobbing and reactive movement are not independently counted as attacks."
+  ],
+  "limits": [
+    "Opening two attack blocks only; not a full-match count.",
+    "Contact animation onset can differ from HP depletion or evidence publication time.",
+    "Some source frames are variable-rate; labels use actual PTS, not frame index or nominal FPS.",
+    "Most onset brackets are about0.1\u20130.15s; first two tighter.",
+    "No audio stream in supplied MP4; does not establish whether Overdex archive audio exists.",
+    "Existing first-/second-/transition- sheets crop at y610 and can clip the HP top border. Use hp-first- sheets/full frame for HP inspection."
+  ]
+}

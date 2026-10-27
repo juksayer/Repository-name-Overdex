@@ -261,6 +261,7 @@ internal object ActiveHpBarMeasurer {
         val maxBarWidth = expectedBarWidth?.let { minOf(width, (it * 1.15f).toInt()) } ?: width
         val outlines = buildList {
             val colorMasks = intArrayOf(1, 2, 8)
+            val contrastMasks = intArrayOf(1, 8)
             val inset = ((expectedBarWidth ?: width) / 64).coerceIn(2, 4)
             for (y in 0 until height) {
                 // White outline plus adjacent orange Pokémon art is not one
@@ -271,16 +272,18 @@ internal object ActiveHpBarMeasurer {
                     }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
                         .map { (left, right) -> OutlineRun(y, left, right, colorMask) })
                 }
-                // A white Pokémon behind a white outline can join the run to
-                // its body or the screen edge. The bar's interior still provides
-                // a contrast boundary. Recover that boundary without relaxing
-                // the paired outlines, two end caps, or left-aligned fill tests.
-                addAll(findRuns(width, maxGap) { x ->
-                    isBrightNeutral(pixelAt(x, y)) &&
-                        ((y >= inset && !isBrightNeutral(pixelAt(x, y - inset))) ||
-                            (y + inset < height && !isBrightNeutral(pixelAt(x, y + inset))))
-                }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
-                    .map { (left, right) -> OutlineRun(y, left, right, 1) })
+                // White Pokémon art or blue sky can join an outline to the
+                // background. Its interior still provides a contrast boundary.
+                // Recover that boundary without relaxing width, gaps, paired
+                // colors, real end caps, or the left-aligned saturated fill.
+                for (colorMask in contrastMasks) {
+                    addAll(findRuns(width, maxGap) { x ->
+                        pixelAt(x, y) and colorMask != 0 &&
+                            ((y >= inset && pixelAt(x, y - inset) and colorMask == 0) ||
+                                (y + inset < height && pixelAt(x, y + inset) and colorMask == 0))
+                    }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
+                        .map { (left, right) -> OutlineRun(y, left, right, colorMask) })
+                }
             }
         }
         if (outlines.isEmpty()) return emptyList()
@@ -333,10 +336,12 @@ internal object ActiveHpBarMeasurer {
                     right = right,
                     bottom = bottom.y,
                     width = width,
-                    pixelAt = pixelAt
+                    pixelAt = pixelAt,
+                    colorMask = top.colorMask,
                 )
                 if (edgeSupport < MIN_VERTICAL_EDGE_SUPPORT) continue
-                measureFill(left, top.y, right, bottom.y, width, pixelAt)?.let { measurement ->
+                measureFill(left, top.y, right, bottom.y, width, pixelAt,
+                    requireContinuousFill = top.colorMask == 8)?.let { measurement ->
                     val widthRatio = measurement.width.toFloat() / (expectedBarWidth ?: width)
                     val targetWidthRatio = if (expectedBarWidth != null) 1f else EXPECTED_WIDTH_RATIO
                     val widthScore = (1f - abs(widthRatio - targetWidthRatio) / WIDTH_RATIO_TOLERANCE)
@@ -369,10 +374,11 @@ internal object ActiveHpBarMeasurer {
         right: Int,
         bottom: Int,
         width: Int,
-        pixelAt: HpPixels
+        pixelAt: HpPixels,
+        colorMask: Int,
     ): Float {
         if (bottom <= top || right <= left) return 0f
-        fun bestNear(edgeX: Int): Float {
+        fun bestNear(edgeX: Int, interiorDirection: Int): Float {
             var best = 0f
             val searchLeft = (edgeX - EDGE_SEARCH_RADIUS).coerceAtLeast(0)
             val searchRight = (edgeX + EDGE_SEARCH_RADIUS).coerceAtMost(width - 1)
@@ -381,13 +387,21 @@ internal object ActiveHpBarMeasurer {
                 var samples = 0
                 for (y in top..bottom) {
                     samples++
-                    if (isTrackableOutline(pixelAt(x, y))) matches++
+                    // Blue scenery alone is not an end cap. The blue pulse
+                    // must end against the bar interior on each side; otherwise
+                    // the sky can widen the denominator and manufacture HP loss.
+                    val supported = if (colorMask == 8) {
+                        val interiorX = (x + interiorDirection * (EDGE_SEARCH_RADIUS + 1))
+                            .coerceIn(0, width - 1)
+                        pixelAt(x, y) and colorMask != 0 && pixelAt(interiorX, y) and colorMask == 0
+                    } else isTrackableOutline(pixelAt(x, y))
+                    if (supported) matches++
                 }
                 if (samples > 0) best = max(best, matches.toFloat() / samples)
             }
             return best
         }
-        return minOf(bestNear(left), bestNear(right - 1))
+        return minOf(bestNear(left, 1), bestNear(right - 1, -1))
     }
 
     private fun edgeSupportAt(x: Int, top: Int, bottom: Int, pixelAt: HpPixels, colorMask: Int): Float =
@@ -418,7 +432,8 @@ internal object ActiveHpBarMeasurer {
         right: Int,
         bottom: Int,
         cropWidth: Int,
-        pixelAt: HpPixels
+        pixelAt: HpPixels,
+        requireContinuousFill: Boolean,
     ): ActiveHpBarMeasurement? {
         val inset = max(2, (right - left) / 80)
         val innerLeft = left + inset
@@ -456,8 +471,16 @@ internal object ActiveHpBarMeasurer {
                 break
             }
         }
+        val minimumFilledWidth = max(4, filledColumns.size / 40)
+        // A blue pulse/overlay can interrupt the green interior. If another
+        // substantial fill segment continues beyond that hole, the left fragment
+        // is not a valid HP endpoint. Abstain instead of bridging unseen pixels
+        // or publishing a large, false loss from the shortened fragment.
+        if (requireContinuousFill && longestRun(lastFilledIndex + 1, filledColumns.size) {
+                filledColumns[it]
+            } >= minimumFilledWidth) return null
         val filledWidth = lastFilledIndex - firstFilledIndex + 1
-        if (filledWidth < max(4, filledColumns.size / 40)) return null
+        if (filledWidth < minimumFilledWidth) return null
 
         val fraction = ((lastFilledIndex + 1).toFloat() / filledColumns.size).coerceIn(0f, 1f)
         val outlineCoverage = (right - left).toFloat() / cropWidth
@@ -519,7 +542,6 @@ internal object ActiveHpBarMeasurer {
         operator fun invoke(x: Int, y: Int): Int = flags[y * width + x].toInt()
     }
 
-    private fun isBrightNeutral(flags: Int) = flags and 1 != 0
     private fun isTrackableOutline(flags: Int) = flags and 11 != 0
     private fun isSaturatedFill(flags: Int) = flags and 4 != 0
 
