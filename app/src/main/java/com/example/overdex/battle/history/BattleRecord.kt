@@ -65,10 +65,10 @@ object BattleRecordProjector {
             .sortedWith(compareBy({ it.monotonicTimeNanos }, { it.sequenceNumber ?: 0L }))
         val start = articles.firstOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos
         val end = articles.firstOrNull { it.payload is ArchivedMatchEnded }
-        val configured = articles.mapNotNull { article ->
-            (article.payload as? ArchivedPlayerTeamSlotConfigured)?.let { article to it }
-        }.filter { start == null || it.first.monotonicTimeNanos!! <= start }
-            .groupBy { it.second.slot }.values.map { it.last() }
+        val teamConfiguration = ArchivedPlayerTeamConfiguration(articles)
+        val configured = teamConfiguration.recordsAt().map { article ->
+            article to (article.payload as ArchivedPlayerTeamSlotConfigured)
+        }
         // A species read cannot distinguish two cards of the same species. Never
         // attach such an event to the first matching card or a current collection search.
         fun owner(species: String): Pair<ArchivedRealityArticle, ArchivedPlayerTeamSlotConfigured>? =
@@ -115,7 +115,9 @@ object BattleRecordProjector {
                     val species = payload.attackerSpeciesName ?: player?.first ?: return@forEach
                     if (player?.first?.let(::key)?.let { it != key(species) } == true) return@forEach
                     val move = owner(species)?.second?.fastMoveName ?: articles.asSequence()
-                        .filter { it.monotonicTimeNanos!! <= at }.mapNotNull { it.payload as? ArchivedFastMoveIdentified }
+                        .filter { it.monotonicTimeNanos!! <= at && it.payload is ArchivedFastMoveIdentified &&
+                            teamConfiguration.acceptsDerivedEvidence(it) }
+                        .map { it.payload as ArchivedFastMoveIdentified }
                         .lastOrNull { it.side == "PLAYER" && key(it.speciesName) == key(species) }?.moveName
                     val use = event(article, BattleMetricKind.FAST_MOVE, species, move,
                         supporting = listOfNotNull(player?.second, opponent?.second) + article.predecessorIds,

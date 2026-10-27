@@ -43,6 +43,7 @@ import com.example.overdex.battle.archive.ArchivedRawText
 import com.example.overdex.battle.archive.ArchivedVsScreenWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.archive.ArchivedPlayerTeamSlotConfigured
+import com.example.overdex.battle.archive.ArchivedPlayerTeamConfiguration
 import com.example.overdex.battle.archive.MatchArchive
 import com.example.overdex.model.Move
 import com.example.overdex.model.PokemonType
@@ -88,11 +89,9 @@ class MatchReplayModel(
     val matchStartNanos: Long? = timedArticles
         .firstOrNull { it.payload is ArchivedMatchStarted }
         ?.monotonicTimeNanos
-    private val configuredPlayerMembers = timedArticles
-        .filter { matchStartNanos == null || it.monotonicTimeNanos!! <= matchStartNanos }
-        .mapNotNull { it.payload as? ArchivedPlayerTeamSlotConfigured }
-        .associateBy { it.slot }.values
-        .sortedBy { it.slot }
+    private val playerTeamConfiguration = ArchivedPlayerTeamConfiguration(timedArticles)
+    private val configuredPlayerMembers = playerTeamConfiguration.recordsAt()
+        .map { it.payload as ArchivedPlayerTeamSlotConfigured }
     private val configuredPlayerMovesBySpecies = configuredPlayerMembers.groupBy {
         normalizeSpeciesName(it.speciesName)
     }.mapValues { (_, members) -> members.map { it.fastMoveName }.distinct().singleOrNull() }
@@ -167,6 +166,7 @@ class MatchReplayModel(
                 chargedEffectivenessWindow.contains(article.monotonicTimeNanos!!)
         }
         .filter { (it.payload as? ArchivedFastMoveIdentified)?.basis?.startsWith(CHARGE_FILL_BASIS) == false }
+        .filter(playerTeamConfiguration::acceptsDerivedEvidence)
     private val identifiedFastMoves = identifiedFastMoveArticles.map { it.payload as ArchivedFastMoveIdentified }
     private val possibleFastMoves = fastMovesBySpeciesName.entries.associate {
         normalizeSpeciesName(it.key) to it.value
@@ -205,7 +205,9 @@ class MatchReplayModel(
         } else use
     }
     private val fastMoveCycles = scheduleFastMoves()
-    private val energyTrack = ReplayEnergyTrack(timedArticles, ::combatantFor, fastMoveCycles)
+    private val energyTrack = ReplayEnergyTrack(timedArticles.filter {
+        it.payload !is ArchivedFastMoveEnergyDerived || playerTeamConfiguration.acceptsDerivedEvidence(it)
+    }, ::combatantFor, fastMoveCycles)
     private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER", hpEvidence, fastMoveCycles)
     private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT", hpEvidence, fastMoveCycles)
     private val replayHapticEvents = buildList {
@@ -897,7 +899,8 @@ class MatchReplayModel(
                     .takeIf {
                         it.observedCompletedUses == 1 &&
                             it.side.isBattleSide() &&
-                            !it.basis.contains(CHARGE_FILL_BASIS)
+                            !it.basis.contains(CHARGE_FILL_BASIS) &&
+                            playerTeamConfiguration.acceptsDerivedEvidence(article)
                     }
                     ?.let {
                         ReplayFastMoveUse(

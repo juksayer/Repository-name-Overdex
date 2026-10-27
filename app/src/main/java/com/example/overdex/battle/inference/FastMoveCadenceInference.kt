@@ -143,6 +143,7 @@ class FastMoveCadenceInference(
     private val combatants = mutableMapOf<Pair<ActivePokemonSide, String>, SideState>()
     private val pending = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val appearanceStarts = EnumMap<ActivePokemonSide, Long>(ActivePokemonSide::class.java)
+    private val configurationScope = PlayerTeamConfigurationScope()
     private val configuredPlayerMoves = mutableMapOf<String, ConfiguredPlayerMove>()
     private val configuredPlayerSlots = mutableMapOf<Int, Pair<String, ConfiguredPlayerMove>>()
     private val playerReferenceSlots = mutableMapOf<Int, Pair<String, ArticleId>>()
@@ -158,6 +159,32 @@ class FastMoveCadenceInference(
 
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        if (configurationScope.accept(article)) {
+            // The scan can be another owned copy of the same species. Neither its
+            // configured move nor a cached pre-battle identity transfers to it.
+            configuredPlayerMoves.clear()
+            configuredPlayerSlots.clear()
+            configurationScope.current().values.forEach { current ->
+                val p = current.payload as PlayerTeamSlotConfigured
+                configuredPlayerSlots[p.slot] = normalize(p.speciesName) to ConfiguredPlayerMove(
+                    p.speciesId, p.fastMoveName, current.id, current.confidence ?: 1f)
+            }
+            configuredPlayerMoves.putAll(configuredPlayerSlots.values)
+            playerReferenceSlots.clear()
+            (article.payload as com.example.overdex.battle.custody.PlayerTeamRosterConfirmation)
+                .speciesBySlot.forEachIndexed { index, name ->
+                    if (!name.isNullOrBlank()) playerReferenceSlots[index + 1] = name to article.id
+                }
+            states.remove(ActivePokemonSide.PLAYER)
+            combatants.keys.removeAll { it.first == ActivePokemonSide.PLAYER }
+            pending.remove(ActivePokemonSide.PLAYER)
+            appearanceStarts.remove(ActivePokemonSide.PLAYER)
+            recentUses.removeAll { (it.payload as FastMoveUseObserved).attackingSide == ActivePokemonSide.PLAYER }
+            pendingEffectiveness.clear()
+            audioPreferences.clear()
+            pendingReferenceSounds.clear()
+            return emptyList()
+        }
         article.monotonicTimeNanos?.let { latestEvidenceAtNanos = maxOf(latestEvidenceAtNanos, it) }
         // Capture starts at countdown, but fast-move identity needs GO or a
         // witnessed in-progress phase when observation began late.
@@ -167,6 +194,8 @@ class FastMoveCadenceInference(
         if (article.payload is com.example.overdex.battle.custody.ObservationRestartedByUser ||
             article.payload is com.example.overdex.battle.custody.ScreenIgnoredByUser) playerReferenceSlots.clear()
         (article.payload as? PlayerTeamRosterSlotWitnessed)?.let { roster ->
+            if (configurationScope.latestConfirmationNanos?.let {
+                    (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return@let
             val previous = playerReferenceSlots[roster.slot]
             val name = PokemonFormReference.mergeRosterName(previous?.first, roster.speciesName,
                 explicitSprite = roster.spriteVariant != null)
@@ -213,6 +242,7 @@ class FastMoveCadenceInference(
         }
         val configured = article.payload as? PlayerTeamSlotConfigured
         if (configured != null) {
+            if (!configurationScope.isCurrent(article)) return emptyList()
             playerReferenceSlots[configured.slot] = configured.speciesName to article.id
             val oldName = configuredPlayerSlots[configured.slot]?.first
             configuredPlayerSlots[configured.slot] = normalize(configured.speciesName) to ConfiguredPlayerMove(
@@ -290,6 +320,8 @@ class FastMoveCadenceInference(
         }
         val species = article.payload as? ActivePokemonSpeciesWitnessed
         if (species != null) {
+            if (species.side == ActivePokemonSide.PLAYER && configurationScope.latestConfirmationNanos?.let {
+                    (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return emptyList()
             if (fainted.contains(species.side, species.speciesName)) return emptyList()
             // Reconfirming an unchanged badge must not reset timing or recount energy.
             val priorState = states[species.side]

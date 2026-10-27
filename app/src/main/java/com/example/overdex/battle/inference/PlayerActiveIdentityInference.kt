@@ -38,33 +38,40 @@ internal class PlayerActiveIdentityInference {
         val labels: MutableList<RealityArticle> = mutableListOf(),
     )
     private val scanned = mutableMapOf<Int, Member>()
-    private val configured = mutableMapOf<Int, Pair<PlayerTeamSlotConfigured, RealityArticle>>()
-    private val configurationHistory = mutableMapOf<Int, TreeMap<Long, Pair<PlayerTeamSlotConfigured, RealityArticle>>>()
+    private val configurationScope = PlayerTeamConfigurationScope()
     private val appearances = TreeMap<Long, Appearance>()
     private val faintedSlots = mutableSetOf<Int>()
     private var lastFaint: Long? = null
 
     fun accept(article: RealityArticle): List<Resolution> {
         val at = article.monotonicTimeNanos ?: return emptyList()
+        if (configurationScope.accept(article)) {
+            val previous = scanned.toMap()
+            scanned.clear()
+            (article.payload as PlayerTeamRosterConfirmation).speciesBySlot.forEachIndexed { index, name ->
+                if (!name.isNullOrBlank()) scanned[index + 1] = Member(index + 1, name,
+                    previous[index + 1]?.takeIf { key(it.name) == key(name) }?.id, article.id)
+            }
+            appearances.clear(); faintedSlots.clear(); lastFaint = null
+            return emptyList()
+        }
         when (val p = article.payload) {
             ObservationRestartedByUser -> {
-                scanned.clear(); configured.clear(); configurationHistory.clear()
+                scanned.clear(); configurationScope.clearConfigurations()
                 appearances.clear(); faintedSlots.clear(); lastFaint = null
             }
             is PlayerTeamRosterSlotWitnessed -> {
+                if (configurationScope.latestConfirmationNanos?.let { at <= it } == true) return emptyList()
                 if (appearances.isNotEmpty()) return emptyList()
                 val previous = scanned[p.slot]
                 val name = PokemonFormReference.mergeRosterName(previous?.name, p.speciesName, p.spriteVariant != null)
                 scanned[p.slot] = Member(p.slot, name, p.speciesId,
                     if (name != p.speciesName && previous != null) previous.article else article.id)
             }
-            is PlayerTeamSlotConfigured -> {
-                val history = configurationHistory.getOrPut(p.slot) { TreeMap() }
-                history[at] = p to article
-                configured[p.slot] = history.lastEntry().value
-            }
+            is PlayerTeamSlotConfigured -> Unit // Source-time configuration is retained by the scope above.
             is ActivePokemonSpeciesWitnessed -> {
                 if (p.side != ActivePokemonSide.PLAYER) return emptyList()
+                if (configurationScope.latestConfirmationNanos?.let { at <= it } == true) return emptyList()
                 val previous = appearances.lastEntry()?.value
                 if (previous != null && at < previous.start) return emptyList()
                 val isEntry = article.sourceId.id == "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"
@@ -187,11 +194,17 @@ internal class PlayerActiveIdentityInference {
     fun resolutions(): List<Resolution> = appearances.values.map { it.resolution }
 
     private fun appearanceAt(at: Long) = appearances.floorEntry(at)?.value?.takeIf { at < it.end }
-    private fun members(): List<Member> = (scanned.keys + configured.keys).sorted().mapNotNull { slot ->
-        scanned[slot] ?: configured[slot]?.let { (p, article) -> Member(slot, p.speciesName, p.speciesId, article.id) }
+    private fun members(): List<Member> {
+        val configured = configurationScope.current()
+        return (scanned.keys + configured.keys).sorted().mapNotNull { slot ->
+            scanned[slot] ?: configured[slot]?.let { article ->
+                val p = article.payload as PlayerTeamSlotConfigured
+                Member(slot, p.speciesName, p.speciesId, article.id)
+            }
+        }
     }
     private fun configurationFor(member: Member, at: Long): Pair<PlayerTeamSlotConfigured, RealityArticle>? =
-        configurationHistory.values.mapNotNull { it.floorEntry(at)?.value }
+        configurationScope.at(at).values.map { (it.payload as PlayerTeamSlotConfigured) to it }
             .filter { key(it.first.speciesName) == key(member.name) }.singleOrNull()
     private fun resolution(source: RealityArticle, observed: ActivePokemonSpeciesWitnessed, at: Long,
                            member: Member?, basis: String, evidence: List<ArticleId>) = Resolution(

@@ -10,9 +10,12 @@ import com.example.overdex.battle.reality.RealityArticle
 /** Read-only form reconstruction for old recordings as well as new identity Articles. */
 internal class ReplayPlayerFormIdentity(articles: List<ArchivedRealityArticle>) {
     private val identities = PlayerActiveIdentityInference()
+    private val configuration = ArchivedPlayerTeamConfiguration(articles)
     private val recorded = java.util.TreeMap<Long, ArchivedRealityArticle>().apply {
         articles.sortedBy { it.recordedAt }.forEach { article ->
-            (article.payload as? ArchivedPlayerActiveIdentityResolved)?.let { this[it.appearanceStartedAtNanos] = article }
+            (article.payload as? ArchivedPlayerActiveIdentityResolved)?.takeIf {
+                configuration.acceptsDerivedEvidence(article)
+            }?.let { this[it.appearanceStartedAtNanos] = article }
         }
     }
     init {
@@ -21,6 +24,10 @@ internal class ReplayPlayerFormIdentity(articles: List<ArchivedRealityArticle>) 
             val payload = when (val p = article.payload) {
                 is ArchivedPlayerTeamRosterSlotWitnessed -> PlayerTeamRosterSlotWitnessed(
                     p.slot, p.speciesName, p.speciesId, p.spriteVariant, p.distinctFormMargin)
+                // Old/partial archives may omit empty slots. Preserve the reset
+                // boundary and known slots without inventing members or crashing.
+                is ArchivedPlayerTeamRosterConfirmation -> PlayerTeamRosterConfirmation(p.confirmed,
+                    List(3) { p.speciesBySlot.getOrNull(it)?.takeIf(String::isNotBlank) })
                 is ArchivedPlayerTeamSlotConfigured -> {
                     // Historical exports can contain an unfinished team editor.
                     // Its partial configuration cannot supply a confirmed move.

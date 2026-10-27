@@ -47,7 +47,10 @@ data class SavedBattleTeam(val id: String, val name: String, val team: CurrentBa
 class CurrentBattleTeamStore(context: Context, preferencesName: String = PREFERENCES_NAME) {
     private val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-    private val _team = MutableStateFlow(load())
+    private val _pendingScannedRoster = MutableStateFlow(loadPendingRoster())
+    /** Confirmed species whose moves have not yet been explicitly saved. */
+    val pendingScannedRoster = _pendingScannedRoster.asStateFlow()
+    private val _team = MutableStateFlow(if (_pendingScannedRoster.value == null) load() else CurrentBattleTeam())
     val team = _team.asStateFlow()
     private val _savedTeams = MutableStateFlow(preferences.getString("saved_teams", null)?.let {
         json.decodeFromString<List<SavedBattleTeam>>(it)
@@ -66,15 +69,34 @@ class CurrentBattleTeamStore(context: Context, preferencesName: String = PREFERE
         return saved
     }
 
-    fun replace(team: CurrentBattleTeam) {
+    @Synchronized fun replace(team: CurrentBattleTeam) {
         val normalized = team.normalized()
-        check(preferences.edit().putString(KEY_TEAM, json.encodeToString(normalized)).commit()) {
+        check(preferences.edit().putString(KEY_TEAM, json.encodeToString(normalized))
+            .remove(KEY_PENDING_ROSTER).commit()) {
             "Could not persist the current battle team"
         }
+        _pendingScannedRoster.value = null
         _team.value = normalized
     }
 
+    /** A roster confirmation is not permission to reuse another owned copy's moves. */
+    @Synchronized fun confirmScannedRoster(speciesNames: List<String>) {
+        require(speciesNames.size == 3 && speciesNames.none(String::isBlank))
+        check(preferences.edit().putString(KEY_PENDING_ROSTER, json.encodeToString(speciesNames)).commit()) {
+            "Could not persist the scanned team"
+        }
+        // Keep the previous saved data, named teams, and owned cards intact, but
+        // never expose the earlier loadout as the active team while moves are pending.
+        _team.value = CurrentBattleTeam()
+        _pendingScannedRoster.value = speciesNames.toList()
+    }
+
     fun clear() = replace(CurrentBattleTeam())
+
+    private fun loadPendingRoster(): List<String>? = preferences.getString(KEY_PENDING_ROSTER, null)?.let { encoded ->
+        // An unreadable pending marker must not silently reactivate the old loadout.
+        runCatching { json.decodeFromString<List<String>>(encoded) }.getOrDefault(emptyList())
+    }
 
     private fun load(): CurrentBattleTeam {
         val encoded = preferences.getString(KEY_TEAM, null) ?: return CurrentBattleTeam()
@@ -85,5 +107,6 @@ class CurrentBattleTeamStore(context: Context, preferencesName: String = PREFERE
     private companion object {
         const val PREFERENCES_NAME = "current_battle_team"
         const val KEY_TEAM = "team"
+        const val KEY_PENDING_ROSTER = "pending_scanned_roster"
     }
 }

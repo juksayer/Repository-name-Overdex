@@ -31,11 +31,7 @@ internal class ReplayChargedMoveLoadout(
     private val baseByKey = formsByBase.flatMap { (base, forms) -> forms.map { key(it) to base } }.toMap()
 
     init {
-        val start = articles.firstOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos
-        val configured = articles.filter {
-            it.payload is ArchivedPlayerTeamSlotConfigured &&
-                (start == null || it.monotonicTimeNanos!! <= start)
-        }.associateBy { (it.payload as ArchivedPlayerTeamSlotConfigured).slot }.values
+        val configured = ArchivedPlayerTeamConfiguration(articles).recordsAt()
         configured.groupBy { key((it.payload as ArchivedPlayerTeamSlotConfigured).speciesName) }
             .forEach { (species, records) ->
                 // A species alone cannot select between different owned copies.

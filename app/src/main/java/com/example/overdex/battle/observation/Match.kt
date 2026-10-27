@@ -16,6 +16,8 @@ import com.example.overdex.battle.custody.PokemonIdentified
 import com.example.overdex.battle.custody.RawTestimony
 import com.example.overdex.battle.custody.PlayerTeamRosterSlotWitnessed
 import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
+import com.example.overdex.battle.custody.PlayerTeamRosterConfirmation
+import com.example.overdex.battle.inference.PlayerTeamConfigurationScope
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
@@ -136,6 +138,7 @@ class Match(
     private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
     private val publishedAvailabilitySequence = MutableStateFlow(Long.MIN_VALUE)
     private val publishedTestimonySequence = MutableStateFlow(Long.MIN_VALUE)
+    private val playerConfigurationScope = PlayerTeamConfigurationScope()
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
     private val playerRosterIdBySlot = ConcurrentHashMap<Int, Int>()
     private val playerRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
@@ -355,26 +358,6 @@ class Match(
                     Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
 
-                (testimony.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
-                    val name = com.example.overdex.data.PokemonFormReference.mergeRosterName(
-                        playerRosterBySlot[rosterEntry.slot].takeIf { playerRosterArticleBySlot.containsKey(rosterEntry.slot) },
-                        rosterEntry.speciesName,
-                        explicitSprite = rosterEntry.spriteVariant != null)
-                    playerRosterBySlot[rosterEntry.slot] = name
-                    rosterEntry.speciesId?.let { playerRosterIdBySlot[rosterEntry.slot] = it }
-                    DroidballOverlayPresentation.recordInferredPlayerRosterSlot(rosterEntry.slot, name)
-                }
-                (testimony.payload as? PlayerTeamSlotConfigured)?.let { configured ->
-                    if (playerRosterBySlot[configured.slot]?.let(TeamRosterSpeciesAttributor::speciesKey) !=
-                        TeamRosterSpeciesAttributor.speciesKey(configured.speciesName)) {
-                        // Editing a saved slot is not a fresh Team Select scan.
-                        playerRosterArticleBySlot.remove(configured.slot)
-                        entrySideTracker.discardRosterAssumptions()
-                    }
-                    playerRosterBySlot[configured.slot] = configured.speciesName
-                    playerRosterIdBySlot[configured.slot] = configured.speciesId
-                }
-
                 val article = RealityArticle(
                     id = ArticleId(UUID.randomUUID().toString()),
                     perceivedAt = testimony.timestamp,
@@ -387,17 +370,53 @@ class Match(
                     matchId = MatchId(matchId),
                     monotonicTimeNanos = testimony.monotonicTimeNanos
                 )
+                if (playerConfigurationScope.accept(article)) {
+                    val priorIds = playerRosterBySlot.entries.mapNotNull { (slot, name) ->
+                        playerRosterIdBySlot[slot]?.let { name to it }
+                    }.toMap()
+                    playerRosterBySlot.clear()
+                    playerRosterIdBySlot.clear()
+                    playerRosterArticleBySlot.clear()
+                    configuredRosterArticleBySlot.clear()
+                    (article.payload as PlayerTeamRosterConfirmation).speciesBySlot.forEachIndexed { index, name ->
+                        if (!name.isNullOrBlank()) {
+                            val slot = index + 1
+                            playerRosterBySlot[slot] = name
+                            priorIds[name]?.let { playerRosterIdBySlot[slot] = it }
+                            playerRosterArticleBySlot[slot] = article.id
+                        }
+                    }
+                    playerRosterContradicted = false
+                    entrySideTracker.discardRosterAssumptions()
+                    activeSpeciesBySide.remove(ActivePokemonSide.PLAYER)
+                    activeSpeciesAtBySide.remove(ActivePokemonSide.PLAYER)
+                }
                 (article.payload as? PlayerTeamRosterSlotWitnessed)?.let { rosterEntry ->
-                    // A later bare OCR label must not replace the evidence that
-                    // supplied the retained regional form.
-                    if (playerRosterBySlot[rosterEntry.slot] == rosterEntry.speciesName ||
-                        !playerRosterArticleBySlot.containsKey(rosterEntry.slot)) {
+                    if (playerConfigurationScope.latestConfirmationNanos?.let {
+                            (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return@let
+                    val name = com.example.overdex.data.PokemonFormReference.mergeRosterName(
+                        playerRosterBySlot[rosterEntry.slot].takeIf { playerRosterArticleBySlot.containsKey(rosterEntry.slot) },
+                        rosterEntry.speciesName,
+                        explicitSprite = rosterEntry.spriteVariant != null)
+                    playerRosterBySlot[rosterEntry.slot] = name
+                    rosterEntry.speciesId?.let { playerRosterIdBySlot[rosterEntry.slot] = it }
+                    DroidballOverlayPresentation.recordInferredPlayerRosterSlot(rosterEntry.slot, name)
+                    // Retain the article that supplied the regional form.
+                    if (name == rosterEntry.speciesName || !playerRosterArticleBySlot.containsKey(rosterEntry.slot)) {
                         playerRosterArticleBySlot[rosterEntry.slot] = article.id
                     }
                 }
-                (article.payload as? PlayerTeamSlotConfigured)?.let {
-                    configuredRosterArticleBySlot[it.slot] = article.id
-                }
+                (article.payload as? PlayerTeamSlotConfigured)?.takeIf { playerConfigurationScope.isCurrent(article) }
+                    ?.let { configured ->
+                        if (playerRosterBySlot[configured.slot]?.let(TeamRosterSpeciesAttributor::speciesKey) !=
+                            TeamRosterSpeciesAttributor.speciesKey(configured.speciesName)) {
+                            playerRosterArticleBySlot.remove(configured.slot)
+                            entrySideTracker.discardRosterAssumptions()
+                        }
+                        playerRosterBySlot[configured.slot] = configured.speciesName
+                        playerRosterIdBySlot[configured.slot] = configured.speciesId
+                        configuredRosterArticleBySlot[configured.slot] = article.id
+                    }
                 (article.payload as? ActivePokemonFaintedWitnessed)?.let { faint ->
                     article.monotonicTimeNanos?.let { at ->
                         entrySideTracker.observeFaint(faint.side, faint.speciesName, at, article.id.value)
@@ -492,7 +511,8 @@ class Match(
                     }
                 }
                 (article.payload as? PlayerTeamSlotConfigured)
-                    ?.takeIf { it.slot == 1 && activeSpeciesBySide[ActivePokemonSide.PLAYER] == null }
+                    ?.takeIf { it.slot == 1 && playerConfigurationScope.isCurrent(article) &&
+                        activeSpeciesBySide[ActivePokemonSide.PLAYER] == null }
                     ?.let { configuredLead ->
                         val species = pokemonKnowledge.getPokemonByName(configuredLead.speciesName)
                         DroidballOverlayPresentation.setActivePlayerTypes(species?.types.orEmpty())

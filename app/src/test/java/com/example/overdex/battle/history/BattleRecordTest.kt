@@ -8,6 +8,31 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class BattleRecordTest {
+    @Test fun `confirmed roster keeps witnessed uses but does not attribute stale owned card or moves`() {
+        val source = opening() + article("confirm", .2, ArchivedPlayerTeamRosterConfirmation(true,
+            listOf("Charizard", "Swampert", "Pikachu"))) +
+            article("stale-inference", 1.5, ArchivedFastMoveIdentified("PLAYER", "Charizard", "Wing Attack",
+                1_000_000_000L, cadenceSampleCount = 0, basis = "CONFIGURED_PLAYER_TEAM")) + hit()
+        val record = project(source)
+        val use = record.events.single { it.kind == BattleMetricKind.FAST_MOVE }
+        assertNull(use.pokemon)
+        assertNull(use.moveName)
+        assertTrue(record.configuredCards.isEmpty())
+        assertFalse("team" in use.articleIds)
+        assertEquals(source.size, record.articleCount)
+    }
+
+    @Test fun `explicit save after confirmed roster restores the newly selected owned card`() {
+        val replacement = card.copy(id = "different-charizard")
+        val source = opening() + article("confirm", .2, ArchivedPlayerTeamRosterConfirmation(true,
+            listOf("Charizard", "Swampert", "Pikachu"))) +
+            article("new-team", .3, configuration(owned = replacement)) + hit()
+        val use = project(source).events.single { it.kind == BattleMetricKind.FAST_MOVE }
+        assertEquals("different-charizard", use.pokemon?.ownedPokemonId)
+        assertEquals("Wing Attack", use.moveName)
+        assertTrue("new-team" in use.articleIds)
+        assertFalse("team" in use.articleIds)
+    }
     private val card = OwnedPokemon(id = "charizard-xl", speciesId = 6, isShadow = true,
         size = PokemonSize.XL, fastMove = "Wing Attack", chargedMove1 = "Blast Burn")
     private fun configuration(slot: Int = 1, owned: OwnedPokemon = card) = ArchivedPlayerTeamSlotConfigured(

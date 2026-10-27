@@ -14,13 +14,16 @@ internal data class PlayerInformationDerivation(
 
 /** Compare independent observations with reference input; never edit an owned card. */
 internal class PlayerBattleInformationInference(private val knowledge: PokemonKnowledge) {
-    private val configured = mutableMapOf<Int, RealityArticle>()
+    private val configurationScope = PlayerTeamConfigurationScope()
     private val appearances = TreeMap<Long, RealityArticle?>()
     private val labels = mutableListOf<RealityArticle>()
     private val chargedReferences = mutableMapOf<String, List<com.example.overdex.model.Move>>()
     private val emitted = mutableSetOf<PlayerBattleInformationChecked>()
 
     suspend fun accept(article: RealityArticle): List<PlayerInformationDerivation> {
+        val invalidated = configurationScope.accept(article)
+        if (invalidated) { labels.clear(); appearances.clear(); emitted.clear() }
+        val configured = configurationScope.at(article.monotonicTimeNanos ?: Long.MAX_VALUE)
         val output = mutableListOf<PlayerInformationDerivation>()
         fun check(species: String, field: String, expected: String?, observed: String,
                   confirmed: Boolean, basis: String, evidence: List<ArticleId>, source: RealityArticle = article,
@@ -30,6 +33,7 @@ internal class PlayerBattleInformationInference(private val knowledge: PokemonKn
             if (emitted.add(payload)) output += PlayerInformationDerivation(payload, source, evidence.distinct())
         }
         suspend fun configFor(species: String, speciesId: Int? = null, at: Long? = article.monotonicTimeNanos): RealityArticle? {
+            val configured = configurationScope.at(at ?: Long.MAX_VALUE)
             val active = at?.let { appearances.floorEntry(it)?.value?.payload as? ActivePokemonSpeciesWitnessed }
             active?.playerTeamSlot?.let { slot ->
                 configured[slot]?.takeIf {
@@ -41,7 +45,7 @@ internal class PlayerBattleInformationInference(private val knowledge: PokemonKn
             }.singleOrNull() // Multiple owned copies cannot be distinguished by their name alone.
         }
         when (val p = article.payload) {
-            is PlayerTeamSlotConfigured -> configured[p.slot] = article
+            is PlayerTeamSlotConfigured -> Unit
             is PlayerTeamRosterSlotWitnessed -> {
                 val config = configured[p.slot]
                 val expected = (config?.payload as? PlayerTeamSlotConfigured)?.speciesName

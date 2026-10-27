@@ -203,11 +203,15 @@ object DroidballOverlayPresentation {
 
     fun recordInferredPlayerRosterSlot(slot: Int, speciesName: String) {
         if (slot !in 1..3) return
+        if (_inferredPlayerTeam.value[slot - 1] == speciesName) return
         _inferredPlayerTeam.value = _inferredPlayerTeam.value.toMutableList().also { it[slot - 1] = speciesName }
         _playerTeamConfirmed.value = false
     }
 
-    fun confirmInferredPlayerTeam() { _playerTeamConfirmed.value = true }
+    fun confirmInferredPlayerTeam() {
+        _playerTeamConfirmed.value = true
+        _configuredPlayerTeam.value = emptyList()
+    }
 
     fun clearInferredPlayerTeam() {
         _inferredPlayerTeam.value = List(3) { null }

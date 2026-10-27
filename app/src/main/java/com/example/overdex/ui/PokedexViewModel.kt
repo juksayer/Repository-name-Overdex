@@ -220,6 +220,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val cropArtifactStore = FileCropArtifactStore(application.filesDir)
     private val currentBattleTeamStore = CurrentBattleTeamStore(application)
     val currentBattleTeam = currentBattleTeamStore.team
+    val pendingScannedRoster = currentBattleTeamStore.pendingScannedRoster
     val savedBattleTeams = currentBattleTeamStore.savedTeams
     private val binderStore = com.example.overdex.data.OwnedBinderStore(application)
     val customBinders = binderStore.binders
@@ -1111,6 +1112,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
         fun restartObservationAttempt() {
             if (!session.restartObservation()) return
+            fieldTeamEditor.discardScan()
             match.custody.submitTestimony(
                 SourceId("DROIDBALL_USER_CONTROL"), ObservationRestartedByUser,
                 System.currentTimeMillis(), 1f, emptyList(), System.nanoTime()
@@ -1183,9 +1185,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         if (session.canEditTeam) {
                             val scanned = DroidballOverlayPresentation.inferredPlayerTeam.value
                             val configured = currentBattleTeam.value.members.sortedBy { it.slot }.map { it.speciesName }
-                            if (scanned.any { it != null } &&
+                            val pending = pendingScannedRoster.value
+                            val proposal = scanned.takeIf { it.any { name -> name != null } } ?: pending
+                            if (pending != null) {
+                                fieldTeamEditor.resumeScan(proposal ?: pending)
+                            } else if (scanned.any { it != null } &&
                                 (!DroidballOverlayPresentation.playerTeamConfirmed.value || scanned != configured)) {
-                                fieldTeamEditor.openScan(scanned)
+                                fieldTeamEditor.resumeScan(scanned)
                             } else fieldTeamEditor.open(currentBattleTeam.value)
                         }
                     }
@@ -1208,6 +1214,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     is DroidballSignal.ConfirmInferredPlayerTeamRequested -> {
                         val team = DroidballOverlayPresentation.inferredPlayerTeam.value
                         if (session.canEditTeam && team.all { it != null }) {
+                            // Persist the unfinished setup before acknowledging it. Later
+                            // sessions must not silently restore the previous team's moves.
+                            try {
+                                currentBattleTeamStore.confirmScannedRoster(team.filterNotNull())
+                            } catch (error: Exception) {
+                                Log.e("CURRENT_TEAM", "Unable to preserve confirmed roster; confirmation remains pending", error)
+                                android.widget.Toast.makeText(getApplication(),
+                                    "Could not save the team confirmation. Please try again.", android.widget.Toast.LENGTH_LONG).show()
+                                return@collect
+                            }
+                            teamConfigurationJob?.cancel()
+                            teamConfigurationJob = null
                             match.custody.submitTestimony(SourceId("DROIDBALL_USER_CONTROL"), PlayerTeamRosterConfirmation(true, team), System.currentTimeMillis(), 1f, emptyList(), System.nanoTime())
                             DroidballOverlayPresentation.confirmInferredPlayerTeam()
                             fieldTeamEditor.openScan(team)

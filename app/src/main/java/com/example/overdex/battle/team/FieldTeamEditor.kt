@@ -50,23 +50,45 @@ class FieldTeamEditor(
     val speciesNames = _speciesNames.asStateFlow()
     private var job: Job? = null
     private var revision = 0L
+    private var scanRoster: List<String?>? = null
+    private var suspendedScanDraft: FieldTeamDraft? = null
 
-    fun open(team: CurrentBattleTeam) = load {
-        List(3) { index ->
-            team.members.firstOrNull { it.slot == index + 1 }?.let { member ->
-                val pokemon = knowledge.getPokemonByName(member.speciesName)
-                FieldTeamSlot(pokemon, member.speciesName, member.fastMoveName,
-                    member.chargedMoveNames, member.ownedPokemonId)
-            } ?: FieldTeamSlot()
+    fun open(team: CurrentBattleTeam) {
+        scanRoster = null
+        suspendedScanDraft = null
+        load {
+            List(3) { index ->
+                team.members.firstOrNull { it.slot == index + 1 }?.let { member ->
+                    val pokemon = knowledge.getPokemonByName(member.speciesName)
+                    FieldTeamSlot(pokemon, member.speciesName, member.fastMoveName,
+                        member.chargedMoveNames, member.ownedPokemonId)
+                } ?: FieldTeamSlot()
+            }
         }
     }
 
-    fun openScan(names: List<String?>) = load {
-        // Even a same-species scan might be a different owned Pokémon with different moves.
-        List(3) { index ->
-            val name = names.getOrNull(index)
-            FieldTeamSlot(pokemon = name?.let { knowledge.getPokemonByName(it) }, scannedName = name)
+    fun openScan(names: List<String?>) {
+        if (!canEdit()) { close(); return }
+        scanRoster = names.toList()
+        suspendedScanDraft = null
+        _draft.value = null
+        load {
+            // Even a same-species scan might be a different owned Pokémon with different moves.
+            List(3) { index ->
+                val name = names.getOrNull(index)
+                FieldTeamSlot(pokemon = name?.let { knowledge.getPokemonByName(it) }, scannedName = name)
+            }
         }
+    }
+
+    /** Closing the field panel must not erase choices when the same scan is reopened. */
+    fun resumeScan(names: List<String?>) {
+        if (!canEdit()) { close(); return }
+        if (scanRoster == names) {
+            if (_draft.value != null) return
+            suspendedScanDraft?.let { _draft.value = it; return }
+        }
+        openScan(names)
     }
 
     fun chooseSpecies(slot: Int, name: String) {
@@ -97,6 +119,8 @@ class FieldTeamEditor(
         if (!before.ready) { _draft.value = before.copy(error = "Finish all three slots and their moves first."); return }
         try {
             save(before.team())
+            scanRoster = null
+            suspendedScanDraft = null
             close()
         } catch (error: Exception) {
             if (error is CancellationException) throw error
@@ -105,9 +129,17 @@ class FieldTeamEditor(
     }
 
     fun close() {
+        if (scanRoster != null) _draft.value?.takeUnless { it.loading }?.let { suspendedScanDraft = it }
         revision++
         job?.cancel()
         _draft.value = null
+    }
+
+    /** An explicit rescan may contain different owned copies with the same names. */
+    fun discardScan() {
+        close()
+        scanRoster = null
+        suspendedScanDraft = null
     }
 
     private fun change(slot: Int, edit: (FieldTeamSlot) -> FieldTeamSlot) {

@@ -103,7 +103,8 @@ fun FieldTeamEditorOverlay(
                             Modifier.fillMaxWidth()) { editor.toggleCharged(slot, move.name) }
                     }
                 }
-                Text("${team.slots.count { it.ready }}/3 ready", color = ink, fontSize = 12.sp)
+                Text("${team.slots.count { it.ready }}/3 move sets selected", color = ink, fontSize = 12.sp)
+                Text("Tap USE THIS TEAM to save these moves.", color = ink, fontSize = 10.sp)
                 FieldTeamAction("USE THIS TEAM", team.ready, Modifier.fillMaxWidth()) { editor.useTeam() }
             }
         }

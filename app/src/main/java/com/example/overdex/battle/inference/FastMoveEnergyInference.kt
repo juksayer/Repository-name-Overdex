@@ -37,6 +37,7 @@ class FastMoveEnergyInference(
         val referenceDurationNanos: Long,
     )
 
+    private var playerRosterConfirmedAt: Long? = null
     private val activeSpecies = EnumMap<ActivePokemonSide, String>(ActivePokemonSide::class.java)
     private val fainted = FaintedCombatants()
     private val identities = EnumMap<ActivePokemonSide, Identity>(ActivePokemonSide::class.java)
@@ -53,6 +54,21 @@ class FastMoveEnergyInference(
         fainted.observe(article)
         timing.observe(article)
         when (val payload = article.payload) {
+            is com.example.overdex.battle.custody.PlayerTeamRosterConfirmation -> {
+                val at = article.monotonicTimeNanos ?: return emptyList()
+                if (payload.confirmed && (playerRosterConfirmedAt == null || at > playerRosterConfirmedAt!!)) {
+                    playerRosterConfirmedAt = at
+                    identities.remove(ActivePokemonSide.PLAYER)
+                    activeSpecies.remove(ActivePokemonSide.PLAYER)
+                    learnedIdentities.keys.removeAll { it.first == ActivePokemonSide.PLAYER }
+                    pendingUses.remove(ActivePokemonSide.PLAYER)
+                    playerAppearances.clear()
+                    speciesHistory.remove(ActivePokemonSide.PLAYER)
+                    appearanceStarts[ActivePokemonSide.PLAYER] = at
+                    timing.appearanceStarted(ActivePokemonSide.PLAYER, at)
+                }
+                return emptyList()
+            }
             is ActivePokemonFaintedWitnessed -> {
                 val active = activeSpecies[payload.side]
                 val at = article.monotonicTimeNanos ?: Long.MIN_VALUE
@@ -84,6 +100,8 @@ class FastMoveEnergyInference(
             }
 
             is ActivePokemonSpeciesWitnessed -> {
+                if (payload.side == ActivePokemonSide.PLAYER && playerRosterConfirmedAt?.let {
+                        (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return emptyList()
                 if (payload.side == ActivePokemonSide.PLAYER && payload.appearanceStartedAtNanos != null)
                     playerAppearances[payload.appearanceStartedAtNanos] = payload
                 payload.appearanceStartedAtNanos?.let { boundary ->
@@ -114,6 +132,8 @@ class FastMoveEnergyInference(
             }
 
             is FastMoveIdentified -> {
+                if (payload.side == ActivePokemonSide.PLAYER && playerRosterConfirmedAt?.let {
+                        (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return emptyList()
                 // A single cadence source (and especially a higher-energy tie
                 // break) is useful as a live HUD hypothesis, not yet an exact
                 // energy identity. Preserve it on the Timeline and wait for a
@@ -155,6 +175,8 @@ class FastMoveEnergyInference(
             }
 
             is FastMoveUseObserved -> {
+                if (payload.attackingSide == ActivePokemonSide.PLAYER && playerRosterConfirmedAt?.let {
+                        (article.monotonicTimeNanos ?: Long.MIN_VALUE) <= it } == true) return emptyList()
                 // Charge-button shade can advance through several visual steps
                 // during one move, and also changes during the countdown. It is
                 // supporting evidence, not a trustworthy one-use counter by

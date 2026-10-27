@@ -8,6 +8,38 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayPlayerFormIdentityTest {
+    @Test fun `confirmed ordinary Raichu does not inherit previous Alolan form equipment or archived stale resolution`() {
+        val old = article("old", ArchivedPlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26,
+            "Spark", listOf("Psychic")), 0)
+        val source = listOf(old,
+            article("confirmed", ArchivedPlayerTeamRosterConfirmation(true, listOf("Raichu", null, null)), 1),
+            badge("player", "Raichu", 2),
+            article("stale-resolution", ArchivedPlayerActiveIdentityResolved("Raichu", "Raichu (Alolan)", 26, 1,
+                2_000_000_000L, "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"), 2).copy(predecessorIds = listOf("old", "player")),
+            article("go", ArchivedMatchStarted, 3))
+        val scene = MatchReplayModel(MatchArchive(matchId = "forms", articles = source)).sceneAt(4_000_000_000L)
+        assertEquals("Raichu", scene.player?.speciesName)
+        assertEquals(1, scene.player?.playerTeamSlot)
+        assertTrue(scene.playerChargedMoves.isEmpty())
+        assertEquals("Raichu (Alolan)", (old.payload as ArchivedPlayerTeamSlotConfigured).speciesName)
+    }
+
+    @Test fun `partial or oversized archived roster confirmation keeps reset without restoring stale form`() {
+        listOf(emptyList(), listOf("Raichu"), listOf("Raichu", null, null, "Raichu (Alolan)")).forEach { names ->
+            val source = listOf(
+                article("old", ArchivedPlayerTeamSlotConfigured(1, "Raichu (Alolan)", 26,
+                    "Spark", listOf("Psychic")), 0),
+                article("confirmed", ArchivedPlayerTeamRosterConfirmation(true, names), 1),
+                badge("player", "Raichu", 2), article("go", ArchivedMatchStarted, 3))
+            val archive = MatchArchive(matchId = "forms", articles = source)
+            val original = MatchArchiveSerializer.serialize(archive)
+            val scene = MatchReplayModel(archive).sceneAt(4_000_000_000L)
+            assertEquals("Raichu", scene.player?.speciesName)
+            assertTrue(scene.playerChargedMoves.isEmpty())
+            assertFalse("Raichu (Alolan)" in latestArchivedPlayerRoster(source, 4_000_000_000L))
+            assertEquals(original, MatchArchiveSerializer.serialize(archive))
+        }
+    }
     private fun article(id: String, p: ArchivedTestimonyPayload, seconds: Long, source: String = "test") =
         ArchivedRealityArticle(id, "forms", 0, 0, source, p, emptyList(), null, null, emptyList(), seconds * 1_000_000_000L)
     private fun badge(id: String, name: String, seconds: Long, source: String = "PLAYER_SPECIES_OVERLAY_PIPELINE") =

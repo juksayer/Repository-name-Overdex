@@ -69,4 +69,29 @@ class BinderAndTeamStoreDeviceTest {
         assertEquals(1080, prefs.getInt("${detail.name}_source_width", 0))
         assertEquals(2400, prefs.getInt("${detail.name}_source_height", 0))
     }
+
+    @Test fun confirmedScanInvalidatesActiveMovesAcrossReloadUntilExplicitSave() = preferences { name ->
+        val oldTeam = CurrentBattleTeam((1..3).map {
+            CurrentBattleTeamMember(it, 26, "Raichu", "Spark", listOf("Thunder Punch"), "owned-$it")
+        })
+        val store = CurrentBattleTeamStore(context, name)
+        store.replace(oldTeam)
+        val named = store.saveNamed("Electric", oldTeam)
+        val roster = listOf("Raichu", "Sandslash (Alolan)", "Dragalge")
+        store.confirmScannedRoster(roster)
+        assertTrue(store.team.value.members.isEmpty())
+        val restored = CurrentBattleTeamStore(context, name)
+        assertEquals(roster, restored.pendingScannedRoster.value)
+        assertTrue(restored.team.value.members.isEmpty())
+        assertEquals(listOf(named), restored.savedTeams.value)
+
+        // Explicitly choosing the saved team restores moves and owned identities.
+        restored.replace(named.team)
+        val savedAgain = CurrentBattleTeamStore(context, name)
+        assertNull(savedAgain.pendingScannedRoster.value)
+        assertEquals(oldTeam, savedAgain.team.value)
+        // Same-species scans can be different copies and must also invalidate.
+        savedAgain.confirmScannedRoster(List(3) { "Raichu" })
+        assertTrue(CurrentBattleTeamStore(context, name).team.value.members.isEmpty())
+    }
 }

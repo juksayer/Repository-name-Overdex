@@ -38,6 +38,7 @@ fun DroidballReadinessScreen(
     onBack: () -> Unit,
 ) {
     val team by viewModel.currentBattleTeam.collectAsState()
+    val pendingRoster by viewModel.pendingScannedRoster.collectAsState()
     val savedTeams by viewModel.selectableBattleTeams.collectAsState()
     val labels = listOf("LAUNCH POKÉMON GO", "EDIT CURRENT TEAM", "ALL SAVED TEAMS") +
         savedTeams.map { "USE ${it.name}" }
@@ -69,7 +70,7 @@ fun DroidballReadinessScreen(
         onFilterSettingsChange = onFilterSettingsChange,
         lcdLines = listOf(
             "DROIDBALL PRE-FLIGHT",
-            "TEAM ${team.members.size}/3",
+            if (pendingRoster != null) "ROSTER SAVED · MOVES NEEDED" else "TEAM ${team.members.size}/3",
             "[A] SELECT  [B] BACK",
         ),
         onUp = { selectedIndex = (selectedIndex - 1).coerceAtLeast(0) },
@@ -96,7 +97,14 @@ fun DroidballReadinessScreen(
                 color = TerminalGreen,
                 fontSize = 15.sp,
             )
-            if (team.members.isEmpty()) {
+            if (pendingRoster != null) {
+                Text("ROSTER CONFIRMED · MOVES NEEDED", color = TerminalGreen, fontSize = 12.sp)
+                pendingRoster.orEmpty().forEachIndexed { index, name ->
+                    Text("${index + 1}. $name", color = TerminalDimGreen, fontSize = 11.sp)
+                }
+                Text("In GO, open Droidball → TEAM / MOVES to finish this setup, or choose a saved team here.",
+                    color = TerminalDimGreen, fontSize = 10.sp)
+            } else if (team.members.isEmpty()) {
                 Text("NO CURRENT TEAM SAVED", color = TerminalDimGreen, fontSize = 12.sp)
             } else {
                 team.members.sortedBy { it.slot }.forEach { member ->

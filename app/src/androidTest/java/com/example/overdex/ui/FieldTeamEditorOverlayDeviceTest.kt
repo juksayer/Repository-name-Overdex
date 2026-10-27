@@ -43,7 +43,8 @@ class FieldTeamEditorOverlayDeviceTest {
             compose.onNodeWithText("○ Volt Switch").performScrollTo().performClick()
             compose.onNodeWithText("○ Thunder Punch").performScrollTo().performClick()
         }
-        compose.onNodeWithText("3/3 ready").assertIsDisplayed()
+        compose.onNodeWithText("3/3 move sets selected").assertIsDisplayed()
+        compose.onNodeWithText("Tap USE THIS TEAM to save these moves.").assertIsDisplayed()
         compose.onNodeWithText("USE THIS TEAM").assertIsEnabled().performClick()
         compose.runOnIdle {
             assertEquals(listOf("Volt Switch", "Volt Switch", "Volt Switch"), result!!.members.map { it.fastMoveName })
@@ -59,7 +60,7 @@ class FieldTeamEditorOverlayDeviceTest {
             330.dp) { rescanned = true } }
         compose.onNodeWithText("SAVED TEAMS").performClick()
         compose.onNodeWithText("Electric team").performClick()
-        compose.onNodeWithText("3/3 ready").assertIsDisplayed()
+        compose.onNodeWithText("3/3 move sets selected").assertIsDisplayed()
         compose.runOnIdle { assertEquals("card-1", editor.draft.value!!.slots[0].ownedPokemonId) }
         compose.onNodeWithText("RESCAN").assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(rescanned); assertNull(editor.draft.value) }

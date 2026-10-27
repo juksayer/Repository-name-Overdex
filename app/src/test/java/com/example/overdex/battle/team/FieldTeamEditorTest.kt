@@ -65,6 +65,36 @@ class FieldTeamEditorTest {
         } finally { scope.cancel() }
     }
 
+    @Test fun `reopening a pending scan keeps partial moves without saving or reusing an owned card`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var saves = 0
+            val editor = FieldTeamEditor(knowledge, scope, { true }) { saves++ }
+            val roster = List(3) { "Raichu" }
+            editor.openScan(roster)
+            editor.chooseFast(1, "Volt Switch")
+            editor.toggleCharged(1, "Wild Charge")
+            editor.close()
+            editor.resumeScan(roster)
+            assertEquals("Volt Switch", editor.draft.value!!.slots[1].fastMove)
+            assertEquals(listOf("Wild Charge"), editor.draft.value!!.slots[1].chargedMoves)
+            assertNull(editor.draft.value!!.slots[1].ownedPokemonId)
+            assertFalse(editor.draft.value!!.ready)
+            assertEquals(0, saves)
+
+            // A new explicit scan may be a different copy, even with identical names.
+            editor.openScan(roster)
+            assertTrue(editor.draft.value!!.slots.all { it.fastMove == null && it.chargedMoves.isEmpty() })
+
+            editor.chooseFast(0, "Volt Switch")
+            editor.toggleCharged(0, "Thunder Punch")
+            editor.close()
+            editor.discardScan() // The RESCAN path, even before a new roster is confirmed.
+            editor.resumeScan(roster)
+            assertTrue(editor.draft.value!!.slots.all { it.fastMove == null && it.chargedMoves.isEmpty() })
+        } finally { scope.cancel() }
+    }
+
     @Test fun `two charged moves maximum and no moves outside the species pool`() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
@@ -109,6 +139,29 @@ class FieldTeamEditorTest {
             editor.close()
             ready.complete(Unit)
             assertNull(editor.draft.value)
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `failed new scan does not resurrect the previous complete loadout`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var fail = false
+            var saves = 0
+            val failing = object : PokemonKnowledge by knowledge {
+                override suspend fun getPokemonByName(name: String): Pokemon? {
+                    if (fail) error("Catalogue unavailable")
+                    return species
+                }
+            }
+            val editor = FieldTeamEditor(failing, scope, { true }) { saves++ }
+            editor.open(saved())
+            assertTrue(editor.draft.value!!.ready)
+            fail = true
+            editor.openScan(List(3) { "Raichu" })
+            assertFalse(editor.draft.value!!.ready)
+            assertEquals("Catalogue unavailable", editor.draft.value!!.error)
+            editor.useTeam()
+            assertEquals(0, saves)
         } finally { scope.cancel() }
     }
 }

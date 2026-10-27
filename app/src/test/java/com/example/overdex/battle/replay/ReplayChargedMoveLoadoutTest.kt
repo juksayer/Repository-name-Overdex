@@ -7,6 +7,28 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ReplayChargedMoveLoadoutTest {
+    @Test fun `confirmed roster does not reuse old charge buttons but fresh OCR can populate them`() {
+        val old = event("old", ArchivedPlayerTeamSlotConfigured(1, "Camerupt", 323, "Incinerate",
+            listOf("Earthquake", "Overheat")), 0)
+        val source = listOf(old, event("confirmed", ArchivedPlayerTeamRosterConfirmation(true,
+            listOf("Camerupt", "Gourgeist", "Abomasnow")), 1), species("player", "PLAYER", "Camerupt", 2),
+            event("go", ArchivedMatchStarted, 3))
+        assertTrue(model(source).sceneAt(5).playerChargedMoves.isEmpty())
+        val observed = model(source + event("ocr", ArchivedPlayerChargeMoveLabelRead(1, "Earth Power"), 4))
+            .sceneAt(5).playerChargedMoves.single()
+        assertEquals("Earth Power", observed.moveName)
+        assertEquals(setOf("ocr"), observed.evidenceArticleIds)
+        assertEquals(listOf("Earthquake", "Overheat"), (old.payload as ArchivedPlayerTeamSlotConfigured).chargedMoveNames)
+    }
+
+    @Test fun `explicit team save after confirmation restores charge buttons`() {
+        val source = listOf(event("confirmed", ArchivedPlayerTeamRosterConfirmation(true,
+            listOf("Camerupt", null, null)), 1),
+            event("saved", ArchivedPlayerTeamSlotConfigured(1, "Camerupt", 323, "Incinerate",
+                listOf("Earth Power")), 2), species("player", "PLAYER", "Camerupt", 3),
+            event("go", ArchivedMatchStarted, 4))
+        assertEquals("Earth Power", model(source).sceneAt(5).playerChargedMoves.single().moveName)
+    }
     @Test fun `regional forms keep separate charge buttons and ambiguous bare appearance has neither loadout`() {
         val trail = Move("Trailblaze", PokemonType.GRASS, 65, 50, false)
         val brick = Move("Brick Break", PokemonType.FIGHTING, 40, 40, false)

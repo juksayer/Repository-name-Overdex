@@ -413,7 +413,7 @@ private fun OverlayPanel(
                 DroidballOverlayMode.PRE_BATTLE -> if (configuredTeamReady) {
                     "Team and moves ready. You can change them or rescan before battle."
                 } else {
-                    "Navigate freely. Start scanning when Team Select is visible."
+                    "Moves not ready. Open TEAM / MOVES, or scan when Team Select is visible."
                 }
                 DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Looking for agreeing league, party-card, restriction, and use-party signals."
                 DroidballOverlayMode.TEAM_SELECT -> "Team Select accepted. Player roster observation is active."
@@ -457,7 +457,12 @@ private fun OverlayPanel(
                         OverlayControl("NO / RESCAN") { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RejectInferredPlayerTeamRequested) }
                     }
                 } else if (playerTeamConfirmed) {
-                    Text("TEAM CONFIRMED", color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                    Text(if (configuredTeamReady) "TEAM & MOVES READY" else "ROSTER CONFIRMED · MOVES NEEDED",
+                        color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                    if (!configuredTeamReady) {
+                        Text("Choose TEAM / MOVES to save moves, or continue with observation only.",
+                            color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+                    }
                 }
                 Text(
                     text = "OPEN BATTLE HUD",

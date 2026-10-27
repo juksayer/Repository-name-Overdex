@@ -33,11 +33,19 @@ internal fun archivedNamedMoveSide(name: String, at: Long, articles: List<Archiv
 /** A contradicted saved team must not make every unlisted player an opponent. */
 internal fun latestArchivedPlayerRoster(articles: List<ArchivedRealityArticle>, at: Long): List<String> {
     val bySlot = mutableMapOf<Int, String>()
+    val configuration = ArchivedPlayerTeamConfiguration(articles)
+    val configuredIds = configuration.recordsAt(at).map { it.articleId }.toSet()
     articles.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= at }
         .sortedBy { it.monotonicTimeNanos }.forEach {
         when (val payload = it.payload) {
             ArchivedObservationRestartedByUser, ArchivedScreenIgnoredByUser -> bySlot.clear()
-            is ArchivedPlayerTeamSlotConfigured -> bySlot[payload.slot] = payload.speciesName
+            is ArchivedPlayerTeamRosterConfirmation -> if (payload.confirmed) {
+                bySlot.clear()
+                payload.speciesBySlot.take(3).forEachIndexed { index, species ->
+                    if (!species.isNullOrBlank()) bySlot[index + 1] = species
+                }
+            }
+            is ArchivedPlayerTeamSlotConfigured -> if (it.articleId in configuredIds) bySlot[payload.slot] = payload.speciesName
             is ArchivedPlayerTeamRosterSlotWitnessed -> bySlot[payload.slot] =
                 com.example.overdex.data.PokemonFormReference.mergeRosterName(
                     bySlot[payload.slot], payload.speciesName, payload.spriteVariant != null)
@@ -56,8 +64,8 @@ internal fun latestArchivedPlayerRoster(articles: List<ArchivedRealityArticle>, 
 
 internal fun configuredLeadContradicted(articles: List<ArchivedRealityArticle>): Boolean {
     val start = articles.firstOrNull { it.payload is ArchivedMatchStarted }?.monotonicTimeNanos ?: return false
-    val lead = articles.filter { (it.monotonicTimeNanos ?: Long.MAX_VALUE) <= start }
-        .mapNotNull { it.payload as? ArchivedPlayerTeamSlotConfigured }.lastOrNull { it.slot == 1 } ?: return false
+    val lead = ArchivedPlayerTeamConfiguration(articles).recordsAt(start)
+        .map { it.payload as ArchivedPlayerTeamSlotConfigured }.lastOrNull { it.slot == 1 } ?: return false
     val firstBadge = articles.firstOrNull { article ->
         val badge = article.payload as? ArchivedActivePokemonSpeciesWitnessed
         badge?.side == "PLAYER" && isSideLocatedSpeciesSource(article.sourceId) &&
