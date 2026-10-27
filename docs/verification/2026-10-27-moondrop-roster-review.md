@@ -23,7 +23,7 @@ Both losses cite clear GOOD EFFORT text. Result OCR publication delay was about 
 
 Both archives retain configured Aegislash / Flygon / Mawile with Psycho Cut / Dragon Tail / Fire Fang. The user-confirmed Team Select rosters are Aegislash / Alolan Sandslash / Dragalge in the first match and Dragalge / Alolan Sandslash / Aegislash in the newest. Live active-species observations agree with those confirmed rosters; Alolan Sandslash resolves to its regional form.
 
-The mismatch is explicitly recorded by PlayerBattleInformationChecked DIFFERS Articles. Neither Dragalge nor Alolan Sandslash gets a FastMoveIdentified or FastMoveEnergyDerived Article. Aegislash retains configured Psycho Cut. Thus new team confirmation established species/order but did not supply the new members' move loadouts. This explains missing player energy for those members without assuming they were idle.
+The mismatch is explicitly recorded by PlayerBattleInformationChecked DIFFERS Articles. Neither Dragalge nor Alolan Sandslash gets a FastMoveIdentified or FastMoveEnergyDerived Article. Aegislash retains configured Psycho Cut. Thus new team confirmation established species/order but did not supply the new members' move loadouts. Missing move identity leaves those members without exact energy accounting; the stale configuration alone does not establish why live inference failed to resolve their moves.
 
 ## Observed uses and bounded energy
 
@@ -49,9 +49,45 @@ Some active-type matches are plainly unreliable support: first match reports DAR
 
 Audio is present and nonzero. First archive retains six 48 kHz stereo clips plus 35 reduced 8 kHz mono clips; newest retains eleven stereo clips plus 47 reduced mono clips. This does not establish whether music was enabled or exact sound attribution. All visual-capture-gap Articles are before MatchStarted; sparse retained crops alone cannot diagnose capture gaps during battle.
 
-## Pending user clarification
+## User clarification received after review
 
-Ask which Fast Moves Dragalge and Alolan Sandslash have, and whether either was deliberately left idle. Exact-count performance cannot be inferred from casual-match totals alone. No clarification is needed to repair the two visibly readable charge announcements or investigate the documented faint attribution.
+The user confirmed **Powder Snow on Alolan Sandslash**, **Acid on Dragalge**, and
+continuous attacking in response to the question about these two new matches.
+This is retrospective user-reported ground truth, not an observation made by the
+app during the recordings. The original archives remain unchanged.
+
+The lack of FastMoveIdentified and FastMoveEnergyDerived Articles for those two
+combatants is therefore unresolved move identity/energy coverage; deliberate
+inactivity does not explain it. Continuous tapping does not establish an exact
+number of completed attacks, because charge sequences, transitions, and network
+delays can interrupt execution. Recorded use counts still need independent
+timing/count validation.
+
+No clarification is needed to repair the two visibly readable charge
+announcements or investigate the documented faint attribution.
+
+### Configuration-path check
+
+At `f1e6f36`, `PokedexViewModel` handles `ConfirmInferredPlayerTeamRequested` by
+recording `PlayerTeamRosterConfirmation`, marking the roster confirmed, and
+opening `FieldTeamEditor.openScan`. It does not replace `currentBattleTeam` there.
+`openScan` intentionally begins with empty moves because even a same-species
+scan can represent a different owned Pokemon. Only the editor's `useTeam()`
+action saves the completed loadout through `saveCurrentBattleTeam` and publishes
+new `PlayerTeamSlotConfigured` testimony.
+
+Thus roster confirmation alone does not establish a new move configuration.
+The archives establish that the old configuration remained; they do not prove
+which editor actions the user attempted. A follow-up should make roster
+confirmation versus move readiness explicit and keep superseded loadouts from
+acting as current-team evidence, without guessing moves or overwriting owned
+cards. This clarification/review update changes no runtime behavior.
+
+`FastMoveCadenceInference` still loads the actually witnessed species' legal
+Fast Move pool and looks up configured moves by species name. Missing configured
+Powder Snow/Acid therefore removes the immediate identity reference but does not
+disable observation-based identification. The failure of that fallback to
+resolve either move is a separate evidence/inference target.
 
 ## Evidence location and follow-up
 
