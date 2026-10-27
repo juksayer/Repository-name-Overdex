@@ -25,6 +25,37 @@ but no audio track. The separate Overdex archives contain 48 kHz stereo audio.
 The user confirmed that Pokémon GO music was off **only on the Moondrop**.
 This context is preserved separately in `user-context.json`.
 
+### Subsequent user clarification: animation stutter and missing ending
+
+After the initial review, the user reported that Gardevoir rapidly repeated
+approximately the first third of its Fast Move animation for at least one normal
+Charm duration. Its exact video interval has not been localized. Do not assume
+it overlaps the opening groups or explains either extra border-only event.
+Repeated partial animation starts are not independently completed attacks and
+must not award extra energy. Equally, stuttering visuals alone do not establish
+that the game stopped registering underlying attacks. Reconcile separate HP,
+energy, audio, and completed-effect observations while preserving their limits.
+
+The user also reported that the final approximately 10–15 seconds, including
+the result, are missing from the MP4. Its last decoded frame is at 179.025656
+seconds and still shows Garchomp alive during battle. The missing duration is
+user-estimated, not measured from the truncated file. The MP4 cannot validate
+the final KO or result timing; result Articles in the two separate Overdex
+archives remain independent evidence. The video ending is not a MatchEnd.
+
+The opening labels below count completed visual episodes. They do not establish
+an independent server-registered attack count, and should not be treated as
+whole-match ground truth. This clarification does not change the pixel-level
+HP-outline regression or rewrite the source archives.
+
+A bounded independent recheck of video 24–56 seconds still supports seven
+completed heart-to-recipient-ring episodes in each opening group, with no extra
+completed ring in the settled gaps. It did not confidently localize a sustained
+partial-animation restart within that window. The initial windup at 26.8–28.8
+seconds is nonuniform, but the sampled frames do not distinguish a restart bug
+from ordinary startup or recording variation. Do not label it as the reported
+stutter without stronger evidence.
+
 ## Independently visible opening attacks
 
 The full manual timing brackets are retained in
@@ -35,7 +66,7 @@ first group and seven in the second. These counts come from distinct visual
 episodes, not taps or division by the nominal move duration. Ring onset times
 below are approximate visual landmarks, not exact damage or server-turn times.
 
-| Group | Approximate recipient-ring onsets, video seconds | Visible attacks | Pixel recorded uses | Moondrop recorded uses |
+| Group | Approximate recipient-ring onsets, video seconds | Completed visual cycles | Pixel recorded uses | Moondrop recorded uses |
 | --- | --- | ---: | ---: | ---: |
 | First | 28.62, 29.93, 31.27, 32.78, 34.25, 35.90, 37.25 | 7 | 1 | 8 |
 | Second | 43.25, 44.88, 46.38, 47.75, 49.26, 50.90, 52.27 | 7 | 3 | 8 |
@@ -60,8 +91,9 @@ only by their MatchStarted Articles would hide timing uncertainty.
 
 The whole archives contain 54 Pixel and 73 Moondrop Gardevoir uses. Neither
 records a Fast Move by the idle recipient team. These whole-match totals are
-not certified ground truth; the opening 14 attacks are the manually labeled
-control. Each recorded HP damage tick has exactly one use descendant.
+not certified ground truth; the opening 14 completed visual cycles are the
+manually labeled control. Each recorded HP damage tick has exactly one use
+descendant.
 
 ### Pixel: intermittent HP measurements are discarded after a gap
 
@@ -105,14 +137,16 @@ Moondrop has 70 HP-backed uses and three border-only uses. Its first damage
 use `3954f368-2659-4f47-ba1d-c1a763b04409` is followed 803.854 ms later by
 border-only use `2d8ae065-2b1e-43f6-9f5a-fa57987ed06c`. At that point the
 move duration is unresolved and the default 450 ms merge allowance separates
-them. The first video group contains seven attacks, not the eight recorded uses.
+them. The first video group contains seven completed visual cycles, compared
+with eight recorded uses. The later stutter report requires treating this as
+a visual-versus-inference discrepancy, not independent proof of server counts.
 
 The second group ends with HP-backed use
 `31e5a736-5265-4200-833c-e68deea1d0c1`, then border-only use
 `558f3fa1-49cd-416b-b42f-6e3712c6c0e9` 1,138.6 ms later. Charm is known by
 then, but the 1,050 ms allowance still separates the phases. HP remains at its
 post-hit plateau until the next attack group. The video again shows seven
-completed attacks, not eight.
+completed visual cycles, compared with eight inferred uses.
 
 A larger global window is not yet justified. The first border flash is also
 only 714 ms before the next HP loss; nearest-neighbor matching can associate it
@@ -138,7 +172,7 @@ No charged-move announcements or energy-spending Articles were found.
 
 ## Acceptance boundary
 
-This review establishes a reusable 14-attack visual control, successful idle
+This review establishes a reusable 14-cycle visual control, successful idle
 side attribution, an audio-mixing comparison, and two distinct counting defects.
 It does not establish a general Charm visual classifier or certify the whole
 match count. Keep both visual phases, audio, HP, and border evidence independent

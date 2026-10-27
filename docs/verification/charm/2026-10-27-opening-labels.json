@@ -176,5 +176,19 @@
     "Most onset brackets are about0.1\u20130.15s; first two tighter.",
     "No audio stream in supplied MP4; does not establish whether Overdex archive audio exists.",
     "Existing first-/second-/transition- sheets crop at y610 and can clip the HP top border. Use hp-first- sheets/full frame for HP inspection."
-  ]
+  ],
+  "subsequent_user_clarification": {
+    "date": "2026-10-27",
+    "animation_stutter_reported": true,
+    "description": "Roughly the first third of Gardevoir Fast Move animation repeated rapidly for at least one regular Charm duration.",
+    "video_interval_seconds": null,
+    "count_interpretation": "Labels count completed visual cycles, not independent server-registered attacks. Do not count partial restarts or infer no underlying attacks from stuttering alone.",
+    "reported_missing_ending_seconds": [
+      10,
+      15
+    ],
+    "reported_missing_content": "Match result; duration is approximate user recollection.",
+    "last_decoded_video_frame_seconds": 179.02565555555555,
+    "last_frame_observation": "Battle continues against Garchomp with HP remaining; no result screen."
+  }
 }
