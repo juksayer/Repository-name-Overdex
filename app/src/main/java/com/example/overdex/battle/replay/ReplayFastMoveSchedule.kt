@@ -65,6 +65,7 @@ internal object ReplayFastMoveSchedule {
     fun build(witnesses: List<ReplayFastMoveWitness>): List<ReplayFastMoveCycle> =
         witnesses.groupBy { it.side }.values.flatMap { sideWitnesses ->
             val cycles = mutableListOf<ReplayFastMoveCycle>()
+            var lastKnownCycle: ReplayFastMoveCycle? = null
             for (witness in sideWitnesses.sortedBy { it.observedAtNanos }) {
                 val duration = witness.durationNanos
                 if (duration == null) {
@@ -75,25 +76,41 @@ internal object ReplayFastMoveSchedule {
                 }
                 val previous = cycles.lastOrNull()?.takeIf {
                     it.witness.windowStartNanos == witness.windowStartNanos &&
-                        it.witness.windowEndNanos == witness.windowEndNanos &&
-                        it.witness.moveName == witness.moveName && it.durationNanos == duration
+                        it.witness.windowEndNanos == witness.windowEndNanos
                 }
+                // A revised identity cannot create spare attack time. Even when
+                // the previous duration is unknown, its observed hit occupies
+                // that instant; a new known move still needs one full cycle.
+                // A neutral witness can occur before a known cycle's jitter-
+                // adjusted impact. It must not erase that already occupied time.
+                val previousKnown = lastKnownCycle?.takeIf {
+                    it.witness.windowStartNanos == witness.windowStartNanos &&
+                        it.witness.windowEndNanos == witness.windowEndNanos
+                }
+                val previousImpact = listOfNotNull(previous?.let {
+                    if (it.hasReferenceDuration) it.impactAtNanos else it.witness.observedAtNanos
+                }, previousKnown?.impactAtNanos).maxOrNull()
+                val sameReference = previous?.hasReferenceDuration == true &&
+                    previous.witness.moveName == witness.moveName && previous.durationNanos == duration
                 // Allow capture jitter around one cycle, but never queue a burst of
                 // impossible uses to play later during an unobserved/idle interval.
                 val tolerance = minOf(400_000_000L, duration / 4)
-                val expected = previous?.impactAtNanos?.plus(duration)
+                val expected = previousImpact?.plus(duration)
                 // Confirmation can lag behind the actual hit by different amounts.
                 // In the Oct 13 recording, two settled Incinerate losses (99->74,
                 // 74->47 percent) were confirmed only 1.63 seconds apart. Cadence
                 // alone must not collapse those independent losses into one hit.
-                val separateDamage = previous != null && expected != null &&
+                val separateDamage = sameReference && expected != null &&
                     // Separate settled losses can correct confirmation jitter,
                     // but cannot queue intermediate draining levels several
                     // moves into the future. Bound reconstruction to half a cycle.
                     expected - witness.observedAtNanos <= duration / 2 &&
                     continuesDamageSequence(previous.witness, witness, duration)
                 if (expected != null && witness.observedAtNanos < expected - tolerance && !separateDamage) {
-                    cycles[cycles.lastIndex] = previous.copy(witness = previous.witness.copy(
+                    // Keep incompatible raw testimony in the archive, without
+                    // merging its identity into a different accepted move.
+                    if (!sameReference) continue
+                    cycles[cycles.lastIndex] = previous!!.copy(witness = previous.witness.copy(
                         evidenceKinds = previous.witness.evidenceKinds + witness.evidenceKinds,
                         articleIds = previous.witness.articleIds + witness.articleIds,
                         sourceTimesNanos = previous.witness.sourceTimesNanos + witness.sourceTimesNanos,
@@ -108,7 +125,9 @@ internal object ReplayFastMoveSchedule {
                 // Both combatants must remain on the field for this cycle. Charge
                 // sequences, switches, faints and match boundaries split windows.
                 if (impact > witness.windowEndNanos) continue
-                cycles += ReplayFastMoveCycle(witness, impact - duration, impact)
+                val cycle = ReplayFastMoveCycle(witness, impact - duration, impact)
+                cycles += cycle
+                lastKnownCycle = cycle
             }
             cycles
         }.sortedBy { it.startedAtNanos }

@@ -203,4 +203,101 @@ class OpponentEnergyForecastTest {
         assertEquals(0, f.estimate(nanos(8.0))!!.observedUses)
         assertTrue(f.estimate(nanos(8.0))!!.paused)
     }
+
+    @Test fun `distinct duplicate impacts cannot exceed completed move cycles`() {
+        val f = engine(snow)
+        repeat(8) { index -> f.add("burst-$index", .1 + index * .05, hit("burst-$index")) }
+        val early = f.estimate(nanos(.5))!!
+        assertEquals(8, early.observedUses)
+        assertEquals(0, early.expectedUses)
+        assertEquals(0, early.energy)
+        assertEquals(8, f.estimate(nanos(1.0))!!.energy)
+        assertEquals(16, f.estimate(nanos(2.0))!!.energy)
+    }
+
+    @Test fun `Charm burst cannot earn more than eight energy per three turns`() {
+        val charm = Move("Charm", PokemonType.FAIRY, 12, 8, true, 3)
+        val f = engine(charm)
+        repeat(10) { index -> f.add("charm-$index", .1 + index * .14, hit("charm-$index")) }
+        assertEquals(0, f.estimate(nanos(1.499))!!.energy)
+        val firstCycle = f.estimate(nanos(1.5))!!
+        assertEquals(8, firstCycle.energy)
+        assertEquals(1, firstCycle.expectedUses)
+        assertEquals(10, firstCycle.observedUses)
+        val secondCycle = f.estimate(nanos(3.0))!!
+        assertEquals(16, secondCycle.energy)
+        assertEquals(2, secondCycle.expectedUses)
+        assertEquals(10, secondCycle.observedUses)
+    }
+
+    @Test fun `a burst after elapsed cycles cannot spend unused time as extra energy`() {
+        val f = engine(snow)
+        repeat(12) { index -> f.add("burst-$index", 5.01 + index * .01, hit("burst-$index")) }
+        val state = f.estimate(nanos(5.2))!!
+        assertEquals(12, state.observedUses)
+        assertEquals(5, state.expectedUses)
+        assertEquals(40, state.energy)
+    }
+
+    @Test fun `late identity and reversed use publication still obey source time ceiling`() {
+        val f = engine(water, snow)
+        repeat(8) { index ->
+            val at = .1 + (7 - index) * .05
+            f.add("late-$index", at, hit("late-$index"))
+        }
+        f.add("actual", 2.0, FastMoveIdentified(opponent, "Sealeo", "Water Gun", nanos(.5),
+            null, 0, "EFFECTIVENESS_TEXT"))
+        val state = f.estimate(nanos(2.0))!!
+        assertEquals(8, state.observedUses)
+        assertEquals(4, state.expectedUses)
+        assertEquals(12, state.energy)
+    }
+
+    @Test fun `partial capture gets one in progress completion but no burst credits`() {
+        val f = OpponentEnergyForecast()
+        f.registerMoves("Sealeo", listOf(water))
+        f.add("species", 10.0, ActivePokemonSpeciesWitnessed(opponent, "Sealeo"))
+        f.visible(10.0, 12.0)
+        repeat(5) { index -> f.add("partial-$index", 10.125 + index * .025, hit("partial-$index")) }
+        val first = f.estimate(nanos(10.3))!!
+        assertTrue(first.partialStart)
+        assertEquals(5, first.observedUses)
+        assertEquals(1, first.expectedUses)
+        assertEquals(3, first.energy)
+        assertEquals(3, f.estimate(nanos(10.624))!!.energy)
+        assertEquals(6, f.estimate(nanos(10.625))!!.energy)
+    }
+
+    @Test fun `post charge burst cannot borrow time from the QTE`() {
+        val f = engine(water)
+        f.add("ready", 2.0, GetReadyWitnessed)
+        f.add("landed", 8.0, ChargeMoveUsedAnnounced)
+        repeat(5) { index -> f.add("resume-$index", 8.8 + index * .02, hit("resume-$index")) }
+        val resumed = f.estimate(nanos(9.0))!!
+        assertEquals(5, resumed.observedUses)
+        assertEquals(12, resumed.energy)
+        assertEquals(15, f.estimate(nanos(9.25))!!.energy)
+    }
+
+    @Test fun `partial recording after known charge cannot claim unknown initial phase`() {
+        val f = OpponentEnergyForecast()
+        f.registerMoves("Sealeo", listOf(water))
+        f.visible(0.0, 12.0)
+        f.add("species", 0.0, ActivePokemonSpeciesWitnessed(opponent, "Sealeo"))
+        f.add("ready", 2.0, GetReadyWitnessed)
+        f.add("landed", 8.0, ChargeMoveUsedAnnounced)
+        f.add("resume", 8.8, hit("resume"))
+        assertEquals(0, f.estimate(nanos(9.0))!!.energy)
+        assertEquals(3, f.estimate(nanos(9.25))!!.energy)
+    }
+
+    @Test fun `resume after replacement cannot include vacant field time`() {
+        val f = engine(water)
+        f.add("player", -1.0, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Pikachu"))
+        f.add("player-faint", 2.0, ActivePokemonFaintedWitnessed(ActivePokemonSide.PLAYER, "Pikachu"))
+        f.add("replacement", 4.0, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Vaporeon"))
+        f.add("resume", 4.125, hit("resume"))
+        assertEquals(12, f.estimate(nanos(4.125))!!.energy)
+        assertEquals(15, f.estimate(nanos(4.5))!!.energy)
+    }
 }

@@ -25,8 +25,10 @@ data class OpponentEnergyEstimate(
  * small projection when late observations or a better move identity arrive;
  * never edit an Article or turn a predicted attack into an observed attack.
  *
- * Each running segment counts max(elapsed complete move cycles, observed uses),
- * not their sum. Interruptions discard unfinished cycles. Stored energy survives
+ * Each running segment earns at most its elapsed complete move cycles. Observed
+ * uses remain a separate count and cannot make an impossible energy burst. One
+ * first observed completion may belong to a move already in progress when a
+ * partial recording began. Interruptions discard unfinished cycles. Stored energy survives
  * switches, is capped at 100, and is spent only for witnessed charged moves.
  */
 class OpponentEnergyForecast {
@@ -102,14 +104,15 @@ class OpponentEnergyForecast {
         var ended = false
         var segmentAt = 0L
         var segmentAwarded = 0
-        var segmentObserved = 0
+        var segmentInitialUses = 0
         var segmentMeasuredNanos = 0L
+        var partialCompletionAvailable = true
         var earliestResume = 0L
         var chargeLockedUntil = Long.MIN_VALUE
         var decisionLockedUntil = Long.MIN_VALUE
         fun balance(name: String) = balances.getOrPut(key(name)) { Balance() }
-        fun begin(at: Long) {
-            segmentAt = at; segmentAwarded = 0; segmentObserved = 0; segmentMeasuredNanos = 0
+        fun begin(at: Long, initialUses: Int = 0) {
+            segmentAt = at; segmentAwarded = 0; segmentInitialUses = initialUses; segmentMeasuredNanos = 0
         }
         fun advance(at: Long) {
             val name = active ?: return
@@ -120,7 +123,7 @@ class OpponentEnergyForecast {
             val elapsed = battlefield.elapsed(segmentAt, at)
             b.activeNanos += elapsed - segmentMeasuredNanos
             segmentMeasuredNanos = elapsed
-            val uses = maxOf(battlefield.completedCycles(segmentAt, at, move.turns!! * TURN_NANOS), segmentObserved)
+            val uses = segmentInitialUses + battlefield.completedCycles(segmentAt, at, move.turns!! * TURN_NANOS)
             val gain = (uses - segmentAwarded).coerceAtLeast(0)
             b.expected += gain
             b.energy = (b.energy + gain * move.energy).coerceAtMost(100)
@@ -128,6 +131,7 @@ class OpponentEnergyForecast {
         }
         fun pause(at: Long) {
             advance(at); running = false; earliestResume = at
+            partialCompletionAvailable = false
         }
         for (event in events.values.filter { it.at <= now }.sortedBy { it.at }) {
             val t = event.at
@@ -138,13 +142,20 @@ class OpponentEnergyForecast {
                     balances.clear(); activeBySide.clear(); seenUses.clear()
                     active = null; start = null; running = false; ended = false; partial = true
                     earliestResume = t; begin(t)
+                    partialCompletionAvailable = true
                     chargeLockedUntil = Long.MIN_VALUE; decisionLockedUntil = Long.MIN_VALUE
                 }
                 MatchStarted -> if (start == null && !ended) {
                     start = t; partial = false; running = true; begin(t)
+                    partialCompletionAvailable = false
                 }
                 is ActivePokemonSpeciesWitnessed -> {
                     val previous = activeBySide.put(p.side, p.speciesName)
+                    if (!running && previous != null && key(previous) != key(p.speciesName)) {
+                        // A resumed move cannot have started while the previous
+                        // combatant was still awaiting a replacement.
+                        earliestResume = maxOf(earliestResume, p.appearanceStartedAtNanos ?: t)
+                    }
                     if (p.side == ActivePokemonSide.OPPONENT && key(active.orEmpty()) != key(p.speciesName)) {
                         active = p.speciesName
                         // The first identity may be published late. Source-time
@@ -200,13 +211,20 @@ class OpponentEnergyForecast {
                     val name = active ?: continue
                     val b = balance(name)
                     if (b.fainted) continue
+                    val firstPartialCompletion = start == null && opponent && partialCompletionAvailable
                     if (start == null) start = t // partial recording, no invented GO
                     if (!running) {
                         running = true
                         val cycle = if (opponent) (chosenMove(name)?.turns ?: 0) * TURN_NANOS else 0L
-                        begin(maxOf(earliestResume, chargeLockedUntil, decisionLockedUntil, t - cycle))
+                        if (firstPartialCompletion) {
+                            // Capture may begin after this move started. Credit
+                            // this one witnessed completion; every later gain
+                            // must wait a complete visible cycle from this hit.
+                            begin(t, initialUses = 1)
+                        } else begin(maxOf(earliestResume, chargeLockedUntil, decisionLockedUntil, t - cycle))
                     }
-                    if (opponent) { b.observed++; segmentObserved++ }
+                    partialCompletionAvailable = false
+                    if (opponent) b.observed++
                     advance(t)
                 }
                 is MatchEnded, ScreenIgnoredByUser, ObservationSessionStoppedByUser -> {

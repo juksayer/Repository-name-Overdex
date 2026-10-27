@@ -17,6 +17,48 @@ class ReplayFastMoveScheduleTest {
         assertEquals(ns(3.9), inputs[3].observedAtNanos) // original timing retained
     }
 
+    @Test fun `changing move identity cannot restart occupied time in the same window`() {
+        val cycles = ReplayFastMoveSchedule.build(listOf(
+            witness("first", 2.0),
+            witness("too-early", 2.2).copy(moveName = "Other move", durationNanos = ns(1.0)),
+            witness("next", 2.9).copy(moveName = "Other move", durationNanos = ns(1.0))))
+        assertEquals(listOf(ns(2.0), ns(3.0)), cycles.map { it.impactAtNanos })
+        assertEquals(listOf(ns(0.0), ns(2.0)), cycles.map { it.startedAtNanos })
+        assertTrue(cycles.none { "too-early" in it.witness.articleIds })
+    }
+
+    @Test fun `changed duration cannot overlap a previous full cycle`() {
+        val cycles = ReplayFastMoveSchedule.build(listOf(
+            witness("first", 2.0),
+            witness("too-early", 2.2).copy(durationNanos = ns(.5)),
+            witness("next", 2.5).copy(durationNanos = ns(.5))))
+        assertEquals(listOf(ns(2.0), ns(2.5)), cycles.map { it.impactAtNanos })
+        assertTrue(cycles.zipWithNext().all { (a, b) -> b.startedAtNanos >= a.impactAtNanos })
+    }
+
+    @Test fun `a known move after an unknown hit still needs one full cycle`() {
+        val cycles = ReplayFastMoveSchedule.build(listOf(
+            witness("unknown", 2.0).copy(durationNanos = null),
+            witness("early-known", 2.1), witness("known", 4.0)))
+        assertEquals(2, cycles.size)
+        assertFalse(cycles.first().hasReferenceDuration)
+        assertEquals(ns(2.0), cycles.last().startedAtNanos)
+        assertEquals(ns(4.0), cycles.last().impactAtNanos)
+    }
+
+    @Test fun `neutral testimony cannot erase a known cycles later reconstructed impact`() {
+        val cycles = ReplayFastMoveSchedule.build(listOf(
+            witness("first", .1),
+            witness("unknown", .2).copy(durationNanos = null),
+            witness("overlapping", 2.2), witness("next", 4.0)))
+        val known = cycles.filter { it.hasReferenceDuration }
+        assertEquals(listOf(ns(2.0), ns(4.0)), known.map { it.impactAtNanos })
+        assertEquals(1, cycles.count { !it.hasReferenceDuration })
+        assertTrue(known.zipWithNext().all { (a, b) -> b.startedAtNanos >= a.impactAtNanos })
+        assertTrue(cycles.none { "overlapping" in it.witness.articleIds })
+        assertEquals(setOf("unknown"), cycles.single { !it.hasReferenceDuration }.witness.articleIds)
+    }
+
     @Test fun `each side has an independent reference cadence including half second moves`() {
         val inputs = listOf(0.5, 1.0, 1.5, 2.0).mapIndexed { i, at ->
             witness("water$i", at).copy(side = "OPPONENT", moveName = "Water Gun", durationNanos = ns(0.5))

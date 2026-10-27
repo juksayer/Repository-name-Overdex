@@ -54,17 +54,23 @@ class ReplayPlayerFormIdentityTest {
 
     @Test fun `same label replacement has its own moves hp and energy and Alolan return restores its energy`() {
         val raw = team() + listOf(
-            article("a-energy", ArchivedFastMoveEnergyDerived("PLAYER", "Spark", 2, 7, 14, "LEGACY_OBSERVED_USES"), 5),
+            article("a1", ArchivedFastMoveUseObserved("a1", "PLAYER", "OPPONENT", "alolan", "Raichu (Alolan)", listOf("HP_BORDER_PULSE"), "TEST"), 5),
+            article("a-energy1", ArchivedFastMoveEnergyDerived("PLAYER", "Spark", 1, 7, 7, "OBSERVED_USE"), 5).copy(predecessorIds = listOf("a1")),
+            article("a2", ArchivedFastMoveUseObserved("a2", "PLAYER", "OPPONENT", "alolan", "Raichu (Alolan)", listOf("HP_BORDER_PULSE"), "TEST"), 6),
+            article("a-energy2", ArchivedFastMoveEnergyDerived("PLAYER", "Spark", 1, 7, 7, "OBSERVED_USE"), 6).copy(predecessorIds = listOf("a2")),
             article("hp-a", ArchivedActiveHpBarMeasured("PLAYER", 0, 0, 200, 10, .6f), 6),
             badge("k-entry", "Raichu", 20, "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"),
             article("k-label1", ArchivedPlayerChargeMoveLabelRead(1, "BRICK BREAK"), 21),
             article("k-label2", ArchivedPlayerChargeMoveLabelRead(1, "BRICK BREAK"), 22),
-            article("k-energy", ArchivedFastMoveEnergyDerived("PLAYER", "Volt Switch", 1, 16, 16, "LEGACY_OBSERVED_USES"), 23),
+            article("k1", ArchivedFastMoveUseObserved("k1", "PLAYER", "OPPONENT", "ordinary", "Raichu", listOf("HP_BORDER_PULSE"), "TEST"), 23),
+            article("k-energy", ArchivedFastMoveEnergyDerived("PLAYER", "Volt Switch", 1, 16, 16, "OBSERVED_USE"), 23).copy(predecessorIds = listOf("k1")),
             badge("a-entry", "Raichu", 40, "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS"),
             article("a-label1", ArchivedPlayerChargeMoveLabelRead(1, "TRAILBLAZE"), 41),
             article("a-label2", ArchivedPlayerChargeMoveLabelRead(1, "TRAILBLAZE"), 42),
         )
-        val model = MatchReplayModel(MatchArchive(matchId = "forms", articles = raw))
+        val model = MatchReplayModel(MatchArchive(matchId = "forms", articles = raw), fastMovesBySpeciesName = mapOf(
+            "Raichu (Alolan)" to listOf(Move("Spark", PokemonType.ELECTRIC, 4, 7, true, 2)),
+            "Raichu" to listOf(Move("Volt Switch", PokemonType.ELECTRIC, 12, 16, true, 4))))
         assertEquals("Raichu (Alolan)", model.sceneAt(10_000_000_000L).player?.speciesName)
         assertEquals(14, model.sceneAt(10_000_000_000L).playerEnergy?.recordedEnergy)
         val ordinary = model.sceneAt(25_000_000_000L)

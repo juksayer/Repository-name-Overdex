@@ -28,13 +28,13 @@ class FastMoveEnergyInferenceTest {
         val engine = FastMoveEnergyInference(Knowledge(alolan, alolan.copy(name = "Raichu")))
         fun appearance(name: String, slot: Int?, at: Long) = article("species-$at-$slot",
             ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, name, 26,
-                playerTeamSlot = slot, appearanceStartedAtNanos = at), at)
-        fun move(name: String, move: String, at: Long) = identity("move-$at", name, move, at,
+                playerTeamSlot = slot, appearanceStartedAtNanos = at * 1_000_000_000L), at * 1_000_000_000L)
+        fun move(name: String, move: String, at: Long) = identity("move-$at", name, move, at * 1_000_000_000L,
             "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES").let {
                 it.copy(payload = (it.payload as FastMoveIdentified).copy(side = ActivePokemonSide.PLAYER))
             }
         fun hit(id: String, at: Long) = article(id, FastMoveUseObserved(id, ActivePokemonSide.PLAYER,
-            ActivePokemonSide.OPPONENT, "appearance", "Raichu", listOf("HP_BORDER_PULSE")), at)
+            ActivePokemonSide.OPPONENT, "appearance", "Raichu", listOf("HP_BORDER_PULSE")), at * 1_000_000_000L)
         engine.accept(appearance("Raichu", null, 1))
         assertTrue(engine.accept(hit("early", 2)).isEmpty())
         engine.accept(appearance("Raichu (Alolan)", 1, 1))
