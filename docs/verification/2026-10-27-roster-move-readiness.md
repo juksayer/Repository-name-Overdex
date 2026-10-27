@@ -82,9 +82,13 @@ and `powder-acid-diagnostic.json` in the same directory.
   are isolated and removed afterward.
 - Calibration profile, battle crops, Team Select crops, HUD layout, and selected
   team preference hashes are unchanged after installation and device tests.
-- Moondrop was disconnected during installation. Its update and the real
-  Pokemon GO battle check remain pending. Device UI tests establish the setup
-  controls and persistence, not live recognition or exact battle counts.
+- Moondrop `MDPH00124112500414` (Android 14) was subsequently reconnected and
+  received the same hash-verified APK. Its targeted instrumentation reported
+  **OK (3 tests)**: pending-roster persistence plus both field-editor UI checks.
+  The five calibration/HUD/team preference hashes remain unchanged after its
+  installation and tests. Normal application launch succeeded.
+- The real Pokemon GO battle check remains pending. Device UI tests establish
+  the setup controls and persistence, not live recognition or exact battle counts.
 
 Build logs, test output, installed-APK receipts, and preference hashes are under
 `/home/sean/overdex-device-backups/2026-10-27-roster-readiness/`.
