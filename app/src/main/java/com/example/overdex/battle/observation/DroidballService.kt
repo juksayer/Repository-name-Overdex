@@ -1,11 +1,14 @@
 package com.example.overdex.battle.observation
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
@@ -27,6 +30,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
@@ -35,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -313,12 +318,33 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var rejectedEmitCount = 0L
     private var deliveryLoggingJob: kotlinx.coroutines.Job? = null
     private var notificationStateJob: kotlinx.coroutines.Job? = null
+    private var screenLockCheckJob: kotlinx.coroutines.Job? = null
+    private var screenStateReceiverRegistered = false
+    private val powerManager by lazy { getSystemService(Context.POWER_SERVICE) as PowerManager }
+    private val keyguardManager by lazy { getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager }
+    private val automaticStopController = DroidballAutomaticStopController { reason ->
+        if (activeService === this) {
+            Log.i("DROIDBALL_LIFECYCLE", "Automatically ending observation: ${reason.name}")
+            // This owns the same archival/session teardown as the Stop control,
+            // without claiming a user Stop action or inventing a battle result.
+            fieldViewModel.stopObservationAutomatically(reason.description)
+        }
+    }
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF, Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT ->
+                    refreshScreenLockCheck()
+            }
+        }
+    }
 
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
             Log.d("DroidballService", "MediaProjection stopped by system")
-            markStopped()
-            stopSelf()
+            // Newer Android versions can revoke projection on lock before our
+            // screen broadcast arrives. End the whole session in either order.
+            automaticStopController.onProjectionStopped(powerManager.isInteractive, keyguardManager.isKeyguardLocked)
         }
 
         override fun onCapturedContentResize(width: Int, height: Int) {
@@ -385,6 +411,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 _runtimeState.value = DroidballRuntimeState.ACTIVE
                 if (!registrationMode) DroidballRuntimeMarker.markActive(this)
                 _signals.tryEmit(DroidballSignal.Started)
+                observeScreenLockState()
             }.onFailure { error ->
                 Log.e("DROIDBALL_LAUNCH", "Unable to initialize Droidball service", error)
                 _signals.tryEmit(DroidballSignal.Error("Unable to initialize Droidball: ${error.message ?: error::class.simpleName}"))
@@ -395,6 +422,39 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         }
 
         return START_NOT_STICKY
+    }
+
+    private fun observeScreenLockState() {
+        if (!screenStateReceiverRegistered) {
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
+            ContextCompat.registerReceiver(this, screenStateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+            screenStateReceiverRegistered = true
+        }
+        // Cover startup while already asleep; SCREEN_OFF is not a sticky broadcast.
+        refreshScreenLockCheck()
+    }
+
+    private fun refreshScreenLockCheck() {
+        screenLockCheckJob?.cancel()
+        if (!screenStateReceiverRegistered) return
+        screenLockCheckJob = serviceScope.launch {
+            while (isActive) {
+                // Re-read both values: queued broadcasts must not stop a phone
+                // that has already woken up. Keyguard includes swipe-only locks.
+                val recheck = automaticStopController.onDeviceState(
+                    interactive = powerManager.isInteractive,
+                    keyguardShowing = keyguardManager.isKeyguardLocked,
+                )
+                if (!recheck) break
+                // Lock state can settle after SCREEN_OFF. No polling while awake,
+                // and no wake lock: a sleeping device may defer the next check.
+                delay(500L)
+            }
+        }
     }
 
     private fun startMotionPulseCapture() {
@@ -1151,6 +1211,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
+        automaticStopController.close()
+        screenLockCheckJob?.cancel()
+        screenLockCheckJob = null
+        if (screenStateReceiverRegistered) {
+            unregisterReceiver(screenStateReceiver)
+            screenStateReceiverRegistered = false
+        }
         notificationStateJob?.cancel()
         qteTypeIconSampling.value?.stop()
         qteTypeIconSampling.value = null

@@ -19,6 +19,7 @@ import com.example.overdex.battle.custody.PlayerTeamSlotConfigured
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.custody.SourceAvailabilityRecord
 import com.example.overdex.battle.custody.TestimonyCustody
+import com.example.overdex.battle.custody.TestimonyRecord
 import com.example.overdex.battle.custody.WitnessOperating
 import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
@@ -40,6 +41,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
@@ -131,6 +134,8 @@ class Match(
         Thread(runnable, "overdex-match-$matchId").apply { isDaemon = true }
     }.asCoroutineDispatcher()
     private val matchScope = CoroutineScope(matchDispatcher + SupervisorJob())
+    private val publishedAvailabilitySequence = MutableStateFlow(Long.MIN_VALUE)
+    private val publishedTestimonySequence = MutableStateFlow(Long.MIN_VALUE)
     private val playerRosterBySlot = ConcurrentHashMap<Int, String>()
     private val playerRosterIdBySlot = ConcurrentHashMap<Int, Int>()
     private val playerRosterArticleBySlot = ConcurrentHashMap<Int, ArticleId>()
@@ -335,6 +340,7 @@ class Match(
                 realityTimeline.append(article)
                 _articles.tryEmit(article)
                 battleMemory.timeline.record(article)
+                publishedAvailabilitySequence.value = availability.sequenceNumber
             }
         }
         matchScope.launch {
@@ -598,6 +604,9 @@ class Match(
                         battleMemory.timeline.record(derivedArticle)
                     }
                 }
+                // Publication includes this record's inline derivations and interpretation,
+                // not merely the initial raw article appended above.
+                publishedTestimonySequence.value = testimony.sequenceNumber
             }
         }
     }
@@ -840,6 +849,30 @@ class Match(
      */
     fun incrementFrameCount() {
         frameCount++
+    }
+
+    /**
+     * Waits for the testimony and source-availability records already accepted by
+     * Custody to finish publication, including their inline derivations. The two
+     * collectors acknowledge their own sequence numbers because either lane may
+     * be ahead of the other. Records accepted after this snapshot are not a part
+     * of this barrier; callers ending capture must stop producers first.
+     *
+     * This does not release the Match or manufacture a battle outcome. Call it
+     * before archiving/releasing, and let the caller own cancellation or timeout.
+     */
+    suspend fun awaitAcceptedEvidencePublished() {
+        val accepted = custody.getRecords()
+        val testimonySequence = accepted.filterIsInstance<TestimonyRecord>()
+            .maxOfOrNull { it.sequenceNumber }
+        val availabilitySequence = accepted.filterIsInstance<SourceAvailabilityRecord>()
+            .maxOfOrNull { it.sequenceNumber }
+        if (testimonySequence != null) {
+            publishedTestimonySequence.first { it >= testimonySequence }
+        }
+        if (availabilitySequence != null) {
+            publishedAvailabilitySequence.first { it >= availabilitySequence }
+        }
     }
 
     /**

@@ -1284,8 +1284,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun retainAndArchiveMatch(match: Match, reason: String) {
-        if (!retainedMatchIds.add(match.matchId)) return
+    private fun retainAndArchiveMatch(match: Match, reason: String, awaitAcceptedEvidence: Boolean = false) {
+        if (!retainedMatchIds.add(match.matchId)) {
+            if (awaitAcceptedEvidence) {
+                // A result may have saved this Match while the surrounding
+                // session stayed open. Refresh that same archive after draining
+                // the final evidence/stop reason; do not add another ledger entry.
+                archiveCompletedMatch(MatchArchiveSource(MatchId(match.matchId), match.realityTimeline),
+                    reason, match)
+            }
+            return
+        }
         if (_activeMatch.value === match) {
             activeCheckpointJob?.cancel()
             activeCheckpointJob = null
@@ -1299,12 +1308,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             _latestMatchArchiveSource.value = source
             summaryHandoff.offer(source)
         }
-        archiveCompletedMatch(source, reason)
+        archiveCompletedMatch(source, reason, if (awaitAcceptedEvidence) match else null)
     }
 
-    private fun archiveCompletedMatch(source: MatchArchiveSource, reason: String) {
+    private fun archiveCompletedMatch(source: MatchArchiveSource, reason: String, drainingMatch: Match? = null) {
         archiveScope.launch {
             runCatching {
+                // Capture stops immediately. Before taking the archive snapshot,
+                // let already-accepted testimony and the automatic-stop reason
+                // finish publishing on Match's separate serial dispatcher.
+                if (drainingMatch != null) kotlinx.coroutines.withTimeout(30_000L) {
+                    drainingMatch.awaitAcceptedEvidencePublished()
+                }
                 archiveMutex.withLock {
                     archiveDirectoryManager.exportMatch(
                         source.matchId,
@@ -1316,6 +1331,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 }
             }.onSuccess { uri ->
                 if (uri != null) {
+                    // Summary/ledger readers retain the Timeline, not its worker.
+                    // Accepted evidence is drained and durable; close the idle
+                    // Match executor instead of keeping it alive after auto-stop.
+                    drainingMatch?.release()
                     archiveDirectoryManager.deleteMatchCheckpoint(source.matchId)
                     runCatching {
                         val entry = archiveDirectoryManager.listArchives().firstOrNull { it.uri == uri }
@@ -1348,7 +1367,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         stopObservation()
     }
 
-    fun stopObservation() {
+    fun stopObservationAutomatically(reason: String) = stopObservation(automaticReason = reason)
+
+    fun stopObservation() = stopObservation(automaticReason = null)
+
+    private fun stopObservation(automaticReason: String?) {
         if (registrationRequested) {
             guidedRegistration.stop()
             registrationRequested = false
@@ -1358,16 +1381,27 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             return
         }
         _deploymentState.value = InstrumentDeploymentState.RETURNING
-        _activeMatch.value?.let { retainAndArchiveMatch(it, "Droidball stopped") }
         nextMatchVsWatcher?.stop()
         nextMatchVsWatcher = null
-        DroidballService.stop(getApplication())
-        stopDroidBallService()
         observationDispatcher.stopAll()
+        _activeMatch.value?.let { match ->
+            match.speciesChecks.stop()
+            if (automaticReason != null) match.custody.submitTestimony(
+                SourceId("DROIDBALL_LIFECYCLE"),
+                RawTestimony("Observation session stopped automatically: $automaticReason"),
+                System.currentTimeMillis(), 1f, emptyList(), System.nanoTime()
+            )
+            retainAndArchiveMatch(match, automaticReason ?: "Droidball stopped",
+                awaitAcceptedEvidence = automaticReason != null)
+        }
         _droidballSession.value?.end()
         _droidballSession.value = null
-        DroidballOverlayPresentation.reset()
+        // The service's final Stopped signal must not start a second archive
+        // before the automatic-stop publication barrier above has completed.
         _activeMatch.value = null
+        DroidballService.stop(getApplication())
+        stopDroidBallService()
+        DroidballOverlayPresentation.reset()
         _deploymentState.value = InstrumentDeploymentState.IDLE
     }
 
