@@ -3,7 +3,7 @@ package com.example.overdex.battle.audio
 import com.example.overdex.battle.custody.*
 import kotlin.math.abs
 
-/** Audio attention spans the whole fight, including entry animations and charged sequences.
+/** Audio attention spans VS through the fight, including entry animations and charged sequences.
  * Those sounds are observations; downstream combat rules still decide whether an attack occurred.
  */
 internal class FastMoveListeningGate {
@@ -41,6 +41,7 @@ internal class FastMoveListeningGate {
             is CountdownGlyphWitnessed -> if (payload.glyph.uppercase() in setOf("3", "2", "1", "GO", "GO!")) {
                 open(at, articleId)
             }
+            VsScreenWitnessed -> open(at, articleId)
             // A late observer can miss every glyph. A witnessed charged phase
             // establishes that battle is underway, not when the match began.
             MatchStarted, AttackIncoming, GetReadyWitnessed, ChargeMoveUsedAnnounced -> open(at, articleId)

@@ -337,6 +337,22 @@ class FastMoveCadenceInferenceTest {
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
     }
 
+    @Test fun `VS audio stays observation only and cannot corroborate a later fast move identity`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("vs", com.example.overdex.battle.custody.VsScreenWitnessed))
+        assertTrue(engine.accept(referenceSound("vs-sound1", "Spark", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("vs-sound2", "Spark", 3_000_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted)
+            .copy(monotonicTimeNanos = 4_000_000_000L))
+        assertTrue(engine.accept(referenceSound("battle1", "Spark", 5_000_000_000L)).isEmpty())
+        val identified = engine.accept(referenceSound("battle2", "Spark", 6_000_000_000L)).single()
+        assertEquals("Spark", (identified.payload as FastMoveIdentified).moveName)
+        assertTrue(identified.predecessorIds.containsAll(listOf(ArticleId("battle1"), ArticleId("battle2"))))
+        assertTrue(identified.predecessorIds.none { it.value.startsWith("vs") })
+    }
+
     private suspend fun audioEngine(mirror: Boolean = false): FastMoveCadenceInference {
         val opponent = Pokemon(101, "Electrode", listOf(PokemonType.ELECTRIC), "Kanto",
             fastMoves = listOf(move("Spark", 2, 8, PokemonType.ELECTRIC), move("Tackle", 1, 3)), chargedMoves = emptyList())

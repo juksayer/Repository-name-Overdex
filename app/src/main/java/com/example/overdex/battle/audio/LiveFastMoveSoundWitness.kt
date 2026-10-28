@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 
-/** Recognizes independent audio windows from countdown through the final faint/result.
+/** Recognizes independent audio windows from VS through the final faint/result.
  * Strong matches and rate-limited plausible comparisons retain their analyzed PCM. One background worker
  * and a conflated queue prevent the catalogue search from blocking capture or creating a backlog.
  */
@@ -69,7 +69,7 @@ class LiveFastMoveSoundWitness(
             try {
                 input.collect { chunk ->
                     if (generation != gate.generation) { window.reset(); generation = gate.generation }
-                    // Keep a small volatile pre-roll even while waiting for delayed countdown OCR.
+                    // Keep a small volatile pre-roll while waiting for delayed VS/countdown recognition.
                     val snapshot = window.ingest(chunk, generation)
                     val operating = prepared && !failed && gate.allows(chunk.endMonotonicNanos) && window.ready
                     if (available != operating) {

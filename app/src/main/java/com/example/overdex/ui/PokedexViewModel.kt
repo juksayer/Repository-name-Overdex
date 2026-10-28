@@ -819,9 +819,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.vsScreenCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = {
-                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.SEEKING_TEAM_SELECT ||
-                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.TEAM_SELECT_ACTIVE ||
-                        session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.CALIBRATING
+                    session.vsScreenWitnessingActive()
                 },
                 // VS remains visible for many frames. Five samples per second
                 // opens the HUD promptly without competing with the brief entry

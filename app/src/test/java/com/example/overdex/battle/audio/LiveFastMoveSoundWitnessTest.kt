@@ -15,6 +15,9 @@ import java.io.File
 import java.nio.file.Files
 
 class LiveFastMoveSoundWitnessTest {
+    @Test fun `VS starts retained audio matching without countdown attacks identity or energy`() =
+        captureAfter(VsScreenWitnessed)
+
     @Test fun `countdown audio reaches custody without species HP or visual triggers and overlaps are not new sounds`() =
         captureAfter(CountdownGlyphWitnessed("2", .99f, 1))
 

@@ -186,9 +186,10 @@ class FastMoveCadenceInference(
             return emptyList()
         }
         article.monotonicTimeNanos?.let { latestEvidenceAtNanos = maxOf(latestEvidenceAtNanos, it) }
-        // Capture starts at countdown, but fast-move identity needs GO or a
+        // Capture starts at VS, but fast-move identity needs GO or a
         // witnessed in-progress phase when observation began late.
-        if (article.payload !is com.example.overdex.battle.custody.CountdownGlyphWitnessed) {
+        if (article.payload !is com.example.overdex.battle.custody.CountdownGlyphWitnessed &&
+            article.payload !is com.example.overdex.battle.custody.VsScreenWitnessed) {
             audioIdentityGate.observe(article.payload, article.monotonicTimeNanos, article.id.value)
         }
         if (article.payload is com.example.overdex.battle.custody.ObservationRestartedByUser ||

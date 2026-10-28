@@ -154,6 +154,22 @@ class DroidballSession(val match: Match) {
         return countdownCaptureDeadlineNanos == Long.MIN_VALUE || nowNanos <= countdownCaptureDeadlineNanos
     }
 
+    /**
+     * VS can follow a long menu wait or an explicitly opened HUD. Keep this
+     * low-rate pre-battle witness available in both cases, independently of
+     * the short countdown window, and retire it when a battle surface is seen.
+     */
+    fun vsScreenWitnessingActive(): Boolean {
+        if (hasCompletedMatch || countdownCaptureFinished || battleSurfaceEstablished.value) return false
+        return _phase.value in setOf(
+            DroidballSessionPhase.NAVIGATION_IDLE,
+            DroidballSessionPhase.SEEKING_TEAM_SELECT,
+            DroidballSessionPhase.TEAM_SELECT_ACTIVE,
+            DroidballSessionPhase.CALIBRATING,
+            DroidballSessionPhase.COUNTDOWN,
+        )
+    }
+
     fun recordFirstLiveCombat(article: RealityArticle) {
         // An active HP surface is already in-battle evidence even when GO OCR
         // was missed. It must not retire countdown work: names and HP appear

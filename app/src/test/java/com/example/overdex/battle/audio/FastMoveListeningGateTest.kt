@@ -6,6 +6,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class FastMoveListeningGateTest {
+    @Test fun `VS opens listening through waiting and countdown but respects source time reset and result`() {
+        val gate = FastMoveListeningGate()
+        gate.observe(VsScreenWitnessed, 100, "vs")
+        assertFalse(gate.allows(99))
+        assertTrue(gate.accepts(100, 120_000_000_000, gate.generation))
+        gate.observe(CountdownGlyphWitnessed("3", .99f, 1), 120_000_000_000, "three")
+        assertEquals(listOf("vs"), gate.triggerIds())
+        gate.observe(MatchEnded(BattleResult.WIN), 130_000_000_000)
+        gate.observe(VsScreenWitnessed, 140_000_000_000, "after-result")
+        assertFalse(gate.allows(140_000_000_000))
+        gate.observe(ObservationRestartedByUser, 150_000_000_000)
+        gate.observe(VsScreenWitnessed, 100, "delayed-old-vs")
+        assertFalse(gate.allows(150_000_000_001))
+        gate.observe(VsScreenWitnessed, 160_000_000_000, "new-vs")
+        assertTrue(gate.allows(160_000_000_000))
+        assertEquals(listOf("new-vs"), gate.triggerIds())
+    }
+
     @Test fun `October 28 missed countdown opens audio on first persistent loss after both active species`() {
         val gate = FastMoveListeningGate()
         // Original source ordering from Moondrop bba80cf7. The first charge cue
