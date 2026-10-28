@@ -1,0 +1,28 @@
+{
+  "purpose": "Bounded timing and geometry regression excerpt; untouched Article envelopes and original serialized order. Media excluded. Not a complete playable source archive.",
+  "sourceArchive": "2026-10-28_16-44-18_fcc29d4c-ab31-4d99-af09-e3d3de9562c8.odxmatch.zip",
+  "sourceArchiveSha256": "8aac61928ae9929c31bdfdb069b136462692b068f23ef03dc5a73f982fd29938",
+  "sourceTimelineSha256": "a22c93d02961a3ea46f55f3742ecb3034a9e55167f16d3c32af02c9d4d0bae36",
+  "sourceMatchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+  "sourceArticleCount": 2814,
+  "fixtureArticleCount": 91,
+  "fixtureSha256": "8c139b5c933a8ab4d54f0213c316e30f7dec0977996bc120d3fa005f1f0dfa02",
+  "selection": {
+    "sourceTimeMinimumNanos": 192401628978077,
+    "payloadKinds": [
+      "active_hp_bar_measured",
+      "charge_move_used_announced",
+      "charged_move_energy_spent",
+      "fast_move_use_observed",
+      "hp_bar_border_pulse",
+      "match_ended",
+      "raw_text"
+    ],
+    "additionalContext": "Original MatchRecordStarted, MatchStarted, and most recent pre-excerpt active-species reading per side. Kept raw OCR to advance source and receipt clocks; no sorting/re-timestamping. Already-derived use retained only as historical comparison; excluded from live inference input."
+  },
+  "chargedMoveAnnouncementArticleId": "0c0670a4-ea2d-4b75-a17b-9866eb068e39",
+  "chargedImpactPulseArticleId": "307d09a2-3b8b-46f0-bad6-24db32929ddc",
+  "originalMisclassifiedUseArticleId": "075d4dad-c798-4374-9c2d-e60b7fffef69",
+  "chargedImpactHpArticleId": "8f2dce39-722f-4234-a494-fbbe639aeee3",
+  "interpretation": "Hydro Cannon announcement followed 1.490 seconds later by a large loss on the relocated HP bar. Supports charged-phase exclusion, without video proving server damage timing or amount. Does not establish missing fast-move counts, exact pre-charge energy, or the truth of any other identity."
+}

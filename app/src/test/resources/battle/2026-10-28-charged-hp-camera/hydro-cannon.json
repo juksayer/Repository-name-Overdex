@@ -1,0 +1,2721 @@
+{
+  "schemaVersion": 1,
+  "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+  "mediaIncluded": false,
+  "articles": [
+    {
+      "articleId": "53e072b4-6a30-49c4-b288-b6d59dae96c7",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793223858837,
+      "recordedAt": 1793223858838,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192258114679920
+    },
+    {
+      "articleId": "62677ef3-689f-4f9e-a0d5-57d4ad73de76",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793223899373,
+      "recordedAt": 1793223901063,
+      "sourceId": "COUNTDOWN_AND_COMBAT_START_INFERENCE",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "d96fd54a-b3e4-4eb9-97ab-529d1d9820cf",
+        "c5bd6dbe-1f97-4bb5-b531-bc041539d650"
+      ],
+      "confidence": 0.75,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 192298628978077
+    },
+    {
+      "articleId": "068105e4-ac20-44ec-b5db-d708d1c62395",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793223998071,
+      "recordedAt": 1793223999528,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Victreebel",
+        "speciesId": 71,
+        "ocrText": "Victreebel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 3999,
+      "evidenceReferences": [
+        "30a4a364-2a48-4f2b-8fa3-86b28ad0ba8f",
+        "09c52f13-4bb3-44f8-aae5-fb2e1ca25f4d"
+      ],
+      "monotonicTimeNanos": 192397334158929
+    },
+    {
+      "articleId": "83d3288a-8cbc-4d27-a873-2242544437df",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793223998995,
+      "recordedAt": 1793224000256,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Greninja",
+        "speciesId": 658,
+        "ocrText": "Greninja",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 4030,
+      "evidenceReferences": [
+        "30a4a364-2a48-4f2b-8fa3-86b28ad0ba8f",
+        "39fb9e6a-3947-4406-aa3a-38280defb4cb"
+      ],
+      "monotonicTimeNanos": 192398258919544
+    },
+    {
+      "articleId": "84ad30c6-2146-4b0f-927c-5b34a972a310",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224002587,
+      "recordedAt": 1793224002964,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 462,
+        "barRight": 231,
+        "barBottom": 479,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91657925,
+      "sequenceNumber": 4103,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192401845801698
+    },
+    {
+      "articleId": "e9c3eb71-7bd4-4753-a8e2-3d580df8fb68",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224002947,
+      "recordedAt": 1793224003260,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 436,
+        "barRight": 230,
+        "barBottom": 454,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91889083,
+      "sequenceNumber": 4111,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192402161924544
+    },
+    {
+      "articleId": "d3462d3c-d0aa-4593-823c-4108a1e1b585",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003049,
+      "recordedAt": 1793224003276,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 434,
+        "barRight": 231,
+        "barBottom": 451,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.95125365,
+      "sequenceNumber": 4112,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192402305340852
+    },
+    {
+      "articleId": "bb14fcbc-2a48-4f8d-82ff-d0cf28fde9ad",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003138,
+      "recordedAt": 1793224003351,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 435,
+        "barRight": 231,
+        "barBottom": 453,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.94933367,
+      "sequenceNumber": 4114,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192402395683544
+    },
+    {
+      "articleId": "f23b6a96-30db-47da-bc4a-de6ecc54d2c2",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003406,
+      "recordedAt": 1793224003951,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 440,
+        "barRight": 230,
+        "barBottom": 458,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4128,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192402538845083
+    },
+    {
+      "articleId": "bb0b5743-fff9-4199-95e0-93627f8e9c21",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003788,
+      "recordedAt": 1793224004153,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 477,
+        "barRight": 230,
+        "barBottom": 495,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4132,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403050432237
+    },
+    {
+      "articleId": "4dae9f4c-3078-4307-8acd-4708c2e63c00",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004029,
+      "recordedAt": 1793224004191,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 486,
+        "barRight": 231,
+        "barBottom": 503,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.95125365,
+      "sequenceNumber": 4133,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403298518006
+    },
+    {
+      "articleId": "491a8fa3-7beb-494f-86fb-792a1c40bb79",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004076,
+      "recordedAt": 1793224004433,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 486,
+        "barRight": 231,
+        "barBottom": 503,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91657925,
+      "sequenceNumber": 4136,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403345817775
+    },
+    {
+      "articleId": "da95f32b-3f4d-4ba9-9d34-5ec3fb2a0e62",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004338,
+      "recordedAt": 1793224004641,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 473,
+        "barRight": 230,
+        "barBottom": 491,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91889083,
+      "sequenceNumber": 4142,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403610180160
+    },
+    {
+      "articleId": "862f4e84-61dc-4e94-8560-3a163a56b6ca",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004567,
+      "recordedAt": 1793224004705,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 454,
+        "barRight": 231,
+        "barBottom": 471,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9516822,
+      "sequenceNumber": 4143,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403821383929
+    },
+    {
+      "articleId": "79dd20c6-4e23-4577-978d-81bb3490d626",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004635,
+      "recordedAt": 1793224004909,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 449,
+        "barRight": 231,
+        "barBottom": 466,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9170078,
+      "sequenceNumber": 4148,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403896247621
+    },
+    {
+      "articleId": "7238f88d-064f-47f3-9e94-0d5f37ea89c0",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004818,
+      "recordedAt": 1793224004944,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 437,
+        "barRight": 230,
+        "barBottom": 455,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.95317656,
+      "sequenceNumber": 4150,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404087836545
+    },
+    {
+      "articleId": "17bd78b9-7c13-4ae7-85d1-26cb2a8ae036",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004874,
+      "recordedAt": 1793224005029,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 436,
+        "barRight": 231,
+        "barBottom": 454,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9499724,
+      "sequenceNumber": 4153,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404141087006
+    },
+    {
+      "articleId": "105e428d-601a-4e04-a5d6-dc1d3f25990c",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004927,
+      "recordedAt": 1793224005624,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 434,
+        "barRight": 231,
+        "barBottom": 451,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91657925,
+      "sequenceNumber": 4162,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404196218391
+    },
+    {
+      "articleId": "1720f1e9-aca9-4961-8440-8c99081e2e4b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005158,
+      "recordedAt": 1793224005648,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 435,
+        "barRight": 231,
+        "barBottom": 452,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9510435,
+      "sequenceNumber": 4163,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404411438391
+    },
+    {
+      "articleId": "f40458b7-606f-4920-821e-f9761cecc49b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005346,
+      "recordedAt": 1793224005934,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 443,
+        "barRight": 231,
+        "barBottom": 460,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91657925,
+      "sequenceNumber": 4173,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404589307237
+    },
+    {
+      "articleId": "d40fa953-e152-47bd-ad67-61ae16300e29",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004029,
+      "recordedAt": 1793224006035,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=da4ebda2-4617-4299-9434-fc00d4ae2e41 queueMs=308 captureToAdmissionMs=804 nativeReadMs=1049 processingMs=1190 totalMs=1994 passes=2 pending=1 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4177,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192403298518006
+    },
+    {
+      "articleId": "c51681d2-181a-4d98-8b41-18f2f7435c7c",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004029,
+      "recordedAt": 1793224006045,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 68.0,
+                "top": 72.0,
+                "right": 100.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 110.0,
+                "top": 72.0,
+                "right": 191.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.056584362,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 200.0,
+                "top": 72.0,
+                "right": 278.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.29700854,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 287.0,
+                "top": 72.0,
+                "right": 403.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.38254312,
+              "tealFraction": 0.04525862,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4178,
+      "evidenceReferences": [
+        "da4ebda2-4617-4299-9434-fc00d4ae2e41"
+      ],
+      "monotonicTimeNanos": 192403298518006
+    },
+    {
+      "articleId": "d5c4e23d-3702-445c-a30f-f4178ece7f20",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004029,
+      "recordedAt": 1793224006054,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Protte: S'dds reainE:.",
+        "ocr": {
+          "treatment": "WHITE_TEXT_210_PADDED",
+          "rawText": "Protte: S'dds reainE:.",
+          "acceptedText": "Protte: S'dds reainE:.",
+          "words": [
+            {
+              "text": "Protte:",
+              "line": 0,
+              "bounds": {
+                "left": 110.0,
+                "top": 69.0,
+                "right": 188.0,
+                "bottom": 91.0
+              },
+              "violetFraction": 0.064685315,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "S'dds",
+              "line": 0,
+              "bounds": {
+                "left": 209.0,
+                "top": 70.0,
+                "right": 279.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.27402598,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "reainE:.",
+              "line": 0,
+              "bounds": {
+                "left": 287.0,
+                "top": 71.0,
+                "right": 404.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.34671125,
+              "tealFraction": 0.054254923,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4179,
+      "evidenceReferences": [
+        "da4ebda2-4617-4299-9434-fc00d4ae2e41"
+      ],
+      "monotonicTimeNanos": 192403298518006
+    },
+    {
+      "articleId": "0f04e2ae-e4b9-4dbb-8188-e3d05b9b1f16",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005785,
+      "recordedAt": 1793224006422,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 477,
+        "barRight": 230,
+        "barBottom": 495,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4184,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192405045889160
+    },
+    {
+      "articleId": "c6c44eef-f085-47db-a031-a18ec4d7e1c4",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006280,
+      "recordedAt": 1793224006872,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 476,
+        "barRight": 231,
+        "barBottom": 493,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9170078,
+      "sequenceNumber": 4194,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192405534026314
+    },
+    {
+      "articleId": "7921b5f5-a50b-4094-bc5e-cb1b61d92df3",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005489,
+      "recordedAt": 1793224006912,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=1107 captureToAdmissionMs=547 nativeReadMs=853 processingMs=893 totalMs=1441 passes=2 replacedCrops=1",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4197,
+      "evidenceReferences": [
+        "0b641d9f-abd2-425f-98cf-63445d5e0a93"
+      ],
+      "monotonicTimeNanos": 192404747523006
+    },
+    {
+      "articleId": "2cf51554-e17c-426f-aaab-c83426417917",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005489,
+      "recordedAt": 1793224006915,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4198,
+      "evidenceReferences": [
+        "0b641d9f-abd2-425f-98cf-63445d5e0a93"
+      ],
+      "monotonicTimeNanos": 192404747523006
+    },
+    {
+      "articleId": "b4290d76-9bd9-4a86-a9ae-72d28169d9b4",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006813,
+      "recordedAt": 1793224007450,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 441,
+        "barRight": 230,
+        "barBottom": 459,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91889083,
+      "sequenceNumber": 4205,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192406079660468
+    },
+    {
+      "articleId": "5011ed85-2292-4c42-93ed-dd35085f639f",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006545,
+      "recordedAt": 1793224007680,
+      "sourceId": "FAST_MOVE_AUDIO_ANALYSIS_STATUS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "STREAM; scans=29; skippedWindows=511; meanMatchMs=1260; maxMatchMs=1705; accepted=false; best=Take Down; similarity=0.88967806; changingSimilarity=0.65567756",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4211,
+      "evidenceReferences": [
+        "d96fd54a-b3e4-4eb9-97ab-529d1d9820cf"
+      ],
+      "monotonicTimeNanos": 192405822462006
+    },
+    {
+      "articleId": "9dca38e2-ceae-41f1-967a-5969f1a2906e",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007401,
+      "recordedAt": 1793224007957,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 444,
+        "barRight": 230,
+        "barBottom": 462,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4220,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192406661569775
+    },
+    {
+      "articleId": "3fa6f910-9e28-4b0c-82c0-8fa98d8789a7",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007917,
+      "recordedAt": 1793224008228,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 483,
+        "barRight": 230,
+        "barBottom": 501,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4226,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192407180280775
+    },
+    {
+      "articleId": "c3d930ed-7716-4d35-abd3-1958deeadb70",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007983,
+      "recordedAt": 1793224008363,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 485,
+        "barRight": 230,
+        "barBottom": 503,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.95295477,
+      "sequenceNumber": 4230,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192407248891622
+    },
+    {
+      "articleId": "59095a14-9593-492c-a16c-cdc0d83fc3bb",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224008304,
+      "recordedAt": 1793224008790,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 476,
+        "barRight": 230,
+        "barBottom": 493,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.92179954,
+      "sequenceNumber": 4234,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192407561770699
+    },
+    {
+      "articleId": "b1b83c32-3fb4-4fd9-884e-1704a8612890",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003138,
+      "recordedAt": 1793224008933,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=0ffb354f-0437-4c2a-b10b-b620a6b2549d queueMs=1405 captureToAdmissionMs=4306 nativeReadMs=1417 processingMs=1507 totalMs=5813 passes=2 pending=2 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4236,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192402395683544
+    },
+    {
+      "articleId": "30d38c5c-8bb5-4b8a-ba6f-c79c02bc57d7",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003138,
+      "recordedAt": 1793224008936,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 68.0,
+                "top": 72.0,
+                "right": 100.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 110.0,
+                "top": 72.0,
+                "right": 191.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 200.0,
+                "top": 72.0,
+                "right": 278.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 287.0,
+                "top": 72.0,
+                "right": 403.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.052083332,
+              "tealFraction": 0.008261494,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4237,
+      "evidenceReferences": [
+        "0ffb354f-0437-4c2a-b10b-b620a6b2549d"
+      ],
+      "monotonicTimeNanos": 192402395683544
+    },
+    {
+      "articleId": "2f36c8ab-548d-40ad-9ea8-9447c040a500",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224008712,
+      "recordedAt": 1793224009349,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 443,
+        "barRight": 231,
+        "barBottom": 461,
+        "filledFraction": 0.8518519,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.915298,
+      "sequenceNumber": 4245,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192407983936468
+    },
+    {
+      "articleId": "fb1308e4-b188-4e58-b961-0c94a581efe0",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007166,
+      "recordedAt": 1793224009786,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=2038 captureToAdmissionMs=1815 nativeReadMs=817 processingMs=834 totalMs=2649 passes=2 replacedCrops=1",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4252,
+      "evidenceReferences": [
+        "2d322741-f02e-4f18-9077-3761de25a2c4"
+      ],
+      "monotonicTimeNanos": 192406412565391
+    },
+    {
+      "articleId": "02505b97-a648-40b5-89ae-75ca245327bd",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007166,
+      "recordedAt": 1793224009799,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4253,
+      "evidenceReferences": [
+        "2d322741-f02e-4f18-9077-3761de25a2c4"
+      ],
+      "monotonicTimeNanos": 192406412565391
+    },
+    {
+      "articleId": "45c6085e-daf0-4c8a-99df-99baa3c392c3",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003788,
+      "recordedAt": 1793224010039,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4256,
+      "evidenceReferences": [
+        "975ad92d-d854-44e5-aed6-503c3ff043ad"
+      ],
+      "monotonicTimeNanos": 192403050432237
+    },
+    {
+      "articleId": "65731e7b-53ce-41fc-8dad-82233cf916c5",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009649,
+      "recordedAt": 1793224010100,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 656,
+        "barRight": 230,
+        "barBottom": 674,
+        "filledFraction": 0.85638297,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.91846,
+      "sequenceNumber": 4258,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192408905845699
+    },
+    {
+      "articleId": "7024a900-0af7-47fa-9451-50b00466cdc3",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003788,
+      "recordedAt": 1793224010133,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "THRESHOLD_185_2X",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4259,
+      "evidenceReferences": [
+        "975ad92d-d854-44e5-aed6-503c3ff043ad"
+      ],
+      "monotonicTimeNanos": 192403050432237
+    },
+    {
+      "articleId": "bb1eac06-042f-4d40-b0a8-2b7644e87181",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224003788,
+      "recordedAt": 1793224010226,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4261,
+      "evidenceReferences": [
+        "975ad92d-d854-44e5-aed6-503c3ff043ad",
+        "45c6085e-daf0-4c8a-99df-99baa3c392c3",
+        "7024a900-0af7-47fa-9451-50b00466cdc3"
+      ],
+      "monotonicTimeNanos": 192403050432237
+    },
+    {
+      "articleId": "53c9a775-f40c-48e0-b94d-e5b2d3f44827",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009208,
+      "recordedAt": 1793224010961,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=9615ff7e-034a-41b4-94c6-27ea204bcf56 queueMs=1095 captureToAdmissionMs=830 nativeReadMs=852 processingMs=920 totalMs=1750 passes=1 pending=5 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4266,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192408476167545
+    },
+    {
+      "articleId": "8f2dce39-722f-4234-a494-fbbe639aeee3",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224010797,
+      "recordedAt": 1793224011159,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 40,
+        "barTop": 661,
+        "barRight": 227,
+        "barBottom": 677,
+        "filledFraction": 0.32786885,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.725769,
+      "sequenceNumber": 4269,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192410061000237
+    },
+    {
+      "articleId": "307d09a2-3b8b-46f0-bad6-24db32929ddc",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224010797,
+      "recordedAt": 1793224011162,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_BORDER_PULSE_WITNESS",
+      "payload": {
+        "kind": "hp_bar_border_pulse",
+        "barSide": "PLAYER",
+        "status": "PRESENT",
+        "peakColorDistance": 0.9306931,
+        "sampleCount": 42,
+        "peakOrangeFraction": 0.0,
+        "baselineWhiteFraction": 0.9995592
+      },
+      "predecessorIds": [],
+      "confidence": 0.9756985,
+      "sequenceNumber": 4270,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192410061000237
+    },
+    {
+      "articleId": "0ac95a3c-ec13-4acd-b437-715c667826db",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004927,
+      "recordedAt": 1793224012420,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=a2523003-dd17-44c2-b64f-14f9ba0c7ab8 queueMs=432 captureToAdmissionMs=6463 nativeReadMs=860 processingMs=1036 totalMs=7500 passes=2 pending=6 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4287,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404196218391
+    },
+    {
+      "articleId": "909d6a29-4c2f-4532-b1b5-16428e036caa",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004927,
+      "recordedAt": 1793224012427,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 67.0,
+                "top": 68.0,
+                "right": 99.0,
+                "bottom": 91.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 108.0,
+                "top": 68.0,
+                "right": 190.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 199.0,
+                "top": 69.0,
+                "right": 277.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 286.0,
+                "top": 70.0,
+                "right": 401.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.28173912,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4288,
+      "evidenceReferences": [
+        "a2523003-dd17-44c2-b64f-14f9ba0c7ab8"
+      ],
+      "monotonicTimeNanos": 192404196218391
+    },
+    {
+      "articleId": "6f80a96d-831c-489f-a7ef-bedd8418e395",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224004927,
+      "recordedAt": 1793224012450,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "\\o Prott: S1lts remaining.",
+        "ocr": {
+          "treatment": "WHITE_TEXT_210_PADDED",
+          "rawText": "\\o Prott: S1lts remaining.",
+          "acceptedText": "\\o Prott: S1lts remaining.",
+          "words": [
+            {
+              "text": "\\o",
+              "line": 0,
+              "bounds": {
+                "left": 68.0,
+                "top": 70.0,
+                "right": 100.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Prott:",
+              "line": 0,
+              "bounds": {
+                "left": 109.0,
+                "top": 70.0,
+                "right": 187.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "S1lts",
+              "line": 0,
+              "bounds": {
+                "left": 204.0,
+                "top": 70.0,
+                "right": 277.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining.",
+              "line": 0,
+              "bounds": {
+                "left": 286.0,
+                "top": 71.0,
+                "right": 405.0,
+                "bottom": 97.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.27343246,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4289,
+      "evidenceReferences": [
+        "a2523003-dd17-44c2-b64f-14f9ba0c7ab8"
+      ],
+      "monotonicTimeNanos": 192404196218391
+    },
+    {
+      "articleId": "075d4dad-c798-4374-9c2d-e60b7fffef69",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224010797,
+      "recordedAt": 1793224012666,
+      "sourceId": "FAST_MOVE_USE_INTERPRETER",
+      "payload": {
+        "kind": "fast_move_use_observed",
+        "useId": "fast-move-use:307d09a2-3b8b-46f0-bad6-24db32929ddc",
+        "attackingSide": "OPPONENT",
+        "damagedSide": "PLAYER",
+        "appearanceId": "924efbdb-4844-4c7b-aa05-a8643c4c433f",
+        "attackerSpeciesName": "Greninja",
+        "evidenceKinds": [
+          "HP_BORDER_PULSE"
+        ],
+        "basis": "FUSED_SIDE_ATTRIBUTED_FAST_MOVE_EVIDENCE"
+      },
+      "predecessorIds": [
+        "307d09a2-3b8b-46f0-bad6-24db32929ddc"
+      ],
+      "confidence": 0.9756985,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 192410061000237
+    },
+    {
+      "articleId": "515e2ad7-a372-4db6-b119-34bac22e6ea6",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009315,
+      "recordedAt": 1793224012704,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Greninja used Hydro Cannon!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "Greninja used Hydro Cannon!",
+          "acceptedText": "Greninja used Hydro Cannon!",
+          "words": [
+            {
+              "text": "Greninja",
+              "line": 0,
+              "bounds": {
+                "left": 87.0,
+                "top": 15.0,
+                "right": 199.0,
+                "bottom": 51.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.49007937,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "used",
+              "line": 0,
+              "bounds": {
+                "left": 210.0,
+                "top": 15.0,
+                "right": 276.0,
+                "bottom": 51.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.21001683,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Hydro",
+              "line": 0,
+              "bounds": {
+                "left": 292.0,
+                "top": 15.0,
+                "right": 379.0,
+                "bottom": 51.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.6874202,
+              "dangerRedFraction": 0.017879948,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Cannon!",
+              "line": 0,
+              "bounds": {
+                "left": 380.0,
+                "top": 15.0,
+                "right": 501.0,
+                "bottom": 51.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.02020202,
+              "dangerRedFraction": 0.5268595,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4297,
+      "evidenceReferences": [
+        "3aa9118e-d0c9-4f39-8f29-d99381fbfcc4"
+      ],
+      "monotonicTimeNanos": 192408571025391
+    },
+    {
+      "articleId": "87736401-5b51-4231-b2fb-14029ddbfaf0",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009315,
+      "recordedAt": 1793224012846,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Greninja used Hydro Cannon!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4298,
+      "evidenceReferences": [
+        "3aa9118e-d0c9-4f39-8f29-d99381fbfcc4",
+        "515e2ad7-a372-4db6-b119-34bac22e6ea6"
+      ],
+      "monotonicTimeNanos": 192408571025391
+    },
+    {
+      "articleId": "1475e125-73b2-441b-a7ad-548d2471e480",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009315,
+      "recordedAt": 1793224012905,
+      "sourceId": "CHARGED_MOVE_ANNOUNCEMENT_INTERPRETER",
+      "payload": {
+        "kind": "charged_move_energy_spent",
+        "side": "OPPONENT",
+        "speciesName": "Greninja",
+        "moveName": "Hydro Cannon",
+        "energyCost": 40,
+        "basis": "ANNOUNCED_NAMED_CHARGED_MOVE_AND_REFERENCE_ENERGY_COST"
+      },
+      "predecessorIds": [
+        "87736401-5b51-4231-b2fb-14029ddbfaf0",
+        "83d3288a-8cbc-4d27-a873-2242544437df"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 192408571025391
+    },
+    {
+      "articleId": "0c0670a4-ea2d-4b75-a17b-9866eb068e39",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224009315,
+      "recordedAt": 1793224012918,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4299,
+      "evidenceReferences": [
+        "87736401-5b51-4231-b2fb-14029ddbfaf0"
+      ],
+      "monotonicTimeNanos": 192408571025391
+    },
+    {
+      "articleId": "fee44692-1a3b-4baf-ad0b-2000ca2983c9",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224011679,
+      "recordedAt": 1793224013134,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=d570f0c5-02fa-49de-a925-eb9119c18b8b queueMs=268 captureToAdmissionMs=1052 nativeReadMs=397 processingMs=441 totalMs=1493 passes=1 pending=6 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4309,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192410912927006
+    },
+    {
+      "articleId": "b42c4a31-7f7b-449e-bdd5-92abfa664b4b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224012779,
+      "recordedAt": 1793224014126,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=89 captureToAdmissionMs=361 nativeReadMs=878 processingMs=882 totalMs=1243 passes=2 replacedCrops=0",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4338,
+      "evidenceReferences": [
+        "3d043e3a-2865-4a38-9b15-61fba9e30013"
+      ],
+      "monotonicTimeNanos": 192412045739237
+    },
+    {
+      "articleId": "ceba011b-7bad-491b-a1f3-c039adb18d3b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224012779,
+      "recordedAt": 1793224014142,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_OCR_EMPTY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4339,
+      "evidenceReferences": [
+        "3d043e3a-2865-4a38-9b15-61fba9e30013"
+      ],
+      "monotonicTimeNanos": 192412045739237
+    },
+    {
+      "articleId": "6457eeee-2b1f-438d-8488-1c068e64a33e",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224014140,
+      "recordedAt": 1793224015291,
+      "sourceId": "FAST_MOVE_AUDIO_ANALYSIS_STATUS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "STREAM; scans=31; skippedWindows=547; meanMatchMs=1260; maxMatchMs=1705; accepted=false; best=Take Down; similarity=0.89808446; changingSimilarity=0.68426484",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4369,
+      "evidenceReferences": [
+        "d96fd54a-b3e4-4eb9-97ab-529d1d9820cf"
+      ],
+      "monotonicTimeNanos": 192413417022622
+    },
+    {
+      "articleId": "1926a1aa-4494-43ae-845d-e982fd992164",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005659,
+      "recordedAt": 1793224015914,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=81ae78b0-d32c-4029-bbc6-91757dcb6c9e queueMs=1362 captureToAdmissionMs=8845 nativeReadMs=1308 processingMs=1420 totalMs=10265 passes=2 pending=9 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4389,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192404924554006
+    },
+    {
+      "articleId": "565eb2ad-9ebf-4707-af81-67b1ba5a86b4",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005659,
+      "recordedAt": 1793224015915,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 67.0,
+                "top": 69.0,
+                "right": 99.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 108.0,
+                "top": 68.0,
+                "right": 190.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.25707316,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 199.0,
+                "top": 69.0,
+                "right": 277.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 286.0,
+                "top": 70.0,
+                "right": 402.0,
+                "bottom": 96.0
+              },
+              "violetFraction": 0.04442971,
+              "tealFraction": 0.17108753,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4390,
+      "evidenceReferences": [
+        "81ae78b0-d32c-4029-bbc6-91757dcb6c9e"
+      ],
+      "monotonicTimeNanos": 192404924554006
+    },
+    {
+      "articleId": "49e07e1e-2e2b-4e55-b8ac-a4fdb0451c4b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224005659,
+      "recordedAt": 1793224015918,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "0 Prottrt S1ds romainir:",
+        "ocr": {
+          "treatment": "WHITE_TEXT_210_PADDED",
+          "rawText": "0 Prottrt S1ds romainir:",
+          "acceptedText": "0 Prottrt S1ds romainir:",
+          "words": [
+            {
+              "text": "0",
+              "line": 0,
+              "bounds": {
+                "left": 100.0,
+                "top": 71.0,
+                "right": 106.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Prottrt",
+              "line": 0,
+              "bounds": {
+                "left": 110.0,
+                "top": 71.0,
+                "right": 190.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.2652174,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "S1ds",
+              "line": 0,
+              "bounds": {
+                "left": 208.0,
+                "top": 71.0,
+                "right": 281.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "romainir:",
+              "line": 0,
+              "bounds": {
+                "left": 287.0,
+                "top": 71.0,
+                "right": 407.0,
+                "bottom": 94.0
+              },
+              "violetFraction": 0.0384058,
+              "tealFraction": 0.18297102,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4391,
+      "evidenceReferences": [
+        "81ae78b0-d32c-4029-bbc6-91757dcb6c9e"
+      ],
+      "monotonicTimeNanos": 192404924554006
+    },
+    {
+      "articleId": "e23d546b-ff9f-4213-8361-8c81cbfb5d98",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224015531,
+      "recordedAt": 1793224016440,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=1900 captureToAdmissionMs=389 nativeReadMs=481 processingMs=525 totalMs=915 passes=2 replacedCrops=1",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4396,
+      "evidenceReferences": [
+        "656bc24f-e6ac-4235-b5f3-bfacbd008b45"
+      ],
+      "monotonicTimeNanos": 192414801301391
+    },
+    {
+      "articleId": "506091fb-eaf3-400d-a7ca-e89d114d6f05",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224016005,
+      "recordedAt": 1793224017367,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=8305cdd4-82c0-4adf-9a07-6805b28e7087 queueMs=1036 captureToAdmissionMs=959 nativeReadMs=267 processingMs=338 totalMs=1297 passes=1 pending=10 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4418,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192415267820545
+    },
+    {
+      "articleId": "4a62d531-97f2-4d9c-a76c-a8797bcdc561",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224012321,
+      "recordedAt": 1793224017588,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4420,
+      "evidenceReferences": [
+        "bfd1bfbd-27d1-4c17-b91f-e695ca35a7a2"
+      ],
+      "monotonicTimeNanos": 192411582828776
+    },
+    {
+      "articleId": "081ead93-7d49-4d0d-a17f-fd37c4c5a54a",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224012321,
+      "recordedAt": 1793224017658,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "THRESHOLD_185_2X",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4423,
+      "evidenceReferences": [
+        "bfd1bfbd-27d1-4c17-b91f-e695ca35a7a2"
+      ],
+      "monotonicTimeNanos": 192411582828776
+    },
+    {
+      "articleId": "50d07404-8ee0-4601-9cb3-81e533eedc11",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224012321,
+      "recordedAt": 1793224017696,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4425,
+      "evidenceReferences": [
+        "bfd1bfbd-27d1-4c17-b91f-e695ca35a7a2",
+        "4a62d531-97f2-4d9c-a76c-a8797bcdc561",
+        "081ead93-7d49-4d0d-a17f-fd37c4c5a54a"
+      ],
+      "monotonicTimeNanos": 192411582828776
+    },
+    {
+      "articleId": "814dddf4-b4a3-49d7-8bf7-09d763e3db6e",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006879,
+      "recordedAt": 1793224018751,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=7a9ab41d-7724-4005-be88-58d1baebfef4 queueMs=277 captureToAdmissionMs=10703 nativeReadMs=977 processingMs=1181 totalMs=11884 passes=2 pending=11 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4437,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192406140113699
+    },
+    {
+      "articleId": "c9d2caf3-4ab3-4463-8b82-a17d8ab72873",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006879,
+      "recordedAt": 1793224018766,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 67.0,
+                "top": 69.0,
+                "right": 99.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 109.0,
+                "top": 69.0,
+                "right": 190.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.6967257,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 199.0,
+                "top": 69.0,
+                "right": 277.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.2900641,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 286.0,
+                "top": 70.0,
+                "right": 401.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.10713044,
+              "tealFraction": 0.1387826,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4438,
+      "evidenceReferences": [
+        "7a9ab41d-7724-4005-be88-58d1baebfef4"
+      ],
+      "monotonicTimeNanos": 192406140113699
+    },
+    {
+      "articleId": "f69ca989-b363-42a7-82f4-d67a64266194",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224006879,
+      "recordedAt": 1793224018778,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "\\o Protec S lds renainii",
+        "ocr": {
+          "treatment": "WHITE_TEXT_210_PADDED",
+          "rawText": "\\o Protec S lds renainii",
+          "acceptedText": "\\o Protec S lds renainii",
+          "words": [
+            {
+              "text": "\\o",
+              "line": 0,
+              "bounds": {
+                "left": 68.0,
+                "top": 69.0,
+                "right": 99.0,
+                "bottom": 91.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protec",
+              "line": 0,
+              "bounds": {
+                "left": 116.0,
+                "top": 69.0,
+                "right": 180.0,
+                "bottom": 91.0
+              },
+              "violetFraction": 0.75284094,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "S",
+              "line": 0,
+              "bounds": {
+                "left": 207.0,
+                "top": 70.0,
+                "right": 213.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.719697,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "lds",
+              "line": 0,
+              "bounds": {
+                "left": 248.0,
+                "top": 70.0,
+                "right": 276.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "renainii",
+              "line": 0,
+              "bounds": {
+                "left": 290.0,
+                "top": 70.0,
+                "right": 381.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.04061156,
+              "tealFraction": 0.17869088,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4439,
+      "evidenceReferences": [
+        "7a9ab41d-7724-4005-be88-58d1baebfef4"
+      ],
+      "monotonicTimeNanos": 192406140113699
+    },
+    {
+      "articleId": "43abb675-ff61-45db-bd16-76cc2d285637",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224017922,
+      "recordedAt": 1793224019323,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=371f7619-e5c0-411a-b059-a27fb4d1e8df queueMs=220 captureToAdmissionMs=1063 nativeReadMs=291 processingMs=313 totalMs=1376 passes=1 pending=11 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4448,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192417183096238
+    },
+    {
+      "articleId": "946db2ee-9638-45ff-91fb-b64e81239f46",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007563,
+      "recordedAt": 1793224020959,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=68ce37d9-bf31-4c7b-a49f-d4af72c1d7d4 queueMs=553 captureToAdmissionMs=12285 nativeReadMs=982 processingMs=1118 totalMs=13404 passes=2 pending=12 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4472,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192406828310929
+    },
+    {
+      "articleId": "e2bf2519-49b7-4ae8-9559-eb7cee16400d",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007563,
+      "recordedAt": 1793224020988,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "No Protect Shields remaining!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "No Protect Shields remaining!",
+          "acceptedText": "No Protect Shields remaining!",
+          "words": [
+            {
+              "text": "No",
+              "line": 0,
+              "bounds": {
+                "left": 67.0,
+                "top": 69.0,
+                "right": 99.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Protect",
+              "line": 0,
+              "bounds": {
+                "left": 108.0,
+                "top": 68.0,
+                "right": 190.0,
+                "bottom": 92.0
+              },
+              "violetFraction": 0.1453252,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Shields",
+              "line": 0,
+              "bounds": {
+                "left": 199.0,
+                "top": 69.0,
+                "right": 277.0,
+                "bottom": 93.0
+              },
+              "violetFraction": 0.5956197,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "remaining!",
+              "line": 0,
+              "bounds": {
+                "left": 286.0,
+                "top": 70.0,
+                "right": 401.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.60243475,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4473,
+      "evidenceReferences": [
+        "68ce37d9-bf31-4c7b-a49f-d4af72c1d7d4"
+      ],
+      "monotonicTimeNanos": 192406828310929
+    },
+    {
+      "articleId": "d2f9f438-8463-40d2-93ca-16811e7ae73f",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224007563,
+      "recordedAt": 1793224021018,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "o Prottr: Sdts rmaiirE",
+        "ocr": {
+          "treatment": "WHITE_TEXT_210_PADDED",
+          "rawText": "o Prottr: Sdts rmaiirE",
+          "acceptedText": "o Prottr: Sdts rmaiirE",
+          "words": [
+            {
+              "text": "o",
+              "line": 0,
+              "bounds": {
+                "left": 69.0,
+                "top": 71.0,
+                "right": 98.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.0,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Prottr:",
+              "line": 0,
+              "bounds": {
+                "left": 116.0,
+                "top": 71.0,
+                "right": 197.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.18981482,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "Sdts",
+              "line": 0,
+              "bounds": {
+                "left": 197.0,
+                "top": 71.0,
+                "right": 285.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.6245265,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            },
+            {
+              "text": "rmaiirE",
+              "line": 0,
+              "bounds": {
+                "left": 284.0,
+                "top": 71.0,
+                "right": 395.0,
+                "bottom": 95.0
+              },
+              "violetFraction": 0.6261261,
+              "tealFraction": 0.0,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4474,
+      "evidenceReferences": [
+        "68ce37d9-bf31-4c7b-a49f-d4af72c1d7d4"
+      ],
+      "monotonicTimeNanos": 192406828310929
+    },
+    {
+      "articleId": "53acde51-4dc6-4cd0-b86d-1cd5c8189ec8",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224017420,
+      "recordedAt": 1793224021246,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4480,
+      "evidenceReferences": [
+        "097adbfc-4b6f-4de1-ba30-5f86a9ea64c8"
+      ],
+      "monotonicTimeNanos": 192416691233699
+    },
+    {
+      "articleId": "f248a35e-9753-4e7a-9788-13ef49df0dea",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224017420,
+      "recordedAt": 1793224021439,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "THRESHOLD_185_2X",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4486,
+      "evidenceReferences": [
+        "097adbfc-4b6f-4de1-ba30-5f86a9ea64c8"
+      ],
+      "monotonicTimeNanos": 192416691233699
+    },
+    {
+      "articleId": "27960320-b379-4d95-8b36-f693ba998d52",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224017420,
+      "recordedAt": 1793224021534,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4488,
+      "evidenceReferences": [
+        "097adbfc-4b6f-4de1-ba30-5f86a9ea64c8",
+        "53acde51-4dc6-4cd0-b86d-1cd5c8189ec8",
+        "f248a35e-9753-4e7a-9788-13ef49df0dea"
+      ],
+      "monotonicTimeNanos": 192416691233699
+    },
+    {
+      "articleId": "80302821-a609-4175-be17-4d8f1126631b",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224020503,
+      "recordedAt": 1793224021725,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=4117f627-e1e8-4e54-8c6b-ce8608db9fea queueMs=284 captureToAdmissionMs=763 nativeReadMs=436 processingMs=472 totalMs=1235 passes=1 pending=13 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4493,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192419755141161
+    },
+    {
+      "articleId": "c90d5a6d-13fe-426c-97f0-70d8af3b73b2",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224020945,
+      "recordedAt": 1793224022248,
+      "sourceId": "FAST_MOVE_AUDIO_ANALYSIS_STATUS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "STREAM; scans=33; skippedWindows=579; meanMatchMs=1259; maxMatchMs=1705; accepted=false; best=Take Down; similarity=0.9026727; changingSimilarity=0.6807374",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4504,
+      "evidenceReferences": [
+        "d96fd54a-b3e4-4eb9-97ab-529d1d9820cf"
+      ],
+      "monotonicTimeNanos": 192420222082392
+    },
+    {
+      "articleId": "14b6991f-dda1-4ecd-a52d-8d64ef2f97fb",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224021534,
+      "recordedAt": 1793224022548,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=576 captureToAdmissionMs=193 nativeReadMs=816 processingMs=834 totalMs=1028 passes=2 replacedCrops=1",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4511,
+      "evidenceReferences": [
+        "c36584a8-4483-4472-a71e-72b8f19e2745"
+      ],
+      "monotonicTimeNanos": 192420796825161
+    },
+    {
+      "articleId": "5fd393fe-59c8-42dd-a115-a7cd157b0120",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224008519,
+      "recordedAt": 1793224023562,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=9bcce67e-7223-410d-bdb6-d659597d70ca queueMs=1467 captureToAdmissionMs=14694 nativeReadMs=334 processingMs=379 totalMs=15074 passes=1 pending=14 nonblank=false",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4533,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192407763971314
+    },
+    {
+      "articleId": "597b80b0-2329-4c59-940e-0b71dff39eec",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224023255,
+      "recordedAt": 1793224024233,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=1017 captureToAdmissionMs=320 nativeReadMs=638 processingMs=667 totalMs=988 passes=2 replacedCrops=1",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4544,
+      "evidenceReferences": [
+        "97d3c924-d828-4c96-999f-41e28c363553"
+      ],
+      "monotonicTimeNanos": 192422522060469
+    },
+    {
+      "articleId": "9c92afac-c4f2-48d6-84ac-21f2940f102e",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024200,
+      "recordedAt": 1793224025222,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "cropId=b7bb1657-c895-4da3-a42e-24c417f1840d queueMs=1085 captureToAdmissionMs=458 nativeReadMs=450 processingMs=571 totalMs=1030 passes=1 pending=16 nonblank=true",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4557,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 192423466431623
+    },
+    {
+      "articleId": "89ece9d0-1c31-4321-b15d-15b8d729aebc",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024200,
+      "recordedAt": 1793224025224,
+      "sourceId": "MATCH_OUTCOME_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "YOUWIN!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "YOUWIN!",
+          "acceptedText": "YOUWIN!",
+          "words": [
+            {
+              "text": "YOUWIN!",
+              "line": 0,
+              "bounds": {
+                "left": 43.0,
+                "top": 78.0,
+                "right": 470.0,
+                "bottom": 172.0
+              },
+              "violetFraction": 0.0029286607,
+              "tealFraction": 0.02212766,
+              "dangerRedFraction": 0.085657075,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": null,
+          "expectedMinimumHeightAt672": null,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4558,
+      "evidenceReferences": [
+        "b7bb1657-c895-4da3-a42e-24c417f1840d"
+      ],
+      "monotonicTimeNanos": 192423466431623
+    },
+    {
+      "articleId": "4fd50392-2f88-4455-a471-049399ac2541",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024200,
+      "recordedAt": 1793224025226,
+      "sourceId": "YOU_WIN_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "YOUWIN!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4559,
+      "evidenceReferences": [
+        "89ece9d0-1c31-4321-b15d-15b8d729aebc"
+      ],
+      "monotonicTimeNanos": 192423466431623
+    },
+    {
+      "articleId": "b852da15-7f04-4268-b416-02cdfc118fcc",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024200,
+      "recordedAt": 1793224025230,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "4fd50392-2f88-4455-a471-049399ac2541"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 192423466431623
+    },
+    {
+      "articleId": "8760ab2a-2dd7-4d89-8a56-e17896003d2a",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224023582,
+      "recordedAt": 1793224025930,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE_LATENCY",
+      "payload": {
+        "kind": "raw_text",
+        "value": "side=PLAYER queueMs=986 captureToAdmissionMs=1688 nativeReadMs=696 processingMs=709 totalMs=2397 passes=2 replacedCrops=0",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4588,
+      "evidenceReferences": [
+        "3eedd234-f468-4aa3-9fd2-cbe021d1d33e"
+      ],
+      "monotonicTimeNanos": 192422808944161
+    },
+    {
+      "articleId": "7c522806-ad6d-4dd5-96e7-050f212fc98e",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224021059,
+      "recordedAt": 1793224026103,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4591,
+      "evidenceReferences": [
+        "ea60f6d5-7f1c-4d69-a61e-2f6c2d05c018"
+      ],
+      "monotonicTimeNanos": 192420327710315
+    },
+    {
+      "articleId": "f7c6f3f9-fc7c-4ffe-b94b-7d667196eda7",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224021059,
+      "recordedAt": 1793224026266,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "THRESHOLD_185_2X",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4596,
+      "evidenceReferences": [
+        "ea60f6d5-7f1c-4d69-a61e-2f6c2d05c018"
+      ],
+      "monotonicTimeNanos": 192420327710315
+    },
+    {
+      "articleId": "c7cd2b51-a9d5-4f36-9179-18a805ceed31",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224021059,
+      "recordedAt": 1793224026317,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4597,
+      "evidenceReferences": [
+        "ea60f6d5-7f1c-4d69-a61e-2f6c2d05c018",
+        "7c522806-ad6d-4dd5-96e7-050f212fc98e",
+        "f7c6f3f9-fc7c-4ffe-b94b-7d667196eda7"
+      ],
+      "monotonicTimeNanos": 192420327710315
+    },
+    {
+      "articleId": "0e69e67e-5a59-43d7-b118-64c0f5d0cfdb",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024697,
+      "recordedAt": 1793224027232,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4611,
+      "evidenceReferences": [
+        "804fb2c4-e4b7-45ec-99a7-581a5c39014d"
+      ],
+      "monotonicTimeNanos": 192423962339238
+    },
+    {
+      "articleId": "4216213f-83db-4485-9ee5-bcad5f406661",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024697,
+      "recordedAt": 1793224027288,
+      "sourceId": "ANNOUNCEMENT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": {
+          "treatment": "THRESHOLD_185_2X",
+          "rawText": "",
+          "acceptedText": "",
+          "words": [],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 23.76,
+          "profileSampleCount": 5
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4612,
+      "evidenceReferences": [
+        "804fb2c4-e4b7-45ec-99a7-581a5c39014d"
+      ],
+      "monotonicTimeNanos": 192423962339238
+    },
+    {
+      "articleId": "9eeef555-b771-43d6-af6a-12aec3d32e5f",
+      "matchId": "fcc29d4c-ab31-4d99-af09-e3d3de9562c8",
+      "perceivedAt": 1793224024697,
+      "recordedAt": 1793224027355,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 4614,
+      "evidenceReferences": [
+        "804fb2c4-e4b7-45ec-99a7-581a5c39014d",
+        "0e69e67e-5a59-43d7-b118-64c0f5d0cfdb",
+        "4216213f-83db-4485-9ee5-bcad5f406661"
+      ],
+      "monotonicTimeNanos": 192423962339238
+    }
+  ]
+}

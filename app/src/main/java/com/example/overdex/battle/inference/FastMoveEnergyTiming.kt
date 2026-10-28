@@ -1,6 +1,7 @@
 package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.BattleDecisionTimerObserved
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
@@ -37,11 +38,20 @@ internal class FastMoveEnergyTiming {
     private val chargedPauses = mutableListOf<Pause>()
     private val decisionPauses = mutableListOf<Pause>()
     private val phaseCues = TreeMap<Long, MutableList<TestimonyPayload>>()
+    private val chargedHpCamera = ChargedHpCameraGuard()
     private var matchStart: Long? = null
     private var matchEnd: Long? = null
 
     fun observe(article: RealityArticle) {
         val at = article.monotonicTimeNanos ?: return
+        chargedHpCamera.advanceTo(at)
+        when (val payload = article.payload) {
+            is ActiveHpBarMeasured -> chargedHpCamera.observeHp(article.id.value, at, payload.side.name,
+                payload.barLeft, payload.barTop, payload.barRight, payload.barBottom,
+                payload.sourceWidth, payload.sourceHeight)
+            ChargeMoveUsedAnnounced -> chargedHpCamera.observeCharge(at)
+            else -> Unit
+        }
         when (val payload = article.payload) {
             MatchStarted -> matchStart = minOf(matchStart ?: at, at)
             is MatchEnded -> matchEnd = minOf(matchEnd ?: at, at)
@@ -85,10 +95,12 @@ internal class FastMoveEnergyTiming {
 
     /** A genuine appearance transition is a barrier; a request to scan is not. */
     fun appearanceStarted(side: ActivePokemonSide, at: Long) {
+        chargedHpCamera.observeBoundary(at)
         appearanceBoundaries.getOrPut(side) { TreeSet() }.add(at)
     }
 
     fun fainted(side: ActivePokemonSide, at: Long) {
+        chargedHpCamera.observeBoundary(at, includeImpactAtBoundary = true)
         faintTimes.getOrPut(side) { TreeSet() }.add(at)
     }
 
@@ -106,11 +118,13 @@ internal class FastMoveEnergyTiming {
         val faintPauses = faintTimes.flatMap { (faintedSide, times) ->
             times.map { it to (appearanceBoundaries[faintedSide]?.higher(it) ?: Long.MAX_VALUE) }
         }
-        val pauses = ((chargedPauses + decisionPauses).map { it.start to it.end } + faintPauses)
+        val cameraPauses = chargedHpCamera.windows().map { it.first to add(it.last, 1L) }
+        val pauses = ((chargedPauses + decisionPauses).map { it.start to it.end } + faintPauses + cameraPauses)
             .sortedBy { it.first }
         // A delayed capture is not permission to reinterpret an observation
         // made during a known pause as an earlier completed attack.
-        if ((chargedPauses + decisionPauses).any { observedAt >= it.start && observedAt < it.end } ||
+        if (chargedHpCamera.isChargeImpact(observedAt) ||
+            (chargedPauses + decisionPauses).any { observedAt >= it.start && observedAt < it.end } ||
             faintPauses.any { (start, end) -> observedAt > start && observedAt < end }) return false
         val candidate = Reservation(observedAt, duration, earliestStart, pauses)
         val accepted = reservations.getOrPut(side) { mutableListOf() }

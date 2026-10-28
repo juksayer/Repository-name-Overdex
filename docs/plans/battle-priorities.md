@@ -54,6 +54,12 @@ as seven plus seven paired uses with original source IDs/times retained. This
 repairs one duplicate-count path; complete Fast Move observation, earlier phase
 boundaries, dependable player-fill measurements, and live acceptance remain open.
 
+October 28 charged-phase progress: [measured HP camera intervals](../verification/2026-10-28-charged-hp-camera.md)
+now distinguish a late charged impact from a Fast Move when a used-move banner
+and full-frame HP relocation agree. Live counts, exact energy admission and Replay
+share the rule. Damage-range/energy/gap inference for missed charge announcements
+and validation of the physical QTE vibration signature remain open.
+
 October 22 progress: the [player form handoff](../verification/2026-10-22-player-form-handoff.md)
 now retains scanned lead identity, resolves later appearances from independent
 button evidence, and keeps the two Raichu forms separate in move, energy, faint

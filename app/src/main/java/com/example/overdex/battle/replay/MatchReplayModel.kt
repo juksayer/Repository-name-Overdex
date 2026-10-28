@@ -37,6 +37,7 @@ import com.example.overdex.battle.archive.ArchivedDeviceMotionPulseMeasured
 import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
 import com.example.overdex.battle.archive.ArchivedAttackIncoming
 import com.example.overdex.battle.inference.FastMoveUseEvidence
+import com.example.overdex.battle.inference.ChargedHpCameraGuard
 import com.example.overdex.battle.archive.ArchivedPokemonIdentified
 import com.example.overdex.battle.archive.ArchivedRealityArticle
 import com.example.overdex.battle.archive.ArchivedRawText
@@ -813,6 +814,41 @@ class MatchReplayModel(
                 (it.sourceId == "ANNOUNCEMENT_WITNESS" &&
                     (it.payload as? ArchivedRawText)?.value?.let(MOVE_PATTERN::matches) == true)
         }.map { it.monotonicTimeNanos!! }
+        // A preserved HP bar can remain in the charged-attack camera after
+        // the used-move banner. Use that measured interval rather than turning
+        // a late charged impact into another Fast Move. Old archives without
+        // full-frame geometry retain the existing bounded banner fallback.
+        val chargedHpCamera = ChargedHpCameraGuard()
+        val chargeTimes = namedCharges.toSet()
+        // A replacement may have a different ordinary bar height. Compare
+        // geometry only within the existing identity intervals, not across a
+        // KO or switch. Repeated readings of the same species are not changes.
+        val cameraBoundaries = buildMap<Long, Boolean> {
+            (playerIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start } +
+                opponentIdentityTrack.hpAppearancesAt(Long.MAX_VALUE).map { it.start })
+                .forEach { put(it, false) }
+            timedArticles.forEach { article ->
+                val faint = article.payload is ArchivedActivePokemonFaintedWitnessed
+                if (faint || article.payload is ArchivedMatchStarted || article.payload is ArchivedMatchEnded) {
+                    article.monotonicTimeNanos?.let { at -> put(at, get(at) == true || faint) }
+                }
+            }
+        }.toSortedMap().entries.toList()
+        var nextBoundary = 0
+        timedArticles.forEach { article ->
+            val at = article.monotonicTimeNanos!!
+            while (nextBoundary < cameraBoundaries.size && cameraBoundaries[nextBoundary].key <= at) {
+                val boundary = cameraBoundaries[nextBoundary++]
+                chargedHpCamera.observeBoundary(boundary.key, includeImpactAtBoundary = boundary.value)
+            }
+            if (at in chargeTimes) chargedHpCamera.observeCharge(at)
+            (article.payload as? ArchivedActiveHpBarMeasured)?.let { hp ->
+                chargedHpCamera.observeHp(article.articleId, at, hp.side,
+                    hp.barLeft, hp.barTop, hp.barRight, hp.barBottom,
+                    hp.sourceWidth, hp.sourceHeight)
+            }
+        }
+        chargedHpCamera.advanceTo(recordingEndNanos)
         return timedArticles.mapNotNull { article ->
             val at = article.monotonicTimeNanos!!
             val maximumEnd = when {
@@ -822,7 +858,7 @@ class MatchReplayModel(
             }
             val from = chargeTransitions.forCue(article)?.presentationAtNanos ?: at
             from..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
-        } + namedCharges.map { it..(it + 750_000_000L) } + decisionTimers.windows
+        } + namedCharges.map { it..(it + 750_000_000L) } + decisionTimers.windows + chargedHpCamera.windows()
     }
 
     /** Coalesce same-hit corroboration while retaining independently observed uses. */

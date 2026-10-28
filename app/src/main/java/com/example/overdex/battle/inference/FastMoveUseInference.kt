@@ -63,6 +63,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private val pending = mutableListOf<PendingUse>()
     private val hpHistory = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
     private val impactHistory = mutableListOf<UseEvidence>()
+    private val chargedHpCamera = ChargedHpCameraGuard()
     private val knownDurations = mutableMapOf<Pair<ActivePokemonSide, String>, Long>()
     private var watermarkNanos = Long.MIN_VALUE
     private var receiptWatermarkMillis = Long.MIN_VALUE
@@ -110,6 +111,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             pending.clear()
             hpHistory.clear()
             impactHistory.clear()
+            chargedHpCamera.reset()
             appearances.clear()
             appearanceHistory.clear()
             knownDurations.clear()
@@ -129,6 +131,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         fainted.observe(article)
         watermarkNanos = max(watermarkNanos, atNanos)
         receiptWatermarkMillis = max(receiptWatermarkMillis, article.recordedAt)
+        chargedHpCamera.advanceTo(atNanos)
         if (article.payload is MatchStarted) {
             // A delayed GO must not discard hits or charged-phase pauses that
             // were already established by independently witnessed combat.
@@ -152,6 +155,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         val output = mutableListOf<FastMoveUseDerivation>()
         when (val payload = article.payload) {
             is ActiveHpBarMeasured -> {
+                chargedHpCamera.observeHp(article.id.value, atNanos, payload.side.name,
+                    payload.barLeft, payload.barTop, payload.barRight, payload.barBottom,
+                    payload.sourceWidth, payload.sourceHeight)
                 val samples = hpHistory.getOrPut(payload.side) { mutableListOf() }
                 if (samples.none { it.id == article.id }) samples += article
                 samples.removeAll { (it.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }
@@ -181,6 +187,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 return flush()
             }
             ChargeMoveUsedAnnounced -> {
+                chargedHpCamera.observeCharge(atNanos)
                 decisionPauses.lastOrNull()?.let { if (atNanos in it.start until it.end) it.end = atNanos }
                 val phase = chargedPauses.lastOrNull { atNanos in it.start..it.end }
                     ?: ChargedPause(atNanos, atNanos + CHARGED_IMPACT_TAIL_NANOS).also { chargedPauses += it }
@@ -199,7 +206,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 return flushExpired(watermarkNanos)
             }
             is MatchEnded -> {
-                val final = if (combatConfirmed) flush() else emptyList()
+                val final = if (combatConfirmed) flush(includeAwaitingCharge = true) else emptyList()
                 chargedPauses.forEach { it.held.clear() }
                 combatConfirmed = false
                 matchEnded = true
@@ -212,7 +219,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                         payload.speciesName.equals(current.speciesName, ignoreCase = true))) {
                     output += flushSide(payload.side)
                     appearances.remove(payload.side)
-                    recordAppearanceBoundary(payload.side, Appearance(article.id.value, null, atNanos))
+                    recordAppearanceBoundary(payload.side, Appearance(article.id.value, null, atNanos), endsWithImpact = true)
                 }
             }
             is ActivePokemonSpeciesWitnessed -> {
@@ -360,6 +367,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         val until = maxOf(a, b)
         return appearanceHistory.values.any { history -> history.any { it.atNanos > from && it.atNanos <= until } } ||
             chargedPauses.any { it.start <= until && it.end >= from } ||
+            chargedHpCamera.windows().any { it.first <= until && it.last >= from } ||
             decisionPauses.any { it.start <= until && it.end >= from }
     }
 
@@ -404,7 +412,10 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private fun appearanceAt(side: ActivePokemonSide, atNanos: Long): Appearance? =
         appearanceHistory[side]?.lastOrNull { it.atNanos <= atNanos }
 
-    private fun recordAppearanceBoundary(side: ActivePokemonSide, appearance: Appearance) {
+    private fun recordAppearanceBoundary(side: ActivePokemonSide, appearance: Appearance, endsWithImpact: Boolean = false) {
+        // A replacement may naturally have a different HP height. Do not learn
+        // that new combatant's normal bar as the old one's charged camera.
+        chargedHpCamera.observeBoundary(appearance.atNanos, includeImpactAtBoundary = endsWithImpact)
         appearanceHistory.getOrPut(side) { mutableListOf() } += appearance
         // Only unpublished evidence is reassigned. Already emitted Articles stay
         // immutable; replay can reconcile their identity from the full history.
@@ -430,11 +441,15 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         else -> false
     }
 
-    fun flush(): List<FastMoveUseDerivation> = resolvePending(pending).flatMap { finalize(it.use) }
-        .also { pending.clear() }
+    fun flush(includeAwaitingCharge: Boolean = false): List<FastMoveUseDerivation> {
+        val ready = pending.filter { includeAwaitingCharge || !chargedHpCamera.isAwaitingCharge(it.anchorNanos) }
+        pending.removeAll(ready.toSet())
+        return resolvePending(ready).flatMap { finalize(it.use) }
+    }
 
     private fun flushSide(side: ActivePokemonSide, beforeNanos: Long = Long.MAX_VALUE): List<FastMoveUseDerivation> {
-        val ready = pending.filter { it.attackingSide == side && it.anchorNanos < beforeNanos }
+        val ready = pending.filter { it.attackingSide == side && it.anchorNanos < beforeNanos &&
+            !chargedHpCamera.isAwaitingCharge(it.anchorNanos) }
         val resolved = resolvePending(ready)
         pending.removeAll(ready.toSet())
         return resolved.flatMap { finalize(it.use) }
@@ -463,6 +478,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             val impacts = use.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
             val lastReceivedAt = impacts.maxOfOrNull { it.article.recordedAt } ?: use.firstImpactReceivedAt
             atNanos - use.anchorNanos > mergeWindow(use) + DELIVERY_GRACE_NANOS &&
+                !chargedHpCamera.isAwaitingCharge(use.anchorNanos) &&
                 // Preserve the same bounded grace for every phase in a pair.
                 // An unpublished association may still be contradicted by late
                 // geometry or a phase/appearance boundary during this interval.
@@ -500,6 +516,10 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     }
 
     private fun finalize(use: PendingUse): List<FastMoveUseDerivation> {
+        // The banner may reach custody after the relocated HP flash. Keep the
+        // original measurements, but do not publish a charged-camera impact as
+        // a Fast Move merely because the ordinary announcement tail elapsed.
+        if (chargedHpCamera.isChargeImpact(use.anchorNanos)) return emptyList()
         val ordered = use.evidence.sortedWith(compareBy(
             { it.article.monotonicTimeNanos ?: Long.MAX_VALUE },
             { it.article.id.value }
