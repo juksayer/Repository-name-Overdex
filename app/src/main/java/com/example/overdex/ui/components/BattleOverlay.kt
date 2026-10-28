@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -364,9 +365,8 @@ private fun OverlayPanel(
 
     Column(
         modifier = Modifier.width(teamInfoWidth)
-            .then(if (isBattleHud) Modifier.battleHudBadgeBackground() else Modifier.background(background, panelShape))
-            .padding(start = 8.dp, end = 8.dp, bottom = if (isBattleHud) 2.dp else 6.dp,
-                top = (if (isBattleHud) 2.dp else 6.dp) + if (isBattleHud) jointDepth else 0.dp),
+            .then(if (isBattleHud) Modifier else Modifier.background(background, panelShape)
+                .padding(start = 8.dp, end = 8.dp, bottom = 6.dp, top = 6.dp)),
         verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 0.dp else 5.dp),
         horizontalAlignment = if (isBattleHud) Alignment.End else Alignment.Start,
     ) {
@@ -389,23 +389,31 @@ private fun OverlayPanel(
             // Preserve only the panel's outside padding. The three stock-like
             // inactive cards share their edges so every available pixel can
             // belong to the sprites.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
-            }
-            if (opponentMoves != null) {
-                if (opponentMoves.fastMoves.isNotEmpty()) {
-                    MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76),
-                        assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
-                }
-                if (opponentMoves.chargedMoves.isNotEmpty()) {
-                    MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
-                        energy = estimate?.energy,
-                        fastGain = opponentMoves.fastMoves.firstOrNull {
-                            it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
-                        }?.energy)
+            Column(Modifier.fillMaxWidth().battleHudBadgeBackground()
+                .padding(start = 8.dp, end = 8.dp, top = jointDepth + 2.dp, bottom = 2.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                    repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
                 }
             }
-            OpponentHudStatus(estimate)
+            // Only the sprite header has badge material. Keep the game's
+            // announcement strokes intact underneath the right-aligned labels.
+            Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+                horizontalAlignment = Alignment.End) {
+                if (opponentMoves != null) {
+                    if (opponentMoves.fastMoves.isNotEmpty()) {
+                        MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76),
+                            assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
+                    }
+                    if (opponentMoves.chargedMoves.isNotEmpty()) {
+                        MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
+                            energy = estimate?.energy,
+                            fastGain = opponentMoves.fastMoves.firstOrNull {
+                                it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
+                            }?.energy)
+                    }
+                }
+                OpponentHudStatus(estimate)
+            }
 
         } else {
             val configuredTeamReady = configuredPlayerTeam.size == 3
@@ -520,7 +528,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
         }
     }
     Box(
-        modifier = Modifier.weight(1f).height(44.dp)
+        modifier = Modifier.weight(1f).height(36.dp)
             .background(Color(0x18005E5B), RoundedCornerShape(6.dp))
             .border(1.dp, Color(0x55005E5B), RoundedCornerShape(6.dp)),
         contentAlignment = Alignment.Center
@@ -533,7 +541,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
             AsyncImage(
                 model = spriteRequest,
                 contentDescription = "${species.speciesName} sprite",
-                modifier = Modifier.size(42.dp).alpha(if (species.isFainted) 0.35f else 1f)
+                modifier = Modifier.size(36.dp).alpha(if (species.isFainted) 0.35f else 1f)
                     .semantics { stateDescription = if (species.isFainted) "Fainted" else "Not fainted" },
                 contentScale = ContentScale.Fit,
                 colorFilter = if (species.isFainted) {
@@ -590,6 +598,7 @@ private fun MovePossibilityLine(
                     }
                 },
                 color = readinessColor,
+                style = TextStyle(shadow = BattleHudBadgeStyle.textShadow(LocalDensity.current)),
                 fontSize = 8.sp,
                 lineHeight = 10.sp,
                 textAlign = TextAlign.End,

@@ -22,9 +22,18 @@ class OcrHeightProfile(val textField: OcrField) {
         // Thresholding changes which edge pixels ML Kit includes in a word's
         // box, even after scaling is undone. Only native-color reads train the
         // shared reference height, so one treatment cannot shrink another's gate.
-        if (reading.treatment != "RAW" || !confirmed || context.overlayBounds != null || context.frameWidth <= 0 ||
-            reading.acceptedText.isBlank() || reading.words.any { it.decision != "RETAINED" }) return
-        val measured = reading.words.mapNotNull { word ->
+        if (reading.treatment != "RAW" || !confirmed || context.frameWidth <= 0 ||
+            reading.acceptedText.isBlank()) return
+        val retainedWords = reading.words.filter { it.decision == "RETAINED" }
+        // A crop can contain a clean GO phrase beside rejected HUD words. Its
+        // retained phrase is still usable, but even a small overlap (or missing
+        // geometry) makes it unsafe to teach the game-text height from that word.
+        // The filtering gate deliberately requires much more overlap than this
+        // training gate: retaining uncertain text must not train the profile.
+        if (context.overlayBounds != null && retainedWords.any { word ->
+                word.bounds?.overlapFraction(context.overlayBounds)?.let { it > 0f } != false
+            }) return
+        val measured = retainedWords.mapNotNull { word ->
             word.bounds?.height?.takeIf { word.text.any(Char::isLetter) && it > 0f }
                 ?.times(672f / context.frameWidth)
         }.sorted()

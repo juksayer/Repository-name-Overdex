@@ -86,6 +86,36 @@ class OcrSourceFilterTest {
         assertEquals(0, profile.sampleCount)
     }
 
+    @Test fun `confirmed game text outside the HUD can teach size even when that crop also contains HUD words`() {
+        // Native geometry matches the mixed announcement crop from the recorded
+        // Moondrop match: GO words on the left, small HUD controls on the right.
+        val source = OcrSourceContext(672, OcrBox(380f, 0f, 550f, 100f))
+        val gameWords = listOf(
+            OcrWordEvidence("Go,", 0, OcrBox(203f, 15f, 250f, 49f)),
+            OcrWordEvidence("Flygon!", 0, OcrBox(263f, 17f, 366f, 51f)),
+        )
+        val hudWord = OcrWordEvidence("STOP", 1, OcrBox(380f, 66f, 413f, 78f), tealFraction = .5f)
+        val reading = OcrSourceFilter.apply("Go, Flygon!\nSTOP", gameWords + hudWord, "RAW", source, profile)
+        assertEquals("Go, Flygon!", reading.acceptedText)
+        profile.learn(reading, source, confirmed = true)
+        assertEquals(1, profile.sampleCount)
+        assertEquals(34f, profile.expectedHeightAt672, .01f)
+        assertEquals("Go, Flygon!\nSTOP", reading.rawText)
+        assertEquals("HUD_SIZE_COLOR_POSITION", reading.words.last().decision)
+    }
+
+    @Test fun `training refuses even partial HUD overlap and unknown word geometry`() {
+        val source = OcrSourceContext(672, OcrBox(380f, 0f, 550f, 100f))
+        val gameWord = OcrWordEvidence("Flygon!", 0, OcrBox(300f, 15f, 381f, 49f))
+        val reading = OcrSourceFilter.apply(gameWord.text, listOf(gameWord), "RAW", source, profile)
+        // Retained for downstream interpretation, but that is weaker than a
+        // clean sample suitable for changing the expected text size.
+        assertEquals("Flygon!", reading.acceptedText)
+        profile.learn(reading, source, confirmed = true)
+        profile.learn(reading.copy(words = listOf(gameWord.copy(bounds = null))), source, confirmed = true)
+        assertEquals(0, profile.sampleCount)
+    }
+
     @Test fun `HUD placement is translated into original crop coordinates without shifting the crop`() {
         val crop = BattleCropProvenance("announcement", 1080, 2400, BattleCropBounds(100, 700, 1000, 850))
         val captureHud = AnchorRegion(.5f, .25f, .4f, .2f)

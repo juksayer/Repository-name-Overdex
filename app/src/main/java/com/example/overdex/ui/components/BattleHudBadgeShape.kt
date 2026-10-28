@@ -1,16 +1,19 @@
 package com.example.overdex.ui.components
 
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import kotlin.math.pow
 
 /** GO badge material and the complementary lower-edge joint, in display pixels. */
@@ -19,6 +22,12 @@ internal object BattleHudBadgeStyle {
     // Deliberately distinct from GO's teal badge text and white announcements.
     // Retain full move names; confirmation and danger also have non-color marks.
     val moveInk = Color(0xFF763CB6)
+    // Tight light backing keeps colored, small monospace HUD lettering readable
+    // on the battlefield without painting a panel over the game's announcement.
+    // A broad white halo would also dilute the ink evidence used by OCR filtering.
+    fun textShadow(density: Density): Shadow = with(density) {
+        Shadow(Color.White, Offset(.5.dp.toPx(), .5.dp.toPx()), .75.dp.toPx())
+    }
     // Approximately 17 capture pixels at 672/1080 scale in the retained GO badge.
     // Scale with badge width, not Android font or density settings.
     fun cornerPx(width: Float): Float = width * 27f / 415f

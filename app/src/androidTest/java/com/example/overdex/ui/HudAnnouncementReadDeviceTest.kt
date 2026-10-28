@@ -110,9 +110,11 @@ class HudAnnouncementReadDeviceTest {
                 assertTrue("No reserved announcement gap", b.top - a.bottom < 3f)
                 assertEquals("Move labels share right edge", a.right, b.right, 1f)
             }
+            assertEquals("Empty space beside the moves must reveal the game without a panel tint",
+                background, visible.getPixel(location[0] + 4, location[1] + bounds.first().center.y.toInt()))
             val sprite = compose.onNodeWithContentDescription("Sneasel sprite", useUnmergedTree = true)
                 .fetchSemanticsNode().boundsInRoot
-            assertEquals(42f * compose.activity.resources.displayMetrics.density, sprite.height, 1f)
+            assertEquals(36f * compose.activity.resources.displayMetrics.density, sprite.height, 1f)
             val originalPosition = location.copyOf()
             val initialHeight = overlay.height
             compose.onNodeWithText("Triple Axel", useUnmergedTree = true).performTouchInput {
