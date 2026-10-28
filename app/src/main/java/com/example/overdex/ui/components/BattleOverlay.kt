@@ -10,7 +10,9 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,9 +28,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
@@ -362,23 +366,28 @@ private fun OverlayPanel(
     val background = if (isBattleHud) BattleHudBadgeStyle.background else Color(0xE810231F)
     val foreground = if (isBattleHud) Color(0xFF275F6D) else Color(0xFFD7FFF4)
     val muted = if (isBattleHud) Color(0xFF397786) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
+    // The field control panel can contain more actions than fit on a short
+    // display. Keep its larger touch targets reachable without resizing the
+    // live badge or clipping the lower Droidball half off screen.
+    val controlPanelMaxHeight = (LocalConfiguration.current.screenHeightDp - 112).coerceAtLeast(96).dp
+    val controlPanelScroll = rememberScrollState()
 
     Column(
         modifier = Modifier.width(teamInfoWidth)
-            .then(if (isBattleHud) Modifier else Modifier.background(background, panelShape)
+            .then(if (isBattleHud) Modifier else Modifier.heightIn(max = controlPanelMaxHeight)
+                .background(background, panelShape)
+                .verticalScroll(controlPanelScroll)
                 .padding(start = 8.dp, end = 8.dp, bottom = 6.dp, top = 6.dp)),
         verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 0.dp else 5.dp),
         horizontalAlignment = if (isBattleHud) Alignment.End else Alignment.Start,
     ) {
         if (teamEditingAllowed && !isBattleHud) {
-            Text("TEAM / MOVES", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.EditTeamRequested)
-                }.padding(vertical = 5.dp))
-            Text("SCAN TEAM SELECT", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
-                }.padding(vertical = 5.dp))
+            OverlayControl("TEAM / MOVES") {
+                DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.EditTeamRequested)
+            }
+            OverlayControl("SCAN TEAM SELECT") {
+                DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
+            }
         }
         if (!isBattleHud) {
             Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
@@ -429,13 +438,13 @@ private fun OverlayPanel(
                 DroidballOverlayMode.RESULT -> "Outcome evidence is preserved. Tap to arm the next match."
                 else -> captureLine(diagnostics)
             }
-            Text(
-                text = message,
-                modifier = if (mode == DroidballOverlayMode.RESULT) Modifier.clickable {
+            if (mode == DroidballOverlayMode.RESULT) {
+                OverlayControl(message) {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch)
-                } else Modifier,
-                color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace
-            )
+                }
+            } else {
+                Text(message, color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+            }
             if (mode == DroidballOverlayMode.PRE_BATTLE) {
                 OverlayControl("START BATTLE HUD") {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
@@ -461,8 +470,8 @@ private fun OverlayPanel(
                 if (inferredPlayerTeam.all { it != null } && !playerTeamConfirmed) {
                     Text("IS THIS YOUR TEAM?", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OverlayControl("YES") { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ConfirmInferredPlayerTeamRequested) }
-                        OverlayControl("NO / RESCAN") { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RejectInferredPlayerTeamRequested) }
+                        OverlayControl("YES", Modifier.weight(1f)) { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ConfirmInferredPlayerTeamRequested) }
+                        OverlayControl("NO / RESCAN", Modifier.weight(1f)) { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RejectInferredPlayerTeamRequested) }
                     }
                 } else if (playerTeamConfirmed) {
                     Text(if (configuredTeamReady) "TEAM & MOVES READY" else "ROSTER CONFIRMED · MOVES NEEDED",
@@ -472,16 +481,9 @@ private fun OverlayPanel(
                             color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
                     }
                 }
-                Text(
-                    text = "OPEN BATTLE HUD",
-                    modifier = Modifier.clickable {
-                        DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
-                    },
-                    color = foreground,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+                OverlayControl("OPEN BATTLE HUD") {
+                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
+                }
                 OverlayControl("RESTART OBSERVATION") {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RestartObservationRequested)
                 }
@@ -493,6 +495,7 @@ private fun OverlayPanel(
                     DroidballOverlayMode.CALIBRATING
                 )
             ) {
+                Spacer(Modifier.height(16.dp))
                 OverlayControl("STOP SESSION") {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.StopSessionRequested)
                 }
@@ -502,15 +505,25 @@ private fun OverlayPanel(
 }
 
 @Composable
-private fun OverlayControl(label: String, action: () -> Unit) {
-    Text(
-        text = label,
-        modifier = Modifier.clickable(onClick = action),
-        color = Color(0xFFD7FFF4),
-        fontSize = 9.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Monospace
-    )
+private fun OverlayControl(
+    label: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    action: () -> Unit,
+) {
+    Box(
+        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            .clickable(role = Role.Button, onClick = action)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            text = label,
+            color = Color(0xFFD7FFF4),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+    }
 }
 
 @Composable
