@@ -21,10 +21,17 @@ class LiveFastMoveSoundWitnessTest {
     @Test fun `late charged phase records subsequent audio without fabricating match start`() =
         captureAfter(GetReadyWitnessed)
 
+    @Test fun `missed countdown combat opens retained audio with species and damage provenance but no invented start`() =
+        captureAfter(ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .9f, .1f),
+            context = listOf(
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Aegislash"),
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Swampert")))
+
     @Test fun `ambiguous comparison keeps its PCM and rejected status while overlapping windows are rate limited`() =
         captureAfter(CountdownGlyphWitnessed("2", .99f, 1), ambiguous = true)
 
-    private fun captureAfter(opening: TestimonyPayload, ambiguous: Boolean = false) = runBlocking {
+    private fun captureAfter(opening: TestimonyPayload, ambiguous: Boolean = false,
+        context: List<TestimonyPayload> = emptyList()) = runBlocking {
         val references = listOf("Spark" to "209-0_spark.wav", "Tackle" to "033-0_tackle.wav").map { (name, file) ->
             FastMoveSoundReference(name, file, requireNotNull(WavPcm16.decode(
                 File("src/main/assets/fast_move_sounds/${if (ambiguous) "209-0_spark.wav" else file}").readBytes())))
@@ -46,6 +53,10 @@ class LiveFastMoveSoundWitnessTest {
             witness.start(match)
             withTimeout(4000) { while (input.subscriptionCount.value == 0) delay(10) }
             val base = System.nanoTime()
+            context.forEachIndexed { index, payload ->
+                custody.submitTestimony(SourceId("TEST"), payload,
+                    998 + index.toLong(), null, emptyList(), base - context.size + index)
+            }
             custody.submitTestimony(SourceId("TEST"), opening,
                 1000, null, emptyList(), base)
             withTimeout(4000) { while (timeline.getArticles().none { it.payload == opening }) delay(10) }
@@ -70,10 +81,16 @@ class LiveFastMoveSoundWitnessTest {
             assertEquals(LiveFastMoveSoundWitness.CUE_KIND, audio.cueKind)
             assertEquals(1_200_000_000L, audio.durationNanos)
             assertTrue(File(root, audio.artifact.relativePath).isFile)
-            assertTrue(articles.none { it.payload is FastMoveUseObserved })
+            if (opening !is ActiveHpBarDamageTickMeasured)
+                assertTrue(articles.none { it.payload is FastMoveUseObserved })
+            else assertTrue(articles.filter { it.payload is FastMoveUseObserved }.all {
+                articles.single { source -> source.payload == opening }.id in it.predecessorIds
+            })
             assertTrue(articles.none { it.payload is FastMoveIdentified })
+            assertTrue(articles.none { it.payload is FastMoveEnergyDerived })
             assertTrue(articles.none { it.payload is MatchStarted })
-            assertEquals(listOf(articles.single { it.payload == opening }.id.value), capture.evidenceReferences)
+            assertEquals((context + opening).map { payload -> articles.single { it.payload == payload }.id.value },
+                capture.evidenceReferences)
         } finally { witness.stop(); match.release(); root.deleteRecursively() }
     }
 }

@@ -311,6 +311,24 @@ class FastMoveCadenceInferenceTest {
         }
     }
 
+    @Test fun `persistent combat enables repeated audio identity without GO but not before the loss`() = runBlocking {
+        val engine = audioEngine()
+        assertTrue(engine.accept(referenceSound("before1", "Spark", 2_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("before2", "Spark", 3_000_000_000L)).isEmpty())
+        engine.accept(article("real-loss", com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured(
+            ActivePokemonSide.PLAYER, 1f, .9f, .1f)).copy(monotonicTimeNanos = 4_000_000_000L))
+        assertTrue(engine.accept(referenceSound("after1", "Spark", 5_000_000_000L)).isEmpty())
+        val identified = engine.accept(referenceSound("after2", "Spark", 6_000_000_000L)).single()
+        assertEquals("Spark", (identified.payload as FastMoveIdentified).moveName)
+        assertEquals(ActivePokemonSide.OPPONENT, identified.payload.side)
+        assertTrue(identified.predecessorIds.containsAll(listOf(ArticleId("after1"), ArticleId("after2"))))
+        assertTrue(identified.predecessorIds.none { it.value.startsWith("before") })
+        engine.accept(article("qte", com.example.overdex.battle.custody.GetReadyWitnessed)
+            .copy(monotonicTimeNanos = 7_000_000_000L))
+        assertTrue(engine.accept(referenceSound("during1", "Spark", 8_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(referenceSound("during2", "Spark", 9_000_000_000L)).isEmpty())
+    }
+
     @Test fun `countdown opens observation but cannot identify a pre GO fast move`() = runBlocking {
         val engine = audioEngine()
         engine.accept(article("three", com.example.overdex.battle.custody.CountdownGlyphWitnessed("3", .99f, 1)))

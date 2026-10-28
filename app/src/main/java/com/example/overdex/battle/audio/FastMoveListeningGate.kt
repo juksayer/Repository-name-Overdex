@@ -1,6 +1,7 @@
 package com.example.overdex.battle.audio
 
 import com.example.overdex.battle.custody.*
+import kotlin.math.abs
 
 /** Audio attention spans the whole fight, including entry animations and charged sequences.
  * Those sounds are observations; downstream combat rules still decide whether an attack occurred.
@@ -9,7 +10,11 @@ internal class FastMoveListeningGate {
     private var start: Long? = null
     private var end: Long? = null
     private var stopped = false
-    private var openingId: String? = null
+    private var openingIds = emptyList<String>()
+    private var attemptFromNanos = Long.MIN_VALUE
+    private data class Evidence(val at: Long, val id: String?)
+    private val firstSpecies = mutableMapOf<ActivePokemonSide, Evidence>()
+    private var pendingDamage: Evidence? = null
     private val activeNames = mutableMapOf<ActivePokemonSide, String>()
     private val faintedNames = mutableSetOf<Pair<ActivePokemonSide, String>>()
     private val awaitingReplacement = mutableSetOf<ActivePokemonSide>()
@@ -18,10 +23,15 @@ internal class FastMoveListeningGate {
         private set
 
     @Synchronized fun observe(payload: TestimonyPayload, at: Long?, articleId: String? = null) {
+        // A completed OCR/measurement job can arrive after a manual restart.
+        // Its old battlefield time must not open the replacement attempt.
+        if (at != null && at < attemptFromNanos) return
         when (payload) {
             ObservationRestartedByUser -> {
                 generation++
-                start = null; end = null; stopped = false; openingId = null
+                start = null; end = null; stopped = false; openingIds = emptyList()
+                attemptFromNanos = at ?: attemptFromNanos
+                firstSpecies.clear(); pendingDamage = null
                 activeNames.clear(); faintedNames.clear(); awaitingReplacement.clear(); faints = 0
             }
             ScreenIgnoredByUser, ObservationSessionStoppedByUser -> {
@@ -39,6 +49,24 @@ internal class FastMoveListeningGate {
                 val name = payload.speciesName.lowercase().trim()
                 val old = activeNames.put(payload.side, name)
                 if (old != name && payload.side to name !in faintedNames) awaitingReplacement.remove(payload.side)
+                if (at != null && name.isNotEmpty() &&
+                    at < (firstSpecies[payload.side]?.at ?: Long.MAX_VALUE)) {
+                    firstSpecies[payload.side] = Evidence(at, articleId)
+                    openFromCombatIfReady()
+                }
+            }
+            is ActiveHpBarDamageTickMeasured -> {
+                // The same persistent-loss validity check used by Fast Move
+                // accounting. Both active sides supply battle context; names,
+                // full bars, flashes and countdown button shading alone do not.
+                if (at != null && payload.beforeFraction in 0f..1f &&
+                    payload.afterFraction in 0f..1f && payload.lostFraction > 0f &&
+                    payload.beforeFraction > payload.afterFraction &&
+                    abs(payload.beforeFraction - payload.afterFraction - payload.lostFraction) < .001f) {
+                    if (at > (pendingDamage?.at ?: Long.MIN_VALUE))
+                        pendingDamage = Evidence(at, articleId)
+                    openFromCombatIfReady()
+                }
             }
             is ActivePokemonFaintedWitnessed -> {
                 val began = start ?: return
@@ -54,9 +82,20 @@ internal class FastMoveListeningGate {
         }
     }
 
-    private fun open(at: Long?, id: String?) {
+    private fun openFromCombatIfReady() {
+        val damage = pendingDamage ?: return
+        val context = ActivePokemonSide.entries.map { firstSpecies[it] ?: return }
+        // Delivery order is not source order. A later species frame cannot
+        // retroactively establish context for an earlier ambiguous HP change.
+        if (context.any { it.at > damage.at }) return
+        open(damage.at, (context.mapNotNull { it.id } + listOfNotNull(damage.id)).distinct())
+    }
+
+    private fun open(at: Long?, id: String?) = open(at, listOfNotNull(id))
+
+    private fun open(at: Long?, ids: List<String>) {
         if (at == null || stopped || end != null) return
-        if (start == null || at < start!!) { start = at; openingId = id }
+        if (start == null || at < start!!) { start = at; openingIds = ids }
     }
 
     @Synchronized fun allows(at: Long): Boolean = !stopped && start?.let {
@@ -68,5 +107,5 @@ internal class FastMoveListeningGate {
         windowGeneration == generation && until > from && allows(from) &&
             (end == null || until <= end!!)
 
-    @Synchronized fun triggerIds(): List<String> = listOfNotNull(openingId)
+    @Synchronized fun triggerIds(): List<String> = openingIds
 }
