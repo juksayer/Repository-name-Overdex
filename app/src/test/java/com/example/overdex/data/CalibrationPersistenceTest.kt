@@ -20,6 +20,46 @@ import org.junit.rules.TemporaryFolder
 class CalibrationPersistenceTest {
     @get:Rule val temporary = TemporaryFolder()
 
+    @Test fun `exit box survives legacy and named saves without changing other calibration`() {
+        val context = TestContext(temporary.newFolder())
+        val original = CalibrationManager(context).load().copy(
+            playerSpeciesNameRegion = strip(32f, 240f, 270f, 51f),
+            qteTypeIconsRegion = strip(410f, 1000f, 256f, 270f),
+        )
+        val positioned = original.copy(exitIconRegion = strip(29f, 388f, 144f, 138f))
+        assertTrue(CalibrationManager(context).save(positioned))
+        assertEquals(positioned, CalibrationManager(context).load())
+        val profile = saveProfile(context, original)
+        assertTrue(CalibrationManager(context).save(CalibrationManager(context).load().copy(
+            exitIconRegion = positioned.exitIconRegion)))
+        val reloaded = MatchCalibrationProfileStore(context).activeProfile()!!
+        assertEquals(profile.id, reloaded.id)
+        assertEquals(profile.teamSelectCalibration, reloaded.teamSelectCalibration)
+        assertEquals(positioned, reloaded.battleCalibration)
+        assertEquals(positioned, CalibrationManager(context).load())
+        assertEquals(positioned.exitIconRegion,
+            com.example.overdex.battle.observation.BattleCropContracts.exitIcon.region.regionIn(positioned))
+    }
+
+    @Test fun `older profiles acquire an exit default without rewriting the file or other boxes`() {
+        val context = TestContext(temporary.newFolder())
+        val positioned = BattleCalibration(
+            opponentSpeciesNameRegion = strip(780f, 242f, 269f, 54f),
+            trainerChargeMoveControlsRegion = strip(90f, 1940f, 880f, 300f),
+        )
+        val saved = saveProfile(context, positioned)
+        val file = File(context.filesDir, "calibration_profiles/${saved.id}.json")
+        val json = kotlinx.serialization.json.Json.parseToJsonElement(file.readText()) as kotlinx.serialization.json.JsonObject
+        val regions = json["battleRegions"] as kotlinx.serialization.json.JsonObject
+        file.writeText(kotlinx.serialization.json.JsonObject(json + ("battleRegions" to
+            kotlinx.serialization.json.JsonObject(regions - "exit_icon"))).toString())
+        val before = file.readText()
+        repeat(2) {
+            assertEquals(positioned, CalibrationManager(context).load())
+            assertEquals(before, file.readText())
+        }
+    }
+
     @Test fun `live QTE adjustment survives restart and changes only its own box in active profile`() {
         val context = TestContext(temporary.newFolder())
         val before = CalibrationManager(context).load().copy(

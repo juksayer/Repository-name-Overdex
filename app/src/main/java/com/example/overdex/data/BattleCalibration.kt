@@ -118,6 +118,12 @@ data class BattleCalibration(
     val qteTypeIconsRegion: AnchorRegion = AnchorRegion(
         x = 0.375f, y = 0.45f, width = 0.25f, height = 0.15f
     ),
+    // Adjustable starting territory around the upper-left battle exit button.
+    // Full captured-frame coordinates; no assumed status-bar subtraction.
+    val exitIconRegion: AnchorRegion = AnchorRegion(
+        x = 20f / 1080f, y = 380f / 2400f,
+        width = 155f / 1080f, height = 155f / 2400f
+    ),
     val trainerChargeMoveControlsRegion: AnchorRegion = AnchorRegion(
         x = 100f / 1080f,
         y = 1940f / 2400f,

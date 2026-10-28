@@ -110,6 +110,7 @@ fun BattleOverlay(
     onDragFinished: () -> Unit = {},
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
+    onExitIconCalibration: () -> Unit = {},
 ) {
     val requestedMode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -122,6 +123,7 @@ fun BattleOverlay(
     val layoutEditing = false
     val badgeSeen by DroidballOverlayPresentation.battleBadgeSeen.collectAsState()
     val mode = com.example.overdex.battle.observation.battleOverlayDisplayMode(requestedMode, badgeSeen)
+    var sessionControlsOpen by remember(mode) { mutableStateOf(false) }
     var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
     var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
     var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
@@ -190,7 +192,9 @@ fun BattleOverlay(
             .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f)
             .then(
                 if (!anchoredToBattleHud) Modifier.clickable { DroidballOverlayPresentation.toggleExpanded() }
-                else Modifier
+                else Modifier.clickable(onClickLabel = "Open session controls") {
+                    sessionControlsOpen = !sessionControlsOpen
+                }.semantics { contentDescription = "Battle HUD" }
             ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -221,6 +225,12 @@ fun BattleOverlay(
                 playerTeamConfirmed,
                 configuredPlayerTeam,
                 panelWidthPx,
+                sessionControlsOpen = sessionControlsOpen,
+                onCloseSessionControls = { sessionControlsOpen = false },
+                onExitIconCalibration = {
+                    sessionControlsOpen = false
+                    onExitIconCalibration()
+                },
             )
             if (!anchoredToBattleHud) {
                 DroidballHalf(
@@ -342,7 +352,9 @@ private fun OverlayPanel(
     playerTeamConfirmed: Boolean,
     configuredPlayerTeam: List<String>,
     panelWidthPx: Int,
-
+    sessionControlsOpen: Boolean,
+    onCloseSessionControls: () -> Unit,
+    onExitIconCalibration: () -> Unit,
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
@@ -383,7 +395,14 @@ private fun OverlayPanel(
         if (!isBattleHud) {
             Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
         }
-        if (isBattleHud) {
+        if (isBattleHud && sessionControlsOpen) {
+            // A short tap exposes these controls only while requested. The
+            // permanent HUD remains free of calibration labels and handles.
+            Text("EXIT ICON BOX", color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onExitIconCalibration).padding(vertical = 10.dp))
+            Text("CLOSE", color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onCloseSessionControls).padding(vertical = 10.dp))
+        } else if (isBattleHud) {
             val forecast by DroidballOverlayPresentation.opponentEnergyEstimate.collectAsState()
             val estimate = forecast?.takeIf { it.speciesName.equals(opponentMoves?.speciesName, ignoreCase = true) }
             // Preserve only the panel's outside padding. The three stock-like
@@ -485,6 +504,7 @@ private fun OverlayPanel(
                     DroidballOverlayMode.CALIBRATING
                 )
             ) {
+                OverlayControl("EXIT ICON BOX", onExitIconCalibration)
                 OverlayControl("STOP SESSION") {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.StopSessionRequested)
                 }

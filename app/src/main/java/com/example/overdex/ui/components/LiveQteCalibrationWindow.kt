@@ -55,6 +55,9 @@ internal class LiveQteCalibrationWindow(
     private val sampleRegion: (AnchorRegion) -> Boolean = { false },
     private val samplingStatus: Flow<QteIconSamplingStatus> = flowOf(QteIconSamplingStatus()),
     private val onRegionChanged: (AnchorRegion) -> Unit = {},
+    private val calibrationTitle: String = "QTE Type Icons",
+    private val nudgeDescriptionPrefix: String = "QTE",
+    private val samplingEnabled: Boolean = true,
 ) {
     private var region by mutableStateOf(initialRegion.adjustPixels(0f, 0f, screenWidth, screenHeight, false))
     private var adjusting by mutableStateOf(false)
@@ -72,7 +75,7 @@ internal class LiveQteCalibrationWindow(
     private val guide = composeView().apply {
         setContent {
             Box(Modifier.fillMaxSize().border(0.6.dp, Color(0xFFBA00FF))
-                .semantics { contentDescription = "QTE Type Icons guide" }
+                .semantics { contentDescription = "$calibrationTitle guide" }
                 .pointerInput(adjusting, resizing, saving) {
                     if (adjusting && !saving) detectDragGestures { change, amount ->
                         change.consume()
@@ -92,7 +95,7 @@ internal class LiveQteCalibrationWindow(
                 }
             }
             Column(Modifier.fillMaxWidth().background(Color(0xEF10251C)).padding(6.dp)) {
-                Text("QTE TYPE ICONS · drag panel", color = ink, fontSize = 10.sp,
+                Text("${calibrationTitle.uppercase(java.util.Locale.ROOT)} · drag panel", color = ink, fontSize = 10.sp,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).pointerInput(Unit) {
                         detectDragGestures { change, amount ->
                             change.consume()
@@ -115,19 +118,19 @@ internal class LiveQteCalibrationWindow(
                     Action("CANCEL") { close() }
                 }
                 if (adjusting) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Nudge("←", "QTE left", -1f, 0f)
-                    Nudge("↑", "QTE up", 0f, -1f)
-                    Nudge("↓", "QTE down", 0f, 1f)
-                    Nudge("→", "QTE right", 1f, 0f)
+                    Nudge("←", "$nudgeDescriptionPrefix left", -1f, 0f)
+                    Nudge("↑", "$nudgeDescriptionPrefix up", 0f, -1f)
+                    Nudge("↓", "$nudgeDescriptionPrefix down", 0f, 1f)
+                    Nudge("→", "$nudgeDescriptionPrefix right", 1f, 0f)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                if (samplingEnabled) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Action(if (samples.sampling) "SAMPLING…" else "SAMPLE 10s", enabled = !samples.sampling) {
                         sampleUnavailable = !sampleRegion(region)
                     }
                     Text("SAVED ${samples.saved}", color = ink, fontSize = 10.sp,
                         modifier = Modifier.padding(vertical = 10.dp))
                 }
-                if (sampleUnavailable) Text("Start an observation session to sample", color = ink, fontSize = 10.sp)
+                if (samplingEnabled && sampleUnavailable) Text("Start an observation session to sample", color = ink, fontSize = 10.sp)
                 Action(if (saving) "SAVING…" else if (saveFailed) "RETRY SAVE & CLOSE" else "SAVE & CLOSE") {
                     saving = true
                     val savedRegion = region

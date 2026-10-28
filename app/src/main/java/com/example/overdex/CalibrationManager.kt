@@ -187,6 +187,11 @@ class CalibrationManager(context: Context) {
             .putFloat("qte_type_icons_w", calibration.qteTypeIconsRegion.width)
             .putFloat("qte_type_icons_h", calibration.qteTypeIconsRegion.height)
 
+            .putFloat("exit_icon_x", calibration.exitIconRegion.x)
+            .putFloat("exit_icon_y", calibration.exitIconRegion.y)
+            .putFloat("exit_icon_w", calibration.exitIconRegion.width)
+            .putFloat("exit_icon_h", calibration.exitIconRegion.height)
+
             .putFloat("trainer_charge_move_controls_x", calibration.trainerChargeMoveControlsRegion.x)
             .putFloat("trainer_charge_move_controls_y", calibration.trainerChargeMoveControlsRegion.y)
             .putFloat("trainer_charge_move_controls_w", calibration.trainerChargeMoveControlsRegion.width)
@@ -661,6 +666,7 @@ class CalibrationManager(context: Context) {
             opponentHpRegion = opponentHpRegion,
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
             qteTypeIconsRegion = loadExtraRegion("qte_type_icons", BattleCalibration().qteTypeIconsRegion),
+            exitIconRegion = loadExtraRegion("exit_icon", BattleCalibration().exitIconRegion),
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,
             pointerCoordinatesRegion = loadExtraRegion("pointer_coordinates", BattleCalibration().pointerCoordinatesRegion),
             decisionTimerRegion = loadExtraRegion("decision_timer", BattleCalibration().decisionTimerRegion),

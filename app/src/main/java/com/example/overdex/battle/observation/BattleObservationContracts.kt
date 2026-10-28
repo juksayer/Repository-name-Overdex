@@ -37,6 +37,7 @@ enum class BattleRegionId {
     OPPONENT_HP,
     CHARGE_MOVE_EXECUTION,
     QTE_TYPE_ICONS,
+    EXIT_ICON,
     PLAYER_CHARGE_MOVE_CONTROLS,
     POINTER_COORDINATES,
     DECISION_TIMER,
@@ -67,6 +68,7 @@ enum class BattleRegionId {
         OPPONENT_HP -> calibration.opponentHpRegion
         CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
         QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
+        EXIT_ICON -> calibration.exitIconRegion
         PLAYER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
         POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         DECISION_TIMER -> calibration.decisionTimerRegion
@@ -185,6 +187,7 @@ object BattleCropContracts {
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
     // Raw calibration samples; moving glyph classification requires measured examples.
     val qteTypeIcons = BattleCropContract("QteTypeIconsCrop", BattleRegionId.QTE_TYPE_ICONS)
+    val exitIcon = BattleCropContract("ExitIconCrop", BattleRegionId.EXIT_ICON)
     val playerChargeMoveControls = BattleCropContract("PlayerChargeMoveControlsCrop", BattleRegionId.PLAYER_CHARGE_MOVE_CONTROLS)
     val pointerCoordinates = BattleCropContract("PointerCoordinatesCrop", BattleRegionId.POINTER_COORDINATES)
     val decisionTimer = BattleCropContract("DecisionTimerCrop", BattleRegionId.DECISION_TIMER, minimumSize = 16)
