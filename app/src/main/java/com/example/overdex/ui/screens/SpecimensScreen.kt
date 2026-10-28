@@ -80,9 +80,9 @@ fun SpecimensScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 itemsIndexed(ownedPokemon) { index, owned ->
-                    var species by remember(owned.speciesId) { mutableStateOf<Pokemon?>(null) }
-                    LaunchedEffect(owned.speciesId) {
-                        species = pokedexViewModel.getPokemonById(owned.speciesId)
+                    var species by remember(owned.speciesId, owned.speciesName) { mutableStateOf<Pokemon?>(null) }
+                    LaunchedEffect(owned.speciesId, owned.speciesName) {
+                        species = pokedexViewModel.resolveOwnedPokemonReference(owned)
                     }
 
                     SpecimenListItem(
@@ -135,7 +135,7 @@ fun SpecimenListItem(
                 )
 
                 Text(
-                    text = species?.name ?: "Unknown",
+                    text = species?.name ?: owned.speciesName ?: "Unknown",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)

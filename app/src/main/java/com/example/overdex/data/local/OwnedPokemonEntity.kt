@@ -24,6 +24,7 @@ data class OwnedPokemonEntity(
     val updatedAt: Long,
     @ColumnInfo(defaultValue = "'[]'") val teamsJson: String = "[]",
     @ColumnInfo(defaultValue = "'UNKNOWN'") val size: String = "UNKNOWN",
+    val speciesName: String? = null,
 )
 
 fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
@@ -43,6 +44,7 @@ fun OwnedPokemonEntity.toDomain() = OwnedPokemon(
     teams = Json.decodeFromString<List<String>>(teamsJson),
     size = com.example.overdex.model.PokemonSize.entries.firstOrNull { it.name == size }
         ?: com.example.overdex.model.PokemonSize.UNKNOWN,
+    speciesName = speciesName,
 )
 
 fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
@@ -61,9 +63,10 @@ fun OwnedPokemon.toEntity() = OwnedPokemonEntity(
     updatedAt = updatedAt,
     teamsJson = Json.encodeToString(teams),
     size = size.name,
+    speciesName = speciesName,
 )
 
 data class OwnedPokemonWithSpecies(
     @androidx.room.Embedded val owned: OwnedPokemonEntity,
-    val speciesName: String?
+    @ColumnInfo(name = "referenceSpeciesName") val speciesName: String?
 )

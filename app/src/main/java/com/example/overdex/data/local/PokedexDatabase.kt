@@ -7,12 +7,18 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [PokemonEntity::class, OwnedPokemonEntity::class], version = 11, exportSchema = false)
+@Database(entities = [PokemonEntity::class, OwnedPokemonEntity::class], version = 12, exportSchema = false)
 abstract class PokedexDatabase : RoomDatabase() {
     abstract fun pokemonDao(): PokemonDao
     abstract fun ownedPokemonDao(): OwnedPokemonDao
 
     companion object {
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // A national-dex ID cannot establish an existing card's regional form.
+                db.execSQL("ALTER TABLE owned_pokemon ADD COLUMN speciesName TEXT")
+            }
+        }
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE owned_pokemon ADD COLUMN size TEXT NOT NULL DEFAULT 'UNKNOWN'")
@@ -33,7 +39,7 @@ abstract class PokedexDatabase : RoomDatabase() {
                     PokedexDatabase::class.java,
                     "pokedex_database",
                 )
-                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

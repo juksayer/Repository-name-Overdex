@@ -21,7 +21,7 @@ data class OwnedPokemonDraft(
     val teams: String = "",
     val createdAt: Long = System.currentTimeMillis(),
 ) {
-    fun selectSpecies(pokemon: Pokemon): OwnedPokemonDraft = if (speciesId == pokemon.id) this else copy(
+    fun selectSpecies(pokemon: Pokemon): OwnedPokemonDraft = if (speciesId == pokemon.id && speciesName == pokemon.name) this else copy(
         speciesId = pokemon.id, speciesName = pokemon.name,
         fastMove = null, chargedMove1 = null, chargedMove2 = null,
     )
@@ -39,6 +39,7 @@ data class OwnedPokemonDraft(
             cp = cp.toIntOrNull(), fastMove = fastMove, chargedMove1 = chargedMove1,
             chargedMove2 = chargedMove2, isShadow = shadow, isPurified = purified, isShiny = shiny,
             size = size, teams = OwnedPokemonTeams.parse(teams), createdAt = createdAt,
+            speciesName = speciesName.trim().ifEmpty { null },
         )
     }
 }

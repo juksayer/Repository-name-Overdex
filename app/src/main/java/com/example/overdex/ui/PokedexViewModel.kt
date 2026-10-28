@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -115,6 +116,7 @@ import com.example.overdex.data.PokemonRepository
 import com.example.overdex.data.SpeciesJsonLoader
 import com.example.overdex.data.SpriteProvider
 import com.example.overdex.data.local.toDomain
+import com.example.overdex.data.local.toEntity
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.PokemonEntity
 import com.example.overdex.data.observation.DroidballObservationInput
@@ -232,8 +234,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val species = owned.flatMap { it.members }.map { it.speciesId }.distinct().mapNotNull { id ->
             pokemonRepository.getPokemonById(id)?.let { id to it }
         }.toMap()
+        val forms = owned.flatMap { it.members }.mapNotNull { it.speciesName }.distinct().mapNotNull { name ->
+            pokemonRepository.getPokemonByName(name)?.takeIf { it.name.equals(name, true) }?.let { name to it }
+        }.toMap()
         saved + owned.mapNotNull { choice ->
-            choice.resolve(species)?.let { team ->
+            choice.resolve(species, forms)?.let { team ->
                 com.example.overdex.battle.team.SavedBattleTeam("owned:${choice.name}", "CARDS: ${choice.name}", team)
             }
         }
@@ -255,6 +260,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         com.example.overdex.battle.team.FieldTeamEditor(
             pokemonRepository, viewModelScope,
             canEdit = { _droidballSession.value?.canEditTeam == true },
+            loadOwnedCards = { db.ownedPokemonDao().getAllOwnedPokemonWithSpecies().first().map { it.owned.toDomain() } },
+            saveToCollection = ::saveFieldTeamCollection,
             save = ::saveCurrentBattleTeam,
         )
     }
@@ -1498,7 +1505,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 val card = try {
                     member.ownedPokemonId?.let { id ->
                         db.ownedPokemonDao().getOwnedPokemonById(id).first()?.toDomain()
-                    }?.takeIf { it.speciesId == member.speciesId }
+                    }?.takeIf { it.speciesId == member.speciesId &&
+                        (it.speciesName == null || it.speciesName.equals(member.speciesName, true)) }
                 } catch (error: Exception) {
                     if (error is kotlinx.coroutines.CancellationException) throw error
                     // A missing card snapshot must not discard the configured
@@ -1533,6 +1541,29 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         currentBattleTeamStore.replace(team)
         if (session?.canEditTeam == true) submitCurrentTeamConfiguration(session.match)
     }
+
+    /** Explicit pre-flight review links shared card IDs before the next match snapshot. */
+    private suspend fun saveFieldTeamCollection(draft: com.example.overdex.battle.team.FieldTeamDraft): CurrentBattleTeam =
+        withContext(Dispatchers.IO) {
+            check(_droidballSession.value?.canEditTeam == true) { "Save this team before starting the battle." }
+            val plan = db.withTransaction {
+                val cards = db.ownedPokemonDao().getAllOwnedPokemonWithSpecies().first().map { it.owned.toDomain() }
+                val proposed = com.example.overdex.battle.team.FieldTeamCollectionPlan.from(draft, cards, System.currentTimeMillis())
+                val named = currentBattleTeamStore.savedTeams.value.firstOrNull { it.name.equals(proposed.name, true) }
+                require(named == null || named.team.members.sortedBy { it.slot }.map { it.ownedPokemonId } ==
+                    proposed.team.members.map { it.ownedPokemonId }) { "That team name is already in use. Choose another name." }
+                proposed.newCards.forEach { db.ownedPokemonDao().addScannedPokemon(it.toEntity()) }
+                proposed.updatedCards.forEach { db.ownedPokemonDao().updateOwnedPokemon(it.toEntity()) }
+                proposed
+            }
+            val existing = currentBattleTeamStore.savedTeams.value.firstOrNull { it.name.equals(plan.name, true) }
+            try {
+                currentBattleTeamStore.saveNamed(plan.name, plan.team, existing?.id)
+            } catch (error: Exception) {
+                throw IllegalStateException("Cards are saved, but the team could not be saved. Try again.", error)
+            }
+            plan.team
+        }
 
     fun clearCurrentBattleTeam() {
         currentBattleTeamStore.clear()

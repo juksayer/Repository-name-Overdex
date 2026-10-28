@@ -7,10 +7,12 @@ package com.example.overdex.model
  * understanding of a specimen.
  *
  * @param speciesId The canonical Pokédex ID of the recognized species.
+ * @param speciesName The canonical name supplied by species resolution, not unverified OCR text.
  */
-fun RecognizedPokemon.toOwnedPokemon(speciesId: Int): OwnedPokemon {
+fun RecognizedPokemon.toOwnedPokemon(speciesId: Int, speciesName: String? = null): OwnedPokemon {
     return OwnedPokemon(
         speciesId = speciesId,
+        speciesName = speciesName?.trim()?.takeIf { it.isNotEmpty() },
         cp = cp,
         isShadow = shadowBonus != null,
         displayName = null,

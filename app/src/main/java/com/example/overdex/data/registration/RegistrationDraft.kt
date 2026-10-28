@@ -114,6 +114,7 @@ data class RegistrationDraft(
         if (!resolution.ready) return null
         return OwnedPokemon(
             id = cardId, speciesId = requireNotNull(resolution.species).id,
+            speciesName = resolution.species.name,
             displayName = resolution.title?.takeUnless { textKey(it) == textKey(resolution.species.name) },
             cp = resolution.cp, fastMove = resolution.fastMove,
             chargedMove1 = resolution.chargedMoves.getOrNull(0), chargedMove2 = resolution.chargedMoves.getOrNull(1),

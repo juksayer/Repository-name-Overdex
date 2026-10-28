@@ -15,9 +15,10 @@ data class OwnedPokemonBattleSnapshot(
     val isPurified: Boolean = false,
     val isShiny: Boolean = false,
     val size: PokemonSize = PokemonSize.UNKNOWN,
+    val speciesName: String? = null,
 ) {
     companion object {
         fun from(card: OwnedPokemon) = OwnedPokemonBattleSnapshot(card.id, card.speciesId,
-            card.displayName, card.cp, card.isShadow, card.isPurified, card.isShiny, card.size)
+            card.displayName, card.cp, card.isShadow, card.isPurified, card.isShiny, card.size, card.speciesName)
     }
 }

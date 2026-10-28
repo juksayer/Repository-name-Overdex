@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.overdex.data.LocalSpriteProvider
 import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.OwnedPokemonBinder
 import com.example.overdex.model.Pokemon
@@ -66,6 +67,27 @@ private data class OwnedBinderCardData(
     val species: Pokemon?,
     val spriteUrl: String,
 )
+
+/** A stored form is explicit identity; a missing form reference must not become its ordinary form. */
+internal suspend fun PokedexViewModel.resolveOwnedPokemonReference(owned: OwnedPokemon): Pokemon? {
+    val canonicalName = owned.speciesName?.trim()?.takeIf { it.isNotEmpty() }
+        ?: return getPokemonById(owned.speciesId)
+    return getPokemonByName(canonicalName)?.takeIf {
+        it.id == owned.speciesId && it.name.equals(canonicalName, ignoreCase = true)
+    }
+}
+
+/** Only draw regional/form artwork when that exact view is bundled. */
+internal fun PokedexViewModel.ownedPokemonSpriteUrl(owned: OwnedPokemon, species: Pokemon?): String {
+    val canonicalName = owned.speciesName?.trim().orEmpty()
+    if (canonicalName.isNotEmpty() && species == null) return ""
+    if ('(' in canonicalName) {
+        return if (!owned.isShiny && owned.speciesId == 26 && canonicalName.equals("Raichu (Alolan)", ignoreCase = true)) {
+            (spriteProvider as? LocalSpriteProvider)?.getReplaySpriteUrl(owned.speciesId, canonicalName, back = false).orEmpty()
+        } else ""
+    }
+    return spriteProvider.getSpriteUrl(owned.speciesId, owned.isShiny, owned.isShadow, owned.isPurified)
+}
 
 /**
  * The trainer's owned cards presented through the same 18-pocket binder used by
@@ -98,29 +120,25 @@ fun MyCollectionScreen(
     val allOwnedPokemon by collectionViewModel.ownedPokemon.collectAsState()
     val searchQuery by collectionViewModel.searchQuery.collectAsState()
 
-    val speciesIds = remember(allOwnedPokemon) {
-        allOwnedPokemon.map { it.speciesId }.distinct()
+    val speciesIdentities = remember(allOwnedPokemon) {
+        allOwnedPokemon.distinctBy { it.speciesId to it.speciesName }
     }
-    var speciesById by remember { mutableStateOf<Map<Int, Pokemon>>(emptyMap()) }
-    LaunchedEffect(speciesIds) {
-        speciesById = speciesIds.mapNotNull { id ->
-            pokedexViewModel.getPokemonById(id)?.let { id to it }
+    var speciesByIdentity by remember { mutableStateOf<Map<Pair<Int, String?>, Pokemon>>(emptyMap()) }
+    LaunchedEffect(speciesIdentities) {
+        speciesByIdentity = speciesIdentities.mapNotNull { owned ->
+            pokedexViewModel.resolveOwnedPokemonReference(owned)?.let { (owned.speciesId to owned.speciesName) to it }
         }.toMap()
     }
 
-    val cards = remember(allOwnedPokemon, speciesById, binder) {
+    val cards = remember(allOwnedPokemon, speciesByIdentity, binder) {
         allOwnedPokemon
-            .filter { binder.contains(it, speciesById[it.speciesId]) }
+            .filter { binder.contains(it, speciesByIdentity[it.speciesId to it.speciesName]) }
             .map { owned ->
+                val species = speciesByIdentity[owned.speciesId to owned.speciesName]
                 OwnedBinderCardData(
                     owned = owned,
-                    species = speciesById[owned.speciesId],
-                    spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
-                        id = owned.speciesId,
-                        isShiny = owned.isShiny,
-                        isShadow = owned.isShadow,
-                        isPurified = owned.isPurified,
-                    ),
+                    species = species,
+                    spriteUrl = pokedexViewModel.ownedPokemonSpriteUrl(owned, species),
                 )
             }
     }
@@ -535,7 +553,7 @@ private fun OwnedBinderSelectionDetail(
 
     val owned = card.owned
     val species = card.species
-    val displayName = owned.displayName?.takeIf { it.isNotBlank() } ?: species?.name ?: "UNKNOWN"
+    val displayName = owned.displayName?.takeIf { it.isNotBlank() } ?: species?.name ?: owned.speciesName ?: "UNKNOWN"
     val status = buildList {
         if (owned.isFavorite) add("FAVORITE")
         if (owned.isShiny) add("SHINY")

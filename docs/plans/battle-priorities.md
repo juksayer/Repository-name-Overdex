@@ -47,6 +47,13 @@ are starting points; a task is not complete merely because a class or test exist
 Next substantial slice: species/form preservation and the paired-match Fast Move
 audit (orders 1–2). Finish and measure one bounded change before adding readers.
 
+October 28 pre-flight addition at the user's request: [Team Select collection review](../verification/2026-10-28-field-team-collection.md)
+offers reviewed card imports, existing-card links and named team saving before
+battle. Owned storage now preserves canonical form names. Historical match
+association, prompts for discoveries made only during battle, and the broader
+assisted-registration redesign remain separate work. [Larger pre-match controls](../verification/2026-10-28-preflight-controls.md)
+also separate Open/Start from Stop with usable touch targets.
+
 October 28 progress: [loss/flash phase pairing](../verification/2026-10-28-fast-move-phase-pairing.md)
 now uses measured post-loss HP continuity to associate delayed phases without
 requiring an already-resolved move name. The recorded Charm opening reprocesses

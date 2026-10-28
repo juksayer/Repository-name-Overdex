@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface OwnedPokemonDao {
     @Query("""
-        SELECT owned.*, pokemon.name as speciesName 
+        SELECT owned.*, pokemon.name as referenceSpeciesName
         FROM owned_pokemon as owned
         LEFT JOIN pokemon ON owned.speciesId = pokemon.id
         ORDER BY owned.createdAt DESC

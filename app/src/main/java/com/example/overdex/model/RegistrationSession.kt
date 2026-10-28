@@ -44,10 +44,12 @@ data class RegistrationSession(
      *
      * @param speciesId The canonical species identifier.
      * @param resolver The policy used to resolve competing observations.
+     * @param speciesName An explicitly resolved canonical form name; legacy ID-only calls leave it unknown.
      */
     fun buildSpecimen(
         speciesId: Int,
-        resolver: ObservationResolver = DefaultObservationResolver()
+        resolver: ObservationResolver = DefaultObservationResolver(),
+        speciesName: String? = null,
     ): OwnedPokemon {
         // Resolve best understanding per field
         val grouped = observations.groupBy { it::class.java.simpleName }
@@ -65,6 +67,7 @@ data class RegistrationSession(
 
         return OwnedPokemon(
             speciesId = speciesId,
+            speciesName = speciesName?.trim()?.takeIf { it.isNotEmpty() },
             cp = cpObs?.cp,
             isShadow = shadowObs?.isShadow ?: false,
             fastMove = fastMoveObs?.moveName,

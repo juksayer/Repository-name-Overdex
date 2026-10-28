@@ -35,4 +35,6 @@ data class OwnedPokemon(
     /** Named memberships belong to this specimen; one card can serve several teams. */
     val teams: List<String> = emptyList(),
     val size: PokemonSize = PokemonSize.UNKNOWN,
+    /** Canonical species/form selected for this card; null means an older, unconfirmed form. */
+    val speciesName: String? = null,
 )

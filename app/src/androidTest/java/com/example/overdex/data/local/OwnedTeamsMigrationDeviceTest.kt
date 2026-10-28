@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -40,7 +41,8 @@ class OwnedTeamsMigrationDeviceTest {
             }
 
             fun open() = Room.databaseBuilder(context, PokedexDatabase::class.java, name)
-                .addMigrations(PokedexDatabase.MIGRATION_9_10, PokedexDatabase.MIGRATION_10_11).build()
+                .addMigrations(PokedexDatabase.MIGRATION_9_10, PokedexDatabase.MIGRATION_10_11,
+                    PokedexDatabase.MIGRATION_11_12).build()
             val migrated = open().also { database = it }
             val original = requireNotNull(migrated.ownedPokemonDao().getOwnedPokemonById("my-charizard").first()).toDomain()
             assertEquals("Ember:FIRE:", original.displayName)
@@ -50,8 +52,13 @@ class OwnedTeamsMigrationDeviceTest {
             assertEquals("Dragon Claw", original.chargedMove2)
             assertEquals(emptyList<String>(), original.teams)
             assertEquals(com.example.overdex.model.PokemonSize.UNKNOWN, original.size)
+            assertNull(original.speciesName)
+            assertEquals("my-charizard", original.id)
+            assertEquals(100L, original.createdAt)
+            assertEquals(200L, original.updatedAt)
             assertEquals(1, migrated.pokemonDao().getCount())
-            val updated = original.copy(teams = listOf("Great League", "Coach practice"), size = com.example.overdex.model.PokemonSize.XL)
+            val updated = original.copy(teams = listOf("Great League", "Coach practice"),
+                size = com.example.overdex.model.PokemonSize.XL, speciesName = "Charizard")
             migrated.ownedPokemonDao().updateOwnedPokemon(updated.toEntity())
             migrated.close()
 

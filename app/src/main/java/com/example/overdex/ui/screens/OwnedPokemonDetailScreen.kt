@@ -139,9 +139,8 @@ fun OwnedPokemonDetailScreen(
             chargedMove1 = owned.chargedMove1 ?: ""
             chargedMove2 = owned.chargedMove2 ?: ""
             
-            if (species == null) {
-                species = pokedexViewModel.getPokemonById(owned.speciesId)
-            }
+            species = null
+            species = pokedexViewModel.resolveOwnedPokemonReference(owned)
         }
     }
 
@@ -193,12 +192,7 @@ fun OwnedPokemonDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Sprite resolution through unified pipeline
-                val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
-                    id = owned.speciesId,
-                    isShiny = owned.isShiny,
-                    isShadow = owned.isShadow,
-                    isPurified = owned.isPurified
-                )
+                val spriteUrl = pokedexViewModel.ownedPokemonSpriteUrl(owned, species)
                 AsyncImage(
                     model = spriteUrl,
                     contentDescription = species?.name,
@@ -211,7 +205,7 @@ fun OwnedPokemonDetailScreen(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
-                    val speciesName = species?.name ?: "UNKNOWN"
+                    val speciesName = species?.name ?: owned.speciesName ?: "UNKNOWN"
                     Text(
                         text = speciesName.uppercase(),
                         fontSize = 24.sp,

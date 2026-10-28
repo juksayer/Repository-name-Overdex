@@ -42,4 +42,41 @@ class OwnedBattleTeamTest {
         val named = SavedBattleTeam("one", "Great", decoded)
         assertEquals(named, Json.decodeFromString<SavedBattleTeam>(Json.encodeToString(named)))
     }
+
+    @Test fun `explicit regional form resolves its own reference and retains specimen id`() {
+        val ordinary = reference.copy(id = 26, name = "Raichu")
+        val alolan = ordinary.copy(name = "Raichu (Alolan)", types = listOf(PokemonType.ELECTRIC, PokemonType.PSYCHIC),
+            chargedMoves = listOf(Move("Psychic", PokemonType.PSYCHIC, 75, 55, false)))
+        val regionalCard = cards.first().copy(speciesId = 26, speciesName = alolan.name, chargedMove1 = "Psychic")
+        val choice = OwnedBattleTeamChoice("Regional", listOf(regionalCard) + cards.drop(1))
+        val configured = requireNotNull(choice.resolve(mapOf(25 to reference, 26 to ordinary), mapOf(alolan.name to alolan)))
+        assertEquals(alolan.name, configured.members.first().speciesName)
+        assertEquals(regionalCard.id, configured.members.first().ownedPokemonId)
+        assertEquals("Psychic", configured.members.first().chargedMoveNames.single())
+    }
+
+    @Test fun `missing explicit form never falls back to ordinary moves even when they match`() {
+        val regionalCard = cards.first().copy(speciesId = 26, speciesName = "Raichu (Alolan)")
+        val ordinary = reference.copy(id = 26, name = "Raichu")
+        val choice = OwnedBattleTeamChoice("Missing form", listOf(regionalCard) + cards.drop(1))
+        assertNull(choice.resolve(mapOf(25 to reference, 26 to ordinary)))
+        assertNull(choice.resolve(mapOf(25 to reference, 26 to ordinary), mapOf("Raichu (Alolan)" to ordinary)))
+        assertNull(choice.resolve(mapOf(25 to reference, 26 to ordinary),
+            mapOf("Raichu (Alolan)" to ordinary.copy(id = 999, name = "Raichu (Alolan)"))))
+    }
+
+    @Test fun `explicit ordinary species can reuse an exact named base reference`() {
+        val choice = OwnedBattleTeamChoice("Ordinary", cards.map { it.copy(speciesName = reference.name) })
+        assertNotNull(choice.resolve(mapOf(25 to reference)))
+    }
+
+    @Test fun `snapshots keep canonical form and older snapshots decode as unconfirmed`() {
+        val card = cards.first().copy(speciesId = 26, speciesName = "Raichu (Alolan)")
+        val snapshot = OwnedPokemonBattleSnapshot.from(card)
+        assertEquals(card.id, snapshot.ownedPokemonId)
+        assertEquals("Raichu (Alolan)", snapshot.speciesName)
+        assertEquals(snapshot, Json.decodeFromString<OwnedPokemonBattleSnapshot>(Json.encodeToString(snapshot)))
+        val older = Json.decodeFromString<OwnedPokemonBattleSnapshot>("""{"ownedPokemonId":"old-raichu","speciesId":26}""")
+        assertNull(older.speciesName)
+    }
 }

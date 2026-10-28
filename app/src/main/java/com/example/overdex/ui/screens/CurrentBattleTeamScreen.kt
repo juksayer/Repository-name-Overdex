@@ -94,7 +94,8 @@ fun CurrentBattleTeamScreen(
             speciesName = species.name,
             fastMoveName = fastMove,
             chargedMoveNames = selectedChargedMoves.toList(),
-            ownedPokemonId = savedTeam.members.firstOrNull { it.slot == slot && it.speciesId == species.id }?.ownedPokemonId,
+            ownedPokemonId = savedTeam.members.firstOrNull { it.slot == slot && it.speciesId == species.id &&
+                it.speciesName.equals(species.name, ignoreCase = true) }?.ownedPokemonId,
         )
         viewModel.saveCurrentBattleTeam(
             CurrentBattleTeam((savedTeam.members.filterNot { it.slot == slot } + member).sortedBy { it.slot })

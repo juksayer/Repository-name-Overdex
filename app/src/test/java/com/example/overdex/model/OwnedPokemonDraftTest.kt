@@ -20,6 +20,7 @@ class OwnedPokemonDraftTest {
         assertEquals(listOf("Great", "Fire"), restored.toOwnedPokemon().teams)
         assertEquals("Flame:FIRE:", restored.toOwnedPokemon().displayName)
         assertEquals(PokemonSize.XL, restored.toOwnedPokemon().size)
+        assertEquals("Charizard", restored.toOwnedPokemon().speciesName)
         assertNotEquals(draft.id, OwnedPokemonDraft().selectSpecies(species(6, "Charizard")).id)
     }
 
@@ -45,6 +46,24 @@ class OwnedPokemonDraftTest {
         assertNull(corrected.fastMove)
         assertNull(corrected.chargedMove1)
         assertNull(corrected.chargedMove2)
+    }
+
+    @Test fun changingRegionalFormWithTheSameDexIdClearsMovesAndPreservesTheCard() {
+        val draft = OwnedPokemonDraft().selectSpecies(species(26, "Raichu")).copy(
+            fastMove = "Charm", chargedMove1 = "Brick Break", chargedMove2 = "Thunder",
+            nickname = "Partner", cp = "1498", teams = "Great, Training", createdAt = 100,
+        )
+        val corrected = draft.selectSpecies(species(26, "Raichu (Alolan)"))
+        assertEquals(draft.id, corrected.id)
+        assertEquals(draft.createdAt, corrected.createdAt)
+        assertEquals(draft.nickname, corrected.nickname)
+        assertEquals(draft.cp, corrected.cp)
+        assertEquals(draft.teams, corrected.teams)
+        assertEquals("Raichu (Alolan)", corrected.toOwnedPokemon().speciesName)
+        assertNull(corrected.fastMove)
+        assertNull(corrected.chargedMove1)
+        assertNull(corrected.chargedMove2)
+        assertEquals(corrected, corrected.selectSpecies(species(26, "Raichu (Alolan)")))
     }
 
     @Test fun finishingAnInlineBranchReturnsFocusToItAndKeepsItsParentOpen() {

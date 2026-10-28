@@ -177,6 +177,7 @@ fun AddOwnedPokemonWizard(
                             collectionViewModel.addOwnedPokemon(
                                 OwnedPokemon(
                                     speciesId = species.id,
+                                    speciesName = species.name,
                                     cp = cpValue.toIntOrNull(),
                                     isShadow = isShadow,
                                     isPurified = isPurified,
