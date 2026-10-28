@@ -525,6 +525,9 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val travelHalfWidth = (maxWidth / 4).coerceAtLeast(0.dp)
                 val spriteSize = minOf(130.dp * 1.15f, maxWidth / 2 + 18.dp)
+                val playerQte = scene.chargedMoveActions.lastOrNull {
+                    it.side == "PLAYER" && it.phase == ReplayChargePhase.CHARGING
+                }
                 // Build the icon toward the opponent, partly behind its performer,
                 // then draw it above the
                 // scene while in flight. It never becomes a separate spinner.
@@ -549,6 +552,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "PLAYER" },
                         statChanges = scene.statChanges.filter { it.side == "PLAYER" },
                         spriteSize = spriteSize * 1.15f,
+                        qteSpriteScale = ReplayChargePose.qteSpriteScale(playerQte, cursor, player = true),
                         modifier = Modifier.weight(1f),
                     )
                     ReplayCombatantSlot(
@@ -562,6 +566,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
                         statChanges = scene.statChanges.filter { it.side == "OPPONENT" },
                         spriteSize = spriteSize * 0.9f,
+                        qteSpriteScale = ReplayChargePose.qteSpriteScale(playerQte, cursor, player = false),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -746,6 +751,7 @@ internal fun ReplayCombatantSlot(
     spriteSize: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
     statChanges: List<com.example.overdex.battle.replay.ReplayStatChangeAction> = emptyList(),
+    qteSpriteScale: Float = 1f,
 ) {
     val faintPose = combatant?.let {
         ReplayFaintPose.at(it.knockoutPresentationAtNanos ?: it.faintedAtNanos ?: it.defeatedAtNanos,
@@ -774,7 +780,9 @@ internal fun ReplayCombatantSlot(
                         // The bundled Turtonator front/rear art faces opposite
                         // to the other battle sprites. Face the other combatant
                         // before applying the KO rotation; keep the PNG intact.
-                        scaleX = if (speciesId == 776) -1f else 1f
+                        val focusScale = if (down) 1f else qteSpriteScale
+                        scaleX = focusScale * if (speciesId == 776) -1f else 1f
+                        scaleY = focusScale
                         // Keep fading on the transformed layer so a separate
                         // opacity layer cannot clip the falling sprite.
                         alpha = faintPose?.opacity ?: if (down) 0.6f else 1f

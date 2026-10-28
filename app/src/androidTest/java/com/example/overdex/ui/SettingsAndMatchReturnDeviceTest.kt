@@ -13,6 +13,8 @@ import com.example.overdex.battle.reality.InMemoryRealityTimeline
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.ODXFi.ODXFiShell
+import com.example.overdex.ui.ODXFi.DroidballSessionControl
+import com.example.overdex.ui.ODXFi.LocalDroidballSessionControl
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.navigation.MatchSummaryHandoff
 import com.example.overdex.ui.navigation.MatchSummaryReturnEffect
@@ -23,6 +25,63 @@ import org.junit.Test
 
 class SettingsAndMatchReturnDeviceTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun moduleWithoutStartOverrideStopsAndReturnsToStartWhenServiceFinishes() {
+        val deployment = mutableStateOf(InstrumentDeploymentState.OBSERVING)
+        var stopRequests = 0
+        var startRequests = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalDroidballSessionControl provides DroidballSessionControl(deployment.value) {
+                if (deployment.value == InstrumentDeploymentState.IDLE) startRequests++
+                else {
+                    stopRequests++
+                    deployment.value = InstrumentDeploymentState.RETURNING
+                }
+            }) {
+                // Match Summary and other modules use the shared shell without
+                // overriding Start. That path previously displayed an inert STOP.
+                ODXFiShell(showBattleOverlay = false) {}
+            }
+        }
+        compose.onNodeWithText("STOP").performClick()
+        compose.onNodeWithText("STOPPING").assertIsDisplayed().assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(1, stopRequests); assertEquals(0, startRequests) }
+        // A Stop request is not completion; only the service transition enables Start.
+        compose.runOnIdle { deployment.value = InstrumentDeploymentState.IDLE }
+        compose.onNodeWithText("START").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, startRequests); assertEquals(1, stopRequests) }
+    }
+
+    @Test fun explicitScreenStartActionRemainsOwnedByScreenDuringSessionTeardown() {
+        var sessionRequests = 0
+        var saves = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalDroidballSessionControl provides DroidballSessionControl(
+                InstrumentDeploymentState.RETURNING, { sessionRequests++ })) {
+                ODXFiShell(showBattleOverlay = false, startLabel = "SAVE AS", onStart = { saves++ }) {}
+            }
+        }
+        compose.onNodeWithText("SAVE AS").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(1, saves); assertEquals(0, sessionRequests) }
+    }
+
+    @Test fun contextualStartWithoutLabelDoesNotClaimToStopActiveSession() {
+        val deployment = mutableStateOf(InstrumentDeploymentState.OBSERVING)
+        var sessionRequests = 0
+        var contextualActions = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalDroidballSessionControl provides DroidballSessionControl(
+                deployment.value, { sessionRequests++ })) {
+                ODXFiShell(showBattleOverlay = false, onStart = { contextualActions++ }) {}
+            }
+        }
+        compose.onNodeWithText("START").assertIsEnabled().performClick()
+        compose.onNodeWithText("STOP").assertDoesNotExist()
+        compose.runOnIdle { deployment.value = InstrumentDeploymentState.RETURNING }
+        compose.onNodeWithText("START").assertIsEnabled().performClick()
+        compose.onNodeWithText("STOPPING").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(2, contextualActions); assertEquals(0, sessionRequests) }
+    }
 
     @Test fun stopAndOrdinaryButtonSequencesNeverOpenHiddenSettings() {
         var stops = 0

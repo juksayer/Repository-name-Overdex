@@ -1,5 +1,16 @@
 # Exit Icon calibration — October 28, 2026
 
+## Follow-up
+
+The user subsequently requested CRT-only access. The live/HUD Exit Icon menu,
+guide, and its device-test source were removed. **Match Calibration → Exit Icon**,
+legacy/named-profile persistence, and all other calibration boxes remain.
+The original implementation and verification record below describes the earlier
+build; see [the follow-up verification](2026-10-28-stop-and-qte-focus.md) for the
+current changes.
+
+## Original implementation
+
 Added a dedicated Exit Icon region to Match Calibration and a live guide.
 Screenshot selection remains unchanged while the user decides its new workflow.
 

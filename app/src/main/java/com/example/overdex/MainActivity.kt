@@ -507,7 +507,9 @@ fun PokedexApp(
     val currentRoute = currentBackStackEntry?.destination?.route
 
     CompositionLocalProvider(
-        com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides currentRoute
+        com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides currentRoute,
+        com.example.overdex.ui.ODXFi.LocalDroidballSessionControl provides
+            com.example.overdex.ui.ODXFi.DroidballSessionControl(deploymentState, viewModel::toggleObservation),
     ) {
         NavHost(
             navController = navController,

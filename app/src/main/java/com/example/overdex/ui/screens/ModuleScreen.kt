@@ -26,7 +26,7 @@ fun ModuleScreen(
     viewModel: com.example.overdex.ui.PokedexViewModel? = null,
     filterSettings: FilterSettings = FilterSettings(),
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
-    onStart: () -> Unit = {},
+    onStart: (() -> Unit)? = null,
     onSelect: () -> Unit = {}
 ) {
     ODXFiShell(

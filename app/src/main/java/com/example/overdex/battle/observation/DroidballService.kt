@@ -270,7 +270,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var registrationMode = false
     private var registrationBoxes: com.example.overdex.ui.components.RegistrationAlignmentWindows? = null
     private var qteCalibrationWindow: com.example.overdex.ui.components.LiveQteCalibrationWindow? = null
-    private var exitCalibrationWindow: com.example.overdex.ui.components.LiveQteCalibrationWindow? = null
     private val registrationPanelExpanded = androidx.compose.runtime.mutableStateOf(false)
     private val registrationController by lazy {
         androidx.lifecycle.ViewModelProvider(
@@ -893,7 +892,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     },
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
-                    onExitIconCalibration = ::openExitIconCalibration,
                     )
                 }
             }
@@ -930,10 +928,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         serviceScope.launch(Dispatchers.Main) {
-            instrumentVisible.collect { visible ->
-                qteCalibrationWindow?.setVisible(!visible)
-                exitCalibrationWindow?.setVisible(!visible)
-            }
+            instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
         }
         if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
             DroidballOverlayPresentation.opponentBadgeContent.collect(retainedOpponentBadge::contentChanged)
@@ -971,7 +966,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun openQteCalibration() {
-        if (registrationMode || qteCalibrationWindow != null || exitCalibrationWindow != null) return
+        if (registrationMode || qteCalibrationWindow != null) return
         val bounds = displayBounds()
         val calibration = com.example.overdex.CalibrationManager(this)
         val window = com.example.overdex.ui.components.LiveQteCalibrationWindow(
@@ -994,32 +989,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         catch (error: Exception) {
             window.close()
             Log.e("QTE_CALIBRATION", "Unable to open calibration guide", error)
-        }
-    }
-
-    /** Calibration only: no Exit visibility testimony or sampling is implied. */
-    private fun openExitIconCalibration() {
-        if (registrationMode || exitCalibrationWindow != null || qteCalibrationWindow != null) return
-        val bounds = displayBounds()
-        val calibration = com.example.overdex.CalibrationManager(this)
-        val window = com.example.overdex.ui.components.LiveQteCalibrationWindow(
-            this, windowManager, this, this, this, serviceScope,
-            bounds.width(), bounds.height(), calibration.load().exitIconRegion,
-            saveRegion = { region ->
-                // Another calibration surface may have saved since this guide
-                // opened. A live adjustment owns only its own box.
-                calibration.save(calibration.load().copy(exitIconRegion = region))
-            },
-            onClosed = { exitCalibrationWindow = null },
-            calibrationTitle = "Exit Icon",
-            nudgeDescriptionPrefix = "Exit Icon",
-            samplingEnabled = false,
-        )
-        exitCalibrationWindow = window
-        try { window.show(); window.setVisible(!instrumentVisible.value) }
-        catch (error: Exception) {
-            window.close()
-            Log.e("EXIT_ICON_CALIBRATION", "Unable to open calibration guide", error)
         }
     }
 
@@ -1262,8 +1231,6 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         registrationBoxes = null
         qteCalibrationWindow?.close()
         qteCalibrationWindow = null
-        exitCalibrationWindow?.close()
-        exitCalibrationWindow = null
         retainedOpponentBadge.close()
         _signals.tryEmit(DroidballSignal.Stopped)
         

@@ -315,12 +315,12 @@ fun ODXFiShell(
     onFilterSettingsChange: (FilterSettings) -> Unit = {},
     onSelect: () -> Unit = {},
     onSelectLong: () -> Unit = {},
-    onStart: () -> Unit = {},
+    onStart: (() -> Unit)? = null,
     startLabel: String? = null,
     onLaunchProbe: () -> Unit = {},
     onLaunchObservatory: () -> Unit = {},
     onLaunchMatchCalibration: () -> Unit = {},
-    deploymentState: InstrumentDeploymentState = InstrumentDeploymentState.IDLE,
+    deploymentState: InstrumentDeploymentState? = null,
     frameCount: Long = 0,
     lcdLine1: String? = null,
     lcdLine2: String? = null,
@@ -343,6 +343,11 @@ fun ODXFiShell(
 ) {
     val activeMatch by viewModel?.activeMatch?.collectAsState() ?: remember { mutableStateOf(null) }
     val battleMemory = activeMatch?.battleMemory
+    val sessionControl = LocalDroidballSessionControl.current
+    val observedDeploymentState by viewModel?.deploymentState?.collectAsState()
+        ?: remember { mutableStateOf(InstrumentDeploymentState.IDLE) }
+    val currentDeploymentState = deploymentState ?: sessionControl?.deploymentState ?: observedDeploymentState
+    val startAction: () -> Unit = onStart ?: sessionControl?.toggle ?: { viewModel?.toggleObservation() }
 
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
 
@@ -630,7 +635,7 @@ fun ODXFiShell(
             // Binder mode rotates only the pixels shown inside its fixed frame.
             InstrumentLCD(
                 presentationState = presentationState,
-                deploymentState = deploymentState,
+                deploymentState = currentDeploymentState,
                 frameCount = frameCount,
                 lcdLine1 = lcdLine1,
                 lcdLine2 = lcdLine2,
@@ -682,15 +687,20 @@ fun ODXFiShell(
                     onLongClick = onSelectLong
                 )
                 InstrumentButton(
-                    label = startLabel ?: when (deploymentState) {
+                    // An explicit contextual callback without an explicit
+                    // session state retains its own START key. It must not
+                    // claim to Stop Droidball while editing a card or message.
+                    label = startLabel ?: if (onStart != null && deploymentState == null) "START" else when (currentDeploymentState) {
                         InstrumentDeploymentState.OBSERVING, 
                         InstrumentDeploymentState.DEPLOYING,
                         InstrumentDeploymentState.READY -> "STOP"
+                        InstrumentDeploymentState.RETURNING -> "STOPPING"
                         else -> "START"
                     }, 
-                    // START/STOP belongs to this screen. Settings are reached
-                    // explicitly through Signal Observatory, never by session state.
-                    onClick = onStart
+                    // Modules inherit the live session control unless they own
+                    // an explicit Start action, such as replay or calibration.
+                    onClick = startAction,
+                    enabled = onStart != null || currentDeploymentState != InstrumentDeploymentState.RETURNING,
                 )
             }
         }

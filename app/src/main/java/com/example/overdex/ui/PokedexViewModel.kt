@@ -383,6 +383,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun toggleObservation() {
+        if (_deploymentState.value == InstrumentDeploymentState.RETURNING) return
         // The foreground service is the authority. A recreated screen must
         // always be able to stop an already-running capture, even if its
         // presentation state has not caught up yet.
@@ -1388,15 +1389,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     fun stopObservation() = stopObservation(automaticReason = null)
 
     private fun stopObservation(automaticReason: String?) {
+        if (_deploymentState.value == InstrumentDeploymentState.RETURNING) return
+        _deploymentState.value = InstrumentDeploymentState.RETURNING
+        // The per-match control collector must not handle queued frame/next-match
+        // signals after Stop. Service runtime below remains the teardown authority;
+        // archive work has its own scope and is deliberately left running.
+        droidballSignalJob?.cancel()
+        droidballSignalJob = null
         if (registrationRequested) {
             guidedRegistration.stop()
             registrationRequested = false
             DroidballService.stop(getApplication())
             _observationSessionState.value = ObservationSessionState.IDLE
-            _deploymentState.value = InstrumentDeploymentState.IDLE
+            if (DroidballService.runtimeState.value == DroidballRuntimeState.STOPPED) {
+                _deploymentState.value = InstrumentDeploymentState.IDLE
+            }
             return
         }
-        _deploymentState.value = InstrumentDeploymentState.RETURNING
         nextMatchVsWatcher?.stop()
         nextMatchVsWatcher = null
         observationDispatcher.stopAll()
@@ -1418,7 +1427,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         DroidballService.stop(getApplication())
         stopDroidBallService()
         DroidballOverlayPresentation.reset()
-        _deploymentState.value = InstrumentDeploymentState.IDLE
+        if (DroidballService.runtimeState.value == DroidballRuntimeState.STOPPED) {
+            _deploymentState.value = InstrumentDeploymentState.IDLE
+        }
     }
 
     override fun onCleared() {
@@ -1567,6 +1578,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                     DroidballRuntimeState.ACTIVE -> {
+                        if (_deploymentState.value == InstrumentDeploymentState.RETURNING) {
+                            // An already-queued runtime update cannot restart
+                            // the recorder while the service is tearing down.
+                            previous = runtime
+                            return@collect
+                        }
                         if (registrationRequested) {
                             _deploymentState.value = InstrumentDeploymentState.OBSERVING
                             _observationSessionState.value = ObservationSessionState.SERVICE_ACTIVE
@@ -1588,7 +1605,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                             registrationRequested = false
                             _observationSessionState.value = ObservationSessionState.IDLE
                         }
-                        if (previous != DroidballRuntimeState.STOPPED &&
+                        if ((previous != DroidballRuntimeState.STOPPED ||
+                                _deploymentState.value == InstrumentDeploymentState.RETURNING) &&
                             _deploymentState.value != InstrumentDeploymentState.REQUESTING_PERMISSIONS
                         ) {
                             _deploymentState.value = InstrumentDeploymentState.IDLE
