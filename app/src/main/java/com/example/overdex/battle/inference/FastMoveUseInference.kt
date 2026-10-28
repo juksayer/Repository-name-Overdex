@@ -311,6 +311,20 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             remaining.remove(a)
             remaining.remove(b)
         }
+        // The Halloween Cup recording contains a loss and onset from the exact
+        // same frame, followed by another onset on the unchanged HP plateau.
+        // Preserve the direct same-frame pair before trying delayed associations.
+        for (first in remaining.toList()) {
+            if (first !in remaining) continue
+            val kind = first.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }.singleOrNull()?.kind
+                ?: continue
+            val exact = remaining.firstOrNull { other ->
+                val otherKind = other.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }.singleOrNull()?.kind
+                other !== first && sameContext(first, other) && first.anchorNanos == other.anchorNanos &&
+                    otherKind != null && otherKind != kind
+            } ?: continue
+            combine(first, exact, emptyList())
+        }
         // Positive plateau evidence takes precedence over symmetric proximity.
         for (loss in remaining.toList()) {
             if (loss !in remaining) continue
@@ -364,7 +378,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         val attackingSide = damage.damagedSide.opposite()
         if (impactHistory.any { other -> other.article.id != loss.article.id && other.article.id != pulse.article.id &&
                 evidenceFrom(other.article)?.first == attackingSide &&
-                (other.article.monotonicTimeNanos ?: 0L).let { it > from && it <= until } }) return null
+                (other.article.monotonicTimeNanos ?: 0L).let { it >= from && it <= until } }) return null
         val samples = hpHistory[damage.damagedSide].orEmpty()
             .filter { (it.monotonicTimeNanos ?: 0L) in from..until }.sortedBy { it.monotonicTimeNanos }
         if (samples.map { it.monotonicTimeNanos }.distinct().size < 3 ||

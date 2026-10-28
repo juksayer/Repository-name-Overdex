@@ -23,6 +23,20 @@ import org.junit.Test
 
 /** Synthetic controls for delayed phases; recorded Charm fixtures live separately. */
 class FastMovePlateauPairingTest {
+    @Test fun `same frame onset takes precedence over a later plateau onset`() {
+        // Halloween Cup Rapidash: same-frame loss/onset at +65.395704s,
+        // then another onset at +66.301s on the same measured HP plateau.
+        // The later onset remains independent evidence; it must not steal the
+        // directly matched loss or manufacture two uses at the loss timestamp.
+        val uses = evaluate(listOf(loss("loss", 1_000), pulse("same-frame", 1_000)) +
+            plateau() + pulse("later-flash", 1_804))
+        assertEquals(2, uses.size)
+        val first = uses.single { it.observedArticle.monotonicTimeNanos == 1_000_000_000L }
+        assertHasTogether(first, "loss", "same-frame")
+        assertNeverJoined(uses, "loss", "later-flash")
+        assertEquals(1_804_000_000L, uses.last().observedArticle.monotonicTimeNanos)
+    }
+
     @Test fun `an unresolved move joins a late onset only when HP is observed at its post loss plateau`() {
         val loss = loss("loss", 1_000)
         val flash = pulse("flash", 1_804)
