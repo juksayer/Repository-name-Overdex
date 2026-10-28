@@ -1,0 +1,138 @@
+{
+  "purpose": "Timing-only regression excerpt, not a complete or portable match archive. No source Article fields or array order were changed. Media is excluded and mediaIncluded is false in this derived fixture header.",
+  "sourceArchive": "moondrop.odxmatch.zip",
+  "sourceArchiveSha256": "de979e83fe819e8a6f7ff22bff68e3c10f8f690905cf96952acc258d9a549975",
+  "sourceTimelineSha256": "a7b16b0f35312a4234d834d94ed955d52466e0b1e8aba0e50bdc8d9c3f236b20",
+  "sourceMatchId": "5df79cf4-211b-46df-af49-1a2c75e9996e",
+  "sourceArticleCount": 4433,
+  "fixtureArticleCount": 273,
+  "fixtureSha256": "2ec4e20405dc79253aec2b6b3011b90f979ff4d87eb40289080a60022a938a03",
+  "selection": {
+    "maximumMonotonicTimeNanosExclusive": 131937573680320,
+    "payloadKinds": [
+      "active_hp_bar_border_cadence_measured",
+      "active_hp_bar_damage_tick_measured",
+      "active_hp_bar_measured",
+      "active_hp_bar_motion_cadence_measured",
+      "active_pokemon_species_witnessed",
+      "fast_move_identified",
+      "fast_move_recipient_visual_artifact_measured",
+      "fast_move_recipient_visual_cadence_measured",
+      "hp_bar_border_pulse",
+      "match_record_started",
+      "match_started",
+      "player_charge_move_energy_fill_increased"
+    ],
+    "preservedOrder": "Original serialized Article order, not sorted by source capture time or receipt time.",
+    "omitted": "Unrelated OCR, audio rankings, crop/media references, resource measurements and already-derived uses/energy are excluded. Retained HP readings advance source and receipt watermarks; this reduced harness does not establish original live publication latency."
+  },
+  "recordOriginMonotonicTimeNanos": 131850073680320,
+  "visualLabels": {
+    "path": "docs/verification/charm/2026-10-27-opening-labels.json",
+    "sha256": "d11c9d6a20622672fe36035c9bd8077330463107805d7b8c16ef00af367bc43e",
+    "videoSha256": "a4cb0134c0c62d1b9e833e4385ca82a20b068b3a15185c4cb7cb3a33b7a0858c",
+    "completedVisualEpisodesPerGroup": [
+      7,
+      7
+    ],
+    "scope": "Counts are independently reviewed completed visual episodes, not server attack truth. Moondrop is the defender perspective. No Pixel-to-video offset was applied to the Moondrop monotonic clock.",
+    "reportedAnimationStutter": "Interval remains unlocalized; it does not certify or disprove additional server attacks."
+  },
+  "expectedOrderPreservingImpactPairs": [
+    {
+      "group": 1,
+      "lossArticleId": "cf6b5c6e-8972-4de0-b74a-5d62d48a1575",
+      "pulseArticleId": "5a72e649-e282-40ec-bf7c-278e5a5c4d84",
+      "phaseOffsetNanos": 803854461
+    },
+    {
+      "group": 1,
+      "lossArticleId": "9579ef74-e884-4aeb-bab6-24ba5828c8d0",
+      "pulseArticleId": "cf34b7b5-70e6-4b24-a93b-5518c45aef0d",
+      "phaseOffsetNanos": 422143769
+    },
+    {
+      "group": 1,
+      "lossArticleId": "1f152755-6b8a-4395-8b89-69c36b966e91",
+      "pulseArticleId": "41e83035-0f2b-4e98-ab13-5fba581dfde7",
+      "phaseOffsetNanos": 439450769
+    },
+    {
+      "group": 1,
+      "lossArticleId": "6b120a4f-de96-4a81-8b2f-3659eb23ece9",
+      "pulseArticleId": "3654ccd9-dbe3-4b10-b31c-77f321622886",
+      "phaseOffsetNanos": 527888923
+    },
+    {
+      "group": 1,
+      "lossArticleId": "fb51911e-2bb4-4ee4-9f19-dbddd47de959",
+      "pulseArticleId": "4c1fdc9d-7f32-4b42-81cb-b3d8ebbd9780",
+      "phaseOffsetNanos": 659327154
+    },
+    {
+      "group": 1,
+      "lossArticleId": "fed25945-ea11-4864-8933-d8e95350c30a",
+      "pulseArticleId": "b3ab084a-3699-4027-86b2-dfaf9d2458df",
+      "phaseOffsetNanos": 435633923
+    },
+    {
+      "group": 1,
+      "lossArticleId": "0d80bb29-b032-4a85-87c8-5aecb25d954d",
+      "pulseArticleId": "fdff3b38-a6c1-4954-ac6f-032375e6c54e",
+      "phaseOffsetNanos": 745022693
+    },
+    {
+      "group": 2,
+      "lossArticleId": "179a991f-014c-4225-8dcb-7b9859ee4a56",
+      "pulseArticleId": "33a8c05f-87ce-4bca-84df-1ca0d94a7a94",
+      "phaseOffsetNanos": 455595384
+    },
+    {
+      "group": 2,
+      "lossArticleId": "6fbf4300-a3e9-4603-a7ba-e3cf306de366",
+      "pulseArticleId": "07edb060-b956-4279-aca3-9c10f487f837",
+      "phaseOffsetNanos": 387785846
+    },
+    {
+      "group": 2,
+      "lossArticleId": "488d4b4d-bd13-4bdf-aa6c-654c4a6cb282",
+      "pulseArticleId": "d79ca39a-6cbf-464b-a966-cac6dce28446",
+      "phaseOffsetNanos": 700818462
+    },
+    {
+      "group": 2,
+      "lossArticleId": "92cdc077-06c6-47d9-9ff0-2e0eccab05cc",
+      "pulseArticleId": "d8ab7e2d-0dda-478f-be39-c63962199f96",
+      "phaseOffsetNanos": 603793538
+    },
+    {
+      "group": 2,
+      "lossArticleId": "e3044322-06a0-4069-8721-9d035a93ba51",
+      "pulseArticleId": "fcfae986-25aa-410c-9b13-5328d3af2e41",
+      "phaseOffsetNanos": 521610462
+    },
+    {
+      "group": 2,
+      "lossArticleId": "d901be90-6fa8-47dd-97cb-348fec8dd61d",
+      "pulseArticleId": "dcf1e48a-1128-44c6-b4b9-16f3496433b1",
+      "phaseOffsetNanos": 719127077
+    },
+    {
+      "group": 2,
+      "lossArticleId": "45ad8bb5-578d-4554-8342-51ec67a1d92c",
+      "pulseArticleId": "d81276a2-7896-4031-9422-42e44ba82df8",
+      "phaseOffsetNanos": 1138598769
+    }
+  ],
+  "settledArchiveSourceControls": [
+    [
+      131918073680320,
+      131921573680320
+    ],
+    [
+      131933073680320,
+      131937573680320
+    ]
+  ],
+  "controlScope": "Intervals between the two opening impact streams and after the second, with retained HP readings. These are archive-relative quiet controls, not an independently synchronized video-to-Moondrop mapping."
+}

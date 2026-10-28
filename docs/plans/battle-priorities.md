@@ -47,6 +47,13 @@ are starting points; a task is not complete merely because a class or test exist
 Next substantial slice: species/form preservation and the paired-match Fast Move
 audit (orders 1–2). Finish and measure one bounded change before adding readers.
 
+October 28 progress: [loss/flash phase pairing](../verification/2026-10-28-fast-move-phase-pairing.md)
+now uses measured post-loss HP continuity to associate delayed phases without
+requiring an already-resolved move name. The recorded Charm opening reprocesses
+as seven plus seven paired uses with original source IDs/times retained. This
+repairs one duplicate-count path; complete Fast Move observation, earlier phase
+boundaries, dependable player-fill measurements, and live acceptance remain open.
+
 October 22 progress: the [player form handoff](../verification/2026-10-22-player-form-handoff.md)
 now retains scanned lead identity, resolves later appearances from independent
 button evidence, and keeps the two Raichu forms separate in move, energy, faint

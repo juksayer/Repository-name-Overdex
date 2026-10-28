@@ -5,6 +5,7 @@ import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
 import com.example.overdex.battle.custody.ApertureStatus
 import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.custody.ActiveHpBarMeasured
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
@@ -60,6 +61,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private val appearanceHistory = EnumMap<ActivePokemonSide, MutableList<Appearance>>(ActivePokemonSide::class.java)
     private var fainted = FaintedCombatants()
     private val pending = mutableListOf<PendingUse>()
+    private val hpHistory = EnumMap<ActivePokemonSide, MutableList<RealityArticle>>(ActivePokemonSide::class.java)
+    private val impactHistory = mutableListOf<UseEvidence>()
     private val knownDurations = mutableMapOf<Pair<ActivePokemonSide, String>, Long>()
     private var watermarkNanos = Long.MIN_VALUE
     private var receiptWatermarkMillis = Long.MIN_VALUE
@@ -105,6 +108,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         if (article.payload == ObservationRestartedByUser || article.payload == ScreenIgnoredByUser) {
             if (atNanos < attemptFromNanos || matchEnded) return emptyList()
             pending.clear()
+            hpHistory.clear()
+            impactHistory.clear()
             appearances.clear()
             appearanceHistory.clear()
             knownDurations.clear()
@@ -146,6 +151,12 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         }
         val output = mutableListOf<FastMoveUseDerivation>()
         when (val payload = article.payload) {
+            is ActiveHpBarMeasured -> {
+                val samples = hpHistory.getOrPut(payload.side) { mutableListOf() }
+                if (samples.none { it.id == article.id }) samples += article
+                samples.removeAll { (it.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }
+                while (samples.size > MAX_HP_HISTORY) samples.removeAt(0)
+            }
             is com.example.overdex.battle.custody.BattleDecisionTimerObserved -> {
                 if (atNanos >= decisionObservedAtNanos) {
                     decisionObservedAtNanos = atNanos
@@ -251,9 +262,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         // capture order; retained objects contain numbers/articles, no Bitmaps.
         output += flushExpired(watermarkNanos)
         while (pending.size > MAX_PENDING_USES) {
-            val oldest = pending.minBy { it.anchorNanos }
-            pending.remove(oldest)
-            output += finalize(oldest)
+            val oldest = resolvePending(pending).first()
+            pending.removeAll(oldest.members.toSet())
+            output += finalize(oldest.use)
         }
         return output
     }
@@ -261,21 +272,117 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
     private fun enqueueEvidence(side: ActivePokemonSide, appearance: Appearance?, measured: UseEvidence) {
         val article = measured.article
         val atNanos = article.monotonicTimeNanos ?: return
-        val matching = pending.filter { use ->
+        if (FastMoveUseEvidence.isImpact(measured.kind) && impactHistory.none { it.article.id == article.id }) {
+            impactHistory += measured
+            impactHistory.removeAll { (it.article.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }
+            while (impactHistory.size > MAX_IMPACT_HISTORY) impactHistory.removeAt(0)
+        }
+        // Keep complementary impact streams separate until publication, so a
+        // late plateau sample or boundary can still change their association.
+        val neighborhood = pending.filter { use ->
             use.attackingSide == side && use.appearance == appearance &&
                 abs(atNanos - use.anchorNanos) <= mergeWindow(use) &&
-                // Two persistent HP steps or two pulse onsets are two hits.
                 (!FastMoveUseEvidence.isImpact(measured.kind) || use.evidence.none {
                     it.kind == measured.kind && it.article.monotonicTimeNanos != atNanos
                 })
         }.minByOrNull { abs(atNanos - it.anchorNanos) }
-        if (FastMoveUseEvidence.isImpact(measured.kind) &&
-            matching?.evidence?.any { FastMoveUseEvidence.isImpact(it.kind) } != true) onFirstImpact(article)
+        val corroborates = neighborhood?.evidence?.any { FastMoveUseEvidence.isImpact(it.kind) } == true ||
+            pending.any { it.attackingSide == side && it.appearance == appearance &&
+                plateauSupport(it.evidence, listOf(measured)) != null }
+        if (FastMoveUseEvidence.isImpact(measured.kind) && !corroborates) onFirstImpact(article)
+        val matching = neighborhood?.takeUnless { use -> FastMoveUseEvidence.isImpact(measured.kind) &&
+            use.evidence.any { FastMoveUseEvidence.isImpact(it.kind) && it.kind != measured.kind } }
         if (matching != null) {
             if (matching.evidence.none { it.article.id == article.id }) matching.evidence += measured
         } else {
             pending += PendingUse(side, side.opposite(), appearance, mutableListOf(measured))
         }
+    }
+
+    private data class ResolvedUse(val use: PendingUse, val members: List<PendingUse>)
+
+    /** Recomputed from retained sources until emission; no irreversible early association. */
+    private fun resolvePending(input: List<PendingUse>): List<ResolvedUse> {
+        val remaining = input.sortedBy { it.anchorNanos }.toMutableList()
+        val resolved = mutableListOf<ResolvedUse>()
+        fun combine(a: PendingUse, b: PendingUse, support: List<UseEvidence>) {
+            val evidence = (a.evidence + b.evidence + support).distinctBy { it.article.id }.toMutableList()
+            resolved += ResolvedUse(PendingUse(a.attackingSide, a.damagedSide, a.appearance, evidence), listOf(a, b))
+            remaining.remove(a)
+            remaining.remove(b)
+        }
+        // Positive plateau evidence takes precedence over symmetric proximity.
+        for (loss in remaining.toList()) {
+            if (loss !in remaining) continue
+            val match = remaining.asSequence().filter { it !== loss && sameContext(loss, it) }
+                .mapNotNull { pulse -> plateauSupport(loss.evidence, pulse.evidence)?.let { pulse to it } }
+                .firstOrNull() ?: continue
+            combine(loss, match.first, match.second)
+        }
+        // Preserve ordinary close-time fusion when no extended join was proved.
+        for (first in remaining.toList()) {
+            if (first !in remaining) continue
+            val firstKind = first.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }.singleOrNull()?.kind
+            val second = if (firstKind == null) null else remaining.filter { other ->
+                val kind = other.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }.singleOrNull()?.kind
+                other !== first && kind != null && kind != firstKind && sameContext(first, other) &&
+                    !crossesBoundary(first.anchorNanos, other.anchorNanos) &&
+                    abs(first.anchorNanos - other.anchorNanos) <= mergeWindow(first)
+            }.minByOrNull { abs(first.anchorNanos - it.anchorNanos) }
+            if (second != null) combine(first, second, emptyList())
+            else {
+                resolved += ResolvedUse(first, listOf(first))
+                remaining.remove(first)
+            }
+        }
+        return resolved.sortedBy { it.use.anchorNanos }
+    }
+
+    private fun sameContext(a: PendingUse, b: PendingUse) =
+        a.attackingSide == b.attackingSide && a.appearance == b.appearance
+
+    private fun crossesBoundary(a: Long, b: Long): Boolean {
+        val from = minOf(a, b)
+        val until = maxOf(a, b)
+        return appearanceHistory.values.any { history -> history.any { it.atNanos > from && it.atNanos <= until } } ||
+            chargedPauses.any { it.start <= until && it.end >= from } ||
+            decisionPauses.any { it.start <= until && it.end >= from }
+    }
+
+    private fun plateauSupport(left: List<UseEvidence>, right: List<UseEvidence>): List<UseEvidence>? {
+        if (left.count { FastMoveUseEvidence.isImpact(it.kind) } != 1 ||
+            right.count { FastMoveUseEvidence.isImpact(it.kind) } != 1) return null
+        val impacts = (left + right).filter { FastMoveUseEvidence.isImpact(it.kind) }
+        val loss = impacts.singleOrNull { it.kind == "HP_DAMAGE_TICK" } ?: return null
+        val pulse = impacts.singleOrNull { it.kind == "HP_BORDER_PULSE" } ?: return null
+        if (impacts.size != 2) return null
+        val damage = loss.article.payload as? ActiveHpBarDamageTickMeasured ?: return null
+        val from = loss.article.monotonicTimeNanos ?: return null
+        val until = pulse.article.monotonicTimeNanos ?: return null
+        if (until <= from || until - from > MAX_DELAYED_PHASE_NANOS) return null
+        if (crossesBoundary(from, until)) return null
+        val attackingSide = damage.damagedSide.opposite()
+        if (impactHistory.any { other -> other.article.id != loss.article.id && other.article.id != pulse.article.id &&
+                evidenceFrom(other.article)?.first == attackingSide &&
+                (other.article.monotonicTimeNanos ?: 0L).let { it > from && it <= until } }) return null
+        val samples = hpHistory[damage.damagedSide].orEmpty()
+            .filter { (it.monotonicTimeNanos ?: 0L) in from..until }.sortedBy { it.monotonicTimeNanos }
+        if (samples.map { it.monotonicTimeNanos }.distinct().size < 3 ||
+            samples.first().monotonicTimeNanos!! - from > PLATEAU_ENDPOINT_NANOS ||
+            until - samples.last().monotonicTimeNanos!! > PLATEAU_ENDPOINT_NANOS ||
+            samples.zipWithNext().any { (a, b) -> b.monotonicTimeNanos!! - a.monotonicTimeNanos!! > MAX_PLATEAU_GAP_NANOS }) return null
+        val first = samples.first().payload as ActiveHpBarMeasured
+        if (first.sourceWidth == null) return null
+        if (samples.any { sample ->
+                val hp = sample.payload as ActiveHpBarMeasured
+                val width = hp.barRight - hp.barLeft
+                val inner = width - 2 * max(2, width / 80)
+                inner <= 0 || width.toFloat() / (hp.barBottom - hp.barTop) !in 6f..30f ||
+                    hp.sourceWidth != first.sourceWidth || hp.sourceHeight != first.sourceHeight ||
+                    abs(hp.barLeft - first.barLeft) > 2 || abs(hp.barRight - first.barRight) > 2 ||
+                    abs(hp.filledFraction - damage.afterFraction) * inner > 1.5f
+            }) return null
+        return samples.map { UseEvidence(it, "HP_PLATEAU_CONTINUITY", 0f) }
     }
 
     private fun isDecisionPaused(atNanos: Long) = decisionPauses.any { atNanos in it.start until it.end }
@@ -309,14 +416,14 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         else -> false
     }
 
-    fun flush(): List<FastMoveUseDerivation> = pending.sortedBy { it.anchorNanos }
-        .flatMap(::finalize).also { pending.clear() }
+    fun flush(): List<FastMoveUseDerivation> = resolvePending(pending).flatMap { finalize(it.use) }
+        .also { pending.clear() }
 
     private fun flushSide(side: ActivePokemonSide, beforeNanos: Long = Long.MAX_VALUE): List<FastMoveUseDerivation> {
         val ready = pending.filter { it.attackingSide == side && it.anchorNanos < beforeNanos }
-            .sortedBy { it.anchorNanos }
+        val resolved = resolvePending(ready)
         pending.removeAll(ready.toSet())
-        return ready.flatMap(::finalize)
+        return resolved.flatMap { finalize(it.use) }
     }
 
     private fun mergeWindow(use: PendingUse): Long {
@@ -337,17 +444,18 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
 
     private fun flushExpired(atNanos: Long): List<FastMoveUseDerivation> {
         chargedPauses.filter { atNanos > it.end + DELIVERY_GRACE_NANOS }.forEach { it.held.clear() }
-        val ready = pending.filter {
-            atNanos - it.anchorNanos > mergeWindow(it) + DELIVERY_GRACE_NANOS &&
-                // A slow HP witness may publish an older capture after another
-                // lane has advanced the source watermark. Give that newly
-                // received impact the same bounded corroboration opportunity;
-                // otherwise it expires immediately and its flash is counted again.
-                receiptWatermarkMillis - it.firstImpactReceivedAt >= DELIVERY_GRACE_NANOS / 1_000_000L
+        val ready = resolvePending(pending).filter { resolved ->
+            val use = resolved.use
+            val impacts = use.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
+            val lastReceivedAt = impacts.maxOfOrNull { it.article.recordedAt } ?: use.firstImpactReceivedAt
+            atNanos - use.anchorNanos > mergeWindow(use) + DELIVERY_GRACE_NANOS &&
+                // Preserve the same bounded grace for every phase in a pair.
+                // An unpublished association may still be contradicted by late
+                // geometry or a phase/appearance boundary during this interval.
+                receiptWatermarkMillis - lastReceivedAt >= DELIVERY_GRACE_NANOS / 1_000_000L
         }
-            .sortedBy { it.anchorNanos }
-        pending.removeAll(ready.toSet())
-        return ready.flatMap(::finalize)
+        pending.removeAll(ready.flatMap { it.members }.toSet())
+        return ready.flatMap { finalize(it.use) }
     }
 
     private fun evidenceFrom(article: RealityArticle): Pair<ActivePokemonSide, UseEvidence>? = when (val payload = article.payload) {
@@ -384,7 +492,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         ))
         val anchor = ordered.firstOrNull { FastMoveUseEvidence.isImpact(it.kind) } ?: return emptyList()
         val evidenceKinds = ordered.map { it.kind }.distinct().sortedBy { EVIDENCE_ORDER.indexOf(it) }
-        val confidence = (1.0 - ordered.fold(1.0) { remaining, item ->
+        // Plateau frames explain association; correlated samples do not multiply
+        // the independent witnesses' confidence or establish an attack by themselves.
+        val confidence = (1.0 - ordered.filter { it.kind != "HP_PLATEAU_CONTINUITY" }.fold(1.0) { remaining, item ->
             remaining * (1.0 - (item.article.confidence ?: item.defaultConfidence).coerceIn(0f, 0.99f))
         }).toFloat().coerceIn(0f, 0.99f)
         return listOf(FastMoveUseDerivation(
@@ -413,12 +523,19 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         // wait preserves capture timestamps and prevents late evidence recounts.
         const val DELIVERY_GRACE_NANOS = 1_200_000_000L
         const val MAX_PENDING_USES = 24
+        const val MAX_DELAYED_PHASE_NANOS = 1_250_000_000L
+        const val PLATEAU_ENDPOINT_NANOS = 150_000_000L
+        const val MAX_PLATEAU_GAP_NANOS = 650_000_000L
+        const val PHASE_HISTORY_NANOS = 6_000_000_000L
+        const val MAX_HP_HISTORY = 160
+        const val MAX_IMPACT_HISTORY = 96
         const val CHARGED_MAX_PHASE_NANOS = 12_000_000_000L
         const val MAX_HELD_CHARGE_EVIDENCE = 128
         const val CHARGED_IMPACT_TAIL_NANOS = 750_000_000L
         val EVIDENCE_ORDER = listOf(
             "HP_BORDER_PULSE",
             "HP_DAMAGE_TICK",
+            "HP_PLATEAU_CONTINUITY",
             "RECIPIENT_VISUAL_ARTIFACT",
             "HP_BORDER_CADENCE",
             "HP_BAR_MOTION_COMPLETION",
