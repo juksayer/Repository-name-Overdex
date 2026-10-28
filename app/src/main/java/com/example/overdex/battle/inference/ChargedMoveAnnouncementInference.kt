@@ -124,7 +124,7 @@ class ChargedMoveAnnouncementInference(
                 else -> rosterSideForSpecies(speciesName)
             } ?: return null
             pokemon = pokemon(activeSpeciesBySide[side] ?: speciesName) ?: return null
-            val exact = bestMoveMatches(moveName, pokemon.chargedMoves).singleOrNull()?.move
+            val exact = LegalChargedMoveTextResolver.bestMatches(moveName, pokemon.chargedMoves).singleOrNull()?.move
             move = exact ?: selection?.move ?: return null
             if (exact == null || activeSides.size > 1) {
                 supportingIds = selection?.ids ?: return null
@@ -138,15 +138,15 @@ class ChargedMoveAnnouncementInference(
             // the performer only when BOTH active combatants are known and exactly
             // one can use it. A missing opponent is not proof it cannot use the move.
             if (activeSpeciesBySide.keys != ActivePokemonSide.entries.toSet()) return null
-            val candidates = mutableListOf<Triple<ActivePokemonSide, Pokemon, MoveMatch>>()
+            val candidates = mutableListOf<Triple<ActivePokemonSide, Pokemon, LegalChargedMoveTextResolver.Match>>()
             for ((activeSide, name) in activeSpeciesBySide) {
                 val active = pokemon(name) ?: return null
-                bestMoveMatches(moveName, active.chargedMoves).forEach {
+                LegalChargedMoveTextResolver.bestMatches(moveName, active.chargedMoves).forEach {
                     candidates += Triple(activeSide, active, it)
                 }
             }
-            val bestDistance = candidates.minOfOrNull { it.third.edits } ?: return null
-            val candidate = candidates.filter { it.third.edits == bestDistance }.singleOrNull() ?: return null
+            val bestRank = candidates.minOfOrNull { it.third.repairRank } ?: return null
+            val candidate = candidates.filter { it.third.repairRank == bestRank }.singleOrNull() ?: return null
             side = candidate.first; pokemon = candidate.second; move = candidate.third.move
             supportingIds = activeAtUse.values.map { it.id }
             basis = "ANNOUNCED_CHARGED_MOVE_AND_UNIQUE_ACTIVE_MOVEPOOL"
@@ -166,12 +166,9 @@ class ChargedMoveAnnouncementInference(
                 speciesName = pokemon.name,
                 moveName = move.name,
                 energyCost = move.energy,
-                basis = basis + when {
-                    basis.contains("VISIBLE_TOUCH") -> ""
-                    moveName == normalize(move.name) -> ""
-                    MoveTextAliases.matches(moveName, move.name) -> "_VISIBLE_MOVE_NAME_ALIAS"
-                    MoveTextAliases.normalizedNames(move.name).any { SpeciesOcrTypography.glyphRepairCost(moveName, it) != null } -> "_OCR_LEGAL_GLYPH_REPAIR"
-                    else -> "_OCR_SINGLE_CHARACTER_REPAIR"
+                basis = basis + if (basis.contains("VISIBLE_TOUCH")) "" else {
+                    LegalChargedMoveTextResolver.bestMatches(moveName, listOf(move))
+                        .singleOrNull()?.repairBasis?.let { "_$it" }.orEmpty()
                 }
             ),
             predecessorIds = listOf(article.id) + supportingIds,
@@ -231,11 +228,11 @@ class ChargedMoveAnnouncementInference(
             val labelMatches = pokemon.chargedMoves.filter { MoveTextAliases.matchesButtonLabel(label.text, it.name) }
             val move = when (labelMatches.size) {
                 1 -> labelMatches.single()
-                0 -> bestMoveMatches(normalize(MoveTextAliases.buttonLabelText(label.text)), pokemon.chargedMoves).singleOrNull()?.move
+                0 -> LegalChargedMoveTextResolver.bestMatches(normalize(MoveTextAliases.buttonLabelText(label.text)), pokemon.chargedMoves).singleOrNull()?.move
                 else -> null
             } ?: continue
             if (MoveTextAliases.normalizedNames(move.name).none { reading == it || it.startsWith(reading) } &&
-                bestMoveMatches(reading, listOf(move)).isEmpty()) continue
+                LegalChargedMoveTextResolver.bestMatches(reading, listOf(move)).isEmpty()) continue
             val ready = controlEvidence.filter { it.payload is GetReadyWitnessed &&
                 it.monotonicTimeNanos?.let { t -> t in contactAt..minOf(at, contactAt + 2_000_000_000L) } == true
             }.minByOrNull { it.monotonicTimeNanos!! }
@@ -245,41 +242,6 @@ class ChargedMoveAnnouncementInference(
             return Selection(move, listOf(active.id, contact.id, labelArticle.id) + listOfNotNull(ready?.id))
         }
         return null
-    }
-
-    private data class MoveMatch(val move: Move, val edits: Int)
-
-    /** Compare the entire reading only with legal moves; clipped prefixes never select a move. */
-    private fun bestMoveMatches(reading: String, moves: List<Move>): List<MoveMatch> {
-        val matches = moves.distinctBy { normalize(it.name) }.mapNotNull { move ->
-            MoveTextAliases.normalizedNames(move.name).mapNotNull { name ->
-                when {
-                    reading == name -> MoveMatch(move, 0)
-                    reading.length < 6 || name.length < 6 -> null
-                    reading.startsWith(name) || name.startsWith(reading) -> null
-                    SpeciesOcrTypography.glyphRepairCost(reading, name) != null -> MoveMatch(move, 1)
-                    singleCharacterDifference(reading, name) -> MoveMatch(move, 1)
-                    else -> null
-                }
-            }.minByOrNull { it.edits }
-        }
-        val best = matches.minOfOrNull { it.edits } ?: return emptyList()
-        return matches.filter { it.edits == best }
-    }
-
-    private fun singleCharacterDifference(left: String, right: String): Boolean {
-        if (kotlin.math.abs(left.length - right.length) > 1) return false
-        var a = 0; var b = 0; var edits = 0
-        while (a < left.length && b < right.length) {
-            if (left[a] == right[b]) { a++; b++; continue }
-            if (++edits > 1) return false
-            when {
-                left.length > right.length -> a++
-                right.length > left.length -> b++
-                else -> { a++; b++ }
-            }
-        }
-        return edits + (left.length - a) + (right.length - b) == 1
     }
 
     private companion object {

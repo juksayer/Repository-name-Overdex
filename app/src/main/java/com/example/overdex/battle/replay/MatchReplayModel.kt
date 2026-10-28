@@ -183,6 +183,7 @@ class MatchReplayModel(
         .distinctBy { "${it.side}:${it.atNanos}:${it.label}" }
         .sortedBy { it.atNanos }
     private val decisionTimers = ReplayDecisionTimers(timedArticles, knockoutTrack.knockouts)
+    private val chargeTransitions = ReplayChargeTransitions(archive.articles) { combatantFor("PLAYER", it) }
     private val fastMoveChargeWindows = fastMoveExclusionWindows()
     private val recordedFastMoveUses = reconstructFastMoveUses()
     private val recordedChargedMoveUses = reconstructChargedMoveUses().map { use ->
@@ -345,6 +346,7 @@ class MatchReplayModel(
                 qteLevelProgress = milestone?.let {
                     ((monotonicTimeNanos - it.atNanos).toFloat() / 180_000_000L).coerceIn(0f, 1f)
                 } ?: 1f,
+                transition = use.transition,
             )
         }
 
@@ -601,19 +603,26 @@ class MatchReplayModel(
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
             if (isReplayGetReadyCue(article)) {
                 val selected = selectedPlayerChargeAt(atNanos)
+                val transition = chargeTransitions.forCue(article)
                 return@mapNotNull ReplayChargedMoveUse(
                     "PLAYER", atNanos, atNanos, selected, 1,
-                    setOf("GET_READY") + if (selected != null) setOf("PLAYER_BUTTON_LABEL_AND_TOUCH") else emptySet()
+                    setOf("GET_READY") + (if (selected != null) setOf("PLAYER_BUTTON_LABEL_AND_TOUCH") else emptySet()) +
+                        listOfNotNull(transition?.basis),
+                    preparationAtNanos = transition?.presentationAtNanos ?: atNanos,
+                    transition = transition,
                 )
             }
             if (isReplayAttackIncomingCue(article)) {
+                val transition = chargeTransitions.forCue(article)
                 return@mapNotNull ReplayChargedMoveUse(
                     side = "OPPONENT",
                     animationAtNanos = atNanos,
                     lastEvidenceAtNanos = atNanos,
                     moveName = null,
                     anchorPriority = 1,
-                    evidenceKinds = setOf("ATTACK_INCOMING")
+                    evidenceKinds = setOf("ATTACK_INCOMING") + listOfNotNull(transition?.basis),
+                    preparationAtNanos = transition?.presentationAtNanos ?: atNanos,
+                    transition = transition,
                 )
             }
             when (val payload = article.payload) {
@@ -657,7 +666,7 @@ class MatchReplayModel(
                 val previous = merged.lastOrNull()
                 if (
                     previous != null &&
-                    current.animationAtNanos - previous.preparationAtNanos <= CHARGE_MOVE_PREPARATION_MAX_NANOS &&
+                    current.animationAtNanos - (previous.transition?.cueAtNanos ?: previous.preparationAtNanos) <= CHARGE_MOVE_PREPARATION_MAX_NANOS &&
                     previous.anchorPriority < 3
                 ) {
                     val replaceAnchor = current.anchorPriority > previous.anchorPriority
@@ -666,7 +675,8 @@ class MatchReplayModel(
                         lastEvidenceAtNanos = maxOf(previous.lastEvidenceAtNanos, current.lastEvidenceAtNanos),
                         moveName = current.moveName ?: previous.moveName,
                         anchorPriority = maxOf(previous.anchorPriority, current.anchorPriority),
-                        evidenceKinds = previous.evidenceKinds + current.evidenceKinds
+                        evidenceKinds = previous.evidenceKinds + current.evidenceKinds,
+                        transition = previous.transition ?: current.transition,
                     )
                 } else {
                     merged += current
@@ -677,7 +687,7 @@ class MatchReplayModel(
             if (use.anchorPriority < 3) {
                 // An opening cue without a closing announcement still gets a
                 // bounded charge-up. No grade, move name or impact is invented.
-                use.copy(animationAtNanos = use.preparationAtNanos + CHARGE_MOVE_PREPARATION_MAX_NANOS,
+                use.copy(animationAtNanos = (use.transition?.cueAtNanos ?: use.preparationAtNanos) + CHARGE_MOVE_PREPARATION_MAX_NANOS,
                     evidenceKinds = use.evidenceKinds + "OPEN_CHARGE_SEQUENCE")
             } else if (use.preparationAtNanos < use.animationAtNanos) use else {
                 // Completed-record presentation can bridge an unobserved QTE
@@ -721,36 +731,41 @@ class MatchReplayModel(
             val match = NAMED_MOVE_PATTERN.matchEntire(text.trim()) ?: continue
             val at = article.monotonicTimeNanos!!
             val performer = normalizeSpeciesName(match.groupValues[1])
-            val reading = normalizeSpeciesName(match.groupValues[2])
-            val candidates = listOf("PLAYER", "OPPONENT").mapNotNull { side ->
-                val combatant = combatantFor(side, at) ?: return@mapNotNull null
-                val move = possibleChargedMoves[normalizeSpeciesName(combatant.speciesName)]
-                    ?.singleOrNull { MoveTextAliases.matches(reading, it.name) } ?: return@mapNotNull null
-                Triple(side, combatant, move)
+            val combatants = listOf("PLAYER", "OPPONENT").mapNotNull { side ->
+                combatantFor(side, at)?.let { side to it }
             }
-            val exactPerformers = candidates.filter {
+            val candidates = combatants.flatMap { (side, combatant) ->
+                com.example.overdex.battle.inference.LegalChargedMoveTextResolver.bestMatches(
+                    match.groupValues[2], possibleChargedMoves[normalizeSpeciesName(combatant.speciesName)].orEmpty()
+                ).map { Triple(side, combatant, it) }
+            }
+            val namedSides = combatants.filter {
                 TeamRosterSpeciesAttributor.speciesKey(it.second.speciesName) ==
                     TeamRosterSpeciesAttributor.speciesKey(match.groupValues[1])
-            }
-            val candidate = if (exactPerformers.isNotEmpty()) exactPerformers.singleOrNull() else {
+            }.map { it.first }.toSet()
+            val eligible = if (namedSides.isNotEmpty()) candidates.filter { it.first in namedSides } else {
                 // A nickname may be resolved by a unique legal move only when
                 // both active movepools are known. A missing rival is not exclusion.
-                val bothKnown = listOf("PLAYER", "OPPONENT").all { side ->
-                    combatantFor(side, at)?.speciesName?.let { possibleChargedMoves[normalizeSpeciesName(it)] }
-                        ?.isNotEmpty() == true
+                val bothKnown = combatants.size == 2 && combatants.all { (_, combatant) ->
+                    possibleChargedMoves[normalizeSpeciesName(combatant.speciesName)]?.isNotEmpty() == true
                 }
-                candidates.singleOrNull().takeIf { bothKnown && performer !in canonicalSpecies }
-            } ?: continue
+                candidates.takeIf { bothKnown && performer !in canonicalSpecies && performer !in possibleChargedMoves }
+                    .orEmpty()
+            }
+            val bestRank = eligible.minOfOrNull { it.third.repairRank } ?: continue
+            val candidate = eligible.filter { it.third.repairRank == bestRank }.singleOrNull() ?: continue
+            val move = candidate.third.move
             if (timedArticles.any {
                     val spent = it.payload as? ArchivedChargedMoveEnergySpent ?: return@any false
                     spent.side == candidate.first &&
-                        MoveTextAliases.matches(spent.moveName, candidate.third.name) &&
+                        MoveTextAliases.matches(spent.moveName, move.name) &&
                         sameChargeAnnouncementEpisode(it.monotonicTimeNanos!!, at)
                 }) continue
-            if (recovered.any { it.side == candidate.first && it.moveName == candidate.third.name &&
+            if (recovered.any { it.side == candidate.first && it.moveName == move.name &&
                     sameChargeAnnouncementEpisode(it.animationAtNanos, at) }) continue
-            recovered += ReplayChargedMoveUse(candidate.first, at, at, candidate.third.name, 3,
-                setOf("NAMED_CHARGED_MOVE", "ARCHIVED_ANNOUNCEMENT_AND_REFERENCE_MOVE"))
+            recovered += ReplayChargedMoveUse(candidate.first, at, at, move.name, 3,
+                setOf("NAMED_CHARGED_MOVE", "ARCHIVED_ANNOUNCEMENT_AND_REFERENCE_MOVE") +
+                    listOfNotNull(candidate.third.repairBasis))
         }
         return recovered
     }
@@ -805,7 +820,8 @@ class MatchReplayModel(
                 isReplayAttackIncomingCue(article) -> at + 12_000_000_000L
                 else -> return@mapNotNull null
             }
-            at..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
+            val from = chargeTransitions.forCue(article)?.presentationAtNanos ?: at
+            from..(namedCharges.firstOrNull { it in at..maximumEnd }?.plus(750_000_000L) ?: maximumEnd)
         } + namedCharges.map { it..(it + 750_000_000L) } + decisionTimers.windows
     }
 
@@ -1527,6 +1543,8 @@ data class ReplayChargedMoveAction(
     val type: PokemonType? = null,
     val qteLevel: Int = 0,
     val qteLevelProgress: Float = 1f,
+    /** Original rim interval and phase cue retained beside the presentation estimate. */
+    val transition: ReplayChargeTransition? = null,
 )
 
 enum class ReplayChargePhase { CHARGING, STRIKING }
@@ -1558,6 +1576,7 @@ private data class ReplayChargedMoveUse(
     val evidenceKinds: Set<String>,
     val preparationAtNanos: Long = animationAtNanos,
     val visualDurationNanos: Long = CHARGE_MOVE_VISUAL_NANOS,
+    val transition: ReplayChargeTransition? = null,
 ) {
     val isCompleted get() = "OPEN_CHARGE_SEQUENCE" !in evidenceKinds
     val impactAtNanos get() = animationAtNanos + visualDurationNanos

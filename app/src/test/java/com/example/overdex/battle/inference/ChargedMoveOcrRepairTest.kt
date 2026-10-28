@@ -39,6 +39,49 @@ class ChargedMoveOcrRepairTest {
         assertNull(inference.accept(announcement("Sneasel used Ice Punch!").copy(monotonicTimeNanos = 11_000_000_000)) { null })
     }
 
+    @Test fun `one or two missing internal letters resolve Foul Play and retain raw reading time and custody links`() = runBlocking {
+        for (reading in listOf("FouPlay", "FouPay")) {
+            val inference = activePair("Scrafty", "Flareon")
+            val raw = announcement("Scrafty used $reading!")
+            val result = requireNotNull(inference.accept(raw) { null })
+            assertEquals("Foul Play", result.payload.moveName)
+            assertEquals(40, result.payload.energyCost)
+            assertEquals("Scrafty", result.payload.speciesName)
+            assertEquals(ActivePokemonSide.PLAYER, result.payload.side)
+            assertEquals(raw, result.observedArticle)
+            assertEquals("Scrafty used $reading!", (result.observedArticle.payload as RawTestimony).data)
+            assertEquals(10_000_000_000L, result.observedArticle.monotonicTimeNanos)
+            assertEquals(listOf(raw.id, ArticleId("p")), result.predecessorIds)
+            assertTrue(result.payload.basis.endsWith("OCR_MISSING_INTERNAL_CHARACTERS"))
+            assertNull(inference.accept(announcement("Scrafty used Foul Play!")
+                .copy(monotonicTimeNanos = 11_000_000_000)) { null })
+        }
+    }
+
+    @Test fun `two missing letters never supply a clipped edge reorder letters or permit an illegal move`() = runBlocking {
+        for (reading in listOf("FoulPl", "ulPlay", "FouPya", "FauPay", "FoPay")) {
+            assertNull(reading, activePair("Scrafty", "Flareon")
+                .accept(announcement("Scrafty used $reading!")) { null })
+        }
+        assertNull(activePair("Scrafty", "Flareon").accept(announcement("Flareon used FouPay!")) { null })
+        assertNull(activePair("Scrafty", "Umbreon").accept(announcement("nickname used FouPay!")) { null })
+        assertNull(activePair("Scrafty", "Scrafty").accept(announcement("Scrafty used FouPay!")) { null })
+    }
+
+    @Test fun `missing letter repair requires one legal candidate even when another needs fewer repairs`() = runBlocking {
+        val pokemon = Pokemon(1, "Example", emptyList(), "", fastMoves = emptyList(), chargedMoves =
+            listOf("Foul Play", "Foul Pay").map { Move(it, PokemonType.DARK, 1, 1, false) })
+        val inference = ChargedMoveAnnouncementInference(object : PokemonKnowledge {
+            override suspend fun getPokemonByName(name: String) = pokemon
+            override suspend fun getPokemonById(id: Int) = pokemon
+            override suspend fun getAllSpeciesNames() = setOf(pokemon.name)
+        })
+        inference.accept(species("p", "Example", ActivePokemonSide.PLAYER)) { null }
+        assertNull(inference.accept(announcement("Example used FouPay!")) { null })
+        // An exact legal name still wins over a repair to the other candidate.
+        assertEquals("Foul Pay", inference.accept(announcement("Example used Foul Pay!")) { null }?.payload?.moveName)
+    }
+
     @Test fun `recorded missing spaces and one letter error resolve only to unique active legal user`() = runBlocking {
         val inference = activePair("Galvantula", "Combusken")
         val result = requireNotNull(inference.accept(announcement("salusedDischargo")) { null })
