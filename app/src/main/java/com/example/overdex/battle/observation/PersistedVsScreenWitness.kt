@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class PersistedVsScreenWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("VS_SCREEN_WITNESS", ObservationSource.SCREEN_CAPTURE),
-    override val name: String = "VS Screen Witness"
+    override val name: String = "VS Screen"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

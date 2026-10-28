@@ -1,5 +1,6 @@
 package com.example.overdex.battle.witness
 
+import com.example.overdex.diagnostics.sourceJobLabel
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.battle.custody.RawTestimony
@@ -28,7 +29,7 @@ class SpeciesWitness(
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
         ObserverId("SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Opponent Species Witness",
+    override val name: String = "Opponent Species",
     private val recognize: suspend (Bitmap?, String) -> List<RecognitionResult<*>> = { cropped, regionId ->
         if (cropped == null) emptyList()
         else ObservationRecognizer.recognize(CaptureObservation(regionId, cropped), stage = "SPECIES")
@@ -61,7 +62,7 @@ class SpeciesWitness(
 
     override fun start(match: Match) {
         if (scope != null) return
-        Log.d("SpeciesWitness", "start()")
+        Log.d("Species", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -70,9 +71,9 @@ class SpeciesWitness(
         match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
 
         newScope.launch {
-            Log.d("SpeciesWitness", "waiting for frames")
+            Log.d("Species", "waiting for frames")
             input.supply { bitmap ->
-                Log.d("SpeciesWitness", "opponent bitmap received")
+                Log.d("Species", "opponent bitmap received")
                 
                 val timestamp = System.currentTimeMillis()
                 match.custody.submitInputAvailability(sourceId, true, timestamp)
@@ -92,7 +93,7 @@ class SpeciesWitness(
 
                     if (result != null) {
                         val opponentSpeciesText = result.value as String
-                        Log.d("SpeciesWitness", "Opponent species OCR text submitted: \"$opponentSpeciesText\" confidence=${result.confidence}")
+                        Log.d("Species", "Opponent species OCR text submitted: \"$opponentSpeciesText\" confidence=${result.confidence}")
 
                         // Reality Handoff (Neutral Testimony)
                         match.custody.submitTestimony(
@@ -102,7 +103,7 @@ class SpeciesWitness(
                             confidence = result.confidence
                         )
 
-                        Log.d("OPPONENT_SPECIES_SLICE", "SpeciesWitness submission: species=$opponentSpeciesText, sourceId=${sourceId.id}, confidence=${result.confidence}")
+                        Log.d("OPPONENT_SPECIES_SLICE", "Opponent Species submission: species=$opponentSpeciesText, job=${sourceJobLabel(sourceId.id)}, confidence=${result.confidence}")
                     }
                 }
             }

@@ -39,7 +39,7 @@ import kotlin.math.sqrt
  */
 class PersistedFastMoveSoundWitness(private val root: File, private val context: Context) : Observer {
     override val observerId = ObserverId("FAST_MOVE_SOUND_WITNESS", ObservationSource.AUDIO_CAPTURE)
-    override val name = "Fast Move Sound Witness"
+    override val name = "Fast Move Sound"
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {

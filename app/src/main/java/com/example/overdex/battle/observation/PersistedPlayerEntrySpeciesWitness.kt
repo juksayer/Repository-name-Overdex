@@ -23,7 +23,7 @@ import com.example.overdex.battle.timeline.observer.ObservationSource as Observe
  */
 class PersistedPlayerEntrySpeciesWitness(
     override val observerId: ObserverId = ObserverId("ENTRY_ANNOUNCEMENT_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Entry Announcement Species Witness"
+    override val name: String = "Entry Announcement Species"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

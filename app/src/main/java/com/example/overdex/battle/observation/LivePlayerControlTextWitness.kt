@@ -57,7 +57,7 @@ internal class LivePlayerControlTextWitness(
     override val observerId = ObserverId(if (slot == 0) "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS"
         else if (effectiveness) "PLAYER_CHARGE_MOVE_EFFECTIVENESS_${slot}_WITNESS"
         else "PLAYER_CHARGE_MOVE_LABEL_${slot}_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = if (slot == 0) "Player Charge Button Touch Witness" else if (effectiveness) "Charged Button Effectiveness $slot Witness" else "Player Charge Move Label $slot Witness"
+    override val name = if (slot == 0) "Player Charge Button Touch" else if (effectiveness) "Charged Button Effectiveness $slot" else "Player Charge Move Label $slot"
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
     private var samples: Channel<Sample>? = null

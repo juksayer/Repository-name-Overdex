@@ -24,7 +24,7 @@ import com.example.overdex.battle.timeline.observer.ObservationSource as Observe
 class PersistedAnnouncementWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("ANNOUNCEMENT_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Announcement Witness"
+    override val name: String = "Announcement"
 ) : Observer {
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
@@ -65,7 +65,7 @@ class PersistedAnnouncementWitness(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        android.util.Log.w("ANNOUNCEMENT_WITNESS", "Recognition failed", error)
+                        android.util.Log.w("ANNOUNCEMENT", "Recognition failed", error)
                         null
                     } finally { bitmap.recycle() }
                 }

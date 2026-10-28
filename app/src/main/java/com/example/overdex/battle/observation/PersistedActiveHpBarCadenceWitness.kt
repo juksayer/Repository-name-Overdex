@@ -82,13 +82,13 @@ class PersistedActiveHpBarCadenceWitness(
         fun player() = PersistedActiveHpBarCadenceWitness(
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerActiveHpBarCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Active HP Bar Cadence Witness"
+            "Player Active HP Bar Cadence"
         )
 
         fun opponent() = PersistedActiveHpBarCadenceWitness(
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentActiveHpBarCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Active HP Bar Cadence Witness"
+            "Opponent Active HP Bar Cadence"
         )
     }
 }

@@ -116,7 +116,7 @@ class PersistedActiveHpBarWitness(
             crop = BattleCropContracts.playerHpEvidence,
             side = ActivePokemonSide.PLAYER,
             observerId = ObserverId("PLAYER_ACTIVE_HP_BAR_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            name = "Player Active HP Bar Witness"
+            name = "Player Active HP Bar"
         )
 
         fun opponent(artifactStore: FileCropArtifactStore) = PersistedActiveHpBarWitness(
@@ -124,7 +124,7 @@ class PersistedActiveHpBarWitness(
             crop = BattleCropContracts.opponentHpEvidence,
             side = ActivePokemonSide.OPPONENT,
             observerId = ObserverId("OPPONENT_ACTIVE_HP_BAR_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            name = "Opponent Active HP Bar Witness"
+            name = "Opponent Active HP Bar"
         )
     }
 }

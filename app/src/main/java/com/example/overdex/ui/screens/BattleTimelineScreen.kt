@@ -1,5 +1,7 @@
 package com.example.overdex.ui.screens
 
+import com.example.overdex.diagnostics.sourceJobLabel
+import com.example.overdex.diagnostics.signalLabel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -134,10 +136,10 @@ private fun RealityArticleRow(
         Row(modifier = Modifier.fillMaxWidth()) {
             TerminalText(timeStr, color = if (isSelected) TerminalGreen else TerminalDimGreen, fontSize = 12.sp, modifier = Modifier.width(48.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            TerminalText(article.sourceId.id, color = if (isSelected) TerminalGreen else Color.White, fontSize = 12.sp)
+            TerminalText(sourceJobLabel(article.sourceId.id), color = if (isSelected) TerminalGreen else Color.White, fontSize = 12.sp)
         }
         TerminalText(
-            text = article.payload::class.simpleName.orEmpty(),
+            text = signalLabel(article.payload::class.simpleName.orEmpty()),
             color = TerminalDimGreen,
             fontSize = 10.sp,
             modifier = Modifier.padding(start = 56.dp)

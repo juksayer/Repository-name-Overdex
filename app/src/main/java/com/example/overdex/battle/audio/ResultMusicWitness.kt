@@ -27,7 +27,7 @@ class ResultMusicWitness(
     private val loadMatcher: suspend () -> ResultMusicMatcher = { ResultMusicReferences.load(context) },
 ) : Observer {
     override val observerId = ObserverId("RESULT_MUSIC_WITNESS", ObservationSource.AUDIO_CAPTURE)
-    override val name = "Result Music Witness"
+    override val name = "Result Music"
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null

@@ -2,8 +2,9 @@ package com.example.overdex.battle.reality
 
 /**
  * The Reality Timeline: preserves immutable records concerning Articles.
- * It is responsible for the objective history of what was perceived and
- * what was reasoned during a Match.
+ * Stores observations and conclusions supplied by their respective producers.
+ * It does not interpret payloads, reconcile evidence, or infer battle events.
+ * Reasoning belongs to the independent consumers that produce derived Articles.
  */
 interface RealityTimeline {
     /** Appends a new, immutable record to the chronological ledger. */

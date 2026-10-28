@@ -24,7 +24,7 @@ class YouWinWitness(
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
         ObserverId("YOU_WIN_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "You Win Witness",
+    override val name: String = "You Win",
     private val recognize: suspend (Bitmap?, String) -> List<RecognitionResult<*>> = { cropped, regionId ->
         if (cropped == null) emptyList()
         else ObservationRecognizer.recognize(CaptureObservation(regionId, cropped), stage = "MATCH_END")
@@ -58,7 +58,7 @@ class YouWinWitness(
     override fun start(match: Match) {
         if (scope != null) return
 
-        Log.d("YouWinWitness", "start()")
+        Log.d("YouWin", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -68,7 +68,7 @@ class YouWinWitness(
 
         newScope.launch {
             input.supply { bitmap ->
-                Log.d("YouWinWitness", "bitmap received")
+                Log.d("YouWin", "bitmap received")
                 
                 val timestamp = System.currentTimeMillis()
                 match.custody.submitInputAvailability(sourceId, true, timestamp)
@@ -89,7 +89,7 @@ class YouWinWitness(
 
                 if (result != null) {
                     Log.d(
-                        "YouWinWitness",
+                        "YouWin",
                         "YouWin OCR text submitted: \"${result.value}\" confidence=${result.confidence}"
                     )
 

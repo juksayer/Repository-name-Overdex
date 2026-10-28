@@ -266,7 +266,7 @@ internal class LiveHpEffectivenessTextWitness(
             isEnabled,
             frameHub,
             ObserverId(FastMoveEffectivenessSources.PLAYER_TEXT, ObserverSource.SCREEN_CAPTURE),
-            "Player HP Effectiveness Text Witness",
+            "Player HP Effectiveness Text",
         )
 
         fun opponent(
@@ -284,7 +284,7 @@ internal class LiveHpEffectivenessTextWitness(
             isEnabled,
             frameHub,
             ObserverId(FastMoveEffectivenessSources.OPPONENT_TEXT, ObserverSource.SCREEN_CAPTURE),
-            "Opponent HP Effectiveness Text Witness",
+            "Opponent HP Effectiveness Text",
         )
     }
 }

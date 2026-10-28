@@ -60,12 +60,12 @@ class PersistedPlayerInactiveSpeciesSpriteWitness(
         fun upper(artifactStore: FileCropArtifactStore) = PersistedPlayerInactiveSpeciesSpriteWitness(
             artifactStore, 0, BattleCropContracts.playerInactiveUpperSpeciesSprite,
             ObserverId("PLAYER_INACTIVE_UPPER_SPECIES_SPRITE_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            "Player Inactive Upper Species Sprite Witness"
+            "Player Inactive Upper Species Sprite"
         )
         fun lower(artifactStore: FileCropArtifactStore) = PersistedPlayerInactiveSpeciesSpriteWitness(
             artifactStore, 1, BattleCropContracts.playerInactiveLowerSpeciesSprite,
             ObserverId("PLAYER_INACTIVE_LOWER_SPECIES_SPRITE_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            "Player Inactive Lower Species Sprite Witness"
+            "Player Inactive Lower Species Sprite"
         )
     }
 }

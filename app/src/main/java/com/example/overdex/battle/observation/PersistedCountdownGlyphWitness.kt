@@ -21,7 +21,7 @@ import com.example.overdex.battle.timeline.observer.ObservationSource as Observe
 class PersistedCountdownGlyphWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId(BattleWitnessContracts.countdownGlyph.witnessId, ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Countdown Glyph Witness"
+    override val name: String = "Countdown Glyph"
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -85,7 +85,7 @@ class PersistedCountdownGlyphWitness(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        Log.e("CountdownGlyphWitness", "Glyph recognition failed for ${article.id.value}", error)
+                        Log.e("CountdownGlyph", "Glyph recognition failed for ${article.id.value}", error)
                     } finally {
                         bitmap.recycle()
                     }

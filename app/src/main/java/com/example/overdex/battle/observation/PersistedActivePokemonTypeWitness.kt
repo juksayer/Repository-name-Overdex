@@ -40,7 +40,7 @@ class PersistedActivePokemonTypeWitness(
                                 // witness had no usable reading. It must not cancel
                                 // the observer scope or crash the field session.
                                 Log.w(
-                                    "TYPE_ICON_WITNESS",
+                                    "TYPE_ICON",
                                     "Unable to inspect ${captured.cropProvenance.cropName} " +
                                         "(${bitmap.width}x${bitmap.height})",
                                     error
@@ -63,7 +63,7 @@ class PersistedActivePokemonTypeWitness(
     override fun stop() { scope?.cancel("Witness stopped"); scope = null }
 
     companion object {
-        fun player(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.PLAYER, BattleCropContracts.playerActiveTypeIcons, ObserverId(BattleWitnessContracts.playerActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Player Active Type Icons Witness")
-        fun opponent(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.OPPONENT, BattleCropContracts.opponentActiveTypeIcons, ObserverId(BattleWitnessContracts.opponentActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Opponent Active Type Icons Witness")
+        fun player(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.PLAYER, BattleCropContracts.playerActiveTypeIcons, ObserverId(BattleWitnessContracts.playerActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Player Active Type Icons")
+        fun opponent(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.OPPONENT, BattleCropContracts.opponentActiveTypeIcons, ObserverId(BattleWitnessContracts.opponentActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Opponent Active Type Icons")
     }
 }

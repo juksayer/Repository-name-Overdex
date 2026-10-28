@@ -14,7 +14,7 @@ import com.example.overdex.battle.timeline.observer.ObservationSource as Observe
 /** Reads only the short decision dial between the team badges, never the opening countdown. */
 class PersistedDecisionTimerWitness(private val artifacts: FileCropArtifactStore) : Observer {
     override val observerId = ObserverId("DECISION_TIMER_WITNESS", ObserverSource.SCREEN_CAPTURE)
-    override val name = "Decision Timer Witness"
+    override val name = "Decision Timer"
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {
@@ -42,7 +42,7 @@ class PersistedDecisionTimerWitness(private val artifacts: FileCropArtifactStore
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        android.util.Log.e("DecisionTimerWitness", "Unable to read preserved timer crop", error)
+                        android.util.Log.e("DecisionTimer", "Unable to read preserved timer crop", error)
                     } finally {
                         bitmap.recycle()
                     }

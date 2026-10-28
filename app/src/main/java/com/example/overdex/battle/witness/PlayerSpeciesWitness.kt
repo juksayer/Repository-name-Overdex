@@ -28,7 +28,7 @@ class PlayerSpeciesWitness(
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
         ObserverId("PLAYER_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Player Species Witness",
+    override val name: String = "Player Species",
     private val recognize: suspend (Bitmap?, String) -> List<RecognitionResult<*>> = { cropped, regionId ->
         if (cropped == null) emptyList()
         else ObservationRecognizer.recognize(CaptureObservation(regionId, cropped), stage = "SPECIES")
@@ -61,7 +61,7 @@ class PlayerSpeciesWitness(
 
     override fun start(match: Match) {
         if (scope != null) return
-        Log.d("PlayerSpeciesWitness", "start()")
+        Log.d("PlayerSpecies", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -70,9 +70,9 @@ class PlayerSpeciesWitness(
         match.custody.submitAvailability(sourceId, true, System.currentTimeMillis())
 
         newScope.launch {
-            Log.d("PlayerSpeciesWitness", "waiting for frames")
+            Log.d("PlayerSpecies", "waiting for frames")
             input.supply { bitmap ->
-                Log.d("PlayerSpeciesWitness", "player bitmap received")
+                Log.d("PlayerSpecies", "player bitmap received")
                 
                 val timestamp = System.currentTimeMillis()
                 match.custody.submitInputAvailability(sourceId, true, timestamp)
@@ -92,7 +92,7 @@ class PlayerSpeciesWitness(
 
                     if (result != null) {
                         val playerSpeciesText = result.value as String
-                        Log.d("PlayerSpeciesWitness", "Player Species OCR text submitted: \"$playerSpeciesText\" confidence=${result.confidence}")
+                        Log.d("PlayerSpecies", "Player Species OCR text submitted: \"$playerSpeciesText\" confidence=${result.confidence}")
 
                         // Reality Handoff (Neutral Testimony)
                         match.custody.submitTestimony(

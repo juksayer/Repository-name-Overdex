@@ -80,7 +80,7 @@ internal class LiveActiveHpBarWitness(
     private val opponentFrameHub: LiveActiveHpBarFrameHub,
 ) : Observer {
     override val observerId = ObserverId("ACTIVE_HP_BARS_FRAME_WITNESS", ObserverSource.SCREEN_CAPTURE)
-    override val name = "Active HP Bars Frame Witness"
+    override val name = "Active HP Bars Frame"
     override val managesAvailability = true
 
     private var scope: CoroutineScope? = null
@@ -286,7 +286,7 @@ internal class LiveActiveHpBarBorderCadenceWitness(
                 frameHub,
                 ActivePokemonSide.PLAYER,
                 ObserverId(BattleWitnessContracts.playerActiveHpBarBorderCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-                "Player Active HP Bar Border Cadence Witness"
+                "Player Active HP Bar Border Cadence"
             )
 
         fun opponent(frameHub: LiveActiveHpBarFrameHub) =
@@ -294,7 +294,7 @@ internal class LiveActiveHpBarBorderCadenceWitness(
                 frameHub,
                 ActivePokemonSide.OPPONENT,
                 ObserverId(BattleWitnessContracts.opponentActiveHpBarBorderCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-                "Opponent Active HP Bar Border Cadence Witness"
+                "Opponent Active HP Bar Border Cadence"
             )
     }
 }
@@ -399,7 +399,7 @@ internal class LiveActiveHpBarBorderPulseWitness(
                 frameHub,
                 ActivePokemonSide.PLAYER,
                 ObserverId(BattleWitnessContracts.playerActiveHpBarBorderPulse.witnessId, ObserverSource.SCREEN_CAPTURE),
-                "Player Active HP Bar Border Pulse Witness"
+                "Player Active HP Bar Border Pulse"
             )
 
         fun opponent(frameHub: LiveActiveHpBarFrameHub) =
@@ -407,7 +407,7 @@ internal class LiveActiveHpBarBorderPulseWitness(
                 frameHub,
                 ActivePokemonSide.OPPONENT,
                 ObserverId(BattleWitnessContracts.opponentActiveHpBarBorderPulse.witnessId, ObserverSource.SCREEN_CAPTURE),
-                "Opponent Active HP Bar Border Pulse Witness"
+                "Opponent Active HP Bar Border Pulse"
             )
     }
 }
@@ -736,14 +736,14 @@ internal class LiveActiveHpBarDamageTickWitness(
             frameHub,
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerActiveHpBarDamageTick.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Active HP Bar Damage Tick Witness"
+            "Player Active HP Bar Damage Tick"
         )
 
         fun opponent(frameHub: LiveActiveHpBarFrameHub) = LiveActiveHpBarDamageTickWitness(
             frameHub,
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentActiveHpBarDamageTick.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Active HP Bar Damage Tick Witness"
+            "Opponent Active HP Bar Damage Tick"
         )
     }
 }
@@ -989,14 +989,14 @@ internal class LiveFastMoveRecipientVisualArtifactWitness(
             frameHub,
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerFastMoveRecipientVisualArtifact.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Fast Move Recipient Visual Artifact Witness"
+            "Player Fast Move Recipient Visual Artifact"
         )
 
         fun opponent(frameHub: LiveActiveHpBarFrameHub) = LiveFastMoveRecipientVisualArtifactWitness(
             frameHub,
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentFastMoveRecipientVisualArtifact.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Fast Move Recipient Visual Artifact Witness"
+            "Opponent Fast Move Recipient Visual Artifact"
         )
     }
 }
@@ -1089,13 +1089,13 @@ internal class LiveFastMoveRecipientVisualCadenceWitness(
         fun player() = LiveFastMoveRecipientVisualCadenceWitness(
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerFastMoveRecipientVisualCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Fast Move Recipient Visual Cadence Witness"
+            "Player Fast Move Recipient Visual Cadence"
         )
 
         fun opponent() = LiveFastMoveRecipientVisualCadenceWitness(
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentFastMoveRecipientVisualCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Fast Move Recipient Visual Cadence Witness"
+            "Opponent Fast Move Recipient Visual Cadence"
         )
     }
 }

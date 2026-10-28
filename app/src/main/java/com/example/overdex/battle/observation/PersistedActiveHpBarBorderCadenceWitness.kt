@@ -114,7 +114,7 @@ class PersistedActiveHpBarBorderCadenceWitness(
             BattleCropContracts.playerHpEvidence,
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerActiveHpBarBorderCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Active HP Bar Border Cadence Witness"
+            "Player Active HP Bar Border Cadence"
         )
 
         fun opponent(store: FileCropArtifactStore) = PersistedActiveHpBarBorderCadenceWitness(
@@ -122,7 +122,7 @@ class PersistedActiveHpBarBorderCadenceWitness(
             BattleCropContracts.opponentHpEvidence,
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentActiveHpBarBorderCadence.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Active HP Bar Border Cadence Witness"
+            "Opponent Active HP Bar Border Cadence"
         )
     }
 }

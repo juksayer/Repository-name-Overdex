@@ -1,5 +1,6 @@
 package com.example.overdex.battle.observation
 
+import com.example.overdex.diagnostics.sourceJobLabel
 import com.example.overdex.BattleMemory
 import com.example.overdex.battle.custody.AttackIncoming
 import com.example.overdex.battle.custody.ActivePokemonSide
@@ -351,11 +352,11 @@ class Match(
             var matchEndRecorded = false
             custody.testimonyFlow.collect { testimony ->
                 if (testimony.payload is AttackIncoming) {
-                    Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
+                    Log.d("ATTACK_SLICE", "Match received TestimonyRecord: type=${testimony.payload::class.simpleName}, job=${sourceJobLabel(testimony.sourceId.id)}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
                 if (testimony.payload is PokemonIdentified) {
                     val p = testimony.payload as PokemonIdentified
-                    Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, sourceId=${testimony.sourceId.id}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
+                    Log.d("SPECIES_SLICE", "Match received TestimonyRecord: type=${p::class.simpleName}, species=${p.species}, job=${sourceJobLabel(testimony.sourceId.id)}, confidence=${testimony.confidence}, sequence=${testimony.sequenceNumber}, refs=${testimony.evidenceReferences}")
                 }
 
                 val article = RealityArticle(
@@ -439,11 +440,11 @@ class Match(
                     }
 
                 if (testimony.payload is AttackIncoming) {
-                    Log.d("ATTACK_SLICE", "Match created RealityArticle: articleId=${article.id.value}, matchId=${article.matchId?.value}, type=${article.payload::class.simpleName}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
+                    Log.d("ATTACK_SLICE", "Match created RealityArticle: articleId=${article.id.value}, matchId=${article.matchId?.value}, type=${article.payload::class.simpleName}, job=${sourceJobLabel(article.sourceId.id)}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
                 }
                 if (testimony.payload is PokemonIdentified) {
                     val p = article.payload as PokemonIdentified
-                    Log.d("SPECIES_SLICE", "Match created RealityArticle: articleId=${article.id.value}, matchId=${article.matchId?.value}, type=${p::class.simpleName}, species=${p.species}, sourceId=${article.sourceId.id}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
+                    Log.d("SPECIES_SLICE", "Match created RealityArticle: articleId=${article.id.value}, matchId=${article.matchId?.value}, type=${p::class.simpleName}, species=${p.species}, job=${sourceJobLabel(article.sourceId.id)}, confidence=${article.confidence}, sequence=${article.sequenceNumber}, refs=${article.evidenceReferences}")
                 }
 
                 realityTimeline.append(article)

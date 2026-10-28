@@ -67,13 +67,13 @@ class PersistedAnnouncementPhraseWitness(
     companion object {
         fun getReady(artifactStore: FileCropArtifactStore) = PersistedAnnouncementPhraseWitness(
             artifactStore, "GETREADY", GetReadyWitnessed,
-            ObserverId("GET_READY_WITNESS", ObservationSource.SCREEN_CAPTURE), "Get Ready Witness"
+            ObserverId("GET_READY_WITNESS", ObservationSource.SCREEN_CAPTURE), "Get Ready"
         )
 
         fun chargeMoveUsed(artifactStore: FileCropArtifactStore) = PersistedAnnouncementPhraseWitness(
             artifactStore, "USED", ChargeMoveUsedAnnounced,
             ObserverId("CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS", ObservationSource.SCREEN_CAPTURE),
-            "Charge Move Used Announcement Witness"
+            "Charge Move Used Announcement"
         )
     }
 }

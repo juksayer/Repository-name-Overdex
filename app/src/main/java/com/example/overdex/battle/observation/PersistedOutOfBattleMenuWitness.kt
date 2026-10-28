@@ -19,7 +19,7 @@ class PersistedOutOfBattleMenuWitness(
     private val store: FileCropArtifactStore
 ) : Observer {
     override val observerId = ObserverId("OUT_OF_BATTLE_MENU_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Out Of Battle Menu Witness"
+    override val name = "Out Of Battle Menu"
 
     private var scope: CoroutineScope? = null
 

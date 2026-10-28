@@ -19,7 +19,7 @@ class PersistedAnnouncementSpeciesWitness(
     override val observerId: ObserverId = ObserverId(
         "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS", ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Announcement Species Roster Attribution Witness"
+    override val name: String = "Announcement Species Roster Attribution"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

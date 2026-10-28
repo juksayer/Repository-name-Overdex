@@ -19,7 +19,7 @@ class DeviceMotionPulseWitness(
         "DEVICE_MOTION_PULSE_WITNESS",
         ObservationSource.DROIDBALL
     ),
-    override val name: String = "Device Motion Pulse Witness"
+    override val name: String = "Device Motion Pulse"
 ) : Observer {
     override val managesAvailability: Boolean = true
     private var scope: CoroutineScope? = null

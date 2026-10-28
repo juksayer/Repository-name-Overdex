@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 class AudioCaptureWitness(
     private val artifactStore: AudioArtifactStore,
     override val observerId: ObserverId,
-    override val name: String = "Battle Cry Audio Capture Witness"
+    override val name: String = "Battle Cry Audio Capture"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

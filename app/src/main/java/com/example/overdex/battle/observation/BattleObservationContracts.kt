@@ -351,10 +351,10 @@ object BattleWitnessContracts {
         crop = BattleCropContracts.announcement,
         testimonyType = RawTestimony::class
     )
-    val attackIncomingText = BattleWitnessContract(
+    val attackIncoming = BattleWitnessContract(
         witnessId = "ATTACK_INCOMING_WITNESS",
         crop = BattleCropContracts.announcement,
-        testimonyType = RawTestimony::class
+        testimonyType = com.example.overdex.battle.custody.AttackIncoming::class
     )
     val getReady = BattleWitnessContract(
         witnessId = "GET_READY_WITNESS",

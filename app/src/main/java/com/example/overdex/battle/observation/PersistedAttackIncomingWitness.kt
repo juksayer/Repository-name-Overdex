@@ -14,7 +14,7 @@ import com.example.overdex.battle.timeline.observer.ObservationSource as Observe
 class PersistedAttackIncomingWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("ATTACK_INCOMING_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Attack Incoming Witness"
+    override val name: String = "Attack Incoming"
 ) : Observer {
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
@@ -46,7 +46,10 @@ class PersistedAttackIncomingWitness(
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     val at = article.monotonicTimeNanos ?: return@collect
                     if (!episodes.accept(text, at)) return@collect
-                    match.custody.submitTestimony(sourceId, RawTestimony(text), article.perceivedAt, null, listOf(article.id.value), at)
+                    // Recognition is complete here. Preserve the raw announcement
+                    // as its own article and publish the warning with that source
+                    // time and reference; no downstream text interpretation is needed.
+                    match.custody.submitTestimony(sourceId, AttackIncoming, article.perceivedAt, null, listOf(article.id.value), at)
                 }
             }
         }

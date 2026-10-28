@@ -15,7 +15,8 @@ interface Observer {
     val observerId: ObserverId
 
     /**
-     * Human-readable name of the observer.
+     * Human-readable job or output-signal name, without a redundant Witness suffix.
+     * The stable observerId remains separate for routing and archive compatibility.
      */
     val name: String
 

@@ -221,12 +221,12 @@ class PersistedSpeciesWitness(
 
         fun player(artifactStore: FileCropArtifactStore) = PersistedSpeciesWitness(
             artifactStore, BattleCropContracts.playerActiveSpeciesText, ActivePokemonSide.PLAYER,
-            ObserverId("PLAYER_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE), "Player Species Witness"
+            ObserverId("PLAYER_SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE), "Player Species"
         )
 
         fun opponent(artifactStore: FileCropArtifactStore) = PersistedSpeciesWitness(
             artifactStore, BattleCropContracts.opponentActiveSpeciesText, ActivePokemonSide.OPPONENT,
-            ObserverId("SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE), "Opponent Species Witness"
+            ObserverId("SPECIES_WITNESS", ObserverSource.SCREEN_CAPTURE), "Opponent Species"
         )
     }
 }

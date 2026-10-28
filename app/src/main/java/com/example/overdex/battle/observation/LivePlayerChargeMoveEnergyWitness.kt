@@ -37,7 +37,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
         BattleWitnessContracts.playerChargeMoveEnergyFill.witnessId,
         ObserverSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Player Charge Move Energy Fill Witness"
+    override val name: String = "Player Charge Move Energy Fill"
 ) : Observer {
     override val managesAvailability: Boolean = true
     private var scope: CoroutineScope? = null
@@ -312,7 +312,7 @@ internal class PersistedPlayerChargeMoveEnergyFillCadenceWitness(
         BattleWitnessContracts.playerChargeMoveEnergyFillCadence.witnessId,
         ObserverSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Player Charge Move Energy Fill Cadence Witness"
+    override val name: String = "Player Charge Move Energy Fill Cadence"
 ) : Observer {
     override val managesAvailability: Boolean = true
     private var scope: CoroutineScope? = null

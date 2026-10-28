@@ -1,5 +1,6 @@
 package com.example.overdex.battle.witness
 
+import com.example.overdex.diagnostics.sourceJobLabel
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.overdex.battle.custody.RawTestimony
@@ -26,12 +27,12 @@ class AttackIncomingWitness(
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
         ObserverId("ATTACK_INCOMING_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Attack Incoming Witness",
+    override val name: String = "Attack Incoming",
     private val perceive: suspend (Bitmap) -> String? = { bitmap ->
         try {
             SharedLatinTextRecognizer.readText(bitmap)
         } catch (e: Exception) {
-            Log.e("AttackIncomingWitness", "Perception failed", e)
+            Log.e("AttackIncoming", "Perception failed", e)
             null
         }
     },
@@ -60,7 +61,7 @@ class AttackIncomingWitness(
     override fun start(match: Match) {
         if (scope != null) return
 
-        Log.d("AttackIncomingWitness", "start()")
+        Log.d("AttackIncoming", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -79,7 +80,7 @@ class AttackIncomingWitness(
                         val text = perceive(cropped)
                         
                         if (text != null) {
-                            Log.d("AttackIncomingWitness", "OCR text observed: \"$text\" (conf=null)")
+                            Log.d("AttackIncoming", "OCR text observed: \"$text\" (conf=null)")
 
                             // Submit raw testimony preserving spelling, case, whitespace, punctuation, and empty strings
                             match.custody.submitTestimony(
@@ -89,7 +90,7 @@ class AttackIncomingWitness(
                                 confidence = null
                             )
 
-                            Log.d("ATTACK_SLICE", "Witness submitted RawTestimony: sourceId=${sourceId.id}, text=\"$text\"")
+                            Log.d("ATTACK_SLICE", "Attack Incoming submitted RawTestimony: job=${sourceJobLabel(sourceId.id)}, text=\"$text\"")
                         }
                     }
                 }

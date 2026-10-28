@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens.observatory
 
+import com.example.overdex.diagnostics.sourceJobLabel
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -318,7 +319,7 @@ private fun ArchiveArticleRow(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             TerminalText(
-                text = article.sourceId,
+                text = sourceJobLabel(article.sourceId),
                 color = if (isSelected) TerminalGreen else TerminalPurple,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,

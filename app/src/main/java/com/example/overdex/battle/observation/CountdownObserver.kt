@@ -214,7 +214,7 @@ class CountdownObserver(
                                         candidate,
                                         matchResult.similarity
                                     )
-                                    Log.d("COUNTDOWN_GLYPH_WITNESS", witnessLog)
+                                    Log.d("COUNTDOWN_GLYPH", witnessLog)
                                 }
 
                                 val candidateStr = candidate ?: "null"

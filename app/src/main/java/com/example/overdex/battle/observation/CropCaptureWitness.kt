@@ -113,10 +113,10 @@ class CropCaptureWitness(
                                 frame.capturedAtMonotonicTimeNanos
                             )
                         } catch (error: Exception) {
-                            Log.e("CropCaptureWitness", "Post-custody delivery failed for ${contract.crop.cropName}", error)
+                            Log.e("CropCapture", "Post-custody delivery failed for ${contract.crop.cropName}", error)
                         }
                     } catch (error: Exception) {
-                        Log.e("CropCaptureWitness", "Crop preservation failed for ${contract.crop.cropName}", error)
+                        Log.e("CropCapture", "Crop preservation failed for ${contract.crop.cropName}", error)
                     } finally {
                         resolved.bitmap.recycle()
                     }

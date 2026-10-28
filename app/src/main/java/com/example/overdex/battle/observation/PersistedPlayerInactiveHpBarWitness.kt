@@ -58,13 +58,13 @@ class PersistedPlayerInactiveHpBarWitness(
         fun upper(artifactStore: FileCropArtifactStore) = PersistedPlayerInactiveHpBarWitness(
             artifactStore, 0, BattleCropContracts.playerInactiveUpperHpBar,
             ObserverId("PLAYER_INACTIVE_UPPER_HP_BAR_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            "Player Inactive Upper HP Bar Witness"
+            "Player Inactive Upper HP Bar"
         )
 
         fun lower(artifactStore: FileCropArtifactStore) = PersistedPlayerInactiveHpBarWitness(
             artifactStore, 1, BattleCropContracts.playerInactiveLowerHpBar,
             ObserverId("PLAYER_INACTIVE_LOWER_HP_BAR_WITNESS", ObserverSource.SCREEN_CAPTURE),
-            "Player Inactive Lower HP Bar Witness"
+            "Player Inactive Lower HP Bar"
         )
     }
 }

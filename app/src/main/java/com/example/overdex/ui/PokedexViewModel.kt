@@ -665,7 +665,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             artifactStore = cropArtifactStore,
             isEnabled = { session.canObserveTeamSelect },
             observerId = ObserverId("TEAM_SELECT_SNAPSHOT_CAPTURE", ObserverSource.SCREEN_CAPTURE),
-            name = "Team Select Snapshot Capture Witness",
+            name = "Team Select Snapshot Capture",
         ))
         observationDispatcher.register(PersistedTeamSelectPartyWitness(cropArtifactStore))
         observationDispatcher.register(PersistedTeamSelectLeagueWitness(cropArtifactStore))
@@ -744,8 +744,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         val activeTypeSampling = com.example.overdex.battle.observation.ActiveTypeSamplingGate()
         observationDispatcher.register(activeTypeSampling)
         listOf(
-            BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture Witness",
-            BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture Witness"
+            BattleWitnessContracts.playerActiveTypeIconsCapture to "Player Active Type Icons Capture",
+            BattleWitnessContracts.opponentActiveTypeIconsCapture to "Opponent Active Type Icons Capture"
         ).forEach { (contract, name) ->
             val side = if (contract == BattleWitnessContracts.playerActiveTypeIconsCapture)
                 com.example.overdex.battle.custody.ActivePokemonSide.PLAYER else com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT
@@ -763,10 +763,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         listOf(
-            BattleWitnessContracts.playerPokeBallsCapture to "Player Poké Balls Capture Witness",
-            BattleWitnessContracts.opponentPokeBallsCapture to "Opponent Poké Balls Capture Witness",
-            BattleWitnessContracts.playerShieldsCapture to "Player Shields Capture Witness",
-            BattleWitnessContracts.opponentShieldsCapture to "Opponent Shields Capture Witness"
+            BattleWitnessContracts.playerPokeBallsCapture to "Player Poké Balls Capture",
+            BattleWitnessContracts.opponentPokeBallsCapture to "Opponent Poké Balls Capture",
+            BattleWitnessContracts.playerShieldsCapture to "Player Shields Capture",
+            BattleWitnessContracts.opponentShieldsCapture to "Opponent Shields Capture"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(
                 input = input,
@@ -804,7 +804,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = transientIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.countdownCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Countdown Crop Capture Witness"
+                name = "Countdown Crop Capture"
             )
         )
         observationDispatcher.register(PersistedCountdownGlyphWitness(cropArtifactStore))
@@ -827,7 +827,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = 200_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.vsScreenCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "VS Screen Crop Capture Witness"
+                name = "VS Screen Crop Capture"
             )
         )
         observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore))
@@ -843,7 +843,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = transientIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.trainerInactiveTimerOverlayClearanceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Trainer Inactive Timer Overlay Capture Witness"
+                name = "Trainer Inactive Timer Overlay Capture"
             )
         )
         observationDispatcher.register(PersistedTrainerInactiveTimerOverlayClearanceWitness(cropArtifactStore))
@@ -860,7 +860,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 // faster witnesses retain only their truthful crop bytes.
                 preserveCompleteFrame = true,
                 observerId = ObserverId(BattleWitnessContracts.opponentHpEvidenceCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Opponent HP Evidence Capture Witness",
+                name = "Opponent HP Evidence Capture",
                 onCaptured = { crop, _, at ->
                     // Keep one actual battlefield frame per match for Draggy Boxes.
                     // Both HP bars must have been visible close to this frame.
@@ -930,9 +930,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         listOf(
-            BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture Witness",
-            BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture Witness",
-            BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture Witness"
+            BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture",
+            BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture",
+            BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
                 isEnabled = if (contract == BattleWitnessContracts.playerHpEvidenceCapture) activeHpEvidenceLive else battleEvidenceLive,
@@ -955,7 +955,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = transientTextIntervalNanos,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.announcementCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Announcement Crop Capture Witness")
+                name = "Announcement Crop Capture")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
         val qteSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
@@ -973,7 +973,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             captureIntervalNanos = com.example.overdex.battle.observation.QteTypeIconSampling.CAPTURE_INTERVAL_NANOS,
             captureDispatcher = auxiliaryCaptureDispatcher,
             observerId = ObserverId("QTE_TYPE_ICONS_CAPTURE", ObserverSource.SCREEN_CAPTURE),
-            name = "QTE Type Icons Capture Witness",
+            name = "QTE Type Icons Capture",
             onCaptured = { _, _, at -> qteSampling.captured(at) }
         ))
         observationDispatcher.register(CropCaptureWitness(input, calibration,
@@ -981,7 +981,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             isEnabled = { battleEvidenceLive() && session.firstLiveCombatArticle.value != null },
             captureIntervalNanos = 250_000_000L, captureDispatcher = auxiliaryCaptureDispatcher,
             observerId = ObserverId("DECISION_TIMER_CAPTURE", ObserverSource.SCREEN_CAPTURE),
-            name = "Decision Timer Capture Witness"))
+            name = "Decision Timer Capture"))
         observationDispatcher.register(com.example.overdex.battle.observation.PersistedDecisionTimerWitness(cropArtifactStore))
         observationDispatcher.register(PersistedPlayerEntrySpeciesWitness())
         observationDispatcher.register(PersistedAnnouncementSpeciesWitness())
@@ -989,10 +989,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.getReady(cropArtifactStore))
         observationDispatcher.register(PersistedAnnouncementPhraseWitness.chargeMoveUsed(cropArtifactStore))
         listOf(
-            BattleWitnessContracts.playerInactiveUpperSpeciesSpriteCapture to "Player Inactive Upper Species Sprite Capture Witness",
-            BattleWitnessContracts.playerInactiveLowerSpeciesSpriteCapture to "Player Inactive Lower Species Sprite Capture Witness",
-            BattleWitnessContracts.playerInactiveUpperHpBarCapture to "Player Inactive Upper HP Bar Capture Witness",
-            BattleWitnessContracts.playerInactiveLowerHpBarCapture to "Player Inactive Lower HP Bar Capture Witness"
+            BattleWitnessContracts.playerInactiveUpperSpeciesSpriteCapture to "Player Inactive Upper Species Sprite Capture",
+            BattleWitnessContracts.playerInactiveLowerSpeciesSpriteCapture to "Player Inactive Lower Species Sprite Capture",
+            BattleWitnessContracts.playerInactiveUpperHpBarCapture to "Player Inactive Upper HP Bar Capture",
+            BattleWitnessContracts.playerInactiveLowerHpBarCapture to "Player Inactive Lower HP Bar Capture"
         ).forEach { (contract, name) ->
             observationDispatcher.register(
                 CropCaptureWitness(
@@ -1022,7 +1022,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = 200_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.inactiveMatchStartTimerCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Inactive Match Start Timer Capture Witness"
+                name = "Inactive Match Start Timer Capture"
             )
         )
         observationDispatcher.register(
@@ -1035,7 +1035,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = 1_000_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.switchLockoutTimerCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Switch Lockout Timer Capture Witness"
+                name = "Switch Lockout Timer Capture"
             )
         )
         observationDispatcher.register(PersistedPlayerInactiveHpBarWitness.upper(cropArtifactStore))
@@ -1045,10 +1045,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedOutOfBattleMenuWitness(cropArtifactStore))
         observationDispatcher.register(CropCaptureWitness(input, calibration, BattleWitnessContracts.battlePartyTabsCapture, cropArtifactStore,
             isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
-            observerId = ObserverId(BattleWitnessContracts.battlePartyTabsCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Battle Party Tabs Capture Witness"))
+            observerId = ObserverId(BattleWitnessContracts.battlePartyTabsCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Battle Party Tabs Capture"))
         observationDispatcher.register(CropCaptureWitness(input, calibration, BattleWitnessContracts.outOfBattleMenuCapture, cropArtifactStore,
             isEnabled = { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT },
-            observerId = ObserverId(BattleWitnessContracts.outOfBattleMenuCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Out Of Battle Menu Capture Witness"))
+            observerId = ObserverId(BattleWitnessContracts.outOfBattleMenuCapture.witnessId, ObserverSource.SCREEN_CAPTURE), name = "Out Of Battle Menu Capture"))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -1059,7 +1059,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureIntervalNanos = 250_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.matchOutcomeCropCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
-                name = "Match Outcome Crop Capture Witness"
+                name = "Match Outcome Crop Capture"
             )
         )
         observationDispatcher.register(PersistedOutcomeTextWitness(cropArtifactStore))
@@ -1071,7 +1071,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         com.example.overdex.battle.observation.MatchOutcomePhrase.WIN
                 },
                 observerId = ObserverId("YOU_WIN_WITNESS", ObserverSource.SCREEN_CAPTURE),
-                name = "You Win Witness"
+                name = "You Win"
             )
         )
         observationDispatcher.register(
@@ -1081,7 +1081,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         com.example.overdex.battle.observation.MatchOutcomePhrase.LOSS
                 },
                 observerId = ObserverId("GOOD_EFFORT_WITNESS", ObserverSource.SCREEN_CAPTURE),
-                name = "Good Effort Witness"
+                name = "Good Effort"
             )
         )
 

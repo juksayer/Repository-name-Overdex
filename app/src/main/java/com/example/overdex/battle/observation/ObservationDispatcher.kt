@@ -35,7 +35,7 @@ class ObservationDispatcher {
         Log.d("DEPLOY", "4 startAll()")
         activeMatch = match
         observers.forEach {
-            Log.d("DEPLOY", "Starting ${it.javaClass.simpleName}")
+            Log.d("DEPLOY", "Starting ${it.name}")
             it.start(match)
             if (!it.managesAvailability) match.custody.submitAvailability(
                 sourceId = SourceId(it.observerId.id), available = true, timestamp = System.currentTimeMillis()

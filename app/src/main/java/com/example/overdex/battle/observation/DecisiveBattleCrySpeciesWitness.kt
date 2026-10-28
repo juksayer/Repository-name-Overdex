@@ -59,7 +59,7 @@ class DecisiveBattleCrySpeciesWitness(
         "DECISIVE_BATTLE_CRY_SPECIES_WITNESS",
         ObservationSource.AUDIO_CAPTURE,
     ),
-    override val name: String = "Decisive Battle Cry Species Witness",
+    override val name: String = "Decisive Battle Cry Species",
 ) : Observer {
     private var scope: CoroutineScope? = null
     private val openingSideGate = OpeningCrySideGate()

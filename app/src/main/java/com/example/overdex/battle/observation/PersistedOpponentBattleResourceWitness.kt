@@ -89,7 +89,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
             maximumCount = 3,
             acceptsPixel = OpponentBattleResourceCounter::isBrightPokeBallRed,
             observerId = ObserverId("OPPONENT_POKE_BALLS_WITNESS", ObservationSource.SCREEN_CAPTURE),
-            name = "Opponent Poké Balls Witness"
+            name = "Opponent Poké Balls"
         )
 
         fun playerShields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
@@ -100,7 +100,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
             acceptsPixel = OpponentBattleResourceCounter::isShieldColor,
             playerShields = true,
             observerId = ObserverId("PLAYER_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
-            name = "Player Shields Witness"
+            name = "Player Shields"
         )
 
         fun shields(artifactStore: FileCropArtifactStore) = PersistedOpponentBattleResourceWitness(
@@ -110,7 +110,7 @@ class PersistedOpponentBattleResourceWitness private constructor(
             maximumCount = 2,
             acceptsPixel = OpponentBattleResourceCounter::isShieldColor,
             observerId = ObserverId("OPPONENT_SHIELDS_WITNESS", ObservationSource.SCREEN_CAPTURE),
-            name = "Opponent Shields Witness"
+            name = "Opponent Shields"
         )
     }
 }
@@ -122,7 +122,7 @@ class PersistedPlayerPokeBallWitness(
         "PLAYER_POKE_BALLS_WITNESS",
         ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Player Poké Balls Witness"
+    override val name: String = "Player Poké Balls"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

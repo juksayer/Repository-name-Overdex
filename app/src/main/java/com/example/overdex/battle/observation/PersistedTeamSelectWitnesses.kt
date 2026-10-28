@@ -22,7 +22,7 @@ internal class PersistedTeamSelectPartyWitness(
     },
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PARTY_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Team Select Party Witness"
+    override val name = "Team Select Party"
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
         if (scope != null) return
@@ -131,7 +131,7 @@ internal class PersistedTeamSelectPartyWitness(
 /** Classifies the standard league while retaining the shield crop as its evidence. */
 class PersistedTeamSelectLeagueWitness(private val store: FileCropArtifactStore) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_LEAGUE_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Team Select League Witness"
+    override val name = "Team Select League"
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {
@@ -185,7 +185,7 @@ class PersistedPlayerTeamRosterSlotWitness(
     private val cropName: String
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_OCR_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Team Select Player Slot $slot OCR Witness"
+    override val name = "Team Select Player Slot $slot OCR"
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
         if (scope != null) return
@@ -252,7 +252,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
     private val cropName: String,
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_VISUAL_WITNESS", ObservationSource.SCREEN_CAPTURE)
-    override val name = "Team Select Player Slot $slot Visual Witness"
+    override val name = "Team Select Player Slot $slot Visual"
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {

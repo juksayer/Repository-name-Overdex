@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 class PersistedCountdownCryCueWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("COUNTDOWN_CRY_CUE_WITNESS", ObservationSource.AUDIO_CAPTURE),
-    override val name: String = "Countdown Cry Cue Witness"
+    override val name: String = "Countdown Cry Cue"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

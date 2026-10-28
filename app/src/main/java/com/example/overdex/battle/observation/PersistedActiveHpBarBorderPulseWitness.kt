@@ -114,7 +114,7 @@ class PersistedActiveHpBarBorderPulseWitness(
             BattleCropContracts.playerHpEvidence,
             ActivePokemonSide.PLAYER,
             ObserverId(BattleWitnessContracts.playerActiveHpBarBorderPulse.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Player Active HP Bar Border Pulse Witness"
+            "Player Active HP Bar Border Pulse"
         )
 
         fun opponent(store: FileCropArtifactStore) = PersistedActiveHpBarBorderPulseWitness(
@@ -122,7 +122,7 @@ class PersistedActiveHpBarBorderPulseWitness(
             BattleCropContracts.opponentHpEvidence,
             ActivePokemonSide.OPPONENT,
             ObserverId(BattleWitnessContracts.opponentActiveHpBarBorderPulse.witnessId, ObserverSource.SCREEN_CAPTURE),
-            "Opponent Active HP Bar Border Pulse Witness"
+            "Opponent Active HP Bar Border Pulse"
         )
     }
 }

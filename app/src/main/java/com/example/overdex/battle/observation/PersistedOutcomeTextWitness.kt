@@ -24,7 +24,7 @@ import com.example.overdex.model.observation.OcrTextEvidence
 class PersistedOutcomeTextWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("MATCH_OUTCOME_TEXT_WITNESS", ObservationSource.SCREEN_CAPTURE),
-    override val name: String = "Match Outcome Text Witness"
+    override val name: String = "Match Outcome Text"
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -77,7 +77,7 @@ class PersistedOutcomeTextWitness(
                         } catch (error: Exception) {
                             // A failed frame must not terminate the result reader
                             // for the remainder of this Match.
-                            Log.e("OutcomeTextWitness", "Result OCR failed for ${sample?.id?.value}", error)
+                            Log.e("OutcomeText", "Result OCR failed for ${sample?.id?.value}", error)
                             emptyList()
                         }
                         val article = sample ?: continue

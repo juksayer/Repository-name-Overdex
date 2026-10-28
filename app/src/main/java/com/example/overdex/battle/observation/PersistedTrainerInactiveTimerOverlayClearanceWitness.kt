@@ -23,7 +23,7 @@ class PersistedTrainerInactiveTimerOverlayClearanceWitness(
         BattleWitnessContracts.trainerInactiveTimerOverlayClearance.witnessId,
         ObserverSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Trainer Inactive Timer Overlay Clearance Witness"
+    override val name: String = "Trainer Inactive Timer Overlay Clearance"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

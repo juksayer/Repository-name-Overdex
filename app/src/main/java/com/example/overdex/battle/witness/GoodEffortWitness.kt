@@ -24,7 +24,7 @@ class GoodEffortWitness(
     private val calibration: BattleCalibration,
     override val observerId: ObserverId =
         ObserverId("GOOD_EFFORT_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Good Effort Witness",
+    override val name: String = "Good Effort",
     private val recognize: suspend (Bitmap?, String) -> List<RecognitionResult<*>> = { cropped, regionId ->
         if (cropped == null) emptyList()
         else ObservationRecognizer.recognize(CaptureObservation(regionId, cropped), stage = "MATCH_END")
@@ -58,7 +58,7 @@ class GoodEffortWitness(
     override fun start(match: Match) {
         if (scope != null) return
 
-        Log.d("GoodEffortWitness", "start()")
+        Log.d("GoodEffort", "start()")
 
         val newScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         scope = newScope
@@ -68,7 +68,7 @@ class GoodEffortWitness(
 
         newScope.launch {
             input.supply { bitmap ->
-                Log.d("GoodEffortWitness", "bitmap received")
+                Log.d("GoodEffort", "bitmap received")
                 
                 val timestamp = System.currentTimeMillis()
                 match.custody.submitInputAvailability(sourceId, true, timestamp)
@@ -89,7 +89,7 @@ class GoodEffortWitness(
 
                 if (result != null) {
                     Log.d(
-                        "GoodEffortWitness",
+                        "GoodEffort",
                         "GoodEffort OCR text submitted: \"${result.value}\" confidence=${result.confidence}"
                     )
 

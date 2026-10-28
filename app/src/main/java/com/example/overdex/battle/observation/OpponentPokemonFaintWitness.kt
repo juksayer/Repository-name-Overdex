@@ -32,7 +32,7 @@ class PokemonFaintWitness(
         "${side.name}_POKEMON_FAINT_WITNESS",
         ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "${side.name} Pokémon Faint Witness"
+    override val name: String = "${side.name} Pokémon Faint"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

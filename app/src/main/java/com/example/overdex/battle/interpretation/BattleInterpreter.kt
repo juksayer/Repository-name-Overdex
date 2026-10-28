@@ -49,8 +49,9 @@ class BattleInterpreter(
     }
 
     /**
-     * Interprets a raw RealityArticle from ATTACK_INCOMING_WITNESS and produces a derived RealityArticle
-     * with payload [AttackIncoming] if the text matches the attack warning pattern.
+     * Compatibility adapter for older raw ATTACK_INCOMING_WITNESS testimony.
+     * Current recognition publishes [AttackIncoming] directly. Typed warnings
+     * return null here so custody publication cannot create a duplicate warning.
      */
     fun interpretAttackIncoming(article: RealityArticle): RealityArticle? {
         if (article.sourceId.id != "ATTACK_INCOMING_WITNESS") return null

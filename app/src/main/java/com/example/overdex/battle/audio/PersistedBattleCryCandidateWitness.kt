@@ -16,7 +16,7 @@ import java.security.MessageDigest
 
 class PersistedBattleCryCandidateWitness(private val context: Context, private val root: File) : Observer {
     override val observerId = ObserverId("BATTLE_CRY_CANDIDATE_WITNESS", ObservationSource.AUDIO_CAPTURE)
-    override val name = "Battle Cry Candidate Witness"
+    override val name = "Battle Cry Candidate"
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
         if (scope != null) return

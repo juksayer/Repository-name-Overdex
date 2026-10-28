@@ -74,7 +74,7 @@ class PersistedFastMoveEffectivenessWitness(
         "FAST_MOVE_EFFECTIVENESS_TEXT_WITNESS",
         ObservationSource.SCREEN_CAPTURE
     ),
-    override val name: String = "Fast Move Effectiveness Text Witness"
+    override val name: String = "Fast Move Effectiveness Text"
 ) : Observer {
     private var scope: CoroutineScope? = null
 

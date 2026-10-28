@@ -26,7 +26,7 @@ class StatChangeSoundWitness(
     private val input: Flow<LivePcmChunk> = DroidballService.livePcm,
 ) : Observer {
     override val observerId = ObserverId("STAT_CHANGE_SOUND_WITNESS", ObservationSource.AUDIO_CAPTURE)
-    override val name = "Stat Change Sound Witness"
+    override val name = "Stat Change Sound"
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {

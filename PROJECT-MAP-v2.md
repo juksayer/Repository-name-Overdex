@@ -46,8 +46,9 @@ These rules are the stable boundary for new battle work:
    availability still enter the Timeline.
 4. Wall time provides human/archive chronology. Monotonic time provides elapsed
    measurement. Frame arrival does not advance or pause the clock.
-5. Witness availability is evidence. Until an operating record exists, the
-   Timeline must not assume that a witness was observing.
+5. Witness availability is evidence. Until an operating record exists,
+   consumers must not assume that a witness was observing. The Timeline only
+   preserves supplied Articles; it never interprets or reconciles their meaning.
 6. A Droidball session surrounds zero or more battle attempts. A Match describes
    an actual battle record. Starting assistance does not make a Match active.
 7. Replay may use later evidence to render what was present earlier, while
@@ -102,6 +103,12 @@ flowchart TD
     TIMELINE --> PRESENTATION
     TIMELINE --> ARCHIVE --> REPLAY
 ```
+
+Logcat and list headings show the producer's job name without a redundant
+`WITNESS` token. Stable source IDs remain unchanged in custody and archives for
+routing compatibility. `BattleRecordDiagnostics` formats supplied record fields
+outside the ledger; the generic log category is `ARTICLE`, because a preserved
+record may contain either an observation or a separately produced conclusion.
 
 The decisive implementation files are:
 
