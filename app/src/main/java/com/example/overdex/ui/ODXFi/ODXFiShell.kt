@@ -669,8 +669,8 @@ fun ODXFiShell(
                     label = startLabel ?: if (onStart != null && deploymentState == null) "START" else when (currentDeploymentState) {
                         InstrumentDeploymentState.OBSERVING, 
                         InstrumentDeploymentState.DEPLOYING,
-                        InstrumentDeploymentState.READY -> "STOP"
-                        InstrumentDeploymentState.RETURNING -> "STOPPING"
+                        InstrumentDeploymentState.READY,
+                        InstrumentDeploymentState.RETURNING -> "STOP"
                         else -> "START"
                     }, 
                     // Modules inherit the live session control unless they own

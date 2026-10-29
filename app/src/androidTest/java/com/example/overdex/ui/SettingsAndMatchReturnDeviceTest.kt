@@ -44,7 +44,7 @@ class SettingsAndMatchReturnDeviceTest {
             }
         }
         compose.onNodeWithText("STOP").performClick()
-        compose.onNodeWithText("STOPPING").assertIsDisplayed().assertIsNotEnabled()
+        compose.onNodeWithText("STOP").assertIsDisplayed().assertIsNotEnabled()
         compose.runOnIdle { assertEquals(1, stopRequests); assertEquals(0, startRequests) }
         // A Stop request is not completion; only the service transition enables Start.
         compose.runOnIdle { deployment.value = InstrumentDeploymentState.IDLE }
