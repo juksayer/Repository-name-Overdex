@@ -246,7 +246,101 @@ His silhouette, proportions, and identity never change. Only the renderer change
 
 Selecting the "Launch Droidball" action represents deploying the observation instrument into the field.
 
-The transition is continuous:
+## Current direction — October 28, 2026
+
+The departure, field arrival, and homecoming below are the current design intent.
+They are proposed choreography, not a claim that these stages already run in the
+app. Preserve the sense that the same Droidball travels between environments.
+Timing, rendering, texture, and individual movements remain adjustable when a
+better, cheaper, or cleaner alternative is found. These notes supersede the older
+rough outline below where they differ, including the previously unspecified field
+entry side and any older restrictions against expressive eyes.
+
+### Leaving the ODX-Fi
+
+1. Droidball's eyes widen into an angry, intently focused expression: eager to go
+   to work, rather than angry at the trainer. He blinks one to three times.
+2. A button-like drop shadow appears beneath him, giving him separation from the
+   shell. He depresses and releases like an eject button, then undocks.
+3. As he leaves the green ODX-Fi surface, his lower half becomes white. His body
+   gains visible depth and may acquire an industrial material or texture. This
+   is a rendering/material transition of the same character.
+4. He rolls off the **left** edge of the ODX-Fi screen.
+5. He remains out of view during the app handoff and system permission surfaces.
+   He does not reappear until Pokémon GO is actually open; an elapsed delay by
+   itself is not proof that GO has opened.
+
+### Arriving in Pokémon GO
+
+1. Droidball rolls in from the **right**, moving at considerable speed. His field
+   appearance is a very clean vector rendering with convincing three-dimensional
+   depth. This describes the desired appearance; it does not require a runtime
+   3D engine. Layered vector shapes, lighting, and transforms are valid cheaper
+   approaches if they reproduce it well.
+2. He makes it only about **two body lengths** into view before skidding to a
+   halt. Measure this relative to his displayed body size, not a fixed pixel
+   distance, so the gesture works across phones and tablets.
+3. His angry/focused eyes blink, then return to a friendly expression.
+4. He visibly scans the screen while still closed. The scan gesture does not
+   require opening a panel. Actual observation and calibration status remain
+   independent of whether the gesture has finished.
+5. After the scan gesture, he snaps to the **right** edge of the screen and waits
+   in his collapsed body.
+
+### When a display may open
+
+Droidball should present a display only after the **Team Select screen has been
+recognized**, or when the **user taps him**. Merely launching GO, requesting a
+scan, searching the overworld, or playing the entrance gesture must not expose a
+status panel. A user tap can open his controls before Team Select.
+
+Once Team Select or a user tap has allowed the display, the normal battle HUD can
+follow the match. If a session starts partway through a battle without either
+condition, VS/countdown/battle evidence alone must not force the closed body open.
+This display rule concerns presentation: recognition, recording, and information
+availability must not wait for the decorative travel, blinking, or scan gesture.
+
+### Returning home
+
+When returning from battling to the ODX-Fi, reverse the journey with a different
+emotional tone: Droidball looks **disappointed or reluctant to come home**, rather
+than eager to deploy.
+
+Close any open display into his body, leave the field through the right edge,
+remain hidden during the app handoff, then roll back into the ODX-Fi from the
+left. Reverse the material/color transition as he settles into the dock: the
+white lower half rejoins the green shell presentation, the eject-button motion
+resolves back into rest, and the separation shadow settles away. Preserve the
+reluctant expression through the return rather than mechanically reversing every
+facial-expression frame.
+
+This describes the visual homecoming. Saving the match, stopping capture, arming
+another match, and returning to the app remain real lifecycle actions; an animation
+must not silently discard a recording or end an ongoing session.
+
+### Implementation status at this revision
+
+- **Existing pieces:** deployment launches GO; the field overlay has a short
+  58 dp spring entrance; dragging can snap it to the nearest edge. An optional
+  shell-logo tap response already tilts and blinks twice, separately from launch.
+- **Partly present:** Team Select and user taps can open the display. Some scan,
+  countdown, battle, and result paths also expand it, so the stricter display
+  rule above is **not yet fully enforced**.
+- **Planned:** the continuous eject/undock, shell-to-field material change,
+  rolling left departure, hidden handoff, fast right entrance, two-body-length
+  skid, expression sequence, visible scan, post-arrival right docking, and
+  disappointed reverse homecoming.
+
+No new animation or display-gating implementation is implied by this documentation
+revision. Hardware motion must continue to follow the existing rule that useful
+information never waits for physical presentation.
+
+## Historical rough outline
+
+The earlier continuous-transition sketch is retained for provenance. The current
+direction above resolves its damaged entry-side sentence and refines its timing,
+display trigger, and return behavior:
+
 1. Droidball undocks from the ODX-FI.
 2. Droidball Rolls off-screen from the left
 3. Pokémon GO launches (permissions handled by system).
