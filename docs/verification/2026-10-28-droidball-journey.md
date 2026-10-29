@@ -69,9 +69,56 @@ prevent stale callbacks from reviving a stopped or superseded journey.
 - APK SHA-256:
   `eebcfb51ad7d7de7264d58db1e20f496214443010f95e99e396cbb5adba5f569`.
 
-The successful artwork test verifies the production Canvas pixels. It does not
-validate native-window movement, GO foreground timing, animation performance,
-or live battle recognition. Full launch/return and Team Select/tap checks still
-need an unlocked phone. Also check Stop during departure and during a field
-session: capture must stop at once, with no delayed GO launch or surviving window.
-No new battle was played by the agent.
+The artwork test validates the production Canvas pixels separately from native
+window behavior. The following unlocked-phone check extends that boundary; it
+does not measure live battle recognition or sustained battle performance.
+
+## Unlocked Moondrop check and resulting fixes
+
+The user unlocked the Moondrop and authorized finishing the check. Native screen
+recordings captured the shell departure, initial GO handoff, entrance/skid/scan,
+closed field body, and return to the shell. One body was present through the
+transfer. Initial GO loading was slow; its loading screen already had the closed
+body, which is consistent with the documented app-handoff boundary.
+
+Tapping the body opened the prebattle controls. Scan Team Select accepted the
+actual party and resolved **Golbat, Greninja, Victreebel**, including Golbat's
+nickname. No roster confirmation, move edit, or party-use action was submitted.
+Closing the panel hid it. Stop from the shell and from the field removed the
+service/window, and the shell displayed **START** again.
+
+Two live defects were found and fixed:
+
+1. Expanding the panel had overwritten the compact body's dock with the panel's
+   left edge. Compact dock coordinates now remain separate from panel alignment;
+   the measured-size callback reconciles resizing without writing calibration.
+   Three successive real open/close cycles restored the same right-edge body
+   position. The red shell bounds after the cycles were x=956–1058 on the
+   1080-pixel-wide capture, matching the original right-edge placement. Tests
+   also exercise left/right manual dock choices and repeated resize cycles.
+2. Pressing Stop while Android still owed a foreground-service promotion could
+   cancel the pending service and crash with
+   `ForegroundServiceDidNotStartInTimeException`. A small startup gate now queues
+   that cancellation, acknowledges foreground startup with a lightweight
+   notification, and stops before projection, audio, sensors or overlay setup.
+   Active capture still stops directly. The repeated phone check logged
+   `Cancelled startup: foreground acknowledged; capture was not opened`, kept
+   Overdex in front, and left no active service or delayed GO launch. No new
+   AndroidRuntime exception occurred on the updated APK.
+
+Final checks: **1,386 unit tests / 222 suites**, zero failures/errors/skips; debug
+app and Android-test APK builds successful. Both fixes are installed on Moondrop.
+The 16 calibration/profile, HUD-layout and current-team files included in the
+live-fix backup retained their exact hashes; all **24** owned cards remain, with
+SQLite integrity OK. Final APK SHA-256:
+`991906dce34eef221c7b07c3cb34435e936a8d48b5c6418bd8af49d54acaf27b`.
+
+Live evidence is under
+`docs/verification/evidence/droidball-journey-20261028/live/`; the short deployment
+excerpt preserves the source timestamps after trimming the permission wait.
+Editable-state snapshots and final verification JSON are in the backup's
+`live-fixes/` folder. These navigation checks created prebattle/test-session
+records with no Match Start or battle result. No actual battle was played.
+The final service query reports `(nothing)`, and the shell shows START. Pixel 4
+was not changed. Android animation-scale-OFF behavior and sustained battle frame
+performance were not measured during this check.

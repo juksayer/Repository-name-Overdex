@@ -133,6 +133,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     SensorEventListener {
 
     companion object {
+        private val foregroundStartup = DroidballForegroundStartupGate()
         /**
          * Battle regions are normalized, so their calibration remains valid at this
          * capture scale.  Keeping the source at three quarters of display resolution
@@ -240,6 +241,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val captureDiagnostics = _captureDiagnostics.asStateFlow()
 
         fun start(context: Context, resultCode: Int, data: Intent, registration: Boolean = false) {
+            if (!foregroundStartup.beginStart()) return
             _runtimeState.value = DroidballRuntimeState.STARTING
             val intent = Intent(context, DroidballService::class.java).apply {
                 putExtra("resultCode", resultCode)
@@ -253,13 +255,21 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     context.startService(intent)
                 }
             } catch (error: Throwable) {
+                foregroundStartup.markStopped()
                 _runtimeState.value = DroidballRuntimeState.STOPPED
                 throw error
             }
         }
 
         fun stop(context: Context) {
-            context.stopService(Intent(context, DroidballService::class.java))
+            when (foregroundStartup.requestStop()) {
+                // Android still needs its foreground acknowledgement. The
+                // cancelled command will stop before creating any capture.
+                DroidballForegroundStartupGate.StopAction.DEFER -> Unit
+                DroidballForegroundStartupGate.StopAction.STOP_NOW ->
+                    context.stopService(Intent(context, DroidballService::class.java))
+                DroidballForegroundStartupGate.StopAction.NONE -> Unit
+            }
         }
 
         /** Moves the visible field control without changing its observation state. */
@@ -376,6 +386,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun markStopped() {
+        foregroundStartup.markStopped()
         val current = _captureDiagnostics.value
         _captureDiagnostics.value = current.copy(state = "STOPPED")
         _runtimeState.value = DroidballRuntimeState.STOPPED
@@ -410,6 +421,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         registrationMode = intent?.getBooleanExtra("registration", false) == true
 
         if (resultCode == Activity.RESULT_OK && data != null) {
+            // Fulfil Android's startup contract before expensive state access
+            // or honoring a Stop queued while this command was still pending.
+            val startingNotification = buildDroidballNotification(this, DROIDBALL_CHANNEL_ID,
+                DroidballNotificationState.OBSERVING, registrationMode,
+                sessionId = notificationSessionId, matchId = null)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val serviceTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
                     if (!registrationMode && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -417,9 +433,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     } else {
                         0
                     }
-                startForeground(DROIDBALL_NOTIFICATION_ID, createNotification(), serviceTypes)
+                startForeground(DROIDBALL_NOTIFICATION_ID, startingNotification, serviceTypes)
             } else {
-                startForeground(DROIDBALL_NOTIFICATION_ID, createNotification())
+                startForeground(DROIDBALL_NOTIFICATION_ID, startingNotification)
+            }
+            if (!foregroundStartup.foregroundPromoted()) {
+                Log.i("DROIDBALL_LIFECYCLE", "Cancelled startup: foreground acknowledged; capture was not opened")
+                stopSelf()
+                return START_NOT_STICKY
             }
             observeNotificationState()
             runCatching {
