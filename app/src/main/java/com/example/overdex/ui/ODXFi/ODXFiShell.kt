@@ -63,7 +63,7 @@ import com.example.overdex.presentation.DroidballJourneyPhase
 import com.example.overdex.presentation.DroidballChoreography
 import com.example.overdex.presentation.rememberDroidballPose
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.DroidballBody
+import com.example.overdex.ui.components.DroidballAcknowledgingBody
 import com.example.overdex.ui.components.DROIDBALL_BODY_DIAMETER_FRACTION
 import com.example.overdex.ui.components.BreathingLED
 import com.example.overdex.ui.components.EnemyTeamMemoryOverlay
@@ -449,12 +449,15 @@ fun ODXFiShell(
         ) {
             // The empty dock stays in place while the single body is in the field.
             Box(Modifier.size(54.dp)) {
-                if (journey.shellOwnsBody) DroidballBody(
+                if (journey.shellOwnsBody) DroidballAcknowledgingBody(
                     // Travel remains screen-left even when the binder rotates the body.
                     modifier = Modifier.fillMaxSize()
                         .absoluteOffset(x = 54.dp * DROIDBALL_BODY_DIAMETER_FRACTION * droidballPose.xBodies)
                         .rotate(if (isBinderMode) 90f else 0f),
                     pose = droidballPose.copy(xBodies = 0f),
+                    interactive = isLogoInteractive && journey.phase == DroidballJourneyPhase.DOCKED &&
+                        currentRoute == owningRoute,
+                    resetKey = journey.generation to currentRoute,
                 )
             }
 

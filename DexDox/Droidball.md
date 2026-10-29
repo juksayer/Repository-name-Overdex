@@ -283,6 +283,14 @@ Hiding/pausing the body stops its loop; resumed visible movement can restart it.
 All three supplied originals and their provenance are preserved under
 `tools/audio_sources/droidball/`.
 
+The docked Directory Tree logo again responds to a tap with a roughly 15-degree
+spring tilt, two blinks and a return upright. This acknowledgement uses the same
+current body, takes about 2.3 seconds and restarts on another tap. It is enabled
+only for the active shell's existing interactive-logo opt-in while docked.
+Navigation or any journey phase immediately clears the local acknowledgement;
+field taps retain their normal display controls. This finite frame-clock response
+does not change observation state or produce travel sounds.
+
 Only one environment owns the body at a time. It is absent during transit. The
 native floating window follows the ball, with a small drawing margin during
 travel, instead of covering the entire path with a transparent touch surface.
