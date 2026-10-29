@@ -354,7 +354,7 @@ private fun OverlayPanel(
                 } else {
                     "Moves not ready. Open TEAM / MOVES, or scan when Team Select is visible."
                 }
-                DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Looking for agreeing league, party-card, restriction, and use-party signals."
+                DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Scanning your team. You can open the battle HUD now."
                 DroidballOverlayMode.TEAM_SELECT -> "Team Select accepted. Player roster observation is active."
                 DroidballOverlayMode.CALIBRATING -> "Adjust crop boxes in Overdex."
                 DroidballOverlayMode.RESULT -> "Outcome evidence is preserved. Tap to arm the next match."
@@ -367,7 +367,7 @@ private fun OverlayPanel(
             } else {
                 Text(message, color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
             }
-            if (mode == DroidballOverlayMode.PRE_BATTLE) {
+            if (mode == DroidballOverlayMode.PRE_BATTLE || mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {
                 OverlayControl("START BATTLE HUD") {
                     DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
                 }
