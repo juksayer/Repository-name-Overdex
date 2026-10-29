@@ -122,3 +122,43 @@ records with no Match Start or battle result. No actual battle was played.
 The final service query reports `(nothing)`, and the shell shows START. Pixel 4
 was not changed. Android animation-scale-OFF behavior and sustained battle frame
 performance were not measured during this check.
+
+## Visible departure correction and slower entrance
+
+The user's follow-up identified that departure could appear as a disappearance.
+The earlier general launch check did not establish that the complete left roll
+was visible. Its clock started before synchronous capture/witness setup, while
+the navigation delay started afterward: setup could consume the entire pose
+sequence before a shell frame was available.
+
+Departure now progresses from delivered shell frame timestamps, starting at zero
+and capping each step at 50 ms. A journey-owned clock preserves progress across
+shell recreation and ignores duplicate/older frame timestamps. Hidden field
+compositions cannot advance it. Only completion of that visible progression
+permits the Activity to claim the GO handoff; Stop/Home can still cancel before
+the claim. Capture starts immediately as before. Horizontal translation now sits
+outside binder rotation. Arrival runs at 90% speed: 2,333 ms instead of 2,100 ms.
+
+- Full suite: **1,394 tests / 223 suites**, no failures, errors or skips. Debug
+  application and instrumentation APK builds passed. New checks cover stalled
+  first/subsequent frames, duplicate/older frames, fractional timing, exact
+  endpoints, stale generations and Stop after the last frame before handoff.
+- Installed on the idle Moondrop. A native screen recording shows the lower shell
+  becoming white, rotation and leftward travel through intermediate positions,
+  the entire body leaving the left edge, and then the GO entrance and right dock.
+  Closeups at source times 4.518, 4.620, 4.709, 4.829 and 4.943 seconds show the
+  progressively departing body; it is gone by 5.064 seconds. This directly
+  verifies the reported visual defect, unlike the stationary pose sheet.
+- Returning to Overdex and pressing Stop removed the service. A second launch
+  interrupted by Home 700 ms after accepting capture stayed on the Android home
+  screen, removed the service, and did not open GO afterward. No new app crash
+  appeared; the crash-buffer entry at 21:05 belongs to the previously fixed build.
+- All 16 calibration/profile, HUD-layout and current-team files retained their
+  hashes. Editable-state snapshots are in the backup's `visible-roll/` folder.
+  These were prebattle navigation checks; no battle, team edit or confirmation
+  was performed. Pixel 4 was not updated.
+- Generated evidence: `live/visible-roll.mp4`, `live/left-roll-detail.png`,
+  `live/visible-roll-excerpt.mp4` (trimmed with original frame timing), and
+  `live/roll-home-cancel.mp4` under the evidence directory above.
+- Installed APK SHA-256:
+  `188ae93978679e438a2434b977d2bef45b368ea87433dfa7112f170a92aa8302`.

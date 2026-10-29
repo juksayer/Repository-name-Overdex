@@ -9,6 +9,7 @@ data class DroidballJourneyState(
     val phase: DroidballJourneyPhase = DroidballJourneyPhase.DOCKED,
     val generation: Long = 0,
     val startedAtNanos: Long = 0,
+    val departurePresented: Boolean = false,
 ) {
     val shellOwnsBody: Boolean get() = when (phase) {
         DroidballJourneyPhase.DOCKED, DroidballJourneyPhase.DEPARTING, DroidballJourneyPhase.DOCKING -> true
@@ -23,16 +24,36 @@ data class DroidballJourneyState(
 /** Presentation only. The capture service never waits for an animation to stop. */
 object DroidballJourney {
     private val mutableState = MutableStateFlow(DroidballJourneyState())
+    private var departureClock = DroidballDepartureClock(DroidballChoreography.DEPARTURE_MILLIS)
+    private var departureElapsedMillis = 0L
     val state = mutableState.asStateFlow()
     private fun move(phase: DroidballJourneyPhase, now: Long) {
         mutableState.value = DroidballJourneyState(phase, mutableState.value.generation + 1, now)
     }
     @Synchronized fun depart(now: Long = System.nanoTime()): Long {
+        departureClock = DroidballDepartureClock(DroidballChoreography.DEPARTURE_MILLIS)
+        departureElapsedMillis = 0L
         move(DroidballJourneyPhase.DEPARTING, now)
         return mutableState.value.generation
     }
+    /** Shared by shell instances; duplicate frame timestamps cannot advance twice. */
+    @Synchronized fun departureFrame(generation: Long, frameNanos: Long): Long? {
+        val current = mutableState.value
+        if (current.generation != generation || current.phase != DroidballJourneyPhase.DEPARTING) return null
+        departureElapsedMillis = departureClock.frameElapsedMillis(frameNanos)
+        if (departureElapsedMillis >= DroidballChoreography.DEPARTURE_MILLIS && !current.departurePresented) {
+            // Stay DEPARTING until the Activity claims the handoff. Stop/Home still
+            // cancel it, including the interval between the last frame and launch.
+            mutableState.value = current.copy(departurePresented = true)
+        }
+        return departureElapsedMillis
+    }
+    @Synchronized fun departureElapsed(generation: Long): Long =
+        if (mutableState.value.generation == generation) departureElapsedMillis else 0L
+
     @Synchronized fun departureFinished(generation: Long, now: Long = System.nanoTime()): Boolean {
-        if (mutableState.value.generation != generation || mutableState.value.phase != DroidballJourneyPhase.DEPARTING) return false
+        if (mutableState.value.generation != generation || mutableState.value.phase != DroidballJourneyPhase.DEPARTING ||
+            !mutableState.value.departurePresented) return false
         move(DroidballJourneyPhase.TRANSIT, now)
         return true
     }

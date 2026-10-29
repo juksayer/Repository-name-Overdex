@@ -266,6 +266,13 @@ measured in displayed body diameters. Frame ticks and monotonic elapsed time
 keep this motion independent of Android Animator duration scaling. Static poses
 do not keep an animation loop running.
 
+Departure starts on the shell's first animation frame and limits progress across
+long frame stalls. Capture setup must not consume an unseen roll and leave only
+an empty dock. Progress belongs to the journey, so recreating a shell or composing
+two navigation destinations cannot restart or double-speed it. GO launches after
+the visible departure completes. The entrance runs at 90% of its original speed
+(2,333 ms instead of 2,100 ms). Screen-left travel remains horizontal in binder mode.
+
 Only one environment owns the body at a time. It is absent during transit. The
 native floating window follows the ball, with a small drawing margin during
 travel, instead of covering the entire path with a transparent touch surface.
@@ -289,11 +296,11 @@ recognition can continue without opening it. Useful information skips the rest
 of the entrance when necessary. Closing preserves eligibility without forcing
 an immediate reopen. No HUD calibration values are saved by the journey.
 
-Build and pure-state checks are separate from phone behavior. The remaining live
-acceptance is a full launch/return on the Moondrop, opening Team Select, tapping
-the closed body, and pressing Stop during travel and during a session. The test
-pose sheet verifies the actual renderer, not the native-window handoff or battle
-recognition accuracy.
+Build and pure-state checks are separate from phone behavior. Launch/return,
+Team Select, body taps and Stop have been checked on the Moondrop; the subsequent
+visible-departure correction is documented in
+`docs/verification/2026-10-28-droidball-journey.md`. The test pose sheet verifies
+the actual renderer, not the native-window handoff or battle recognition accuracy.
 
 ### Leaving the ODX-Fi
 

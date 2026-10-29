@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -63,6 +64,7 @@ import com.example.overdex.presentation.DroidballChoreography
 import com.example.overdex.presentation.rememberDroidballPose
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.DroidballBody
+import com.example.overdex.ui.components.DROIDBALL_BODY_DIAMETER_FRACTION
 import com.example.overdex.ui.components.BreathingLED
 import com.example.overdex.ui.components.EnemyTeamMemoryOverlay
 import com.example.overdex.ui.components.FilterSettings
@@ -338,7 +340,7 @@ fun ODXFiShell(
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
     val journey by DroidballJourney.state.collectAsState()
-    val droidballPose = rememberDroidballPose(journey)
+    val droidballPose = rememberDroidballPose(journey, driveDeparture = true)
     LaunchedEffect(journey.generation, journey.phase) {
         if (journey.phase == DroidballJourneyPhase.DOCKING) {
             val elapsed = (System.nanoTime() - journey.startedAtNanos).coerceAtLeast(0) / 1_000_000
@@ -448,8 +450,11 @@ fun ODXFiShell(
             // The empty dock stays in place while the single body is in the field.
             Box(Modifier.size(54.dp)) {
                 if (journey.shellOwnsBody) DroidballBody(
-                    modifier = Modifier.fillMaxSize().rotate(if (isBinderMode) 90f else 0f),
-                    pose = droidballPose,
+                    // Travel remains screen-left even when the binder rotates the body.
+                    modifier = Modifier.fillMaxSize()
+                        .absoluteOffset(x = 54.dp * DROIDBALL_BODY_DIAMETER_FRACTION * droidballPose.xBodies)
+                        .rotate(if (isBinderMode) 90f else 0f),
+                    pose = droidballPose.copy(xBodies = 0f),
                 )
             }
 

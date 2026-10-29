@@ -32,9 +32,10 @@ class DroidballChoreographyTest {
         val first = pose(DroidballJourneyPhase.ARRIVING, 0)
         assertTrue(first.xBodies > 1f)
         assertEquals(1f, first.focus, 0f)
-        val stopped = pose(DroidballJourneyPhase.ARRIVING, 1100)
+        val duration = DroidballChoreography.ARRIVAL_MILLIS
+        val stopped = pose(DroidballJourneyPhase.ARRIVING, duration * 52 / 100)
         assertTrue(stopped.xBodies < -1.9f)
-        val scan = pose(DroidballJourneyPhase.ARRIVING, 1565)
+        val scan = pose(DroidballJourneyPhase.ARRIVING, duration * 745 / 1000)
         assertTrue(scan.scan > .9f)
         assertEquals(0f, scan.focus, .001f)
         assertTrue(scan.xBodies < -1.9f)
@@ -72,8 +73,9 @@ class DroidballChoreographyTest {
     }
 
     @Test fun `arrival roll finishes at an equivalent upright angle without a visible discontinuity`() {
-        val before = pose(DroidballJourneyPhase.ARRIVING, 1049)
-        val after = pose(DroidballJourneyPhase.ARRIVING, 1050)
+        val uprightAt = (DroidballChoreography.ARRIVAL_MILLIS + 1) / 2
+        val before = pose(DroidballJourneyPhase.ARRIVING, uprightAt - 1)
+        val after = pose(DroidballJourneyPhase.ARRIVING, uprightAt)
         assertEquals(-360f, before.rollDegrees, .001f)
         assertEquals(0f, after.rollDegrees, 0f)
         assertEquals(before.xBodies, after.xBodies, .003f)

@@ -108,6 +108,7 @@ import com.example.overdex.ui.theme.OverdexTheme
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 
 /**
@@ -171,7 +172,9 @@ class MainActivity : ComponentActivity() {
                 pokedexViewModel.deployInstrument(result.resultCode, result.data!!)
                 departureJob?.cancel()
                 departureJob = lifecycleScope.launch {
-                    delay(DroidballChoreography.DEPARTURE_MILLIS)
+                    // A busy capture startup must not consume the shell animation.
+                    // Stop/supersession wakes this waiter but cannot launch GO.
+                    DroidballJourney.state.first { it.generation != generation || it.departurePresented }
                     if (DroidballJourney.departureFinished(generation)) launchPokemonGo(launchIntent)
                 }
             }

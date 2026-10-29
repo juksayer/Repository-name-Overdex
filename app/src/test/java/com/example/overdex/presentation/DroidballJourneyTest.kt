@@ -19,6 +19,7 @@ class DroidballJourneyTest {
         assertOwner(true, false)
         val departure = DroidballJourney.depart(10)
         assertOwner(true, false)
+        presentDeparture(departure)
         assertTrue(DroidballJourney.departureFinished(departure, 20))
         assertOwner(false, false)
         DroidballJourney.enterField(30)
@@ -41,7 +42,9 @@ class DroidballJourneyTest {
     }
 
     @Test fun `stop during arrival cannot be undone by stale completion`() {
-        DroidballJourney.departureFinished(DroidballJourney.depart(10), 20)
+        val departure = DroidballJourney.depart(10)
+        presentDeparture(departure)
+        DroidballJourney.departureFinished(departure, 20)
         DroidballJourney.enterField(30)
         val arrival = DroidballJourney.state.value.generation
         DroidballJourney.stopped(shellVisible = false, now = 31)
@@ -52,7 +55,9 @@ class DroidballJourneyTest {
     }
 
     @Test fun `return during arrival has single completion and repeated start is harmless`() {
-        DroidballJourney.departureFinished(DroidballJourney.depart(10), 20)
+        val departure = DroidballJourney.depart(10)
+        presentDeparture(departure)
+        DroidballJourney.departureFinished(departure, 20)
         DroidballJourney.enterField(30)
         val arrival = DroidballJourney.state.value.generation
         val returning = DroidballJourney.returnToShell(40)
@@ -71,5 +76,34 @@ class DroidballJourneyTest {
         assertFalse(DroidballJourney.departureFinished(departure, 20))
         DroidballJourney.stopped(true, 30)
         assertEquals(DroidballJourneyPhase.DOCKED, DroidballJourney.state.value.phase)
+    }
+
+    @Test fun `startup delay cannot skip departure and stale renderers cannot advance its replacement`() {
+        val first = DroidballJourney.depart(10)
+        assertFalse(DroidballJourney.departureFinished(first, 10_000_000_000L))
+        assertEquals(0L, DroidballJourney.departureFrame(first, 10_000_000_000L))
+        assertEquals(16L, DroidballJourney.departureFrame(first, 10_016_000_000L))
+        assertEquals(16L, DroidballJourney.departureFrame(first, 10_016_000_000L))
+        assertEquals(16L, DroidballJourney.departureElapsed(first))
+        val second = DroidballJourney.depart(20_000_000_000L)
+        assertNull(DroidballJourney.departureFrame(first, 30_000_000_000L))
+        assertEquals(0L, DroidballJourney.departureElapsed(second))
+        assertFalse(DroidballJourney.state.value.departurePresented)
+    }
+
+    @Test fun `stop after final displayed frame still cancels the unclaimed GO launch`() {
+        val departure = DroidballJourney.depart(10)
+        presentDeparture(departure)
+        assertTrue(DroidballJourney.state.value.departurePresented)
+        assertEquals(DroidballJourneyPhase.DEPARTING, DroidballJourney.state.value.phase)
+        DroidballJourney.stopped(shellVisible = false, now = 20)
+        assertFalse(DroidballJourney.departureFinished(departure, 30))
+        assertNull(DroidballJourney.departureFrame(departure, 40))
+    }
+
+    private fun presentDeparture(generation: Long) {
+        for (millis in 0L..DroidballChoreography.DEPARTURE_MILLIS step 16L) {
+            DroidballJourney.departureFrame(generation, millis * 1_000_000L)
+        }
     }
 }

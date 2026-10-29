@@ -21,10 +21,11 @@ data class DroidballPose(
     val sadness: Float = 0f,
 )
 
-/** Clock-driven presentation; neither capture nor navigation depends on a pose finishing. */
+/** Presentation motion. Capture starts immediately; the GO handoff follows the visible departure. */
 object DroidballChoreography {
     const val DEPARTURE_MILLIS = 1600L
-    const val ARRIVAL_MILLIS = 2100L
+    // Play the original entrance at 90% speed, including its skid, scan and docking.
+    const val ARRIVAL_MILLIS = 2333L
     const val EXIT_MILLIS = 550L
     const val DOCKING_MILLIS = 1050L
 
@@ -115,23 +116,31 @@ object DroidballChoreography {
 
 /** Frame ticks rather than Animator duration scaling keep the journey visible with animations off. */
 @Composable
-fun rememberDroidballPose(state: DroidballJourneyState): DroidballPose {
+fun rememberDroidballPose(state: DroidballJourneyState, driveDeparture: Boolean = false): DroidballPose {
     val duration = DroidballChoreography.durationMillis(state.phase)
     val current = remember(state.phase, state.generation, state.startedAtNanos) {
-        val elapsed = if (duration == 0L) 0L else
+        val elapsed = if (state.phase == DroidballJourneyPhase.DEPARTING)
+            DroidballJourney.departureElapsed(state.generation)
+        else if (duration == 0L) 0L else
             (System.nanoTime() - state.startedAtNanos).coerceAtLeast(0) / 1_000_000L
         mutableStateOf(DroidballChoreography.pose(state.phase, elapsed))
     }
-    LaunchedEffect(state.phase, state.generation, state.startedAtNanos) {
+    LaunchedEffect(state.phase, state.generation, state.startedAtNanos, driveDeparture) {
+        // Hidden field compositions must not start the shell's visible-frame clock.
+        if (state.phase == DroidballJourneyPhase.DEPARTING && !driveDeparture) return@LaunchedEffect
         if (duration == 0L) {
             current.value = DroidballChoreography.pose(state.phase, 0)
             return@LaunchedEffect
         }
         var elapsed: Long
         do {
-            // withFrameNanos paces drawing; the journey and this elapsed time share nanoTime.
-            withFrameNanos { }
-            elapsed = ((System.nanoTime() - state.startedAtNanos).coerceAtLeast(0) / 1_000_000L)
+            val frameNanos = withFrameNanos { it }
+            // Capture setup can occupy the UI thread before the first shell frame.
+            // Departure advances only on delivered frames, so startup cannot eat
+            // the roll. Other journeys still use their shared monotonic clock.
+            elapsed = if (state.phase == DroidballJourneyPhase.DEPARTING)
+                DroidballJourney.departureFrame(state.generation, frameNanos) ?: return@LaunchedEffect
+            else ((System.nanoTime() - state.startedAtNanos).coerceAtLeast(0) / 1_000_000L)
             current.value = DroidballChoreography.pose(state.phase, elapsed)
         } while (elapsed < duration)
     }
