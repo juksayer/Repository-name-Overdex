@@ -295,6 +295,7 @@ fun ODXFiShell(
     lcdLine2: String? = null,
     lcdLines: List<String> = emptyList(),
     lcdContent: (@Composable () -> Unit)? = null,
+    lcdEdgeToEdgeContent: Boolean = false,
     keyboardPrompt: String? = null,
     title: String? = null,
     breadcrumb: String? = null,
@@ -623,7 +624,7 @@ fun ODXFiShell(
                 onDrag = onLcdDrag,
                 onTap = onLcdTap,
                 contentRotationDegrees = if (isBinderMode) 90f else 0f,
-                edgeToEdgeContent = isBinderMode,
+                edgeToEdgeContent = isBinderMode || lcdEdgeToEdgeContent,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()

@@ -268,6 +268,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val _latestMatchArchiveSource =
         MutableStateFlow<com.example.overdex.battle.archive.MatchArchiveSource?>(null)
     val latestMatchArchiveSource = _latestMatchArchiveSource.asStateFlow()
+    private val directoryCropPreviewFeed = com.example.overdex.battle.preview.DirectoryCropPreviewFeed(application.filesDir, sources = {
+        listOfNotNull(_activeMatch.value?.let { MatchArchiveSource(MatchId(it.matchId), it.realityTimeline) },
+            _latestMatchArchiveSource.value)
+    })
+    val directoryCropPreviews = directoryCropPreviewFeed.states().stateIn(viewModelScope,
+        SharingStarted.WhileSubscribed(stopTimeoutMillis = 0),
+        com.example.overdex.battle.preview.DirectoryCropPreviewState())
     private val summaryHandoff = com.example.overdex.ui.navigation.MatchSummaryHandoff()
     val pendingMatchSummary = summaryHandoff.pending
 

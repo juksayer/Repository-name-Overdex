@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
@@ -78,6 +79,7 @@ import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.CalibrationRegion
+import com.example.overdex.ui.components.DirectoryCropPreviewLcd
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.screens.AccessibilityProbeScreen
@@ -585,16 +587,8 @@ fun PokedexApp(
                         }
                     }
                 }
-                ODXFiShell(
-
-                    instrumentState = instrumentState,
-                    deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    showBattleOverlay = false,
-                    keyboardController = registration.keyboard,
-                    keyboardPrompt = registration.keyboardPrompt,
-                    onKeyActivated = registration.key,
-                    lcdLines = registration.lcdLines.takeIf { it.isNotEmpty() } ?: interruptedObservationNotice?.let { notice ->
+                val directoryLcdLines = registration.lcdLines.takeIf { it.isNotEmpty() }
+                    ?: interruptedObservationNotice?.let { notice ->
                         buildList {
                             add("OBSERVATION INTERRUPTED")
                             if (notice.recoveredMatchCount > 0) {
@@ -607,7 +601,26 @@ fun PokedexApp(
                             }
                             add("[START] NEW SESSION")
                         }
-                    } ?: emptyList(),
+                    } ?: emptyList()
+                val showCropPreviews = directoryLcdLines.isEmpty() && !registration.keyboard.isVisible
+                ODXFiShell(
+
+                    instrumentState = instrumentState,
+                    deploymentState = deploymentState,
+                    frameCount = frameCount,
+                    showBattleOverlay = false,
+                    keyboardController = registration.keyboard,
+                    keyboardPrompt = registration.keyboardPrompt,
+                    onKeyActivated = registration.key,
+                    lcdLines = directoryLcdLines,
+                    lcdContent = if (showCropPreviews) {
+                        {
+                            // Subscribe only while the directory's normal LCD is visible.
+                            val crops by viewModel.directoryCropPreviews.collectAsStateWithLifecycle()
+                            DirectoryCropPreviewLcd(state = crops)
+                        }
+                    } else null,
+                    lcdEdgeToEdgeContent = showCropPreviews,
 
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },

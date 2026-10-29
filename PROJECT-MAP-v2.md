@@ -290,6 +290,18 @@ ball-check window so the first hidden frames do not exhaust the check.
 
 ## Owned cards and editing
 
+The Directory Tree's default LCD shows the last captured species-name, HP,
+Poké Ball, and announcement images through
+[DirectoryCropPreviewLcd.kt](app/src/main/java/com/example/overdex/ui/components/DirectoryCropPreviewLcd.kt).
+[DirectoryCropPreviews.kt](app/src/main/java/com/example/overdex/battle/preview/DirectoryCropPreviews.kt)
+selects one Match's existing `CropCaptured` evidence by capture time and decodes
+only changed images while the directory LCD is visible. These are untinted source
+pixels, not OCR reconstructions or a new screen-capture loop. HP previews show
+the calibrated HP observation territory, which can be wider than the tracked bar.
+Cold launch can restore retained images from the latest useful battle archive;
+absent captures and unavailable media remain explicit. Contextual registration
+controls, the keyboard, and interrupted-observation notices retain LCD priority.
+
 [EditSpecimenScreen.kt](app/src/main/java/com/example/overdex/ui/screens/EditSpecimenScreen.kt)
 edits the persistent owned card, including multiple named team memberships.
 These names can be searched in the owned binder and selected in the saved-team
