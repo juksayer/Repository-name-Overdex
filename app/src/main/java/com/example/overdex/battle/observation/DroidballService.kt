@@ -1020,7 +1020,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 overlayView?.visibility = if (showField) {
                     android.view.View.VISIBLE
                 } else android.view.View.INVISIBLE
-                if (!showField) capturedOverlayRegion = null
+                if (!showField) {
+                    capturedOverlayRegion = null
+                    if (journey.fieldOwnsBody) com.example.overdex.media.DroidballJourneySounds.hidden(journey)
+                }
                 // Completion belongs to the service's journey, not to a
                 // visible Compose frame (which Android may pause off screen).
                 overlayJourneyCompletionJob?.cancel()

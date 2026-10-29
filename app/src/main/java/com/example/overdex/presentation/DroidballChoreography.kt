@@ -1,10 +1,16 @@
 package com.example.overdex.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.overdex.media.DroidballJourneySounds
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -117,6 +123,17 @@ object DroidballChoreography {
 /** Frame ticks rather than Animator duration scaling keep the journey visible with animations off. */
 @Composable
 fun rememberDroidballPose(state: DroidballJourneyState, driveDeparture: Boolean = false): DroidballPose {
+    val context = LocalContext.current
+    val view = LocalView.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(Unit) { DroidballJourneySounds.prepare(context) }
+    DisposableEffect(state.generation, driveDeparture) {
+        onDispose {
+            if ((driveDeparture && state.shellOwnsBody) || (!driveDeparture && state.fieldOwnsBody)) {
+                DroidballJourneySounds.hidden(state)
+            }
+        }
+    }
     val duration = DroidballChoreography.durationMillis(state.phase)
     val current = remember(state.phase, state.generation, state.startedAtNanos) {
         val elapsed = if (state.phase == DroidballJourneyPhase.DEPARTING)
@@ -142,6 +159,11 @@ fun rememberDroidballPose(state: DroidballJourneyState, driveDeparture: Boolean 
                 DroidballJourney.departureFrame(state.generation, frameNanos) ?: return@LaunchedEffect
             else ((System.nanoTime() - state.startedAtNanos).coerceAtLeast(0) / 1_000_000L)
             current.value = DroidballChoreography.pose(state.phase, elapsed)
+            if ((driveDeparture && state.shellOwnsBody) || (!driveDeparture && state.fieldOwnsBody)) {
+                if (view.isShown && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                    DroidballJourneySounds.frame(state, elapsed)
+                } else DroidballJourneySounds.hidden(state)
+            }
         } while (elapsed < duration)
     }
     return current.value

@@ -390,6 +390,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
+        val journey = DroidballJourney.state.value
+        if (journey.shellOwnsBody) com.example.overdex.media.DroidballJourneySounds.hidden(journey)
         pokedexViewModel.isOverdexVisible = false
         DroidballService.setInstrumentVisible(false)
         if (pendingGoHandoff) {

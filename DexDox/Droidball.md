@@ -273,6 +273,16 @@ two navigation destinations cannot restart or double-speed it. GO launches after
 the visible departure completes. The entrance runs at 90% of its original speed
 (2,333 ms instead of 2,100 ms). Screen-left travel remains horizontal in binder mode.
 
+Journey audio uses the supplied Sonic spin effect during visible rolling legs,
+including departure and return. The skid effect accompanies the arrival's braking;
+the scan starts no new sound. Completing the visible snap to the right edge adds
+the Sonic pinball bumper sound. Interrupted or skipped
+entrances do not produce a delayed impact. Effects follow media volume and opt
+out of Android playback capture so they cannot contaminate battle recognition.
+Hiding/pausing the body stops its loop; resumed visible movement can restart it.
+All three supplied originals and their provenance are preserved under
+`tools/audio_sources/droidball/`.
+
 Only one environment owns the body at a time. It is absent during transit. The
 native floating window follows the ball, with a small drawing margin during
 travel, instead of covering the entire path with a transparent touch surface.
