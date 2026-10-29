@@ -93,6 +93,21 @@ data class CaptureDiagnostics(
     val publicationNanoTime: Long? = null
 )
 
+/** The compact body's dock is independent of the temporary panel's width. */
+internal fun droidballFreeWindowLeft(
+    displayWidth: Int,
+    windowWidth: Int,
+    bodyWidth: Int,
+    bodyDockLeft: Int,
+    panelVisible: Boolean,
+): Int = if (!panelVisible) {
+    bodyDockLeft.coerceIn(0, (displayWidth - bodyWidth).coerceAtLeast(0))
+} else if (bodyDockLeft + bodyWidth / 2 < displayWidth / 2) {
+    0
+} else {
+    (displayWidth - windowWidth).coerceAtLeast(0)
+}
+
 /**
  * Process-local truth for the foreground capture service.
  *
@@ -298,6 +313,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
+    private var overlayPanelVisible = false
     private var overlayJourneyTravel = false
     private var overlayJourneyCompletionJob: kotlinx.coroutines.Job? = null
     private var freeOverlayX: Int? = null
@@ -936,6 +952,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         overlayView!!.setViewTreeLifecycleOwner(this)
         overlayView!!.setViewTreeViewModelStoreOwner(this)
         overlayView!!.setViewTreeSavedStateRegistryOwner(this)
+        overlayView!!.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                alignFreeOverlayWindow()
+            }
+        }
 
         // Read geometry on the UI thread. Capture workers retain this immutable
         // screen-space footprint alongside each frame, without repainting it.
@@ -1096,7 +1117,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val params = overlayParams ?: return
         params.x += deltaX.toInt()
         params.y += deltaY.toInt()
-        freeOverlayX = params.x
+        // The expanded panel centers the body above itself. Keep the body
+        // location, rather than treating the panel's left edge as a new dock.
+        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        freeOverlayX = params.x + if (!registrationMode && overlayPanelVisible) (view.width - bodyWidth).coerceAtLeast(0) / 2 else 0
         freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
     }
@@ -1108,9 +1132,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val bounds = displayBounds()
         val viewWidth = view.width.coerceAtLeast(1)
         val viewHeight = view.height.coerceAtLeast(1)
-        params.x = if (params.x + viewWidth / 2 < bounds.width() / 2) 0 else (bounds.width() - viewWidth).coerceAtLeast(0)
+        val rightDock = params.x + viewWidth / 2 >= bounds.width() / 2
+        params.x = if (rightDock) (bounds.width() - viewWidth).coerceAtLeast(0) else 0
         params.y = params.y.coerceIn(0, (bounds.height() - viewHeight).coerceAtLeast(0))
-        freeOverlayX = params.x
+        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        freeOverlayX = if (registrationMode) params.x else if (rightDock) (bounds.width() - bodyWidth).coerceAtLeast(0) else 0
         freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
     }
@@ -1215,11 +1241,12 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // Arrival owns only a compact body window, not the saved HUD position.
         if (!registrationMode && DroidballJourney.state.value.phase in setOf(
                 DroidballJourneyPhase.ARRIVING, DroidballJourneyPhase.RETURNING)) return
+        overlayPanelVisible = panelVisible
         val wasAnchored = overlayAnchoredToBattleHud
         if (anchoredToBattleHud) {
             if (!wasAnchored) {
-                freeOverlayX = params.x
-                freeOverlayY = params.y
+                if (freeOverlayX == null) freeOverlayX = params.x
+                if (freeOverlayY == null) freeOverlayY = params.y
             }
             overlayAnchoredToBattleHud = true
             val bounds = displayBounds()
@@ -1245,9 +1272,28 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.y = freeOverlayY ?: params.y
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
         }
-        // Expansion changes the window width. Let Compose finish measuring it,
-        // then keep the entire movable panel inside the display.
-        if (panelVisible) view.post(::snapOverlayToNearestEdge)
+        // Expansion changes width only; it must not replace the compact dock
+        // with the panel's left edge. Reconcile again after actual measurement.
+        alignFreeOverlayWindow()
+        view.post(::alignFreeOverlayWindow)
+    }
+
+    private fun alignFreeOverlayWindow() {
+        if (registrationMode || overlayAnchoredToBattleHud || overlayJourneyTravel ||
+            DroidballJourney.state.value.phase != DroidballJourneyPhase.FIELD ||
+            fieldViewModel.fieldTeamEditor.draft.value != null) return
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val bounds = displayBounds()
+        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        val x = droidballFreeWindowLeft(bounds.width(), view.width.coerceAtLeast(bodyWidth), bodyWidth,
+            freeOverlayX ?: params.x, overlayPanelVisible)
+        val y = (freeOverlayY ?: params.y).coerceIn(0, (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0))
+        if (params.x != x || params.y != y) {
+            params.x = x
+            params.y = y
+            if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+        }
     }
 
     /**
