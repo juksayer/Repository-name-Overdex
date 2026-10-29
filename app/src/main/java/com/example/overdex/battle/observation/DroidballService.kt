@@ -61,6 +61,7 @@ import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import com.example.overdex.ui.components.BattleHudOverlayGeometry
 import com.example.overdex.ui.components.DroidballFieldGeometry
+import com.example.overdex.ui.components.FieldBattleMenuGeometry
 import com.example.overdex.presentation.DroidballJourney
 import com.example.overdex.presentation.DroidballChoreography
 import com.example.overdex.presentation.DroidballJourneyPhase
@@ -324,6 +325,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var overlayParams: WindowManager.LayoutParams? = null
     // The renderer and native window share one physical canvas for this overlay.
     private var fieldBodyCanvasWidthPx = 1
+    private var fieldWindowScreenOffsetY: Int? = null
     private var overlayAnchoredToBattleHud = false
     private var overlayPanelVisible = false
     private var overlayJourneyTravel = false
@@ -901,6 +903,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun setupOverlay() {
+        fieldWindowScreenOffsetY = null
         val bounds = displayBounds()
         val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
         val bodyCanvasWidthPx = DroidballFieldGeometry.bodyCanvasWidthPx(bounds.width())
@@ -948,11 +951,13 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     if (draft != null && !traveling) com.example.overdex.ui.components.FieldTeamEditorOverlay(
                         editor = fieldViewModel.fieldTeamEditor,
                         savedTeams = savedTeams,
-                        width = minOf(330f, bounds.width() / resources.displayMetrics.density - 16f).dp,
+                        width = (FieldBattleMenuGeometry.widthPx(bounds.width()) / resources.displayMetrics.density).dp,
                         onRescan = { emitSignal(DroidballSignal.ScanTeamSelectRequested) },
                     ) else BattleOverlay(
                     bodyCanvasWidthPx = bodyCanvasWidthPx,
                     panelWidthPx = panelWidthPx,
+                    fieldMenuWidthPx = FieldBattleMenuGeometry.widthPx(bounds.width()),
+                    fieldMenuHeightPx = FieldBattleMenuGeometry.heightPx(bounds.height()),
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY ->
                         if (overlayAnchoredToBattleHud) moveBattleHudBy(deltaX, deltaY)
@@ -979,6 +984,11 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         overlayView!!.setViewTreeViewModelStoreOwner(this)
         overlayView!!.setViewTreeSavedStateRegistryOwner(this)
         overlayView!!.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (fieldWindowScreenOffsetY == null) {
+                val location = IntArray(2)
+                overlayView!!.getLocationOnScreen(location)
+                fieldWindowScreenOffsetY = location[1] - params.y
+            }
             if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
                 alignFreeOverlayWindow()
             }
@@ -988,6 +998,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // screen-space footprint alongside each frame, without repainting it.
         overlayView!!.viewTreeObserver.addOnPreDrawListener {
             val view = overlayView
+            // Capture the attached origin once, before later moves enqueue new
+            // LayoutParams. Comparing an old frame with a pending params.y
+            // creates a false inset and feeds the movement back into itself.
+            if (view != null && fieldWindowScreenOffsetY == null && view.isAttachedToWindow) {
+                val location = IntArray(2)
+                view.getLocationOnScreen(location)
+                fieldWindowScreenOffsetY = location[1] - params.y
+            }
             capturedOverlayRegion = if (view != null && view.isShown && !registrationMode &&
                 (!overlayAnchoredToBattleHud || DroidballOverlayPresentation.battleBadgeSeen.value)) {
                 val location = IntArray(2)
@@ -1112,6 +1130,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         if (open) retainedOpponentBadge.reset()
         val view = overlayView ?: return
         val params = overlayParams ?: return
+        // Read the actual attached translation before changing params. Until
+        // WindowManager lays out the restored window, its screen location still
+        // belongs to the editor and cannot be compared with the new params.y.
+        val screenOffsetBefore = overlayWindowScreenOffsetY(view, params)
         fieldEditorResumeAtNanos = System.nanoTime() + 250_000_000L
         _frames.resetReplayCache()
         if (open) {
@@ -1123,7 +1145,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.flags = params.flags and
                 (WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL).inv()
             params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            params.x = (displayBounds().width() * .04f).roundToInt()
+            params.width = FieldBattleMenuGeometry.widthPx(displayBounds().width())
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            params.x = FieldBattleMenuGeometry.leftPx(displayBounds().width())
             params.y = (displayBounds().height() * .12f).roundToInt()
         } else {
             fieldEditorOriginalPosition?.let { (x, y) -> params.x = x; params.y = y }
@@ -1131,11 +1155,24 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
             getSystemService(android.view.inputmethod.InputMethodManager::class.java)
                 ?.hideSoftInputFromWindow(view.windowToken, 0)
-            updateOverlayLayoutState(
-                DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value &&
-                    DroidballOverlayPresentation.mode.value in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE),
-                DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value,
-            )
+            overlayPanelVisible = DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value
+            overlayAnchoredToBattleHud = overlayPanelVisible &&
+                battleOverlayDisplayMode(DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value) in
+                    setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE)
+            val bounds = displayBounds()
+            if (overlayAnchoredToBattleHud) {
+                params.width = WindowManager.LayoutParams.WRAP_CONTENT
+                params.height = WindowManager.LayoutParams.WRAP_CONTENT
+                applyBattleHudWindowPosition(view, params, bounds, windowScreenOffsetY = screenOffsetBefore)
+            } else if (overlayPanelVisible) {
+                params.width = FieldBattleMenuGeometry.widthPx(bounds.width())
+                params.height = fieldBodyCanvasWidthPx + FieldBattleMenuGeometry.heightPx(bounds.height())
+                params.x = FieldBattleMenuGeometry.leftPx(bounds.width())
+                params.y = FieldBattleMenuGeometry.windowTopPx(bounds.height(), fieldBodyCanvasWidthPx, screenOffsetBefore)
+            } else {
+                params.width = WindowManager.LayoutParams.WRAP_CONTENT
+                params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            }
         }
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
@@ -1234,8 +1271,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         params: WindowManager.LayoutParams,
         bounds: android.graphics.Rect,
         layout: BattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height()),
+        windowScreenOffsetY: Int = overlayWindowScreenOffsetY(view, params),
     ) {
-        val windowScreenOffsetY = overlayWindowScreenOffsetY(view, params)
         val attachedWindowTop = BattleHudOverlayGeometry.attachedPanelWindowTopPx(
             bounds.height(),
             windowScreenOffsetY,
@@ -1261,6 +1298,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         params: WindowManager.LayoutParams,
     ): Int {
         if (!view.isAttachedToWindow) return 0
+        fieldWindowScreenOffsetY?.let { return it }
         val location = IntArray(2)
         view.getLocationOnScreen(location)
         return location[1] - params.y
@@ -1268,7 +1306,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
 
     /**
      * Live battle presentation is attached to GO's opponent Team Info badge.
-     * Other modes retain the user's movable, edge-snapping Droidball position.
+     * The open field menu uses its party-card reference; the collapsed body
+     * retains the user's movable, edge-snapping position.
      */
     private fun updateOverlayLayoutState(anchoredToBattleHud: Boolean, panelVisible: Boolean) {
         val view = overlayView ?: return
@@ -1284,6 +1323,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 if (freeOverlayY == null) freeOverlayY = params.y
             }
             overlayAnchoredToBattleHud = true
+            params.width = WindowManager.LayoutParams.WRAP_CONTENT
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
             val bounds = displayBounds()
             applyBattleHudWindowPosition(view, params, bounds)
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
@@ -1307,8 +1348,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             params.y = freeOverlayY ?: params.y
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
         }
-        // Expansion changes width only; it must not replace the compact dock
-        // with the panel's left edge. Reconcile again after actual measurement.
+        // Menu expansion must not replace the compact dock with the card's
+        // origin. Reconcile again after actual native measurement.
         alignFreeOverlayWindow()
         view.post(::alignFreeOverlayWindow)
     }
@@ -1321,10 +1362,21 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val params = overlayParams ?: return
         val bounds = displayBounds()
         val bodyWidth = fieldBodyCanvasWidthPx
-        val x = droidballFreeWindowLeft(bounds.width(), view.width.coerceAtLeast(bodyWidth), bodyWidth,
-            freeOverlayX ?: params.x, overlayPanelVisible)
-        val y = (freeOverlayY ?: params.y).coerceIn(0, (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0))
-        if (params.x != x || params.y != y) {
+        val width = if (overlayPanelVisible) FieldBattleMenuGeometry.widthPx(bounds.width())
+            else WindowManager.LayoutParams.WRAP_CONTENT
+        val height = if (overlayPanelVisible) bodyWidth + FieldBattleMenuGeometry.heightPx(bounds.height())
+            else WindowManager.LayoutParams.WRAP_CONTENT
+        // The wide menu is fixed to the native party-card reference. Keep the
+        // collapsed body's edge dock separate so opening/closing never saves a
+        // new body position or changes the user's battle HUD calibration.
+        val x = if (overlayPanelVisible) FieldBattleMenuGeometry.leftPx(bounds.width())
+            else freeOverlayX ?: params.x
+        val y = if (overlayPanelVisible) FieldBattleMenuGeometry.windowTopPx(
+            bounds.height(), bodyWidth, overlayWindowScreenOffsetY(view, params))
+            else (freeOverlayY ?: params.y).coerceIn(0, (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0))
+        if (params.x != x || params.y != y || params.width != width || params.height != height) {
+            params.width = width
+            params.height = height
             params.x = x
             params.y = y
             if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)

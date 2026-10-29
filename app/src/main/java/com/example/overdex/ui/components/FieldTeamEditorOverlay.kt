@@ -45,7 +45,7 @@ fun FieldTeamEditorOverlay(
     val member = team.slots[slot]
     val ink = FieldTeamInk
     Column(Modifier.width(width).heightIn(max = 470.dp)
-        .background(Color(0xFFF3FCF5), RoundedCornerShape(12.dp)).padding(12.dp),
+        .background(FieldMenuPaper, RoundedCornerShape(12.dp)).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("TEAM & MOVES", color = ink, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

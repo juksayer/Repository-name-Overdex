@@ -13,16 +13,18 @@ enum class DroidballOverlayMode {
     SEEKING_TEAM_SELECT,
     TEAM_SELECT,
     CALIBRATING,
+    /** Display-only acknowledgement; the requested mode remains BATTLE_HUD. */
+    BATTLE_READY,
     /** The Droidball Battle HUD is open; GO has not necessarily started the Match yet. */
     BATTLE_HUD,
     BATTLE_LIVE,
     RESULT
 }
 
-/** Keep recovery controls reachable when the HUD was requested before a battle. */
+/** Acknowledge the request while native badge evidence still gates the battle layout. */
 internal fun battleOverlayDisplayMode(mode: DroidballOverlayMode, badgeSeen: Boolean): DroidballOverlayMode =
     if (!badgeSeen && mode in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE))
-        DroidballOverlayMode.PRE_BATTLE else mode
+        DroidballOverlayMode.BATTLE_READY else mode
 
 data class ObservedOpponentSpecies(
     val speciesName: String,
@@ -172,10 +174,16 @@ object DroidballOverlayPresentation {
     }
 
     fun showAcceptedTeamSelect() {
+        val requestedMode = _mode.value
+        val awaitingBattle = battleOverlayDisplayMode(requestedMode, _battleBadgeSeen.value) ==
+            DroidballOverlayMode.BATTLE_READY
+        val preserveVisibility = awaitingBattle && _panelAllowed.value
         _battleBadgeSeen.value = false
-        _mode.value = DroidballOverlayMode.TEAM_SELECT
+        // Recognition may finish after the user arms the HUD. Keep that request,
+        // including an explicit Hide, while still accepting the roster evidence.
+        _mode.value = if (awaitingBattle) requestedMode else DroidballOverlayMode.TEAM_SELECT
         _panelAllowed.value = true
-        _expanded.value = true
+        if (!preserveVisibility) _expanded.value = true
     }
 
     /** Battle evidence selects its layout; only Team Select or a user action reveals it. */

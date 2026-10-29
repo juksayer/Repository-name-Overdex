@@ -134,14 +134,70 @@ class DroidballOverlayPresentationTest {
         assertEquals(false, confirmed.isAudioFavored)
     }
 
-    @Test fun `an explicit early HUD request keeps navigation controls visible until a native badge arrives`() {
+    @Test fun `an explicit early HUD request displays ready until a native badge arrives`() {
         DroidballOverlayPresentation.reset()
         DroidballOverlayPresentation.showBattleHud(userRequested = true)
-        assertEquals(DroidballOverlayMode.PRE_BATTLE, battleOverlayDisplayMode(
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+        assertFalse(DroidballOverlayPresentation.battleBadgeSeen.value)
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        assertEquals(DroidballOverlayMode.BATTLE_READY, battleOverlayDisplayMode(
             DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
         DroidballOverlayPresentation.recordBattleBadgePresent()
         assertEquals(DroidballOverlayMode.BATTLE_HUD, battleOverlayDisplayMode(
             DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+    }
+
+    @Test fun `an accepted resource count also promotes the ready display to the battle HUD`() {
+        DroidballOverlayPresentation.showBattleHud(userRequested = true)
+        DroidballOverlayPresentation.recordOpponentResources(
+            com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured(
+                com.example.overdex.battle.custody.OpponentBattleResource.POKE_BALLS, 3, 3),
+            1_000L,
+        )
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, battleOverlayDisplayMode(
+            DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `late Team Select acceptance preserves a ready request and its visibility`() {
+        for (hidden in listOf(false, true)) {
+            DroidballOverlayPresentation.reset()
+            DroidballOverlayPresentation.showBattleHud(userRequested = true)
+            if (hidden) DroidballOverlayPresentation.toggleExpanded()
+            DroidballOverlayPresentation.showAcceptedTeamSelect()
+            DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+            assertEquals(DroidballOverlayMode.BATTLE_READY, battleOverlayDisplayMode(
+                DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+            assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+            assertEquals(!hidden, DroidballOverlayPresentation.expanded.value)
+        }
+    }
+
+    @Test fun `accepted Team Select can authorize an automatic pending HUD without losing its request`() {
+        DroidballOverlayPresentation.showBattleHud()
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        assertEquals(DroidballOverlayMode.BATTLE_READY, battleOverlayDisplayMode(
+            DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `explicit navigation rescan and reset clear a pending ready display`() {
+        for ((clear, expected) in listOf(
+            DroidballOverlayPresentation::showNavigationIdle to DroidballOverlayMode.PRE_BATTLE,
+            DroidballOverlayPresentation::showTeamSelectScan to DroidballOverlayMode.SEEKING_TEAM_SELECT,
+            DroidballOverlayPresentation::reset to DroidballOverlayMode.PRE_BATTLE,
+        )) {
+            DroidballOverlayPresentation.showBattleHud(userRequested = true)
+            clear()
+            assertEquals(expected, battleOverlayDisplayMode(
+                DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
+            assertFalse(DroidballOverlayPresentation.battleBadgeSeen.value)
+        }
     }
 
     @Test fun `explicit navigation and rescan clear a wrongly opened badge without a relaunch`() {

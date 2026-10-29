@@ -6,9 +6,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +20,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -37,7 +34,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.battle.observation.CaptureDiagnostics
 import com.example.overdex.battle.observation.BattleHudLayout
 import com.example.overdex.battle.observation.DroidballOverlayMode
 import com.example.overdex.battle.observation.DroidballOverlayPresentation
@@ -133,6 +129,8 @@ internal object DroidballFieldGeometry {
 fun BattleOverlay(
     bodyCanvasWidthPx: Int = DroidballFieldGeometry.bodyCanvasWidthPx(1080),
     panelWidthPx: Int = 415,
+    fieldMenuWidthPx: Int = 930,
+    fieldMenuHeightPx: Int = 484,
     initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
     onDragFinished: () -> Unit = {},
@@ -142,7 +140,6 @@ fun BattleOverlay(
 ) {
     val requestedMode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
-    val diagnostics by DroidballService.captureDiagnostics.collectAsState()
     val opponentSpecies by DroidballOverlayPresentation.opponentSpecies.collectAsState()
     val opponentMoves by DroidballOverlayPresentation.activeOpponentMovePossibilities.collectAsState()
     val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
@@ -166,7 +163,7 @@ fun BattleOverlay(
     val battleMode = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     val panelIsVisible = panelAllowed && !traveling && expanded
     val anchoredToBattleHud = battleMode && panelIsVisible
-    val mayMove = !traveling && !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
+    val mayMove = !traveling && !panelIsVisible && mode != DroidballOverlayMode.RESULT
     val currentOnDrag by rememberUpdatedState(onDrag)
     val currentOnDragFinished by rememberUpdatedState(onDragFinished)
     val overlayView = LocalView.current
@@ -247,13 +244,14 @@ fun BattleOverlay(
         if (panelIsVisible) {
             OverlayPanel(
                 mode,
-                diagnostics,
                 opponentSpecies,
                 opponentMoves,
                 inferredPlayerTeam,
                 playerTeamConfirmed,
                 configuredPlayerTeam,
                 panelWidthPx,
+                fieldMenuWidthPx,
+                fieldMenuHeightPx,
             )
         }
     }
@@ -262,58 +260,29 @@ fun BattleOverlay(
 @Composable
 private fun OverlayPanel(
     mode: DroidballOverlayMode,
-    diagnostics: CaptureDiagnostics,
     opponentSpecies: List<ObservedOpponentSpecies>,
     opponentMoves: OpponentMovePossibilities?,
     inferredPlayerTeam: List<String?>,
     playerTeamConfirmed: Boolean,
     configuredPlayerTeam: List<String>,
     panelWidthPx: Int,
-
+    fieldMenuWidthPx: Int,
+    fieldMenuHeightPx: Int,
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
-    val heading = when (mode) {
-        DroidballOverlayMode.PRE_BATTLE -> "NAVIGATION IDLE"
-        DroidballOverlayMode.SEEKING_TEAM_SELECT -> "SEEKING TEAM SELECT"
-        DroidballOverlayMode.TEAM_SELECT -> "TEAM SELECT ACTIVE"
-        DroidballOverlayMode.CALIBRATING -> "CALIBRATION"
-        DroidballOverlayMode.RESULT -> "RESULT OBSERVED"
-        else -> "BATTLE HUD"
+    if (!isBattleHud) {
+        FieldBattleMenu(mode, inferredPlayerTeam, playerTeamConfirmed, configuredPlayerTeam,
+            teamEditingAllowed, fieldMenuWidthPx, fieldMenuHeightPx)
+        return
     }
     // Match the calibrated opponent badge exactly at every display width.
     val teamInfoWidth = with(LocalDensity.current) { panelWidthPx.toDp() }
     val jointDepth = with(LocalDensity.current) { BattleHudBadgeStyle.cornerPx(panelWidthPx.toFloat()).toDp() }
-    val panelShape = if (isBattleHud) BattleHudBadgeShape else RoundedCornerShape(9.dp)
-    val background = if (isBattleHud) BattleHudBadgeStyle.background else Color(0xE810231F)
-    val foreground = if (isBattleHud) Color(0xFF275F6D) else Color(0xFFD7FFF4)
-    val muted = if (isBattleHud) Color(0xFF397786) else Color(0xFFD7FFF4).copy(alpha = 0.82f)
-    // The field control panel can contain more actions than fit on a short
-    // display. Keep its larger touch targets reachable without resizing the
-    // live badge or clipping the lower Droidball half off screen.
-    val controlPanelMaxHeight = (LocalConfiguration.current.screenHeightDp - 112).coerceAtLeast(96).dp
-    val controlPanelScroll = rememberScrollState()
-
     Column(
-        modifier = Modifier.width(teamInfoWidth)
-            .then(if (isBattleHud) Modifier else Modifier.heightIn(max = controlPanelMaxHeight)
-                .background(background, panelShape)
-                .verticalScroll(controlPanelScroll)
-                .padding(start = 8.dp, end = 8.dp, bottom = 6.dp, top = 6.dp)),
-        verticalArrangement = Arrangement.spacedBy(if (isBattleHud) 0.dp else 5.dp),
-        horizontalAlignment = if (isBattleHud) Alignment.End else Alignment.Start,
+        modifier = Modifier.width(teamInfoWidth),
+        horizontalAlignment = Alignment.End,
     ) {
-        if (teamEditingAllowed && !isBattleHud) {
-            OverlayControl("TEAM / MOVES") {
-                DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.EditTeamRequested)
-            }
-            OverlayControl("SCAN TEAM SELECT") {
-                DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ScanTeamSelectRequested)
-            }
-        }
-        if (!isBattleHud) {
-            Text(heading, color = foreground, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-        }
         if (isBattleHud) {
             val forecast by DroidballOverlayPresentation.opponentEnergyEstimate.collectAsState()
             val estimate = forecast?.takeIf { it.speciesName.equals(opponentMoves?.speciesName, ignoreCase = true) }
@@ -346,105 +315,7 @@ private fun OverlayPanel(
                 OpponentHudStatus(estimate)
             }
 
-        } else {
-            val configuredTeamReady = configuredPlayerTeam.size == 3
-            val message = when (mode) {
-                DroidballOverlayMode.PRE_BATTLE -> if (configuredTeamReady) {
-                    "Team and moves ready. You can change them or rescan before battle."
-                } else {
-                    "Moves not ready. Open TEAM / MOVES, or scan when Team Select is visible."
-                }
-                DroidballOverlayMode.SEEKING_TEAM_SELECT -> "Scanning your team. You can open the battle HUD now."
-                DroidballOverlayMode.TEAM_SELECT -> "Team Select accepted. Player roster observation is active."
-                DroidballOverlayMode.CALIBRATING -> "Adjust crop boxes in Overdex."
-                DroidballOverlayMode.RESULT -> "Outcome evidence is preserved. Tap to arm the next match."
-                else -> captureLine(diagnostics)
-            }
-            if (mode == DroidballOverlayMode.RESULT) {
-                OverlayControl(message) {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.BeginNextMatch)
-                }
-            } else {
-                Text(message, color = foreground, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
-            }
-            if (mode == DroidballOverlayMode.PRE_BATTLE || mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {
-                OverlayControl("START BATTLE HUD") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
-                }
-            }
-            if (mode == DroidballOverlayMode.SEEKING_TEAM_SELECT) {
-                OverlayControl("IGNORE CURRENT SCREEN") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.IgnoreCurrentScreenRequested)
-                }
-                OverlayControl("RESTART OBSERVATION") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RestartObservationRequested)
-                }
-            }
-            if (mode == DroidballOverlayMode.TEAM_SELECT) {
-                if (inferredPlayerTeam.any { it != null }) {
-                    Text(
-                        inferredPlayerTeam.mapIndexed { index, species -> "${index + 1}. ${species ?: "?"}" }.joinToString("  "),
-                        color = foreground,
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-                if (inferredPlayerTeam.all { it != null } && !playerTeamConfirmed) {
-                    Text("IS THIS YOUR TEAM?", color = foreground, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OverlayControl("YES", Modifier.weight(1f)) { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.ConfirmInferredPlayerTeamRequested) }
-                        OverlayControl("NO / RESCAN", Modifier.weight(1f)) { DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RejectInferredPlayerTeamRequested) }
-                    }
-                } else if (playerTeamConfirmed) {
-                    Text(if (configuredTeamReady) "TEAM & MOVES READY" else "ROSTER CONFIRMED · MOVES NEEDED",
-                        color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
-                    if (!configuredTeamReady) {
-                        Text("Choose TEAM / MOVES to save moves, or continue with observation only.",
-                            color = foreground, fontSize = 8.sp, fontFamily = FontFamily.Monospace)
-                    }
-                }
-                OverlayControl("OPEN BATTLE HUD") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.OpenBattleHudRequested)
-                }
-                OverlayControl("RESTART OBSERVATION") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.RestartObservationRequested)
-                }
-            }
-            if (mode in setOf(
-                    DroidballOverlayMode.PRE_BATTLE,
-                    DroidballOverlayMode.SEEKING_TEAM_SELECT,
-                    DroidballOverlayMode.TEAM_SELECT,
-                    DroidballOverlayMode.CALIBRATING
-                )
-            ) {
-                Spacer(Modifier.height(16.dp))
-                OverlayControl("STOP SESSION") {
-                    DroidballService.emitSignal(com.example.overdex.battle.observation.DroidballSignal.StopSessionRequested)
-                }
-            }
         }
-    }
-}
-
-@Composable
-private fun OverlayControl(
-    label: String,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    action: () -> Unit,
-) {
-    Box(
-        modifier = modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .clickable(role = Role.Button, onClick = action)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(
-            text = label,
-            color = Color(0xFFD7FFF4),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
-        )
     }
 }
 
@@ -542,11 +413,4 @@ private fun MovePossibilityLine(
             )
         }
     }
-}
-
-private fun captureLine(diagnostics: CaptureDiagnostics): String {
-    val dimensions = diagnostics.width?.let { width ->
-        diagnostics.height?.let { height -> "${width}x${height}" }
-    } ?: "awaiting frame"
-    return "Capture: ${diagnostics.state.lowercase()} ($dimensions)"
 }

@@ -64,7 +64,10 @@ class DroidballSession(val match: Match) {
                 }
                 when (article.payload) {
                     is com.example.overdex.battle.custody.TeamSelectPartyWitnessed -> {
-                        if (canObserveTeamSelect && !battleSurfaceEstablished.value) {
+                        if (canObserveTeamSelect && !battleSurfaceEstablished.value &&
+                            _phase.value != DroidballSessionPhase.COUNTDOWN) {
+                            // A late scan result must not revoke a deliberate HUD
+                            // request or disable its countdown observation window.
                             _phase.value = DroidballSessionPhase.TEAM_SELECT_ACTIVE
                         }
                     }
