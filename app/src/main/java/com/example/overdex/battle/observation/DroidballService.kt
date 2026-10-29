@@ -60,6 +60,11 @@ import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.ui.components.BattleOverlay
 import com.example.overdex.ui.components.BattleHudOverlayGeometry
+import com.example.overdex.ui.components.DroidballFieldGeometry
+import com.example.overdex.presentation.DroidballJourney
+import com.example.overdex.presentation.DroidballChoreography
+import com.example.overdex.presentation.DroidballJourneyPhase
+import com.example.overdex.presentation.DroidballJourneyState
 import android.widget.FrameLayout
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
@@ -293,6 +298,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
     private var overlayAnchoredToBattleHud = false
+    private var overlayJourneyTravel = false
+    private var overlayJourneyCompletionJob: kotlinx.coroutines.Job? = null
     private var freeOverlayX: Int? = null
     private var freeOverlayY: Int? = null
     private lateinit var battleHudLayoutStore: BattleHudLayoutStore
@@ -636,6 +643,24 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, playerBadgeRegion)
                     val opponentBadgePresent = battleSurfaceEstablished && badgeExclusionBefore == null &&
                         TeamBadgeCropLocator.nativeBadgePresent(nativeFrame, opponentBadgeRegion)
+                    if (!registrationMode && playerBadgePresent && opponentBadgePresent) {
+                        // Returning through Recents has no explicit GO launch.
+                        // This frame's two native badges can restore field
+                        // ownership without waiting for another semantic event.
+                        val waitingJourney = DroidballJourney.state.value
+                        if (!instrumentVisible.value && waitingJourney.phase == DroidballJourneyPhase.TRANSIT &&
+                            receivedAtNanos >= waitingJourney.startedAtNanos) {
+                            serviceScope.launch(Dispatchers.Main) {
+                                // The user may have returned home while this
+                                // frame was processed. Recheck on the UI thread;
+                                // an old positive must never undock the shell.
+                                if (activeService === this@DroidballService && isRunning() &&
+                                    !instrumentVisible.value && DroidballJourney.state.value == waitingJourney) {
+                                    DroidballJourney.enterField()
+                                }
+                            }
+                        }
+                    }
                     if (!registrationMode && !DroidballOverlayPresentation.battleBadgeSeen.value &&
                         playerBadgePresent && opponentBadgePresent) {
                         DroidballOverlayPresentation.recordBattleBadgePresent()
@@ -646,6 +671,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         retainedOpponentBadge.update(bitmap, receivedAtNanos, playerBadgePresent, opponentBadgePresent,
                             opponentBadgeRegion, width, height, badgeScope,
                             battleSurfaceEstablished &&
+                                DroidballOverlayPresentation.panelAllowed.value &&
+                                DroidballOverlayPresentation.expanded.value &&
+                                DroidballJourney.state.value.phase == DroidballJourneyPhase.FIELD &&
                                 DroidballOverlayPresentation.mode.value == DroidballOverlayMode.BATTLE_HUD &&
                                 DroidballOverlayPresentation.battleBadgeSeen.value,
                             capturedOverlayRegion, DroidballOverlayPresentation.opponentBadgeContent.value)
@@ -873,8 +901,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 } else {
                     val draft by fieldViewModel.fieldTeamEditor.draft.collectAsState()
                     val savedTeams by fieldViewModel.selectableBattleTeams.collectAsState()
+                    val journey by DroidballJourney.state.collectAsState()
+                    val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
                     LaunchedEffect(draft != null) { setFieldEditorWindow(draft != null) }
-                    if (draft != null) com.example.overdex.ui.components.FieldTeamEditorOverlay(
+                    if (draft != null && !traveling) com.example.overdex.ui.components.FieldTeamEditorOverlay(
                         editor = fieldViewModel.fieldTeamEditor,
                         savedTeams = savedTeams,
                         width = minOf(330f, bounds.width() / resources.displayMetrics.density - 16f).dp,
@@ -892,6 +922,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                     },
                     onHalfPositionsChanged = ::saveBattleHudHalfPositions,
                     onLayoutStateChanged = ::updateOverlayLayoutState,
+                    onJourneyOffsetChanged = ::moveJourneyWindow,
                     )
                 }
             }
@@ -923,6 +954,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             true
         }
         
+        // The native window must share the same owner as the shell body. Do
+        // not expose a second, static ball while GO is opening.
+        if (!registrationMode) overlayView?.visibility = android.view.View.INVISIBLE
         windowManager.addView(overlayView, params)
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
@@ -931,11 +965,42 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
         }
         if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
+            combine(instrumentVisible, DroidballJourney.state) { visible, journey ->
+                visible to journey
+            }.collect { (visible, journey) ->
+                if (journey.phase == DroidballJourneyPhase.RETURNING && fieldViewModel.fieldTeamEditor.draft.value != null) {
+                    fieldViewModel.fieldTeamEditor.close()
+                    setFieldEditorWindow(false)
+                }
+                updateJourneyWindow(journey)
+                val showField = journey.fieldOwnsBody &&
+                    (!visible || journey.phase == DroidballJourneyPhase.RETURNING)
+                overlayView?.visibility = if (showField) {
+                    android.view.View.VISIBLE
+                } else android.view.View.INVISIBLE
+                if (!showField) capturedOverlayRegion = null
+                // Completion belongs to the service's journey, not to a
+                // visible Compose frame (which Android may pause off screen).
+                overlayJourneyCompletionJob?.cancel()
+                if (journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING) {
+                    overlayJourneyCompletionJob = launch {
+                        val elapsed = ((System.nanoTime() - journey.startedAtNanos).coerceAtLeast(0) / 1_000_000L)
+                        delay((DroidballChoreography.durationMillis(journey.phase) - elapsed).coerceAtLeast(0))
+                        if (journey.phase == DroidballJourneyPhase.ARRIVING) DroidballJourney.arrivalFinished(journey.generation)
+                        else DroidballJourney.fieldExitFinished(journey.generation)
+                    }
+                }
+            }
+        }
+        if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
             DroidballOverlayPresentation.opponentBadgeContent.collect(retainedOpponentBadge::contentChanged)
         }
         if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
-            combine(instrumentVisible, DroidballOverlayPresentation.mode, DroidballOverlayPresentation.battleBadgeSeen) {
-                visible, mode, seen -> !visible && seen && mode == DroidballOverlayMode.BATTLE_HUD
+            combine(instrumentVisible, DroidballOverlayPresentation.mode, DroidballOverlayPresentation.battleBadgeSeen,
+                combine(DroidballOverlayPresentation.panelAllowed, DroidballOverlayPresentation.expanded) { allowed, expanded -> allowed && expanded },
+                DroidballJourney.state) {
+                visible, mode, seen, panelVisible, journey -> !visible && panelVisible && seen &&
+                    journey.phase == DroidballJourneyPhase.FIELD && mode == DroidballOverlayMode.BATTLE_HUD
             }.distinctUntilChanged().collect { allowed -> if (!allowed) retainedOpponentBadge.reset() }
         }
         if (registrationMode) {
@@ -1017,15 +1082,16 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             getSystemService(android.view.inputmethod.InputMethodManager::class.java)
                 ?.hideSoftInputFromWindow(view.windowToken, 0)
             updateOverlayLayoutState(
-                DroidballOverlayPresentation.mode.value in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE),
-                DroidballOverlayPresentation.expanded.value,
+                DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value &&
+                    DroidballOverlayPresentation.mode.value in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE),
+                DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value,
             )
         }
         if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
     }
 
     private fun moveOverlayBy(deltaX: Float, deltaY: Float) {
-        if (overlayAnchoredToBattleHud) return
+        if (overlayAnchoredToBattleHud || overlayJourneyTravel) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
         params.x += deltaX.toInt()
@@ -1036,7 +1102,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun snapOverlayToNearestEdge() {
-        if (overlayAnchoredToBattleHud) return
+        if (overlayAnchoredToBattleHud || overlayJourneyTravel) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()
@@ -1146,6 +1212,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun updateOverlayLayoutState(anchoredToBattleHud: Boolean, panelVisible: Boolean) {
         val view = overlayView ?: return
         val params = overlayParams ?: return
+        // Arrival owns only a compact body window, not the saved HUD position.
+        if (!registrationMode && DroidballJourney.state.value.phase in setOf(
+                DroidballJourneyPhase.ARRIVING, DroidballJourneyPhase.RETURNING)) return
         val wasAnchored = overlayAnchoredToBattleHud
         if (anchoredToBattleHud) {
             if (!wasAnchored) {
@@ -1159,7 +1228,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             // The first state callback can precede WindowManager's initial layout.
             // Reapply once attached so getLocationOnScreen supplies the real inset.
             view.post {
-                if (overlayAnchoredToBattleHud && overlayView === view && view.isAttachedToWindow) {
+                if (overlayAnchoredToBattleHud && !overlayJourneyTravel &&
+                    fieldViewModel.fieldTeamEditor.draft.value == null &&
+                    overlayView === view && view.isAttachedToWindow) {
                     val liveParams = overlayParams ?: return@post
                     applyBattleHudWindowPosition(view, liveParams, displayBounds())
                     windowManager.updateViewLayout(view, liveParams)
@@ -1177,6 +1248,67 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         // Expansion changes the window width. Let Compose finish measuring it,
         // then keep the entire movable panel inside the display.
         if (panelVisible) view.post(::snapOverlayToNearestEdge)
+    }
+
+    /**
+     * A compact native window follows the ball instead of laying a broad,
+     * transparent touch-catching rectangle over the game. Temporary movement
+     * never writes the user's HUD calibration or edge position.
+     */
+    private fun updateJourneyWindow(journey: DroidballJourneyState) {
+        if (registrationMode) return
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
+        val bodyPixels = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        val travelPadding = (DroidballFieldGeometry.TRAVEL_PADDING_DP * resources.displayMetrics.density).roundToInt()
+        val travelWindowPixels = bodyPixels + travelPadding * 2
+        val bounds = displayBounds()
+        if (traveling) {
+            overlayJourneyTravel = true
+            overlayAnchoredToBattleHud = false
+            params.width = travelWindowPixels
+            params.height = travelWindowPixels
+            params.flags = droidballOverlayWindowFlags(false) or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            val elapsed = ((System.nanoTime() - journey.startedAtNanos).coerceAtLeast(0) / 1_000_000L)
+            params.x = DroidballFieldGeometry.windowLeftPx(bounds.width(), bodyPixels,
+                DroidballChoreography.pose(journey.phase, elapsed).xBodies, travelPadding)
+            params.y = ((freeOverlayY ?: 350) - travelPadding).coerceIn(0, (bounds.height() - travelWindowPixels).coerceAtLeast(0))
+        } else if (overlayJourneyTravel) {
+            overlayJourneyTravel = false
+            params.width = WindowManager.LayoutParams.WRAP_CONTENT
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+            params.flags = params.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS.inv()
+            params.x = DroidballFieldGeometry.windowLeftPx(bounds.width(), bodyPixels, 0f)
+            params.y = freeOverlayY ?: 350
+            freeOverlayX = params.x
+            // Reconcile against the usual battle seam only after the travel
+            // window has released ownership; this does not persist a layout.
+            if (journey.phase == DroidballJourneyPhase.FIELD) view.post {
+                if (DroidballJourney.state.value != journey || overlayView !== view || !view.isAttachedToWindow ||
+                    fieldViewModel.fieldTeamEditor.draft.value != null) return@post
+                val panelAllowed = DroidballOverlayPresentation.panelAllowed.value
+                val mode = battleOverlayDisplayMode(DroidballOverlayPresentation.mode.value,
+                    DroidballOverlayPresentation.battleBadgeSeen.value)
+                val panelVisible = panelAllowed && DroidballOverlayPresentation.expanded.value
+                val anchored = panelVisible && mode in setOf(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayMode.BATTLE_LIVE)
+                updateOverlayLayoutState(anchored, panelVisible)
+            }
+        } else return
+        if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+    }
+
+    private fun moveJourneyWindow(bodyWidths: Float) {
+        if (registrationMode || !overlayJourneyTravel) return
+        val view = overlayView ?: return
+        val params = overlayParams ?: return
+        val bodyPixels = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        val travelPadding = (DroidballFieldGeometry.TRAVEL_PADDING_DP * resources.displayMetrics.density).roundToInt()
+        val nextX = DroidballFieldGeometry.windowLeftPx(displayBounds().width(), bodyPixels, bodyWidths, travelPadding)
+        if (params.x != nextX) {
+            params.x = nextX
+            if (view.isAttachedToWindow) windowManager.updateViewLayout(view, params)
+        }
     }
 
     private fun displayBounds(): android.graphics.Rect =
@@ -1211,6 +1343,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     override fun onDestroy() {
+        overlayJourneyCompletionJob?.cancel()
+        overlayJourneyCompletionJob = null
         automaticStopController.close()
         screenLockCheckJob?.cancel()
         screenLockCheckJob = null

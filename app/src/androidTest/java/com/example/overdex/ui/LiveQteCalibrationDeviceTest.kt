@@ -62,7 +62,7 @@ class LiveQteCalibrationDeviceTest {
                 }
             })
             DroidballOverlayPresentation.reset()
-            DroidballOverlayPresentation.showBattleHud()
+            DroidballOverlayPresentation.showBattleHud(userRequested = true)
             hud = ComposeView(activity).apply {
                 setViewTreeLifecycleOwner(activity)
                 setViewTreeViewModelStoreOwner(activity)

@@ -57,10 +57,13 @@ import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.presentation.InstrumentLifecycle
 import com.example.overdex.presentation.ObservationIndicator
 import com.example.overdex.presentation.PresentationState
+import com.example.overdex.presentation.DroidballJourney
+import com.example.overdex.presentation.DroidballJourneyPhase
+import com.example.overdex.presentation.DroidballChoreography
+import com.example.overdex.presentation.rememberDroidballPose
 import com.example.overdex.ui.PokedexViewModel
-import com.example.overdex.ui.components.AndroidPokeballLogo
+import com.example.overdex.ui.components.DroidballBody
 import com.example.overdex.ui.components.BreathingLED
-import com.example.overdex.ui.components.Droidball
 import com.example.overdex.ui.components.EnemyTeamMemoryOverlay
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.InstrumentLCD
@@ -169,42 +172,6 @@ fun InstrumentButton(
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier.rotate(labelRotationDegrees)
-            )
-        }
-    }
-}
-
-/**
- * Droidball: The physical embodiment of the ODX-Fi
- *
- * This component visualizes the observation state by mapping [PresentationState]
- * to its physical representation.
- */
-@Composable
-fun Droidball(
-    presentationState: PresentationState,
-    modifier: Modifier = Modifier
-){
-    // Presentation Layer: Mapping semantic indicators to physical colors
-    val ledColor = when (presentationState.observation.status) {
-        ObservationIndicator.SEARCHING -> Color(0xFFFFB300) // Amber
-        ObservationIndicator.CONFIRMED -> Color(0xFF00E676) // Green
-        ObservationIndicator.ALIGNING -> Color(0xFFD1C4E9) // Purple
-        ObservationIndicator.SYNCING -> Color(0xFF2979FF)  // Blue
-        ObservationIndicator.ERROR -> Color(0xFFFF1744)    // Red
-        ObservationIndicator.OFF -> Color.Transparent
-    }
-
-    Box(modifier = modifier.size(40.dp)) {
-        Droidball(
-            presentationState = presentationState,
-            modifier = Modifier.size(54.dp)
-        )
-
-        if (presentationState.instrument != InstrumentLifecycle.IDLE) {
-            BreathingLED(
-                color = ledColor,
-                modifier = Modifier.align(androidx.compose.ui.Alignment.Center).size(8.dp)
             )
         }
     }
@@ -370,6 +337,15 @@ fun ODXFiShell(
     val currentState = instrumentState ?: ObservationSessionState.IDLE
 
     val serviceMode = currentState == ObservationSessionState.SERVICE_ACTIVE
+    val journey by DroidballJourney.state.collectAsState()
+    val droidballPose = rememberDroidballPose(journey)
+    LaunchedEffect(journey.generation, journey.phase) {
+        if (journey.phase == DroidballJourneyPhase.DOCKING) {
+            val elapsed = (System.nanoTime() - journey.startedAtNanos).coerceAtLeast(0) / 1_000_000
+            kotlinx.coroutines.delay((DroidballChoreography.DOCKING_MILLIS - elapsed).coerceAtLeast(0))
+            DroidballJourney.dockingFinished(journey.generation)
+        }
+    }
 
     // Shared physical material for the CRT and lower service assembly. The top
     // CRT rail is deeper only to retain the etched model badge.
@@ -469,13 +445,13 @@ fun ODXFiShell(
                 .padding(bottom = 2.dp, start = 2.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Device Emblem (Permanent branding)
-            AndroidPokeballLogo(
-                modifier = Modifier
-                    .size(54.dp)
-                    .rotate(if (isBinderMode) 90f else 0f),
-                isInteractive = isLogoInteractive
-            )
+            // The empty dock stays in place while the single body is in the field.
+            Box(Modifier.size(54.dp)) {
+                if (journey.shellOwnsBody) DroidballBody(
+                    modifier = Modifier.fillMaxSize().rotate(if (isBinderMode) 90f else 0f),
+                    pose = droidballPose,
+                )
+            }
 
             Spacer(modifier = Modifier.width(24.dp))
 
@@ -549,14 +525,6 @@ fun ODXFiShell(
                 // HUD Overlay Layer (Kept clean and sharp)
                 if (showBattleOverlay && serviceMode) {
                     Column {
-                        // DroidBall (Service indicator and control)
-                        // Architecture: Droidball is a specialized observation-aware view of the logo.
-                        // When presentation state is present, we use Droidball to reflect the state.
-                        Droidball(
-                            presentationState = presentationState,
-                            modifier = Modifier.size(40.dp)
-                        )
-
                         if (overlayState == OverlayState.EXPANDED) {
                             EnemyTeamMemoryOverlay(
                                 opponent = presentationState.team.opponent,

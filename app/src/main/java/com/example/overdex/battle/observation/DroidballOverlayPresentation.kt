@@ -102,6 +102,9 @@ object DroidballOverlayPresentation {
     val mode = _mode.asStateFlow()
     private val _expanded = MutableStateFlow(false)
     val expanded = _expanded.asStateFlow()
+    private val _panelAllowed = MutableStateFlow(false)
+    /** Team Select or a deliberate tap may reveal a display; observation alone cannot. */
+    val panelAllowed = _panelAllowed.asStateFlow()
     private val _opponentSpecies = MutableStateFlow<List<ObservedOpponentSpecies>>(emptyList())
     /** First-seen opponent identities for the three HUD cells. */
     val opponentSpecies = _opponentSpecies.asStateFlow()
@@ -130,8 +133,8 @@ object DroidballOverlayPresentation {
     fun showSessionPhase(phase: DroidballSessionPhase) {
         _teamEditingAllowed.value = phase !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
         // Session state is delivered asynchronously. A prebattle emission can
-        // arrive after VS/countdown has already opened the HUD; it must not erase
-        // the field presentation that the accepted witness just requested.
+        // arrive after VS/countdown has requested the HUD layout; it must not
+        // erase that layout. Layout requests do not themselves authorize a panel.
         _mode.value = when (phase) {
             DroidballSessionPhase.NAVIGATION_IDLE -> preserveBattleHudOr(DroidballOverlayMode.PRE_BATTLE)
             DroidballSessionPhase.SEEKING_TEAM_SELECT -> preserveBattleHudOr(DroidballOverlayMode.SEEKING_TEAM_SELECT)
@@ -149,17 +152,17 @@ object DroidballOverlayPresentation {
         if (phase == DroidballSessionPhase.COUNTDOWN ||
             phase == DroidballSessionPhase.BATTLE_ACTIVE ||
             phase == DroidballSessionPhase.RESULT
-        ) _expanded.value = true
+        ) _expanded.value = _panelAllowed.value
     }
 
     private fun preserveBattleHudOr(requested: DroidballOverlayMode): DroidballOverlayMode =
         if (_mode.value == DroidballOverlayMode.BATTLE_HUD) DroidballOverlayMode.BATTLE_HUD else requested
 
-    /** An explicit rescan returns to the scanner even if the HUD was already opened. */
+    /** A scan request chooses the scanner but cannot reveal a display by itself. */
     fun showTeamSelectScan() {
         _battleBadgeSeen.value = false
         _mode.value = DroidballOverlayMode.SEEKING_TEAM_SELECT
-        _expanded.value = true
+        _expanded.value = _panelAllowed.value
     }
 
     /** A deliberate navigation boundary is not a late prebattle phase emission. */
@@ -171,15 +174,17 @@ object DroidballOverlayPresentation {
     fun showAcceptedTeamSelect() {
         _battleBadgeSeen.value = false
         _mode.value = DroidballOverlayMode.TEAM_SELECT
+        _panelAllowed.value = true
         _expanded.value = true
     }
 
-    /** Opens the field HUD as soon as VS is witnessed, independent of GO. */
-    fun showBattleHud() {
+    /** Battle evidence selects its layout; only Team Select or a user action reveals it. */
+    fun showBattleHud(userRequested: Boolean = false) {
+        if (userRequested) _panelAllowed.value = true
         if (_mode.value != DroidballOverlayMode.RESULT) {
             _mode.value = DroidballOverlayMode.BATTLE_HUD
-            _expanded.value = true
         }
+        _expanded.value = _panelAllowed.value
     }
 
     @Synchronized fun clearOpponentSpecies() {
@@ -393,13 +398,13 @@ object DroidballOverlayPresentation {
         value.uppercase().filter(Char::isLetterOrDigit)
 
     fun toggleExpanded() {
-        if (_mode.value != DroidballOverlayMode.BATTLE_LIVE) {
-            _expanded.value = !_expanded.value
-        }
+        _panelAllowed.value = true
+        _expanded.value = !_expanded.value
     }
 
     fun reset() {
         energyForecastMatchId = null
+        _panelAllowed.value = false
         _teamEditingAllowed.value = false
         _mode.value = DroidballOverlayMode.PRE_BATTLE
         _expanded.value = false

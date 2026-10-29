@@ -105,7 +105,7 @@ class BattleHudReadThroughDeviceTest {
             }
             activity.setContentView(backdrop)
             DroidballOverlayPresentation.reset()
-            DroidballOverlayPresentation.showBattleHud()
+            DroidballOverlayPresentation.showBattleHud(userRequested = true)
             DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215,
                 listOf("Feint Attack" to PokemonType.DARK, "Ice Shard" to PokemonType.ICE),
                 listOf("Foul Play" to PokemonType.DARK, "Ice Punch" to PokemonType.ICE, "Avalanche" to PokemonType.ICE))

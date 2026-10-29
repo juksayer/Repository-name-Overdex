@@ -249,12 +249,51 @@ Selecting the "Launch Droidball" action represents deploying the observation ins
 ## Current direction — October 28, 2026
 
 The departure, field arrival, and homecoming below are the current design intent.
-They are proposed choreography, not a claim that these stages already run in the
-app. Preserve the sense that the same Droidball travels between environments.
+The first implementation now follows these stages with one shared vector body and
+a presentation-only journey coordinator. Preserve the sense that the same
+Droidball travels between environments.
 Timing, rendering, texture, and individual movements remain adjustable when a
 better, cheaper, or cleaner alternative is found. These notes supersede the older
 rough outline below where they differ, including the previously unspecified field
 entry side and any older restrictions against expressive eyes.
+
+### First implementation and validation boundary
+
+The shell and field use the same layered Canvas body. Its green lower shell
+becomes white as it ejects; focused eyes, two blinks, a grounded shadow, a short
+skid, a scan and a reluctant return provide the first expressive pass. Travel is
+measured in displayed body diameters. Frame ticks and monotonic elapsed time
+keep this motion independent of Android Animator duration scaling. Static poses
+do not keep an animation loop running.
+
+Only one environment owns the body at a time. It is absent during transit. The
+native floating window follows the ball, with a small drawing margin during
+travel, instead of covering the entire path with a transparent touch surface.
+The existing badge-attached battle HUD remains body-free.
+
+Recording begins immediately after screen-sharing approval; the shell departure
+only delays the app launch. Stop invalidates pending movement and removes capture
+and its windows immediately. A return animation never postpones Stop. Leaving
+the shell during departure cancels the delayed launch. If GO is unavailable or
+cannot launch, observation stops and Droidball returns to the shell.
+
+The initial field-entry boundary is a successful explicit GO launch followed by
+Overdex leaving the foreground. This is an app handoff signal, not a pixel-level
+proof that GO has finished drawing. Returning to an already-open battle through
+Recents uses fresh native team badges; accepted Team Select evidence must follow
+the current transit boundary. Delayed generic OCR does not restore the body over
+another app. No new foreground-app permission is added for decorative motion.
+
+A panel stays closed until accepted Team Select or a user tap/request. Background
+recognition can continue without opening it. Useful information skips the rest
+of the entrance when necessary. Closing preserves eligibility without forcing
+an immediate reopen. No HUD calibration values are saved by the journey.
+
+Build and pure-state checks are separate from phone behavior. The remaining live
+acceptance is a full launch/return on the Moondrop, opening Team Select, tapping
+the closed body, and pressing Stop during travel and during a session. The test
+pose sheet verifies the actual renderer, not the native-window handoff or battle
+recognition accuracy.
 
 ### Leaving the ODX-Fi
 

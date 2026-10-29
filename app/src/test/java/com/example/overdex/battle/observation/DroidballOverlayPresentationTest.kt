@@ -2,12 +2,116 @@ package com.example.overdex.battle.observation
 
 import com.example.overdex.model.PokemonType
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DroidballOverlayPresentationTest {
+    @Before fun beginWithNoDisplayPermission() {
+        DroidballOverlayPresentation.reset()
+    }
+
+    @Test fun `starting midbattle keeps every automatic panel hidden until Droidball is tapped`() {
+        DroidballOverlayPresentation.showTeamSelectScan()
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showBattleHud()
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+        DroidballOverlayPresentation.recordBattleBadgePresent()
+        for (phase in listOf(
+            DroidballSessionPhase.COUNTDOWN,
+            DroidballSessionPhase.BATTLE_ACTIVE,
+            DroidballSessionPhase.RESULT,
+        )) {
+            DroidballOverlayPresentation.showSessionPhase(phase)
+            assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+            assertFalse(DroidballOverlayPresentation.expanded.value)
+        }
+
+        DroidballOverlayPresentation.toggleExpanded()
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
+    }
+
+    @Test fun `accepted Team Select reveals the scanner and subsequent battle layouts`() {
+        // A phase notification is not the accepted screen observation.
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        assertEquals(DroidballOverlayMode.TEAM_SELECT, DroidballOverlayPresentation.mode.value)
+
+        DroidballOverlayPresentation.showBattleHud()
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.RESULT)
+        assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `an explicit HUD request opens without a Team Select observation`() {
+        DroidballOverlayPresentation.showBattleHud(userRequested = true)
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.toggleExpanded()
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        DroidballOverlayPresentation.toggleExpanded()
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `reset revokes panel permission and a rescan cannot restore it`() {
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.showTeamSelectScan()
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.reset()
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+
+        DroidballOverlayPresentation.showTeamSelectScan()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `late automatic phases cannot grant display permission or discard a requested HUD layout`() {
+        DroidballOverlayPresentation.showBattleHud()
+        for (phase in listOf(
+            DroidballSessionPhase.NAVIGATION_IDLE,
+            DroidballSessionPhase.SEEKING_TEAM_SELECT,
+            DroidballSessionPhase.TEAM_SELECT_ACTIVE,
+            DroidballSessionPhase.CALIBRATING,
+        )) {
+            DroidballOverlayPresentation.showSessionPhase(phase)
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+            assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+            assertFalse(DroidballOverlayPresentation.expanded.value)
+        }
+    }
+
+    @Test fun `hidden panels keep recognition state available for the later user tap`() {
+        DroidballOverlayPresentation.showBattleHud()
+        DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215,
+            listOf("Ice Shard" to PokemonType.ICE), listOf("Foul Play" to PokemonType.DARK))
+        DroidballOverlayPresentation.recordOpponentChargedMove("Sneasel", "Foul Play")
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        assertEquals("Sneasel", DroidballOverlayPresentation.opponentSpecies.value.single().speciesName)
+        assertTrue(DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.single().isConfirmed)
+
+        DroidballOverlayPresentation.toggleExpanded()
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        assertTrue(DroidballOverlayPresentation.activeOpponentMovePossibilities.value!!.chargedMoves.single().isConfirmed)
+    }
+
     @Test fun `audio favorite keeps alternatives and never receives a confirmation checkmark`() {
         val moves = listOf("Dragon Breath" to PokemonType.DRAGON, "Iron Tail" to PokemonType.STEEL)
         DroidballOverlayPresentation.recordOpponentSpecies("Dragonair", 148, moves, emptyList())
@@ -30,9 +134,9 @@ class DroidballOverlayPresentationTest {
         assertEquals(false, confirmed.isAudioFavored)
     }
 
-    @Test fun `an early HUD request keeps navigation controls visible until a native badge arrives`() {
+    @Test fun `an explicit early HUD request keeps navigation controls visible until a native badge arrives`() {
         DroidballOverlayPresentation.reset()
-        DroidballOverlayPresentation.showBattleHud()
+        DroidballOverlayPresentation.showBattleHud(userRequested = true)
         assertEquals(DroidballOverlayMode.PRE_BATTLE, battleOverlayDisplayMode(
             DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
         DroidballOverlayPresentation.recordBattleBadgePresent()

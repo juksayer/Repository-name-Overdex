@@ -482,6 +482,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 if (article.payload is com.example.overdex.battle.custody.TeamSelectPartyWitnessed &&
                     _droidballSession.value === session && session.canEditTeam &&
                     !session.battleSurfaceEstablished.value) {
+                    val journey = com.example.overdex.presentation.DroidballJourney.state.value
+                    if (!isOverdexVisible && journey.phase == com.example.overdex.presentation.DroidballJourneyPhase.TRANSIT &&
+                        (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= journey.startedAtNanos) {
+                        com.example.overdex.presentation.DroidballJourney.enterField()
+                    }
                     DroidballOverlayPresentation.showAcceptedTeamSelect()
                 }
                 if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed")
@@ -1113,7 +1118,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 monotonicTimeNanos = System.nanoTime()
             )
             }
-            DroidballOverlayPresentation.showBattleHud()
+            // Delayed OCR is not proof that GO is still foreground. Automatic
+            // return uses fresh native badges; an explicit user request may open now.
+            if (!isOverdexVisible && reason == BattleOverlayOpenReason.USER_REQUEST)
+                com.example.overdex.presentation.DroidballJourney.enterField()
+            DroidballOverlayPresentation.showBattleHud(userRequested = reason == BattleOverlayOpenReason.USER_REQUEST)
         }
 
         fun restartObservationAttempt() {
@@ -1397,6 +1406,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
 
     private fun stopObservation(automaticReason: String?) {
         if (_deploymentState.value == InstrumentDeploymentState.RETURNING) return
+        com.example.overdex.presentation.DroidballJourney.stopped(isOverdexVisible)
         _deploymentState.value = InstrumentDeploymentState.RETURNING
         // The per-match control collector must not handle queued frame/next-match
         // signals after Stop. Service runtime below remains the teardown authority;

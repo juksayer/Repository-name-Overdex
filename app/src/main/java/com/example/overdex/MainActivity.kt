@@ -60,6 +60,9 @@ import com.example.overdex.data.SharedPreferencesTimelineRepository
 import com.example.overdex.data.SharedTimelineRepository
 import com.example.overdex.data.TrainerRepository
 import com.example.overdex.media.MediaManager
+import com.example.overdex.presentation.DroidballChoreography
+import com.example.overdex.presentation.DroidballJourney
+import com.example.overdex.presentation.DroidballJourneyPhase
 import com.example.overdex.ui.screens.observatory.MatchArchiveDirectoryScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -103,6 +106,8 @@ import com.example.overdex.ui.screens.TrainerProfileScreen
 import com.example.overdex.ui.screens.observatory.MatchSummaryRoute
 import com.example.overdex.ui.theme.OverdexTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 
 /**
@@ -149,33 +154,46 @@ class MainActivity : ComponentActivity() {
     private var openedArchiveUri = mutableStateOf<Uri?>(null)
     private var archiveLoadInProgress = mutableStateOf(false)
     private var notificationStartRequest = mutableStateOf(0)
+    private var departureJob: Job? = null
+    private var pendingGoHandoff = false
 
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK && result.data != null) {
-            pokedexViewModel.deployInstrument(result.resultCode, result.data!!)
-            launchPokemonGo()
+            val launchIntent = packageManager.getLaunchIntentForPackage("com.nianticlabs.pokemongo")
+            if (launchIntent == null) {
+                Toast.makeText(this, "Pokémon GO is not installed.", Toast.LENGTH_LONG).show()
+                pokedexViewModel.stopObservation()
+            } else {
+                val generation = DroidballJourney.depart()
+                // Recording starts now; only the visual app handoff waits for the eject.
+                pokedexViewModel.deployInstrument(result.resultCode, result.data!!)
+                departureJob?.cancel()
+                departureJob = lifecycleScope.launch {
+                    delay(DroidballChoreography.DEPARTURE_MILLIS)
+                    if (DroidballJourney.departureFinished(generation)) launchPokemonGo(launchIntent)
+                }
+            }
         } else {
             pokedexViewModel.stopObservation()
         }
     }
 
     /** The field handoff following a successful Droidball deployment. */
-    private fun launchPokemonGo() {
-        val launchIntent = packageManager.getLaunchIntentForPackage("com.nianticlabs.pokemongo")
-        if (launchIntent == null) {
-            android.widget.Toast.makeText(
-                this,
-                "Pokémon GO is not installed.",
-                android.widget.Toast.LENGTH_LONG
-            ).show()
-            return
-        }
+    private fun launchPokemonGo(launchIntent: Intent) {
         // Keep Pokémon GO in its own task while leaving this shell as the
         // single launcher task to return to. MainActivity is singleTask, so
         // reopening Overdex from the launcher reuses the existing shell.
-        startActivity(launchIntent)
+        try {
+            pendingGoHandoff = true
+            startActivity(launchIntent)
+        } catch (error: RuntimeException) {
+            pendingGoHandoff = false
+            pokedexViewModel.stopObservation()
+            Toast.makeText(this, "Could not open Pokémon GO.", Toast.LENGTH_LONG).show()
+            Log.e("DROIDBALL_HANDOFF", "Pokémon GO launch failed", error)
+        }
     }
 
     private val archiveOpenLauncher = registerForActivityResult(
@@ -345,6 +363,13 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         pokedexViewModel.isOverdexVisible = true
         DroidballService.setInstrumentVisible(true)
+        val generation = DroidballJourney.returnToShell()
+        if (DroidballJourney.state.value.phase == DroidballJourneyPhase.RETURNING) {
+            lifecycleScope.launch {
+                delay(DroidballChoreography.EXIT_MILLIS)
+                DroidballJourney.fieldExitFinished(generation)
+            }
+        }
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStart()")
     }
 
@@ -364,6 +389,17 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         pokedexViewModel.isOverdexVisible = false
         DroidballService.setInstrumentVisible(false)
+        if (pendingGoHandoff) {
+            pendingGoHandoff = false
+            // A successful explicit GO launch plus this activity leaving is our handoff.
+            DroidballJourney.enterField()
+        } else if (DroidballJourney.state.value.phase == DroidballJourneyPhase.DEPARTING) {
+            // Leaving by Home/lock/back must never launch GO later in the background.
+            departureJob?.cancel()
+            pokedexViewModel.stopObservation()
+        } else if (DroidballService.isRunning()) {
+            DroidballJourney.hideInTransit()
+        }
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] MainActivity.onStop()")
     }
 

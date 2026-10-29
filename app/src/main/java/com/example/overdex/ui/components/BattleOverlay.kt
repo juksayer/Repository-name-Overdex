@@ -1,9 +1,5 @@
 package com.example.overdex.ui.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -17,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -25,12 +20,10 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -44,7 +37,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.overdex.R
 import com.example.overdex.battle.observation.CaptureDiagnostics
 import com.example.overdex.battle.observation.BattleHudLayout
 import com.example.overdex.battle.observation.DroidballOverlayMode
@@ -56,6 +48,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.overdex.battle.observation.OverlayMovePossibility
 import com.example.overdex.battle.observation.DroidballService
+import com.example.overdex.presentation.DroidballJourney
+import com.example.overdex.presentation.DroidballJourneyPhase
+import com.example.overdex.presentation.rememberDroidballPose
 import kotlin.math.roundToInt
 
 /** Geometry shared by the floating window and its Compose content. */
@@ -102,10 +97,20 @@ internal object BattleHudOverlayGeometry {
     fun savedSeamForWindowTop(windowTopY: Int, displayWidth: Int): Int = windowTopY + jointDepthPx(displayWidth)
 }
 
+/** Travel changes a small native window's location, never its touch footprint. */
+internal object DroidballFieldGeometry {
+    const val BODY_CANVAS_DP = 48f
+    const val TRAVEL_PADDING_DP = 16f
+
+    fun windowLeftPx(displayWidth: Int, bodyCanvasWidth: Int, offsetBodyDiameters: Float, travelPadding: Int = 0): Int =
+        (displayWidth - bodyCanvasWidth - travelPadding +
+            bodyCanvasWidth * DROIDBALL_BODY_DIAMETER_FRACTION * offsetBodyDiameters).roundToInt()
+}
+
 /**
  * Droidball's field body. Before battle it is a movable control; opening it
- * exposes the instrument panel between its two physical halves. Live battle
- * state opens that panel automatically because it now has decision-time work.
+ * exposes the instrument panel. One renderer owns the body throughout travel;
+ * the anchored battle panel keeps its existing badge layout.
  */
 @Composable
 fun BattleOverlay(
@@ -115,6 +120,7 @@ fun BattleOverlay(
     onDragFinished: () -> Unit = {},
     onHalfPositionsChanged: (Float, Float, Float, Float) -> Unit = { _, _, _, _ -> },
     onLayoutStateChanged: (anchoredToBattleHud: Boolean, panelVisible: Boolean) -> Unit = { _, _ -> },
+    onJourneyOffsetChanged: (bodyWidths: Float) -> Unit = {},
 ) {
     val requestedMode by DroidballOverlayPresentation.mode.collectAsState()
     val expanded by DroidballOverlayPresentation.expanded.collectAsState()
@@ -124,27 +130,25 @@ fun BattleOverlay(
     val inferredPlayerTeam by DroidballOverlayPresentation.inferredPlayerTeam.collectAsState()
     val playerTeamConfirmed by DroidballOverlayPresentation.playerTeamConfirmed.collectAsState()
     val configuredPlayerTeam by DroidballOverlayPresentation.configuredPlayerTeam.collectAsState()
-    val layoutEditing = false
+    val panelAllowed by DroidballOverlayPresentation.panelAllowed.collectAsState()
+    val journey by DroidballJourney.state.collectAsState()
+    val pose = rememberDroidballPose(journey)
+    val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
     val badgeSeen by DroidballOverlayPresentation.battleBadgeSeen.collectAsState()
     val mode = com.example.overdex.battle.observation.battleOverlayDisplayMode(requestedMode, badgeSeen)
-    var topHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetX) }
-    var topHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.topHalfOffsetY) }
-    var bottomHalfOffsetX by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetX) }
-    var bottomHalfOffsetY by remember(initialLayout) { mutableFloatStateOf(initialLayout.bottomHalfOffsetY) }
-    var arrived by remember { mutableStateOf(false) }
-    val arrivalOffset by animateDpAsState(
-        targetValue = if (arrived) 0.dp else 58.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "droidball field arrival"
-    )
-    LaunchedEffect(Unit) { arrived = true }
+    // Team Select and an explicit tap make information immediately available;
+    // neither waits for a decorative entrance to finish.
+    LaunchedEffect(journey.generation, panelAllowed) {
+        if (journey.phase == DroidballJourneyPhase.ARRIVING && panelAllowed) {
+            DroidballJourney.arrivalFinished(journey.generation)
+        }
+    }
+    SideEffect { if (traveling) onJourneyOffsetChanged(pose.xBodies) }
 
-    val anchoredToBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
-    val panelIsVisible = expanded || anchoredToBattleHud
-    val mayMove = !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
+    val battleMode = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
+    val panelIsVisible = panelAllowed && !traveling && expanded
+    val anchoredToBattleHud = battleMode && panelIsVisible
+    val mayMove = !traveling && !anchoredToBattleHud && mode != DroidballOverlayMode.RESULT
     val currentOnDrag by rememberUpdatedState(onDrag)
     val currentOnDragFinished by rememberUpdatedState(onDragFinished)
     val overlayView = LocalView.current
@@ -191,32 +195,36 @@ fun BattleOverlay(
     } else Modifier
     Column(
         modifier = interactionModifier
-            .offset(x = if (anchoredToBattleHud) 0.dp else arrivalOffset)
-            .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f)
-            .then(
-                if (!anchoredToBattleHud) Modifier.clickable { DroidballOverlayPresentation.toggleExpanded() }
-                else Modifier
-            ),
+            .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (panelIsVisible) {
-            if (!anchoredToBattleHud) {
-                DroidballHalf(
-                    top = true,
-                    layoutEditing = layoutEditing,
-                    offsetX = topHalfOffsetX,
-                    offsetY = topHalfOffsetY,
-                    onOffsetChanged = { x, y -> topHalfOffsetX = x; topHalfOffsetY = y },
-                    onDragFinished = {
-                        onHalfPositionsChanged(
-                            topHalfOffsetX,
-                            topHalfOffsetY,
-                            bottomHalfOffsetX,
-                            bottomHalfOffsetY,
-                        )
+        if (!anchoredToBattleHud && journey.fieldOwnsBody) {
+            // The rotating antennae and short scan beam extend beyond the
+            // 48dp canvas. Only travel gets this small safety margin.
+            Box(
+                modifier = Modifier.size((DroidballFieldGeometry.BODY_CANVAS_DP +
+                    if (traveling) DroidballFieldGeometry.TRAVEL_PADDING_DP * 2f else 0f).dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                DroidballBody(
+                    modifier = Modifier.size(DroidballFieldGeometry.BODY_CANVAS_DP.dp).clickable {
+                        when (journey.phase) {
+                            DroidballJourneyPhase.ARRIVING -> {
+                                DroidballJourney.arrivalFinished(journey.generation)
+                                DroidballOverlayPresentation.showBattleHud(userRequested = true)
+                            }
+                            DroidballJourneyPhase.RETURNING -> DroidballJourney.fieldExitFinished(journey.generation)
+                            else -> DroidballOverlayPresentation.toggleExpanded()
+                        }
                     },
+                    // Move the compact native window, so the empty travel path
+                    // never intercepts taps intended for Pokemon GO.
+                    pose = pose.copy(xBodies = 0f),
+                    contentDescription = "Droidball. Tap to open assistance.",
                 )
             }
+        }
+        if (panelIsVisible) {
             OverlayPanel(
                 mode,
                 diagnostics,
@@ -226,112 +234,6 @@ fun BattleOverlay(
                 playerTeamConfirmed,
                 configuredPlayerTeam,
                 panelWidthPx,
-            )
-            if (!anchoredToBattleHud) {
-                DroidballHalf(
-                    top = false,
-                    layoutEditing = layoutEditing,
-                    offsetX = bottomHalfOffsetX,
-                    offsetY = bottomHalfOffsetY,
-                    onOffsetChanged = { x, y -> bottomHalfOffsetX = x; bottomHalfOffsetY = y },
-                    onDragFinished = {
-                        onHalfPositionsChanged(
-                            topHalfOffsetX,
-                            topHalfOffsetY,
-                            bottomHalfOffsetX,
-                            bottomHalfOffsetY,
-                        )
-                    },
-                )
-            }
-        } else {
-            Image(
-                painter = painterResource(R.drawable.droidball),
-                contentDescription = "Droidball. Tap to open assistance.",
-                modifier = Modifier.size(48.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun DroidballHalf(
-    top: Boolean,
-    layoutEditing: Boolean,
-    offsetX: Float,
-    offsetY: Float,
-    onOffsetChanged: (Float, Float) -> Unit,
-    onDragFinished: () -> Unit,
-) {
-    val splitHeight = if (top) {
-        BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP.dp
-    } else {
-        BattleHudOverlayGeometry.DROIDBALL_BOTTOM_HALF_DP.dp
-    }
-    val currentOffsetX by rememberUpdatedState(offsetX)
-    val currentOffsetY by rememberUpdatedState(offsetY)
-    val currentOnOffsetChanged by rememberUpdatedState(onOffsetChanged)
-    val currentOnDragFinished by rememberUpdatedState(onDragFinished)
-    val dragModifier = if (layoutEditing) {
-        Modifier.pointerInput(top, layoutEditing) {
-            detectDragGestures(
-                onDragEnd = { currentOnDragFinished() },
-                onDragCancel = { currentOnDragFinished() },
-                onDrag = { change, amount ->
-                    change.consume()
-                    currentOnOffsetChanged(
-                        currentOffsetX + amount.x,
-                        currentOffsetY + amount.y,
-                    )
-                },
-            )
-        }
-    } else Modifier
-    Box(
-        modifier = dragModifier
-            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .width(48.dp)
-            .height(splitHeight)
-            .then(if (layoutEditing) Modifier.border(1.dp, Color(0xFFB000FF)) else Modifier)
-            .clipToBounds(),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        if (top) {
-            Image(
-                painter = painterResource(R.drawable.droidball_top_shell),
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
-        } else {
-            // The lower shell begins at the upper edge of the equatorial band.
-            Box(
-                modifier = Modifier
-                    .offset(y = BattleHudOverlayGeometry.DROIDBALL_BUTTON_UNDERBITE_DP.dp)
-                    .width(48.dp)
-                    .height(BattleHudOverlayGeometry.DROIDBALL_BOTTOM_BODY_DP.dp)
-                    .clipToBounds()
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.droidball),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .offset(y = (-BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP).dp)
-                )
-            }
-            // The button starts above the band, so render it independently as
-            // part of the lower shell instead of leaving its crown on the top.
-            Image(
-                painter = painterResource(R.drawable.droidball_center_button),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .offset(
-                        y = -(
-                            BattleHudOverlayGeometry.DROIDBALL_TOP_HALF_DP -
-                                BattleHudOverlayGeometry.DROIDBALL_BUTTON_UNDERBITE_DP
-                            ).dp
-                    )
             )
         }
     }

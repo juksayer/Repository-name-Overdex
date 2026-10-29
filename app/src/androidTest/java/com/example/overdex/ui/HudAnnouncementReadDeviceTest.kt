@@ -46,7 +46,7 @@ class HudAnnouncementReadDeviceTest {
                 override fun onDraw(canvas: Canvas) { canvas.drawColor(android.graphics.Color.rgb(55, 112, 144)) }
             })
             DroidballOverlayPresentation.reset()
-            DroidballOverlayPresentation.showBattleHud()
+            DroidballOverlayPresentation.showBattleHud(userRequested = true)
             DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215,
                 listOf("Feint Attack" to PokemonType.DARK, "Ice Shard" to PokemonType.ICE),
                 listOf("Foul Play" to PokemonType.DARK, "Ice Punch" to PokemonType.ICE,
