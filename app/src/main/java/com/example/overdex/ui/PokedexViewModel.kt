@@ -920,8 +920,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(LiveFastMoveRecipientVisualArtifactWitness.opponent(opponentHpFrameHub))
         observationDispatcher.register(LiveFastMoveRecipientVisualCadenceWitness.player())
         observationDispatcher.register(LiveFastMoveRecipientVisualCadenceWitness.opponent())
+        val playerChargeControlLayout = com.example.overdex.battle.observation.PlayerChargeControlLayout()
         observationDispatcher.register(
-            LivePlayerChargeMoveEnergyFillWitness(input, calibration, battleEvidenceLive)
+            LivePlayerChargeMoveEnergyFillWitness(input, calibration, battleEvidenceLive,
+                controlLayout = playerChargeControlLayout,
+                hasBattleSurface = { session.battleSurfaceEstablished.value })
         )
         observationDispatcher.register(PersistedPlayerChargeMoveEnergyFillCadenceWitness())
         // Optional visual input evidence. Android continues receiving all gameplay
@@ -934,12 +937,14 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     else battleEvidenceLive()
                 },
                 slot = slot,
+                controlLayout = playerChargeControlLayout,
             ))
         }
         (1..2).forEach { slot ->
             observationDispatcher.register(com.example.overdex.battle.observation.LivePlayerControlTextWitness(
                 input, calibration, cropArtifactStore, isEnabled = battleEvidenceLive,
                 slot = slot, effectiveness = true,
+                controlLayout = playerChargeControlLayout,
             ))
         }
         listOf(

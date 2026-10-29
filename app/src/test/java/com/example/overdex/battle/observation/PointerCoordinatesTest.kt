@@ -5,6 +5,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PointerCoordinatesTest {
+    @Test fun `center tap maps to sole move only with witnessed single control layout`() {
+        val controls = com.example.overdex.model.AnchorRegion(.1f, .8f, .8f, .15f)
+        val center = PointerCoordinates(500f, 850f)
+        assertNull(PointerCoordinateParser.chargedButtonSlot(center, 1000, 1000, controls))
+        assertEquals(1, PointerCoordinateParser.chargedButtonSlot(center, 1000, 1000, controls, singleCentered = true))
+        assertNull(PointerCoordinateParser.chargedButtonSlot(PointerCoordinates(250f, 850f),
+            1000, 1000, controls, singleCentered = true))
+        assertNull(PointerCoordinateParser.chargedButtonSlot(PointerCoordinates(500f, 750f),
+            1000, 1000, controls, singleCentered = true))
+    }
     @Test fun `pointer trace over separator does not discard otherwise exact coordinates`() {
         assertEquals(PointerCoordinates(328f, 2187f),
             PointerCoordinateParser.parse("P:1/1 X:328.0 Y} 2187.0", 1080, 2400))

@@ -1,7 +1,6 @@
 package com.example.overdex.battle.observation
 
 import android.graphics.Bitmap
-import android.graphics.Color
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.MatchStarted
@@ -26,13 +25,15 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
- * Watches only the two player charged-move controls and reports a confirmed
+ * Watches the player's charged-move controls and reports a confirmed
  * upward fill step. It does not decide which Fast Move caused that energy.
  */
 internal class LivePlayerChargeMoveEnergyFillWitness(
     private val input: ObservationInput,
     private val calibration: BattleCalibration,
     private val isEnabled: () -> Boolean,
+    private val controlLayout: PlayerChargeControlLayout = PlayerChargeControlLayout(),
+    private val hasBattleSurface: () -> Boolean = { false },
     override val observerId: ObserverId = ObserverId(
         BattleWitnessContracts.playerChargeMoveEnergyFill.witnessId,
         ObserverSource.SCREEN_CAPTURE
@@ -47,6 +48,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
     private val stateLock = Any()
     private val detector = PlayerChargeMoveEnergyFillDetector()
     private var lastHeightSampleNanos: Long? = null
+    @Volatile private var battleStarted = false
     private val heightSource = SourceId(BattleWitnessContracts.playerChargeButtonFillHeight.witnessId)
 
     override fun start(match: Match) {
@@ -55,6 +57,8 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
         lastEnabled = null
         lastHeightSampleNanos = null
         lastSpeciesName = null
+        battleStarted = false
+        controlLayout.reset()
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
@@ -63,12 +67,12 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                         // Countdown shading is deliberately retained in the
                         // Timeline. The first live frame after GO becomes the
                         // new comparison baseline for actual energy gain.
-                        synchronized(stateLock) { detector.reset() }
+                        synchronized(stateLock) { detector.reset(); controlLayout.reset(); battleStarted = true }
                         return@collect
                     }
                     val species = article.payload as? ActivePokemonSpeciesWitnessed ?: return@collect
                     if (species.side == ActivePokemonSide.PLAYER && species.speciesName != lastSpeciesName) {
-                        synchronized(stateLock) { detector.reset() }
+                        synchronized(stateLock) { detector.reset(); controlLayout.reset() }
                         lastSpeciesName = species.speciesName
                     }
                 }
@@ -84,7 +88,7 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                             match.custody.submitAvailability(sourceId, enabled, frame.capturedAtWallTimeMillis)
                             match.custody.submitAvailability(heightSource, enabled, frame.capturedAtWallTimeMillis)
                             lastEnabled = enabled
-                            if (!enabled) synchronized(stateLock) { detector.reset() }
+                            if (!enabled) synchronized(stateLock) { detector.reset(); controlLayout.reset() }
                         }
                         if (!enabled) return@supplyFrames
                         val crop = BattleCropContracts.playerChargeMoveControls
@@ -97,8 +101,18 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                                 val bitmap = crop.bitmap
                                 val pixels = IntArray(bitmap.width * bitmap.height)
                                 bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                                val left = ChargeButtonFillHeightReader.measure(bitmap.width, bitmap.height, pixels, 0)
+                                val right = ChargeButtonFillHeightReader.measure(bitmap.width, bitmap.height, pixels, 1)
+                                // Search the center only when both established side territories
+                                // lack a rim. A single missing side does not mean one unlocked move.
+                                // A verified battle surface also admits sessions begun after GO.
+                                val center = if ((battleStarted || hasBattleSurface()) && left == null && right == null)
+                                    ChargeButtonFillHeightReader.measureCentered(bitmap.width, bitmap.height, pixels) else null
+                                controlLayout.observe(now, bitmap.width, bitmap.height, left, right, center)
+                                val single = controlLayout.centerAt(now, bitmap.width, bitmap.height)
                                 for (slot in 0..1) {
-                                    val reading = ChargeButtonFillHeightReader.measure(bitmap.width, bitmap.height, pixels, slot)
+                                    val reading = if (single != null) single.takeIf { slot == 0 }
+                                        else if (slot == 0) left else right
                                     val provenance = crop.provenance
                                     match.custody.submitTestimony(
                                         sourceId = heightSource,
@@ -113,7 +127,8 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
                                         evidenceReferences = emptyList(), monotonicTimeNanos = now)
                                 }
                             }
-                            val levels = PlayerChargeMoveEnergyFillSampler.measure(crop.bitmap)
+                            val levels = PlayerChargeMoveEnergyFillSampler.measure(crop.bitmap,
+                                controlLayout.centerAt(now, crop.bitmap.width, crop.bitmap.height))
                             val measurement = synchronized(stateLock) {
                                 detector.accept(levels, frame.capturedAtMonotonicTimeNanos)
                             } ?: return@supplyFrames
@@ -154,29 +169,33 @@ internal class LivePlayerChargeMoveEnergyFillWitness(
         activeMatch = null
         scope?.cancel("Player charge-move energy fill witness stopped")
         scope = null
-        synchronized(stateLock) { detector.reset() }
+        synchronized(stateLock) { detector.reset(); controlLayout.reset() }
+        battleStarted = false
         lastSpeciesName = null
         lastEnabled = false
     }
 }
 
-/** Measures the horizontal fill boundary inside each of the two circular controls. */
+/** Measures the horizontal fill boundary; a centered control produces one value. */
 internal object PlayerChargeMoveEnergyFillSampler {
-    fun measure(bitmap: Bitmap): List<Float> = listOf(
-        measureSlot(bitmap, 0.235f),
-        measureSlot(bitmap, 0.735f)
-    )
+    fun measure(bitmap: Bitmap, center: ChargeButtonFillHeightReader.Reading? = null): List<Float> =
+        measure(bitmap.width, bitmap.height, bitmap::getPixel, center)
 
-    private fun measureSlot(bitmap: Bitmap, centerXFraction: Float): Float {
-        val radius = min(bitmap.width / 2f, bitmap.height.toFloat()) * 0.24f
+    internal fun measure(width: Int, height: Int, pixel: (Int, Int) -> Int,
+        center: ChargeButtonFillHeightReader.Reading? = null): List<Float> = if (center != null) {
+        listOf(measureSlot(width, height, pixel, center.centerX.toFloat(), center.centerY.toFloat(), center.radius.toFloat()))
+    } else listOf(.235f, .735f).map { x ->
+        measureSlot(width, height, pixel, width * x, height * .39f, min(width / 2f, height.toFloat()) * .24f)
+    }
+
+    private fun measureSlot(width: Int, height: Int, pixel: (Int, Int) -> Int,
+        centerX: Float, centerY: Float, radius: Float): Float {
         if (radius < 4f) return 0f
-        val centerX = bitmap.width * centerXFraction
-        val centerY = bitmap.height * 0.39f
-        val startY = ceil(centerY - radius * 0.75f).toInt().coerceIn(0, bitmap.height - 1)
-        val endY = floor(centerY + radius * 0.75f).toInt().coerceIn(startY, bitmap.height - 1)
+        val startY = ceil(centerY - radius * 0.75f).toInt().coerceIn(0, height - 1)
+        val endY = floor(centerY + radius * 0.75f).toInt().coerceIn(startY, height - 1)
         val halfStripe = max(2, (radius * 0.20f).toInt())
-        val startX = (centerX.toInt() - halfStripe).coerceIn(0, bitmap.width - 1)
-        val endX = (centerX.toInt() + halfStripe).coerceIn(startX, bitmap.width - 1)
+        val startX = (centerX.toInt() - halfStripe).coerceIn(0, width - 1)
+        val endX = (centerX.toInt() + halfStripe).coerceIn(startX, width - 1)
         val rowColors = (startY..endY).map { y ->
             var red = 0f
             var green = 0f
@@ -184,10 +203,10 @@ internal object PlayerChargeMoveEnergyFillSampler {
             var count = 0
             var x = startX
             while (x <= endX) {
-                val color = bitmap.getPixel(x, y)
-                red += Color.red(color) / 255f
-                green += Color.green(color) / 255f
-                blue += Color.blue(color) / 255f
+                val color = pixel(x, y)
+                red += (color ushr 16 and 255) / 255f
+                green += (color ushr 8 and 255) / 255f
+                blue += (color and 255) / 255f
                 count++
                 x += 2
             }
@@ -246,9 +265,12 @@ internal class PlayerChargeMoveEnergyFillDetector {
 
     @Synchronized
     fun accept(levels: List<Float>, monotonicTimeNanos: Long): PlayerChargeMoveEnergyFillMeasurement? {
-        require(levels.size == 2 && levels.all { it in 0f..1f })
+        require(levels.size in 1..2 && levels.all { it in 0f..1f })
         val baseline = stable
-        if (baseline == null) {
+        if (baseline == null || baseline.size != levels.size) {
+            // A layout change is a new baseline, never a fill gain.
+            candidate = null
+            lastEmissionNanos = null
             stable = levels
             return null
         }

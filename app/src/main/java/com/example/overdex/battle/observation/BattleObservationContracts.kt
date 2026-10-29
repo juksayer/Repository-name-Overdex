@@ -43,8 +43,10 @@ enum class BattleRegionId {
     DECISION_TIMER,
     PLAYER_CHARGE_MOVE_NAME_LEFT,
     PLAYER_CHARGE_MOVE_NAME_RIGHT,
+    PLAYER_CHARGE_MOVE_NAME_CENTER,
     PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT,
     PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT,
+    PLAYER_CHARGE_MOVE_EFFECTIVENESS_CENTER,
     PLAYER_INACTIVE_POKEMON,
     COUNTDOWN,
     VS_SCREEN,
@@ -75,7 +77,11 @@ enum class BattleRegionId {
         PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
         PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT -> calibration.playerChargeMoveEffectivenessLeftRegion
         PLAYER_CHARGE_MOVE_NAME_RIGHT -> calibration.playerChargeMoveNameRightRegion
+        PLAYER_CHARGE_MOVE_NAME_CENTER -> PlayerChargeControlLayout.centeredRegion(
+            calibration.playerChargeMoveNameLeftRegion, calibration.playerChargeMoveNameRightRegion)
         PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT -> calibration.playerChargeMoveEffectivenessRightRegion
+        PLAYER_CHARGE_MOVE_EFFECTIVENESS_CENTER -> PlayerChargeControlLayout.centeredRegion(
+            calibration.playerChargeMoveEffectivenessLeftRegion, calibration.playerChargeMoveEffectivenessRightRegion)
         PLAYER_INACTIVE_POKEMON -> calibration.trainerInactivePokemonRegion
         COUNTDOWN -> calibration.countdownRegion
         VS_SCREEN -> calibration.vsScreenRegion
@@ -107,7 +113,8 @@ data class BattleCropContract(
         // margin in the reading, with its actual geometry in crop provenance.
         // Saved coordinates and the calibration preview are never rewritten.
         val measuredRegion = if (region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_LEFT ||
-            region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT) {
+            region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT ||
+            region == BattleRegionId.PLAYER_CHARGE_MOVE_NAME_CENTER) {
             located.copy(height = minOf(1f - located.y, located.height + minOf(located.height, 65f / 2400f)))
         } else located
         if (!frame.canObserve(measuredRegion)) return null
@@ -195,6 +202,8 @@ object BattleCropContracts {
     val playerChargeMoveEffectivenessLeft = BattleCropContract("PlayerChargeMoveEffectivenessLeftCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_LEFT)
     val playerChargeMoveNameRight = BattleCropContract("PlayerChargeMoveNameRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_RIGHT)
     val playerChargeMoveEffectivenessRight = BattleCropContract("PlayerChargeMoveEffectivenessRightCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT)
+    val playerChargeMoveNameCenter = BattleCropContract("PlayerChargeMoveNameCenterCrop", BattleRegionId.PLAYER_CHARGE_MOVE_NAME_CENTER)
+    val playerChargeMoveEffectivenessCenter = BattleCropContract("PlayerChargeMoveEffectivenessCenterCrop", BattleRegionId.PLAYER_CHARGE_MOVE_EFFECTIVENESS_CENTER)
     val announcement = BattleCropContract("AnnouncementCrop", BattleRegionId.ANNOUNCEMENT, minimumSize = 32)
     val matchOutcome = BattleCropContract("MatchOutcomeCrop", BattleRegionId.MATCH_OUTCOME, minimumSize = 32)
     val outOfBattleMenu = BattleCropContract("OutOfBattleMenuCrop", BattleRegionId.OUT_OF_BATTLE_MENU, minimumSize = 32)

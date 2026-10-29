@@ -11,6 +11,15 @@ internal object ChargeButtonFillHeightReader {
     private val directions = (0 until 24).map { val a = it * PI / 12; cos(a) to sin(a) }
     fun measure(width: Int, height: Int, pixels: IntArray, slot: Int): Reading? {
         require(slot in 0..1)
+        return measureInRange(width, height, pixels, slot * .5 + .15, slot * .5 + .38)
+    }
+
+    /** A separate search territory; a circle between two controls is not a third move. */
+    fun measureCentered(width: Int, height: Int, pixels: IntArray): Reading? =
+        measureInRange(width, height, pixels, .40, .60)
+
+    private fun measureInRange(width: Int, height: Int, pixels: IntArray,
+        startFraction: Double, endFraction: Double): Reading? {
         require(pixels.size == width * height)
         val minRadius = max(8, (width * .09).toInt())
         val maxRadius = min((width * .16).toInt(), height / 2 - 2)
@@ -27,8 +36,8 @@ internal object ChargeButtonFillHeightReader {
         var best: Triple<Int,Int,Int>? = null
         var bestScore = 0
         val step = max(3, minRadius / 10)
-        val startX = (width * (slot * .5 + .15)).toInt()
-        val endX = (width * (slot * .5 + .38)).toInt()
+        val startX = (width * startFraction).toInt()
+        val endX = (width * endFraction).toInt()
         for (r in minRadius..maxRadius step step) {
             for (y in r+2 until height-(r*.65).toInt()-1 step step) for (x in startX..endX step step) {
                 val s = score(x,y,r)

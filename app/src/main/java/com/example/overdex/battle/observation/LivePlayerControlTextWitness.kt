@@ -49,9 +49,10 @@ internal class LivePlayerControlTextWitness(
     private val calibration: BattleCalibration,
     private val artifactStore: CropArtifactStore,
     private val isEnabled: () -> Boolean,
-    /** 0 = pointer coordinates, 1/2 = left/right charged-move label. */
+    /** 0 = pointer coordinates; 1 = left or lone center; 2 = right. */
     private val slot: Int,
     private val effectiveness: Boolean = false,
+    private val controlLayout: PlayerChargeControlLayout = PlayerChargeControlLayout(),
 ) : Observer {
     init { require(slot in 0..2 && (!effectiveness || slot != 0)) }
     override val observerId = ObserverId(if (slot == 0) "PLAYER_CHARGE_BUTTON_TOUCH_WITNESS"
@@ -63,13 +64,8 @@ internal class LivePlayerControlTextWitness(
     private var samples: Channel<Sample>? = null
     private var activeMatch: Match? = null
     private val source get() = SourceId(observerId.id)
-    private val crop get() = when (slot) {
-        0 -> BattleCropContracts.pointerCoordinates
-        1 -> if (effectiveness) BattleCropContracts.playerChargeMoveEffectivenessLeft else BattleCropContracts.playerChargeMoveNameLeft
-        else -> if (effectiveness) BattleCropContracts.playerChargeMoveEffectivenessRight else BattleCropContracts.playerChargeMoveNameRight
-    }
     private data class Sample(val crop: ResolvedBattleCrop, val wall: Long, val at: Long,
-        val displayWidth: Int?, val displayHeight: Int?)
+        val displayWidth: Int?, val displayHeight: Int?, val singleCentered: Boolean)
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -82,14 +78,16 @@ internal class LivePlayerControlTextWitness(
                 var available: Boolean? = null
                 try {
                     input.supplyFrames { frame ->
+                        val at = frame.capturedAtMonotonicTimeNanos
+                        val singleCentered = controlLayout.centerAt(at) != null
+                        val crop = PlayerChargeControlLayout.textCrop(slot, effectiveness, singleCentered)
                         val enabled = isEnabled() && (slot != 0 ||
-                            (frame.displayWidth != null && frame.displayHeight != null))
+                            (frame.displayWidth != null && frame.displayHeight != null)) && crop != null
                         if (enabled != available) {
                             match.custody.submitAvailability(source, enabled, frame.capturedAtWallTimeMillis)
                             available = enabled
                         }
                         if (!enabled) return@supplyFrames
-                        val at = frame.capturedAtMonotonicTimeNanos
                         val interval = if (slot == 0) 50_000_000L else if (effectiveness) 1_000_000_000L else 500_000_000L
                         if (lastAt != Long.MIN_VALUE && at - lastAt < interval) return@supplyFrames
                         if (slot == 0) {
@@ -98,10 +96,10 @@ internal class LivePlayerControlTextWitness(
                             val display = frame.displayWidth!!.toDouble() / frame.displayHeight!!
                             if (kotlin.math.abs(actual / display - 1) > 0.01) return@supplyFrames
                         }
-                        val resolved = crop.resolve(calibration, frame) ?: return@supplyFrames
+                        val resolved = crop?.resolve(calibration, frame) ?: return@supplyFrames
                         lastAt = at
                         if (channel.trySend(Sample(resolved, frame.capturedAtWallTimeMillis, at,
-                                frame.displayWidth, frame.displayHeight)).isFailure) resolved.bitmap.recycle()
+                                frame.displayWidth, frame.displayHeight, singleCentered)).isFailure) resolved.bitmap.recycle()
                     }
                 } finally { match.custody.submitAvailability(source, false, System.currentTimeMillis()) }
             }
@@ -110,7 +108,8 @@ internal class LivePlayerControlTextWitness(
                 var lastPreserved = Long.MIN_VALUE
                 var lastDiagnostic = Long.MIN_VALUE
                 var previousText: String? = null
-                val stableReading = StableLabelReading()
+                var stableReading = StableLabelReading()
+                var previousCropName: String? = null
                 for (queued in channel) {
                     var sample = queued
                     try {
@@ -132,6 +131,14 @@ internal class LivePlayerControlTextWitness(
                             if (!isEnabled() || System.nanoTime() - sample.at !in 0..1_500_000_000L) {
                                 return@withReadingTurn null
                             }
+                            // A moved reading territory must never reuse the other
+                            // control's OCR or suppress its first fresh label.
+                            val cropName = sample.crop.provenance.cropName
+                            if (previousCropName != cropName) {
+                                stableReading = StableLabelReading()
+                                previousText = null
+                                previousCropName = cropName
+                            }
                             val bitmap = sample.crop.bitmap
                             val pixels = IntArray(bitmap.width * bitmap.height)
                             bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
@@ -146,7 +153,7 @@ internal class LivePlayerControlTextWitness(
                             val height = sample.displayHeight ?: continue
                             val point = PointerCoordinateParser.parse(text, width, height)
                             val button = point?.let { PointerCoordinateParser.chargedButtonSlot(it,
-                                width, height, calibration.trainerChargeMoveControlsRegion) }
+                                width, height, calibration.trainerChargeMoveControlsRegion, sample.singleCentered) }
                             if (point == null || button == null) {
                                 // Sparse diagnostics show absent/released/outside-control readings.
                                 if (lastDiagnostic != Long.MIN_VALUE && sample.at - lastDiagnostic < 5_000_000_000L) continue

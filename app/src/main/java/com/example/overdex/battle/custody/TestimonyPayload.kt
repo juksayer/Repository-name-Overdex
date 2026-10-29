@@ -390,8 +390,8 @@ data class ActiveHpBarMotionCadenceMeasured(
 
 /**
  * A persistent upward change measured in the player's charged-move energy
- * controls. Both controls receive the same earned energy, but their visible
- * fractions can differ because their moves have different costs.
+ * controls. One value describes a lone centered control. Two controls receive
+ * the same earned energy, but their fractions can differ with move cost.
  */
 data class PlayerChargeMoveEnergyFillIncreased(
     val beforeBySlot: List<Float>,
@@ -399,9 +399,9 @@ data class PlayerChargeMoveEnergyFillIncreased(
     val changedSlots: List<Int>
 ) : TestimonyPayload {
     init {
-        require(beforeBySlot.size == 2 && afterBySlot.size == 2)
+        require(beforeBySlot.size in 1..2 && afterBySlot.size == beforeBySlot.size)
         require(beforeBySlot.all { it in 0f..1f } && afterBySlot.all { it in 0f..1f })
-        require(changedSlots.isNotEmpty() && changedSlots.all { it in 0..1 })
+        require(changedSlots.isNotEmpty() && changedSlots.all { it in beforeBySlot.indices })
     }
 }
 

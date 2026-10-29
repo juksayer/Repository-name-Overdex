@@ -25,12 +25,14 @@ object PointerCoordinateParser {
     }
 
     /** These bounds are in full-display fractions, with no notification-bar subtraction. */
-    fun chargedButtonSlot(point: PointerCoordinates, displayWidth: Int, displayHeight: Int, controls: AnchorRegion): Int? {
+    fun chargedButtonSlot(point: PointerCoordinates, displayWidth: Int, displayHeight: Int, controls: AnchorRegion,
+        singleCentered: Boolean = false): Int? {
         if (displayWidth <= 0 || displayHeight <= 0 || controls.width <= 0 || controls.height <= 0) return null
         val nx = point.x / displayWidth
         val ny = point.y / displayHeight
         if (nx !in controls.x..(controls.x + controls.width) || ny !in controls.y..(controls.y + controls.height)) return null
         val horizontal = (nx - controls.x) / controls.width
+        if (singleCentered) return 1.takeIf { horizontal in 0.30f..0.70f }
         // Leave a gap between the controls; do not guess when a touch is between them.
         return when {
             horizontal in 0.04f..0.44f -> 1
