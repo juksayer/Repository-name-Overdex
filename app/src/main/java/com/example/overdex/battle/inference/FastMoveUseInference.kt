@@ -356,7 +356,48 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
                 remaining.remove(first)
             }
         }
-        return resolved.sortedBy { it.use.anchorNanos }
+        // A short animation stutter can produce another onset after a complete
+        // loss/pulse pair. Pairwise matching above cannot attach it to that pair.
+        // Retain it as support only when the HP plateau proves continuity inside
+        // half a known cycle; elapsed time alone never deletes a measured loss.
+        val grouped = mutableListOf<ResolvedUse>()
+        for (next in resolved.sortedBy { it.use.anchorNanos }) {
+            val previous = grouped.asReversed().firstNotNullOfOrNull { prior ->
+                repeatedPulseSupport(prior.use, next.use)?.let { prior to it }
+            }
+            if (previous == null) grouped += next else {
+                val (prior, support) = previous
+                val repeated = next.use.evidence.map { evidence ->
+                    if (evidence.kind == "HP_BORDER_PULSE") evidence.copy(kind = "HP_BORDER_REPEAT_ON_PLATEAU")
+                    else evidence
+                }
+                val merged = prior.use.copy(evidence = (prior.use.evidence + repeated + support)
+                    .distinctBy { it.article.id }.toMutableList())
+                grouped[grouped.indexOf(prior)] = ResolvedUse(merged, prior.members + next.members)
+            }
+        }
+        return grouped
+    }
+
+    private fun repeatedPulseSupport(hit: PendingUse, repeated: PendingUse): List<UseEvidence>? {
+        if (!sameContext(hit, repeated)) return null
+        val impacts = hit.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
+        val loss = impacts.singleOrNull { it.kind == "HP_DAMAGE_TICK" } ?: return null
+        if (impacts.none { it.kind == "HP_BORDER_PULSE" }) return null
+        val pulse = repeated.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }.singleOrNull()
+            ?.takeIf { it.kind == "HP_BORDER_PULSE" } ?: return null
+        val duration = hit.appearance?.speciesName?.let { knownDurations[hit.attackingSide to it.lowercase()] }
+            ?: return null
+        val from = loss.article.monotonicTimeNanos ?: return null
+        val until = pulse.article.monotonicTimeNanos ?: return null
+        if (until <= from || until - from >= duration / 2 || until - from > mergeWindow(hit) ||
+            crossesBoundary(from, until)) return null
+        // A second actual HP step may be a lagged impact. Never merge it, or a
+        // pulse following it, merely because the normal move duration is longer.
+        if (impactHistory.any { other -> other.kind == "HP_DAMAGE_TICK" && other.article.id != loss.article.id &&
+                evidenceFrom(other.article)?.first == hit.attackingSide &&
+                (other.article.monotonicTimeNanos ?: 0L) in from..until }) return null
+        return hpPlateauSupport(loss.article.payload as ActiveHpBarDamageTickMeasured, from, until)
     }
 
     private fun sameContext(a: PendingUse, b: PendingUse) =
@@ -387,6 +428,10 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         if (impactHistory.any { other -> other.article.id != loss.article.id && other.article.id != pulse.article.id &&
                 evidenceFrom(other.article)?.first == attackingSide &&
                 (other.article.monotonicTimeNanos ?: 0L).let { it >= from && it <= until } }) return null
+        return hpPlateauSupport(damage, from, until)
+    }
+
+    private fun hpPlateauSupport(damage: ActiveHpBarDamageTickMeasured, from: Long, until: Long): List<UseEvidence>? {
         val samples = hpHistory[damage.damagedSide].orEmpty()
             .filter { (it.monotonicTimeNanos ?: 0L) in from..until }.sortedBy { it.monotonicTimeNanos }
         if (samples.map { it.monotonicTimeNanos }.distinct().size < 3 ||
@@ -475,8 +520,13 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         chargedPauses.filter { atNanos > it.end + DELIVERY_GRACE_NANOS }.forEach { it.held.clear() }
         val ready = resolvePending(pending).filter { resolved ->
             val use = resolved.use
-            val impacts = use.evidence.filter { FastMoveUseEvidence.isImpact(it.kind) }
-            val lastReceivedAt = impacts.maxOfOrNull { it.article.recordedAt } ?: use.firstImpactReceivedAt
+            // A repeat remains a newly received pulse even while provisionally
+            // treated as support. Late contradictory evidence must get the same
+            // grace to split it back out before the association is published.
+            val phaseReceipts = use.evidence.filter {
+                FastMoveUseEvidence.isImpact(it.kind) || it.kind == "HP_BORDER_REPEAT_ON_PLATEAU"
+            }
+            val lastReceivedAt = phaseReceipts.maxOfOrNull { it.article.recordedAt } ?: use.firstImpactReceivedAt
             atNanos - use.anchorNanos > mergeWindow(use) + DELIVERY_GRACE_NANOS &&
                 !chargedHpCamera.isAwaitingCharge(use.anchorNanos) &&
                 // Preserve the same bounded grace for every phase in a pair.
@@ -528,7 +578,9 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
         val evidenceKinds = ordered.map { it.kind }.distinct().sortedBy { EVIDENCE_ORDER.indexOf(it) }
         // Plateau frames explain association; correlated samples do not multiply
         // the independent witnesses' confidence or establish an attack by themselves.
-        val confidence = (1.0 - ordered.filter { it.kind != "HP_PLATEAU_CONTINUITY" }.fold(1.0) { remaining, item ->
+        val confidence = (1.0 - ordered.filter {
+            it.kind != "HP_PLATEAU_CONTINUITY" && it.kind != "HP_BORDER_REPEAT_ON_PLATEAU"
+        }.fold(1.0) { remaining, item ->
             remaining * (1.0 - (item.article.confidence ?: item.defaultConfidence).coerceIn(0f, 0.99f))
         }).toFloat().coerceIn(0f, 0.99f)
         return listOf(FastMoveUseDerivation(
@@ -570,6 +622,7 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             "HP_BORDER_PULSE",
             "HP_DAMAGE_TICK",
             "HP_PLATEAU_CONTINUITY",
+            "HP_BORDER_REPEAT_ON_PLATEAU",
             "RECIPIENT_VISUAL_ARTIFACT",
             "HP_BORDER_CADENCE",
             "HP_BAR_MOTION_COMPLETION",

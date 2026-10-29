@@ -26,6 +26,135 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `recorded Golbat plateau stutter belongs to first hit while next HP decrease stays separate`() {
+        // Moondrop b933d564, +21.667/+21.941/+22.223s. The middle onset
+        // flashes on the same HP plateau; the last loss is distinct raw evidence.
+        for (reverseDelivery in listOf(false, true)) {
+            val inference = knownMoveInference("Golbat", "Wing Attack", 1_000_000_000L)
+            val samples = golbatStutterSamples()
+            val outputs = (if (reverseDelivery) samples.reversed() else samples)
+                .flatMap { inference.accept(it) } + inference.flush()
+            assertEquals(2, outputs.size)
+            val first = outputs.first { it.observedArticle.monotonicTimeNanos == 21_667_000_000L }
+            assertTrue(first.predecessorIds.contains(ArticleId("f2aa8852-453d-4b31-b4fb-70e005837a72")))
+            assertTrue(first.predecessorIds.contains(ArticleId("791f8863-c1c9-46fc-9956-83ed970d87fa")))
+            assertTrue(first.payload.evidenceKinds.contains("HP_BORDER_REPEAT_ON_PLATEAU"))
+            assertTrue(first.payload.evidenceKinds.contains("HP_PLATEAU_CONTINUITY"))
+            val second = outputs.first { it.observedArticle.monotonicTimeNanos == 22_223_000_000L }
+            assertTrue(second.predecessorIds.contains(ArticleId("13f6d333-516c-4b29-9c4d-02b1c7bb09d3")))
+            assertTrue(second.predecessorIds.contains(ArticleId("25ae4929-8487-413f-b7d4-fe546dd2f2b3")))
+            assertTrue(!second.payload.evidenceKinds.contains("HP_BORDER_REPEAT_ON_PLATEAU"))
+        }
+    }
+
+    @Test fun `repeat pulse does not add independent confidence or erase its raw predecessor`() {
+        fun run(repeat: Boolean): FastMoveUseDerivation {
+            val inference = knownMoveInference("Golbat", "Wing Attack", 1_000_000_000L)
+            val samples = golbatStutterSamples().filter { it.monotonicTimeNanos!! <= 22_050_000_000L }
+                .filter { repeat || it.id.value != "f2aa8852-453d-4b31-b4fb-70e005837a72" }
+            samples.forEach { inference.accept(it) }
+            return inference.flush().single()
+        }
+        val base = run(false)
+        val stutter = run(true)
+        assertEquals(base.confidence, stutter.confidence, 0f)
+        assertTrue(stutter.predecessorIds.containsAll(base.predecessorIds))
+        assertTrue(stutter.predecessorIds.contains(ArticleId("f2aa8852-453d-4b31-b4fb-70e005837a72")))
+    }
+
+    @Test fun `true half second move pulses stay separate even when next damage is below a pixel`() {
+        val inference = knownMoveInference("Vaporeon", "Water Gun", 500_000_000L)
+        inference.accept(article("loss", 1_000_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .7f, .1f)))
+        inference.accept(article("flash", 1_000_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        for (millis in 1000..1500 step 100) inference.accept(hpSample("hp-$millis", millis * 1_000_000L, .7f))
+        inference.accept(article("next-real-flash", 1_500_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        assertEquals(2, inference.flush().size)
+    }
+
+    @Test fun `late repeat receipt preserves grace for a contradictory boundary or distinct HP step`() {
+        for (contradiction in listOf("defender replacement", "distinct HP step")) {
+            val inference = knownMoveInference("Golbat", "Wing Attack", 1_000_000_000L)
+            inference.accept(article("defender", 2, ActivePokemonSpeciesWitnessed(
+                ActivePokemonSide.OPPONENT, "Combusken", 256)))
+            inference.accept(article("loss", 1_000_000_000L,
+                ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .8f, .7f, .1f))
+                .copy(recordedAt = 10_000L))
+            inference.accept(article("flash", 1_000_000_000L, pulse(ActivePokemonSide.OPPONENT))
+                .copy(recordedAt = 10_000L))
+            for (millis in listOf(1000, 1100, 1200)) {
+                inference.accept(hpSample("hp-$millis", millis * 1_000_000L, .7f)
+                    .copy(recordedAt = 10_100L))
+            }
+            assertTrue(inference.accept(article("late-repeat", 1_300_000_000L,
+                pulse(ActivePokemonSide.OPPONENT)).copy(recordedAt = 11_250L)).isEmpty())
+            // Source time has expired the original hit, and its receipt is over
+            // 1.2s old, but the repeat has only just arrived. Keep it reversible.
+            assertTrue(contradiction, inference.accept(article("watermark", 3_000_000_000L,
+                RawTestimony("other reader")).copy(recordedAt = 11_251L)).isEmpty())
+            val contradictory = if (contradiction == "defender replacement") {
+                article("replacement", 1_250_000_000L, ActivePokemonSpeciesWitnessed(
+                    ActivePokemonSide.OPPONENT, "Magcargo", 219))
+            } else {
+                article("next-loss", 1_250_000_000L,
+                    ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .7f, .68f, .02f))
+            }
+            val outputs = inference.accept(contradictory.copy(recordedAt = 11_260L)) +
+                inference.accept(article("settled", 3_500_000_000L, RawTestimony("other reader"))
+                    .copy(recordedAt = 12_461L))
+            assertEquals(contradiction, 2, outputs.size)
+            assertEquals(setOf("loss", "flash"), outputs.first().predecessorIds.map { it.value }.toSet())
+            val secondSources = if (contradiction == "defender replacement") setOf("late-repeat")
+                else setOf("late-repeat", "next-loss")
+            assertEquals(contradiction, secondSources, outputs.last().predecessorIds.map { it.value }.toSet())
+            assertTrue(outputs.none { "HP_BORDER_REPEAT_ON_PLATEAU" in it.payload.evidenceKinds })
+            assertTrue(inference.flush().isEmpty())
+        }
+    }
+
+    @Test fun `absent continuity or untrusted duration cannot convert a second pulse to stutter`() {
+        for (mode in listOf("missing samples", "changed geometry", "unknown duration")) {
+            val inference = if (mode == "unknown duration") startedInference()
+                else knownMoveInference("Golbat", "Wing Attack", 1_000_000_000L)
+            val samples = golbatStutterSamples().filter { it.monotonicTimeNanos!! <= 22_050_000_000L }
+                .filter { mode != "missing samples" || it.payload !is com.example.overdex.battle.custody.ActiveHpBarMeasured }
+                .map { a ->
+                    val hp = a.payload as? com.example.overdex.battle.custody.ActiveHpBarMeasured
+                    if (mode == "changed geometry" && hp != null && a.monotonicTimeNanos!! >= 21_813_000_000L)
+                        a.copy(payload = hp.copy(barLeft = hp.barLeft + 20, barRight = hp.barRight + 20)) else a
+                }
+            samples.forEach { inference.accept(it) }
+            assertEquals(mode, 2, inference.flush().size)
+        }
+    }
+
+    private fun knownMoveInference(species: String, move: String, duration: Long) = startedInference().also {
+        it.accept(article("player", 1, ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, species, null)))
+        it.observeIdentity(FastMoveIdentified(ActivePokemonSide.PLAYER, species, move, duration, null, 0,
+            "CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES"))
+    }
+
+    private fun hpSample(id: String, at: Long, fraction: Float) = article(id, at,
+        com.example.overdex.battle.custody.ActiveHpBarMeasured(ActivePokemonSide.OPPONENT,
+            402, 603, 594, 621, fraction, 672, 1493))
+
+    private fun golbatStutterSamples(): List<RealityArticle> = buildList {
+        add(article("f1bb488a-1dd0-409b-8c11-444be191ba9d", 21_667_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .9368421f, .9148936f, .021948457f)))
+        add(article("791f8863-c1c9-46fc-9956-83ed970d87fa", 21_667_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        for ((millis, fraction) in listOf(21667L to .9148936f, 21724L to .9148936f, 21813L to .9148936f,
+            21941L to .91052634f, 21991L to .91052634f, 22050L to .9148936f))
+            add(hpSample("hp-$millis", millis * 1_000_000L, fraction))
+        add(article("f2aa8852-453d-4b31-b4fb-70e005837a72", 21_941_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+        add(article("13f6d333-516c-4b29-9c4d-02b1c7bb09d3", 22_223_000_000L,
+            ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .9148936f, .8842105f, .0306831f)))
+        for ((millis, fraction) in listOf(22223L to .8842105f, 22256L to .8842105f, 22295L to .8842105f,
+            22346L to .8842105f, 22469L to .8842105f, 22638L to .88829786f, 22704L to .88829786f,
+            22842L to .88829786f, 22901L to .8888889f))
+            add(hpSample("hp-$millis", millis * 1_000_000L, fraction))
+        add(article("25ae4929-8487-413f-b7d4-fe546dd2f2b3", 22_901_000_000L, pulse(ActivePokemonSide.OPPONENT)))
+    }.sortedBy { it.monotonicTimeNanos }
+
     @Test fun `shield text fallback gates late pulse evidence and releases post charge attacks`() {
         val inference = startedInference()
         val shieldText = com.example.overdex.battle.observation.ShieldDecisionTextEvidence()
