@@ -1,5 +1,8 @@
 # Docked Droidball tilt and blink — October 29, 2026
 
+This records the initial restoration checkpoint. The subsequent five-tap behavior
+and its device checks are recorded in [Droidball tap progression](2026-10-29-droidball-tap-progression.md).
+
 The previous `AndroidPokeballLogo` in `PokedexComponents.kt` still contained the
 tap response, but replacing its shell call with `DroidballBody` left the existing
 `isLogoInteractive` flag unused. Only the Directory Tree's main-menu shell opts

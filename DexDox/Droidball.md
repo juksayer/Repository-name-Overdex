@@ -283,13 +283,21 @@ Hiding/pausing the body stops its loop; resumed visible movement can restart it.
 All three supplied originals and their provenance are preserved under
 `tools/audio_sources/droidball/`.
 
-The docked Directory Tree logo again responds to a tap with a roughly 15-degree
-spring tilt, two blinks and a return upright. This acknowledgement uses the same
-current body, takes about 2.3 seconds and restarts on another tap. It is enabled
-only for the active shell's existing interactive-logo opt-in while docked.
-Navigation or any journey phase immediately clears the local acknowledgement;
-field taps retain their normal display controls. This finite frame-clock response
-does not change observation state or produce travel sounds.
+The docked Directory Tree logo uses a five-tap acknowledgement sequence on the
+same current body. The first two taps each give a roughly 15-degree spring tilt,
+two blinks and a return upright (about 2.3 seconds). The third stays upright and
+blinks twice; the fourth stays upright and blinks once. The fifth closes the eyes
+immediately and settles at a 15-degree tilt. Further taps on Droidball do nothing
+until navigation or a journey resets him. Other instrument controls stay usable.
+The tap count lasts for the current docked visit, without an inactivity timeout;
+a tap during an unfinished response immediately starts the next response.
+
+This interaction is enabled only for the active shell's existing interactive-logo
+opt-in while docked. Navigation, journey generation or interaction eligibility
+changes clear both the local pose and tap count; field taps retain their normal
+display controls. The finite frame-clock response stops requesting frames at
+rest, including the fifth tap's sleeping pose. It does not change observation
+state or produce travel sounds.
 
 Only one environment owns the body at a time. It is absent during transit. The
 native floating window follows the ball, with a small drawing margin during
