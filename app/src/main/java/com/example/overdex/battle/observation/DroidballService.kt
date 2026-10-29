@@ -322,6 +322,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private val retainedOpponentBadge by lazy { RetainedOpponentBadge(this, windowManager) }
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
+    // The renderer and native window share one physical canvas for this overlay.
+    private var fieldBodyCanvasWidthPx = 1
     private var overlayAnchoredToBattleHud = false
     private var overlayPanelVisible = false
     private var overlayJourneyTravel = false
@@ -901,7 +903,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private fun setupOverlay() {
         val bounds = displayBounds()
         val savedBattleHudLayout = battleHudLayoutStore.load(bounds.width(), bounds.height())
-        val collapsedSizePx = (48f * resources.displayMetrics.density).roundToInt()
+        val bodyCanvasWidthPx = DroidballFieldGeometry.bodyCanvasWidthPx(bounds.width())
+        fieldBodyCanvasWidthPx = bodyCanvasWidthPx
         val panelWidthPx = BattleHudOverlayGeometry.panelWidthPx(bounds.width())
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -914,7 +917,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (bounds.width() - if (registrationMode) (184 * resources.displayMetrics.density).roundToInt() else collapsedSizePx).coerceAtLeast(0)
+            x = if (registrationMode) (bounds.width() - (184 * resources.displayMetrics.density).roundToInt()).coerceAtLeast(0)
+                else DroidballFieldGeometry.dockedWindowLeftPx(bounds.width(), bodyCanvasWidthPx)
             y = 350
         }
         freeOverlayX = params.x
@@ -947,6 +951,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         width = minOf(330f, bounds.width() / resources.displayMetrics.density - 16f).dp,
                         onRescan = { emitSignal(DroidballSignal.ScanTeamSelectRequested) },
                     ) else BattleOverlay(
+                    bodyCanvasWidthPx = bodyCanvasWidthPx,
                     panelWidthPx = panelWidthPx,
                     initialLayout = savedBattleHudLayout,
                     onDrag = { deltaX, deltaY ->
@@ -1143,7 +1148,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         params.y += deltaY.toInt()
         // The expanded panel centers the body above itself. Keep the body
         // location, rather than treating the panel's left edge as a new dock.
-        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        val bodyWidth = fieldBodyCanvasWidthPx
         freeOverlayX = params.x + if (!registrationMode && overlayPanelVisible) (view.width - bodyWidth).coerceAtLeast(0) / 2 else 0
         freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
@@ -1157,10 +1162,16 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val viewWidth = view.width.coerceAtLeast(1)
         val viewHeight = view.height.coerceAtLeast(1)
         val rightDock = params.x + viewWidth / 2 >= bounds.width() / 2
-        params.x = if (rightDock) (bounds.width() - viewWidth).coerceAtLeast(0) else 0
         params.y = params.y.coerceIn(0, (bounds.height() - viewHeight).coerceAtLeast(0))
-        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
-        freeOverlayX = if (registrationMode) params.x else if (rightDock) (bounds.width() - bodyWidth).coerceAtLeast(0) else 0
+        val bodyWidth = fieldBodyCanvasWidthPx
+        if (registrationMode) {
+            params.x = if (rightDock) (bounds.width() - viewWidth).coerceAtLeast(0) else 0
+            freeOverlayX = params.x
+        } else {
+            val bodyDock = DroidballFieldGeometry.dockedWindowLeftPx(bounds.width(), bodyWidth, rightDock)
+            freeOverlayX = bodyDock
+            params.x = droidballFreeWindowLeft(bounds.width(), viewWidth, bodyWidth, bodyDock, overlayPanelVisible)
+        }
         freeOverlayY = params.y
         windowManager.updateViewLayout(view, params)
     }
@@ -1309,7 +1320,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()
-        val bodyWidth = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
+        val bodyWidth = fieldBodyCanvasWidthPx
         val x = droidballFreeWindowLeft(bounds.width(), view.width.coerceAtLeast(bodyWidth), bodyWidth,
             freeOverlayX ?: params.x, overlayPanelVisible)
         val y = (freeOverlayY ?: params.y).coerceIn(0, (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0))
@@ -1330,8 +1341,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val traveling = journey.phase == DroidballJourneyPhase.ARRIVING || journey.phase == DroidballJourneyPhase.RETURNING
-        val bodyPixels = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
-        val travelPadding = (DroidballFieldGeometry.TRAVEL_PADDING_DP * resources.displayMetrics.density).roundToInt()
+        val bodyPixels = fieldBodyCanvasWidthPx
+        val travelPadding = DroidballFieldGeometry.travelPaddingPx(bodyPixels)
         val travelWindowPixels = bodyPixels + travelPadding * 2
         val bounds = displayBounds()
         if (traveling) {
@@ -1372,8 +1383,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         if (registrationMode || !overlayJourneyTravel) return
         val view = overlayView ?: return
         val params = overlayParams ?: return
-        val bodyPixels = (DroidballFieldGeometry.BODY_CANVAS_DP * resources.displayMetrics.density).roundToInt()
-        val travelPadding = (DroidballFieldGeometry.TRAVEL_PADDING_DP * resources.displayMetrics.density).roundToInt()
+        val bodyPixels = fieldBodyCanvasWidthPx
+        val travelPadding = DroidballFieldGeometry.travelPaddingPx(bodyPixels)
         val nextX = DroidballFieldGeometry.windowLeftPx(displayBounds().width(), bodyPixels, bodyWidths, travelPadding)
         if (params.x != nextX) {
             params.x = nextX

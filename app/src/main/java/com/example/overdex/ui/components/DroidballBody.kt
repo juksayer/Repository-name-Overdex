@@ -22,6 +22,8 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 const val DROIDBALL_BODY_DIAMETER_FRACTION = .72f
+// Include the dark circular outline when aligning the visible body with GO icons.
+internal const val DROIDBALL_OUTER_BODY_DIAMETER_FRACTION = .746f
 
 /**
  * The shell and floating window share this single body renderer. The ball is a vector,
@@ -88,7 +90,7 @@ private fun DrawScope.drawDroidballBody(pose: DroidballPose) {
         drawLine(Color(0xFFF55B44), a + Offset(-.004f, 0f), b + Offset(-.004f, 0f),
             strokeWidth = .019f, cap = StrokeCap.Round)
     }
-    drawCircle(ink, .373f, center)
+    drawCircle(ink, DROIDBALL_OUTER_BODY_DIAMETER_FRACTION / 2f, center)
     val top = Path().apply {
         moveTo(.14f, .59f)
         arcTo(shell, 180f, 180f, false)

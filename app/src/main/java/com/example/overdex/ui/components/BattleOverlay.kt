@@ -99,11 +99,28 @@ internal object BattleHudOverlayGeometry {
 
 /** Travel changes a small native window's location, never its touch footprint. */
 internal object DroidballFieldGeometry {
-    const val BODY_CANVAS_DP = 48f
-    const val TRAVEL_PADDING_DP = 16f
+    private const val REFERENCE_WIDTH_PX = 1080f
+    // User-measured Pokeball Plus backing circle: X=935..1040 on a 1080px display.
+    private const val REFERENCE_BODY_DIAMETER_PX = 105f
+    private const val REFERENCE_EDGE_INSET_PX = 40f
+
+    fun bodyCanvasWidthPx(displayWidth: Int): Int =
+        (displayWidth * REFERENCE_BODY_DIAMETER_PX / REFERENCE_WIDTH_PX /
+            DROIDBALL_OUTER_BODY_DIAMETER_FRACTION).roundToInt().coerceAtLeast(1)
+
+    // Preserve the former 16dp margin around a 48dp canvas at every body size.
+    fun travelPaddingPx(bodyCanvasWidth: Int): Int = (bodyCanvasWidth / 3f).roundToInt().coerceAtLeast(1)
+
+    /** Anchor the visible circle, rather than the transparent canvas boundary. */
+    fun dockedWindowLeftPx(displayWidth: Int, bodyCanvasWidth: Int, rightDock: Boolean = true): Int {
+        val edgeInset = displayWidth * REFERENCE_EDGE_INSET_PX / REFERENCE_WIDTH_PX
+        val outerRadius = bodyCanvasWidth * DROIDBALL_OUTER_BODY_DIAMETER_FRACTION / 2f
+        val bodyCenter = if (rightDock) displayWidth - edgeInset - outerRadius else edgeInset + outerRadius
+        return (bodyCenter - bodyCanvasWidth / 2f).roundToInt()
+    }
 
     fun windowLeftPx(displayWidth: Int, bodyCanvasWidth: Int, offsetBodyDiameters: Float, travelPadding: Int = 0): Int =
-        (displayWidth - bodyCanvasWidth - travelPadding +
+        (dockedWindowLeftPx(displayWidth, bodyCanvasWidth) - travelPadding +
             bodyCanvasWidth * DROIDBALL_BODY_DIAMETER_FRACTION * offsetBodyDiameters).roundToInt()
 }
 
@@ -114,6 +131,7 @@ internal object DroidballFieldGeometry {
  */
 @Composable
 fun BattleOverlay(
+    bodyCanvasWidthPx: Int = DroidballFieldGeometry.bodyCanvasWidthPx(1080),
     panelWidthPx: Int = 415,
     initialLayout: BattleHudLayout = BattleHudLayout(),
     onDrag: (Float, Float) -> Unit = { _, _ -> },
@@ -152,6 +170,8 @@ fun BattleOverlay(
     val currentOnDrag by rememberUpdatedState(onDrag)
     val currentOnDragFinished by rememberUpdatedState(onDragFinished)
     val overlayView = LocalView.current
+    val bodyCanvasSize = with(LocalDensity.current) { bodyCanvasWidthPx.toDp() }
+    val travelPaddingSize = with(LocalDensity.current) { DroidballFieldGeometry.travelPaddingPx(bodyCanvasWidthPx).toDp() }
     LaunchedEffect(anchoredToBattleHud, panelIsVisible) {
         onLayoutStateChanged(anchoredToBattleHud, panelIsVisible)
     }
@@ -200,14 +220,14 @@ fun BattleOverlay(
     ) {
         if (!anchoredToBattleHud && journey.fieldOwnsBody) {
             // The rotating antennae and short scan beam extend beyond the
-            // 48dp canvas. Only travel gets this small safety margin.
+            // body canvas. Only travel gets this small safety margin.
             Box(
-                modifier = Modifier.size((DroidballFieldGeometry.BODY_CANVAS_DP +
-                    if (traveling) DroidballFieldGeometry.TRAVEL_PADDING_DP * 2f else 0f).dp),
+                modifier = Modifier.size(bodyCanvasSize +
+                    if (traveling) travelPaddingSize * 2 else 0.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 DroidballBody(
-                    modifier = Modifier.size(DroidballFieldGeometry.BODY_CANVAS_DP.dp).clickable {
+                    modifier = Modifier.size(bodyCanvasSize).clickable {
                         when (journey.phase) {
                             DroidballJourneyPhase.ARRIVING -> {
                                 DroidballJourney.arrivalFinished(journey.generation)

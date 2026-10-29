@@ -65,7 +65,8 @@ object DroidballChoreography {
             }
             DroidballJourneyPhase.ARRIVING -> {
                 // Arrive fast, skid two body lengths into the field, inspect, then tuck right.
-                val entry = 1.15f - 3.15f * easeOut(t, 0f, .39f)
+                // Begin fully outside the screen even with the GO icon's inset dock.
+                val entry = 1.5f - 3.5f * easeOut(t, 0f, .39f)
                 val skid = .13f * pulse(t, .43f, .075f)
                 val dock = ease(t, .85f, 1f)
                 val x = (entry - skid) * (1f - dock)

@@ -304,6 +304,17 @@ native floating window follows the ball, with a small drawing margin during
 travel, instead of covering the entire path with a transparent touch surface.
 The existing badge-attached battle HUD remains body-free.
 
+The collapsed field body's circular outline follows the measured Pokeball Plus
+backing circle: 105 pixels across and 40 pixels inside the right edge on a
+1080-pixel-wide display (reference X=935..1040). Scale the reference by display
+width when creating the overlay; account for transparent canvas space and the
+dark outline, with antennae above the circle. The renderer and native window use
+one canvas size for that overlay's lifetime. Travel padding scales with the body.
+Dragging and snapping to either side retain the same inset, and opening/closing
+the panel must not replace the compact dock with the panel's left edge. Its
+vertical position remains movable; these measurements do not relocate the battle
+HUD or alter calibration.
+
 Recording begins immediately after screen-sharing approval; the shell departure
 only delays the app launch. Stop invalidates pending movement and removes capture
 and its windows immediately. A return animation never postpones Stop. Leaving
