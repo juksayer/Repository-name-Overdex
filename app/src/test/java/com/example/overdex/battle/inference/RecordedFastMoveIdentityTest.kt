@@ -71,7 +71,6 @@ class RecordedFastMoveIdentityTest {
             // Keep the old conclusion and its measurements for audit. As in Match,
             // use the resolved player appearance rather than raw duplicate labels.
             if (a.payload is ArchivedFastMoveIdentified || a.payload is ArchivedFastMoveEnergyDerived ||
-                a.payload is ArchivedActiveHpBarDamageTickMeasured ||
                 (a.payload is ArchivedActivePokemonSpeciesWitnessed && a.payload.side == "PLAYER")) continue
             val input = live(a)
             awards += energy.accept(input)
@@ -145,6 +144,12 @@ class RecordedFastMoveIdentityTest {
                 p.fastMoveName, p.chargedMoveNames)
             is ArchivedActiveHpBarBorderCadenceMeasured -> ActiveHpBarBorderCadenceMeasured(side(p.damagedBarSide),
                 p.intervalNanos, p.peakColorDistance, p.sampleCount, p.peakOrangeFraction, p.baselineWhiteFraction)
+            is ArchivedActiveHpBarDamageTickMeasured -> ActiveHpBarDamageTickMeasured(side(p.damagedSide),
+                p.beforeFraction, p.afterFraction, p.lostFraction)
+            is ArchivedActiveHpBarBorderPulseObserved -> ActiveHpBarBorderPulseObserved(side(p.damagedBarSide),
+                p.peakColorDistance, p.sampleCount, p.peakOrangeFraction, p.baselineWhiteFraction)
+            is ArchivedHpBarBorderPulse -> HpBarBorderPulse(side(p.barSide), ApertureStatus.valueOf(p.status),
+                p.peakColorDistance, p.sampleCount, p.peakOrangeFraction, p.baselineWhiteFraction)
             is ArchivedActiveHpBarMotionCadenceMeasured -> ActiveHpBarMotionCadenceMeasured(side(p.movingSide),
                 p.intervalNanos, p.verticalExcursionPixels, p.sampleCount)
             is ArchivedFastMoveRecipientVisualCadenceMeasured -> FastMoveRecipientVisualCadenceMeasured(side(p.damagedSide), p.intervalNanos)

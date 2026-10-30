@@ -2,6 +2,10 @@ package com.example.overdex.battle.inference
 
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.custody.ApertureStatus
+import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed
@@ -99,6 +103,11 @@ class FastMoveCadenceInference(
         val defenderArticleId: ArticleId,
     )
 
+    private data class ObservedUseEndpoint(
+        val useArticle: RealityArticle,
+        val sourceArticle: RealityArticle,
+    )
+
     private data class SideState(
         val side: ActivePokemonSide,
         val speciesName: String,
@@ -120,7 +129,7 @@ class FastMoveCadenceInference(
         var selectedBasis: CadenceBasis? = null,
         var assumedHigherEnergyTieBreak: Boolean = false,
         var identificationEvidence: List<ArticleId> = emptyList(),
-        val lastDirectUseArticles: MutableMap<String, RealityArticle> = mutableMapOf(),
+        val lastDirectUseArticles: MutableMap<String, ObservedUseEndpoint> = mutableMapOf(),
         var lastSoundOnsetNanos: Long? = null,
         var lastSoundArticle: RealityArticle? = null,
         var corroborationSignature: String = "",
@@ -149,6 +158,9 @@ class FastMoveCadenceInference(
     private val playerReferenceSlots = mutableMapOf<Int, Pair<String, ArticleId>>()
     private val pendingEffectiveness = mutableListOf<RealityArticle>()
     private val recentUses = mutableListOf<RealityArticle>()
+    // Fused uses retain occurrence/ownership proof, but each measurement family
+    // has its own source instant. An early flash must not redate a later HP loss.
+    private val rawImpactArticles = linkedMapOf<ArticleId, RealityArticle>()
     private var cadenceFloorNanos = Long.MIN_VALUE
     private val audioIdentityGate = FastMoveListeningGate()
     private val audioPreferences = FastMoveAudioPreferenceTracker()
@@ -180,6 +192,7 @@ class FastMoveCadenceInference(
             pending.remove(ActivePokemonSide.PLAYER)
             appearanceStarts.remove(ActivePokemonSide.PLAYER)
             recentUses.removeAll { (it.payload as FastMoveUseObserved).attackingSide == ActivePokemonSide.PLAYER }
+            rawImpactArticles.clear()
             pendingEffectiveness.clear()
             audioPreferences.clear()
             pendingReferenceSounds.clear()
@@ -209,6 +222,7 @@ class FastMoveCadenceInference(
             audioPreferences.clear()
             pendingReferenceSounds.clear()
             audioEntryCues.clear()
+            rawImpactArticles.clear()
             states.values.forEach { it.referenceSounds.clear() }
         }
         fainted.observe(article)
@@ -238,6 +252,7 @@ class FastMoveCadenceInference(
             pending.clear()
             pendingEffectiveness.clear()
             recentUses.clear()
+            rawImpactArticles.clear()
             pendingReferenceSounds.clear()
             return emptyList()
         }
@@ -463,6 +478,18 @@ class FastMoveCadenceInference(
             return acceptEffectiveness(article, effectiveness)
         }
 
+        if (rawImpactKind(article) != null) {
+            rawImpactArticles[article.id] = article
+            while (rawImpactArticles.size > MAX_RAW_IMPACT_HISTORY) {
+                rawImpactArticles.remove(rawImpactArticles.keys.first())
+            }
+            // Match can publish a fused use before delivering its final raw
+            // predecessor to this inference. Resolve that deferred stream now.
+            return recentUses.filter { article.id in it.predecessorIds }.flatMap {
+                acceptObservedUseCadence(it, it.payload as FastMoveUseObserved)
+            }
+        }
+
         val use = article.payload as? FastMoveUseObserved
         if (use != null) {
             if (recentUses.none { (it.payload as FastMoveUseObserved).useId == use.useId }) recentUses += article
@@ -648,26 +675,51 @@ class FastMoveCadenceInference(
         val streams = use.evidenceKinds.filter { it in IMPACT_USE_EVIDENCE_KINDS }
             .ifEmpty { use.evidenceKinds.filter { it in DIRECT_USE_EVIDENCE_KINDS } }.distinct()
         return streams.flatMap { kind ->
+            val source = if (kind in IMPACT_USE_EVIDENCE_KINDS && article.predecessorIds.isNotEmpty()) {
+                article.predecessorIds.mapNotNull(rawImpactArticles::get)
+                    .filter { rawImpactKind(it) == kind && rawImpactRecipient(it) == use.damagedSide }
+                    .filter { it.monotonicTimeNanos != null }
+                    .minByOrNull { it.monotonicTimeNanos!! }
+                    ?: return@flatMap emptyList()
+            } else article // Legacy/source-less uses retain their recorded timing.
+            if (!useBelongsTo(state, source, use)) return@flatMap emptyList()
+            val endpoint = ObservedUseEndpoint(article, source)
+            val sourceAt = source.monotonicTimeNanos ?: return@flatMap emptyList()
             val previous = state.lastDirectUseArticles[kind]
-            val previousAt = previous?.monotonicTimeNanos
+            val previousAt = previous?.sourceArticle?.monotonicTimeNanos
             if (previous == null || previousAt == null) {
-                state.lastDirectUseArticles[kind] = article
+                state.lastDirectUseArticles[kind] = endpoint
                 return@flatMap emptyList()
             }
-            val interval = at - previousAt
+            val interval = sourceAt - previousAt
             if (interval < MIN_USE_INTERVAL_NANOS) return@flatMap emptyList()
-            state.lastDirectUseArticles[kind] = article
+            state.lastDirectUseArticles[kind] = endpoint
             acceptCadence(
-                article,
+                source,
                 CadenceInput(
                     attackingSide = use.attackingSide,
                     intervalNanos = interval,
                     basis = CadenceBasis.OBSERVED_USES,
-                    predecessorIds = listOf(previous.id, article.id),
+                    predecessorIds = listOf(previous.useArticle.id, article.id,
+                        previous.sourceArticle.id, source.id).distinct(),
                     useEvidenceKind = kind,
                 )
             )
         }
+    }
+
+    private fun rawImpactKind(article: RealityArticle): String? = when (val payload = article.payload) {
+        is ActiveHpBarDamageTickMeasured -> "HP_DAMAGE_TICK"
+        is ActiveHpBarBorderPulseObserved -> "HP_BORDER_PULSE"
+        is HpBarBorderPulse -> "HP_BORDER_PULSE".takeIf { payload.status == ApertureStatus.PRESENT }
+        else -> null
+    }
+
+    private fun rawImpactRecipient(article: RealityArticle): ActivePokemonSide? = when (val payload = article.payload) {
+        is ActiveHpBarDamageTickMeasured -> payload.damagedSide
+        is ActiveHpBarBorderPulseObserved -> payload.damagedBarSide
+        is HpBarBorderPulse -> payload.barSide
+        else -> null
     }
 
     private fun acceptCadence(
@@ -1378,6 +1430,7 @@ class FastMoveCadenceInference(
         const val MAX_CADENCE_HISTORY = 64
         const val MAX_EFFECTIVENESS_HISTORY = 16
         const val MAX_USE_HISTORY = 16
+        const val MAX_RAW_IMPACT_HISTORY = 256
         const val EFFECTIVENESS_USE_ALIGNMENT_NANOS = 500_000_000L
         const val MOTION_IMPACT_ALIGNMENT_NANOS = 450_000_000L
         const val MIN_USE_INTERVAL_NANOS = 300_000_000L

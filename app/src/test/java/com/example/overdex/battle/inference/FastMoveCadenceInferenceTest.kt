@@ -3,6 +3,9 @@ package com.example.overdex.battle.inference
 import com.example.overdex.data.PokemonKnowledge
 import com.example.overdex.battle.custody.ActiveHpBarMotionCadenceMeasured
 import com.example.overdex.battle.custody.ActiveHpBarBorderCadenceMeasured
+import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+import com.example.overdex.battle.custody.ApertureStatus
+import com.example.overdex.battle.custody.HpBarBorderPulse
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.FastMoveEffectiveness
@@ -109,6 +112,130 @@ class FastMoveCadenceInferenceTest {
         )
         val output = uses.flatMap {
             engine.accept(it.copy(payload = (it.payload as FastMoveUseObserved).copy(attackerSpeciesName = "Sealeo")))
+        }
+        assertTrue(output.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `fused flash anchors do not shift the cited HP loss cadence`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        listOf(1_000_000_000L, 2_800_000_000L, 4_000_000_000L).forEachIndexed { index, flashAt ->
+            val lossAt = 1_350_000_000L + index * 1_500_000_000L
+            val flash = sourcePulse("flash-$index", flashAt)
+            val loss = sourceLoss("loss-$index", lossAt)
+            engine.accept(flash)
+            engine.accept(loss)
+            output += engine.accept(citedUse("use-$index", flashAt, flash, loss))
+        }
+        val identity = output.last { it.payload is FastMoveIdentified }
+        val payload = identity.payload as FastMoveIdentified
+        assertEquals("Waterfall", payload.moveName)
+        assertEquals(1_500_000_000L, payload.observedMedianIntervalNanos)
+        assertEquals(2, payload.cadenceSampleCount)
+        assertEquals(4_350_000_000L, identity.observedArticle.monotonicTimeNanos)
+        assertTrue(identity.predecessorIds.containsAll((0..2).flatMap {
+            listOf(ArticleId("use-$it"), ArticleId("loss-$it"))
+        }))
+        assertTrue(!payload.basis.contains("CORROBORATED_BY"))
+    }
+
+    @Test fun `cited impacts wait for raw delivery and duplicates add no cadence samples`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        repeat(3) { index ->
+            val at = 1_000_000_000L + index * 1_500_000_000L
+            val loss = sourceLoss("late-loss-$index", at + 250_000_000L)
+            val use = citedUse("late-use-$index", at, loss)
+            assertTrue(engine.accept(use).none { it.payload is FastMoveIdentified })
+            output += engine.accept(loss)
+            assertTrue(engine.accept(loss).none { it.payload is FastMoveIdentified })
+            assertTrue(engine.accept(use).none { it.payload is FastMoveIdentified })
+        }
+        val identity = output.single { it.payload is FastMoveIdentified }.payload as FastMoveIdentified
+        assertEquals("Waterfall", identity.moveName)
+        assertEquals(2, identity.cadenceSampleCount)
+        assertEquals(1_500_000_000L, identity.observedMedianIntervalNanos)
+    }
+
+    @Test fun `one pair of fused hits remains one impact family despite two raw kinds`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        repeat(2) { index ->
+            val at = 1_000_000_000L + index * 1_500_000_000L
+            val pulse = sourcePulse("pulse-$index", at)
+            val loss = sourceLoss("loss-$index", at + 200_000_000L)
+            engine.accept(pulse)
+            engine.accept(loss)
+            output += engine.accept(citedUse("use-$index", at, pulse, loss))
+        }
+        assertTrue(output.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `cited half second losses remain half second despite varying fused anchors`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        listOf(1_300_000_000L, 1_500_000_000L, 2_300_000_000L).forEachIndexed { index, anchor ->
+            val loss = sourceLoss("fast-loss-$index", 1_400_000_000L + index * 500_000_000L)
+            engine.accept(loss)
+            output += engine.accept(citedUse("fast-use-$index", anchor, loss))
+        }
+        val identity = output.last { it.payload is FastMoveIdentified }.payload as FastMoveIdentified
+        assertEquals("Water Gun", identity.moveName)
+        assertEquals(500_000_000L, identity.observedMedianIntervalNanos)
+    }
+
+    @Test fun `wrong recipient or unavailable cited impact never borrows the fused time`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        repeat(3) { index ->
+            val at = 1_000_000_000L + index * 1_500_000_000L
+            val otherSide = sourceLoss("other-$index", at, ActivePokemonSide.OPPONENT)
+            engine.accept(otherSide)
+            assertTrue(engine.accept(citedUse("wrong-$index", at, otherSide)).isEmpty())
+            val absent = article("absent-$index", HpBarBorderPulse(ActivePokemonSide.PLAYER, ApertureStatus.ABSENT))
+                .copy(monotonicTimeNanos = at)
+            engine.accept(absent)
+            val pulseUse = fastUseAt("absent-use-$index", at, listOf("HP_BORDER_PULSE"))
+                .copy(predecessorIds = listOf(absent.id))
+            assertTrue(engine.accept(pulseUse).isEmpty())
+        }
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `late cited loss cannot cross the charged phase floor`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        engine.accept(article("incoming", com.example.overdex.battle.custody.AttackIncoming)
+            .copy(monotonicTimeNanos = 1_000_000_000L))
+        val guarded = sourceLoss("guarded", 12_900_000_000L)
+        engine.accept(guarded)
+        engine.accept(citedUse("guarded-use", 13_010_000_000L, guarded))
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        repeat(2) { index ->
+            val at = 14_400_000_000L + index * 1_500_000_000L
+            val loss = sourceLoss("after-charge-$index", at)
+            engine.accept(loss)
+            output += engine.accept(citedUse("after-charge-use-$index", at, loss))
+        }
+        assertTrue(output.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+    }
+
+    @Test fun `cited source before a new appearance cannot seed its cadence`() = runBlocking {
+        val engine = sourceCadenceEngine()
+        engine.accept(article("return", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT,
+            "Source Cadence", 999, appearanceStartedAtNanos = 5_000_000_000L))
+            .copy(monotonicTimeNanos = 5_000_000_000L))
+        val earlier = sourceLoss("previous-appearance", 4_900_000_000L)
+        engine.accept(earlier)
+        engine.accept(citedUse("late-use", 5_010_000_000L, earlier))
+        val output = mutableListOf<FastMoveCadenceDerivation>()
+        repeat(2) { index ->
+            val at = 6_400_000_000L + index * 1_500_000_000L
+            val loss = sourceLoss("new-loss-$index", at)
+            engine.accept(loss)
+            output += engine.accept(citedUse("new-use-$index", at, loss))
         }
         assertTrue(output.none { it.payload is FastMoveIdentified })
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
@@ -1422,6 +1549,29 @@ class FastMoveCadenceInferenceTest {
     private fun effect(id: String, effectiveness: FastMoveEffectiveness, at: Long) = article(id,
         FastMoveEffectivenessWitnessed(effectiveness, ActivePokemonSide.PLAYER, effectiveness.name)
     ).copy(monotonicTimeNanos = at)
+
+    private suspend fun sourceCadenceEngine(): FastMoveCadenceInference {
+        val pokemon = Pokemon(999, "Source Cadence", listOf(PokemonType.WATER), "test",
+            fastMoves = listOf(move("Waterfall", 3, 10, PokemonType.WATER),
+                move("Quick Attack", 2, 8, PokemonType.NORMAL)), chargedMoves = emptyList())
+        return FastMoveCadenceInference(SinglePokemonKnowledge(pokemon)).also {
+            it.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT,
+                pokemon.name, pokemon.id)))
+        }
+    }
+
+    private fun sourceLoss(id: String, at: Long, side: ActivePokemonSide = ActivePokemonSide.PLAYER) =
+        article(id, ActiveHpBarDamageTickMeasured(side, .8f, .75f, .05f)).copy(monotonicTimeNanos = at)
+
+    private fun sourcePulse(id: String, at: Long) = article(id,
+        HpBarBorderPulse(ActivePokemonSide.PLAYER, ApertureStatus.PRESENT, .3f, 3))
+        .copy(monotonicTimeNanos = at)
+
+    private fun citedUse(id: String, at: Long, vararg sources: RealityArticle): RealityArticle {
+        val kinds = sources.map { if (it.payload is ActiveHpBarDamageTickMeasured) "HP_DAMAGE_TICK" else "HP_BORDER_PULSE" }
+            .distinct()
+        return fastUseAt(id, at, kinds).copy(predecessorIds = sources.map { it.id })
+    }
 
     private fun move(
         name: String,
