@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Overdex · Fast Move listening homework</title>
+  <style>
+    :root { --ink:#203240; --muted:#526675; --paper:#f3f5f2; --card:#fff; --line:#d5dfdf; --accent:#155c60; --soft:#e7f2ef; --warn:#8c4623; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button,select,.file-label { min-height:44px; border:1px solid #9eb3b8; border-radius:9px; background:white; color:var(--ink); padding:9px 14px; cursor:pointer; }
+    button:hover,.file-label:hover { background:var(--soft); }
+    button:disabled { opacity:.5; cursor:default; }
+    button.primary { background:var(--accent); color:white; border-color:var(--accent); font-weight:650; }
+    button.primary:hover { background:#10484b; }
+    :focus-visible { outline:3px solid #ce721e; outline-offset:3px; }
+    a { color:var(--accent); }
+    h1,h2,h3,p { margin:0; }
+    h1 { font-size:clamp(28px,4vw,43px); line-height:1.15; letter-spacing:-1.3px; margin:5px 0 13px; }
+    h2 { font-size:23px; line-height:1.3; }
+    h3 { font-size:18px; line-height:1.3; }
+    .page { max-width:1230px; margin:auto; padding:34px 24px 50px; }
+    .eyebrow { font-size:12px; font-weight:750; letter-spacing:1.8px; text-transform:uppercase; color:var(--accent); }
+    .lede { max-width:780px; color:var(--muted); }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:20px 0 12px; }
+    .toolbar .push { margin-left:auto; }
+    .small { font-size:13px; color:var(--muted); }
+    .notice { padding:12px 15px; border-radius:9px; background:#fff1e4; color:#71371b; border:1px solid #dfba98; margin:12px 0; }
+    [hidden] { display:none !important; }
+    .progress-row { display:flex; align-items:center; gap:14px; margin:17px 0 23px; }
+    progress { width:220px; max-width:42vw; height:9px; accent-color:var(--accent); }
+    .workspace { display:grid; grid-template-columns:170px minmax(0,1fr); gap:24px; align-items:start; }
+    .case-nav { display:grid; gap:7px; }
+    .case-nav button { text-align:left; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .case-nav button[aria-current="step"] { background:var(--accent); border-color:var(--accent); color:white; }
+    .case-nav .marker { font-size:11px; font-weight:650; }
+    .nav-help { margin-top:13px; }
+    .panel { border:1px solid var(--line); border-radius:16px; background:var(--card); padding:23px; box-shadow:0 3px 15px #20324006; }
+    .case-header { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; margin-bottom:20px; }
+    .badge { display:inline-block; border:1px solid #bbd5cc; border-radius:30px; background:var(--soft); color:#245a4b; padding:4px 10px; font-size:12px; font-weight:700; white-space:nowrap; }
+    .instructions { margin:0 0 17px; color:var(--muted); font-size:14px; }
+    .play-settings { display:flex; gap:18px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .play-settings label { display:flex; align-items:center; gap:8px; font-size:14px; }
+    input[type="checkbox"],input[type="radio"] { accent-color:var(--accent); width:18px; height:18px; flex-shrink:0; }
+    .recording { border:1px solid #9abdc0; background:#f2f8f7; border-radius:12px; padding:17px; margin-bottom:15px; }
+    .sound-head { display:flex; justify-content:space-between; gap:10px; align-items:baseline; margin-bottom:10px; }
+    audio { width:100%; height:44px; display:block; }
+    .audio-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .audio-actions button { font-size:13px; padding:7px 10px; }
+    .play-status { min-height:20px; font-size:12px; color:var(--muted); margin-top:7px; }
+    .candidates { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:13px; }
+    .candidate { border:1px solid var(--line); border-radius:12px; padding:15px; min-width:0; }
+    .candidate-name { color:var(--accent); font-size:15px; margin:10px 0 4px; font-weight:700; }
+    .scores { font-size:12px; color:var(--muted); }
+    .section-heading { margin:24px 0 10px; font-size:18px; }
+    fieldset { border:0; padding:0; margin:18px 0 0; min-width:0; }
+    legend { font-weight:700; margin-bottom:9px; }
+    .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:9px; }
+    .choice { display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:9px; padding:11px; min-height:48px; cursor:pointer; font-size:14px; }
+    .choice:has(input:checked) { border-color:var(--accent); background:var(--soft); }
+    .confidence { display:flex; flex-wrap:wrap; gap:9px; }
+    .confidence .choice { min-width:130px; }
+    .notes-label { display:block; font-weight:700; margin:18px 0 8px; }
+    textarea { display:block; width:100%; min-height:100px; resize:vertical; border:1px solid #9eb3b8; border-radius:9px; padding:12px; background:#fcfdfb; color:var(--ink); }
+    .review-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:15px; }
+    .review-state { font-size:13px; color:var(--muted); }
+    .reveal-bar { margin-top:22px; border-top:1px solid var(--line); padding-top:18px; }
+    .context { margin-top:17px; padding:18px; background:#f5f7f6; border:1px solid var(--line); border-radius:12px; }
+    .context p + p { margin-top:8px; }
+    .context dl { display:grid; grid-template-columns:130px minmax(0,1fr); gap:6px 14px; margin:13px 0; font-size:13px; }
+    .context dt { color:var(--muted); }
+    .context dd { margin:0; overflow-wrap:anywhere; }
+    .context ul { padding-left:20px; font-size:13px; }
+    .table-wrap { overflow-x:auto; margin:10px 0; }
+    table { border-collapse:collapse; width:100%; font-size:12px; text-align:left; }
+    th,td { border-bottom:1px solid var(--line); padding:8px 10px 8px 0; white-space:nowrap; }
+    th { color:var(--muted); font-weight:650; }
+    .provenance { font-size:12px; margin-top:15px; }
+    .provenance summary { cursor:pointer; padding:8px 0; }
+    .footer { margin-top:23px; max-width:900px; font-size:13px; color:var(--muted); }
+    #status { min-height:24px; font-size:13px; color:var(--accent); }
+    #status.error { color:#8c311a; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media(max-width:760px) { .page { padding:23px 14px 35px; } .workspace { grid-template-columns:1fr; gap:14px; } .case-nav { display:flex; flex-wrap:wrap; } .case-nav button { flex:1 1 100px; } .nav-help { display:none; } .panel { padding:17px; } .toolbar .push { margin-left:0; } .context dl { grid-template-columns:1fr; gap:2px; } .context dd { margin-bottom:8px; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="eyebrow">Overdex · Listening homework</div>
+    <h1>Which sound belongs here?</h1>
+    <p class="lede">Listen to the recorded battle snippet, compare the lettered references, then tell us what you hear. A close call is a useful answer. Names and matcher scores stay hidden until you choose to reveal them.</p>
+    <div class="toolbar">
+      <button id="export" type="button">Export answers</button>
+      <button id="import" type="button">Import answers</button>
+      <input id="import-file" type="file" accept=".json,application/json" hidden>
+      <span id="set-summary" class="small"></span>
+      <button id="reset" class="push" type="button">Reset this set</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p id="storage-warning" class="notice" hidden></p>
+    <div class="progress-row"><progress id="progress" value="0" max="1" aria-label="Completed reviews"></progress><span id="progress-label" class="small"></span></div>
+  </header>
+  <div class="workspace">
+    <aside><nav id="case-nav" class="case-nav" aria-label="Listening cases"></nav><p class="small nav-help">Drafts save as you work. Choose an answer and confidence, then mark the case reviewed.</p></aside>
+    <main id="case-panel" class="panel" aria-labelledby="case-heading"></main>
+  </div>
+  <footer class="footer">These are selected saved comparisons, not a measurement of recognition accuracy. Your answers stay in this browser and in any JSON file you export. They do not change the match ledger or automatically retrain the recognizer. This sheet makes no network requests.</footer>
+</div>
+<script id="review-data" type="application/json">__REVIEW_DATA_JSON__</script>
+<script>
+(() => {
+  'use strict';
+  const data = JSON.parse(document.getElementById('review-data').textContent);
+  const ANSWER_VERSION = 'fast-move-audio-review-answers-v1';
+  const storageKey = 'overdex-fast-move-audio-review:' + data.reviewSetId;
+  const cases = data.cases;
+  const byId = new Map(cases.map(item => [item.id, item]));
+  const reviews = new Map();
+  const specialChoices = [['mixed','Mixed / overlapping sounds'],['another_sound','Another sound'],['no_fast_move','No Fast Move audible'],['unsure','Too close / unsure']];
+  const confidenceChoices = [['sure','Sure'],['tentative','Tentative'],['unsure','Unsure']];
+  let index = 0;
+  let speed = 1;
+  let loop = false;
+  let players = [];
+  let playbackFrame = null;
+  let currentPlayer = null;
+  const panel = document.getElementById('case-panel');
+  const nav = document.getElementById('case-nav');
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
+  }
+  function button(text, action, className) {
+    const node = el('button', className, text);
+    node.type = 'button';
+    node.addEventListener('click', action);
+    return node;
+  }
+  function status(message, error = false) {
+    const node = document.getElementById('status');
+    node.textContent = message;
+    node.classList.toggle('error', error);
+  }
+  function emptyReview() {
+    return {choice:null, confidence:null, notes:'', updatedAtUtc:null, reviewedAtUtc:null, revealedAtUtc:null, reviewedWithContext:false};
+  }
+  function reviewFor(item) {
+    if (!reviews.has(item.id)) reviews.set(item.id, emptyReview());
+    return reviews.get(item.id);
+  }
+  function complete(review) { return Boolean(review.choice && review.confidence && review.reviewedAtUtc); }
+  function seconds(number, signed = false) {
+    if (!Number.isFinite(number)) return 'Not retained';
+    return (number < 0 ? '−' : signed ? '+' : '') + Math.abs(number).toFixed(2) + ' s';
+  }
+  function percentage(number) { return Number.isFinite(number) ? (100 * number).toFixed(1) + '%' : 'Not retained'; }
+  function score(number) { return Number.isFinite(number) ? number.toFixed(6) : 'Not retained'; }
+  function sourceFor(item) {
+    return {archiveName:item.archiveName, matchId:item.matchId, sourceSha256:item.sourceSha256, articleId:item.articleId,
+      recordingSha256:item.recording.sha256, relativeSeconds:item.relativeSeconds, timeOrigin:item.timeOrigin || 'Match Start',
+      candidates:item.candidates.map(candidate => ({code:candidate.code, referenceSha256:candidate.reference.sha256,
+        matchingOffsetSeconds:candidate.matchingOffsetSeconds, referenceOffsetSeconds:candidate.referenceOffsetSeconds,
+        matchingDurationSeconds:candidate.matchingDurationSeconds}))};
+  }
+  function envelope() {
+    return {version:ANSWER_VERSION, datasetVersion:data.version, reviewSetId:data.reviewSetId, exportedAtUtc:new Date().toISOString(),
+      reviews:cases.map(item => ({id:item.id, source:sourceFor(item), review:{...reviewFor(item)}}))};
+  }
+  function storageFailure() {
+    const node = document.getElementById('storage-warning');
+    node.hidden = false;
+    node.textContent = 'Browser storage is unavailable. Your answers still work in this open page; export JSON before closing or reloading it.';
+  }
+  function persist() {
+    try { localStorage.setItem(storageKey, JSON.stringify(envelope())); }
+    catch (_) { storageFailure(); }
+  }
+  function canonical(value) {
+    if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+    if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + canonical(value[key])).join(',') + '}';
+    return JSON.stringify(value);
+  }
+  function validDate(value) { return value === null || (typeof value === 'string' && value.length <= 40 && Number.isFinite(Date.parse(value))); }
+  function validateImport(imported) {
+    if (!imported || imported.version !== ANSWER_VERSION || imported.datasetVersion !== data.version || imported.reviewSetId !== data.reviewSetId)
+      throw new Error('This answer file belongs to a different review set or format.');
+    if (!Array.isArray(imported.reviews) || imported.reviews.length > cases.length) throw new Error('The answer list is invalid.');
+    const staged = new Map();
+    for (const entry of imported.reviews) {
+      if (!entry || typeof entry.id !== 'string' || !byId.has(entry.id)) throw new Error('An answer refers to an unknown case.');
+      if (staged.has(entry.id)) throw new Error('The file contains a duplicate case.');
+      const item = byId.get(entry.id);
+      if (canonical(entry.source) !== canonical(sourceFor(item))) throw new Error('A source, audio hash, candidate assignment, or clip window does not match this sheet.');
+      const r = entry.review;
+      const choices = [...item.candidates.map(candidate => candidate.code), ...specialChoices.map(pair => pair[0])];
+      if (!r || (r.choice !== null && !choices.includes(r.choice)) ||
+          (r.confidence !== null && !confidenceChoices.some(pair => pair[0] === r.confidence)) ||
+          typeof r.notes !== 'string' || r.notes.length > 10000 ||
+          !validDate(r.updatedAtUtc) || !validDate(r.reviewedAtUtc) || !validDate(r.revealedAtUtc) ||
+          typeof r.reviewedWithContext !== 'boolean' ||
+          (r.reviewedAtUtc && (!r.choice || !r.confidence)) ||
+          (r.reviewedWithContext && !r.revealedAtUtc)) throw new Error('A review contains an invalid answer, date, or confidence value.');
+      staged.set(entry.id, {choice:r.choice, confidence:r.confidence, notes:r.notes, updatedAtUtc:r.updatedAtUtc,
+        reviewedAtUtc:r.reviewedAtUtc, revealedAtUtc:r.revealedAtUtc, reviewedWithContext:r.reviewedWithContext});
+    }
+    return staged;
+  }
+  function stopPlayers() {
+    players.forEach(player => player.audio.pause());
+    currentPlayer = null;
+    if (playbackFrame !== null) cancelAnimationFrame(playbackFrame);
+    playbackFrame = null;
+  }
+  function trackPlayback() {
+    if (playbackFrame !== null) cancelAnimationFrame(playbackFrame);
+    const tick = () => {
+      playbackFrame = null;
+      const player = currentPlayer;
+      if (!player || player.audio.paused) return;
+      enforceSegment(player);
+      if (!player.audio.paused) playbackFrame = requestAnimationFrame(tick);
+    };
+    playbackFrame = requestAnimationFrame(tick);
+  }
+  function safePlay(player) {
+    player.audio.play().catch(() => status('Playback could not start. Try the audio control again, or check your browser’s audio permissions.', true));
+  }
+  function enforceSegment(player) {
+    if (!player.segment || player.audio.paused) return;
+    if (player.audio.currentTime >= player.segment.end) {
+      if (loop) player.audio.currentTime = player.segment.start;
+      else { player.audio.pause(); player.audio.currentTime = player.segment.end; }
+    }
+  }
+  function playFull(player) {
+    stopPlayers();
+    player.segment = null;
+    player.audio.loop = loop;
+    player.audio.currentTime = 0;
+    player.label.textContent = 'Full clip';
+    safePlay(player);
+  }
+  function segmentFor(media, offset, duration) {
+    if (!Number.isFinite(offset) || !Number.isFinite(duration) || offset < 0 || duration <= 0 || offset >= media.durationSeconds) return null;
+    const end = Math.min(media.durationSeconds, offset + duration);
+    return end > offset ? {start:offset, end} : null;
+  }
+  function playSegment(player, segment, name) {
+    stopPlayers();
+    player.segment = segment;
+    player.audio.loop = false;
+    player.audio.currentTime = segment.start;
+    player.label.textContent = name + ' · ' + seconds(segment.start) + '–' + seconds(segment.end);
+    safePlay(player);
+  }
+  function audioPlayer(media, label, parent) {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.setAttribute('aria-label', label);
+    // Only the embedded WAV contract is playable; archive text is never HTML or an external URL.
+    if (typeof media.src === 'string' && media.src.startsWith('data:audio/wav;base64,')) audio.src = media.src;
+    audio.playbackRate = speed;
+    audio.loop = loop;
+    const playbackLabel = el('p', 'play-status', 'Full clip');
+    const player = {audio, media, label:playbackLabel, segment:null};
+    players.push(player);
+    audio.addEventListener('play', () => {
+      players.forEach(other => { if (other !== player) other.audio.pause(); });
+      currentPlayer = player;
+      audio.playbackRate = speed;
+      audio.loop = loop && !player.segment;
+      if (player.segment && (audio.currentTime < player.segment.start || audio.currentTime >= player.segment.end)) audio.currentTime = player.segment.start;
+      trackPlayback();
+    });
+    audio.addEventListener('timeupdate', () => enforceSegment(player));
+    audio.addEventListener('ended', () => {
+      if (loop && player.segment) { audio.currentTime = player.segment.start; safePlay(player); }
+    });
+    audio.addEventListener('error', () => { playbackLabel.textContent = 'This embedded audio could not be loaded.'; });
+    parent.append(audio);
+    const actions = el('div', 'audio-actions');
+    actions.append(button('Play full clip', () => playFull(player)));
+    parent.append(actions, playbackLabel);
+    return player;
+  }
+  function progress() {
+    const count = cases.filter(item => complete(reviewFor(item))).length;
+    document.getElementById('progress').max = cases.length || 1;
+    document.getElementById('progress').value = count;
+    document.getElementById('progress-label').textContent = count + ' of ' + cases.length + ' reviewed';
+    nav.replaceChildren();
+    cases.forEach((item, position) => {
+      const review = reviewFor(item);
+      const node = button('', () => navigate(position));
+      node.append(el('span', '', 'Case ' + (position + 1)), el('span', 'marker', complete(review) ? 'Done' : review.choice || review.notes ? 'Draft' : 'New'));
+      if (position === index) node.setAttribute('aria-current', 'step');
+      node.setAttribute('aria-label', 'Case ' + (position + 1) + (complete(review) ? ', reviewed' : ', unreviewed'));
+      nav.append(node);
+    });
+  }
+  function navigate(position) {
+    index = position;
+    render();
+    document.getElementById('case-heading').focus({preventScroll:true});
+  }
+  function nextUnreviewed() {
+    for (let distance = 1; distance <= cases.length; distance++) {
+      const next = (index + distance) % cases.length;
+      if (!complete(reviewFor(cases[next]))) { navigate(next); return; }
+    }
+    status('Every case is reviewed. Export your answers to keep a portable copy.');
+  }
+  function radioGroup(values, name, selected, onChange, className) {
+    const group = el('div', className);
+    values.forEach(([value, text]) => {
+      const label = el('label', 'choice');
+      const input = document.createElement('input');
+      input.type = 'radio'; input.name = name; input.value = value; input.checked = selected === value;
+      input.addEventListener('change', () => onChange(value));
+      label.append(input, el('span', '', text)); group.append(label);
+    });
+    return group;
+  }
+  function contextBlock(item) {
+    const block = el('section', 'context');
+    block.setAttribute('aria-label', 'Revealed matcher and battle context');
+    block.append(el('h3', '', 'What the saved record says'));
+    block.append(el('p', 'small', 'Similarity is a comparison score, not the probability that a move occurred. Original-spectrum and changing-spectrum rankings can disagree. An equipped or identified move does not guarantee its sound is present in this window.'));
+    const facts = el('dl');
+    const fact = (label, value) => facts.append(el('dt', '', label), el('dd', '', value));
+    fact('Archive', item.archiveName);
+    fact('Clip start', seconds(item.relativeSeconds, true) + ' from ' + (item.timeOrigin || 'Match Start'));
+    fact('Captured', item.capturedAtUtc || 'Not retained');
+    fact('Matcher outcome', item.accepted ? 'Accepted by the saved matcher' : 'Not accepted by the saved matcher');
+    if (item.priorityReason) fact('Selected because', item.priorityReason);
+    if (Number.isFinite(item.scoreGap)) fact('Original score gap', score(item.scoreGap));
+    if (Number.isFinite(item.changingLead)) fact('Changing lead', score(item.changingLead) + ' (original leader minus the strongest alternative on changing spectrum)');
+    if (item.candidateCoverage !== undefined) fact('Saved coverage', typeof item.candidateCoverage === 'object' ? JSON.stringify(item.candidateCoverage) : item.candidateCoverage);
+    const context = item.context || {};
+    fact('Your Pokémon', context.playerSpecies || 'Unresolved');
+    fact('Opponent', context.opponentSpecies || 'Unresolved');
+    if (context.userReportedPattern) fact('User-provided test context', context.userReportedPattern);
+    block.append(facts);
+    block.append(el('h3', '', 'Nearby HP measurements'));
+    block.append(el('p', 'small', 'Times below are relative to this clip’s start; negative times are before it. These are source measurements, not an attribution of damage to a candidate. Compact recordings may omit bar geometry.'));
+    if (Array.isArray(context.hpTicks) && context.hpTicks.length) {
+      const wrap = el('div', 'table-wrap');
+      const table = el('table');
+      const caption = el('caption', 'sr-only', 'Nearby HP source measurements');
+      const head = el('thead'); const row = el('tr');
+      ['Time','Side','Before','After','Lost','Bar width'].forEach(label => { const th = el('th', '', label); th.scope = 'col'; row.append(th); });
+      head.append(row); const body = el('tbody');
+      context.hpTicks.forEach(tick => {
+        const tr = el('tr');
+        [seconds(tick.timeSeconds, true),tick.side,percentage(tick.beforeFraction),percentage(tick.afterFraction),percentage(tick.lostFraction),Number.isFinite(tick.barWidthPixels) ? tick.barWidthPixels + ' px' : 'Not retained'].forEach(text => tr.append(el('td', '', text)));
+        body.append(tr);
+      });
+      table.append(caption, head, body); wrap.append(table); block.append(wrap);
+    } else block.append(el('p', 'small', 'No nearby HP loss measurements were retained for this snippet.'));
+    if (Array.isArray(context.events) && context.events.length) {
+      block.append(el('h3', 'section-heading', 'Nearby recorded events'));
+      const list = el('ul');
+      context.events.forEach(event => list.append(el('li', '', seconds(event.timeSeconds, true) + ' · ' + event.label + (event.side ? ' · ' + event.side : ''))));
+      block.append(list);
+    }
+    const provenance = el('details', 'provenance');
+    provenance.append(el('summary', '', 'Source IDs and set notes'));
+    const ids = el('dl');
+    [['Case',item.id],['Match',item.matchId],['Article',item.articleId],['Archive SHA-256',item.sourceSha256],['Recording SHA-256',item.recording.sha256]].forEach(([label,value]) => ids.append(el('dt','',label),el('dd','',value)));
+    item.candidates.forEach(candidate => ids.append(el('dt','','Reference '+candidate.code),el('dd','',candidate.reference.sha256)));
+    (context.hpTicks || []).forEach((tick, position) => ids.append(el('dt','','HP source '+(position+1)),el('dd','',tick.articleId)));
+    provenance.append(ids);
+    if (data.summary && data.summary.notes) provenance.append(el('p','small',data.summary.notes));
+    const missing = data.summary && data.summary.missingNamedReferences;
+    if (Array.isArray(missing) && missing.length) provenance.append(el('p','small','Named references unavailable in this source library: '+missing.join(', ')+'. Their absence is not evidence that these sounds were absent from a recording.'));
+    block.append(provenance);
+    return block;
+  }
+  function render() {
+    stopPlayers(); players = []; panel.replaceChildren(); progress();
+    const item = cases[index];
+    if (!item) { panel.append(el('p','','This set has no playable cases.')); return; }
+    const review = reviewFor(item);
+    const revealed = Boolean(review.revealedAtUtc);
+    const header = el('div','case-header');
+    const headingWrap = el('div');
+    const heading = el('h2','','Case '+(index+1)); heading.id='case-heading'; heading.tabIndex=-1;
+    headingWrap.append(heading,el('p','small','Clip starts '+seconds(item.relativeSeconds,true)+' from '+(item.timeOrigin || 'Match Start')));
+    header.append(headingWrap,el('span','badge',revealed?'Context revealed':'Blind comparison')); panel.append(header);
+    panel.append(el('p','instructions','1. Listen to the recording.  2. Compare the references.  3. Choose what you hear and how sure you feel. Letters are stable and do not indicate matcher rank.'));
+    const settings = el('div','play-settings');
+    const loopLabel = el('label'); const loopInput = document.createElement('input'); loopInput.type='checkbox'; loopInput.checked=loop;
+    loopInput.addEventListener('change',()=>{loop=loopInput.checked;players.forEach(player=>{player.audio.loop=loop&&!player.segment;});});
+    loopLabel.append(loopInput,el('span','','Loop playback'));
+    const speedLabel = el('label','','Speed'); const select = document.createElement('select'); select.setAttribute('aria-label','Playback speed');
+    [1,.75,.5].forEach(value=>{const option=el('option','',value+'×');option.value=String(value);option.selected=speed===value;select.append(option);});
+    select.addEventListener('change',()=>{speed=Number(select.value);players.forEach(player=>{player.audio.playbackRate=speed;});});speedLabel.append(select);
+    settings.append(loopLabel,speedLabel,button('Pause all',stopPlayers)); panel.append(settings);
+    const recording=el('section','recording');const recordingHead=el('div','sound-head');recordingHead.append(el('h3','','Recorded snippet'),el('span','small',seconds(item.recording.durationSeconds)));recording.append(recordingHead);
+    const recordedPlayer=audioPlayer(item.recording,'Recorded battle snippet',recording);panel.append(recording);
+    const candidateGrid=el('div','candidates');
+    item.candidates.forEach(candidate=>{
+      const card=el('section','candidate');const head=el('div','sound-head');head.append(el('h3','','Reference '+candidate.code),el('span','small',seconds(candidate.reference.durationSeconds)));card.append(head);
+      const referencePlayer=audioPlayer(candidate.reference,'Reference '+candidate.code,card);
+      const segmentActions=el('div','audio-actions');
+      const recordedSegment=segmentFor(item.recording,candidate.matchingOffsetSeconds,candidate.matchingDurationSeconds);
+      const referenceSegment=segmentFor(candidate.reference,candidate.referenceOffsetSeconds,candidate.matchingDurationSeconds);
+      const recordedButton=button('Recording window '+candidate.code,()=>playSegment(recordedPlayer,recordedSegment,'Changing-spectrum window '+candidate.code));
+      const referenceButton=button('Reference window '+candidate.code,()=>playSegment(referencePlayer,referenceSegment,'Changing-spectrum window '+candidate.code));
+      recordedButton.disabled=!recordedSegment;referenceButton.disabled=!referenceSegment;segmentActions.append(recordedButton,referenceButton);card.append(segmentActions);
+      if(revealed){card.append(el('p','candidate-name',candidate.moveName),el('p','scores','Original similarity '+score(candidate.similarity)+' · Changing similarity '+score(candidate.changingSimilarity)));}
+      candidateGrid.append(card);
+    });panel.append(candidateGrid);
+    panel.append(el('p','small','Window buttons play the saved changing-spectrum alignment. The original-spectrum match may use a different window. Full clips retain their original audio levels. Displayed lengths describe the sound files; move-cycle timing is measured separately.'));
+    const answerField=el('fieldset');answerField.append(el('legend','','What is the closest description?'));
+    const confidenceField=el('fieldset');confidenceField.append(el('legend','','How confident are you?'));
+    const reviewState=el('span','review-state');reviewState.setAttribute('aria-live','polite');
+    const saveButton=button('Mark reviewed',()=>{
+      if(!review.choice||!review.confidence){status('Choose an answer and a confidence level first.',true);return;}
+      review.reviewedAtUtc=new Date().toISOString();review.updatedAtUtc=review.reviewedAtUtc;review.reviewedWithContext=Boolean(review.revealedAtUtc);persist();updateReviewState();progress();status('Case '+(index+1)+' marked reviewed. Export answers whenever you want a backup.');
+    },'primary');
+    function updateReviewState(){saveButton.disabled=!review.choice||!review.confidence;reviewState.textContent=complete(review)?'Reviewed'+(review.reviewedWithContext?' with context revealed.':' before revealing context.'):(review.choice||review.notes||review.confidence?'Draft · not yet marked reviewed.':'No answer selected.');}
+    function edit(field,value){review[field]=value;review.updatedAtUtc=new Date().toISOString();review.reviewedAtUtc=null;review.reviewedWithContext=false;persist();updateReviewState();progress();}
+    answerField.append(radioGroup([...item.candidates.map(candidate=>[candidate.code,'Reference '+candidate.code]),...specialChoices],'answer',review.choice,value=>edit('choice',value),'choices'));
+    confidenceField.append(radioGroup(confidenceChoices,'confidence',review.confidence,value=>edit('confidence',value),'confidence'));
+    panel.append(answerField,confidenceField);
+    const notesLabel=el('label','notes-label','Listening notes (optional)');notesLabel.htmlFor='listening-notes';
+    const notes=document.createElement('textarea');notes.id='listening-notes';notes.maxLength=10000;notes.value=review.notes;notes.placeholder='For example: A has the closer rhythm, but I hear another sound over it.';notes.addEventListener('input',()=>edit('notes',notes.value));
+    panel.append(notesLabel,notes);const actions=el('div','review-actions');actions.append(saveButton,button('Next unreviewed',nextUnreviewed),reviewState);panel.append(actions);updateReviewState();
+    const revealBar=el('div','reveal-bar');
+    if(!revealed){revealBar.append(button('Reveal names, scores & context',()=>{review.revealedAtUtc=new Date().toISOString();review.updatedAtUtc=review.revealedAtUtc;persist();render();status('Context revealed for this case. This is recorded in your exported answers.');}),el('p','small','Try a blind judgment first. Revealing is optional and is recorded with your answer.'));}
+    else{revealBar.append(el('p','small','Context has been revealed for this case. Its reveal history is retained even if you change your answer.'),contextBlock(item));}
+    panel.append(revealBar);
+  }
+  document.getElementById('export').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(envelope(),null,2)+'\n'],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='overdex-audio-answers-'+data.reviewSetId+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Answer download requested. Keep the JSON file to restore or share your work.');
+  });
+  const importFile=document.getElementById('import-file');
+  document.getElementById('import').addEventListener('click',()=>importFile.click());
+  importFile.addEventListener('change',async()=>{
+    const file=importFile.files&&importFile.files[0];if(!file)return;
+    try{
+      if(file.size>2*1024*1024)throw new Error('Answer files must be smaller than 2 MB.');
+      const staged=validateImport(JSON.parse(await file.text()));
+      staged.forEach((review,id)=>{
+        // Importing an older blind draft cannot undo having seen this case's context.
+        const previous=reviews.get(id);
+        if(previous&&previous.revealedAtUtc&&(!review.revealedAtUtc||Date.parse(previous.revealedAtUtc)<Date.parse(review.revealedAtUtc))) review.revealedAtUtc=previous.revealedAtUtc;
+        reviews.set(id,review);
+      });
+      persist();render();status('Imported '+staged.size+' case reviews. All source IDs and hashes matched.');
+    }
+    catch(error){status('Nothing imported. '+(error instanceof SyntaxError?'This is not valid JSON.':error.message),true);}
+    finally{importFile.value='';}
+  });
+  document.getElementById('reset').addEventListener('click',()=>{
+    if(!window.confirm('Reset all answers and reveal history for this review set? Export a backup first if you want to keep them.'))return;
+    reviews.clear();persist();render();status('This review set was reset. Previously exported files are unchanged.');
+  });
+  try{const saved=localStorage.getItem(storageKey);if(saved){const staged=validateImport(JSON.parse(saved));staged.forEach((review,id)=>reviews.set(id,review));status('Restored answers saved in this browser.');}}
+  catch(error){if(error instanceof DOMException)storageFailure();else status('Saved browser answers could not be restored. They were not imported; you can try a previously exported JSON file.',true);}
+  document.getElementById('set-summary').textContent=cases.length+' cases · '+(data.summary&&data.summary.archiveCount||0)+' battles · works offline';
+  render();
+  window.addEventListener('pagehide',stopPlayers);
+})();
+</script>
+</body>
+</html>
