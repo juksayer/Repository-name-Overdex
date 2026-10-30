@@ -578,6 +578,17 @@ class FastMoveCadenceInference(
             return emptyList()
         }
         if (states.size < 2 || states.values.any { it.possibleMoves.isEmpty() }) return retainUnassigned()
+        // A cry/entry can precede the incoming species' readable badge. Its
+        // sound need not be legal for the departing combatant, so retain the
+        // immutable measurement before ranking against the still-old pool.
+        if (audioEntryCues.isNotEmpty() && sound.referenceCandidates.any { candidate ->
+                val segmentAt = clipAt + candidate.matchingOffsetNanos
+                val alignedStart = segmentAt - candidate.referenceOffsetNanos
+                candidate.matchingOffsetNanos >= 0 && candidate.referenceOffsetNanos >= 0 &&
+                    candidate.matchedDurationNanos > 0 && segmentAt >= cadenceFloorNanos &&
+                    audioIdentityGate.allows(segmentAt) && audioIdentityGate.allows(alignedStart) &&
+                    audioEntryCues.values.any { segmentAt >= it.first }
+            }) return retainUnassigned()
         val supportingContext = states.values.flatMap { listOf(it.speciesArticleId) + it.appearanceEvidence } +
             configuredPlayerSlots.values.map { it.second.articleId } +
             sound.referenceSearchScopes.flatMap { it.contextArticleIds }.map(::ArticleId)
@@ -591,9 +602,7 @@ class FastMoveCadenceInference(
             val alignedStart = segmentAt - candidate.referenceOffsetNanos
             val phaseAllowed = segmentAt >= cadenceFloorNanos && audioIdentityGate.allows(segmentAt) &&
                 audioIdentityGate.allows(alignedStart)
-            val waitingForEntry = audioEntryCues.values.any { segmentAt >= it.first }
-            if (phaseAllowed && waitingForEntry) retainUnassigned()
-            phaseAllowed && !waitingForEntry && states.values.none { alignedStart < it.audioActiveSinceNanos }
+            phaseAllowed && states.values.none { alignedStart < it.audioActiveSinceNanos }
         }
         // Only guarded candidates can update presentation. Keep all their same-
         // side alternatives for ranking and coverage checks.
@@ -670,7 +679,8 @@ class FastMoveCadenceInference(
             if (waiting.size > MAX_CADENCE_HISTORY) waiting.removeAt(0)
             return emptyList()
         }
-        if (onset < max(appearanceStarts[side] ?: Long.MIN_VALUE, cadenceFloorNanos)) return emptyList()
+        if (onset < maxOf(appearanceStarts[side] ?: Long.MIN_VALUE,
+                state.appearanceBoundaryNanos ?: Long.MIN_VALUE, cadenceFloorNanos)) return emptyList()
         val previousAt = state.lastSoundOnsetNanos
         val previousArticle = state.lastSoundArticle
         state.lastSoundOnsetNanos = onset
@@ -760,11 +770,15 @@ class FastMoveCadenceInference(
         cadence: CadenceInput,
     ): List<FastMoveCadenceDerivation> {
         val attackingSide = cadence.attackingSide
-        val start = max(appearanceStarts[attackingSide] ?: Long.MIN_VALUE, cadenceFloorNanos)
+        val state = states[attackingSide]
+        val start = maxOf(appearanceStarts[attackingSide] ?: Long.MIN_VALUE,
+            state?.appearanceBoundaryNanos ?: Long.MIN_VALUE, cadenceFloorNanos)
         val end = cadence.eventAtNanos ?: article.monotonicTimeNanos
         // A cadence spanning a witnessed change cannot be assigned to the new combatant.
+        // The first resolved identity can supply its own appearance boundary;
+        // queued testimony must respect it even without a previous known species.
         if (end == null || end - cadence.intervalNanos < start) return emptyList()
-        val state = states[attackingSide] ?: run {
+        if (state == null) {
             val waiting = pending.getOrPut(attackingSide) { mutableListOf() }
             if (waiting.none { it.id == article.id }) waiting += article
             // The Timeline retains the complete evidence; this is only the live working set.

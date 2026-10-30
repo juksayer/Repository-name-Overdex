@@ -62,20 +62,31 @@ class FastMoveAudioPreferenceTrackerTest {
         assertNull(t.preference(PLAYER, context, 8_500_000_001))
     }
 
-    @Test fun `ties low scores missing references shared moves and illegal winners do not create a preference`() {
+    @Test fun `ties low scores missing references and shared moves do not create a preference`() {
         val cases = listOf(
             weak.map { if (it.moveName == "Iron Tail") it.copy(similarity = .885f) else it } to context,
             weak.map { it.copy(similarity = .6f) } to context,
             weak.map { it.copy(changingSimilarity = .5f) } to context,
             weak.filterNot { it.moveName == "Iron Tail" } to context,
             weak to context.map { it.copy(legalMoveNames = context.first().legalMoveNames) },
-            (listOf(candidate("Ember", .95f, .9f)) + weak) to context,
         )
         for ((scores, fighters) in cases) {
             val t = FastMoveAudioPreferenceTracker()
             observe(t, 1_000_000_000, scores, fighters); observe(t, 2_500_000_000, scores, fighters)
             assertNull(t.preference(PLAYER, fighters, 2_500_000_000))
         }
+    }
+
+    @Test fun `impossible global winner cannot block repeated legal move comparisons`() {
+        val t = FastMoveAudioPreferenceTracker()
+        val scores = listOf(candidate("Ember", .99f, .99f)) + weak
+        observe(t, 1_000_000_000, scores)
+        assertNull("One weak comparison is still insufficient", t.preference(PLAYER, context, 1_000_000_000))
+        observe(t, 2_500_000_000, scores)
+        val preferred = t.preference(PLAYER, context, 2_500_000_000)
+        assertEquals("Dragon Breath", preferred?.moveName)
+        assertTrue(preferred?.moveName in context.first().legalMoveNames)
+        assertNull("An illegal resemblance cannot be assigned to the opponent", t.preference(OPPONENT, context, 2_500_000_000))
     }
 
     @Test fun `conflicting comparison clears preference and needs repeated evidence for its replacement`() {

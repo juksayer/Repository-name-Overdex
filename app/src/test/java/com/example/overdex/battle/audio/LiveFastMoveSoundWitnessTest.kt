@@ -33,8 +33,8 @@ class LiveFastMoveSoundWitnessTest {
     @Test fun `missed countdown combat opens retained audio with species and damage provenance but no invented start`() =
         captureAfter(ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, 1f, .9f, .1f),
             context = listOf(
-                ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu"),
-                ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Snorlax")))
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Player Fixture"),
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Opponent Fixture")))
 
     @Test fun `ambiguous comparison keeps its PCM and rejected status while overlapping windows are rate limited`() =
         captureAfter(CountdownGlyphWitnessed("2", .99f, 1), ambiguous = true)
@@ -44,15 +44,15 @@ class LiveFastMoveSoundWitnessTest {
 
     @Test fun `one known side retains legal comparison but cannot accept mixed sound identity`() =
         captureAfter(VsScreenWitnessed,
-            context = listOf(ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu")))
+            context = listOf(ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Player Fixture")))
 
     @Test fun `switch while PCM is being persisted cannot publish stale sound conclusions`() =
         captureAfter(VsScreenWitnessed, expectCapture = false, invalidateDuringStorage = true)
 
     private fun captureAfter(opening: TestimonyPayload, ambiguous: Boolean = false,
         context: List<TestimonyPayload> = listOf(
-            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Raichu"),
-            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Snorlax")),
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Player Fixture"),
+            ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Opponent Fixture")),
         expectCapture: Boolean = true, invalidateDuringStorage: Boolean = false) = runBlocking {
         val references = listOf("Spark" to "209-0_spark.wav", "Tackle" to "033-0_tackle.wav").map { (name, file) ->
             FastMoveSoundReference(name, file, requireNotNull(WavPcm16.decode(
@@ -67,10 +67,12 @@ class LiveFastMoveSoundWitnessTest {
         val timeline = InMemoryRealityTimeline()
         val custody = InMemoryTestimonyCustody()
         val pokemon = listOf(
-            Pokemon(26, "Raichu", listOf(PokemonType.ELECTRIC), "Kanto", fastMoves = listOf(
-                Move("Spark", PokemonType.ELECTRIC, 4, 7, true, 2)), chargedMoves = emptyList()),
-            Pokemon(143, "Snorlax", listOf(PokemonType.NORMAL), "Kanto", fastMoves = listOf(
-                Move("Tackle", PokemonType.NORMAL, 3, 3, true, 1)), chargedMoves = emptyList()))
+            Pokemon(26, "Player Fixture", listOf(PokemonType.ELECTRIC), "Kanto", fastMoves = listOf(
+                Move("Spark", PokemonType.ELECTRIC, 4, 7, true, 2),
+                Move("Tackle", PokemonType.NORMAL, 3, 3, true, 1)), chargedMoves = emptyList()),
+            Pokemon(143, "Opponent Fixture", listOf(PokemonType.NORMAL), "Kanto", fastMoves = listOf(
+                Move("Tackle", PokemonType.NORMAL, 3, 3, true, 1),
+                Move("Spark", PokemonType.ELECTRIC, 4, 7, true, 2)), chargedMoves = emptyList()))
         val knowledge = object : PokemonKnowledge {
             override suspend fun getPokemonByName(name: String) = pokemon.find { it.name == name }
             override suspend fun getPokemonById(id: Int) = pokemon.find { it.id == id }
@@ -129,7 +131,7 @@ class LiveFastMoveSoundWitnessTest {
             val measured = sound.payload as FastMoveSoundMeasured
             assertEquals(!ambiguous && context.size == 2, measured.referenceMatchAccepted)
             assertEquals(context.size, measured.referenceSearchScopes.size)
-            assertEquals(if (context.size == 2) setOf("Spark", "Tackle") else setOf("Spark"),
+            assertEquals(setOf("Spark", "Tackle"),
                 measured.referenceCandidates.map { it.moveName }.toSet())
             assertEquals(measured.referenceCandidates.map { it.moveName }.toSet(),
                 measured.referenceSearchScopes.flatMap { it.moveNames }.toSet())
@@ -151,7 +153,7 @@ class LiveFastMoveSoundWitnessTest {
             assertTrue(articles.none { it.payload is FastMoveEnergyDerived })
             assertTrue(articles.none { it.payload is MatchStarted })
             assertEquals((context + opening).map { payload -> articles.single { it.payload == payload }.id.value }.toSet(),
-                capture.evidenceReferences.toSet())
+                capture.evidenceReferences.orEmpty().toSet())
         } finally { releaseStorage.countDown(); witness.stop(); match.release(); root.deleteRecursively() }
     }
 }

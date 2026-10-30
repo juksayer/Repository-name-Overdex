@@ -1241,6 +1241,91 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
+    fun `Greninja first identity cannot borrow older unidentified border cadence to replace configured Water Shuriken`() = runBlocking {
+        val greninja = Pokemon(658, "Greninja", listOf(PokemonType.WATER, PokemonType.DARK), "Kalos",
+            fastMoves = listOf(move("Water Shuriken", 3, 14, PokemonType.WATER),
+                move("Feint Attack", 2, 6, PokemonType.DARK)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(greninja))
+        engine.accept(article("config", PlayerTeamSlotConfigured(2, "Greninja", 658,
+            "Water Shuriken", listOf("Hydro Cannon"))))
+        engine.accept(playerImpactCadence("unknown-old1", 874_046_231L)
+            .copy(monotonicTimeNanos = 154_046_000_000L))
+        engine.accept(playerImpactCadence("unknown-old2", 1_036_068_231L)
+            .copy(monotonicTimeNanos = 155_082_000_000L))
+
+        val results = engine.accept(article("first-identity", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.PLAYER, "Greninja", 658, playerTeamSlot = 2,
+            appearanceStartedAtNanos = 176_657_000_000L,
+        )).copy(monotonicTimeNanos = 176_657_000_000L))
+
+        val identities = results.mapNotNull { it.payload as? FastMoveIdentified }
+        assertEquals(listOf("Water Shuriken"), identities.map { it.moveName })
+        assertEquals("CONFIGURED_PLAYER_TEAM_AND_ACTIVE_SPECIES", identities.single().basis)
+        assertEquals("Water Shuriken", engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        assertTrue(results.none { result -> result.predecessorIds.any { it.value.startsWith("unknown-old") } })
+    }
+
+    @Test
+    fun `first explicit appearance rejects old and crossing raw intervals but keeps later complete cycles`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(borderCadence("entirely-old", 500_000_000L)
+            .copy(monotonicTimeNanos = 4_500_000_000L))
+        engine.accept(borderCadence("crossing", 500_000_000L)
+            .copy(monotonicTimeNanos = 5_200_000_000L))
+        val first = engine.accept(article("species", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, appearanceStartedAtNanos = 5_000_000_000L,
+        )).copy(monotonicTimeNanos = 5_400_000_000L))
+        assertTrue(first.none { it.payload is FastMoveIdentified })
+        assertTrue(engine.accept(borderCadence("new1", 500_000_000L)
+            .copy(monotonicTimeNanos = 5_700_000_000L)).isEmpty())
+
+        val resolved = engine.accept(borderCadence("new2", 500_000_000L)
+            .copy(monotonicTimeNanos = 6_200_000_000L)).single()
+
+        assertEquals("Water Gun", (resolved.payload as FastMoveIdentified).moveName)
+        assertEquals(setOf("species", "new1", "new2"), resolved.predecessorIds.map { it.value }.toSet())
+    }
+
+    @Test
+    fun `independent earlier entry boundary still permits cadence backfill before a readable badge`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("entry", com.example.overdex.battle.custody.SpeciesCheckMeasured(
+            ActivePokemonSide.OPPONENT, 1, "OPENED", "ENTRY", 10_000_000_000L, 0, 12_000_000_000L,
+        )).copy(monotonicTimeNanos = 10_100_000_000L))
+        engine.accept(borderCadence("early1", 500_000_000L)
+            .copy(monotonicTimeNanos = 10_600_000_000L))
+        engine.accept(borderCadence("early2", 500_000_000L)
+            .copy(monotonicTimeNanos = 11_100_000_000L))
+
+        val resolved = engine.accept(article("species", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, appearanceStartedAtNanos = 10_000_000_000L,
+        )).copy(monotonicTimeNanos = 11_500_000_000L)).single()
+
+        assertEquals("Water Gun", (resolved.payload as FastMoveIdentified).moveName)
+        assertTrue(resolved.predecessorIds.map { it.value }.containsAll(listOf("entry", "species", "early1", "early2")))
+    }
+
+    @Test
+    fun `legacy sound onsets before first explicit appearance cannot seed the new cadence`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        listOf(3_500_000_000L, 4_000_000_000L, 4_500_000_000L).forEachIndexed { index, onset ->
+            engine.accept(sound("old-sound$index", onset))
+        }
+        val first = engine.accept(article("species", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Sealeo", 364, appearanceStartedAtNanos = 5_000_000_000L,
+        )).copy(monotonicTimeNanos = 5_200_000_000L))
+        assertTrue(first.none { it.payload is FastMoveIdentified })
+        assertTrue(engine.accept(sound("new-sound1", 5_500_000_000L)).isEmpty())
+        assertTrue(engine.accept(sound("new-sound2", 6_000_000_000L)).isEmpty())
+
+        val resolved = engine.accept(sound("new-sound3", 6_500_000_000L)).single()
+
+        assertEquals("Water Gun", (resolved.payload as FastMoveIdentified).moveName)
+        assertEquals(setOf("species", "new-sound1", "new-sound2", "new-sound3"),
+            resolved.predecessorIds.map { it.value }.toSet())
+    }
+
+    @Test
     fun `entry clears pending prior-combatant intervals and crossing intervals`() = runBlocking {
         val pokemon = Pokemon(134, "Vaporeon", listOf(PokemonType.WATER), "Kanto",
             fastMoves = listOf(move("Water Gun", 1, 3)), chargedMoves = emptyList())

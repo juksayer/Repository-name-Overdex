@@ -146,7 +146,14 @@ class LiveFastMoveSoundWitness(
                     }
                     if ((accepted || keepComparison) && pending.size < 16 &&
                         gate.accepts(window.startNanos, window.endNanos, window.generation) && candidateContext.isCurrent(search)) {
-                        val peaks = (comparisonPeaks + candidates.take(1)).distinctBy { moveKey(it.moveName) }
+                        // A weak runner-up's wandering alignment must not preserve the
+                        // same accepted occurrence on every overlapping window. Keep an
+                        // additional side occurrence only when that side has a strict fit.
+                        val occurrencePeaks = if (accepted) candidates.take(1) + search.sideMoves.values.mapNotNull { names ->
+                            candidates.filter { candidate -> names.any { moveKey(it) == moveKey(candidate.moveName) } }
+                                .takeIf(FastMoveReferenceMatcher::accepts)?.firstOrNull()
+                        } else comparisonPeaks
+                        val peaks = occurrencePeaks.distinctBy { moveKey(it.moveName) }
                             .map { moveKey(it.moveName) to window.startNanos + it.matchingOffsetNanos - it.referenceOffsetNanos }
                         if (peaks.any { peak -> retained.none { it.first == peak.first && abs(it.second - peak.second) < 250_000_000L } }) {
                             val pcm = ByteArray(window.samples.size * 2)
