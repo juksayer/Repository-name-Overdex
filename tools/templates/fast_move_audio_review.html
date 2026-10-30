@@ -92,7 +92,7 @@
   <header>
     <div class="eyebrow">Overdex · Listening homework</div>
     <h1>Which sound belongs here?</h1>
-    <p class="lede">Listen to the recorded battle snippet, compare the lettered references, then tell us what you hear. A close call is a useful answer. Names and matcher scores stay hidden until you choose to reveal them.</p>
+    <p class="lede">Listen to the battle recording and compare the named move sounds the matcher considered. A close call is a useful answer. Move names are visible; matcher scores and battle context are optional.</p>
     <div class="toolbar">
       <button id="export" type="button">Export answers</button>
       <button id="import" type="button">Import answers</button>
@@ -111,6 +111,8 @@
   <footer class="footer">These are selected saved comparisons, not a measurement of recognition accuracy. Your answers stay in this browser and in any JSON file you export. They do not change the match ledger or automatically retrain the recognizer. This sheet makes no network requests.</footer>
 </div>
 <script id="review-data" type="application/json">__REVIEW_DATA_JSON__</script>
+<script>__AUDIO_SIGNAL_JS__</script>
+<script>__AUDIO_PLAYBACK_JS__</script>
 <script>
 (() => {
   'use strict';
@@ -149,7 +151,8 @@
     node.classList.toggle('error', error);
   }
   function emptyReview() {
-    return {choice:null, confidence:null, notes:'', updatedAtUtc:null, reviewedAtUtc:null, revealedAtUtc:null, reviewedWithContext:false};
+    return {choice:null, confidence:null, notes:'', updatedAtUtc:null, reviewedAtUtc:null, revealedAtUtc:null,
+      reviewedWithContext:false, namesShownAtUtc:null, reviewedWithNames:false};
   }
   function reviewFor(item) {
     if (!reviews.has(item.id)) reviews.set(item.id, emptyReview());
@@ -162,6 +165,7 @@
   }
   function percentage(number) { return Number.isFinite(number) ? (100 * number).toFixed(1) + '%' : 'Not retained'; }
   function score(number) { return Number.isFinite(number) ? number.toFixed(6) : 'Not retained'; }
+  function preciseSeconds(number) { return number.toFixed(3) + ' s'; }
   function sourceFor(item) {
     return {archiveName:item.archiveName, matchId:item.matchId, sourceSha256:item.sourceSha256, articleId:item.articleId,
       recordingSha256:item.recording.sha256, relativeSeconds:item.relativeSeconds, timeOrigin:item.timeOrigin || 'Match Start',
@@ -199,16 +203,25 @@
       const item = byId.get(entry.id);
       if (canonical(entry.source) !== canonical(sourceFor(item))) throw new Error('A source, audio hash, candidate assignment, or clip window does not match this sheet.');
       const r = entry.review;
+      // Earlier sheets revealed names together with context. Preserve that exposure history.
+      let namesShownAtUtc = r && (r.namesShownAtUtc === undefined ? r.revealedAtUtc : r.namesShownAtUtc);
+      const reviewedWithNames = r && (r.reviewedWithContext || (r.reviewedWithNames === undefined ? false : r.reviewedWithNames));
+      if (r && r.revealedAtUtc && (!namesShownAtUtc || Date.parse(r.revealedAtUtc) < Date.parse(namesShownAtUtc))) namesShownAtUtc = r.revealedAtUtc;
       const choices = [...item.candidates.map(candidate => candidate.code), ...specialChoices.map(pair => pair[0])];
       if (!r || (r.choice !== null && !choices.includes(r.choice)) ||
           (r.confidence !== null && !confidenceChoices.some(pair => pair[0] === r.confidence)) ||
           typeof r.notes !== 'string' || r.notes.length > 10000 ||
           !validDate(r.updatedAtUtc) || !validDate(r.reviewedAtUtc) || !validDate(r.revealedAtUtc) ||
           typeof r.reviewedWithContext !== 'boolean' ||
+          (r.namesShownAtUtc !== undefined && !validDate(r.namesShownAtUtc)) ||
+          (r.reviewedWithNames !== undefined && typeof r.reviewedWithNames !== 'boolean') ||
+          !validDate(namesShownAtUtc) || typeof reviewedWithNames !== 'boolean' ||
+          (reviewedWithNames && !namesShownAtUtc) ||
           (r.reviewedAtUtc && (!r.choice || !r.confidence)) ||
           (r.reviewedWithContext && !r.revealedAtUtc)) throw new Error('A review contains an invalid answer, date, or confidence value.');
       staged.set(entry.id, {choice:r.choice, confidence:r.confidence, notes:r.notes, updatedAtUtc:r.updatedAtUtc,
-        reviewedAtUtc:r.reviewedAtUtc, revealedAtUtc:r.revealedAtUtc, reviewedWithContext:r.reviewedWithContext});
+        reviewedAtUtc:r.reviewedAtUtc, revealedAtUtc:r.revealedAtUtc, reviewedWithContext:r.reviewedWithContext,
+        namesShownAtUtc, reviewedWithNames});
     }
     return staged;
   }
@@ -218,47 +231,75 @@
     if (playbackFrame !== null) cancelAnimationFrame(playbackFrame);
     playbackFrame = null;
   }
+  function destroyPlayers() {
+    stopPlayers();
+    players.forEach(player => {
+      player.visual.destroy();
+      player.urls.forEach(url => URL.revokeObjectURL(url));
+    });
+    players = [];
+  }
+  function updatePlayback(player) {
+    const duration = player.segment ? player.segment.end - player.segment.start : player.media.durationSeconds;
+    const elapsed = Math.min(duration, Math.max(0, player.audio.currentTime));
+    player.clock.textContent = preciseSeconds(elapsed) + ' / ' + preciseSeconds(duration);
+    player.visual.setCursor((player.segment ? player.segment.start : 0) + elapsed);
+  }
   function trackPlayback() {
     if (playbackFrame !== null) cancelAnimationFrame(playbackFrame);
     const tick = () => {
       playbackFrame = null;
       const player = currentPlayer;
       if (!player || player.audio.paused) return;
-      enforceSegment(player);
+      updatePlayback(player);
       if (!player.audio.paused) playbackFrame = requestAnimationFrame(tick);
     };
     playbackFrame = requestAnimationFrame(tick);
   }
   function safePlay(player) {
-    player.audio.play().catch(() => status('Playback could not start. Try the audio control again, or check your browser’s audio permissions.', true));
-  }
-  function enforceSegment(player) {
-    if (!player.segment || player.audio.paused) return;
-    if (player.audio.currentTime >= player.segment.end) {
-      if (loop) player.audio.currentTime = player.segment.start;
-      else { player.audio.pause(); player.audio.currentTime = player.segment.end; }
-    }
+    player.audio.play().catch(error => {
+      if (error.name !== 'AbortError') status('Playback could not start. Try the audio control again, or check your browser’s audio permissions.', true);
+    });
   }
   function playFull(player) {
     stopPlayers();
     player.segment = null;
+    player.audio.src = player.media.src;
     player.audio.loop = loop;
     player.audio.currentTime = 0;
     player.label.textContent = 'Full clip';
+    player.visual.setSelection(null);
+    updatePlayback(player);
     safePlay(player);
   }
   function segmentFor(media, offset, duration) {
     if (!Number.isFinite(offset) || !Number.isFinite(duration) || offset < 0 || duration <= 0 || offset >= media.durationSeconds) return null;
-    const end = Math.min(media.durationSeconds, offset + duration);
+    const end = offset + duration;
+    if (end > media.durationSeconds + 1 / media.sampleRateHz) return null;
     return end > offset ? {start:offset, end} : null;
   }
   function playSegment(player, segment, name) {
     stopPlayers();
-    player.segment = segment;
-    player.audio.loop = false;
-    player.audio.currentTime = segment.start;
-    player.label.textContent = name + ' · ' + seconds(segment.start) + '–' + seconds(segment.end);
-    safePlay(player);
+    try {
+      const key = segment.start + ':' + segment.end;
+      let excerpt = player.excerpts.get(key);
+      if (!excerpt) {
+        if (!player.bytes) player.bytes = Uint8Array.from(atob(player.media.src.split(',')[1]), char => char.charCodeAt(0));
+        const cut = window.OverdexAudioWindows.slicePcm16Wav(player.bytes, segment.start, segment.end);
+        const url = URL.createObjectURL(new Blob([cut.bytes], {type:'audio/wav'}));
+        player.urls.push(url);
+        excerpt = {url, start:cut.start, end:cut.end};
+        player.excerpts.set(key, excerpt);
+      }
+      player.segment = {start:excerpt.start, end:excerpt.end};
+      player.audio.src = excerpt.url;
+      player.audio.loop = loop;
+      player.audio.currentTime = 0;
+      player.label.textContent = name + ' · source ' + preciseSeconds(excerpt.start) + '–' + preciseSeconds(excerpt.end);
+      player.visual.setSelection(player.segment);
+      updatePlayback(player);
+      safePlay(player);
+    } catch (_) { status('This saved window could not be prepared. The full source clip remains available.', true); }
   }
   function audioPlayer(media, label, parent) {
     const audio = document.createElement('audio');
@@ -270,25 +311,24 @@
     audio.playbackRate = speed;
     audio.loop = loop;
     const playbackLabel = el('p', 'play-status', 'Full clip');
-    const player = {audio, media, label:playbackLabel, segment:null};
+    const clock = el('p', 'small');
+    const visual = window.OverdexAudioSignals.create(media, {label});
+    const player = {audio, media, label:playbackLabel, segment:null, visual, clock, urls:[], excerpts:new Map(), bytes:null};
     players.push(player);
     audio.addEventListener('play', () => {
       players.forEach(other => { if (other !== player) other.audio.pause(); });
       currentPlayer = player;
       audio.playbackRate = speed;
-      audio.loop = loop && !player.segment;
-      if (player.segment && (audio.currentTime < player.segment.start || audio.currentTime >= player.segment.end)) audio.currentTime = player.segment.start;
+      audio.loop = loop;
       trackPlayback();
     });
-    audio.addEventListener('timeupdate', () => enforceSegment(player));
-    audio.addEventListener('ended', () => {
-      if (loop && player.segment) { audio.currentTime = player.segment.start; safePlay(player); }
-    });
+    ['timeupdate','seeked','ended','pause'].forEach(event => audio.addEventListener(event, () => updatePlayback(player)));
     audio.addEventListener('error', () => { playbackLabel.textContent = 'This embedded audio could not be loaded.'; });
     parent.append(audio);
     const actions = el('div', 'audio-actions');
     actions.append(button('Play full clip', () => playFull(player)));
-    parent.append(actions, playbackLabel);
+    parent.append(actions, playbackLabel, clock, visual.element);
+    updatePlayback(player);
     return player;
   }
   function progress() {
@@ -385,58 +425,67 @@
     return block;
   }
   function render() {
-    stopPlayers(); players = []; panel.replaceChildren(); progress();
+    destroyPlayers(); panel.replaceChildren(); progress();
     const item = cases[index];
     if (!item) { panel.append(el('p','','This set has no playable cases.')); return; }
     const review = reviewFor(item);
+    if (!review.namesShownAtUtc) { review.namesShownAtUtc = new Date().toISOString(); persist(); }
     const revealed = Boolean(review.revealedAtUtc);
     const header = el('div','case-header');
     const headingWrap = el('div');
     const heading = el('h2','','Case '+(index+1)); heading.id='case-heading'; heading.tabIndex=-1;
     headingWrap.append(heading,el('p','small','Clip starts '+seconds(item.relativeSeconds,true)+' from '+(item.timeOrigin || 'Match Start')));
-    header.append(headingWrap,el('span','badge',revealed?'Context revealed':'Blind comparison')); panel.append(header);
-    panel.append(el('p','instructions','1. Listen to the recording.  2. Compare the references.  3. Choose what you hear and how sure you feel. Letters are stable and do not indicate matcher rank.'));
+    header.append(headingWrap,el('span','badge',revealed?'Scores visible':'Compare move sounds')); panel.append(header);
+    panel.append(el('p','instructions','1. Listen to the recording.  2. Compare the named move sounds below.  3. Choose what you hear and how sure you feel. These include the two closest original-spectrum matches and a changing-spectrum alternative where available; their order does not indicate rank.'));
     const settings = el('div','play-settings');
     const loopLabel = el('label'); const loopInput = document.createElement('input'); loopInput.type='checkbox'; loopInput.checked=loop;
-    loopInput.addEventListener('change',()=>{loop=loopInput.checked;players.forEach(player=>{player.audio.loop=loop&&!player.segment;});});
+    loopInput.addEventListener('change',()=>{loop=loopInput.checked;players.forEach(player=>{player.audio.loop=loop;});});
     loopLabel.append(loopInput,el('span','','Loop playback'));
     const speedLabel = el('label','','Speed'); const select = document.createElement('select'); select.setAttribute('aria-label','Playback speed');
     [1,.75,.5].forEach(value=>{const option=el('option','',value+'×');option.value=String(value);option.selected=speed===value;select.append(option);});
     select.addEventListener('change',()=>{speed=Number(select.value);players.forEach(player=>{player.audio.playbackRate=speed;});});speedLabel.append(select);
     settings.append(loopLabel,speedLabel,button('Pause all',stopPlayers)); panel.append(settings);
-    const recording=el('section','recording');const recordingHead=el('div','sound-head');recordingHead.append(el('h3','','Recorded snippet'),el('span','small',seconds(item.recording.durationSeconds)));recording.append(recordingHead);
+    const recording=el('section','recording');const recordingHead=el('div','sound-head');recordingHead.append(el('h3','','Recorded snippet'),el('span','small','Full clip · '+preciseSeconds(item.recording.durationSeconds)));recording.append(recordingHead);
     const recordedPlayer=audioPlayer(item.recording,'Recorded battle snippet',recording);panel.append(recording);
+    recording.append(el('p','small','One battle recording. Each Recording window button below selects a section of this same clip; some sections are identical or overlap.'));
     const candidateGrid=el('div','candidates');
     item.candidates.forEach(candidate=>{
-      const card=el('section','candidate');const head=el('div','sound-head');head.append(el('h3','','Reference '+candidate.code),el('span','small',seconds(candidate.reference.durationSeconds)));card.append(head);
-      const referencePlayer=audioPlayer(candidate.reference,'Reference '+candidate.code,card);
+      const card=el('section','candidate');const head=el('div','sound-head');head.append(el('h3','','Reference '+candidate.code),el('span','small','Full clip · '+preciseSeconds(candidate.reference.durationSeconds)));card.append(head);
+      card.append(el('p','candidate-name',candidate.moveName));
+      const referencePlayer=audioPlayer(candidate.reference,candidate.moveName+' reference sound',card);
       const segmentActions=el('div','audio-actions');
       const recordedSegment=segmentFor(item.recording,candidate.matchingOffsetSeconds,candidate.matchingDurationSeconds);
       const referenceSegment=segmentFor(candidate.reference,candidate.referenceOffsetSeconds,candidate.matchingDurationSeconds);
-      const recordedButton=button('Recording window '+candidate.code,()=>playSegment(recordedPlayer,recordedSegment,'Changing-spectrum window '+candidate.code));
-      const referenceButton=button('Reference window '+candidate.code,()=>playSegment(referencePlayer,referenceSegment,'Changing-spectrum window '+candidate.code));
+      const recordedButton=button('Recording window',()=>{if(referenceSegment)referencePlayer.visual.setSelection(referenceSegment);playSegment(recordedPlayer,recordedSegment,'Selected recording window');});
+      const referenceButton=button('Reference window',()=>{if(recordedSegment)recordedPlayer.visual.setSelection(recordedSegment);playSegment(referencePlayer,referenceSegment,'Selected reference window');});
       recordedButton.disabled=!recordedSegment;referenceButton.disabled=!referenceSegment;segmentActions.append(recordedButton,referenceButton);card.append(segmentActions);
-      if(revealed){card.append(el('p','candidate-name',candidate.moveName),el('p','scores','Original similarity '+score(candidate.similarity)+' · Changing similarity '+score(candidate.changingSimilarity)));}
+      if(recordedSegment){
+        const shared=item.candidates.some(other=>other!==candidate&&other.matchingOffsetSeconds===candidate.matchingOffsetSeconds&&other.matchingDurationSeconds===candidate.matchingDurationSeconds);
+        card.append(el('p','small','Recording section '+preciseSeconds(recordedSegment.start)+'–'+preciseSeconds(recordedSegment.end)+(shared?' · shared by another reference.':'.')));
+      }
+      if(referenceSegment)card.append(el('p','small','Reference section '+preciseSeconds(referenceSegment.start)+'–'+preciseSeconds(referenceSegment.end)+'.'));
+      if(revealed){card.append(el('p','scores','Original similarity '+score(candidate.similarity)+' · Changing similarity '+score(candidate.changingSimilarity)));}
       candidateGrid.append(card);
     });panel.append(candidateGrid);
-    panel.append(el('p','small','Window buttons play the saved changing-spectrum alignment. The original-spectrum match may use a different window. Full clips retain their original audio levels. Displayed lengths describe the sound files; move-cycle timing is measured separately.'));
+    panel.append(el('p','small','Window buttons play exact excerpts at the saved changing-spectrum alignment. The original-spectrum score may describe a different alignment that was not saved. The clock below each player shows elapsed playback; source ranges and plots use seconds from the full clip’s start. Sound-file length is separate from move-cycle duration.'));
+    panel.append(el('p','small','Waveform = sound level over time. Spectrogram = frequencies over time; brighter colors mean more sound energy. Every plot uses the same amplitude and color scales, without boosting quiet clips. Similar shapes support comparison; they do not establish a move by themselves.'));
     const answerField=el('fieldset');answerField.append(el('legend','','What is the closest description?'));
     const confidenceField=el('fieldset');confidenceField.append(el('legend','','How confident are you?'));
     const reviewState=el('span','review-state');reviewState.setAttribute('aria-live','polite');
     const saveButton=button('Mark reviewed',()=>{
       if(!review.choice||!review.confidence){status('Choose an answer and a confidence level first.',true);return;}
-      review.reviewedAtUtc=new Date().toISOString();review.updatedAtUtc=review.reviewedAtUtc;review.reviewedWithContext=Boolean(review.revealedAtUtc);persist();updateReviewState();progress();status('Case '+(index+1)+' marked reviewed. Export answers whenever you want a backup.');
+      review.reviewedAtUtc=new Date().toISOString();review.updatedAtUtc=review.reviewedAtUtc;review.reviewedWithContext=Boolean(review.revealedAtUtc);review.reviewedWithNames=Boolean(review.namesShownAtUtc);persist();updateReviewState();progress();status('Case '+(index+1)+' marked reviewed. Export answers whenever you want a backup.');
     },'primary');
-    function updateReviewState(){saveButton.disabled=!review.choice||!review.confidence;reviewState.textContent=complete(review)?'Reviewed'+(review.reviewedWithContext?' with context revealed.':' before revealing context.'):(review.choice||review.notes||review.confidence?'Draft · not yet marked reviewed.':'No answer selected.');}
-    function edit(field,value){review[field]=value;review.updatedAtUtc=new Date().toISOString();review.reviewedAtUtc=null;review.reviewedWithContext=false;persist();updateReviewState();progress();}
-    answerField.append(radioGroup([...item.candidates.map(candidate=>[candidate.code,'Reference '+candidate.code]),...specialChoices],'answer',review.choice,value=>edit('choice',value),'choices'));
+    function updateReviewState(){saveButton.disabled=!review.choice||!review.confidence;reviewState.textContent=complete(review)?'Reviewed'+(review.reviewedWithNames?' with move names visible':' before move names were shown')+(review.reviewedWithContext?' and scores/context revealed.':'; scores/context hidden.'):(review.choice||review.notes||review.confidence?'Draft · not yet marked reviewed.':'No answer selected.');}
+    function edit(field,value){review[field]=value;review.updatedAtUtc=new Date().toISOString();review.reviewedAtUtc=null;review.reviewedWithContext=false;review.reviewedWithNames=false;persist();updateReviewState();progress();}
+    answerField.append(radioGroup([...item.candidates.map(candidate=>[candidate.code,candidate.moveName]),...specialChoices],'answer',review.choice,value=>edit('choice',value),'choices'));
     confidenceField.append(radioGroup(confidenceChoices,'confidence',review.confidence,value=>edit('confidence',value),'confidence'));
     panel.append(answerField,confidenceField);
     const notesLabel=el('label','notes-label','Listening notes (optional)');notesLabel.htmlFor='listening-notes';
-    const notes=document.createElement('textarea');notes.id='listening-notes';notes.maxLength=10000;notes.value=review.notes;notes.placeholder='For example: A has the closer rhythm, but I hear another sound over it.';notes.addEventListener('input',()=>edit('notes',notes.value));
+    const notes=document.createElement('textarea');notes.id='listening-notes';notes.maxLength=10000;notes.value=review.notes;notes.placeholder='For example: Wing Attack sounds closer, but I hear another sound over it.';notes.addEventListener('input',()=>edit('notes',notes.value));
     panel.append(notesLabel,notes);const actions=el('div','review-actions');actions.append(saveButton,button('Next unreviewed',nextUnreviewed),reviewState);panel.append(actions);updateReviewState();
     const revealBar=el('div','reveal-bar');
-    if(!revealed){revealBar.append(button('Reveal names, scores & context',()=>{review.revealedAtUtc=new Date().toISOString();review.updatedAtUtc=review.revealedAtUtc;persist();render();status('Context revealed for this case. This is recorded in your exported answers.');}),el('p','small','Try a blind judgment first. Revealing is optional and is recorded with your answer.'));}
+    if(!revealed){revealBar.append(button('Show matcher scores and battle context',()=>{review.revealedAtUtc=new Date().toISOString();review.updatedAtUtc=review.revealedAtUtc;persist();render();status('Scores and context shown for this case. This is recorded in your exported answers.');}),el('p','small','Move names are already visible. Showing scores and battle context is optional and is recorded with your answer.'));}
     else{revealBar.append(el('p','small','Context has been revealed for this case. Its reveal history is retained even if you change your answer.'),contextBlock(item));}
     panel.append(revealBar);
   }
@@ -455,6 +504,7 @@
         // Importing an older blind draft cannot undo having seen this case's context.
         const previous=reviews.get(id);
         if(previous&&previous.revealedAtUtc&&(!review.revealedAtUtc||Date.parse(previous.revealedAtUtc)<Date.parse(review.revealedAtUtc))) review.revealedAtUtc=previous.revealedAtUtc;
+        if(previous&&previous.namesShownAtUtc&&(!review.namesShownAtUtc||Date.parse(previous.namesShownAtUtc)<Date.parse(review.namesShownAtUtc))) review.namesShownAtUtc=previous.namesShownAtUtc;
         reviews.set(id,review);
       });
       persist();render();status('Imported '+staged.size+' case reviews. All source IDs and hashes matched.');

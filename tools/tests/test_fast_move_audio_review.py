@@ -3,11 +3,13 @@ import importlib.util
 from io import BytesIO
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 import wave
 import zipfile
 
+sys.path.insert(0, str(Path(__file__).parents[1]))
 spec = importlib.util.spec_from_file_location("audio_review", Path(__file__).parents[1] / "build_fast_move_audio_review.py")
 review = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(review)
@@ -150,9 +152,26 @@ class AudioReviewTest(unittest.TestCase):
             self.assertNotIn(cases[0]["archiveName"], text)
             self.assertIn("\\u003c/script>", text)
             self.assertNotIn("__REVIEW_DATA_JSON__", text)
+            self.assertNotIn("__AUDIO_SIGNAL_JS__", text)
+            self.assertNotIn("__AUDIO_PLAYBACK_JS__", text)
+            self.assertIn("OverdexAudioSignals", text)
+            self.assertIn("OverdexAudioWindows", text)
             cases[0]["context"]["userReportedPattern"] = "User recalled only one team attacking; not a clip label."
             changed = review.build_review(cases, output, self.references)
             self.assertNotEqual(first["reviewSetId"], changed["reviewSetId"])
+
+    def test_derived_signal_views_preserve_review_identity_and_original_wavs(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "match.zip"
+            self.package(path)
+            cases, _ = review.collect_cases([path], self.references)
+            before = json.dumps([review.case_metadata(c) for c in cases], sort_keys=True)
+            source = cases[0]["recording"]["src"]
+            review.attach_signal_previews(cases)
+            self.assertEqual(before, json.dumps([review.case_metadata(c) for c in cases], sort_keys=True))
+            self.assertEqual(source, cases[0]["recording"]["src"])
+            self.assertIn("waveform", cases[0]["recording"]["signal"])
+            self.assertIs(cases[0]["recording"]["signal"], cases[0]["candidates"][0]["reference"]["signal"])
 
 
 if __name__ == "__main__":

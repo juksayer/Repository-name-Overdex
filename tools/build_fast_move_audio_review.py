@@ -17,6 +17,10 @@ import random
 import re
 import wave
 import zipfile
+try:
+    from tools.audio_review_signal import analyze_wav
+except ModuleNotFoundError:
+    from audio_review_signal import analyze_wav
 
 VERSION = "fast-move-audio-review-v1"
 REPO = Path(__file__).resolve().parents[1]
@@ -268,10 +272,24 @@ def select_cases(cases, ids, limit):
 def case_metadata(case):
     """Portable source and context metadata, without embedding the WAVs again."""
     return {**{k: v for k, v in case.items() if k not in ("recording", "candidates")},
-        "recording": {k: v for k, v in case["recording"].items() if k != "src"},
+        "recording": {k: v for k, v in case["recording"].items() if k not in ("src", "signal")},
         "candidates": [{**{k: v for k, v in item.items() if k != "reference"},
-            "reference": {k: v for k, v in item["reference"].items() if k != "src"}}
+            "reference": {k: v for k, v in item["reference"].items() if k not in ("src", "signal")}}
             for item in case["candidates"]]}
+
+
+def attach_signal_previews(cases):
+    """Analyze only the selected media. Derived plots never change review identity."""
+    cache = {}
+    for case in cases:
+        for media in [case["recording"], *(c["reference"] for c in case["candidates"])]:
+            sha = media["sha256"]
+            if sha not in cache:
+                source = base64.b64decode(media["src"].split(",", 1)[1], validate=True)
+                if digest(source) != sha:
+                    raise ValueError("Signal source hash differs")
+                cache[sha] = analyze_wav(source)
+            media["signal"] = cache[sha]
 
 
 def build_review(cases, output, references, missing=0, available=0):
@@ -279,6 +297,7 @@ def build_review(cases, output, references, missing=0, available=0):
         raise ValueError("No playable saved comparisons found")
     signature = [case_metadata(c) for c in cases]
     review_id = digest(json.dumps(signature, sort_keys=True).encode())[:20]
+    attach_signal_previews(cases)
     data = dict(version=VERSION, reviewSetId=review_id,
         createdAtUtc=datetime.now(timezone.utc).isoformat(),
         summary=dict(caseCount=len(cases), archiveCount=len({c["matchId"] for c in cases}),
@@ -291,6 +310,12 @@ def build_review(cases, output, references, missing=0, available=0):
     template = (REPO / "tools/templates/fast_move_audio_review.html").read_text()
     if template.count("__REVIEW_DATA_JSON__") != 1:
         raise ValueError("Review template needs exactly one data marker")
+    for marker, filename in (("__AUDIO_SIGNAL_JS__", "audio_review_signal.js"),
+                             ("__AUDIO_PLAYBACK_JS__", "audio_review_playback.js")):
+        script = (REPO / "tools/templates" / filename).read_text()
+        if template.count(marker) != 1 or "</script" in script.lower():
+            raise ValueError("Review script marker or inline script is unsafe")
+        template = template.replace(marker, script)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(template.replace("__REVIEW_DATA_JSON__", encoded))
