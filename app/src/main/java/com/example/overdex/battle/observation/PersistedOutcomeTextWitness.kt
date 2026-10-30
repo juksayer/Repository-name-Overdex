@@ -8,11 +8,14 @@ import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.data.observation.OutcomeTextRecognizer
+import com.example.overdex.data.observation.OcrPriority
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
@@ -20,99 +23,159 @@ import kotlinx.coroutines.channels.Channel
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
 
-/** Reads preserved result candidates promptly; typed outcome witnesses consume the source-timed text. */
-class PersistedOutcomeTextWitness(
-    private val artifactStore: FileCropArtifactStore,
+/** Reads recent result candidates promptly while recovering older crops at routine priority. */
+class PersistedOutcomeTextWitness internal constructor(
+    private val reader: OutcomeCropReader,
+    private val now: () -> Long = System::nanoTime,
     override val observerId: ObserverId = ObserverId("MATCH_OUTCOME_TEXT_WITNESS", ObservationSource.SCREEN_CAPTURE),
-    override val name: String = "Match Outcome Text"
+    override val name: String = "Match Outcome Text",
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : Observer {
+    constructor(
+        artifactStore: FileCropArtifactStore,
+        observerId: ObserverId = ObserverId("MATCH_OUTCOME_TEXT_WITNESS", ObservationSource.SCREEN_CAPTURE),
+        name: String = "Match Outcome Text",
+    ) : this(ArtifactOutcomeCropReader(artifactStore), System::nanoTime, observerId, name)
+
     private var scope: CoroutineScope? = null
 
     override fun start(match: Match) {
         if (scope != null) return
         val sourceId = SourceId(observerId.id)
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
-            // Queue only immutable artifact references, never decoded bitmaps. The most
-            // recent frame alternates with the oldest so a brief result is not discarded.
-            val pending = FreshEvidenceQueue<RealityArticle>()
-            val wake = Channel<Unit>(Channel.CONFLATED)
+        scope = CoroutineScope(dispatcher + SupervisorJob()).also { witnessScope ->
+            // Only artifact references are queued. Source crops remain in the
+            // Timeline even when their live-reading window has expired.
+            val pending = OutcomeEvidenceQueue<RealityArticle>()
+            val recentWake = Channel<Unit>(Channel.CONFLATED)
+            val recoveryWake = Channel<Unit>(Channel.CONFLATED)
+            witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
+                pending.close()
+                recentWake.close()
+                recoveryWake.close()
+            }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 match.articles.filter { article ->
                     (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
-                }.collect { article -> pending.offer(article); wake.trySend(Unit) }
+                }.collect { article ->
+                    val capturedAt = article.monotonicTimeNanos ?: return@collect
+                    if (pending.offer(article, capturedAt, now())) {
+                        recentWake.trySend(Unit)
+                        recoveryWake.trySend(Unit)
+                    }
+                }
             }
-            // Pay the one-time model startup cost while the battle is underway,
-            // not during the first short-lived result screen.
-            witnessScope.launch { OutcomeTextRecognizer.warmUp() }
-            witnessScope.launch {
+            // Pay model startup while the battle is underway, before the brief result.
+            witnessScope.launch { reader.warmUp() }
+            fun launchLane(recent: Boolean, wake: Channel<Unit>) = witnessScope.launch {
+                val lane = if (recent) "RECENT" else "RECOVERY"
+                val priority = if (recent) OcrPriority.URGENT else OcrPriority.NORMAL
                 for (signal in wake) {
-                    while (pending.size() > 0) {
+                    while (pending.counts(now()).let { if (recent) it.recent else it.recovery } > 0) {
                         var sample: RealityArticle? = null
-                        val queuedAt = System.nanoTime()
+                        val queuedAt = now()
                         var admittedAt = queuedAt
                         var nativeReadNanos = 0L
                         var passes = 0
-                        var pendingCount = 0
+                        var remaining = pending.counts(queuedAt)
                         val readings: List<OcrTextEvidence> = try {
-                            OutcomeTextRecognizer.withReadingTurn {
-                                admittedAt = System.nanoTime()
-                                // Choose after admission so a fresh result arriving
-                                // during other OCR work can take the current turn.
-                                val article = pending.poll() ?: return@withReadingTurn emptyList()
+                            reader.withReadingTurn(priority) { turn ->
+                                admittedAt = now()
+                                // Selection and expiry happen after admission.
+                                // A newer blank cannot leap over a brief recent result.
+                                val article = if (recent) pending.pollRecent(admittedAt)
+                                    else pending.pollRecovery(admittedAt)
+                                recoveryWake.trySend(Unit) // expiry may have moved work
+                                article ?: return@withReadingTurn emptyList()
                                 sample = article
-                                pendingCount = pending.size()
-                                val crop = article.payload as CropCaptured
-                                val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance)
-                                    ?: return@withReadingTurn emptyList()
-                                try {
-                                    recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null }
-                                } finally {
-                                    nativeReadNanos = this.nativeReadNanos
-                                    passes = readCount
-                                    bitmap.recycle()
+                                remaining = pending.counts(admittedAt)
+                                try { turn.recognize(article) } finally {
+                                    nativeReadNanos = turn.nativeReadNanos
+                                    passes = turn.readCount
                                 }
                             }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
-                            // A failed frame must not terminate the result reader
-                            // for the remainder of this Match.
+                            // One bad artifact/read cannot terminate the Match reader.
                             Log.e("OutcomeText", "Result OCR failed for ${sample?.id?.value}", error)
                             emptyList()
                         }
+                        kotlinx.coroutines.currentCoroutineContext().ensureActive()
                         val article = sample ?: continue
                         val capturedAt = article.monotonicTimeNanos ?: continue
-                        val completedAt = System.nanoTime()
-                        // Separate backlog, backend wait, and native OCR time.
-                        // Blank-read diagnostics do not retain extra PNGs in compact exports.
+                        val completedAt = now()
+                        // queueMs is this backend request's wait. Crop age at
+                        // admission also includes time waiting for local selection.
                         match.custody.submitTestimony(
                             SourceId("${observerId.id}_LATENCY"),
-                            RawTestimony("cropId=${article.id.value} queueMs=${(admittedAt - queuedAt) / 1_000_000} " +
+                            RawTestimony("cropId=${article.id.value} lane=$lane priority=$priority " +
+                                "queueMs=${(admittedAt - queuedAt) / 1_000_000} " +
                                 "captureToAdmissionMs=${(admittedAt - capturedAt) / 1_000_000} " +
                                 "nativeReadMs=${nativeReadNanos / 1_000_000} " +
                                 "processingMs=${(completedAt - admittedAt) / 1_000_000} " +
                                 "totalMs=${(completedAt - capturedAt) / 1_000_000} " +
-                                "passes=$passes pending=$pendingCount nonblank=${readings.any { it.rawText.isNotBlank() }}"),
+                                "passes=$passes pending=${remaining.total} recentPending=${remaining.recent} " +
+                                "recoveryPending=${remaining.recovery} nonblank=${readings.any { it.rawText.isNotBlank() }}"),
                             article.perceivedAt, null, emptyList(), capturedAt,
                         )
                         readings.filter { it.rawText.isNotBlank() }.forEach { reading ->
-                            // Keep the unsuccessful native reading as well as the
-                            // treated reading, with the same original crop/time.
                             match.custody.submitTestimony(
                                 sourceId, RawTestimony(reading.rawText, reading), article.perceivedAt, null,
                                 listOf(article.id.value), capturedAt,
                             )
                         }
-                        // One decisive result is sufficient. The unused source crops are
-                        // still in the immutable Timeline, available to forensic review.
-                        if (readings.any { MatchOutcomeTextResolver.resolve(it.rawText) != null }) return@launch
+                        if (readings.any { MatchOutcomeTextResolver.resolve(it.rawText) != null }) {
+                            // Stop collection and both lanes, not just this worker.
+                            // Typed phrase witnesses independently consume the text.
+                            pending.close()
+                            witnessScope.cancel("Decisive result recorded")
+                            return@launch
+                        }
                     }
+                    // The count check can demote expired recent frames even when
+                    // there is no following capture to wake recovery.
+                    if (recent && pending.counts(now()).recovery > 0) recoveryWake.trySend(Unit)
                 }
             }
+            launchLane(recent = true, recentWake)
+            launchLane(recent = false, recoveryWake)
         }
     }
 
     override fun stop() { scope?.cancel("Witness stopped"); scope = null }
+}
+
+/** Admission is separate from crop selection, so a waiting turn never fixes stale pixels. */
+internal interface OutcomeCropReader {
+    suspend fun warmUp()
+    suspend fun <T> withReadingTurn(priority: OcrPriority, block: suspend (OutcomeCropReadingTurn) -> T): T
+}
+
+internal interface OutcomeCropReadingTurn {
+    val nativeReadNanos: Long
+    val readCount: Int
+    suspend fun recognize(article: RealityArticle): List<OcrTextEvidence>
+}
+
+private class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtifactStore) : OutcomeCropReader {
+    override suspend fun warmUp() { OutcomeTextRecognizer.warmUp() }
+    override suspend fun <T> withReadingTurn(
+        priority: OcrPriority,
+        block: suspend (OutcomeCropReadingTurn) -> T,
+    ): T = OutcomeTextRecognizer.withReadingTurn(priority) {
+        val nativeTurn = this
+        block(object : OutcomeCropReadingTurn {
+            override val nativeReadNanos: Long get() = nativeTurn.nativeReadNanos
+            override val readCount: Int get() = nativeTurn.readCount
+            override suspend fun recognize(article: RealityArticle): List<OcrTextEvidence> {
+                val crop = article.payload as CropCaptured
+                val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return emptyList()
+                return try {
+                    nativeTurn.recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null }
+                } finally { bitmap.recycle() }
+            }
+        })
+    }
 }
 
 internal enum class MatchOutcomePhrase { WIN, LOSS }
@@ -170,7 +233,7 @@ class PersistedOutcomePhraseWitness(
         if (scope != null) return
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
-            witnessScope.launch {
+            witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 var accepted = false
                 match.articles.collect { article ->
                     if (accepted || article.sourceId.id != "MATCH_OUTCOME_TEXT_WITNESS") return@collect

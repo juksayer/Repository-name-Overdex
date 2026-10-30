@@ -222,6 +222,7 @@ captured. See the [October 12 verification](docs/verification/2026-10-12-battle-
 
 - `MatchOutcomeCaptureGate` in [BattleCaptureGates.kt](app/src/main/java/com/example/overdex/battle/observation/BattleCaptureGates.kt) opens a bounded result check when either team's last Pokémon has red HP, or a team has no remaining Poké Balls. The surviving team may still have reserves.
 - HP visibility is tracked separately for each side. These cues only schedule observation; `YOU WIN` / `GOOD EFFORT` testimony still establishes the result.
+- [PersistedOutcomeTextWitness.kt](app/src/main/java/com/example/overdex/battle/observation/PersistedOutcomeTextWitness.kt) reads recent result crops in source order at urgent OCR priority. [OutcomeEvidenceQueue.kt](app/src/main/java/com/example/overdex/battle/observation/OutcomeEvidenceQueue.kt) bounds that lane to 12 references / three seconds and retains older crops for independent normal-priority recovery. Selection is rechecked at admission; one decisive phrase closes both workers and their crop subscription. Source timestamps and raw crop Articles remain unchanged. See [result queue verification](docs/verification/2026-10-30-result-reading-queue.md).
 
 ### Audio
 

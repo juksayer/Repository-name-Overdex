@@ -7,7 +7,7 @@ import com.example.overdex.model.observation.OcrTextEvidence
 import com.google.mlkit.vision.text.Text
 import kotlinx.coroutines.CancellationException
 
-/** One warm backend and one urgent turn for a result crop and its bounded fallback. */
+/** One warm backend and one admitted turn for a result crop and its bounded fallback. */
 object OutcomeTextRecognizer {
     suspend fun warmUp() = SharedLatinTextRecognizer.warmUp()
 
@@ -15,8 +15,11 @@ object OutcomeTextRecognizer {
     suspend fun readText(bitmap: Bitmap): String =
         SharedLatinTextRecognizer.read(bitmap, OcrPriority.URGENT).text
 
-    internal suspend fun <T> withReadingTurn(block: suspend ReadingTurn.() -> T): T =
-        SharedLatinTextRecognizer.withReadingTurn(OcrPriority.URGENT) { read ->
+    internal suspend fun <T> withReadingTurn(
+        priority: OcrPriority = OcrPriority.URGENT,
+        block: suspend ReadingTurn.() -> T,
+    ): T =
+        SharedLatinTextRecognizer.withReadingTurn(priority) { read ->
             ReadingTurn(read).block()
         }
 

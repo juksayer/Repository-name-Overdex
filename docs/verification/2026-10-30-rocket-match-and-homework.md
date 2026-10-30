@@ -94,8 +94,10 @@ or rewrite the original archive.
   68 seconds later, after Stop. A border-only Cradily use at +247.567 therefore
   appears after the retrospectively established result boundary. This is a
   result-attention/delivery and downstream boundary issue, not proof that the
-  opponent kept attacking after the win. Recorded diagnostics separate 67.429
-  seconds waiting for OCR admission from 0.619 seconds in native OCR. The
+  opponent kept attacking after the win. The crop was 67.429 seconds old at OCR
+  admission; the final shared-reader request waited 1.280 seconds, and native
+  OCR took 0.619 seconds. Most delay occurred before that final request, while
+  the crop remained unselected. The
   outcome reader's newest/oldest queue alternation skipped the brief winning
   crop and later recovered it from an 83-item backlog. Outcome queue policy,
   rather than a higher OCR priority, is the identified next correction.
@@ -122,4 +124,5 @@ or rewrite the original archive.
 - The original match and answer exports remain unchanged. A fresh live battle
   is still required to validate the corrected timing on the phone. The opening
   identity handoff is addressed in the subsequent continuity correction linked
-  above, with live acceptance pending. The result-queue correction remains open.
+  above, with live acceptance pending. Subsequent result queue work is recorded
+  in [the result queue verification](2026-10-30-result-reading-queue.md).
