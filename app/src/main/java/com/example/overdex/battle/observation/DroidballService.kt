@@ -320,6 +320,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         (fieldViewModel.fieldTeamEditor.draft.value != null || now < fieldEditorResumeAtNanos)
     private var overlayView: FrameLayout? = null
     private val badgeCalibration by lazy { com.example.overdex.CalibrationManager(this).load() }
+    private val teamSelectMenuCalibration by lazy { TeamSelectCalibrationStore(this).load() }
+    private val teamSelectMenuDeparture = TeamSelectMenuDepartureMonitor()
     private val retainedOpponentBadge by lazy { RetainedOpponentBadge(this, windowManager) }
     @Volatile private var capturedOverlayRegion: com.example.overdex.model.AnchorRegion? = null
     private var overlayParams: WindowManager.LayoutParams? = null
@@ -671,6 +673,22 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         !badgeSession.hasCompletedMatch
                     val badgeScope = badgeSession?.let {
                         RetainedBadgeScope(it.match.matchId, it.match.observationAttemptStartedAtNanos)
+                    }
+                    if (badgeSession != null && !badgeSession.hasCompletedMatch &&
+                        !DroidballOverlayPresentation.battleBadgeSeen.value &&
+                        (badgeSession.canObserveTeamSelect ||
+                            (DroidballOverlayPresentation.panelAllowed.value && DroidballOverlayPresentation.expanded.value)) &&
+                        DroidballOverlayPresentation.mode.value !in setOf(DroidballOverlayMode.RESULT, DroidballOverlayMode.CALIBRATING)) {
+                        val menuScope = TeamSelectMenuScope(badgeSession.match.matchId,
+                            badgeSession.match.observationAttemptStartedAtNanos)
+                        if (teamSelectMenuDeparture.shouldSample(menuScope, receivedAtNanos) &&
+                            teamSelectMenuDeparture.observe(receivedAtNanos,
+                                TeamSelectMenuSurfaceProbe.visible(bitmap, teamSelectMenuCalibration, capturedOverlayRegion))) {
+                            // Observe even before accepted Team Select reveals the menu:
+                            // delayed OCR must not reveal it after the party has departed.
+                            // This fresh geometry check does not wait for countdown OCR.
+                            DroidballOverlayPresentation.dismissTeamSelectForBattle()
+                        }
                     }
                     val badgeExclusionBefore = retainedOpponentBadge.exclusion(receivedAtNanos)
                     val nativeFrame = CapturedVisualFrame(bitmap, capturedAtWallTimeMillis, receivedAtNanos,
@@ -1166,9 +1184,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                 applyBattleHudWindowPosition(view, params, bounds, windowScreenOffsetY = screenOffsetBefore)
             } else if (overlayPanelVisible) {
                 params.width = FieldBattleMenuGeometry.widthPx(bounds.width())
-                params.height = fieldBodyCanvasWidthPx + FieldBattleMenuGeometry.heightPx(bounds.height())
+                params.height = FieldBattleMenuGeometry.heightPx(bounds.height())
                 params.x = FieldBattleMenuGeometry.leftPx(bounds.width())
-                params.y = FieldBattleMenuGeometry.windowTopPx(bounds.height(), fieldBodyCanvasWidthPx, screenOffsetBefore)
+                params.y = FieldBattleMenuGeometry.windowTopPx(bounds.height(), screenOffsetBefore)
             } else {
                 params.width = WindowManager.LayoutParams.WRAP_CONTENT
                 params.height = WindowManager.LayoutParams.WRAP_CONTENT
@@ -1361,10 +1379,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val view = overlayView ?: return
         val params = overlayParams ?: return
         val bounds = displayBounds()
-        val bodyWidth = fieldBodyCanvasWidthPx
         val width = if (overlayPanelVisible) FieldBattleMenuGeometry.widthPx(bounds.width())
             else WindowManager.LayoutParams.WRAP_CONTENT
-        val height = if (overlayPanelVisible) bodyWidth + FieldBattleMenuGeometry.heightPx(bounds.height())
+        val height = if (overlayPanelVisible) FieldBattleMenuGeometry.heightPx(bounds.height())
             else WindowManager.LayoutParams.WRAP_CONTENT
         // The wide menu is fixed to the native party-card reference. Keep the
         // collapsed body's edge dock separate so opening/closing never saves a
@@ -1372,7 +1389,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val x = if (overlayPanelVisible) FieldBattleMenuGeometry.leftPx(bounds.width())
             else freeOverlayX ?: params.x
         val y = if (overlayPanelVisible) FieldBattleMenuGeometry.windowTopPx(
-            bounds.height(), bodyWidth, overlayWindowScreenOffsetY(view, params))
+            bounds.height(), overlayWindowScreenOffsetY(view, params))
             else (freeOverlayY ?: params.y).coerceIn(0, (bounds.height() - view.height.coerceAtLeast(1)).coerceAtLeast(0))
         if (params.x != x || params.y != y || params.width != width || params.height != height) {
             params.width = width

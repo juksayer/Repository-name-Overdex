@@ -210,12 +210,28 @@ fun BattleOverlay(
             )
         }
     } else Modifier
+    val fieldBody: @Composable () -> Unit = {
+        DroidballBody(
+            modifier = Modifier.size(bodyCanvasSize).clickable {
+                when (journey.phase) {
+                    DroidballJourneyPhase.ARRIVING -> {
+                        DroidballJourney.arrivalFinished(journey.generation)
+                        DroidballOverlayPresentation.showBattleHud(userRequested = true)
+                    }
+                    DroidballJourneyPhase.RETURNING -> DroidballJourney.fieldExitFinished(journey.generation)
+                    else -> DroidballOverlayPresentation.toggleExpanded()
+                }
+            },
+            pose = pose.copy(xBodies = 0f),
+            contentDescription = "Droidball. Tap to open assistance.",
+        )
+    }
     Column(
         modifier = interactionModifier
             .alpha(if (anchoredToBattleHud && !badgeSeen) 0f else 1f),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!anchoredToBattleHud && journey.fieldOwnsBody) {
+        if (!anchoredToBattleHud && journey.fieldOwnsBody && !panelIsVisible) {
             // The rotating antennae and short scan beam extend beyond the
             // body canvas. Only travel gets this small safety margin.
             Box(
@@ -223,22 +239,8 @@ fun BattleOverlay(
                     if (traveling) travelPaddingSize * 2 else 0.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                DroidballBody(
-                    modifier = Modifier.size(bodyCanvasSize).clickable {
-                        when (journey.phase) {
-                            DroidballJourneyPhase.ARRIVING -> {
-                                DroidballJourney.arrivalFinished(journey.generation)
-                                DroidballOverlayPresentation.showBattleHud(userRequested = true)
-                            }
-                            DroidballJourneyPhase.RETURNING -> DroidballJourney.fieldExitFinished(journey.generation)
-                            else -> DroidballOverlayPresentation.toggleExpanded()
-                        }
-                    },
-                    // Move the compact native window, so the empty travel path
-                    // never intercepts taps intended for Pokemon GO.
-                    pose = pose.copy(xBodies = 0f),
-                    contentDescription = "Droidball. Tap to open assistance.",
-                )
+                // Move the compact window, never an empty travel path.
+                fieldBody()
             }
         }
         if (panelIsVisible) {
@@ -252,6 +254,7 @@ fun BattleOverlay(
                 panelWidthPx,
                 fieldMenuWidthPx,
                 fieldMenuHeightPx,
+                fieldBody.takeIf { journey.fieldOwnsBody },
             )
         }
     }
@@ -268,12 +271,13 @@ private fun OverlayPanel(
     panelWidthPx: Int,
     fieldMenuWidthPx: Int,
     fieldMenuHeightPx: Int,
+    fieldBody: (@Composable () -> Unit)?,
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     if (!isBattleHud) {
         FieldBattleMenu(mode, inferredPlayerTeam, playerTeamConfirmed, configuredPlayerTeam,
-            teamEditingAllowed, fieldMenuWidthPx, fieldMenuHeightPx)
+            teamEditingAllowed, fieldMenuWidthPx, fieldMenuHeightPx, fieldBody)
         return
     }
     // Match the calibrated opponent badge exactly at every display width.

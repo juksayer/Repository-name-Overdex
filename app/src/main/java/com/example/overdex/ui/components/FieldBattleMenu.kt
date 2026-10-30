@@ -29,8 +29,8 @@ internal object FieldBattleMenuGeometry {
     fun topPx(displayHeight: Int): Int = (displayHeight * 1001f / 2280f).roundToInt()
     fun bottomPx(displayHeight: Int): Int = (displayHeight * 1485f / 2280f).roundToInt()
     fun heightPx(displayHeight: Int): Int = bottomPx(displayHeight) - topPx(displayHeight)
-    fun windowTopPx(displayHeight: Int, bodyHeight: Int, windowScreenOffsetY: Int): Int =
-        topPx(displayHeight) - bodyHeight - windowScreenOffsetY
+    fun windowTopPx(displayHeight: Int, windowScreenOffsetY: Int): Int =
+        topPx(displayHeight) - windowScreenOffsetY
 }
 
 // Sampled from the opaque interior of GO's Team Select card, rather than the shaded scene.
@@ -47,6 +47,7 @@ internal fun FieldBattleMenu(
     teamEditingAllowed: Boolean,
     widthPx: Int,
     heightPx: Int,
+    droidball: (@Composable () -> Unit)? = null,
 ) {
     val width = with(LocalDensity.current) { widthPx.toDp() }
     val height = with(LocalDensity.current) { heightPx.toDp() }
@@ -71,9 +72,14 @@ internal fun FieldBattleMenu(
     }
     Column(Modifier.width(width).height(height)
         .background(FieldMenuPaper, RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Text(heading, color = FieldMenuInk, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            Text(detail, color = FieldMenuInk, fontSize = 10.sp, lineHeight = 12.sp)
+        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Text(heading, color = FieldMenuInk, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(detail, color = FieldMenuInk, fontSize = 10.sp, lineHeight = 12.sp)
+            }
+            // Keep the existing body/control inside the paper. A separate row
+            // above it would cover GO's CP restriction and its OCR aperture.
+            droidball?.invoke()
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             FieldMenuAction("TEAM / MOVES", Modifier.weight(1f), teamEditingAllowed) {

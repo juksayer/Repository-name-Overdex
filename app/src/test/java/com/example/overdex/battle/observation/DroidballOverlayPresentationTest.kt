@@ -37,7 +37,7 @@ class DroidballOverlayPresentationTest {
         assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
     }
 
-    @Test fun `accepted Team Select reveals the scanner and subsequent battle layouts`() {
+    @Test fun `accepted Team Select reveals setup but clears the menu while awaiting battle badges`() {
         // A phase notification is not the accepted screen observation.
         DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
         assertFalse(DroidballOverlayPresentation.panelAllowed.value)
@@ -49,6 +49,8 @@ class DroidballOverlayPresentationTest {
 
         DroidballOverlayPresentation.showBattleHud()
         assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.recordBattleBadgePresent()
         assertTrue(DroidballOverlayPresentation.expanded.value)
         DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.RESULT)
         assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
@@ -175,7 +177,7 @@ class DroidballOverlayPresentationTest {
         }
     }
 
-    @Test fun `accepted Team Select can authorize an automatic pending HUD without losing its request`() {
+    @Test fun `late accepted Team Select authorizes the pending battle HUD without reopening setup`() {
         DroidballOverlayPresentation.showBattleHud()
         assertFalse(DroidballOverlayPresentation.panelAllowed.value)
         assertFalse(DroidballOverlayPresentation.expanded.value)
@@ -183,6 +185,8 @@ class DroidballOverlayPresentationTest {
         assertEquals(DroidballOverlayMode.BATTLE_READY, battleOverlayDisplayMode(
             DroidballOverlayPresentation.mode.value, DroidballOverlayPresentation.battleBadgeSeen.value))
         assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.recordBattleBadgePresent()
         assertTrue(DroidballOverlayPresentation.expanded.value)
     }
 
@@ -262,6 +266,77 @@ class DroidballOverlayPresentationTest {
         assertTrue(moves.fastMoves.single().isConfirmed)
         assertEquals(5, moves.fastMoves.single().energy)
         assertEquals(35, moves.chargedMoves.single().energy)
+    }
+
+    @Test fun `party departure dismisses setup and delayed evidence cannot cover countdown again`() {
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.dismissTeamSelectForBattle()
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showBattleHud()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.COUNTDOWN)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        assertFalse(DroidballOverlayPresentation.battleBadgeSeen.value)
+        DroidballOverlayPresentation.recordBattleBadgePresent()
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+        assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+    }
+
+    @Test fun `party departure before delayed screen acceptance keeps the first menu hidden`() {
+        DroidballOverlayPresentation.showTeamSelectScan()
+        val monitor = TeamSelectMenuDepartureMonitor()
+        val scope = TeamSelectMenuScope("late-party", 0L)
+        for ((at, visible) in listOf(100_000_000L to true, 200_000_000L to false, 300_000_000L to false)) {
+            assertTrue(monitor.shouldSample(scope, at))
+            if (monitor.observe(at, visible)) DroidballOverlayPresentation.dismissTeamSelectForBattle()
+        }
+        assertFalse(DroidballOverlayPresentation.panelAllowed.value)
+        // OCR of the earlier party frame finishes only after its surface left.
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.TEAM_SELECT_ACTIVE)
+        assertTrue(DroidballOverlayPresentation.panelAllowed.value)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `an explicit hide while waiting survives badge arrival and repeated automatic cues`() {
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.showBattleHud(userRequested = true)
+        DroidballOverlayPresentation.toggleExpanded()
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.COUNTDOWN)
+        DroidballOverlayPresentation.recordBattleBadgePresent()
+        DroidballOverlayPresentation.showBattleHud()
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.BATTLE_ACTIVE)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.toggleExpanded()
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `manual HUD arming collapses setup before badges or countdown recognition`() {
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        DroidballOverlayPresentation.showBattleHud(userRequested = true)
+        DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.COUNTDOWN)
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        DroidballOverlayPresentation.showAcceptedTeamSelect()
+        assertFalse(DroidballOverlayPresentation.expanded.value)
+        // A deliberate tap can still inspect the menu while waiting.
+        DroidballOverlayPresentation.toggleExpanded()
+        assertTrue(DroidballOverlayPresentation.expanded.value)
+    }
+
+    @Test fun `an explicit new scan or navigation can display setup after a departed party`() {
+        for (next in listOf(DroidballOverlayPresentation::showTeamSelectScan,
+            DroidballOverlayPresentation::showNavigationIdle)) {
+            DroidballOverlayPresentation.reset()
+            DroidballOverlayPresentation.showAcceptedTeamSelect()
+            DroidballOverlayPresentation.dismissTeamSelectForBattle()
+            next()
+            DroidballOverlayPresentation.showAcceptedTeamSelect()
+            assertTrue(DroidballOverlayPresentation.expanded.value)
+            assertEquals(DroidballOverlayMode.TEAM_SELECT, DroidballOverlayPresentation.mode.value)
+        }
     }
 
     @After

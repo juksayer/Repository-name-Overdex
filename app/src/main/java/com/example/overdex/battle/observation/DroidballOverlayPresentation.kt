@@ -87,7 +87,12 @@ object DroidballOverlayPresentation {
     }
 
     /** Capture-only presence, never a species/count witness or a Timeline event. */
-    fun recordBattleBadgePresent() { _battleBadgeSeen.value = true }
+    fun recordBattleBadgePresent() {
+        _battleBadgeSeen.value = true
+        if (preBattleMenuSuppressed && !userHidPendingHud && _mode.value == DroidballOverlayMode.BATTLE_HUD) {
+            _expanded.value = _panelAllowed.value
+        }
+    }
 
     @Synchronized fun recordOpponentResources(count: OpponentBattleResourceCountMeasured, at: Long) {
         if (at < (resourceTimes[count.resource] ?: Long.MIN_VALUE)) return
@@ -107,6 +112,10 @@ object DroidballOverlayPresentation {
     private val _panelAllowed = MutableStateFlow(false)
     /** Team Select or a deliberate tap may reveal a display; observation alone cannot. */
     val panelAllowed = _panelAllowed.asStateFlow()
+    // A setup menu must not stay over entry announcements or 3/2/1 while the
+    // compact battle layout is still waiting for its native badge anchor.
+    @Volatile private var preBattleMenuSuppressed = false
+    @Volatile private var userHidPendingHud = false
     private val _opponentSpecies = MutableStateFlow<List<ObservedOpponentSpecies>>(emptyList())
     /** First-seen opponent identities for the three HUD cells. */
     val opponentSpecies = _opponentSpecies.asStateFlow()
@@ -151,10 +160,12 @@ object DroidballOverlayPresentation {
             DroidballSessionPhase.RESULT -> DroidballOverlayMode.RESULT
             DroidballSessionPhase.ENDED -> DroidballOverlayMode.PRE_BATTLE
         }
-        if (phase == DroidballSessionPhase.COUNTDOWN ||
-            phase == DroidballSessionPhase.BATTLE_ACTIVE ||
-            phase == DroidballSessionPhase.RESULT
-        ) _expanded.value = _panelAllowed.value
+        if (phase == DroidballSessionPhase.COUNTDOWN || phase == DroidballSessionPhase.BATTLE_ACTIVE) {
+            if (!_battleBadgeSeen.value) dismissTeamSelectForBattle()
+            _expanded.value = _panelAllowed.value && _battleBadgeSeen.value && !userHidPendingHud
+        } else if (phase == DroidballSessionPhase.RESULT) {
+            _expanded.value = _panelAllowed.value
+        }
     }
 
     private fun preserveBattleHudOr(requested: DroidballOverlayMode): DroidballOverlayMode =
@@ -162,6 +173,8 @@ object DroidballOverlayPresentation {
 
     /** A scan request chooses the scanner but cannot reveal a display by itself. */
     fun showTeamSelectScan() {
+        preBattleMenuSuppressed = false
+        userHidPendingHud = false
         _battleBadgeSeen.value = false
         _mode.value = DroidballOverlayMode.SEEKING_TEAM_SELECT
         _expanded.value = _panelAllowed.value
@@ -169,11 +182,20 @@ object DroidballOverlayPresentation {
 
     /** A deliberate navigation boundary is not a late prebattle phase emission. */
     fun showNavigationIdle() {
+        preBattleMenuSuppressed = false
+        userHidPendingHud = false
         _battleBadgeSeen.value = false
         _mode.value = DroidballOverlayMode.PRE_BATTLE
     }
 
     fun showAcceptedTeamSelect() {
+        if (preBattleMenuSuppressed) {
+            // A result from an older party frame may finish after the surface
+            // has departed. Its roster remains useful; its menu must not reopen.
+            _panelAllowed.value = true
+            if (_battleBadgeSeen.value && !userHidPendingHud) _expanded.value = true
+            return
+        }
         val requestedMode = _mode.value
         val awaitingBattle = battleOverlayDisplayMode(requestedMode, _battleBadgeSeen.value) ==
             DroidballOverlayMode.BATTLE_READY
@@ -186,13 +208,24 @@ object DroidballOverlayPresentation {
         if (!preserveVisibility) _expanded.value = true
     }
 
+    /** Collapse setup from fresh surface departure, without testifying that GO occurred. */
+    fun dismissTeamSelectForBattle() {
+        if (_battleBadgeSeen.value || _mode.value == DroidballOverlayMode.RESULT) return
+        preBattleMenuSuppressed = true
+        _expanded.value = false
+    }
+
     /** Battle evidence selects its layout; only Team Select or a user action reveals it. */
     fun showBattleHud(userRequested: Boolean = false) {
-        if (userRequested) _panelAllowed.value = true
+        if (userRequested) {
+            _panelAllowed.value = true
+            userHidPendingHud = false
+        }
         if (_mode.value != DroidballOverlayMode.RESULT) {
             _mode.value = DroidballOverlayMode.BATTLE_HUD
         }
-        _expanded.value = _panelAllowed.value
+        if (!userRequested && !_battleBadgeSeen.value) dismissTeamSelectForBattle()
+        _expanded.value = _panelAllowed.value && (userRequested || (_battleBadgeSeen.value && !userHidPendingHud))
     }
 
     @Synchronized fun clearOpponentSpecies() {
@@ -407,12 +440,19 @@ object DroidballOverlayPresentation {
 
     fun toggleExpanded() {
         _panelAllowed.value = true
-        _expanded.value = !_expanded.value
+        val willExpand = !_expanded.value
+        if (!willExpand && !_battleBadgeSeen.value &&
+            (_mode.value == DroidballOverlayMode.BATTLE_HUD || preBattleMenuSuppressed)) {
+            userHidPendingHud = true
+        } else if (willExpand) userHidPendingHud = false
+        _expanded.value = willExpand
     }
 
     fun reset() {
         energyForecastMatchId = null
         _panelAllowed.value = false
+        preBattleMenuSuppressed = false
+        userHidPendingHud = false
         _teamEditingAllowed.value = false
         _mode.value = DroidballOverlayMode.PRE_BATTLE
         _expanded.value = false

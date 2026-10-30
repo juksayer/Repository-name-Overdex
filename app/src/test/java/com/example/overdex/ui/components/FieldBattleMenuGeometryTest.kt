@@ -14,8 +14,20 @@ class FieldBattleMenuGeometryTest {
 
     @Test fun actualWindowInsetDoesNotMoveTheMenuOnTheScreenshot() {
         for (inset in listOf(0, 84, 132, -24)) {
-            val windowTop = FieldBattleMenuGeometry.windowTopPx(2280, 141, inset)
-            assertEquals(1001, windowTop + inset + 141)
+            val windowTop = FieldBattleMenuGeometry.windowTopPx(2280, inset)
+            assertEquals(1001, windowTop + inset)
+        }
+    }
+
+    @Test fun expandedNativeWindowStartsBelowLeagueAndCpRestrictions() {
+        val restriction = com.example.overdex.battle.observation.TeamSelectCalibration.measured1080x2400.restrictions
+        for (height in listOf(2280, 2400, 4560)) {
+            val restrictionBottom = ((restriction.y + restriction.height) * height).toInt()
+            for (inset in listOf(0, 84, 132, -24)) {
+                val screenTop = FieldBattleMenuGeometry.windowTopPx(height, inset) + inset
+                org.junit.Assert.assertTrue(screenTop > restrictionBottom)
+                assertEquals(FieldBattleMenuGeometry.bottomPx(height), screenTop + FieldBattleMenuGeometry.heightPx(height))
+            }
         }
     }
 
