@@ -143,6 +143,7 @@ class FastMoveCadenceInference(
     private data class ReferenceSoundEvidence(
         val article: RealityArticle, val moveName: String, val alignedStartNanos: Long,
         val segmentStartNanos: Long, val predecessors: List<ArticleId>,
+        val impactSupportAtNanos: Long? = null,
     )
 
     private val states = EnumMap<ActivePokemonSide, SideState>(ActivePokemonSide::class.java)
@@ -485,9 +486,15 @@ class FastMoveCadenceInference(
             }
             // Match can publish a fused use before delivering its final raw
             // predecessor to this inference. Resolve that deferred stream now.
-            return recentUses.filter { article.id in it.predecessorIds }.flatMap {
+            val cadenceResults = recentUses.filter { article.id in it.predecessorIds }.flatMap {
                 acceptObservedUseCadence(it, it.payload as FastMoveUseObserved)
             }
+            // Audio analysis may finish before its independent visual support.
+            // Revisit the same immutable window without counting it twice.
+            val audioResults = pendingReferenceSounds.toList().flatMap {
+                acceptReferenceSound(it, it.payload as FastMoveSoundMeasured)
+            }
+            return cadenceResults + audioResults
         }
 
         val use = article.payload as? FastMoveUseObserved
@@ -561,67 +568,93 @@ class FastMoveCadenceInference(
 
     /** The microphone contains BOTH attackers. The visual requester does not establish ownership. */
     private fun acceptReferenceSound(article: RealityArticle, sound: FastMoveSoundMeasured): List<FastMoveCadenceDerivation> {
-        val candidate = sound.referenceCandidates.maxByOrNull { it.similarity } ?: return emptyList()
         val clipAt = article.monotonicTimeNanos ?: return emptyList()
-        val segmentAt = clipAt + candidate.matchingOffsetNanos
-        val alignedStart = segmentAt - candidate.referenceOffsetNanos
-        if (segmentAt < cadenceFloorNanos || !audioIdentityGate.allows(segmentAt) ||
-            !audioIdentityGate.allows(alignedStart)) return emptyList()
+        if (sound.referenceCandidates.isEmpty()) return emptyList()
+        pendingReferenceSounds.removeAll { it.id == article.id }
         fun retainUnassigned(): List<FastMoveCadenceDerivation> {
             if (pendingReferenceSounds.none { it.id == article.id }) pendingReferenceSounds += article
-            pendingReferenceSounds.removeAll { segmentAt - (it.monotonicTimeNanos ?: segmentAt) > 12_000_000_000L }
+            pendingReferenceSounds.removeAll { latestEvidenceAtNanos - (it.monotonicTimeNanos ?: clipAt) > 12_000_000_000L }
             if (pendingReferenceSounds.size > 24) pendingReferenceSounds.removeAt(0)
             return emptyList()
         }
-        if (states.size < 2) {
-            return retainUnassigned()
-        }
-        // A cry/entry cue can precede readable badges. Do not assign the new
-        // fighter's sound using its predecessor's move pool while the check is open.
-        // The look-back limit bounds later attribution; it is not a timeout that
-        // makes a still-unconfirmed predecessor safe to use again.
-        if (audioEntryCues.values.any { segmentAt >= it.first }) return retainUnassigned()
-        // Delayed analysis cannot assign a previous fighter's tail to its replacement.
-        if (states.values.any { alignedStart < it.audioActiveSinceNanos }) return emptyList()
-        if (states.values.any { it.possibleMoves.isEmpty() }) return retainUnassigned()
+        if (states.size < 2 || states.values.any { it.possibleMoves.isEmpty() }) return retainUnassigned()
         val supportingContext = states.values.flatMap { listOf(it.speciesArticleId) + it.appearanceEvidence } +
-            configuredPlayerSlots.values.map { it.second.articleId }
-        audioPreferences.observe(article.id, clipAt, sound.referenceCandidates, audioPreferenceContext(),
-            referenceMatchAccepted = sound.referenceMatchAccepted, contextEvidence = supportingContext)
-        if (!sound.referenceMatchAccepted || !FastMoveReferenceMatcher.accepts(sound.referenceCandidates)) return emptyList()
-        val owners = states.entries.filter { (_, state) ->
-            state.possibleMoves.any { normalize(it.name) == normalize(candidate.moveName) }
+            configuredPlayerSlots.values.map { it.second.articleId } +
+            sound.referenceSearchScopes.flatMap { it.contextArticleIds }.map(::ArticleId)
+        val context = audioPreferenceContext()
+        // Apply phase/appearance guards to each candidate's source segment, not
+        // the unrestricted winner's unrelated alignment.
+        val allowed = contextualAudioChoices(sound.referenceCandidates, context, sound.referenceMatchAccepted,
+            sound.referenceSearchScopes).filter { choice ->
+            val candidate = choice.candidate
+            val segmentAt = clipAt + candidate.matchingOffsetNanos
+            val alignedStart = segmentAt - candidate.referenceOffsetNanos
+            val phaseAllowed = segmentAt >= cadenceFloorNanos && audioIdentityGate.allows(segmentAt) &&
+                audioIdentityGate.allows(alignedStart)
+            val waitingForEntry = audioEntryCues.values.any { segmentAt >= it.first }
+            if (phaseAllowed && waitingForEntry) retainUnassigned()
+            phaseAllowed && !waitingForEntry && states.values.none { alignedStart < it.audioActiveSinceNanos }
         }
-        // Mirrors and shared move pools keep the acoustic testimony unassigned, never discarded.
-        val owner = owners.singleOrNull() ?: return retainUnassigned()
-        val state = owner.value
-        val move = state.possibleMoves.single { normalize(it.name) == normalize(candidate.moveName) }
-        val history = state.referenceSounds
-        history.removeAll { segmentAt - it.segmentStartNanos > 12_000_000_000L }
-        val minimumDistinctStart = maxOf(300_000_000L, move.turns!! * TURN_NANOS * 85 / 100)
-        // Overlapping captures can contain the exact same sound, even with opposite visual cues.
-        if (history.any { normalize(it.moveName) == normalize(move.name) &&
-                (abs(it.alignedStartNanos - alignedStart) < minimumDistinctStart ||
-                    abs(it.segmentStartNanos - segmentAt) < 400_000_000L) }) return emptyList()
-        history += ReferenceSoundEvidence(article, move.name, alignedStart, segmentAt, supportingContext)
-        history.sortBy { it.segmentStartNanos }
-        if (history.size > 16) history.removeAt(0)
-        val agreeing = history.takeLast(2).takeIf { it.size == 2 && it.all { evidence ->
-            normalize(evidence.moveName) == normalize(move.name)
-        } } ?: return emptyList()
-        if (state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM")) return emptyList()
-        if (state.identifiedMove == move && state.identityBasis.startsWith("AUDIO_REFERENCE")) return emptyList()
-        state.identifiedMove = move
-        state.selectedBasis = null
-        state.corroborationSignature = ""
-        state.assumedHigherEnergyTieBreak = false
-        state.identificationEvidence = agreeing.flatMap { it.predecessors + it.article.id }.distinct()
-        state.identityBasis = "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE"
-        state.identityConfidence = .90f // A derived confidence, not a spectral-score probability.
-        return referenceIdentity(state, owner.key, article.copy(
-            perceivedAt = article.perceivedAt + candidate.matchingOffsetNanos / 1_000_000L,
-            monotonicTimeNanos = segmentAt,
-        ))
+        // Only guarded candidates can update presentation. Keep all their same-
+        // side alternatives for ranking and coverage checks.
+        audioPreferences.observe(article.id, clipAt, sound.referenceCandidates, context,
+            referenceMatchAccepted = sound.referenceMatchAccepted, contextEvidence = supportingContext,
+            searchScopes = sound.referenceSearchScopes, allowedSides = allowed.map { it.side }.toSet())
+        return allowed.filter { it.strict }.flatMap { choice ->
+            val candidate = choice.candidate
+            val segmentAt = clipAt + candidate.matchingOffsetNanos
+            val alignedStart = segmentAt - candidate.referenceOffsetNanos
+            val state = states.getValue(choice.side)
+            val move = state.possibleMoves.single { normalize(it.name) == normalize(candidate.moveName) }
+            val history = state.referenceSounds
+            history.removeAll { segmentAt - it.segmentStartNanos > 12_000_000_000L }
+            val minimumDistinctStart = maxOf(300_000_000L, move.turns!! * TURN_NANOS * 85 / 100)
+            if (history.any { normalize(it.moveName) == normalize(move.name) &&
+                    (abs(it.alignedStartNanos - alignedStart) < minimumDistinctStart ||
+                        abs(it.segmentStartNanos - segmentAt) < 400_000_000L ||
+                        (!choice.legacyGlobalMatch && abs(clipAt - (it.article.monotonicTimeNanos ?: clipAt)) < 1_200_000_000L)) }) {
+                return@flatMap emptyList()
+            }
+            val impact = if (choice.requiresImpactSupport) audioImpactSupport(choice.side, segmentAt,
+                candidate.matchedDurationNanos, history) else null
+            if (choice.requiresImpactSupport && impact == null) return@flatMap retainUnassigned()
+            history += ReferenceSoundEvidence(article, move.name, alignedStart, segmentAt,
+                supportingContext + listOfNotNull(impact?.id), impact?.monotonicTimeNanos)
+            history.sortBy { it.segmentStartNanos }
+            if (history.size > 16) history.removeAt(0)
+            val agreeing = history.takeLast(2).takeIf { it.size == 2 && it.all { evidence ->
+                normalize(evidence.moveName) == normalize(move.name)
+            } } ?: return@flatMap emptyList()
+            if (state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM")) return@flatMap emptyList()
+            if (state.identifiedMove == move && state.identityBasis.startsWith("AUDIO_REFERENCE")) return@flatMap emptyList()
+            state.identifiedMove = move
+            state.selectedBasis = null
+            state.corroborationSignature = ""
+            state.assumedHigherEnergyTieBreak = false
+            state.identificationEvidence = agreeing.flatMap { it.predecessors + it.article.id }.distinct()
+            state.identityBasis = "AUDIO_REFERENCE_REPEATED_UNIQUE_LEGAL_SIDE" +
+                if (agreeing.any { it.impactSupportAtNanos != null }) "_SUPPORTED_BY_SIDE_IMPACT" else ""
+            state.identityConfidence = .90f // Derived confidence, never a spectral-score probability.
+            val conclusionAt = agreeing.maxOf { maxOf(it.segmentStartNanos, it.impactSupportAtNanos ?: Long.MIN_VALUE) }
+            referenceIdentity(state, choice.side, article.copy(
+                perceivedAt = article.perceivedAt + (conclusionAt - clipAt) / 1_000_000L,
+                monotonicTimeNanos = conclusionAt,
+            ))
+        }
+    }
+
+    /** Raw recipient-side impact only: audio-derived uses and forecasts cannot corroborate themselves. */
+    private fun audioImpactSupport(side: ActivePokemonSide, segmentAt: Long, duration: Long,
+        history: List<ReferenceSoundEvidence>): RealityArticle? {
+        val floor = maxOf(cadenceFloorNanos, states.values.maxOf { it.audioActiveSinceNanos })
+        return rawImpactArticles.values.filter { raw ->
+            val at = raw.monotonicTimeNanos ?: return@filter false
+            rawImpactRecipient(raw) == side.opposite() && at >= floor &&
+                at >= segmentAt - AUDIO_IMPACT_ALIGNMENT_NANOS &&
+                at <= segmentAt + duration + AUDIO_IMPACT_ALIGNMENT_NANOS &&
+                audioIdentityGate.allows(at) && !chargedEffectivenessWindow.contains(at) &&
+                history.none { it.impactSupportAtNanos?.let { used -> abs(used - at) < MIN_USE_INTERVAL_NANOS } == true }
+        }.minByOrNull { abs(requireNotNull(it.monotonicTimeNanos) - (segmentAt + duration / 2)) }
     }
 
     private fun acceptSoundCadence(
@@ -982,7 +1015,8 @@ class FastMoveCadenceInference(
     }
 
     private fun audioPreferenceContext() = states.map { (side, state) ->
-        AudioPreferenceCombatant(side, state.speciesName, state.audioActiveSinceNanos, state.possibleMoves.map { it.name })
+        AudioPreferenceCombatant(side, state.speciesName, state.audioActiveSinceNanos, state.possibleMoves.map { it.name },
+            state.identifiedMove?.name?.takeIf { state.identityBasis.startsWith("CONFIGURED_PLAYER_TEAM") })
     }
 
     private enum class EvidenceFamily { IMPACT, MOTION, AUDIO, VISUAL }
@@ -1433,6 +1467,7 @@ class FastMoveCadenceInference(
         const val MAX_RAW_IMPACT_HISTORY = 256
         const val EFFECTIVENESS_USE_ALIGNMENT_NANOS = 500_000_000L
         const val MOTION_IMPACT_ALIGNMENT_NANOS = 450_000_000L
+        const val AUDIO_IMPACT_ALIGNMENT_NANOS = 450_000_000L
         const val MIN_USE_INTERVAL_NANOS = 300_000_000L
         const val MIN_TOLERANCE_NANOS = 160_000_000L
         const val RELATIVE_TOLERANCE = 0.15

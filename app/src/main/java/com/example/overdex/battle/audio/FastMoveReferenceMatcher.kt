@@ -6,22 +6,42 @@ import kotlin.math.*
 data class FastMoveSoundReference(val moveName: String, val sha256: String, val audio: Pcm16Audio)
 
 /**
- * Compares a 400 ms spectral sequence against the entire local catalogue. Both the original
+ * Compares a 400 ms spectral sequence against eligible local references. Both the original
  * spectrum and its changing component must agree. A loud clip or a legal move alone cannot win.
  * Offsets describe the matched portion; reference length is NOT the PvP turn duration.
  */
 class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
     private data class Features(val original: List<FloatArray>, val changing: List<FloatArray>)
-    private data class Prepared(val reference: FastMoveSoundReference, val features: Features)
+    private data class Prepared(val reference: FastMoveSoundReference, val key: String, val features: Features)
     private data class Fit(val score: Float, val queryStart: Int, val referenceStart: Int, val frames: Int)
-    private val prepared = references.map { Prepared(it, features(StatChangeSoundMatcher.mono8k(it.audio))) }
+    private val prepared = references.map { Prepared(it, moveKey(it.moveName), features(StatChangeSoundMatcher.mono8k(it.audio))) }
 
+    /** Full-catalogue comparison retained for offline diagnostics. Live callers supply an allowlist. */
     fun measure(audio: Pcm16Audio): List<FastMoveSoundCandidate> = measureMono8k(StatChangeSoundMatcher.mono8k(audio))
 
-    internal fun measureMono8k(mono: ShortArray): List<FastMoveSoundCandidate> {
+    fun measure(audio: Pcm16Audio, allowedMoveNames: Set<String>): List<FastMoveSoundCandidate> {
+        val eligible = allowedReferences(allowedMoveNames)
+        if (eligible.isEmpty()) return emptyList()
+        return measureReferences(StatChangeSoundMatcher.mono8k(audio), eligible)
+    }
+
+    internal fun measureMono8k(mono: ShortArray): List<FastMoveSoundCandidate> = measureReferences(mono, prepared)
+
+    internal fun measureMono8k(mono: ShortArray, allowedMoveNames: Set<String>): List<FastMoveSoundCandidate> =
+        measureReferences(mono, allowedReferences(allowedMoveNames))
+
+    private fun allowedReferences(names: Set<String>): List<Prepared> {
+        val keys = names.map(::moveKey).filter(String::isNotEmpty).toSet()
+        return if (keys.isEmpty()) emptyList() else prepared.filter { it.key in keys }
+    }
+
+    private fun measureReferences(mono: ShortArray, eligible: List<Prepared>): List<FastMoveSoundCandidate> {
+        // An unknown roster or missing reference does not authorize a full-catalogue fallback.
+        // Gate before query extraction and fitting: impossible moves are never scored.
+        if (eligible.isEmpty()) return emptyList()
         if (mono.size < SIZE + (MATCH_FRAMES - 1) * HOP || mono.maxOf { abs(it.toInt()) } < 120) return emptyList()
         val query = features(mono)
-        return prepared.mapNotNull { ref ->
+        return eligible.mapNotNull { ref ->
             val original = fit(query.original, ref.features.original) ?: return@mapNotNull null
             val changing = fit(query.changing, ref.features.changing) ?: return@mapNotNull null
             FastMoveSoundCandidate(ref.reference.moveName, ref.reference.sha256,
@@ -47,7 +67,7 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
                 var dot = 0f
                 var bin = 0
                 // Fixed 64-bin vectors. Unrolling avoids ART's per-bin loop overhead while
-                // preserving the full catalogue and both independent score thresholds.
+                // preserving both independent score thresholds for each eligible reference.
                 while (bin < 64) {
                     dot += q[bin] * r[bin] + q[bin + 1] * r[bin + 1] +
                         q[bin + 2] * r[bin + 2] + q[bin + 3] * r[bin + 3] +
@@ -93,10 +113,10 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
         private const val HOP = 128
         private const val HOP_NANOS = 16_000_000L
         private const val MATCH_FRAMES = 25
+        private fun moveKey(name: String) = name.uppercase().filter(Char::isLetterOrDigit)
 
         /** Retention/presentation floor only, never a confirmed match or a probability. */
         fun plausibleCandidate(candidates: List<FastMoveSoundCandidate>): FastMoveSoundCandidate? {
-            if (candidates.size < 2) return null
             return candidates.maxByOrNull { it.similarity }?.takeIf {
                 it.similarity.isFinite() && it.changingSimilarity.isFinite() &&
                     it.similarity >= .85f && it.changingSimilarity >= .65f

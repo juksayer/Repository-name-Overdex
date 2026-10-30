@@ -6,6 +6,53 @@ import org.junit.Test
 import java.io.File
 
 class FastMoveReferenceMatcherTest {
+    @Test fun `off pool winner is excluded while eligible comparisons retain their measured scores`() {
+        val audio = references.first { it.moveName == "Water Gun" }.audio
+        val full = matcher.measure(audio)
+        assertEquals("Water Gun", full.first().moveName)
+        val allowed = setOf("Spark", "Tackle")
+        val scoped = matcher.measure(audio, allowed)
+        assertEquals(allowed, scoped.map { it.moveName }.toSet())
+        assertEquals(full.filter { it.moveName in allowed }, scoped)
+        assertFalse(scoped.any { it.moveName == "Water Gun" })
+    }
+
+    @Test fun `empty and unavailable allowlists never fall back to the catalogue`() {
+        val audio = references.first { it.moveName == "Water Gun" }.audio
+        val mono = StatChangeSoundMatcher.mono8k(audio)
+        for (allowed in listOf(emptySet(), setOf("", " -_ "), setOf("Uncatalogued Move"))) {
+            assertTrue(matcher.measure(audio, allowed).isEmpty())
+            assertTrue(matcher.measureMono8k(mono, allowed).isEmpty())
+        }
+    }
+
+    @Test fun `allowlist names normalize case spaces and punctuation without leaking other references`() {
+        val audio = references.first { it.moveName == "Water Gun" }.audio
+        val expected = matcher.measure(audio, setOf("Water Gun", "Thunder Shock"))
+        val allowed = setOf("  water_GUN ", "THUNDER-shock", "Water Gun", "Uncatalogued Move")
+        assertEquals(setOf("Water Gun", "Thunder Shock"), expected.map { it.moveName }.toSet())
+        assertEquals(expected, matcher.measure(audio, allowed))
+        assertEquals(expected, matcher.measureMono8k(StatChangeSoundMatcher.mono8k(audio), allowed))
+    }
+
+    @Test fun `a single plausible legal reference is retained but cannot force strict acceptance`() {
+        val audio = references.first { it.moveName == "Water Gun" }.audio
+        val ranked = matcher.measure(audio, setOf("Water Gun"))
+        assertEquals(1, ranked.size)
+        assertEquals("Water Gun", FastMoveReferenceMatcher.plausibleCandidate(ranked)?.moveName)
+        assertFalse(FastMoveReferenceMatcher.accepts(ranked))
+        assertNull(FastMoveReferenceMatcher.plausibleCandidate(listOf(ranked.single().copy(similarity = .84f))))
+        assertNull(FastMoveReferenceMatcher.plausibleCandidate(listOf(ranked.single().copy(changingSimilarity = .64f))))
+        assertNull(FastMoveReferenceMatcher.plausibleCandidate(emptyList()))
+    }
+
+    @Test fun `narrowed comparison still rejects silence and a reference too short to measure`() {
+        assertTrue(matcher.measureMono8k(ShortArray(9_600), setOf("Water Gun")).isEmpty())
+        val bite = references.first { it.moveName == "Bite" }
+        assertTrue(matcher.measure(bite.audio, setOf("Bite")).isEmpty())
+        assertTrue(matcher.measure(references.first { it.moveName == "Water Gun" }.audio, setOf("Bite")).isEmpty())
+    }
+
     @Test fun `clean target sounds survive volume changes and reject the competing move`() {
         for (name in listOf("Water Gun", "Powder Snow", "Spark", "Tackle")) {
             val ref = references.first { it.moveName == name }

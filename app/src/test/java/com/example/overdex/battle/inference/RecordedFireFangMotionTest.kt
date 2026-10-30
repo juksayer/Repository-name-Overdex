@@ -85,7 +85,9 @@ class RecordedFireFangMotionTest {
                 p.cueAttackingSide?.let(::side), p.analysisVersion, p.referenceCandidates.map {
                     FastMoveSoundCandidate(it.moveName, it.referenceSha256, it.similarity, it.changingSimilarity,
                         it.matchingOffsetNanos, it.referenceOffsetNanos, it.matchedDurationNanos)
-                }, p.referenceMatchAccepted)
+                }, p.referenceMatchAccepted, p.referenceSearchScopes.map {
+                    FastMoveSoundSearchScope(side(it.side), it.speciesName, it.moveNames, it.contextArticleIds)
+                })
             ArchivedMatchStarted -> MatchStarted
             is ArchivedMatchEnded -> MatchEnded(BattleResult.valueOf(p.result))
             ArchivedGetReadyWitnessed -> GetReadyWitnessed

@@ -451,7 +451,16 @@ data class ArchivedFastMoveSoundMeasured(
     val analysisVersion: String? = null,
     val referenceCandidates: List<ArchivedFastMoveSoundCandidate> = emptyList(),
     val referenceMatchAccepted: Boolean = false,
+    val referenceSearchScopes: List<ArchivedFastMoveSoundSearchScope> = emptyList(),
 ) : ArchivedTestimonyPayload
+
+@Serializable
+data class ArchivedFastMoveSoundSearchScope(
+    val side: String,
+    val speciesName: String,
+    val moveNames: List<String>,
+    val contextArticleIds: List<String> = emptyList(),
+)
 
 @Serializable
 data class ArchivedFastMoveSoundCandidate(

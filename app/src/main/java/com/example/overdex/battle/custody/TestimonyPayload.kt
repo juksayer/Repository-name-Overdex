@@ -618,6 +618,8 @@ data class FastMoveSoundMeasured(
     val analysisVersion: String? = null,
     val referenceCandidates: List<FastMoveSoundCandidate> = emptyList(),
     val referenceMatchAccepted: Boolean = false,
+    /** Requested legal search pools, including moves with no usable reference recording. */
+    val referenceSearchScopes: List<FastMoveSoundSearchScope> = emptyList(),
 ) : TestimonyPayload {
     init {
         require(peakAmplitude in 0f..1f)
@@ -628,6 +630,14 @@ data class FastMoveSoundMeasured(
         require(!referenceMatchAccepted || referenceCandidates.size >= 2)
     }
 }
+
+/** Context used to choose references; a scope does not assign the measured sound to that side. */
+data class FastMoveSoundSearchScope(
+    val side: ActivePokemonSide,
+    val speciesName: String,
+    val moveNames: List<String>,
+    val contextArticleIds: List<String> = emptyList(),
+)
 
 /** Ranked spectral evidence, still unassigned to a combatant. Offsets are within the two clips. */
 data class FastMoveSoundCandidate(

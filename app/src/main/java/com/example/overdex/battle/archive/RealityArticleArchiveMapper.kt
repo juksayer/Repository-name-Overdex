@@ -358,6 +358,9 @@ object RealityArticleArchiveMapper {
                     ArchivedFastMoveSoundCandidate(it.moveName, it.referenceSha256, it.similarity,
                         it.changingSimilarity, it.matchingOffsetNanos, it.referenceOffsetNanos, it.matchedDurationNanos)
                 },
+                referenceSearchScopes = p.referenceSearchScopes.map {
+                    ArchivedFastMoveSoundSearchScope(it.side.name, it.speciesName, it.moveNames, it.contextArticleIds)
+                },
             )
             is PlayerInactiveSpeciesSpriteFingerprintMeasured -> ArchivedPlayerInactiveSpeciesSpriteFingerprintMeasured(
                 slot = p.slot,

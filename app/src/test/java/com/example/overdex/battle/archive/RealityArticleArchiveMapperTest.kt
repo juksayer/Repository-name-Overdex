@@ -35,6 +35,7 @@ import com.example.overdex.battle.custody.FastMoveEffectiveness
 import com.example.overdex.battle.custody.FastMoveEffectivenessWitnessed
 import com.example.overdex.battle.custody.FastMoveUseObserved
 import com.example.overdex.battle.custody.FastMoveSoundMeasured
+import com.example.overdex.battle.custody.FastMoveSoundSearchScope
 import com.example.overdex.battle.observation.MatchId
 import com.example.overdex.model.PokemonType
 import com.example.overdex.battle.reality.ArticleId
@@ -581,6 +582,47 @@ class RealityArticleArchiveMapperTest {
             """{"kind":"fast_move_sound_measured","audible":false,"peakAmplitude":0.1}""") as ArchivedFastMoveSoundMeasured
         assertEquals(false, old.referenceMatchAccepted)
         assertEquals(emptyList<ArchivedFastMoveSoundCandidate>(), old.referenceCandidates)
+        assertEquals(emptyList<ArchivedFastMoveSoundSearchScope>(), old.referenceSearchScopes)
+    }
+
+    @Test fun `sound search scopes preserve requested moves without claiming a missing reference was scored`() {
+        val scopes = listOf(
+            FastMoveSoundSearchScope(ActivePokemonSide.PLAYER, "Golbat", listOf("Wing Attack"),
+                listOf("player-species", "configured-team")),
+            FastMoveSoundSearchScope(ActivePokemonSide.OPPONENT, "Mawile", listOf("Fire Fang", "Ice Fang"),
+                listOf("opponent-species")),
+        )
+        val candidate = com.example.overdex.battle.custody.FastMoveSoundCandidate(
+            "Wing Attack", "reference-sha", .97f, .91f, 0L, 16_000_000L, 416_000_000L)
+        val measured = FastMoveSoundMeasured(false, null, null, null, .3f,
+            analysisVersion = "spectral-sequence-v1", referenceCandidates = listOf(candidate),
+            referenceSearchScopes = scopes)
+        val archive = RealityArticleArchiveMapper.createArchive(matchA, listOf(article("scoped-sound", measured)))
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        assertEquals(1, restored.schemaVersion)
+        val sound = restored.articles.single().payload as ArchivedFastMoveSoundMeasured
+        assertEquals(listOf(
+            ArchivedFastMoveSoundSearchScope("PLAYER", "Golbat", listOf("Wing Attack"),
+                listOf("player-species", "configured-team")),
+            ArchivedFastMoveSoundSearchScope("OPPONENT", "Mawile", listOf("Fire Fang", "Ice Fang"),
+                listOf("opponent-species")),
+        ), sound.referenceSearchScopes)
+        assertEquals(listOf("Wing Attack"), sound.referenceCandidates.map { it.moveName })
+        assertEquals(null, sound.attackingSide)
+        assertEquals(false, sound.referenceMatchAccepted)
+    }
+
+    @Test fun `scope context IDs default empty when optional metadata is absent`() {
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val sound = json.decodeFromString(ArchivedTestimonyPayload.serializer(), """
+            {"kind":"fast_move_sound_measured","audible":false,"peakAmplitude":0.1,
+             "referenceSearchScopes":[{"side":"OPPONENT","speciesName":"Combusken","moveNames":["Ember","Peck"]}]}
+        """.trimIndent()) as ArchivedFastMoveSoundMeasured
+        assertEquals(listOf(ArchivedFastMoveSoundSearchScope("OPPONENT", "Combusken", listOf("Ember", "Peck"))),
+            sound.referenceSearchScopes)
+        assertEquals(emptyList<String>(), sound.referenceSearchScopes.single().contextArticleIds)
+        assertEquals(emptyList<ArchivedFastMoveSoundCandidate>(), sound.referenceCandidates)
     }
 
     @Test

@@ -17,7 +17,7 @@ import kotlin.math.abs
 
 /** Recognizes independent audio windows from VS through the final faint/result.
  * Strong matches and rate-limited plausible comparisons retain their analyzed PCM. One background worker
- * and a conflated queue prevent the catalogue search from blocking capture or creating a backlog.
+ * and a conflated queue keep active-combatant reference searches off the capture path.
  */
 class LiveFastMoveSoundWitness(
     private val context: Context,
@@ -33,7 +33,11 @@ class LiveFastMoveSoundWitness(
     private var gate = FastMoveListeningGate()
     @Volatile private var failed = false
     @Volatile private var prepared = false
-    private data class PendingSound(val window: FastMoveAudioWindowSnapshot, val measurement: FastMoveSoundMeasured)
+    private data class PendingSound(
+        val window: FastMoveAudioWindowSnapshot,
+        val candidates: FastMoveAudioCandidateSnapshot,
+        val measurement: FastMoveSoundMeasured,
+    )
 
     override fun start(match: Match) {
         if (scope != null) return
@@ -43,6 +47,7 @@ class LiveFastMoveSoundWitness(
         val source = SourceId(observerId.id)
         val windows = Channel<FastMoveAudioWindowSnapshot>(Channel.CONFLATED)
         val pending = ConcurrentHashMap<Pair<String, Long>, PendingSound>()
+        val candidateContext = FastMoveAudioCandidateContext(match.pokemonKnowledge)
         val matcher = worker.async { loadMatcher() }
         match.custody.submitAvailability(source, true, System.currentTimeMillis())
         match.custody.submitInputAvailability(source, false, System.currentTimeMillis())
@@ -50,13 +55,16 @@ class LiveFastMoveSoundWitness(
         worker.launch(start = CoroutineStart.UNDISPATCHED) {
             match.articles.collect { article ->
                 val previousGeneration = gate.generation
+                val previousCandidates = candidateContext.generation
                 gate.observe(article.payload, article.monotonicTimeNanos, article.id.value)
-                if (gate.generation != previousGeneration) pending.clear()
+                candidateContext.observe(article)
+                if (gate.generation != previousGeneration || candidateContext.generation != previousCandidates) pending.clear()
                 val audio = article.payload as? AudioCaptured ?: return@collect
                 if (audio.cueKind != CUE_KIND) return@collect
                 val at = article.monotonicTimeNanos ?: return@collect
                 pending.remove(audio.artifact.sha256 to at)?.let { saved ->
-                    if (!gate.accepts(saved.window.startNanos, saved.window.endNanos, saved.window.generation)) return@collect
+                    if (!gate.accepts(saved.window.startNanos, saved.window.endNanos, saved.window.generation) ||
+                        !candidateContext.isCurrent(saved.candidates)) return@collect
                     match.custody.submitTestimony(source, saved.measurement, article.perceivedAt, null,
                         listOf(article.id.value), at)
                 }
@@ -90,7 +98,7 @@ class LiveFastMoveSoundWitness(
                 val recognizer = matcher.await()
                 prepared = true
                 val retained = ArrayDeque<Pair<String, Long>>()
-                var retainedGeneration = gate.generation
+                var retainedGeneration: Pair<Long, Long>? = null
                 var lastComparisonAt: Long? = null
                 var previousSequence: Long? = null
                 var scans = 0
@@ -100,16 +108,28 @@ class LiveFastMoveSoundWitness(
                 var reportAt = Long.MIN_VALUE
                 for (window in windows) {
                     if (!gate.accepts(window.startNanos, window.endNanos, window.generation)) continue
-                    if (retainedGeneration != window.generation) {
-                        retained.clear(); lastComparisonAt = null; retainedGeneration = window.generation
+                    // PCM acquisition starts at VS, but unknown combatants never trigger a
+                    // full-library search. A window crossing a switch/configuration is discarded.
+                    val search = candidateContext.snapshot(window.startNanos, window.endNanos) ?: continue
+                    val generation = window.generation to search.generation
+                    if (retainedGeneration != generation) {
+                        retained.clear(); lastComparisonAt = null; retainedGeneration = generation
                     }
                     previousSequence?.let { skipped += (window.sequence - it - 1).coerceAtLeast(0) }
                     previousSequence = window.sequence
                     if (System.nanoTime() - window.endNanos > 2_000_000_000L) continue
                     val started = System.nanoTime()
-                    val candidates = recognizer.measureMono8k(window.samples)
-                    val accepted = FastMoveReferenceMatcher.accepts(candidates)
-                    val keepComparison = !accepted && FastMoveReferenceMatcher.plausibleCandidate(candidates) != null &&
+                    val candidates = recognizer.measureMono8k(window.samples, search.allowedMoveNames)
+                    if (!candidateContext.isCurrent(search)) continue
+                    val accepted = search.allActiveSidesKnown && FastMoveReferenceMatcher.accepts(candidates)
+                    // Preserve each side's legal comparison even when the other side is louder.
+                    // Shared names remain acoustically unassigned; downstream evidence owns that decision.
+                    val comparisonPeaks = search.sideMoves.values.mapNotNull { names ->
+                        FastMoveReferenceMatcher.plausibleCandidate(candidates.filter { candidate ->
+                            names.any { moveKey(it) == moveKey(candidate.moveName) }
+                        })
+                    }.distinctBy { moveKey(it.moveName) }
+                    val keepComparison = !accepted && comparisonPeaks.isNotEmpty() &&
                         (lastComparisonAt == null || window.startNanos - lastComparisonAt!! >= 1_500_000_000L)
                     val elapsed = System.nanoTime() - started
                     scans++; totalNanos += elapsed; maximumNanos = maxOf(maximumNanos, elapsed)
@@ -118,15 +138,17 @@ class LiveFastMoveSoundWitness(
                         match.custody.submitTestimony(SourceId("FAST_MOVE_AUDIO_ANALYSIS_STATUS"), RawTestimony(
                             "STREAM; scans=$scans; skippedWindows=$skipped; " +
                                 "meanMatchMs=${totalNanos / scans / 1_000_000}; maxMatchMs=${maximumNanos / 1_000_000}; " +
+                                "legalReferences=${search.allowedMoveNames.size}; activeSidesKnown=${search.allActiveSidesKnown}; " +
                                 "accepted=$accepted; best=${best?.moveName}; similarity=${best?.similarity}; " +
                                 "changingSimilarity=${best?.changingSimilarity}"
                         ), window.endWallMillis, null, gate.triggerIds(), window.endNanos)
                         reportAt = window.endNanos
                     }
-                    if ((accepted || keepComparison) && pending.size < 16 && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
-                        val best = candidates.first()
-                        val alignedAt = window.startNanos + best.matchingOffsetNanos - best.referenceOffsetNanos
-                        if (retained.none { it.first == best.moveName && abs(it.second - alignedAt) < 250_000_000L }) {
+                    if ((accepted || keepComparison) && pending.size < 16 &&
+                        gate.accepts(window.startNanos, window.endNanos, window.generation) && candidateContext.isCurrent(search)) {
+                        val peaks = (comparisonPeaks + candidates.take(1)).distinctBy { moveKey(it.moveName) }
+                            .map { moveKey(it.moveName) to window.startNanos + it.matchingOffsetNanos - it.referenceOffsetNanos }
+                        if (peaks.any { peak -> retained.none { it.first == peak.first && abs(it.second - peak.second) < 250_000_000L } }) {
                             val pcm = ByteArray(window.samples.size * 2)
                             window.samples.forEachIndexed { index, sample ->
                                 pcm[index * 2] = sample.toByte(); pcm[index * 2 + 1] = (sample.toInt() shr 8).toByte()
@@ -135,14 +157,18 @@ class LiveFastMoveSoundWitness(
                                 store.preserveWav(Pcm16WavEncoder.encode(pcm, FastMoveAudioWindow.RATE, 1))
                             }
                             ensureActive()
-                            if (artifact != null && gate.accepts(window.startNanos, window.endNanos, window.generation)) {
+                            if (artifact != null && gate.accepts(window.startNanos, window.endNanos, window.generation) &&
+                                candidateContext.isCurrent(search)) {
                                 val measured = FastMoveSoundAnalyzer.measureMono8k(window.samples)
-                                pending[artifact.sha256 to window.startNanos] = PendingSound(window, measured.copy(
+                                pending[artifact.sha256 to window.startNanos] = PendingSound(window, search, measured.copy(
                                     analysisVersion = FastMoveReferenceMatcher.VERSION,
-                                    // Ambiguous comparisons need every legal alternative's score, including low ranks.
-                                    referenceCandidates = if (keepComparison) candidates else
-                                        (candidates.take(3) + candidates.sortedByDescending { it.changingSimilarity }.take(3))
-                                            .distinctBy { it.moveName }.sortedByDescending { it.similarity },
+                                    // Keep all scored legal alternatives and the requested lists, so
+                                    // missing sound assets remain visible rather than becoming exclusions.
+                                    referenceCandidates = candidates,
+                                    referenceSearchScopes = search.sideMoves.map { (side, names) ->
+                                        FastMoveSoundSearchScope(side, search.sideSpeciesNames.getValue(side),
+                                            names.sorted(), search.sideEvidenceIds.getValue(side))
+                                    },
                                     referenceMatchAccepted = accepted,
                                     soundOnsetMonotonicNanos = measured.onsetOffsetNanos?.let { window.startNanos + it },
                                 ))
@@ -150,8 +176,8 @@ class LiveFastMoveSoundWitness(
                                     AudioCaptured(artifact, FastMoveAudioWindow.RATE, 1, window.durationNanos, CUE_KIND,
                                         window.captureSource, PcmSignalLevel.peak(pcm)),
                                     window.endWallMillis - window.durationNanos / 1_000_000, null,
-                                    gate.triggerIds(), window.startNanos)
-                                retained += best.moveName to alignedAt
+                                    (gate.triggerIds() + search.evidenceIds).distinct(), window.startNanos)
+                                retained.addAll(peaks)
                                 if (keepComparison) lastComparisonAt = window.startNanos
                                 while (retained.size > 64) retained.removeFirst()
                             } else if (artifact == null) {
@@ -181,5 +207,8 @@ class LiveFastMoveSoundWitness(
         prepared = false
     }
 
-    companion object { const val CUE_KIND = "FAST_MOVE_AUDIO_STREAM" }
+    companion object {
+        const val CUE_KIND = "FAST_MOVE_AUDIO_STREAM"
+        private fun moveKey(name: String) = name.uppercase(java.util.Locale.ROOT).filter(Char::isLetterOrDigit)
+    }
 }
