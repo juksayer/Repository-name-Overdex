@@ -18,11 +18,22 @@ class ScreenshotDirectoryManager(private val context: Context) {
         DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment
     } ?: "Bundled samples"
 
-    fun imageUris(): List<Uri> {
+    data class Image(val uri: Uri, val name: String, val deviceLabel: String? = null)
+
+    /** Root images plus one optional subfolder per phone/model. Called off the UI thread. */
+    fun images(): List<Image> {
         val folder = folderUri()?.let { DocumentFile.fromTreeUri(context, it) } ?: return emptyList()
-        return folder.listFiles()
-            .filter { file -> file.isFile && file.type?.startsWith("image/") == true }
-            .sortedBy { it.name?.lowercase() }
-            .map { it.uri }
+        return folder.listFiles().flatMap { entry ->
+            when {
+                entry.isDirectory -> entry.listFiles().mapNotNull { image -> image.asImage(entry.name) }
+                else -> listOfNotNull(entry.asImage(null))
+            }
+        }.sortedWith(compareBy({ it.deviceLabel?.lowercase().orEmpty() }, { it.name.lowercase() }))
     }
+
+    fun imageUris(): List<Uri> = images().map { it.uri }
+
+    private fun DocumentFile.asImage(deviceLabel: String?): Image? =
+        takeIf { isFile && type?.startsWith("image/") == true }
+            ?.let { Image(it.uri, it.name ?: "Screenshot", deviceLabel?.takeIf(String::isNotBlank)) }
 }

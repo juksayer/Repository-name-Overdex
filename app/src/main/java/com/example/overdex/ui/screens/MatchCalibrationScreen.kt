@@ -2,6 +2,8 @@ package com.example.overdex.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
@@ -49,6 +51,10 @@ import com.example.overdex.ui.theme.TerminalBlack
 import android.os.Build
 import java.io.File
 import com.example.overdex.data.BattleCalibrationReferenceStore
+import com.example.overdex.data.CalibrationScreenshotFilter
+import com.example.overdex.data.CalibrationScreenshotLibrary
+import com.example.overdex.data.CalibrationScreenshotReference
+import com.example.overdex.data.CalibrationImageViewport
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -123,21 +129,32 @@ fun MatchCalibrationScreen(
     var battleSaveFailed by remember { mutableStateOf(false) }
     var teamSelectSaveFailed by remember { mutableStateOf(false) }
     val screenshotDirectory = remember(context) { ScreenshotDirectoryManager(context) }
-    var userSamples by remember { mutableStateOf(screenshotDirectory.imageUris()) }
-    val bundledSamples = remember {
-        context.assets.list("battle_samples")?.toList() ?: listOf("celluloid-shot0001.jpg")
+    var libraryRevision by remember { mutableIntStateOf(0) }
+    val library by produceState<List<CalibrationSample>?>(initialValue = null, context, libraryRevision) {
+        value = null
+        value = withContext(Dispatchers.IO) { loadCalibrationSamples(context, screenshotDirectory) }
     }
-    val capturedSample by produceState<File?>(initialValue = null, context) {
-        value = withContext(Dispatchers.IO) { BattleCalibrationReferenceStore(context.filesDir).latest() }
-    }
-    val samples: List<Any> = if (userSamples.isNotEmpty()) userSamples else listOfNotNull(capturedSample) + bundledSamples
+    var screenshotFilter by remember { mutableStateOf<CalibrationScreenshotFilter>(CalibrationScreenshotFilter.ThisScreen) }
+    var showLibraryDialog by remember { mutableStateOf(false) }
+    var showImagePicker by remember { mutableStateOf(false) }
+    val references = library.orEmpty().map { it.reference }
+    val visibleIds = CalibrationScreenshotLibrary.filter(
+        references, screenshotFilter, detectedScreenWidth, detectedScreenHeight
+    ).map { it.id }.toSet()
+    val samples = library.orEmpty().filter { it.reference.id in visibleIds }
     var currentImageIndex by remember { mutableIntStateOf(0) }
-    val screenshotSourceName = when (samples.getOrNull(currentImageIndex)) {
-        is File -> "DEVICE CAPTURE"
-        is Uri -> "YOUR SCREENSHOT"
-        else -> "BUNDLED REFERENCE"
+    val selectedSample = samples.getOrNull(currentImageIndex)
+    val screenshotSourceName = selectedSample?.sourceName ?: "NO REFERENCE"
+    val sourceFrameSize = selectedSample?.reference?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
+    val imageViewport = CalibrationImageViewport.fit(
+        containerSize.width, containerSize.height, sourceFrameSize.width, sourceFrameSize.height
+    )
+    val screenshotFilterLabel = when (val filter = screenshotFilter) {
+        CalibrationScreenshotFilter.ThisScreen -> "This screen"
+        CalibrationScreenshotFilter.All -> "All screenshots"
+        is CalibrationScreenshotFilter.Shape -> "Shape ${CalibrationScreenshotLibrary.shapeLabel(filter.width, filter.height)}"
+        is CalibrationScreenshotFilter.Device -> filter.label
     }
-    var sourceFrameSize by remember { mutableStateOf(IntSize.Zero) }
     val screenshotFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -145,33 +162,17 @@ fun MatchCalibrationScreen(
             runCatching {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
                 screenshotDirectory.saveFolder(uri)
-                userSamples = screenshotDirectory.imageUris()
+                libraryRevision++
                 currentImageIndex = 0
             }
         }
     }
 
-    LaunchedEffect(samples.size) {
+    LaunchedEffect(samples.map { it.reference.id }) {
         currentImageIndex = currentImageIndex.coerceIn(0, (samples.size - 1).coerceAtLeast(0))
-    }
-
-    LaunchedEffect(samples.getOrNull(currentImageIndex)) {
-        val sample = samples.getOrNull(currentImageIndex)
-        sourceFrameSize = withContext(Dispatchers.IO) {
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            runCatching {
-                when (sample) {
-                    is String -> context.assets.open("battle_samples/$sample").use { BitmapFactory.decodeStream(it, null, options) }
-                    is Uri -> context.contentResolver.openInputStream(sample)?.use { BitmapFactory.decodeStream(it, null, options) }
-                    is File -> BitmapFactory.decodeFile(sample.absolutePath, options)
-                }
-                IntSize(options.outWidth.coerceAtLeast(0), options.outHeight.coerceAtLeast(0))
-            }.getOrDefault(IntSize.Zero)
-        }
     }
 
     val matchRegions = remember {
@@ -501,20 +502,18 @@ fun MatchCalibrationScreen(
             val currentIndex = matchRegions.indexOf(selectedRegion)
             selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
         }
-        onALong {
-            screenshotFolderPicker.launch(screenshotDirectory.folderUri())
-        }
+        onALong { showLibraryDialog = true }
         onSelect {
             mode = if (mode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
         }
         onSelectLong {
-            currentImageIndex = (currentImageIndex + 1) % samples.size
+            if (samples.isNotEmpty()) currentImageIndex = (currentImageIndex + 1) % samples.size
         }
         onStart { openSaveProfileDialog() }
         onLcdDrag { delta ->
             showLcdTouchHint = false
-            val dx = if (containerSize.width > 0f) delta.x / containerSize.width else 0f
-            val dy = if (containerSize.height > 0f) delta.y / containerSize.height else 0f
+            val dx = if (imageViewport.width > 0f) delta.x / imageViewport.width else 0f
+            val dy = if (imageViewport.height > 0f) delta.y / imageViewport.height else 0f
             if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
         }
         onLcdTap {
@@ -549,7 +548,7 @@ fun MatchCalibrationScreen(
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
-            "$screenshotSourceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
+            "HOLD A: IMAGES  $screenshotSourceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
         )
     }
 
@@ -621,6 +620,92 @@ fun MatchCalibrationScreen(
         )
     }
 
+    if (showLibraryDialog) {
+        AlertDialog(
+            onDismissRequest = { showLibraryDialog = false },
+            title = { Text("SCREENSHOT LIBRARY", color = TerminalGreen) },
+            text = {
+                Column(
+                    Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("$screenshotFilterLabel · ${samples.size} screenshot(s)", color = TerminalGreen, fontSize = 13.sp)
+                    selectedSample?.let { sample ->
+                        Text(sample.reference.name, color = TerminalGreen, fontSize = 12.sp)
+                        Text(sample.reference.dimensionLabel(), color = TerminalGreen, fontSize = 11.sp)
+                    }
+                    TextButton(
+                        enabled = samples.isNotEmpty(),
+                        onClick = { showLibraryDialog = false; showImagePicker = true }
+                    ) { Text("CHOOSE SCREENSHOT", color = TerminalGreen) }
+                    TextButton(onClick = {
+                        showLibraryDialog = false
+                        screenshotFolderPicker.launch(screenshotDirectory.folderUri())
+                    }) { Text("CHOOSE SCREENSHOT FOLDER", color = TerminalGreen) }
+                    val choices: List<Pair<CalibrationScreenshotFilter, String>> = listOf(
+                        CalibrationScreenshotFilter.ThisScreen to "This screen (${CalibrationScreenshotLibrary.shapeLabel(detectedScreenWidth, detectedScreenHeight)})",
+                        CalibrationScreenshotFilter.All to "All screenshots"
+                    ) + CalibrationScreenshotLibrary.shapeChoices(references).map { shape ->
+                        shape to "Shape ${CalibrationScreenshotLibrary.shapeLabel(shape.width, shape.height)}"
+                    } + references.mapNotNull { it.deviceLabel }.distinct().sorted().map { label ->
+                        CalibrationScreenshotFilter.Device(label) to "Device folder: $label"
+                    }
+                    Text("SCREEN / DEVICE", color = TerminalGreen, fontSize = 12.sp)
+                    choices.forEach { (filter, label) ->
+                        TextButton(onClick = { screenshotFilter = filter; currentImageIndex = 0 }) {
+                            Text("${if (screenshotFilter == filter) "✓ " else ""}$label", color = TerminalGreen)
+                        }
+                    }
+                    val unknownCount = references.count { !it.hasDimensions }
+                    if (unknownCount > 0) {
+                        Text(
+                            "$unknownCount image(s) have unknown dimensions.\nThis screen keeps them available for review.",
+                            color = Color(0xFFFFC857), fontSize = 11.sp
+                        )
+                    }
+                    if (selectedSample?.reference?.hasDimensions == true && !CalibrationScreenshotLibrary.sameShape(
+                            sourceFrameSize.width, sourceFrameSize.height, detectedScreenWidth, detectedScreenHeight
+                        )) {
+                        Text(
+                            "This reference has a different screen shape.\nPreviewing it does not change your saved profile.",
+                            color = Color(0xFFFFC857), fontSize = 11.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLibraryDialog = false }) { Text("CLOSE", color = TerminalGreen) }
+            },
+            containerColor = TerminalBlack
+        )
+    }
+
+    if (showImagePicker) {
+        AlertDialog(
+            onDismissRequest = { showImagePicker = false },
+            title = { Text("CHOOSE SCREENSHOT", color = TerminalGreen) },
+            text = {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    samples.forEachIndexed { index, sample ->
+                        TextButton(onClick = { currentImageIndex = index; showImagePicker = false }) {
+                            Column(Modifier.fillMaxWidth()) {
+                                Text(sample.reference.name, color = TerminalGreen, fontSize = 13.sp)
+                                Text(
+                                    listOfNotNull(sample.reference.deviceLabel, sample.reference.dimensionLabel()).joinToString(" · "),
+                                    color = TerminalGreen.copy(alpha = 0.75f), fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showImagePicker = false }) { Text("CLOSE", color = TerminalGreen) }
+            },
+            containerColor = TerminalBlack
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -628,12 +713,10 @@ fun MatchCalibrationScreen(
     ) {
         // Reference Image
         AsyncImage(
-            model = samples.getOrNull(currentImageIndex)?.let { sample ->
-                if (sample is String) "file:///android_asset/battle_samples/$sample" else sample
-            },
+            model = selectedSample?.imageModel,
             contentDescription = "Calibration Background",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
+            contentScale = ContentScale.Fit
         )
 
         // Selected Region Overlay (Draw ONLY the selected region's rectangle)
@@ -641,25 +724,81 @@ fun MatchCalibrationScreen(
             val color = TerminalPurple
             val stroke = 1.dp.toPx()
 
-            drawRect(
-                color = color,
-                topLeft = Offset(activeRegion.x * size.width, activeRegion.y * size.height),
-                size = Size(activeRegion.width * size.width, activeRegion.height * size.height),
-                style = Stroke(width = stroke)
-            )
-            if (selectedRegion == CalibrationRegion.TRAINER_INACTIVE_POKEMON) {
-                val middleY = (activeRegion.y + activeRegion.height / 2f) * size.height
-                drawLine(
+            if (imageViewport.width > 0f && imageViewport.height > 0f) {
+                drawRect(
                     color = color,
-                    start = Offset(activeRegion.x * size.width, middleY),
-                    end = Offset((activeRegion.x + activeRegion.width) * size.width, middleY),
-                    strokeWidth = stroke,
+                    topLeft = Offset(
+                        imageViewport.left + activeRegion.x * imageViewport.width,
+                        imageViewport.top + activeRegion.y * imageViewport.height
+                    ),
+                    size = Size(activeRegion.width * imageViewport.width, activeRegion.height * imageViewport.height),
+                    style = Stroke(width = stroke)
                 )
+                if (selectedRegion == CalibrationRegion.TRAINER_INACTIVE_POKEMON) {
+                    val middleY = imageViewport.top + (activeRegion.y + activeRegion.height / 2f) * imageViewport.height
+                    drawLine(
+                        color = color,
+                        start = Offset(imageViewport.left + activeRegion.x * imageViewport.width, middleY),
+                        end = Offset(imageViewport.left + (activeRegion.x + activeRegion.width) * imageViewport.width, middleY),
+                        strokeWidth = stroke,
+                    )
+                }
             }
         }
-        
+
+        if (samples.isEmpty()) {
+            Text(
+                if (library == null) "Loading screenshots…" else "No screenshots match this screen.\nHold A to choose a screen shape or All screenshots.",
+                color = TerminalGreen,
+                modifier = Modifier.align(Alignment.Center).background(TerminalBlack).padding(12.dp),
+                fontSize = 13.sp
+            )
+        }
     }
 }
+
+private data class CalibrationSample(
+    val model: Any,
+    val reference: CalibrationScreenshotReference,
+    val sourceName: String,
+) {
+    val imageModel: Any get() = if (model is String) "file:///android_asset/battle_samples/$model" else model
+}
+
+/** Enumerate files and decode only their headers on the caller's IO dispatcher. */
+private fun loadCalibrationSamples(
+    context: android.content.Context,
+    directory: ScreenshotDirectoryManager,
+): List<CalibrationSample> {
+    val userImages = runCatching { directory.images() }.getOrDefault(emptyList())
+    val samples = if (userImages.isNotEmpty()) {
+        userImages.map { image ->
+            CalibrationSample(image.uri, CalibrationScreenshotReference(image.uri.toString(), image.name, 0, 0, image.deviceLabel), "YOUR SCREENSHOT")
+        }
+    } else {
+        val captured = BattleCalibrationReferenceStore(context.filesDir).latest()?.let { file ->
+            CalibrationSample(file, CalibrationScreenshotReference(file.absolutePath, "Latest device capture", 0, 0), "DEVICE CAPTURE")
+        }
+        val bundled = context.assets.list("battle_samples").orEmpty().sorted().map { name ->
+            CalibrationSample(name, CalibrationScreenshotReference("asset:$name", name, 0, 0), "BUNDLED REFERENCE")
+        }
+        listOfNotNull(captured) + bundled
+    }
+    return samples.map { sample ->
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        runCatching {
+            when (val model = sample.model) {
+                is String -> context.assets.open("battle_samples/$model").use { BitmapFactory.decodeStream(it, null, options) }
+                is Uri -> context.contentResolver.openInputStream(model)?.use { BitmapFactory.decodeStream(it, null, options) }
+                is File -> BitmapFactory.decodeFile(model.absolutePath, options)
+            }
+        }
+        sample.copy(reference = sample.reference.copy(width = options.outWidth.coerceAtLeast(0), height = options.outHeight.coerceAtLeast(0)))
+    }
+}
+
+private fun CalibrationScreenshotReference.dimensionLabel(): String =
+    if (hasDimensions) "$width × $height (${CalibrationScreenshotLibrary.shapeLabel(width, height)})" else "Dimensions unknown"
 
 @Composable
 private fun calibrationTextFieldColors() = TextFieldDefaults.colors(

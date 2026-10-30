@@ -116,6 +116,7 @@ The decisive implementation files are:
 - [BattleCalibration.kt](app/src/main/java/com/example/overdex/data/BattleCalibration.kt) owns runtime calibrated Battle Regions.
 - [MatchCalibrationProfileStore.kt](app/src/main/java/com/example/overdex/data/MatchCalibrationProfileStore.kt) owns named device profiles. Calibration stores update the selected profile before reporting a successful save; profile replacement is atomic. Loading preserves saved coordinates exactly, including positions that resemble historical defaults.
 - [BattleCalibrationReferenceStore.kt](app/src/main/java/com/example/overdex/data/BattleCalibrationReferenceStore.kt) keeps one unaltered battlefield capture for Match Calibration. The preview labels device captures, user screenshots, and bundled references, and disables CRT distortion on this screen. Saved crop coordinates are not shifted to compensate for system bars.
+- [CalibrationScreenshotLibrary.kt](app/src/main/java/com/example/overdex/data/CalibrationScreenshotLibrary.kt) filters reference screenshots by full physical display shape, with explicit all/shape/model-folder choices available through Hold A in Match Calibration. References, crop outlines and drag distances share a fitted viewport instead of stretching the source. See [library preparation](docs/verification/2026-10-30-calibration-screenshot-library.md).
 - [BattleCropContract.kt](app/src/main/java/com/example/overdex/battle/observation/BattleCropContract.kt) resolves normalized regions into validated pixel rectangles and crop provenance.
 - [BattleObservationContracts.kt](app/src/main/java/com/example/overdex/battle/observation/BattleObservationContracts.kt) names configured regions, crops, and single-output Witness contracts.
 - [CropCaptureWitness.kt](app/src/main/java/com/example/overdex/battle/observation/CropCaptureWitness.kt) persists the crop before submitting `CropCaptured` testimony.
@@ -340,6 +341,13 @@ an explicit replacement action. Card editing, lineup editing and selection retur
 within the pre-flight navigation stack. Named teams and complete owned-card teams are also listed directly in the
 pre-flight LCD for one-action selection.
 
+[CurrentBattleTeamScreen.kt](app/src/main/java/com/example/overdex/ui/screens/CurrentBattleTeamScreen.kt)
+opens member actions for editing Fast/Charged Moves without reselecting species.
+[CurrentBattleTeamMoveEdit.kt](app/src/main/java/com/example/overdex/battle/team/CurrentBattleTeamMoveEdit.kt)
+preserves the current slot and owned specimen UUID; linked card updates keep
+binder membership and historical battle associations. Past match snapshots remain
+unchanged. See [move correction verification](docs/verification/2026-10-30-current-team-move-editing.md).
+
 [FieldTeamEditor.kt](app/src/main/java/com/example/overdex/battle/team/FieldTeamEditor.kt)
 and [FieldTeamEditorOverlay.kt](app/src/main/java/com/example/overdex/ui/components/FieldTeamEditorOverlay.kt)
 let the user correct species and choose moves without leaving Pokémon GO. Before
@@ -351,6 +359,12 @@ submits fresh `PlayerTeamSlotConfigured` articles. Explicitly loaded saved teams
 owned-card IDs; species scans alone never assign those IDs or assume moves. An accepted Match start closes
 the draft. The secure field editor pauses visual frame publication while open and
 allows a short compositor settling interval after close. While open, the editor keeps touch input away from GO; USE THIS TEAM or CLOSE resumes the game. It does not change crop calibration.
+
+Setup presentation collapses when the lower party surface disappears or battle
+cues arrive, independently of MatchStarted. Delayed party reads cannot reopen it
+during countdown. Native badges still gate the compact HUD; the existing Droidball
+body sits inside the expanded menu header so its window does not extend above the
+paper into native restrictions. See [setup dismissal verification](docs/verification/2026-10-30-party-overlay-dismissal.md).
 
 Manual registration step 1 filters its paged species search by region (including
 Hisui), using National Dex ranges so older imported region labels cannot hide

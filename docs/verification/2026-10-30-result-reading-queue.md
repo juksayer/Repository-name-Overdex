@@ -96,3 +96,28 @@ Private source recording:
 `/home/sean/overdex-device-backups/2026-10-30-new-match-and-homework/2026-10-30_10-59-27_9425d5d1-ced0-4c77-be94-b51cd4265956.odxmatch.zip`.
 Installation metadata:
 `/home/sean/overdex-device-backups/2026-10-30-result-reading-queue/verification-and-install.json`.
+
+## Subsequent Moondrop recordings
+
+Two normal battle recordings made with the queue change contain decisive results
+from the RECENT urgent lane. Their raw source timing and result publication are:
+
+| Match | Result source | Raw OCR delay | Typed MatchEnded delay | Pending at read |
+| --- | --- | --- | --- | --- |
+| `d6b41423-8147-4ad3-bcbf-79b8015e8d7a` | +163.031 s, GOOD EFFORT | about 2.95 s | 2.989 s, LOSS | 13 |
+| `b252d3b6-fc02-4a48-8ae3-f138bbdce188` | +209.175 s, YOU WIN | 2.540 s | 2.603 s, WIN | 16 |
+
+The first final request waited 487 ms for shared OCR; its selected crop was
+2,380 ms old at admission, and native OCR took 473 ms. The second waited 242 ms;
+its crop was 2,138 ms old, with 337 ms of native OCR. Neither result traversed the
+remaining recovery backlog before publication. Both archives also contain
+RECOVERY reads, showing the background lane made progress.
+
+This is positive real-device evidence for result attention under these two
+matches' load. It is not a universal latency guarantee or proof of complete Fast
+Move counts. Both recordings captured GO but none of 3, 2 or 1; the reported
+lingering setup menu needs a separate presentation correction.
+
+Desktop copies and all 884 declared artifacts were verified without modifying
+the phone recordings. Evidence and review details are under
+`/home/sean/overdex-device-backups/2026-10-30-party-menu-and-calibration/`.
