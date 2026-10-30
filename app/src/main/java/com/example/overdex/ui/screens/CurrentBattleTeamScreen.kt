@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,8 +33,9 @@ import com.example.overdex.ui.components.rememberHandheldNavigationController
 import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
-private enum class CurrentTeamStep { TEAM, SPECIES, FAST_MOVE, CHARGED_MOVES }
+private enum class CurrentTeamStep { TEAM, MEMBER, SPECIES, FAST_MOVE, CHARGED_MOVES }
 
 /**
  * The short Overmon-style team builder. It records known player facts before
@@ -54,6 +56,12 @@ fun CurrentBattleTeamScreen(
     var selectedSpecies by remember { mutableStateOf<Pokemon?>(null) }
     var selectedFastMove by remember { mutableStateOf<String?>(null) }
     var selectedChargedMoves by remember { mutableStateOf(linkedSetOf<String>()) }
+    var originalMember by remember { mutableStateOf<CurrentBattleTeamMember?>(null) }
+    var editingMovesOnly by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var notice by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     val keyboard = rememberTerminalKeyboardController()
     val searchQuery = remember { MutableStateFlow("") }
@@ -67,6 +75,7 @@ fun CurrentBattleTeamScreen(
                 (if (savedTeam.members.size < 3) 1 else 0) +
                 (if (savedTeam.members.size == 3 && onReadyToLaunch != null) 1 else 0) +
                 (if (savedTeam.members.isNotEmpty()) 1 else 0) + (if (onTeamLibrary != null) 1 else 0)
+            CurrentTeamStep.MEMBER -> 3
             CurrentTeamStep.SPECIES -> pokemonItems.itemCount + 1
             CurrentTeamStep.FAST_MOVE -> selectedSpecies?.fastMoves?.size ?: 0
             CurrentTeamStep.CHARGED_MOVES -> (selectedSpecies?.chargedMoves?.size ?: 0) + 1
@@ -74,6 +83,9 @@ fun CurrentBattleTeamScreen(
     })
 
     fun beginMember(slot: Int?) {
+        originalMember = null
+        editingMovesOnly = false
+        notice = null
         editingSlot = slot
         selectedSpecies = null
         selectedFastMove = null
@@ -83,10 +95,54 @@ fun CurrentBattleTeamScreen(
         nav.setIndex(0)
     }
 
+    fun editMember(member: CurrentBattleTeamMember) {
+        originalMember = member
+        editingSlot = member.slot
+        editingMovesOnly = true
+        selectedSpecies = null
+        selectedFastMove = member.fastMoveName
+        selectedChargedMoves = LinkedHashSet(member.chargedMoveNames)
+        notice = null
+        loading = true
+        step = CurrentTeamStep.MEMBER
+        nav.setIndex(0)
+        scope.launch {
+            try {
+                val species = viewModel.getPokemonByName(member.speciesName)
+                check(species != null && species.id == member.speciesId && species.name.equals(member.speciesName, true)) {
+                    "Could not read this Pokémon's exact species and form. Return and try again."
+                }
+                if (originalMember == member) selectedSpecies = species
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                if (originalMember == member) notice = error.message ?: "Could not read moves. Try again."
+            } finally {
+                if (originalMember == member) loading = false
+            }
+        }
+    }
+
     fun saveMember() {
         val species = selectedSpecies ?: return
         val fastMove = selectedFastMove ?: return
         if (selectedChargedMoves.isEmpty()) return
+        if (editingMovesOnly) {
+            val original = originalMember ?: return
+            saving = true
+            notice = null
+            scope.launch {
+                try {
+                    viewModel.saveCurrentBattleTeamMemberMoves(original, fastMove, selectedChargedMoves.toList())
+                    step = CurrentTeamStep.TEAM
+                    nav.setIndex(original.slot - 1)
+                    notice = "Moves saved. This Pokémon keeps its battle history."
+                } catch (error: Exception) {
+                    if (error is kotlinx.coroutines.CancellationException) throw error
+                    notice = error.message ?: "Could not save moves. Your choices are still here."
+                } finally { saving = false }
+            }
+            return
+        }
         val slot = editingSlot ?: (savedTeam.members.size + 1)
         val member = CurrentBattleTeamMember(
             slot = slot,
@@ -105,10 +161,12 @@ fun CurrentBattleTeamScreen(
     }
 
     fun activate(index: Int) {
+        if (saving || loading) return
+        notice = null
         when (step) {
             CurrentTeamStep.TEAM -> {
                 if (index < savedTeam.members.size) {
-                    beginMember(savedTeam.members[index].slot)
+                    editMember(savedTeam.members[index])
                     return
                 }
                 var actionIndex = savedTeam.members.size
@@ -134,6 +192,17 @@ fun CurrentBattleTeamScreen(
                 if (savedTeam.members.isNotEmpty()) actionIndex++
                 if (index == actionIndex) onTeamLibrary?.invoke()
             }
+            CurrentTeamStep.MEMBER -> when (index) {
+                0 -> if (selectedSpecies != null) {
+                    step = CurrentTeamStep.FAST_MOVE
+                    nav.setIndex(selectedSpecies!!.fastMoves.indexOfFirst { it.name == selectedFastMove }.coerceAtLeast(0))
+                }
+                1 -> if (selectedSpecies != null) {
+                    step = CurrentTeamStep.CHARGED_MOVES
+                    nav.setIndex(selectedSpecies!!.chargedMoves.indexOfFirst { it.name in selectedChargedMoves }.coerceAtLeast(0))
+                }
+                2 -> beginMember(editingSlot)
+            }
             CurrentTeamStep.SPECIES -> {
                 if (index == 0) keyboard.open()
                 else if (index - 1 in 0 until pokemonItems.itemCount) pokemonItems[index - 1]?.let { pokemon ->
@@ -144,8 +213,10 @@ fun CurrentBattleTeamScreen(
             }
             CurrentTeamStep.FAST_MOVE -> selectedSpecies?.fastMoves?.getOrNull(index)?.let { move ->
                 selectedFastMove = move.name
-                step = CurrentTeamStep.CHARGED_MOVES
-                nav.setIndex(0)
+                if (editingMovesOnly) saveMember() else {
+                    step = CurrentTeamStep.CHARGED_MOVES
+                    nav.setIndex(0)
+                }
             }
             CurrentTeamStep.CHARGED_MOVES -> {
                 val charged = selectedSpecies?.chargedMoves.orEmpty()
@@ -170,11 +241,20 @@ fun CurrentBattleTeamScreen(
     }
 
     fun backOneStep() {
+        if (saving) return
+        notice = null
+        if (editingMovesOnly && step in setOf(CurrentTeamStep.FAST_MOVE, CurrentTeamStep.CHARGED_MOVES)) {
+            originalMember?.let {
+                selectedFastMove = it.fastMoveName
+                selectedChargedMoves = LinkedHashSet(it.chargedMoveNames)
+            }
+        }
         when (step) {
             CurrentTeamStep.TEAM -> onBack()
+            CurrentTeamStep.MEMBER -> { originalMember = null; loading = false; step = CurrentTeamStep.TEAM; nav.setIndex(0) }
             CurrentTeamStep.SPECIES -> { step = CurrentTeamStep.TEAM; nav.setIndex(0) }
-            CurrentTeamStep.FAST_MOVE -> { step = CurrentTeamStep.SPECIES; nav.setIndex(0) }
-            CurrentTeamStep.CHARGED_MOVES -> { step = CurrentTeamStep.FAST_MOVE; nav.setIndex(0) }
+            CurrentTeamStep.FAST_MOVE -> { step = if (editingMovesOnly) CurrentTeamStep.MEMBER else CurrentTeamStep.SPECIES; nav.setIndex(0) }
+            CurrentTeamStep.CHARGED_MOVES -> { step = if (editingMovesOnly) CurrentTeamStep.MEMBER else CurrentTeamStep.FAST_MOVE; nav.setIndex(0) }
         }
     }
 
@@ -182,6 +262,13 @@ fun CurrentBattleTeamScreen(
         CurrentTeamStep.TEAM -> listOf(
             "CURRENT TEAM",
             "${savedTeam.members.size}/3 READY",
+            "A: EDIT MEMBER MOVES · B: BACK",
+        )
+        CurrentTeamStep.MEMBER -> listOf(
+            originalMember?.speciesName?.uppercase() ?: "TEAM MEMBER",
+            "FAST ${selectedFastMove ?: "---"}",
+            selectedChargedMoves.joinToString(" / "),
+            "A: CHOOSE · B: CURRENT TEAM",
         )
         CurrentTeamStep.SPECIES -> listOf(
             "SELECT SPECIES",
@@ -189,7 +276,7 @@ fun CurrentBattleTeamScreen(
         )
         CurrentTeamStep.FAST_MOVE -> moveSelectionLcdLines(
             move = selectedSpecies?.fastMoves?.getOrNull(nav.selectedIndex),
-        )
+        ) + if (editingMovesOnly) listOf("A: SAVE FAST MOVE · B: CANCEL") else emptyList()
         CurrentTeamStep.CHARGED_MOVES -> {
             val moves = selectedSpecies?.chargedMoves.orEmpty()
             val highlighted = moves.getOrNull(nav.selectedIndex)
@@ -200,7 +287,7 @@ fun CurrentBattleTeamScreen(
                 )
             } else {
                 listOf(
-                    "ADD TO TEAM",
+                    if (editingMovesOnly) "SAVE MOVES" else "ADD TO TEAM",
                     selectedSpecies?.name?.uppercase() ?: "UNKNOWN SPECIES",
                     "FAST ${selectedFastMove ?: "---"}",
                     "CHARGED ${selectedChargedMoves.size}/2",
@@ -212,7 +299,12 @@ fun CurrentBattleTeamScreen(
     ODXFiShell(
         viewModel = viewModel,
         showBattleOverlay = false,
-        lcdLines = lcdLines,
+        lcdLines = when {
+            saving -> listOf("SAVING MOVES…", "Keeping this Pokémon and its battle history.")
+            loading -> listOf("READING MOVES…", originalMember?.speciesName.orEmpty())
+            notice != null -> listOf(requireNotNull(notice)) + lcdLines
+            else -> lcdLines
+        },
         onUp = { if (keyboard.isVisible) keyboard.handleUp() else nav.moveUp() },
         onDown = { if (keyboard.isVisible) keyboard.handleDown() else nav.moveDown() },
         onLeft = { if (keyboard.isVisible) keyboard.handleLeft() },
@@ -236,6 +328,14 @@ fun CurrentBattleTeamScreen(
                     showLaunch = onReadyToLaunch != null,
                     showLibrary = onTeamLibrary != null,
                 )
+                CurrentTeamStep.MEMBER -> Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(originalMember?.speciesName.orEmpty(), color = TerminalGreen, fontSize = 18.sp)
+                    listOf("EDIT FAST MOVE", "EDIT CHARGED MOVES", "REPLACE POKÉMON").forEachIndexed { index, label ->
+                        TerminalMenuOption(label, selected = nav.selectedIndex == index)
+                    }
+                    Text("Move corrections keep this Pokémon's card and battle history.",
+                        color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                }
                 CurrentTeamStep.SPECIES -> SpeciesSearchStep(query, pokemonItems, nav.selectedIndex) { }
                 CurrentTeamStep.FAST_MOVE -> MoveSelectionStep(
                     "SELECT FAST MOVE",
@@ -249,7 +349,7 @@ fun CurrentBattleTeamScreen(
                     selectedChargedMoves,
                     nav.selectedIndex,
                     showNext = true,
-                    nextLabel = "ADD TO TEAM"
+                    nextLabel = if (editingMovesOnly) "SAVE MOVES" else "ADD TO TEAM"
                 ) { }
             }
         }

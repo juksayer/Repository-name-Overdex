@@ -1564,6 +1564,45 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         if (session?.canEditTeam == true) submitCurrentTeamConfiguration(session.match)
     }
 
+    /** Correct one member without re-registering it or losing its linked owned card. */
+    suspend fun saveCurrentBattleTeamMemberMoves(
+        expectedMember: com.example.overdex.battle.team.CurrentBattleTeamMember,
+        fastMove: String,
+        chargedMoves: List<String>,
+    ) = withContext(Dispatchers.IO) {
+        val reference = pokemonRepository.getPokemonByName(expectedMember.speciesName)
+            ?: error("Could not read this Pokémon's moves. Try again.")
+        val before = currentBattleTeam.value
+        val edit = com.example.overdex.battle.team.CurrentBattleTeamMoveEdit.prepare(
+            before, expectedMember, reference, fastMove, chargedMoves)
+        val session = _droidballSession.value
+        check(session == null || session.canEditTeam || session.hasCompletedMatch) {
+            "This match has already started. Change the moves before the next match."
+        }
+        expectedMember.ownedPokemonId?.let { id ->
+            db.withTransaction {
+                val card = db.ownedPokemonDao().getOwnedPokemonById(id).first()?.toDomain()
+                    ?: error("The linked owned card is missing. Choose its replacement before editing moves.")
+                // Recheck after the database read so a changed team cannot receive this stale draft.
+                check(currentBattleTeam.value == before) { "The current team changed. Select this Pokémon again." }
+                val currentSession = _droidballSession.value
+                check(currentSession == null || currentSession.canEditTeam || currentSession.hasCompletedMatch) {
+                    "This match has already started. Change the moves before the next match."
+                }
+                db.ownedPokemonDao().updateOwnedPokemon(edit.updateOwnedCard(card, System.currentTimeMillis()).toEntity())
+            }
+        }
+        try {
+            check(currentBattleTeam.value == before) { "The current team changed. Select this Pokémon again." }
+            saveCurrentBattleTeam(edit.team)
+        } catch (error: Exception) {
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            if (expectedMember.ownedPokemonId != null) throw IllegalStateException(
+                "The owned card was saved, but the current team could not be saved. Try again.", error)
+            throw error
+        }
+    }
+
     /** Explicit pre-flight review links shared card IDs before the next match snapshot. */
     private suspend fun saveFieldTeamCollection(draft: com.example.overdex.battle.team.FieldTeamDraft): CurrentBattleTeam =
         withContext(Dispatchers.IO) {
