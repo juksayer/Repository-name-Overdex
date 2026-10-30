@@ -57,6 +57,14 @@ window. This supports retaining mixed-side ambiguity; it does not establish
 that an opponent attack occurred. This review does not measure recall or prove
 that all Fast Moves were counted.
 
+## Correction: the opening identity was already known
+
+The user correctly pointed out that the accepted HUD menu showed Golbat before
+battle. The initial review's nickname explanation was incomplete: observed Team
+Select already established slot one, and Greninja was slot two. The missing GO
+handoff prevented that known opening identity from reaching attack/energy/audio
+tracking. See [the continuity correction](2026-10-30-observed-team-lead-continuity.md).
+
 ## Incorrect historical cadence attribution
 
 The initial player badge crops contain a custom nickname rather than a species
@@ -112,5 +120,6 @@ or rewrite the original archive.
   `a79fd341e6c9e0826791329647d640298bc2e40929116dd8b165f938294fd8a7`.
   No Droidball session was active before replacement.
 - The original match and answer exports remain unchanged. A fresh live battle
-  is still required to validate the corrected timing on the phone. The nickname
-  identity gap and result-queue correction remain open.
+  is still required to validate the corrected timing on the phone. The opening
+  identity handoff is addressed in the subsequent continuity correction linked
+  above, with live acceptance pending. The result-queue correction remains open.

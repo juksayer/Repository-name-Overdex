@@ -548,12 +548,16 @@ class Match(
                         fastMoveUseInference.accept(derivedArticle)
                         appendFastMoveEnergyDerivations(derivedArticle)
                         appendFastMoveCadenceDerivations(derivedArticle)
-                        appendTeamSelectLeadAtMatchStart(derivedArticle)
+                        appendTeamSelectLeadAtBattleEvidence(derivedArticle)
                         _matchStarted.tryEmit(derivedArticle)
                         Log.d("MATCH_START", "Derived MatchStarted article appended: articleId=${derivedArticle.id.value}, predecessor=${article.id.value}")
                     }
                 }
 
+                // The selected lead remains known even if GO was missed or its
+                // battle badge contains a nickname. Establish identity from real
+                // combat before assigning this hit to an otherwise unknown actor.
+                appendTeamSelectLeadAtBattleEvidence(article)
                 appendPlayerInformationChecks(article)
                 appendChargeMoveQteDerivation(article)
                 appendFastMoveEnergyDerivations(article)
@@ -770,40 +774,94 @@ class Match(
     }
 
     /**
-     * Team Select slot 1 is the player's lead. Publish that known identity at GO
-     * when a transient entry announcement was missed, while retaining both the
-     * roster observation and MatchStarted as causal predecessors.
+     * Carries the observed Team Select lead into battle. GO is preferred; when
+     * it was missed, a valid loss plus an opponent identity establishes combat
+     * without manufacturing the unknown start time or re-reading a nickname.
      */
-    private suspend fun appendTeamSelectLeadAtMatchStart(matchStartArticle: RealityArticle) {
-        // A saved slot is a move/roster configuration, not an observation of the
-        // lead selected in GO. Never fabricate that appearance at the countdown.
-        if (playerRosterContradicted || !playerRosterArticleBySlot.containsKey(1)) return
+    private suspend fun appendTeamSelectLeadAtBattleEvidence(boundary: RealityArticle) {
+        val isMatchStart = boundary.payload is MatchStarted
+        val damage = boundary.payload as? com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
+        if (!isMatchStart && (damage == null || damage.beforeFraction !in 0f..1f ||
+                damage.afterFraction !in 0f..1f || damage.lostFraction <= 0f ||
+                damage.beforeFraction <= damage.afterFraction ||
+                kotlin.math.abs(damage.beforeFraction - damage.afterFraction - damage.lostFraction) >= .001f)) return
+        // A saved team is not proof of the selected party, and a known later
+        // combatant must never be replaced by a late opening cue.
+        if (playerRosterContradicted || activeSpeciesBySide[ActivePokemonSide.PLAYER] != null) return
+        val at = boundary.monotonicTimeNanos ?: return
+        if (at < observationAttemptStartedAtNanos) return
+        val rosterId = playerRosterArticleBySlot[1] ?: return
         val rosterName = playerRosterBySlot[1] ?: return
-        // Keep the battle identity aligned with GO's bare badge label. The cited
-        // roster retains the form for knowledge lookups; a later "Raichu" OCR
-        // reading must not look like a switch away from "Raichu (Alolan)".
+        val history = realityTimeline.getArticles()
+        val roster = history.firstOrNull { it.id == rosterId } ?: return
+        val rosterAt = roster.monotonicTimeNanos ?: return
+        if (rosterAt !in observationAttemptStartedAtNanos..at) return
+        // The mutable roster follows delivery order. Do not use an older slot
+        // reading after a newer source-time observation changed the opener.
+        if (history.any { article ->
+                val newer = article.payload as? PlayerTeamRosterSlotWitnessed ?: return@any false
+                val time = article.monotonicTimeNanos ?: return@any false
+                if (newer.slot != 1 || time <= rosterAt || time > at) return@any false
+                val newerName = com.example.overdex.data.PokemonFormReference.mergeRosterName(
+                    rosterName, newer.speciesName, explicitSprite = newer.spriteVariant != null)
+                !newerName.equals(rosterName, ignoreCase = true)
+            }) return
+        val party = history.filter { it.payload is com.example.overdex.battle.custody.TeamSelectPartyWitnessed &&
+            it.monotonicTimeNanos?.let { time -> time in observationAttemptStartedAtNanos..at } == true }
+            .maxByOrNull { it.monotonicTimeNanos!! }
+        if (!isMatchStart && (party == null || rosterAt < party.monotonicTimeNanos!!)) return
+        val selectedAt = party?.monotonicTimeNanos ?: rosterAt
+        // Source-time guards also cover a faint/replacement whose name could
+        // not be read. A lingering hit or late GO cannot resurrect slot one.
+        val invalidated = history.any { article ->
+            val time = article.monotonicTimeNanos ?: return@any false
+            // Historical combat may arrive after the session has closed. It
+            // remains raw evidence, but must not reopen current presentation.
+            if (time >= selectedAt && when (article.payload) {
+                    com.example.overdex.battle.custody.TeamSelectScanStartedByUser,
+                    com.example.overdex.battle.custody.ObservationRestartedByUser,
+                    com.example.overdex.battle.custody.ScreenIgnoredByUser,
+                    com.example.overdex.battle.custody.ObservationSessionStoppedByUser,
+                    is MatchEnded -> true
+                    else -> false
+                }) return@any true
+            if (time !in selectedAt..at || article.id == boundary.id) return@any false
+            when (val payload = article.payload) {
+                is ActivePokemonFaintedWitnessed -> payload.side == ActivePokemonSide.PLAYER
+                is com.example.overdex.battle.custody.PlayerPokeBallCountMeasured -> payload.visibleCount < payload.maximumCount
+                is PlayerTeamRosterConfirmation -> !payload.confirmed
+                is com.example.overdex.battle.custody.SpeciesCheckMeasured ->
+                    payload.side == ActivePokemonSide.PLAYER && payload.status == "OPENED" &&
+                        payload.reason in setOf("SWITCH", "FAINT", "EMPTY_HP")
+                else -> false
+            }
+        }
+        if (invalidated) return
+        val opponent = if (!isMatchStart) history.filter { article ->
+            val payload = article.payload as? ActivePokemonSpeciesWitnessed
+            payload?.side == ActivePokemonSide.OPPONENT && article.monotonicTimeNanos?.let {
+                it in selectedAt..at } == true
+        }.maxByOrNull { it.monotonicTimeNanos!! } ?: return else null
+        // A bare badge label keeps regional form changes distinct from a switch;
+        // the cited slot retains the exact form used by identity/knowledge lookup.
         val speciesName = rosterName.substringBefore(" (")
-        // A late GO result can arrive after the player has already switched.
-        // Team Select may fill an unknown lead; it must not replace a witnessed active species.
-        if (activeSpeciesBySide[ActivePokemonSide.PLAYER] != null) return
         val species = pokemonKnowledge.getPokemonByName(rosterName)
         val leadArticle = RealityArticle(
             id = ArticleId(UUID.randomUUID().toString()),
-            perceivedAt = matchStartArticle.perceivedAt,
+            perceivedAt = boundary.perceivedAt,
             recordedAt = System.currentTimeMillis(),
             sourceId = SourceId("TEAM_SELECT_LEAD_INFERENCE"),
             payload = ActivePokemonSpeciesWitnessed(
                 side = ActivePokemonSide.PLAYER,
                 speciesName = speciesName,
                 speciesId = playerRosterIdBySlot[1] ?: species?.id,
+                playerTeamSlot = 1,
+                appearanceStartedAtNanos = at,
             ),
-            predecessorIds = buildList {
-                playerRosterArticleBySlot[1]?.let(::add)
-                add(matchStartArticle.id)
-            }.distinct(),
+            predecessorIds = (listOfNotNull(party?.id, rosterId, opponent?.id) + boundary.id).distinct(),
             confidence = 0.99f,
             matchId = MatchId(matchId),
-            monotonicTimeNanos = matchStartArticle.monotonicTimeNanos,
+            monotonicTimeNanos = at,
         )
         realityTimeline.append(leadArticle)
         cueSpeciesChecks(leadArticle)
