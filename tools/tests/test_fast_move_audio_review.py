@@ -173,6 +173,55 @@ class AudioReviewTest(unittest.TestCase):
             self.assertIn("waveform", cases[0]["recording"]["signal"])
             self.assertIs(cases[0]["recording"]["signal"], cases[0]["candidates"][0]["reference"]["signal"])
 
+    def test_listening_guide_rejects_impossible_candidates_and_adds_missing_legal_reference_without_relabeling(self):
+        names = ("Air Slash", "Wing Attack", "Ember")
+        self.candidates = [candidate(name, self.sha, .98 - i * .01, .9) for i, name in enumerate(names)]
+        self.sound["payload"]["referenceCandidates"] = self.candidates
+        refs = {(name, self.sha): review.audio_data(self.bytes) for name in (*names, "Peck")}
+        rows = [article("config", "player_team_slot_configured", 1, slot=1, speciesName="Golbat", fastMoveName="Wing Attack"),
+                article("player", "active_pokemon_species_witnessed", 2, side="PLAYER", speciesName="Golbat"),
+                article("opponent", "active_pokemon_species_witnessed", 3, side="OPPONENT", speciesName="Combusken"),
+                article("start", "match_started", 1_000_000_000), self.capture, self.sound]
+        catalogue = dict(timestamp="test snapshot", pokemon=[dict(speciesName="Golbat",fastMoves=["WING_ATTACK"]),
+            dict(speciesName="Combusken",fastMoves=["EMBER","PECK"])],
+            moves=[dict(moveId=name.upper().replace(" ","_"),name=name) for name in (*names,"Peck")])
+        with tempfile.TemporaryDirectory() as root:
+            path=Path(root)/"match.zip"; self.package(path, articles=rows)
+            cat=Path(root)/"catalogue.json"; cat.write_text(json.dumps(catalogue))
+            cases,_=review.collect_cases([path],refs)
+            original=review.build_review(cases,Path(root)/"before.html",refs)
+            guides=review.make_listening_guides(cases,[path],refs,catalogue_path=cat)
+            guide=guides[cases[0]["id"]]
+            roles={c["moveName"]:guide["candidateRoles"][c["code"]] for c in cases[0]["candidates"]}
+            self.assertEqual({"Air Slash":"outside_both_movepools","Wing Attack":"known_player","Ember":"legal_opponent"},roles)
+            self.assertEqual(["Ember","Peck"],guide["legalMoves"]["opponent"]["moveNames"])
+            self.assertIsNone(guide["opponent"]["moveName"])
+            self.assertEqual(["Peck"],[r["moveName"] for r in guide["additionalReferences"]])
+            enriched=review.build_review(cases,Path(root)/"after.html",refs,listening_guides=guides)
+            self.assertEqual(original["reviewSetId"],enriched["reviewSetId"])
+            self.assertEqual(3,len(cases[0]["candidates"]))
+            before_revision=guide["revision"]
+            catalogue["timestamp"]="changed snapshot";cat.write_text(json.dumps(catalogue))
+            changed=review.make_listening_guides(cases,[path],refs,catalogue_path=cat)
+            self.assertNotEqual(before_revision,changed[cases[0]["id"]]["revision"])
+            for fainted, stable in (("Combusken",False),(None,False),("Another Pokémon",True)):
+                self.package(path,articles=rows+[article("faint","active_pokemon_fainted_witnessed",2_100_000_000,side="OPPONENT",speciesName=fainted)])
+                updated,_=review.collect_cases([path],refs)
+                guide=review.make_listening_guides(updated,[path],refs,catalogue_path=cat)[updated[0]["id"]]
+                self.assertEqual(stable,guide["legalMoves"]["opponent"]["resolved"])
+
+    def test_guide_species_lookup_does_not_turn_an_unknown_form_into_ordinary_species(self):
+        rows=[article("player","active_pokemon_species_witnessed",1,side="PLAYER",speciesName="Raichu (Alolan)"),
+              article("start","match_started",1_000_000_000),self.capture,self.sound]
+        with tempfile.TemporaryDirectory() as root:
+            path=Path(root)/"match.zip";self.package(path,articles=rows)
+            cat=Path(root)/"catalogue.json";cat.write_text(json.dumps(dict(pokemon=[dict(speciesName="Raichu",fastMoves=["CHARM"])],moves=[dict(moveId="CHARM",name="Charm")])))
+            cases,_=review.collect_cases([path],self.references)
+            guide=review.make_listening_guides(cases,[path],self.references,catalogue_path=cat)[cases[0]["id"]]
+            self.assertFalse(guide["legalMoves"]["player"]["resolved"])
+            self.assertFalse(guide["legalMoves"]["opponent"]["resolved"])
+            self.assertTrue(all(role=="unassigned" for role in guide["candidateRoles"].values()))
+
 
 if __name__ == "__main__":
     unittest.main()

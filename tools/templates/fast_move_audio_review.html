@@ -53,6 +53,13 @@
     .candidates { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:13px; }
     .candidate { border:1px solid var(--line); border-radius:12px; padding:15px; min-width:0; }
     .candidate-name { color:var(--accent); font-size:15px; margin:10px 0 4px; font-weight:700; }
+    .listening-guide { border:1px solid #b6d3c8; background:#edf6f1; border-radius:12px; padding:16px; margin-bottom:17px; }
+    .listening-guide p { margin:6px 0; }
+    .listening-guide .provenance { overflow-wrap:anywhere; }
+    .role-label { color:#245a4b; font-size:12px; font-weight:650; margin:5px 0 9px; }
+    .lookalikes { margin:14px 0; border:1px solid var(--line); border-radius:9px; padding:12px; }
+    .lookalikes summary { cursor:pointer; font-weight:650; }
+    .lookalikes .candidates { margin-top:12px; }
     .scores { font-size:12px; color:var(--muted); }
     .section-heading { margin:24px 0 10px; font-size:18px; }
     fieldset { border:0; padding:0; margin:18px 0 0; min-width:0; }
@@ -122,9 +129,11 @@
   const cases = data.cases;
   const byId = new Map(cases.map(item => [item.id, item]));
   const reviews = new Map();
-  const specialChoices = [['mixed','Mixed / overlapping sounds'],['another_sound','Another sound'],['no_fast_move','No Fast Move audible'],['unsure','Too close / unsure']];
+  const specialChoices = [['mixed','Mixed / overlapping sounds'],['another_sound','Another sound'],['no_fast_move','No Fast Move audible'],['no_opponent_audio','No opponent attack distinguishable'],['unsure','Too close / unsure']];
   const confidenceChoices = [['sure','Sure'],['tentative','Tentative'],['unsure','Unsure']];
-  let index = 0;
+  const priorityIndices=cases.map((item,index)=>({item,index})).filter(({item})=>guideFor(item)&&guideFor(item).reviewTask&&guideFor(item).reviewTask.status==='needs_review').map(({index})=>index);
+  let showDiagnostics=priorityIndices.length===0;
+  let index = priorityIndices[0] || 0;
   let speed = 1;
   let loop = false;
   let players = [];
@@ -152,7 +161,8 @@
   }
   function emptyReview() {
     return {choice:null, confidence:null, notes:'', updatedAtUtc:null, reviewedAtUtc:null, revealedAtUtc:null,
-      reviewedWithContext:false, namesShownAtUtc:null, reviewedWithNames:false};
+      reviewedWithContext:false, namesShownAtUtc:null, reviewedWithNames:false,
+      guideShownAtUtc:null, guideRevisionAtReview:null};
   }
   function reviewFor(item) {
     if (!reviews.has(item.id)) reviews.set(item.id, emptyReview());
@@ -173,8 +183,15 @@
         matchingOffsetSeconds:candidate.matchingOffsetSeconds, referenceOffsetSeconds:candidate.referenceOffsetSeconds,
         matchingDurationSeconds:candidate.matchingDurationSeconds}))};
   }
+  function guideFor(item) { return data.listeningGuides && data.listeningGuides[item.id]; }
+  function roleFor(item, candidate) { const guide=guideFor(item); return guide && guide.candidateRoles[candidate.code] || 'unassigned'; }
+  function roleLabel(role) {
+    return {known_player:'Known player move',legal_opponent:'Legal opponent candidate',possible_player:'Legal for player species; equipped move may differ',
+      outside_both_movepools:'Acoustic lookalike · not legal for either active species',unassigned:'Sound comparison · side unresolved'}[role];
+  }
   function envelope() {
     return {version:ANSWER_VERSION, datasetVersion:data.version, reviewSetId:data.reviewSetId, exportedAtUtc:new Date().toISOString(),
+      listeningGuideRevisions:cases.filter(item=>guideFor(item)).map(item=>({id:item.id,revision:guideFor(item).revision})),
       reviews:cases.map(item => ({id:item.id, source:sourceFor(item), review:{...reviewFor(item)}}))};
   }
   function storageFailure() {
@@ -207,7 +224,9 @@
       let namesShownAtUtc = r && (r.namesShownAtUtc === undefined ? r.revealedAtUtc : r.namesShownAtUtc);
       const reviewedWithNames = r && (r.reviewedWithContext || (r.reviewedWithNames === undefined ? false : r.reviewedWithNames));
       if (r && r.revealedAtUtc && (!namesShownAtUtc || Date.parse(r.revealedAtUtc) < Date.parse(namesShownAtUtc))) namesShownAtUtc = r.revealedAtUtc;
-      const choices = [...item.candidates.map(candidate => candidate.code), ...specialChoices.map(pair => pair[0])];
+      const guide=guideFor(item);
+      const choices = [...item.candidates.map(candidate => candidate.code), ...specialChoices.map(pair => pair[0]),
+        ...(guide ? guide.additionalReferences.map(candidate=>candidate.code) : [])];
       if (!r || (r.choice !== null && !choices.includes(r.choice)) ||
           (r.confidence !== null && !confidenceChoices.some(pair => pair[0] === r.confidence)) ||
           typeof r.notes !== 'string' || r.notes.length > 10000 ||
@@ -217,11 +236,17 @@
           (r.reviewedWithNames !== undefined && typeof r.reviewedWithNames !== 'boolean') ||
           !validDate(namesShownAtUtc) || typeof reviewedWithNames !== 'boolean' ||
           (reviewedWithNames && !namesShownAtUtc) ||
+          (r.guideShownAtUtc !== undefined && !validDate(r.guideShownAtUtc)) ||
+          (r.guideRevisionAtReview !== undefined && r.guideRevisionAtReview !== null &&
+            (typeof r.guideRevisionAtReview !== 'string' || !/^[a-f0-9]{64}$/.test(r.guideRevisionAtReview))) ||
+          (r.choice && r.choice.startsWith('legal:') && !r.guideRevisionAtReview && r.reviewedAtUtc) ||
           (r.reviewedAtUtc && (!r.choice || !r.confidence)) ||
           (r.reviewedWithContext && !r.revealedAtUtc)) throw new Error('A review contains an invalid answer, date, or confidence value.');
+      if (r.reviewedAtUtc && r.choice.startsWith('legal:') && (!guide || r.guideRevisionAtReview !== guide.revision))
+        throw new Error('A supplemental reference or its listening context changed. Keep the old answer file; this sheet cannot apply that reviewed choice to different evidence.');
       staged.set(entry.id, {choice:r.choice, confidence:r.confidence, notes:r.notes, updatedAtUtc:r.updatedAtUtc,
         reviewedAtUtc:r.reviewedAtUtc, revealedAtUtc:r.revealedAtUtc, reviewedWithContext:r.reviewedWithContext,
-        namesShownAtUtc, reviewedWithNames});
+        namesShownAtUtc, reviewedWithNames, guideShownAtUtc:r.guideShownAtUtc || null, guideRevisionAtReview:r.guideRevisionAtReview || null});
     }
     return staged;
   }
@@ -335,9 +360,10 @@
     const count = cases.filter(item => complete(reviewFor(item))).length;
     document.getElementById('progress').max = cases.length || 1;
     document.getElementById('progress').value = count;
-    document.getElementById('progress-label').textContent = count + ' of ' + cases.length + ' reviewed';
+    document.getElementById('progress-label').textContent = count + ' of ' + cases.length + ' reviewed'+(priorityIndices.length?' · '+priorityIndices.length+' homework candidate'+(priorityIndices.length===1?'':'s'):'');
     nav.replaceChildren();
     cases.forEach((item, position) => {
+      if(!showDiagnostics&&!priorityIndices.includes(position))return;
       const review = reviewFor(item);
       const node = button('', () => navigate(position));
       node.append(el('span', '', 'Case ' + (position + 1)), el('span', 'marker', complete(review) ? 'Done' : review.choice || review.notes ? 'Draft' : 'New'));
@@ -345,6 +371,11 @@
       node.setAttribute('aria-label', 'Case ' + (position + 1) + (complete(review) ? ', reviewed' : ', unreviewed'));
       nav.append(node);
     });
+    if(priorityIndices.length&&priorityIndices.length<cases.length)nav.append(button(showDiagnostics?'Show homework only':'Show diagnostic examples',()=>{
+      showDiagnostics=!showDiagnostics;
+      if(!showDiagnostics&&!priorityIndices.includes(index))index=priorityIndices[0];
+      render();
+    }));
   }
   function navigate(position) {
     index = position;
@@ -354,9 +385,10 @@
   function nextUnreviewed() {
     for (let distance = 1; distance <= cases.length; distance++) {
       const next = (index + distance) % cases.length;
+      if(!showDiagnostics&&!priorityIndices.includes(next))continue;
       if (!complete(reviewFor(cases[next]))) { navigate(next); return; }
     }
-    status('Every case is reviewed. Export your answers to keep a portable copy.');
+    status(showDiagnostics?'Every case is reviewed. Export your answers to keep a portable copy.':'The homework candidates are reviewed. Other examples are available under Show diagnostic examples.');
   }
   function radioGroup(values, name, selected, onChange, className) {
     const group = el('div', className);
@@ -368,6 +400,39 @@
       label.append(input, el('span', '', text)); group.append(label);
     });
     return group;
+  }
+  function listeningGuideBlock(guide) {
+    const block=el('section','listening-guide');block.setAttribute('aria-label','Who is making the sounds');
+    if(guide.reviewTask){block.append(el('p','role-label',guide.reviewTask.status==='needs_review'?'Possible unresolved opponent example':'Diagnostic example · not assigned homework'),el('p','small',guide.reviewTask.reason));}
+    block.append(el('h3','','Who is making the sounds?'));
+    const player=guide.player,opponent=guide.opponent;
+    const known=player.status==='configured'||player.status==='user_confirmed';
+    block.append(el('p','', 'Your Pokémon: '+(player.speciesName||'Unresolved')+' · '+
+      (known?player.moveName+(player.status==='configured'?' (saved team)':' (you confirmed)'):'equipped Fast Move unconfirmed')));
+    if(player.speciesBasis)block.append(el('p','small',player.speciesBasis));
+    block.append(el('p','','Opponent: '+(opponent.speciesName||'Unresolved')+' · '+
+      (opponent.status==='user_confirmed'?opponent.moveName+' (you confirmed)':'equipped Fast Move unconfirmed')));
+    const pool=guide.legalMoves.opponent;
+    block.append(el('p','',pool.resolved?'Legal opponent Fast Moves: '+pool.moveNames.join(', '):'Opponent move choices cannot yet be restricted to one known species.'));
+    block.append(el('p','small','This is combined game audio from both sides. Identify the sounds you can hear; more than one may be present. A familiar player sound helps orient you, but it is not automatically subtracted.'));
+    if(known){
+      // References are created later in render; resolve the player only when clicked.
+      const listen=button('Listen to our '+player.moveName,()=>{
+        const match=players.find(p=>p.moveName===player.moveName);
+        if(match)playFull(match);else status('This player move has no sound reference in this sheet.',true);
+      });
+      listen.dataset.playerReference=player.moveName;block.append(listen);
+    }
+    if(guide.activityNote)block.append(el('p','small',guide.activityNote));
+    block.append(el('p','small',guide.captureNote));
+    (guide.contextNotes||[]).forEach(note=>block.append(el('p','small',note)));
+    if(guide.missingReferences.length)block.append(el('p','small','Library sound unavailable: '+guide.missingReferences.join(', ')+'.'));
+    const evidence=el('details','provenance');evidence.append(el('summary','','Where this context came from'));
+    [player,opponent].forEach((side,index)=>{evidence.append(el('p','small',(index?'Opponent: ':'Player: ')+side.basis));
+      if(side.sourceArticleIds.length)evidence.append(el('p','small','Source Articles: '+side.sourceArticleIds.join(', ')));});
+    evidence.append(el('p','small','Species move lists use the bundled reference data dated '+(guide.catalogue.timestamp||'unknown')+'. Equipped moves and library resemblance do not prove a sound occurred.'));
+    evidence.append(el('p','small','Context revision: '+guide.revision));block.append(evidence);
+    return block;
   }
   function contextBlock(item) {
     const block = el('section', 'context');
@@ -429,14 +494,17 @@
     const item = cases[index];
     if (!item) { panel.append(el('p','','This set has no playable cases.')); return; }
     const review = reviewFor(item);
+    const guide=guideFor(item);
     if (!review.namesShownAtUtc) { review.namesShownAtUtc = new Date().toISOString(); persist(); }
+    if (guide && !review.guideShownAtUtc) { review.guideShownAtUtc = new Date().toISOString(); persist(); }
     const revealed = Boolean(review.revealedAtUtc);
     const header = el('div','case-header');
     const headingWrap = el('div');
     const heading = el('h2','','Case '+(index+1)); heading.id='case-heading'; heading.tabIndex=-1;
     headingWrap.append(heading,el('p','small','Clip starts '+seconds(item.relativeSeconds,true)+' from '+(item.timeOrigin || 'Match Start')));
     header.append(headingWrap,el('span','badge',revealed?'Scores visible':'Compare move sounds')); panel.append(header);
-    panel.append(el('p','instructions','1. Listen to the recording.  2. Compare the named move sounds below.  3. Choose what you hear and how sure you feel. These include the two closest original-spectrum matches and a changing-spectrum alternative where available; their order does not indicate rank.'));
+    if(guide)panel.append(listeningGuideBlock(guide));
+    panel.append(el('p','instructions','1. Check the player and opponent context.  2. Listen to the recording and compare the references.  3. Report what the audio resembles. More than one attack can be audible. This listening answer does not by itself identify the opponent’s move.'));
     const settings = el('div','play-settings');
     const loopLabel = el('label'); const loopInput = document.createElement('input'); loopInput.type='checkbox'; loopInput.checked=loop;
     loopInput.addEventListener('change',()=>{loop=loopInput.checked;players.forEach(player=>{player.audio.loop=loop;});});
@@ -449,10 +517,13 @@
     const recordedPlayer=audioPlayer(item.recording,'Recorded battle snippet',recording);panel.append(recording);
     recording.append(el('p','small','One battle recording. Each Recording window button below selects a section of this same clip; some sections are identical or overlap.'));
     const candidateGrid=el('div','candidates');
+    const lookalikeGrid=el('div','candidates');
     item.candidates.forEach(candidate=>{
       const card=el('section','candidate');const head=el('div','sound-head');head.append(el('h3','','Reference '+candidate.code),el('span','small','Full clip · '+preciseSeconds(candidate.reference.durationSeconds)));card.append(head);
       card.append(el('p','candidate-name',candidate.moveName));
+      const role=roleFor(item,candidate);card.append(el('p','role-label',roleLabel(role)));
       const referencePlayer=audioPlayer(candidate.reference,candidate.moveName+' reference sound',card);
+      referencePlayer.moveName=candidate.moveName;
       const segmentActions=el('div','audio-actions');
       const recordedSegment=segmentFor(item.recording,candidate.matchingOffsetSeconds,candidate.matchingDurationSeconds);
       const referenceSegment=segmentFor(candidate.reference,candidate.referenceOffsetSeconds,candidate.matchingDurationSeconds);
@@ -465,20 +536,36 @@
       }
       if(referenceSegment)card.append(el('p','small','Reference section '+preciseSeconds(referenceSegment.start)+'–'+preciseSeconds(referenceSegment.end)+'.'));
       if(revealed){card.append(el('p','scores','Original similarity '+score(candidate.similarity)+' · Changing similarity '+score(candidate.changingSimilarity)));}
+      (role==='outside_both_movepools'?lookalikeGrid:candidateGrid).append(card);
+    });
+    if(guide)guide.additionalReferences.forEach(candidate=>{
+      const card=el('section','candidate');card.append(el('h3','',candidate.moveName),el('p','role-label',roleLabel(candidate.role)));
+      const referencePlayer=audioPlayer(candidate.reference,candidate.moveName+' additional reference sound',card);referencePlayer.moveName=candidate.moveName;
+      card.append(el('p','small','Added from the species move list. No comparison score or matched window has been invented for this reference.'));
       candidateGrid.append(card);
-    });panel.append(candidateGrid);
+    });
+    panel.append(candidateGrid);
+    if(lookalikeGrid.childElementCount){const details=el('details','lookalikes');details.append(el('summary','','Other acoustic lookalikes from the original matcher'),el('p','small','These resemble the sound numerically but are not legal for either active species in this clip. They remain available for checking the sound matcher.'),lookalikeGrid);panel.append(details);}
+    panel.querySelectorAll('[data-player-reference]').forEach(node=>{node.disabled=!players.some(p=>p.moveName===node.dataset.playerReference);});
     panel.append(el('p','small','Window buttons play exact excerpts at the saved changing-spectrum alignment. The original-spectrum score may describe a different alignment that was not saved. The clock below each player shows elapsed playback; source ranges and plots use seconds from the full clip’s start. Sound-file length is separate from move-cycle duration.'));
     panel.append(el('p','small','Waveform = sound level over time. Spectrogram = frequencies over time; brighter colors mean more sound energy. Every plot uses the same amplitude and color scales, without boosting quiet clips. Similar shapes support comparison; they do not establish a move by themselves.'));
-    const answerField=el('fieldset');answerField.append(el('legend','','What is the closest description?'));
+    const opponentTask=guide&&guide.reviewTask&&guide.reviewTask.status==='needs_review';
+    const answerField=el('fieldset');answerField.append(el('legend','',opponentTask?'Which opponent sound can you distinguish?':'Which sound best resembles the recording?'));
+    answerField.append(el('p','small','Choose Mixed / overlapping sounds if you hear more than one, and name them in your notes. These are listening judgments, not automatic attacker assignments.'));
     const confidenceField=el('fieldset');confidenceField.append(el('legend','','How confident are you?'));
     const reviewState=el('span','review-state');reviewState.setAttribute('aria-live','polite');
     const saveButton=button('Mark reviewed',()=>{
       if(!review.choice||!review.confidence){status('Choose an answer and a confidence level first.',true);return;}
-      review.reviewedAtUtc=new Date().toISOString();review.updatedAtUtc=review.reviewedAtUtc;review.reviewedWithContext=Boolean(review.revealedAtUtc);review.reviewedWithNames=Boolean(review.namesShownAtUtc);persist();updateReviewState();progress();status('Case '+(index+1)+' marked reviewed. Export answers whenever you want a backup.');
+      review.reviewedAtUtc=new Date().toISOString();review.updatedAtUtc=review.reviewedAtUtc;review.reviewedWithContext=Boolean(review.revealedAtUtc);review.reviewedWithNames=Boolean(review.namesShownAtUtc);review.guideRevisionAtReview=guide?guide.revision:null;persist();updateReviewState();progress();status('Case '+(index+1)+' marked reviewed. Export answers whenever you want a backup.');
     },'primary');
-    function updateReviewState(){saveButton.disabled=!review.choice||!review.confidence;reviewState.textContent=complete(review)?'Reviewed'+(review.reviewedWithNames?' with move names visible':' before move names were shown')+(review.reviewedWithContext?' and scores/context revealed.':'; scores/context hidden.'):(review.choice||review.notes||review.confidence?'Draft · not yet marked reviewed.':'No answer selected.');}
-    function edit(field,value){review[field]=value;review.updatedAtUtc=new Date().toISOString();review.reviewedAtUtc=null;review.reviewedWithContext=false;review.reviewedWithNames=false;persist();updateReviewState();progress();}
-    answerField.append(radioGroup([...item.candidates.map(candidate=>[candidate.code,candidate.moveName]),...specialChoices],'answer',review.choice,value=>edit('choice',value),'choices'));
+    function updateReviewState(){saveButton.disabled=!review.choice||!review.confidence;reviewState.textContent=complete(review)?'Reviewed'+(review.reviewedWithNames?' with move names visible':' before move names were shown')+(review.guideRevisionAtReview?' and player/movepool context shown':guide?' before the player/movepool guide was added':'')+(review.reviewedWithContext?'; scores revealed.':'; scores hidden.'):(review.choice||review.notes||review.confidence?'Draft · not yet marked reviewed.':'No answer selected.');}
+    function edit(field,value){review[field]=value;review.updatedAtUtc=new Date().toISOString();review.reviewedAtUtc=null;review.reviewedWithContext=false;review.reviewedWithNames=false;review.guideRevisionAtReview=null;persist();updateReviewState();progress();}
+    const answerCandidates=item.candidates.filter(candidate=>!opponentTask||roleFor(item,candidate)==='legal_opponent');
+    const additional=guide?guide.additionalReferences.filter(candidate=>!opponentTask||candidate.role==='legal_opponent'):[];
+    answerField.append(radioGroup([...answerCandidates.map(candidate=>[candidate.code,candidate.moveName+(guide?' · '+roleLabel(roleFor(item,candidate)):'')]),
+      ...additional.map(candidate=>[candidate.code,candidate.moveName+' · '+roleLabel(candidate.role)]),...specialChoices],'answer',review.choice,value=>edit('choice',value),'choices'));
+    if(opponentTask&&review.choice&&!answerCandidates.some(c=>c.code===review.choice)&&!additional.some(c=>c.code===review.choice)&&!specialChoices.some(c=>c[0]===review.choice))
+      answerField.append(el('p','small','An earlier acoustic-comparison answer is preserved. It is not an opponent identification; choose an opponent answer only if you can distinguish one.'));
     confidenceField.append(radioGroup(confidenceChoices,'confidence',review.confidence,value=>edit('confidence',value),'confidence'));
     panel.append(answerField,confidenceField);
     const notesLabel=el('label','notes-label','Listening notes (optional)');notesLabel.htmlFor='listening-notes';
@@ -505,6 +592,7 @@
         const previous=reviews.get(id);
         if(previous&&previous.revealedAtUtc&&(!review.revealedAtUtc||Date.parse(previous.revealedAtUtc)<Date.parse(review.revealedAtUtc))) review.revealedAtUtc=previous.revealedAtUtc;
         if(previous&&previous.namesShownAtUtc&&(!review.namesShownAtUtc||Date.parse(previous.namesShownAtUtc)<Date.parse(review.namesShownAtUtc))) review.namesShownAtUtc=previous.namesShownAtUtc;
+        if(previous&&previous.guideShownAtUtc&&(!review.guideShownAtUtc||Date.parse(previous.guideShownAtUtc)<Date.parse(review.guideShownAtUtc))) review.guideShownAtUtc=previous.guideShownAtUtc;
         reviews.set(id,review);
       });
       persist();render();status('Imported '+staged.size+' case reviews. All source IDs and hashes matched.');

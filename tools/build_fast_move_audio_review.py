@@ -19,8 +19,10 @@ import wave
 import zipfile
 try:
     from tools.audio_review_signal import analyze_wav
+    from tools.audio_review_context import listening_guide
 except ModuleNotFoundError:
     from audio_review_signal import analyze_wav
+    from audio_review_context import listening_guide
 
 VERSION = "fast-move-audio-review-v1"
 REPO = Path(__file__).resolve().parents[1]
@@ -278,26 +280,115 @@ def case_metadata(case):
             for item in case["candidates"]]}
 
 
-def attach_signal_previews(cases):
+def attach_signal_previews(cases, guides=None):
     """Analyze only the selected media. Derived plots never change review identity."""
     cache = {}
+    media_items = [media for case in cases for media in
+                   [case["recording"], *(c["reference"] for c in case["candidates"])]]
+    media_items.extend(item["reference"] for guide in (guides or {}).values()
+                       for item in guide["additionalReferences"])
+    for media in media_items:
+        sha = media["sha256"]
+        if sha not in cache:
+            source = base64.b64decode(media["src"].split(",", 1)[1], validate=True)
+            if digest(source) != sha:
+                raise ValueError("Signal source hash differs")
+            cache[sha] = analyze_wav(source)
+        media["signal"] = cache[sha]
+
+
+def make_listening_guides(cases, paths, references, human_context=None, catalogue_path=None):
+    """Supplement original comparisons with sourced context; never rewrite their IDs or scores."""
+    catalogue_path = Path(catalogue_path or REPO / "app/src/main/assets/gamemaster.json")
+    catalogue_bytes = catalogue_path.read_bytes()
+    catalogue = json.loads(catalogue_bytes)
+    move_names = {row["moveId"]: row["name"] for row in catalogue["moves"]}
+    normalize = lambda value: re.sub(r"[^a-z0-9]", "", str(value or "").casefold())
+    species = {normalize(row["speciesName"]): row for row in catalogue["pokemon"]}
+    archives = {}
+    for path in map(Path, paths):
+        with zipfile.ZipFile(path) as package:
+            if package.getinfo("timeline.json").file_size > MAX_TIMELINE_BYTES:
+                raise ValueError("Timeline exceeds review limit")
+            timeline = json.loads(package.read("timeline.json"))
+        archives[timeline["matchId"]] = (path, timeline, file_digest(path))
+    result = {}
     for case in cases:
-        for media in [case["recording"], *(c["reference"] for c in case["candidates"])]:
-            sha = media["sha256"]
-            if sha not in cache:
-                source = base64.b64decode(media["src"].split(",", 1)[1], validate=True)
-                if digest(source) != sha:
-                    raise ValueError("Signal source hash differs")
-                cache[sha] = analyze_wav(source)
-            media["signal"] = cache[sha]
+        path, timeline, archive_sha = archives[case["matchId"]]
+        if archive_sha != case["sourceSha256"]:
+            raise ValueError("Listening guide archive differs from original comparison")
+        articles = [row for row in timeline["articles"] if row.get("matchId") == case["matchId"]]
+        by_id = {row["articleId"]: row for row in articles}
+        source = by_id[case["audioArticleId"]]
+        with zipfile.ZipFile(path) as package:
+            if verified_audio(package, source["payload"])["sha256"] != case["recording"]["sha256"]:
+                raise ValueError("Listening guide audio differs from original comparison")
+        start = time_at(source)
+        guide = listening_guide(articles, start, case["recording"]["durationSeconds"],
+                                (human_context or {}).get(case["articleId"]))
+        plan = ((human_context or {}).get(case["articleId"]) or {}).get("reviewTask")
+        if plan and (plan.get("status") not in ("needs_review", "diagnostic") or not isinstance(plan.get("reason"), str)):
+            raise ValueError("Listening review plan must declare its status and reason")
+        guide["reviewTask"] = plan or dict(status="diagnostic", reason="Not yet audited as an unresolved opponent-move assignment.")
+        pools = {}
+        for side in ("player", "opponent"):
+            identity = guide[side]
+            row = species.get(normalize(identity["speciesName"]))
+            changed = False
+            for article in articles:
+                p = article["payload"]
+                if not (start < (time_at(article) or 0) < start + case["recording"]["durationSeconds"] * 1e9 and p.get("side") == side.upper()):
+                    continue
+                if (p.get("kind") == "active_pokemon_species_witnessed" and
+                    normalize(p.get("speciesName")) != normalize(identity["speciesName"])) or (
+                    p.get("kind") == "active_pokemon_fainted_witnessed" and
+                    (not p.get("speciesName") or normalize(p["speciesName"]) == normalize(identity["speciesName"]))):
+                    changed = True
+            names = [move_names[move] for move in row["fastMoves"] if move in move_names] if row else []
+            pools[side] = dict(resolved=bool(row and names and not changed),
+                               moveNames=names if not changed else [])
+        guide["legalMoves"] = pools
+        guide["catalogue"] = dict(sha256=digest(catalogue_bytes), timestamp=catalogue.get("timestamp"))
+        guide["source"] = dict(matchId=case["matchId"], archiveSha256=case["sourceSha256"],
+                               audioArticleId=case["audioArticleId"], audioSha256=case["recording"]["sha256"])
+        known_player = guide["player"].get("moveName") if guide["player"]["status"] in ("configured", "user_confirmed") else None
+        guide["candidateRoles"] = {}
+        for candidate in case["candidates"]:
+            name = candidate["moveName"]
+            role = ("known_player" if name == known_player else
+                    "legal_opponent" if pools["opponent"]["resolved"] and name in pools["opponent"]["moveNames"] else
+                    "possible_player" if pools["player"]["resolved"] and name in pools["player"]["moveNames"] else
+                    "outside_both_movepools" if all(p["resolved"] for p in pools.values()) else "unassigned")
+            guide["candidateRoles"][candidate["code"]] = role
+        supplemental = list(pools["opponent"]["moveNames"]) if pools["opponent"]["resolved"] else []
+        if known_player:
+            supplemental.append(known_player)
+        guide["additionalReferences"], guide["missingReferences"] = [], []
+        original_names = {c["moveName"] for c in case["candidates"]}
+        for name in dict.fromkeys(supplemental):
+            if name in original_names:
+                continue
+            choices = sorted((sha, media) for (move, sha), media in references.items() if move == name)
+            if not choices:
+                guide["missingReferences"].append(name)
+                continue
+            sha, media = choices[0]
+            guide["additionalReferences"].append(dict(moveName=name, code="legal:" + name,
+                role="known_player" if name == known_player else "legal_opponent", reference=media))
+        # Bind the supplemental knowledge separately, keeping original answers portable.
+        fingerprint = {**guide, "additionalReferences": [{**{k: v for k, v in item.items() if k != "reference"},
+            "referenceSha256": item["reference"]["sha256"]} for item in guide["additionalReferences"]]}
+        guide["revision"] = digest(json.dumps(fingerprint, sort_keys=True).encode())
+        result[case["id"]] = guide
+    return result
 
 
-def build_review(cases, output, references, missing=0, available=0):
+def build_review(cases, output, references, missing=0, available=0, listening_guides=None):
     if not cases:
         raise ValueError("No playable saved comparisons found")
     signature = [case_metadata(c) for c in cases]
     review_id = digest(json.dumps(signature, sort_keys=True).encode())[:20]
-    attach_signal_previews(cases)
+    attach_signal_previews(cases, listening_guides)
     data = dict(version=VERSION, reviewSetId=review_id,
         createdAtUtc=datetime.now(timezone.utc).isoformat(),
         summary=dict(caseCount=len(cases), archiveCount=len({c["matchId"] for c in cases}),
@@ -305,7 +396,7 @@ def build_review(cases, output, references, missing=0, available=0):
             namedMoves=len({name for name, _ in references}),
             missingNamedReferences=[name for name in ("Bubble", "Fire Fang") if name not in {n for n, _ in references}],
             notes="Selected retained comparisons, not a recall or accuracy benchmark."),
-        cases=cases)
+        cases=cases, listeningGuides=listening_guides or {})
     encoded = json.dumps(data, ensure_ascii=True, separators=(",", ":")).replace("<", "\\u003c")
     template = (REPO / "tools/templates/fast_move_audio_review.html").read_text()
     if template.count("__REVIEW_DATA_JSON__") != 1:
@@ -329,13 +420,16 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--article-id", action="append", default=[], help="Curated source Article; repeat to retain review order")
     parser.add_argument("--limit", type=int, default=12)
+    parser.add_argument("--listening-context", type=Path, help="Optional separately sourced human context keyed by sound Article ID")
     args = parser.parse_args()
     if not 1 <= args.limit <= 40:
         parser.error("--limit must be 1 through 40")
     references = load_references(args.references)
     all_cases, missing = collect_cases(args.archives, references)
     cases = select_cases(all_cases, args.article_id, args.limit)
-    data = build_review(cases, args.output, references, missing, len(all_cases))
+    human_context = json.loads(args.listening_context.read_text()) if args.listening_context else None
+    guides = make_listening_guides(cases, args.archives, references, human_context)
+    data = build_review(cases, args.output, references, missing, len(all_cases), guides)
     print(json.dumps(dict(path=str(args.output), reviewSetId=data["reviewSetId"], **data["summary"])))
 
 

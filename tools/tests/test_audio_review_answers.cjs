@@ -16,12 +16,13 @@ assert.ok(prefixEnd > 0 && merge, 'Use the actual validation and import merge co
 const T0 = '2026-10-29T12:00:00.000Z', T1 = '2026-10-29T12:01:00.000Z', T2 = '2026-10-29T12:02:00.000Z';
 const clone = value => JSON.parse(JSON.stringify(value));
 
-function fixture() {
+function fixture(withGuide = false) {
   const cases = ['one', 'two'].map(id => ({id, archiveName:'match.zip', matchId:'match',
     sourceSha256:'archive-hash', articleId:id, recording:{sha256:'recording-hash'}, relativeSeconds:2,
     timeOrigin:'Match Start', candidates:[{code:'A', reference:{sha256:'reference-hash'},
       matchingOffsetSeconds:0.144, referenceOffsetSeconds:0.128, matchingDurationSeconds:0.416}]}));
   const data = {version:'fast-move-audio-review-v1', reviewSetId:'same-set', cases};
+  if(withGuide)data.listeningGuides={one:{revision:'a'.repeat(64),additionalReferences:[{code:'legal:Peck'}]}};
   const context = {document:{getElementById:id => id === 'review-data' ? {textContent:JSON.stringify(data)} : {}}};
   vm.runInNewContext(script.slice(0, prefixEnd) + `
     function importAnswers(value) { const staged = validateImport(value); ${merge[0]} }
@@ -96,4 +97,19 @@ test('a later altered source rejects the entire import without changing existing
     assert.throws(() => api.importAnswers(envelope(answer({notes:'Do not partially apply'}), changed)), /does not match/);
     assert.equal(JSON.stringify([...api.reviews]), before);
   }
+});
+
+test('supplemental legal reference answers retain their guide basis without changing old provenance', () => {
+  const {api,answer,envelope}=fixture(true);
+  const entry=answer({choice:'legal:Peck',guideShownAtUtc:T0,guideRevisionAtReview:'a'.repeat(64)});
+  const imported=api.validateImport(envelope(entry)).get('one');
+  assert.equal(imported.choice,'legal:Peck');
+  assert.equal(imported.guideRevisionAtReview,'a'.repeat(64));
+  assert.equal(imported.guideShownAtUtc,T0);
+  for(const invalid of [{choice:'legal:Air Slash'}, {guideRevisionAtReview:'wrong'}, {guideShownAtUtc:7}, {guideRevisionAtReview:null}])
+    assert.throws(()=>api.validateImport(envelope({...entry,review:{...entry.review,...invalid}})),/invalid answer/);
+  const legacy=api.validateImport(envelope(answer())).get('one');
+  assert.equal(legacy.guideShownAtUtc,null);
+  assert.equal(legacy.guideRevisionAtReview,null);
+  assert.throws(()=>api.validateImport(envelope({...entry,review:{...entry.review,guideRevisionAtReview:'b'.repeat(64)}})),/supplemental reference/);
 });
