@@ -1,0 +1,48 @@
+name,status,exact_covered,move_ids,types,turns,cycle_seconds,power,energy_gain,energy_cost,example_pokemon,bundled_files,source_files,alias_source_files,family_bundled_files,family_source_files,any_released_example,all_move_ids_unlisted
+Aura Wheel,missing_source_asset,False,AURA_WHEEL_DARK | AURA_WHEEL_ELECTRIC,dark | electric,,,100,0,45,Morpeko (Full Belly) | Morpeko (Hangry),,,,,,True,False
+Beak Blast,missing_source_asset,False,BEAK_BLAST,flying,,,110,0,55,Toucannon | Toucannon (Shadow),,,,,,True,False
+Behemoth Blade,missing_source_asset,False,BEHEMOTH_BLADE,steel,,,100,0,55,Zacian (Crowned Sword),,,,,,True,False
+Bleakwind Storm,missing_source_asset,False,BLEAKWIND_STORM,flying,,,60,0,45,Tornadus (Therian),,,,,,True,False
+Brutal Swing,missing_source_asset,False,BRUTAL_SWING,dark,,,55,0,35,Ampharos | Tyranitar | Tropius | Absol | Salamence | Conkeldurr,,,,,,True,False
+Chilling Water,missing_source_asset,False,CHILLING_WATER,water,,,60,0,45,Florges | Ninetales (Alolan) | Ninetales (Alolan) (Shadow),,,,,,True,False
+Clanging Scales,missing_source_asset,False,CLANGING_SCALES,dragon,,,120,0,45,Kommo-o,,,,,,True,False
+Crush Grip,missing_source_asset,False,CRUSH_GRIP,normal,,,110,0,50,Regigigas | Regigigas (Shadow),,,,,,True,False
+Dragon Energy,missing_source_asset,False,DRAGON_ENERGY,dragon,,,90,0,45,Regidrago,,,,,,True,False
+Drum Beating,missing_source_asset,False,DRUM_BEATING,grass,,,60,0,35,Rillaboom,,,,,,True,False
+Flower Trick,missing_source_asset,False,FLOWER_TRICK,grass,,,30,0,35,Meowscarada,,,,,,True,False
+Glaive Rush,missing_source_asset,False,GLAIVE_RUSH,dragon,,,90,0,40,Baxcalibur,,,,,,True,False
+Liquidation,missing_source_asset,False,LIQUIDATION,water,,,70,0,45,Golduck | Dewgong | Cloyster | Vaporeon | Armaldo | Floatzel,,,,,,True,False
+Lunge,missing_source_asset,False,LUNGE,bug,,,60,0,45,Ariados | Smeargle | Masquerain | Galvantula | Buzzwole | Pheromosa,,,,,,True,False
+Meteor Beam,missing_source_asset,False,METEOR_BEAM,rock,,,120,0,60,Sudowoodo | Aggron | Gigalith | Tyrantrum | Aurorus | Glimmora,,,,,,True,False
+Mind Blown,missing_source_asset,False,MIND_BLOWN,fire,,,90,0,35,Blacephalon,,,,,,True,False
+Moongeist Beam,missing_source_asset,False,MOONGEIST_BEAM,ghost,,,135,0,65,Necrozma (Dawn Wings),,,,,,True,False
+Nature's Madness,missing_source_asset,False,NATURES_MADNESS,fairy,,,80,0,50,Tapu Koko | Tapu Lele | Tapu Bulu | Tapu Fini,,,,,,True,False
+Obstruct,missing_source_asset,False,OBSTRUCT,dark,,,15,0,40,Obstagoon | Obstagoon (Shadow),,,,,,True,False
+Plasma Fists,missing_source_asset,False,PLASMA_FISTS,electric,,,60,0,35,Zeraora,,,,,,True,False
+Psychic Fangs,missing_source_asset,False,PSYCHIC_FANGS,psychic,,,40,0,35,Arcanine | Espeon | Girafarig | Steelix | Manectric | Luxray,,,,,,True,False
+Pyro Ball,missing_source_asset,False,PYRO_BALL,fire,,,75,0,40,Cinderace,,,,,,True,False
+Rage Fist,missing_source_asset,False,RAGE_FIST,ghost,,,50,0,35,Primeape | Annihilape | Primeape (Shadow) | Annihilape (Shadow),,,,,,True,False
+Sandsear Storm,missing_source_asset,False,SANDSEAR_STORM,ground,,,60,0,45,Landorus (Therian),,,,,,True,False
+Scorching Sands,missing_source_asset,False,SCORCHING_SANDS,ground,,,80,0,50,Sandslash | Ninetales | Arcanine | Rapidash | Magmar | Entei,,,,,,True,False
+Shadow Bone,missing_source_asset,False,SHADOW_BONE,ghost,,,80,0,45,Smeargle | Marowak (Alolan) | Marowak (Alolan) (Shadow),,,,,,True,False
+Skull Bash,source_asset_available,False,SKULL_BASH,normal,,,130,0,75,Blastoise | Raichu | Lapras | Snorlax | Smeargle | Rhyperior,,130-1_skull_bash.wav,,,,True,False
+Sparkling Aria,missing_source_asset,False,SPARKLING_ARIA,water,,,80,0,45,Lapras | Primarina | Lapras (Shadow),,,,,,True,False
+Spirit Shackle,missing_source_asset,False,SPIRIT_SHACKLE,ghost,,,50,0,40,Decidueye,,,,,,True,False
+Sunsteel Strike,missing_source_asset,False,SUNSTEEL_STRIKE,steel,,,135,0,65,Necrozma (Dusk Mane),,,,,,True,False
+Techno Blast (Burn),family_reference_needs_validation,False,TECHNO_BLAST_BURN,fire,,,120,0,55,Smeargle | Genesect (Burn),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Chill),family_reference_needs_validation,False,TECHNO_BLAST_CHILL,ice,,,120,0,55,Smeargle | Genesect (Chill),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Douse),family_reference_needs_validation,False,TECHNO_BLAST_DOUSE,water,,,120,0,55,Smeargle | Genesect (Douse),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Normal),family_reference_needs_validation,False,TECHNO_BLAST_NORMAL,normal,,,120,0,55,Smeargle | Genesect,,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Shock),family_reference_needs_validation,False,TECHNO_BLAST_SHOCK,electric,,,120,0,55,Smeargle | Genesect (Shock),,,,,546-0_techno_blast.wav,True,False
+Thunder Cage,missing_source_asset,False,THUNDER_CAGE,electric,,,60,0,40,Regieleki,,,,,,True,False
+Torch Song,missing_source_asset,False,TORCH_SONG,fire,,,70,0,45,Skeledirge,,,,,,True,False
+Trailblaze,missing_source_asset,False,TRAILBLAZE,grass,,,65,0,45,Raichu | Dodrio | Scyther | Tauros | Furret | Ariados,,,,,,True,False
+Triple Axel,missing_source_asset,False,TRIPLE_AXEL,ice,,,60,0,45,Articuno | Sneasel | Delibird | Hitmontop | Kirlia | Gardevoir,,,,,,True,False
+Upper Hand,missing_source_asset,False,UPPER_HAND,fighting,,,70,0,40,Heracross | Makuhita | Hariyama | Scraggy | Scrafty | Kommo-o,,,,,,True,False
+Vise Grip,spelling_alias_needs_review,False,VICE_GRIP,normal,,,70,0,40,Krabby | Kingler | Pinsir | Smeargle | Mawile | Corphish,,,011-0_vice_grip.wav,,,True,False
+Weather Ball (Fire),family_reference_needs_validation,False,WEATHER_BALL_FIRE,fire,,,60,0,35,Vulpix | Ninetales | Smeargle | Solrock | Roserade | Vulpix (Shadow),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Ice),family_reference_needs_validation,False,WEATHER_BALL_ICE,ice,,,60,0,35,Smeargle | Lunatone | Abomasnow | Amaura | Aurorus | Vulpix (Alolan),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Normal),family_reference_needs_validation,False,WEATHER_BALL_NORMAL,normal,,,60,0,35,Castform,,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Rock),family_reference_needs_validation,False,WEATHER_BALL_ROCK,rock,,,60,0,35,Smeargle | Castform | Hippowdon | Hippowdon (Shadow),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Water),family_reference_needs_validation,False,WEATHER_BALL_WATER,water,,,60,0,35,Politoed | Smeargle | Ludicolo | Pelipper | Bronzong | Politoed (Shadow),,,,,311-0_weather_ball.wav,True,False
+Wildbolt Storm,missing_source_asset,False,WILDBOLT_STORM,electric,,,60,0,45,Thundurus (Therian),,,,,,True,False

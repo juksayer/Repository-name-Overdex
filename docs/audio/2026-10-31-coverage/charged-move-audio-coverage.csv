@@ -1,0 +1,225 @@
+name,status,exact_covered,move_ids,types,turns,cycle_seconds,power,energy_gain,energy_cost,example_pokemon,bundled_files,source_files,alias_source_files,family_bundled_files,family_source_files,any_released_example,all_move_ids_unlisted
+Acid Spray,covered_exact_name,True,ACID_SPRAY,poison,,,20,0,45,Arbok | Victreebel | Tentacruel | Muk | Quagsire | Qwilfish,491-0_acid_spray.wav,491-0_acid_spray.wav,,,,True,False
+Acrobatics,covered_exact_name,True,ACROBATICS,flying,,,110,0,55,Ledian | Jumpluff | Gliscor | Emolga | Naganadel | Wattrel,512-0_acrobatics.wav,512-0_acrobatics.wav,,,,True,False
+Aerial Ace,covered_exact_name,True,AERIAL_ACE,flying,,,60,0,45,Beedrill | Pidgey | Pidgeotto | Pidgeot | Spearow | Fearow,332-0_aerial_ace.wav,332-0_aerial_ace.wav,,,,True,False
+Aeroblast,covered_exact_name,True,AEROBLAST,flying,,,170,0,75,Smeargle | Lugia | Lugia (Shadow),170-0_aeroblast.wav,170-0_aeroblast.wav,,,,True,False
+Air Cutter,covered_exact_name,True,AIR_CUTTER,flying,,,45,0,35,Charizard | Pidgey | Pidgeotto | Pidgeot | Zubat | Golbat,314-0_air_cutter.wav,314-0_air_cutter.wav,,,,True,False
+Ancient Power,covered_exact_name,True,ANCIENT_POWER,rock,,,60,0,45,Golem | Exeggcute | Omanyte | Omastar | Kabuto | Kabutops,246-0_ancient_power.wav,246-0_ancient_power.wav,,,,True,False
+Aqua Jet,covered_exact_name,True,AQUA_JET,water,,,70,0,40,Squirtle | Wartortle | Seel | Dewgong | Starmie | Kabuto,453-0_aqua_jet.wav,453-0_aqua_jet.wav,,,,True,False
+Aqua Step,covered_exact_name,True,AQUA_STEP,water,,,55,0,40,Quaquaval,297-0_aqua_step.wav,297-0_aqua_step.wav,,,,True,False
+Aqua Tail,covered_exact_name,True,AQUA_TAIL,water,,,55,0,35,Squirtle | Psyduck | Seel | Goldeen | Gyarados | Vaporeon,401-0_aqua_tail.wav,401-0_aqua_tail.wav,,,,True,False
+Aura Sphere,covered_exact_name,True,AURA_SPHERE,fighting,,,80,0,40,Smeargle | Raikou | Celebi | Blaziken | Latias | Latios,396-0_aura_sphere.wav,396-0_aura_sphere.wav,,,,True,False
+Aura Wheel,missing_source_asset,False,AURA_WHEEL_DARK | AURA_WHEEL_ELECTRIC,dark | electric,,,100,0,45,Morpeko (Full Belly) | Morpeko (Hangry),,,,,,True,False
+Aurora Beam,covered_exact_name,True,AURORA_BEAM,ice,,,80,0,60,Seel | Dewgong | Cloyster | Seadra | Remoraid | Octillery,062-0_aurora_beam.wav,062-0_aurora_beam.wav,,,,True,False
+Avalanche,covered_exact_name,True,AVALANCHE,ice,,,90,0,45,Cloyster | Jynx | Sneasel | Piloswine | Smeargle | Snorunt,419-0_avalanche.wav,419-0_avalanche.wav,,,,True,False
+Beak Blast,missing_source_asset,False,BEAK_BLAST,flying,,,110,0,55,Toucannon | Toucannon (Shadow),,,,,,True,False
+Behemoth Bash,covered_exact_name,True,BEHEMOTH_BASH,steel,,,80,0,45,Zamazenta (Crowned Shield),622-0_behemoth_bash.wav,622-0_behemoth_bash.wav,,,,True,False
+Behemoth Blade,missing_source_asset,False,BEHEMOTH_BLADE,steel,,,100,0,55,Zacian (Crowned Sword),,,,,,True,False
+Blast Burn,covered_exact_name,True,BLAST_BURN,fire,,,110,0,50,Charizard | Typhlosion | Smeargle | Blaziken | Infernape | Emboar,307-0_blast_burn.wav,307-0_blast_burn.wav,,,,True,False
+Blaze Kick,covered_exact_name,True,BLAZE_KICK,fire,,,60,0,40,Hitmonlee | Smeargle | Blaziken | Riolu | Lucario | Mienshao,299-0_blaze_kick.wav,299-0_blaze_kick.wav,,,,True,False
+Bleakwind Storm,missing_source_asset,False,BLEAKWIND_STORM,flying,,,60,0,45,Tornadus (Therian),,,,,,True,False
+Blizzard,covered_exact_name,True,BLIZZARD,ice,,,140,0,75,Tentacruel | Dewgong | Cloyster | Seadra | Lapras | Articuno,059-0_blizzard.wav,059-0_blizzard.wav,,,,True,False
+Body Slam,covered_exact_name,True,BODY_SLAM,normal,,,55,0,35,Rattata | Nidoran Female | Nidoran Male | Clefairy | Vulpix | Jigglypuff,034-0_body_slam.wav,034-0_body_slam.wav,,,,True,False
+Bone Club,covered_exact_name,True,BONE_CLUB,ground,,,55,0,35,Cubone | Marowak | Smeargle | Cubone (Shadow) | Marowak (Alolan) | Marowak (Alolan) (Shadow),125-0_bone_club.wav,125-0_bone_club.wav,,,,True,False
+Boomburst,covered_exact_name,True,BOOMBURST,normal,,,150,0,70,Exploud | Flygon | Noivern | Kommo-o | Exploud (Shadow) | Flygon (Shadow),586-0_boomburst.wav,586-0_boomburst.wav,,,,True,False
+Brave Bird,covered_exact_name,True,BRAVE_BIRD,flying,,,130,0,55,Pidgeot | Doduo | Dodrio | Skarmory | Smeargle | Ho-Oh,413-0_brave_bird.wav,413-0_brave_bird.wav,,,,True,False
+Breaking Swipe,covered_exact_name,True,BREAKING_SWIPE,dragon,,,50,0,50,Onix | Rhydon | Steelix | Sceptile | Rayquaza | Garchomp,379-0_breaking_swipe.wav,379-0_breaking_swipe.wav,,,,True,False
+Brick Break,covered_exact_name,True,BRICK_BREAK,fighting,,,50,0,40,Raichu | Mankey | Machop | Machoke | Hitmonlee | Hitmonchan,280-0_brick_break.wav,280-0_brick_break.wav,,,,True,False
+Brine,covered_exact_name,True,BRINE,water,,,60,0,50,Omanyte | Smeargle | Mareanie | Toxapex | Omanyte (Shadow) | Wishiwashi,362-0_brine.wav,362-0_brine.wav,,,,True,False
+Brutal Swing,missing_source_asset,False,BRUTAL_SWING,dark,,,55,0,35,Ampharos | Tyranitar | Tropius | Absol | Salamence | Conkeldurr,,,,,,True,False
+Bubble Beam,covered_exact_name,True,BUBBLE_BEAM,water,,,25,0,40,Golduck | Poliwag | Poliwhirl | Tentacool | Shellder | Krabby,061-0_bubble_beam.wav,061-0_bubble_beam.wav,,,,True,False
+Bug Buzz,covered_exact_name,True,BUG_BUZZ,bug,,,100,0,60,Butterfree | Venomoth | Scyther | Ledian | Smeargle | Beautifly,405-0_bug_buzz.wav,405-0_bug_buzz.wav,,,,True,False
+Bulldoze,covered_exact_name,True,BULLDOZE,ground,,,45,0,45,Sandslash | Arcanine | Cubone | Rhyhorn | Mew | Piloswine,523-0_bulldoze.wav,523-0_bulldoze.wav,,,,True,False
+Chilling Water,missing_source_asset,False,CHILLING_WATER,water,,,60,0,45,Florges | Ninetales (Alolan) | Ninetales (Alolan) (Shadow),,,,,,True,False
+Clanging Scales,missing_source_asset,False,CLANGING_SCALES,dragon,,,120,0,45,Kommo-o,,,,,,True,False
+Close Combat,covered_exact_name,True,CLOSE_COMBAT,fighting,,,100,0,45,Primeape | Machamp | Hitmonlee | Hitmonchan | Pinsir | Granbull,370-0_close_combat.wav,370-0_close_combat.wav,,,,True,False
+Crabhammer,covered_exact_name,True,CRABHAMMER,water,,,85,0,50,Kingler | Smeargle | Crawdaunt | Clauncher | Clawitzer | Crabrawler,152-0_crabhammer.wav,152-0_crabhammer.wav,,,,True,False
+Cross Chop,covered_exact_name,True,CROSS_CHOP,fighting,,,55,0,35,Psyduck | Golduck | Mankey | Primeape | Machop | Machoke,238-0_cross_chop.wav,238-0_cross_chop.wav,,,,True,False
+Cross Poison,covered_exact_name,True,CROSS_POISON,poison,,,50,0,35,Paras | Parasect | Spinarak | Ariados | Crobat | Smeargle,440-0_cross_poison.wav,440-0_cross_poison.wav,,,,True,False
+Crunch,covered_exact_name,True,CRUNCH,dark,,,70,0,45,Arcanine | Kangaskhan | Gyarados | Totodile | Croconaw | Feraligatr,242-0_crunch.wav,242-0_crunch.wav,,,,True,False
+Crush Grip,missing_source_asset,False,CRUSH_GRIP,normal,,,110,0,50,Regigigas | Regigigas (Shadow),,,,,,True,False
+Dark Pulse,covered_exact_name,True,DARK_PULSE,dark,,,80,0,50,Arbok | Meowth | Muk | Gastly | Haunter | Gengar,399-0_dark_pulse.wav,399-0_dark_pulse.wav,,,,True,False
+Darkest Lariat,covered_exact_name,True,DARKEST_LARIAT,dark,,,120,0,60,Incineroar,018-0_darkest_lariat.wav,018-0_darkest_lariat.wav,,,,True,False
+Dazzling Gleam,covered_exact_name,True,DAZZLING_GLEAM,fairy,,,90,0,55,Clefable | Jigglypuff | Wigglytuff | Kadabra | Alakazam | Chansey,605-0_dazzling_gleam.wav,605-0_dazzling_gleam.wav,,,,True,False
+Dig,covered_exact_name,True,DIG,ground,,,70,0,50,Rattata | Raticate | Sandshrew | Nidorina | Nidorino | Diglett,091-0_dig.wav,091-0_dig.wav | 091-1_dig.wav,,,,True,False
+Disarming Voice,covered_exact_name,True,DISARMING_VOICE,fairy,,,70,0,45,Clefairy | Jigglypuff | Wigglytuff | Pichu | Smeargle | Ralts,574-0_disarming_voice.wav,574-0_disarming_voice.wav,,,,True,False
+Discharge,covered_exact_name,True,DISCHARGE,electric,,,55,0,40,Pikachu | Magnemite | Magneton | Voltorb | Electrode | Jolteon,435-0_discharge.wav,435-0_discharge.wav,,,,True,False
+Doom Desire,covered_exact_name,True,DOOM_DESIRE,steel,,,80,0,40,Smeargle | Jirachi,353-0_doom_desire.wav,353-0_doom_desire.wav,,,,True,False
+Double Iron Bash,covered_exact_name,True,DOUBLE_IRON_BASH,steel,,,55,0,35,Melmetal,442-0_double_iron_bash.wav,442-0_double_iron_bash.wav,,,,True,False
+Draco Meteor,covered_exact_name,True,DRACO_METEOR,dragon,,,150,0,65,Dragonite | Smeargle | Salamence | Dialga | Palkia | Reshiram,434-0_draco_meteor.wav,434-0_draco_meteor.wav,,,,True,False
+Dragon Ascent,covered_exact_name,True,DRAGON_ASCENT,flying,,,110,0,45,Rayquaza | Rayquaza (Mega),620-0_dragon_ascent.wav,620-0_dragon_ascent.wav,,,,True,False
+Dragon Claw,covered_exact_name,True,DRAGON_CLAW,dragon,,,80,0,50,Charizard | Dragonite | Mew | Smeargle | Sceptile | Flygon,337-0_dragon_claw.wav,337-0_dragon_claw.wav,,,,True,False
+Dragon Energy,missing_source_asset,False,DRAGON_ENERGY,dragon,,,90,0,45,Regidrago,,,,,,True,False
+Dragon Pulse,covered_exact_name,True,DRAGON_PULSE,dragon,,,90,0,55,Horsea | Seadra | Gyarados | Lapras | Dragonair | Dragonite,406-0_dragon_pulse.wav,406-0_dragon_pulse.wav,,,,True,False
+Drain Punch,covered_exact_name,True,DRAIN_PUNCH,fighting,,,40,0,40,Slowbro | Gengar | Quagsire | Sableye | Toxicroak | Mienfoo,409-0_drain_punch.wav,409-0_drain_punch.wav,,,,True,False
+Draining Kiss,covered_exact_name,True,DRAINING_KISS,fairy,,,60,0,55,Clefable | Jynx | Togetic | Smeargle | Kirlia | Gorebyss,577-0_draining_kiss.wav,577-0_draining_kiss.wav,,,,True,False
+Drill Peck,covered_exact_name,True,DRILL_PECK,flying,,,70,0,40,Spearow | Fearow | Doduo | Dodrio | Zapdos | Natu,065-0_drill_peck.wav,065-0_drill_peck.wav,,,,True,False
+Drill Run,covered_exact_name,True,DRILL_RUN,ground,,,70,0,40,Beedrill | Fearow | Rapidash | Dewgong | Seaking | Dunsparce,529-0_drill_run.wav,529-0_drill_run.wav,,,,True,False
+Drum Beating,missing_source_asset,False,DRUM_BEATING,grass,,,60,0,35,Rillaboom,,,,,,True,False
+Dynamax Cannon,covered_exact_name,True,DYNAMAX_CANNON,dragon,,,80,0,45,Eternatus,744-0_dynamax_cannon.wav,744-0_dynamax_cannon.wav,,,,True,False
+Dynamic Punch,covered_exact_name,True,DYNAMIC_PUNCH,fighting,,,90,0,45,Poliwrath | Machoke | Machamp | Ledian | Smeargle | Breloom,223-0_dynamic_punch.wav,223-0_dynamic_punch.wav,,,,True,False
+Earth Power,covered_exact_name,True,EARTH_POWER,ground,,,90,0,50,Nidoqueen | Nidoking | Aerodactyl | Smeargle | Camerupt | Flygon,414-0_earth_power.wav,414-0_earth_power.wav,,,,True,False
+Earthquake,covered_exact_name,True,EARTHQUAKE,ground,,,120,0,65,Sandslash | Nidoqueen | Nidoking | Dugtrio | Golem | Marowak,089-0_earthquake.wav,089-0_earthquake.wav,,,,True,False
+Energy Ball,covered_exact_name,True,ENERGY_BALL,grass,,,80,0,45,Ninetales | Mew | Chikorita | Bayleef | Skiploom | Jumpluff,412-0_energy_ball.wav,412-0_energy_ball.wav,,,,True,False
+Feather Dance,covered_exact_name,True,FEATHER_DANCE,flying,,,35,0,50,Pidgeot | Pidgeot (Mega) | Pidgeot (Shadow),297-0_feather_dance.wav,297-0_feather_dance.wav,,,,True,False
+Fell Stinger,covered_exact_name,True,FELL_STINGER,bug,,,20,0,35,Beedrill | Qwilfish | Smeargle | Vespiquen | Drapion | Togedemaru,565-0_fell_stinger.wav,565-0_fell_stinger.wav,,,,True,False
+Fire Blast,covered_exact_name,True,FIRE_BLAST,fire,,,140,0,80,Charizard | Ninetales | Arcanine | Ponyta | Rapidash | Magmar,126-0_fire_blast.wav,126-0_fire_blast.wav,,,,True,False
+Fire Punch,covered_exact_name,True,FIRE_PUNCH,fire,,,60,0,40,Charmeleon | Alakazam | Hypno | Hitmonchan | Magmar | Smeargle,007-0_fire_punch.wav,007-0_fire_punch.wav,,,,True,False
+Flame Burst,covered_exact_name,True,FLAME_BURST,fire,,,70,0,55,Charmander | Charmeleon | Slugma | Smeargle | Magby | Manectric,481-0_flame_burst.wav,481-0_flame_burst.wav,,,,True,False
+Flame Charge,covered_exact_name,True,FLAME_CHARGE,fire,,,65,0,50,Charmander | Vulpix | Ponyta | Rapidash | Mew | Cyndaquil,488-0_flame_charge.wav,488-0_flame_charge.wav,,,,True,False
+Flame Wheel,covered_exact_name,True,FLAME_WHEEL,fire,,,80,0,45,Growlithe | Ponyta | Smeargle | Torkoal | Chimchar | Monferno,172-0_flame_wheel.wav,172-0_flame_wheel.wav,,,,True,False
+Flamethrower,covered_exact_name,True,FLAMETHROWER,fire,,,90,0,55,Charmander | Charmeleon | Charizard | Vulpix | Ninetales | Growlithe,053-0_flamethrower.wav,053-0_flamethrower.wav,,,,True,False
+Flash Cannon,covered_exact_name,True,FLASH_CANNON,steel,,,110,0,65,Blastoise | Magneton | Horsea | Mew | Skarmory | Smeargle,430-0_flash_cannon.wav,430-0_flash_cannon.wav,,,,True,False
+Flower Trick,missing_source_asset,False,FLOWER_TRICK,grass,,,30,0,35,Meowscarada,,,,,,True,False
+Fly,covered_exact_name,True,FLY,flying,,,80,0,45,Fearow | Moltres | Delibird | Smeargle | Lugia | Salamence,019-0_fly.wav,019-0_fly.wav,,,,True,False
+Flying Press,covered_exact_name,True,FLYING_PRESS,fighting,,,90,0,40,Smeargle | Hawlucha | Pikachu (Libre),560-0_flying_press.wav,560-0_flying_press.wav,,,,True,False
+Focus Blast,covered_exact_name,True,FOCUS_BLAST,fighting,,,150,0,75,Alakazam | Gengar | Hypno | Jynx | Mewtwo | Mew,411-0_focus_blast.wav,411-0_focus_blast.wav,,,,True,False
+Foul Play,covered_exact_name,True,FOUL_PLAY,dark,,,65,0,40,Meowth | Persian | Electrode | Umbreon | Murkrow | Sneasel,492-0_foul_play.wav,492-0_foul_play.wav,,,,True,False
+Freeze Shock,covered_exact_name,True,FREEZE_SHOCK,ice,,,120,0,60,Kyurem (Black),553-0_freeze_shock.wav,553-0_freeze_shock.wav,,,,True,False
+Frenzy Plant,covered_exact_name,True,FRENZY_PLANT,grass,,,100,0,45,Venusaur | Meganium | Smeargle | Sceptile | Torterra | Serperior,338-0_frenzy_plant.wav,338-0_frenzy_plant.wav,,,,True,False
+Fusion Bolt,covered_exact_name,True,FUSION_BOLT,electric,,,90,0,45,Zekrom | Kyurem (Black),559-0_fusion_bolt.wav,559-0_fusion_bolt.wav,,,,True,False
+Fusion Flare,covered_exact_name,True,FUSION_FLARE,fire,,,90,0,45,Reshiram | Kyurem (White),558-0_fusion_flare.wav,558-0_fusion_flare.wav,,,,True,False
+Future Sight,covered_exact_name,True,FUTURE_SIGHT,psychic,,,110,0,65,Alakazam | Hypno | Xatu | Espeon | Smeargle | Lugia,248-0_future_sight.wav,248-0_future_sight.wav,,,,True,False
+Giga Impact,covered_exact_name,True,GIGA_IMPACT,normal,,,150,0,80,Smeargle | Regigigas | Xerneas | Regigigas (Shadow) | Zacian (Crowned Sword) | Zamazenta (Crowned Shield),416-0_giga_impact.wav,416-0_giga_impact.wav,,,,True,False
+Gigaton Hammer,covered_exact_name,True,GIGATON_HAMMER,steel,,,130,0,60,Tinkaton,587-0_gigaton_hammer.wav,587-0_gigaton_hammer.wav,,,,True,False
+Glaciate,covered_exact_name,True,GLACIATE,ice,,,60,0,40,Kyurem,549-0_glaciate.wav,549-0_glaciate.wav,,,,True,False
+Glaive Rush,missing_source_asset,False,GLAIVE_RUSH,dragon,,,90,0,40,Baxcalibur,,,,,,True,False
+Grass Knot,covered_exact_name,True,GRASS_KNOT,grass,,,90,0,50,Tangela | Mew | Chikorita | Bayleef | Sentret | Cleffa,447-0_grass_knot.wav,447-0_grass_knot.wav,,,,True,False
+Gunk Shot,covered_exact_name,True,GUNK_SHOT,poison,,,130,0,75,Ekans | Arbok | Muk | Octillery | Smeargle | Gulpin,441-0_gunk_shot.wav,441-0_gunk_shot.wav,,,,True,False
+Gyro Ball,covered_exact_name,True,GYRO_BALL,steel,,,80,0,50,Jigglypuff | Voltorb | Mew | Pineco | Shuckle | Smeargle,360-0_gyro_ball.wav,360-0_gyro_ball.wav,,,,True,False
+Heat Wave,covered_exact_name,True,HEAT_WAVE,fire,,,75,0,45,Pidgeot | Ninetales | Rapidash | Flareon | Zapdos | Moltres,257-0_heat_wave.wav,257-0_heat_wave.wav,,,,True,False
+Heavy Slam,covered_exact_name,True,HEAVY_SLAM,steel,,,70,0,50,Machamp | Onix | Snorlax | Forretress | Steelix | Donphan,484-0_heavy_slam.wav,484-0_heavy_slam.wav,,,,True,False
+High Horsepower,covered_exact_name,True,HIGH_HORSEPOWER,ground,,,100,0,60,Piloswine | Mamoswine | Ursaluna | Rapidash (Galarian) | Piloswine (Shadow) | Mamoswine (Shadow),543-0_high_horsepower.wav,543-0_high_horsepower.wav,,,,True,False
+High Jump Kick,covered_exact_name,True,HIGH_JUMP_KICK,fighting,,,110,0,55,Mienfoo | Tsareena,136-0_high_jump_kick.wav,136-0_high_jump_kick.wav,,,,True,False
+Horn Attack,covered_exact_name,True,HORN_ATTACK,normal,,,40,0,35,Nidoran Male | Nidorino | Rhyhorn | Goldeen | Tauros | Smeargle,030-0_horn_attack.wav,030-0_horn_attack.wav,,,,True,False
+Hurricane,covered_exact_name,True,HURRICANE,flying,,,110,0,60,Pidgeot | Articuno | Dragonite | Smeargle | Shiftry | Pelipper,542-0_hurricane.wav,542-0_hurricane.wav,,,,True,False
+Hydro Cannon,covered_exact_name,True,HYDRO_CANNON,water,,,80,0,40,Blastoise | Feraligatr | Smeargle | Swampert | Empoleon | Samurott,308-0_hydro_cannon.wav,308-0_hydro_cannon.wav,,,,True,False
+Hydro Pump,covered_exact_name,True,HYDRO_PUMP,water,,,130,0,75,Wartortle | Blastoise | Golduck | Poliwrath | Tentacruel | Cloyster,056-0_hydro_pump.wav,056-0_hydro_pump.wav,,,,True,False
+Hyper Beam,covered_exact_name,True,HYPER_BEAM,normal,,,150,0,80,Raticate | Wigglytuff | Electrode | Lickitung | Chansey | Porygon,063-0_hyper_beam.wav,063-0_hyper_beam.wav,,,,True,False
+Hyper Fang,covered_exact_name,True,HYPER_FANG,normal,,,80,0,50,Rattata | Raticate | Smeargle | Bidoof | Bibarel | Pachirisu,158-0_hyper_fang.wav,158-0_hyper_fang.wav,,,,True,False
+Ice Beam,covered_exact_name,True,ICE_BEAM,ice,,,90,0,55,Wartortle | Blastoise | Nidorino | Wigglytuff | Golduck | Slowbro,058-0_ice_beam.wav,058-0_ice_beam.wav,,,,True,False
+Ice Burn,covered_exact_name,True,ICE_BURN,ice,,,120,0,60,Kyurem (White),554-0_ice_burn.wav,554-0_ice_burn.wav,,,,True,False
+Ice Punch,covered_exact_name,True,ICE_PUNCH,ice,,,60,0,40,Primeape | Poliwrath | Haunter | Hypno | Hitmonchan | Jynx,008-0_ice_punch.wav,008-0_ice_punch.wav,,,,True,False
+Icicle Spear,covered_exact_name,True,ICICLE_SPEAR,ice,,,70,0,40,Piloswine | Walrein | Mamoswine | Cetitan | Piloswine (Shadow) | Walrein (Shadow),333-0_icicle_spear.wav,333-0_icicle_spear.wav,,,,True,False
+Icy Wind,covered_exact_name,True,ICY_WIND,ice,,,60,0,45,Wigglytuff | Poliwrath | Seel | Dewgong | Shellder | Cloyster,196-0_icy_wind.wav,196-0_icy_wind.wav,,,,True,False
+Iron Head,covered_exact_name,True,IRON_HEAD,steel,,,70,0,50,Onix | Tauros | Aerodactyl | Scizor | Smeargle | Entei,442-0_iron_head.wav,442-0_iron_head.wav,,,,True,False
+Last Resort,covered_exact_name,True,LAST_RESORT,normal,,,90,0,55,Eevee | Vaporeon | Jolteon | Flareon | Espeon | Umbreon,384-0_last_resort.wav,384-0_last_resort.wav,,,,True,False
+Leaf Blade,covered_exact_name,True,LEAF_BLADE,grass,,,70,0,35,Victreebel | Farfetch'd | Bellossom | Smeargle | Grovyle | Sceptile,348-0_leaf_blade.wav,348-0_leaf_blade.wav,,,,True,False
+Leaf Storm,covered_exact_name,True,LEAF_STORM,grass,,,130,0,55,Sunflora | Celebi | Ludicolo | Roserade | Leavanny | Lurantis,437-0_leaf_storm.wav,437-0_leaf_storm.wav,,,,True,False
+Leaf Tornado,covered_exact_name,True,LEAF_TORNADO,grass,,,45,0,40,Victreebel | Smeargle | Shiftry | Servine | Serperior | Victreebel (Mega),536-0_leaf_tornado.wav,536-0_leaf_tornado.wav,,,,True,False
+Liquidation,missing_source_asset,False,LIQUIDATION,water,,,70,0,45,Golduck | Dewgong | Cloyster | Vaporeon | Armaldo | Floatzel,,,,,,True,False
+Low Sweep,covered_exact_name,True,LOW_SWEEP,fighting,,,40,0,40,Mankey | Primeape | Machop | Hitmonlee | Mew | Aipom,490-0_low_sweep.wav,490-0_low_sweep.wav,,,,True,False
+Lunge,missing_source_asset,False,LUNGE,bug,,,60,0,45,Ariados | Smeargle | Masquerain | Galvantula | Buzzwole | Pheromosa,,,,,,True,False
+Luster Purge,covered_exact_name,True,LUSTER_PURGE,psychic,,,120,0,60,Latios | Latios (Mega) | Latios (Shadow),295-0_luster_purge.wav,295-0_luster_purge.wav,,,,True,False
+Magma Storm,covered_exact_name,True,MAGMA_STORM,fire,,,65,0,40,Heatran | Heatran (Shadow),463-0_magma_storm.wav,463-0_magma_storm.wav,,,,True,False
+Magnet Bomb,covered_exact_name,True,MAGNET_BOMB,steel,,,70,0,45,Magnemite | Magneton | Smeargle | Probopass | Genesect | Magnemite (Shadow),443-0_magnet_bomb.wav,443-0_magnet_bomb.wav,,,,True,False
+Megahorn,covered_exact_name,True,MEGAHORN,bug,,,110,0,55,Nidoking | Rhydon | Seaking | Ariados | Heracross | Stantler,224-0_megahorn.wav,224-0_megahorn.wav,,,,True,False
+Meteor Beam,missing_source_asset,False,METEOR_BEAM,rock,,,120,0,60,Sudowoodo | Aggron | Gigalith | Tyrantrum | Aurorus | Glimmora,,,,,,True,False
+Meteor Mash,covered_exact_name,True,METEOR_MASH,steel,,,100,0,45,Clefable | Smeargle | Metagross | Lucario | Pikachu (Rock Star) | Metagross (Mega),309-0_meteor_mash.wav,309-0_meteor_mash.wav,,,,True,False
+Mind Blown,missing_source_asset,False,MIND_BLOWN,fire,,,90,0,35,Blacephalon,,,,,,True,False
+Mirror Coat,covered_exact_name,True,MIRROR_COAT,psychic,,,60,0,55,Wobbuffet | Girafarig | Smeargle | Spoink | Grumpig | Lileep,243-0_mirror_coat.wav,243-0_mirror_coat.wav,,,,True,False
+Mirror Shot,covered_exact_name,True,MIRROR_SHOT,steel,,,35,0,35,Forretress | Smeargle | Magnezone | Ferrothorn | Klinklang | Forretress (Shadow),429-0_mirror_shot.wav,429-0_mirror_shot.wav,,,,True,False
+Mist Ball,covered_exact_name,True,MIST_BALL,psychic,,,120,0,60,Latias | Latias (Mega) | Latias (Shadow),296-0_mist_ball.wav,296-0_mist_ball.wav,,,,True,False
+Moonblast,covered_exact_name,True,MOONBLAST,fairy,,,110,0,60,Clefairy | Clefable | Oddish | Gloom | Vileplume | Smeargle,585-0_moonblast.wav,585-0_moonblast.wav,,,,True,False
+Moongeist Beam,missing_source_asset,False,MOONGEIST_BEAM,ghost,,,135,0,65,Necrozma (Dawn Wings),,,,,,True,False
+Mud Bomb,covered_exact_name,True,MUD_BOMB,ground,,,65,0,45,Diglett | Dugtrio | Poliwag | Poliwhirl | Grimer | Wooper,426-0_mud_bomb.wav,426-0_mud_bomb.wav,,,,True,False
+Muddy Water,covered_exact_name,True,MUDDY_WATER,water,,,35,0,35,Smeargle | Swampert | Seismitoad | Basculin | Stunfisk | Goomy,330-0_muddy_water.wav,330-0_muddy_water.wav,,,,True,False
+Mystical Fire,covered_exact_name,True,MYSTICAL_FIRE,fire,,,60,0,45,Drifblim | Litwick | Delphox | Blacephalon | Drifblim (Shadow) | Litwick (Shadow),595-0_mystical_fire.wav,595-0_mystical_fire.wav,,,,True,False
+Nature's Madness,missing_source_asset,False,NATURES_MADNESS,fairy,,,80,0,50,Tapu Koko | Tapu Lele | Tapu Bulu | Tapu Fini,,,,,,True,False
+Night Shade,covered_exact_name,True,NIGHT_SHADE,ghost,,,70,0,45,Gastly | Hoothoot | Noctowl | Natu | Smeargle | Shuppet,101-0_night_shade.wav,101-0_night_shade.wav,,,,True,False
+Night Slash,covered_exact_name,True,NIGHT_SLASH,dark,,,50,0,35,Sandslash | Meowth | Persian | Primeape | Scyther | Spinarak,400-0_night_slash.wav,400-0_night_slash.wav,,,,True,False
+Oblivion Wing,covered_exact_name,True,OBLIVION_WING,flying,,,85,0,50,Yveltal,613-0_oblivion_wing.wav,613-0_oblivion_wing.wav,,,,True,False
+Obstruct,missing_source_asset,False,OBSTRUCT,dark,,,15,0,40,Obstagoon | Obstagoon (Shadow),,,,,,True,False
+Octazooka,covered_exact_name,True,OCTAZOOKA,water,,,50,0,50,Octillery | Kingdra | Smeargle | Kingdra (Shadow),190-0_octazooka.wav,190-0_octazooka.wav,,,,True,False
+Ominous Wind,covered_exact_name,True,OMINOUS_WIND,ghost,,,45,0,45,Golbat | Gastly | Xatu | Misdreavus | Smeargle | Masquerain,466-0_ominous_wind.wav,466-0_ominous_wind.wav,,,,True,False
+Origin Pulse,covered_exact_name,True,ORIGIN_PULSE,water,,,130,0,60,Kyogre | Kyogre (Primal) | Kyogre (Shadow),618-0_origin_pulse.wav,618-0_origin_pulse.wav,,,,True,False
+Outrage,covered_exact_name,True,OUTRAGE,dragon,,,110,0,60,Kangaskhan | Gyarados | Snorlax | Dragonite | Kingdra | Smeargle,200-0_outrage.wav,200-0_outrage.wav,,,,True,False
+Overheat,covered_exact_name,True,OVERHEAT,fire,,,130,0,55,Charizard | Ninetales | Flareon | Moltres | Mew | Typhlosion,315-0_overheat.wav,315-0_overheat.wav,,,,True,False
+Parabolic Charge,covered_exact_name,True,PARABOLIC_CHARGE,electric,,,70,0,50,Helioptile | Heliolisk | Dedenne | Tadbulb | Bellibolt | Helioptile (Shadow),570-0_parabolic_charge.wav,570-0_parabolic_charge.wav,,,,True,False
+Payback,covered_exact_name,True,PAYBACK,dark,,,110,0,60,Persian | Machamp | Tentacruel | Smeargle | Cacnea | Cacturne,371-0_payback.wav,371-0_payback.wav,,,,True,False
+Petal Blizzard,covered_exact_name,True,PETAL_BLIZZARD,grass,,,110,0,65,Venusaur | Gloom | Vileplume | Meganium | Bellossom | Sunflora,572-0_petal_blizzard.wav,572-0_petal_blizzard.wav,,,,True,False
+Plasma Fists,missing_source_asset,False,PLASMA_FISTS,electric,,,60,0,35,Zeraora,,,,,,True,False
+Play Rough,covered_exact_name,True,PLAY_ROUGH,fairy,,,90,0,60,Jigglypuff | Wigglytuff | Persian | Azumarill | Granbull | Teddiursa,583-0_play_rough.wav,583-0_play_rough.wav,,,,True,False
+Poison Fang,covered_exact_name,True,POISON_FANG,poison,,,45,0,40,Ekans | Nidoran Female | Nidorina | Nidoqueen | Zubat | Golbat,305-0_poison_fang.wav,305-0_poison_fang.wav,,,,True,False
+Poltergeist,covered_exact_name,True,POLTERGEIST,ghost,,,150,0,75,Dusclops | Dusknoir | Chandelure | Golurk | Poltchageist | Sinistcha,621-0_poltergeist.wav,621-0_poltergeist.wav,,,,True,False
+Power Gem,covered_exact_name,True,POWER_GEM,rock,,,85,0,50,Persian | Staryu | Starmie | Flaaffy | Ampharos | Corsola,408-0_power_gem.wav,408-0_power_gem.wav,,,,True,False
+Power Whip,covered_exact_name,True,POWER_WHIP,grass,,,90,0,50,Bulbasaur | Ivysaur | Bellsprout | Weepinbell | Lickitung | Tangela,438-0_power_whip.wav,438-0_power_whip.wav,,,,True,False
+Power-Up Punch,covered_exact_name,True,POWER_UP_PUNCH,fighting,,,20,0,35,Poliwrath | Hitmonchan | Kangaskhan | Smeargle | Mawile | Medicham,612-0_power-up_punch.wav,612-0_power-up_punch.wav,,,,True,False
+Precipice Blades,covered_exact_name,True,PRECIPICE_BLADES,ground,,,130,0,60,Groudon | Groudon (Primal) | Groudon (Shadow),619-0_precipice_blades.wav,619-0_precipice_blades.wav,,,,True,False
+Psybeam,covered_exact_name,True,PSYBEAM,psychic,,,70,0,60,Venonat | Psyduck | Kadabra | Drowzee | Chansey | Starmie,060-0_psybeam.wav,060-0_psybeam.wav,,,,True,False
+Psychic,covered_exact_name,True,PSYCHIC,psychic,,,75,0,55,Butterfree | Clefable | Venomoth | Golduck | Alakazam | Slowpoke,094-0_psychic.wav,094-0_psychic.wav,,,,True,False
+Psychic Fangs,missing_source_asset,False,PSYCHIC_FANGS,psychic,,,40,0,35,Arcanine | Espeon | Girafarig | Steelix | Manectric | Luxray,,,,,,True,False
+Psycho Boost,covered_exact_name,True,PSYCHO_BOOST,psychic,,,70,0,35,Smeargle | Deoxys | Deoxys (Attack) | Deoxys (Defense) | Deoxys (Speed),354-0_psycho_boost.wav,354-0_psycho_boost.wav,,,,True,False
+Psyshock,covered_exact_name,True,PSYSHOCK,psychic,,,70,0,40,Ninetales | Abra | Slowpoke | Drowzee | Hypno | Jynx,473-0_psyshock.wav,473-0_psyshock.wav,,,,True,False
+Psystrike,covered_exact_name,True,PSYSTRIKE,psychic,,,90,0,45,Mewtwo | Smeargle | Mewtwo (Armored) | Mewtwo (Mega X) | Mewtwo (Mega Y) | Mewtwo (Shadow),540-0_psystrike.wav,540-0_psystrike.wav,,,,True,False
+Pyro Ball,missing_source_asset,False,PYRO_BALL,fire,,,75,0,40,Cinderace,,,,,,True,False
+Rage Fist,missing_source_asset,False,RAGE_FIST,ghost,,,50,0,35,Primeape | Annihilape | Primeape (Shadow) | Annihilape (Shadow),,,,,,True,False
+Razor Shell,covered_exact_name,True,RAZOR_SHELL,water,,,35,0,35,Shellder | Cloyster | Krabby | Kingler | Corphish | Crawdaunt,534-0_razor_shell.wav,534-0_razor_shell.wav,,,,True,False
+Roar of Time,covered_exact_name,True,ROAR_OF_TIME,dragon,,,150,0,65,Dialga (Origin),456-0_roar_of_time.wav,456-0_roar_of_time.wav,,,,True,False
+Rock Blast,covered_exact_name,True,ROCK_BLAST,rock,,,50,0,40,Graveler | Golem | Omanyte | Omastar | Shuckle | Heracross,350-0_rock_blast.wav,350-0_rock_blast.wav,,,,True,False
+Rock Slide,covered_exact_name,True,ROCK_SLIDE,rock,,,75,0,45,Sandshrew | Machamp | Geodude | Graveler | Onix | Marowak,157-0_rock_slide.wav,157-0_rock_slide.wav,,,,True,False
+Rock Tomb,covered_exact_name,True,ROCK_TOMB,rock,,,75,0,50,Sandshrew | Sandslash | Diglett | Geodude | Omanyte | Kabuto,317-0_rock_tomb.wav,317-0_rock_tomb.wav,,,,True,False
+Rock Wrecker,covered_exact_name,True,ROCK_WRECKER,rock,,,110,0,50,Smeargle | Rhyperior | Crustle | Rhyperior (Shadow) | Crustle (Shadow),439-0_rock_wrecker.wav,439-0_rock_wrecker.wav,,,,True,False
+Sacred Fire,covered_exact_name,True,SACRED_FIRE,fire,,,130,0,65,Ho-Oh | Ho-Oh (Shadow),221-0_sacred_fire.wav,221-0_sacred_fire.wav,,,,True,False
+Sacred Sword,covered_exact_name,True,SACRED_SWORD,fighting,,,60,0,35,Smeargle | Cobalion | Terrakion | Virizion | Doublade | Kartana,533-0_sacred_sword.wav,533-0_sacred_sword.wav,,,,True,False
+Sand Tomb,covered_exact_name,True,SAND_TOMB,ground,,,40,0,40,Sandshrew | Nidoking | Onix | Pineco | Forretress | Smeargle,328-0_sand_tomb.wav,328-0_sand_tomb.wav,,,,True,False
+Sandsear Storm,missing_source_asset,False,SANDSEAR_STORM,ground,,,60,0,45,Landorus (Therian),,,,,,True,False
+Scald,covered_exact_name,True,SCALD,water,,,85,0,50,Poliwhirl | Poliwrath | Tentacruel | Slowbro | Vaporeon | Politoed,503-0_scald.wav,503-0_scald.wav,,,,True,False
+Scorching Sands,missing_source_asset,False,SCORCHING_SANDS,ground,,,80,0,50,Sandslash | Ninetales | Arcanine | Rapidash | Magmar | Entei,,,,,,True,False
+Secret Sword,covered_exact_name,True,SECRET_SWORD,fighting,,,70,0,35,Keldeo (Resolute),548-0_secret_sword.wav,548-0_secret_sword.wav,,,,True,False
+Seed Bomb,covered_exact_name,True,SEED_BOMB,grass,,,55,0,40,Bulbasaur | Oddish | Paras | Weepinbell | Exeggcute | Exeggutor,402-0_seed_bomb.wav,402-0_seed_bomb.wav,,,,True,False
+Seed Flare,covered_exact_name,True,SEED_FLARE,grass,,,130,0,75,Shaymin (Land) | Shaymin (Sky),465-0_seed_flare.wav,465-0_seed_flare.wav,,,,True,False
+Shadow Ball,covered_exact_name,True,SHADOW_BALL,ghost,,,100,0,50,Golbat | Abra | Kadabra | Alakazam | Haunter | Gengar,247-0_shadow_ball.wav,247-0_shadow_ball.wav,,,,True,False
+Shadow Bone,missing_source_asset,False,SHADOW_BONE,ghost,,,80,0,45,Smeargle | Marowak (Alolan) | Marowak (Alolan) (Shadow),,,,,,True,False
+Shadow Force,covered_exact_name,True,SHADOW_FORCE,ghost,,,120,0,90,Giratina (Altered) | Giratina (Altered) (Shadow) | Giratina (Origin),467-0_shadow_force.wav,467-0_shadow_force.wav,,,,True,False
+Shadow Punch,covered_exact_name,True,SHADOW_PUNCH,ghost,,,55,0,35,Haunter | Gengar | Smeargle | Dusclops | Dusknoir | Golett,325-0_shadow_punch.wav,325-0_shadow_punch.wav,,,,True,False
+Shadow Sneak,covered_exact_name,True,SHADOW_SNEAK,ghost,,,75,0,50,Ariados | Misdreavus | Smeargle | Ralts | Kirlia | Sableye,425-0_shadow_sneak.wav,425-0_shadow_sneak.wav,,,,True,False
+Signal Beam,covered_exact_name,True,SIGNAL_BEAM,bug,,,75,0,55,Butterfree | Venonat | Abra | Voltorb | Porygon | Spinarak,324-0_signal_beam.wav,324-0_signal_beam.wav,,,,True,False
+Silver Wind,covered_exact_name,True,SILVER_WIND,bug,,,75,0,45,Venomoth | Ledyba | Ledian | Yanma | Smeargle | Beautifly,318-0_silver_wind.wav,318-0_silver_wind.wav,,,,True,False
+Skull Bash,source_asset_available,False,SKULL_BASH,normal,,,130,0,75,Blastoise | Raichu | Lapras | Snorlax | Smeargle | Rhyperior,,130-1_skull_bash.wav,,,,True,False
+Sky Attack,covered_exact_name,True,SKY_ATTACK,flying,,,75,0,50,Spearow | Fearow | Moltres | Hoothoot | Noctowl | Skarmory,143-0_sky_attack.wav,143-0_sky_attack.wav,,,,True,False
+Sludge,covered_exact_name,True,SLUDGE,poison,,,70,0,40,Venusaur | Grimer | Koffing | Smeargle | Mudkip | Marshtomp,124-0_sludge.wav,124-0_sludge.wav,,,,True,False
+Sludge Bomb,covered_exact_name,True,SLUDGE_BOMB,poison,,,80,0,50,Bulbasaur | Ivysaur | Venusaur | Beedrill | Ekans | Nidoran Female,188-0_sludge_bomb.wav,188-0_sludge_bomb.wav,,,,True,False
+Sludge Wave,covered_exact_name,True,SLUDGE_WAVE,poison,,,110,0,65,Arbok | Nidoqueen | Nidoking | Tentacruel | Muk | Gengar,482-0_sludge_wave.wav,482-0_sludge_wave.wav,,,,True,False
+Solar Beam,covered_exact_name,True,SOLAR_BEAM,grass,,,150,0,80,Ivysaur | Venusaur | Ninetales | Vileplume | Parasect | Victreebel,076-0_solar_beam.wav,076-0_solar_beam.wav | 076-1_solar_beam.wav,,,,True,False
+Spacial Rend,covered_exact_name,True,SPACIAL_REND,dragon,,,95,0,55,Palkia (Origin),460-0_spacial_rend.wav,460-0_spacial_rend.wav,,,,True,False
+Sparkling Aria,missing_source_asset,False,SPARKLING_ARIA,water,,,80,0,45,Lapras | Primarina | Lapras (Shadow),,,,,,True,False
+Spirit Shackle,missing_source_asset,False,SPIRIT_SHACKLE,ghost,,,50,0,40,Decidueye,,,,,,True,False
+Stomp,covered_exact_name,True,STOMP,normal,,,55,0,40,Ponyta | Hitmonlee | Lickitung | Rhyhorn | Kangaskhan | Stantler,023-0_stomp.wav,023-0_stomp.wav,,,,True,False
+Stone Edge,covered_exact_name,True,STONE_EDGE,rock,,,100,0,55,Nidoqueen | Dugtrio | Machamp | Graveler | Golem | Onix,444-0_stone_edge.wav,444-0_stone_edge.wav,,,,True,False
+Struggle,covered_exact_name,True,STRUGGLE,normal,,,35,0,100,Caterpie | Metapod | Weedle | Kakuna | Magikarp | Unown,165-0_struggle.wav,165-0_struggle.wav,,,,True,False
+Submission,covered_exact_name,True,SUBMISSION,fighting,,,60,0,50,Poliwrath | Machoke | Machamp | Pinsir | Smeargle | Poliwrath (Shadow),066-0_submission.wav,066-0_submission.wav,,,,True,False
+Sunsteel Strike,missing_source_asset,False,SUNSTEEL_STRIKE,steel,,,135,0,65,Necrozma (Dusk Mane),,,,,,True,False
+Superpower,covered_exact_name,True,SUPER_POWER,fighting,,,85,0,40,Pinsir | Flareon | Snorlax | Dragonite | Smeargle | Hariyama,276-0_super_power.wav,276-0_super_power.wav,,,,True,False
+Surf,covered_exact_name,True,SURF,water,,,75,0,45,Pikachu | Raichu | Slowbro | Rhydon | Starmie | Lapras,057-0_surf.wav,057-0_surf.wav,,,,True,False
+Swift,covered_exact_name,True,SWIFT,normal,,,55,0,35,Clefairy | Clefable | Jigglypuff | Wigglytuff | Zubat | Doduo,129-0_swift.wav,129-0_swift.wav,,,,True,False
+Synchronoise,covered_exact_name,True,SYNCHRONOISE,psychic,,,80,0,50,Golduck | Smeargle | Gardevoir | Gallade | Golduck (Shadow) | Gardevoir (Mega),485-0_synchronoise.wav,485-0_synchronoise.wav,,,,True,False
+Techno Blast (Burn),family_reference_needs_validation,False,TECHNO_BLAST_BURN,fire,,,120,0,55,Smeargle | Genesect (Burn),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Chill),family_reference_needs_validation,False,TECHNO_BLAST_CHILL,ice,,,120,0,55,Smeargle | Genesect (Chill),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Douse),family_reference_needs_validation,False,TECHNO_BLAST_DOUSE,water,,,120,0,55,Smeargle | Genesect (Douse),,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Normal),family_reference_needs_validation,False,TECHNO_BLAST_NORMAL,normal,,,120,0,55,Smeargle | Genesect,,,,,546-0_techno_blast.wav,True,False
+Techno Blast (Shock),family_reference_needs_validation,False,TECHNO_BLAST_SHOCK,electric,,,120,0,55,Smeargle | Genesect (Shock),,,,,546-0_techno_blast.wav,True,False
+Thunder,covered_exact_name,True,THUNDER,electric,,,100,0,60,Pikachu | Raichu | Starmie | Electabuzz | Jolteon | Zapdos,087-0_thunder.wav,087-0_thunder.wav,,,,True,False
+Thunder Cage,missing_source_asset,False,THUNDER_CAGE,electric,,,60,0,40,Regieleki,,,,,,True,False
+Thunder Punch,covered_exact_name,True,THUNDER_PUNCH,electric,,,60,0,40,Raichu | Muk | Hypno | Hitmonchan | Electabuzz | Dragonite,009-0_thunder_punch.wav,009-0_thunder_punch.wav,,,,True,False
+Thunderbolt,covered_exact_name,True,THUNDERBOLT,electric,,,90,0,55,Pikachu | Nidorina | Magnemite | Voltorb | Electrode | Weezing,085-0_thunderbolt.wav,085-0_thunderbolt.wav,,,,True,False
+Torch Song,missing_source_asset,False,TORCH_SONG,fire,,,70,0,45,Skeledirge,,,,,,True,False
+Trailblaze,missing_source_asset,False,TRAILBLAZE,grass,,,65,0,45,Raichu | Dodrio | Scyther | Tauros | Furret | Ariados,,,,,,True,False
+Tri Attack,covered_exact_name,True,TRI_ATTACK,normal,,,65,0,50,Porygon2 | Smeargle | Porygon-Z | Porygon2 (Shadow) | Porygon-Z (Shadow) | Silvally,161-0_tri_attack.wav,161-0_tri_attack.wav,,,,True,False
+Triple Axel,missing_source_asset,False,TRIPLE_AXEL,ice,,,60,0,45,Articuno | Sneasel | Delibird | Hitmontop | Kirlia | Gardevoir,,,,,,True,False
+Twister,covered_exact_name,True,TWISTER,dragon,,,70,0,40,Pidgey | Pidgeotto | Pidgeot | Spearow | Fearow | Gyarados,239-0_twister.wav,239-0_twister.wav,,,,True,False
+Upper Hand,missing_source_asset,False,UPPER_HAND,fighting,,,70,0,40,Heracross | Makuhita | Hariyama | Scraggy | Scrafty | Kommo-o,,,,,,True,False
+V-Create,covered_exact_name,True,V_CREATE,fire,,,95,0,40,Smeargle | Victini,557-0_v_create.wav,557-0_v_create.wav,,,,True,False
+Vise Grip,spelling_alias_needs_review,False,VICE_GRIP,normal,,,70,0,40,Krabby | Kingler | Pinsir | Smeargle | Mawile | Corphish,,,011-0_vice_grip.wav,,,True,False
+Volt Tackle,covered_exact_name,True,VOLT_TACKLE,electric,,,90,0,40,Pikachu (Horizons),344-0_volt_tackle.wav,344-0_volt_tackle.wav,,,,True,False
+Water Pulse,covered_exact_name,True,WATER_PULSE,water,,,80,0,50,Squirtle | Poliwhirl | Tentacool | Slowpoke | Slowbro | Dewgong,352-0_water_pulse.wav,352-0_water_pulse.wav,,,,True,False
+Weather Ball (Fire),family_reference_needs_validation,False,WEATHER_BALL_FIRE,fire,,,60,0,35,Vulpix | Ninetales | Smeargle | Solrock | Roserade | Vulpix (Shadow),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Ice),family_reference_needs_validation,False,WEATHER_BALL_ICE,ice,,,60,0,35,Smeargle | Lunatone | Abomasnow | Amaura | Aurorus | Vulpix (Alolan),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Normal),family_reference_needs_validation,False,WEATHER_BALL_NORMAL,normal,,,60,0,35,Castform,,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Rock),family_reference_needs_validation,False,WEATHER_BALL_ROCK,rock,,,60,0,35,Smeargle | Castform | Hippowdon | Hippowdon (Shadow),,,,,311-0_weather_ball.wav,True,False
+Weather Ball (Water),family_reference_needs_validation,False,WEATHER_BALL_WATER,water,,,60,0,35,Politoed | Smeargle | Ludicolo | Pelipper | Bronzong | Politoed (Shadow),,,,,311-0_weather_ball.wav,True,False
+Wild Charge,covered_exact_name,True,WILD_CHARGE,electric,,,100,0,45,Pikachu | Raichu | Arcanine | Rapidash | Mew | Igglybuff,528-0_wild_charge.wav,528-0_wild_charge.wav,,,,True,False
+Wildbolt Storm,missing_source_asset,False,WILDBOLT_STORM,electric,,,60,0,45,Thundurus (Therian),,,,,,True,False
+Wrap,covered_exact_name,True,WRAP,normal,,,70,0,45,Ekans | Bellsprout | Tentacool | Lickitung | Dratini | Dragonair,035-0_wrap.wav,035-0_wrap.wav | 035-1_wrap.wav,,,,True,False
+X-Scissor,covered_exact_name,True,X_SCISSOR,bug,,,65,0,40,Beedrill | Paras | Parasect | Kingler | Scyther | Pinsir,404-0_x_scissor.wav,404-0_x_scissor.wav,,,,True,False
+Zap Cannon,covered_exact_name,True,ZAP_CANNON,electric,,,150,0,80,Magneton | Jolteon | Porygon | Zapdos | Ampharos | Porygon2,192-0_zap_cannon.wav,192-0_zap_cannon.wav,,,,True,False
