@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -23,6 +24,12 @@ import com.example.overdex.battle.forecast.OpponentEnergyEstimate
 import com.example.overdex.battle.observation.*
 import com.example.overdex.model.PokemonType
 import com.example.overdex.ui.components.BattleOverlay
+import com.example.overdex.data.observation.OcrField
+import com.example.overdex.data.observation.OcrHeightProfile
+import com.example.overdex.data.observation.OcrSourceContext
+import com.example.overdex.model.observation.OcrBox
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -33,6 +40,141 @@ import java.io.File
 /** The actual overlay root: deliberate long-press movement, no reserved gap or capture flashes. */
 class HudAnnouncementReadDeviceTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+
+    /** Actual BattleOverlay palette, with complete move names retained for accessibility. */
+    @Test fun typeEdgesAndAbbreviationsRemainReadableOnLightAndDarkBattlefields(): Unit = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val palette = linkedMapOf(
+            "Body Slam" to PokemonType.NORMAL,
+            "Flamethrower" to PokemonType.FIRE,
+            "Hydro Cannon" to PokemonType.WATER,
+            "Thunder Punch" to PokemonType.ELECTRIC,
+            "Frenzy Plant" to PokemonType.GRASS,
+            "Ice Beam" to PokemonType.ICE,
+            "Close Combat" to PokemonType.FIGHTING,
+            "Sludge Bomb" to PokemonType.POISON,
+            "Earthquake" to PokemonType.GROUND,
+            "Aerial Ace" to PokemonType.FLYING,
+            "Psychic" to PokemonType.PSYCHIC,
+            "X-Scissor" to PokemonType.BUG,
+            "Rock Slide" to PokemonType.ROCK,
+            "Shadow Ball" to PokemonType.GHOST,
+            "Dragon Pulse" to PokemonType.DRAGON,
+            "Flash Cannon" to PokemonType.STEEL,
+            "Dazzling Gleam" to PokemonType.FAIRY,
+            "Night Slash" to PokemonType.DARK,
+        )
+        assertEquals(PokemonType.entries.toSet(), palette.values.toSet())
+        lateinit var overlay: FrameLayout
+        lateinit var manager: WindowManager
+        lateinit var backdrop: View
+        var backdropColor = android.graphics.Color.rgb(235, 245, 250)
+        val p = DroidballOverlayPresentation
+        compose.runOnUiThread {
+            val activity = compose.activity
+            backdrop = object : View(activity) {
+                override fun onDraw(canvas: Canvas) { canvas.drawColor(backdropColor) }
+            }
+            activity.setContentView(backdrop)
+            p.reset()
+            // Deliberate rendering fixture: the pool spans every type so a
+            // single screenshot can inspect all edges at native HUD size.
+            p.recordOpponentSpecies("Sneasel", 215,
+                listOf("Snarl" to PokemonType.DARK), palette.entries.map { it.key to it.value },
+                moveEnergy = palette.keys.associateWith { name -> when (name) {
+                    "Hydro Cannon" -> 40
+                    "Thunder Punch" -> 50
+                    else -> 75
+                } } + ("Snarl" to 13))
+            p.recordOpponentChargedMove("Sneasel", "Night Slash")
+            p.setActivePlayerTypes(listOf(PokemonType.NORMAL))
+            p.recordBattleBadgePresent()
+            p.showBattleHud(userRequested = true)
+            p.beginEnergyForecast("palette-preview")
+            p.setOpponentEnergyEstimate("palette-preview", OpponentEnergyEstimate(
+                "Sneasel", "Snarl", 40, 4, 3, 12, false, false, 0, true))
+            manager = activity.getSystemService(WindowManager::class.java)
+            overlay = FrameLayout(activity).apply {
+                setViewTreeLifecycleOwner(activity); setViewTreeViewModelStoreOwner(activity)
+                setViewTreeSavedStateRegistryOwner(activity)
+                addView(ComposeView(activity).apply { setContent { BattleOverlay(panelWidthPx = 415) } },
+                    FrameLayout.LayoutParams(-2, -2))
+            }
+            manager.addView(overlay, WindowManager.LayoutParams(-2, -2,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, droidballOverlayWindowFlags(false),
+                PixelFormat.TRANSLUCENT).apply {
+                gravity = Gravity.TOP or Gravity.START; x = 620; y = 360
+            })
+        }
+        try {
+            for ((name, type) in palette) {
+                compose.onNodeWithContentDescription("$name, ${type.name.lowercase()} type", useUnmergedTree = true)
+                    .assertIsDisplayed()
+            }
+            compose.onNodeWithText("T. Punch", useUnmergedTree = true).assertIsDisplayed()
+            compose.onNodeWithText("D. Gleam", useUnmergedTree = true).assertIsDisplayed()
+            compose.onNodeWithText("✓ Night Slash", useUnmergedTree = true).assertIsDisplayed()
+            compose.onNodeWithText("⚠ +60% Close Combat", useUnmergedTree = true).assertIsDisplayed()
+            val ready = compose.onNodeWithContentDescription("Hydro Cannon, water type", useUnmergedTree = true)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Possible move; estimated ready"))
+                .fetchSemanticsNode().boundsInRoot
+            val oneAway = compose.onNodeWithContentDescription("Thunder Punch, electric type", useUnmergedTree = true)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                    "Possible move; estimated one Fast Move away")).fetchSemanticsNode().boundsInRoot
+            val location = IntArray(2)
+            for ((name, color) in listOf(
+                "light" to android.graphics.Color.rgb(235, 245, 250),
+                "dark" to android.graphics.Color.rgb(27, 40, 47),
+            )) {
+                compose.runOnUiThread { backdropColor = color; backdrop.invalidate(); overlay.getLocationOnScreen(location) }
+                compose.waitForIdle(); instrumentation.waitForIdleSync(); delay(150)
+                val screenshot = instrumentation.uiAutomation.takeScreenshot()!!
+                try {
+                    File(instrumentation.targetContext.cacheDir, "hud-types-$name.png").outputStream().use {
+                        screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    val hud = Bitmap.createBitmap(screenshot, location[0], location[1], overlay.width, overlay.height)
+                    val scale = 672f / screenshot.width
+                    val captured = Bitmap.createScaledBitmap(hud, (hud.width * scale).toInt(),
+                        (hud.height * scale).toInt(), true)
+                    try {
+                        val readings = AnnouncementRecognizer.recognizeEvidence(captured,
+                            OcrSourceContext(672, OcrBox(0f, 0f, captured.width.toFloat(), captured.height.toFloat())),
+                            OcrHeightProfile(OcrField.ANNOUNCEMENT))
+                        File(instrumentation.targetContext.cacheDir, "hud-types-ocr-$name.json").writeText(
+                            Json.encodeToString(ListSerializer(com.example.overdex.model.observation.OcrTextEvidence.serializer()), readings))
+                        val ownWords = (palette.keys + "Snarl").flatMap { it.split(Regex("[^A-Za-z]+")) }
+                            .filter { it.length >= 3 }.map { it.lowercase() }.toSet()
+                        val measured = readings.flatMap { it.words }.filter { it.text.lowercase() in ownWords }
+                        assertTrue("The palette must produce actual OCR readings for this check", measured.size >= 5)
+                        assertTrue("HUD words must retain the size/color/position rejection over $name scenery: $measured",
+                            measured.all { it.decision == "HUD_SIZE_COLOR_POSITION" })
+                    } finally { captured.recycle(); hud.recycle() }
+                    fun containsInk(bounds: androidx.compose.ui.geometry.Rect, accepts: (Int, Int, Int) -> Boolean): Boolean {
+                        val left = (location[0] + bounds.left.toInt()).coerceIn(0, screenshot.width)
+                        val right = (location[0] + bounds.right.toInt()).coerceIn(left, screenshot.width)
+                        val top = (location[1] + bounds.top.toInt()).coerceIn(0, screenshot.height)
+                        val bottom = (location[1] + bounds.bottom.toInt()).coerceIn(top, screenshot.height)
+                        for (y in top until bottom) for (x in left until right) {
+                            val pixel = screenshot.getPixel(x, y)
+                            if (accepts(android.graphics.Color.red(pixel), android.graphics.Color.green(pixel),
+                                    android.graphics.Color.blue(pixel))) return true
+                        }
+                        return false
+                    }
+                    assertTrue("Ready text remains bright red over $name scenery", containsInk(ready) { r, g, b ->
+                        r >= 230 && g <= 65 && b <= 65
+                    })
+                    assertTrue("One-away text remains amber over $name scenery", containsInk(oneAway) { r, g, b ->
+                        r >= 230 && g in 115..190 && b <= 65
+                    })
+                } finally { screenshot.recycle() }
+            }
+        } finally {
+            compose.runOnUiThread { manager.removeViewImmediate(overlay); p.reset() }
+        }
+    }
 
     @Test fun compactFixedHudWaitsForBadgeWithoutDuplicatingResources(): Unit = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -46,7 +188,8 @@ class HudAnnouncementReadDeviceTest {
                 override fun onDraw(canvas: Canvas) { canvas.drawColor(android.graphics.Color.rgb(55, 112, 144)) }
             })
             DroidballOverlayPresentation.reset()
-            DroidballOverlayPresentation.showBattleHud(userRequested = true)
+            DroidballOverlayPresentation.showAcceptedTeamSelect()
+            DroidballOverlayPresentation.showBattleHud()
             DroidballOverlayPresentation.recordOpponentSpecies("Sneasel", 215,
                 listOf("Feint Attack" to PokemonType.DARK, "Ice Shard" to PokemonType.ICE),
                 listOf("Foul Play" to PokemonType.DARK, "Ice Punch" to PokemonType.ICE,
@@ -82,7 +225,8 @@ class HudAnnouncementReadDeviceTest {
             val location = IntArray(2)
             val before = shot("waiting")
             compose.runOnUiThread { overlay.getLocationOnScreen(location) }
-            val background = before.getPixel(location[0] + 35, location[1] + 45)
+            val background = before.getPixel(100, 400)
+            compose.onNodeWithText("Feint Attack", useUnmergedTree = true).assertDoesNotExist()
             compose.runOnUiThread {
                 DroidballOverlayPresentation.recordBattleBadgePresent()
                 DroidballOverlayPresentation.recordOpponentResources(

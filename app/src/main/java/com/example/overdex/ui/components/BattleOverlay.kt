@@ -25,13 +25,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.battle.observation.BattleHudLayout
@@ -290,6 +287,11 @@ private fun OverlayPanel(
         if (isBattleHud) {
             val forecast by DroidballOverlayPresentation.opponentEnergyEstimate.collectAsState()
             val estimate = forecast?.takeIf { it.speciesName.equals(opponentMoves?.speciesName, ignoreCase = true) }
+            val moveLabels = remember(opponentMoves) {
+                BattleHudMoveLabels.forPool(opponentMoves?.let { pool ->
+                    (pool.fastMoves + pool.chargedMoves).map { it.name }
+                }.orEmpty())
+            }
             // Preserve only the panel's outside padding. The three stock-like
             // inactive cards share their edges so every available pixel can
             // belong to the sprites.
@@ -305,11 +307,11 @@ private fun OverlayPanel(
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
                     if (opponentMoves.fastMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76),
+                        MovePossibilityLine(opponentMoves.fastMoves, Color(0xFF276F76), moveLabels,
                             assumedMove = estimate?.takeUnless { it.moveIdentified }?.assumedMoveName)
                     }
                     if (opponentMoves.chargedMoves.isNotEmpty()) {
-                        MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk,
+                        MovePossibilityLine(opponentMoves.chargedMoves, BattleHudBadgeStyle.moveInk, moveLabels,
                             energy = estimate?.energy,
                             fastGain = opponentMoves.fastMoves.firstOrNull {
                                 it.name.equals(estimate?.assumedMoveName, ignoreCase = true)
@@ -372,7 +374,7 @@ private fun RowScope.OpponentSpeciesCell(species: ObservedOpponentSpecies?) {
 
 @Composable
 private fun MovePossibilityLine(
-    moves: List<OverlayMovePossibility>, color: Color, assumedMove: String? = null,
+    moves: List<OverlayMovePossibility>, color: Color, labels: Map<String, String>, assumedMove: String? = null,
     energy: Int? = null, fastGain: Int? = null,
 ) {
     moves.forEach { move ->
@@ -383,17 +385,18 @@ private fun MovePossibilityLine(
             else -> color
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
+            BattleHudMoveText(
                 text = buildAnnotatedString {
                     if (!move.isConfirmed && !move.isAudioFavored && move.name.equals(assumedMove, ignoreCase = true)) append("≈ ")
                     if (move.isConfirmed) append("✓ ")
                     if (move.hazardous) withStyle(SpanStyle(color = Color(0xFFC62828))) {
                         append("⚠ +${move.damageIncreasePercent}% ")
                     }
-                    append(move.name)
+                    append(labels[move.name] ?: move.name)
                     if (move.isAudioFavored && !move.isConfirmed) append("\nFavored · low confidence")
                 },
                 modifier = Modifier.weight(1f).semantics {
+                    contentDescription = "${move.name}, ${move.type.name.lowercase()} type"
                     stateDescription = buildString {
                         append(when {
                             move.isConfirmed -> "Confirmed move"
@@ -407,13 +410,9 @@ private fun MovePossibilityLine(
                         }
                     }
                 },
+                type = move.type,
                 color = readinessColor,
-                style = TextStyle(shadow = BattleHudBadgeStyle.textShadow(LocalDensity.current)),
-                fontSize = 8.sp,
-                lineHeight = 10.sp,
-                textAlign = TextAlign.End,
                 fontWeight = if (move.hazardous || move.isConfirmed || energy != null && readiness != com.example.overdex.battle.observation.HudChargeReadiness.BUILDING) FontWeight.Bold else FontWeight.Normal,
-                fontFamily = FontFamily.Monospace
             )
         }
     }

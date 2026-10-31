@@ -10,6 +10,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.FastMoveIdentified
@@ -31,12 +35,16 @@ class FastMoveAudioPreferenceHudDeviceTest {
                 listOf("Dragon Breath" to PokemonType.DRAGON, "Iron Tail" to PokemonType.STEEL), emptyList())
             p.recordOpponentFastMoveCandidates("Dragonair", listOf("Dragon Breath", "Iron Tail"), "Dragon Breath")
             p.recordBattleBadgePresent()
-            p.showBattleHud()
+            p.showBattleHud(userRequested = true)
             compose.setContent {
                 Box(Modifier.fillMaxSize().background(Color(0xFF48827B))) { BattleOverlay(panelWidthPx = 415) }
             }
-            compose.onNodeWithText("Dragon Breath\nFavored · low confidence").assertIsDisplayed()
+            compose.onNodeWithText("D. Breath\nFavored · low confidence").assertIsDisplayed()
             compose.onNodeWithText("Iron Tail").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Dragon Breath, dragon type", useUnmergedTree = true)
+                .assertIsDisplayed().assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                    "Audio favors this move; low confidence, not confirmed"))
+            compose.onNodeWithContentDescription("Iron Tail, steel type", useUnmergedTree = true).assertIsDisplayed()
             val instrumentation = InstrumentationRegistry.getInstrumentation()
             instrumentation.uiAutomation.takeScreenshot().let { screenshot ->
                 File(instrumentation.targetContext.filesDir, "audio-preference-hud.png").outputStream().use {
@@ -48,7 +56,10 @@ class FastMoveAudioPreferenceHudDeviceTest {
                 p.recordOpponentFastMove(FastMoveIdentified(ActivePokemonSide.OPPONENT, "Dragonair",
                     "Dragon Breath", 500_000_000L, null, 0, "AUDIO_REFERENCE"))
             }
-            compose.onNodeWithText("✓ Dragon Breath").assertIsDisplayed()
+            compose.onNodeWithText("✓ D. Breath").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Dragon Breath, dragon type", useUnmergedTree = true)
+                .assertIsDisplayed().assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                    "Confirmed move"))
             compose.onNodeWithText("Favored · low confidence", substring = true).assertDoesNotExist()
             compose.onNodeWithText("Iron Tail").assertDoesNotExist()
         } finally { p.reset() }

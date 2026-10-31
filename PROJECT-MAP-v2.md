@@ -264,8 +264,18 @@ capturing our own presentation. Announcement inference still requires game phras
 not isolated species/move names from the HUD. On-device tests can read retained
 species/announcement pixels through the 80% background, but overlapping HUD ink
 still obscures them; this is not proof of reliable live read-through.
-Move labels use distinct violet ink while retaining full names, confirmation
-checks, and red danger markers/percentages. The device probe also tries removing
+Move labels retain distinct violet/teal ink, confirmation checks and red danger
+markers/percentages. [BattleHudMoveLabels](app/src/main/java/com/example/overdex/ui/components/BattleHudMoveLabels.kt)
+selectively shortens long phrases while preserving short names and typed suffixes.
+It checks the combined visible Fast/Charged pool for collisions and restores full
+names when needed. Full canonical names/types remain accessible; reference data,
+OCR vocabulary and archived Articles are unchanged.
+[BattleHudMoveText](app/src/main/java/com/example/overdex/ui/components/BattleHudMoveText.kt)
+adds the move type's existing color in a tight shadow behind a thin white keyline.
+The established foreground ink remains recognizable to the size/color/position
+filter; ready text remains bright red and one-Fast-Move-away text amber. The
+backing is paint without another layout row or accessibility label. Move space
+below the sprite header remains transparent. The older device probe also tries removing
 violet from a derived OCR copy. It improved one overlap but still lost letters in
 another, so color removal is an experiment, not a live evidence treatment. Raw
 captures remain intact.

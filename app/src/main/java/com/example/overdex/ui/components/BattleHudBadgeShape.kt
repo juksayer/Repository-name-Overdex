@@ -20,7 +20,8 @@ import kotlin.math.pow
 internal object BattleHudBadgeStyle {
     val background = Color.White.copy(alpha = .80f)
     // Deliberately distinct from GO's teal badge text and white announcements.
-    // Retain full move names; confirmation and danger also have non-color marks.
+    // Compact move labels retain their full accessible names; confirmation and
+    // danger also have non-color marks. Type color is an edge behind this ink.
     val moveInk = Color(0xFF763CB6)
     // Tight light backing keeps colored, small monospace HUD lettering readable
     // on the battlefield without painting a panel over the game's announcement.
