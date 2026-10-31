@@ -48,7 +48,7 @@ class DirectoryCropPreviewLcdDeviceTest {
         compose.onNodeWithTag("directory-crop-preview-timestamp").assertDoesNotExist()
     }
 
-    @Test fun absentCropAndUnavailableImageRemainDistinctWithLastCapturedTime() {
+    @Test fun absentCropAndUnavailableImageRemainDistinctWithBattleCaptureTime() {
         val image = quadrantBitmap()
         val state = mutableStateOf(DirectoryCropPreviewState(matchId = "recorded-match", crops = mapOf(
             DirectoryCropSlot.PLAYER_SPECIES to DirectoryCropImage(null, CAPTURE_TIME + 2_000, "missing-image"),
@@ -58,11 +58,11 @@ class DirectoryCropPreviewLcdDeviceTest {
         compose.onNodeWithTag(slotTag(DirectoryCropSlot.PLAYER_SPECIES)).assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Image unavailable"))
         compose.onNodeWithTag(slotTag(DirectoryCropSlot.PLAYER_HP)).assert(
-            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Not captured"))
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Not saved"))
         compose.onNodeWithText("Image unavailable").assertIsDisplayed()
         compose.onNodeWithTag(imageTag(DirectoryCropSlot.PLAYER_SPECIES)).assertDoesNotExist()
         compose.onNodeWithTag(imageTag(DirectoryCropSlot.OPPONENT_HP)).assertIsDisplayed()
-        val timestamp = "Last captured ${formatTime(CAPTURE_TIME + 2_000)}"
+        val timestamp = "Battle crops ${formatTime(CAPTURE_TIME + 2_000)}"
         compose.onNodeWithText(timestamp).assertIsDisplayed()
         compose.mainClock.advanceTimeBy(60_000)
         compose.onNodeWithText(timestamp).assertIsDisplayed()
@@ -99,7 +99,7 @@ class DirectoryCropPreviewLcdDeviceTest {
         }
         assertTrue("Announcement spans both columns",
             slots.getValue(DirectoryCropSlot.ANNOUNCEMENT).width > slots.getValue(DirectoryCropSlot.PLAYER_SPECIES).width * 1.9f)
-        compose.onNodeWithText("Last captured ${formatTime(CAPTURE_TIME + 6_000)}").assertIsDisplayed()
+        compose.onNodeWithText("Battle crops ${formatTime(CAPTURE_TIME + 6_000)}").assertIsDisplayed()
 
         val rendered = compose.onNodeWithTag(imageTag(DirectoryCropSlot.ANNOUNCEMENT))
             .captureToImage().asAndroidBitmap()

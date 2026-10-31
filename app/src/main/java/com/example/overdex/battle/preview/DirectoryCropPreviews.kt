@@ -4,10 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.artifact.CropArtifactReference
-import com.example.overdex.battle.custody.CropCaptured
-import com.example.overdex.battle.observation.BattleCropBounds
-import com.example.overdex.battle.observation.BattleCropProvenance
-import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.reality.RealityTimeline
 import java.io.File
 import java.io.ByteArrayOutputStream
@@ -23,10 +19,9 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-enum class DirectoryCropSlot {
-    PLAYER_SPECIES, OPPONENT_SPECIES, PLAYER_HP, OPPONENT_HP,
-    PLAYER_BALLS, OPPONENT_BALLS, ANNOUNCEMENT
-}
+typealias DirectoryCropSlot = com.example.overdex.battle.observation.BattleCalibrationPreviewSlot
+internal typealias DirectoryCropReference = com.example.overdex.battle.observation.BattleCalibrationPreviewReference
+internal typealias DirectoryCropSelection = com.example.overdex.battle.observation.BattleCalibrationPreviewSelection
 
 data class DirectoryCropImage(val bitmap: Bitmap?, val capturedAtMillis: Long, val articleId: String)
 
@@ -38,74 +33,6 @@ data class DirectoryCropPreviewState(
     val latestCaptureMillis: Long? get() = crops.values.maxOfOrNull { it.capturedAtMillis }
 }
 
-/** Pixel provenance is retained independently of any UI bitmap or current calibration. */
-internal data class DirectoryCropReference(
-    val articleId: String,
-    val capturedAtMillis: Long,
-    val capturedAtNanos: Long?,
-    val artifact: CropArtifactReference,
-    val provenance: BattleCropProvenance,
-) {
-    fun samePixels(other: DirectoryCropReference): Boolean =
-        artifact == other.artifact && provenance == other.provenance
-}
-
-/** Chooses by capture time, never by asynchronous publication/delivery order. */
-internal class DirectoryCropSelection(val matchId: String) {
-    private val latest = linkedMapOf<DirectoryCropSlot, DirectoryCropReference>()
-    val crops: Map<DirectoryCropSlot, DirectoryCropReference> get() = latest.toMap()
-
-    fun accept(article: RealityArticle) {
-        if (article.matchId?.value != matchId) return
-        val crop = article.payload as? CropCaptured ?: return
-        accept(crop.cropProvenance.cropName, DirectoryCropReference(article.id.value,
-            article.perceivedAt, article.monotonicTimeNanos, crop.artifact, crop.cropProvenance))
-    }
-
-    fun accept(article: ArchivedRealityArticle) {
-        if (article.matchId != matchId) return
-        val crop = article.payload as? ArchivedCropCaptured ?: return
-        accept(crop.cropName, DirectoryCropReference(article.articleId, article.perceivedAt,
-            article.monotonicTimeNanos,
-            CropArtifactReference(crop.artifactPath, crop.sha256, crop.byteCount, crop.mediaType),
-            BattleCropProvenance(crop.cropName, crop.sourceWidth, crop.sourceHeight,
-                BattleCropBounds(crop.cropLeft, crop.cropTop, crop.cropRight, crop.cropBottom))))
-    }
-
-    private fun accept(name: String, reference: DirectoryCropReference) {
-        val slot = slots[name] ?: return
-        val previous = latest[slot]
-        val newer = previous == null || if (reference.capturedAtNanos != null && previous.capturedAtNanos != null) {
-            reference.capturedAtNanos > previous.capturedAtNanos
-        } else reference.capturedAtMillis > previous.capturedAtMillis
-        if (newer) latest[slot] = reference
-    }
-
-    companion object {
-        private val slots = mapOf(
-            "PlayerActiveSpeciesTextCrop" to DirectoryCropSlot.PLAYER_SPECIES,
-            "OpponentActiveSpeciesTextCrop" to DirectoryCropSlot.OPPONENT_SPECIES,
-            "PlayerHpEvidenceCrop" to DirectoryCropSlot.PLAYER_HP,
-            "OpponentHpEvidenceCrop" to DirectoryCropSlot.OPPONENT_HP,
-            "PlayerPokeBallsCrop" to DirectoryCropSlot.PLAYER_BALLS,
-            "OpponentPokeBallsCrop" to DirectoryCropSlot.OPPONENT_BALLS,
-            "AnnouncementCrop" to DirectoryCropSlot.ANNOUNCEMENT,
-        )
-
-        fun fromBattleArchive(archive: MatchArchive): DirectoryCropSelection? {
-            // A capture session, Team Select scan, or menu OCR is not a battle.
-            val battle = archive.articles.any { it.matchId == archive.matchId && when (it.payload) {
-                ArchivedMatchStarted, is ArchivedSupportingMatchStart, is ArchivedMatchEnded,
-                is ArchivedFastMoveUseObserved, is ArchivedActiveHpBarDamageTickMeasured -> true
-                else -> false
-            } }
-            if (!battle) return null
-            return DirectoryCropSelection(archive.matchId).also { selected ->
-                archive.articles.forEach(selected::accept)
-            }.takeIf { it.crops.isNotEmpty() }
-        }
-    }
-}
 
 /**
  * Presentation-only access to existing evidence. Collection is owned by the

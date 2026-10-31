@@ -5,9 +5,15 @@ import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.battle.archive.MatchArchiveSource
+import com.example.overdex.battle.archive.MatchArchive
+import com.example.overdex.battle.archive.MatchArchiveArticleSelector
+import com.example.overdex.battle.archive.MatchArchiveExportMode
+import com.example.overdex.battle.archive.MatchArchivePackageWriter
+import com.example.overdex.battle.archive.RealityArticleArchiveMapper
 import com.example.overdex.battle.artifact.CropArtifactReference
 import com.example.overdex.battle.custody.CropCaptured
 import com.example.overdex.battle.custody.SourceId
+import com.example.overdex.battle.custody.SupportingMatchStart
 import com.example.overdex.battle.observation.BattleCropBounds
 import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.battle.observation.MatchId
@@ -95,12 +101,59 @@ class DirectoryCropPreviewFeedDeviceTest {
         }
     }
 
+    @Test fun compactArchiveRestoresAllSevenRawPreviewsWithoutLooseArtifactsOrRecognizerSuccess() = runBlocking {
+        withRoot { root ->
+            val original = patternedBitmap(4, 3)
+            val expected = pixels(original)
+            val artifact = savePng(root, "frames", original)
+            original.recycle()
+            val names = listOf("PlayerActiveSpeciesTextCrop", "OpponentActiveSpeciesTextCrop",
+                "PlayerHpEvidenceCrop", "OpponentHpEvidenceCrop", "PlayerPokeBallsCrop",
+                "OpponentPokeBallsCrop", "AnnouncementCrop")
+            val raw = names.mapIndexed { index, name ->
+                crop("raw-$index", artifact, name, 4, 3, BattleCropBounds(0, 0, 4, 3))
+            }
+            // These deliberately contain no readable names, bars or announcement.
+            // The separate battle cue permits inspection of bad calibration.
+            val compact = MatchArchiveArticleSelector.select(
+                (listOf(battleSurface()) + raw).map(RealityArticleArchiveMapper::map),
+                MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+            val directory = File(root, "match_archives").also { it.mkdirs() }
+            File(directory, "2026-10-31_12-00-00_$MATCH_ID.odxmatch.zip").outputStream().use {
+                MatchArchivePackageWriter.write(MatchArchive(matchId = MATCH_ID, articles = compact), it, root)
+            }
+            assertTrue(File(root, "artifacts").deleteRecursively())
+
+            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() })
+            val restored = withTimeout(5_000) {
+                feed.states().first { it.matchId == MATCH_ID && !it.isLoading }
+            }
+            assertEquals(DirectoryCropSlot.entries.toSet(), restored.crops.keys)
+            assertEquals(raw.map { it.id.value }.toSet(), restored.crops.values.map { it.articleId }.toSet())
+            restored.crops.values.forEach { image ->
+                assertArrayEquals(expected, pixels(requireNotNull(image.bitmap)))
+                assertEquals(CAPTURE_TIME, image.capturedAtMillis)
+            }
+            assertFalse("Reading a preview does not import all archived artifacts", File(root, "artifacts").exists())
+        }
+    }
+
     private suspend fun firstPreview(root: File, articles: List<RealityArticle>): DirectoryCropPreviewState {
-        val timeline = InMemoryRealityTimeline().also { ledger -> articles.forEach(ledger::append) }
+        val timeline = InMemoryRealityTimeline().also { ledger ->
+            ledger.append(battleSurface())
+            articles.forEach(ledger::append)
+        }
         val source = MatchArchiveSource(MatchId(MATCH_ID), timeline)
         val feed = DirectoryCropPreviewFeed(root, sources = { listOf(source) })
         return withTimeout(5_000) { feed.states().first { it.matchId == MATCH_ID && !it.isLoading } }
     }
+
+    private fun battleSurface() = RealityArticle(
+        id = ArticleId("battle-surface"), perceivedAt = CAPTURE_TIME,
+        recordedAt = CAPTURE_TIME, sourceId = SourceId("PREVIEW_DEVICE_TEST"),
+        payload = SupportingMatchStart(1, .8f, .8f),
+        matchId = MatchId(MATCH_ID), monotonicTimeNanos = 1_000_000_000L,
+    )
 
     private fun patternedBitmap(width: Int, height: Int) = Bitmap.createBitmap(width, height,
         Bitmap.Config.ARGB_8888).apply {

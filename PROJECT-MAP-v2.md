@@ -306,16 +306,20 @@ ball-check window so the first hidden frames do not exhaust the check.
 
 ## Owned cards and editing
 
-The Directory Tree's default LCD shows the last captured species-name, HP,
+The Directory Tree's default LCD shows raw battle captures of species names, HP,
 Poké Ball, and announcement images through
 [DirectoryCropPreviewLcd.kt](app/src/main/java/com/example/overdex/ui/components/DirectoryCropPreviewLcd.kt).
 [DirectoryCropPreviews.kt](app/src/main/java/com/example/overdex/battle/preview/DirectoryCropPreviews.kt)
-selects one Match's existing `CropCaptured` evidence by capture time and decodes
+selects one Match's existing `CropCaptured` evidence in observed battle windows by capture time and decodes
 only changed images while the directory LCD is visible. These are untinted source
 pixels, not OCR reconstructions or a new screen-capture loop. HP previews show
 the calibrated HP observation territory, which can be wider than the tracked bar.
+Navigation-only sessions and post-battle crops do not replace those battle samples.
+Announcement previews prefer a nearby charged-move or entry cue. Compact archives
+retain a bounded raw sample for each of the seven preview slots independently of
+that field's recognition success, using the same selection policy as the LCD.
 Cold launch can restore retained images from the latest useful battle archive;
-absent captures and unavailable media remain explicit. Contextual registration
+unsaved crops and unavailable media remain explicit. Contextual registration
 controls, the keyboard, and interrupted-observation notices retain LCD priority.
 
 [EditSpecimenScreen.kt](app/src/main/java/com/example/overdex/ui/screens/EditSpecimenScreen.kt)

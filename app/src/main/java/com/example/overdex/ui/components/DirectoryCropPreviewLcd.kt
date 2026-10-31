@@ -28,7 +28,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Last captured source pixels for calibration checks, within the directory's existing LCD. */
+/** Raw source pixels from an observed battle, within the directory's existing LCD. */
 @Composable
 fun DirectoryCropPreviewLcd(state: DirectoryCropPreviewState, modifier: Modifier = Modifier) {
     val locale = LocalConfiguration.current.locales[0]
@@ -46,7 +46,7 @@ fun DirectoryCropPreviewLcd(state: DirectoryCropPreviewState, modifier: Modifier
             }
         } else {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Last captured ${timeFormat.format(Date(latest))}",
+                Text("Battle crops ${timeFormat.format(Date(latest))}",
                     modifier = Modifier.weight(1f).testTag("directory-crop-preview-timestamp"),
                     color = CropPreviewText, fontSize = 9.sp, lineHeight = 10.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
@@ -99,7 +99,7 @@ private fun CropPreviewTile(
     val bitmap = crop?.bitmap?.takeUnless { it.isRecycled }
     val capturedTime = crop?.let { timeFormat.format(Date(it.capturedAtMillis)) }
     val availability = when {
-        crop == null -> "Not captured"
+        crop == null -> "Not saved"
         bitmap == null -> "Image unavailable"
         else -> "Captured $capturedTime"
     }

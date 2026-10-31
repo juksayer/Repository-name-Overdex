@@ -1,5 +1,7 @@
 package com.example.overdex.battle.archive
 
+import com.example.overdex.battle.observation.BattleCalibrationPreviewSelection
+
 /** Selects a self-contained Timeline slice for a requested archive profile. */
 object MatchArchiveArticleSelector {
     fun select(
@@ -11,12 +13,13 @@ object MatchArchiveArticleSelector {
         val byId = articles.associateBy { it.articleId }
         val retainedIds = linkedSetOf<String>()
         val pendingIds = ArrayDeque<String>()
+        val previewIds = calibrationPreviewIds(articles)
 
         // The timeline remains intact. Raw artifact records join it only when a
         // retained observation explicitly cites them as evidence. The bounded,
-        // explicitly named QTE calibration samples are also retained for inspection;
-        // they do not yet have a type classifier to cite them.
-        articles.filter { !isRawArtifact(it) || isQteCalibrationSample(it) }.forEach { article ->
+        // explicitly named QTE calibration samples and a bounded real-battle LCD
+        // preview are retained for inspection independently of successful recognition.
+        articles.filter { !isRawArtifact(it) || isQteCalibrationSample(it) || it.articleId in previewIds }.forEach { article ->
             retainedIds += article.articleId
             article.referencedArticleIds().forEach(pendingIds::addLast)
         }
@@ -36,6 +39,12 @@ object MatchArchiveArticleSelector {
     private fun isQteCalibrationSample(article: ArchivedRealityArticle): Boolean =
         article.sourceId == "QTE_TYPE_ICONS_CAPTURE" &&
             (article.payload as? ArchivedCropCaptured)?.cropName == "QteTypeIconsCrop"
+
+    /** At most seven extra raw samples: actual pixels, independent of each field's recognition success. */
+    private fun calibrationPreviewIds(articles: List<ArchivedRealityArticle>): Set<String> =
+        articles.groupBy { it.matchId }.flatMap { (matchId, rows) ->
+            BattleCalibrationPreviewSelection.fromArchivedArticles(matchId, rows)?.selectedArticleIds.orEmpty()
+        }.toSet()
 
     private fun ArchivedRealityArticle.referencedArticleIds(): Sequence<String> = sequence {
         yieldAll(predecessorIds)
