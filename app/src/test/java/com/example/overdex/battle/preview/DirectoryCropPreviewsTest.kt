@@ -102,6 +102,8 @@ class DirectoryCropPreviewsTest {
             assertEquals(2, decodes)
             assertEquals(listOf(1L, 2L, 3L), emitted.map { it.latestCaptureMillis })
             assertEquals("a2", emitted[1].crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+            assertEquals(BattleCropProvenance("PlayerHpEvidenceCrop", 1080, 2400, BattleCropBounds(10, 20, 110, 60)),
+                emitted[1].crops.getValue(DirectoryCropSlot.PLAYER_HP).provenance)
             assertEquals("b", emitted.last().matchId)
             assertEquals(setOf(DirectoryCropSlot.OPPONENT_HP), emitted.last().crops.keys)
             assertTrue(emitted.flatMap { it.crops.values }.all { it.bitmap == null })

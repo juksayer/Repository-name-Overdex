@@ -1,5 +1,7 @@
 package com.example.overdex.ui
 
+import com.example.overdex.battle.preview.directoryCropRegion
+import com.example.overdex.battle.preview.withDirectoryCropRegion
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
@@ -275,6 +277,29 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     val directoryCropPreviews = directoryCropPreviewFeed.states().stateIn(viewModelScope,
         SharingStarted.WhileSubscribed(stopTimeoutMillis = 0),
         com.example.overdex.battle.preview.DirectoryCropPreviewState())
+    suspend fun loadDirectoryCalibrationFrame() = directoryCropPreviewFeed.loadCalibrationFrame()
+
+    fun loadDirectoryCalibration(): com.example.overdex.ui.components.DirectoryCalibrationSnapshot =
+        com.example.overdex.ui.components.DirectoryCalibrationSnapshot(
+            CalibrationManager(getApplication()).load(),
+            com.example.overdex.data.MatchCalibrationProfileStore(getApplication()).activeProfile()?.id,
+        )
+
+    suspend fun saveDirectoryCalibration(
+        expected: com.example.overdex.ui.components.DirectoryCalibrationSnapshot,
+        request: com.example.overdex.ui.components.DirectoryCropEditSave,
+    ): Boolean = withContext(Dispatchers.IO) {
+        val current = loadDirectoryCalibration()
+        // Never replace a profile or crop that changed while this draft was open.
+        if (current.profileId != expected.profileId ||
+            current.calibration.directoryCropRegion(request.slot) != expected.calibration.directoryCropRegion(request.slot)) {
+            return@withContext false
+        }
+        val updated = current.calibration.withDirectoryCropRegion(request.slot, request.region)
+        if (updated.directoryCropRegion(request.slot) != request.region) return@withContext false
+        CalibrationManager(getApplication()).save(updated)
+    }
+
     private val summaryHandoff = com.example.overdex.ui.navigation.MatchSummaryHandoff()
     val pendingMatchSummary = summaryHandoff.pending
 
