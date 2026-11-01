@@ -34,7 +34,11 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         fun value(monotonic: Boolean): Long? = if (monotonic) mono else wall
     }
     private enum class Kind { BATTLE, PLAYER_HP, OPPONENT_HP, OPENING, END, STOP, CLOSED, ANNOUNCEMENT }
-    private data class Context(val id: String, val time: Time, val kind: Kind)
+    private data class HpGeometry(
+        val left: Int, val top: Int, val right: Int, val bottom: Int,
+        val sourceWidth: Int?, val sourceHeight: Int?,
+    )
+    private data class Context(val id: String, val time: Time, val kind: Kind, val hp: HpGeometry? = null)
     private data class Window(val from: Long, val until: Long)
     private val history = linkedMapOf<BattleCalibrationPreviewSlot, ArrayDeque<BattleCalibrationPreviewReference>>()
     private val context = ArrayDeque<Context>()
@@ -91,7 +95,10 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
             }
             else -> null
         }
-        if (kind != null) accept(Context(article.id.value, Time(article.perceivedAt, article.monotonicTimeNanos), kind))
+        val hp = (article.payload as? ActiveHpBarMeasured)?.let {
+            HpGeometry(it.barLeft, it.barTop, it.barRight, it.barBottom, it.sourceWidth, it.sourceHeight)
+        }
+        if (kind != null) accept(Context(article.id.value, Time(article.perceivedAt, article.monotonicTimeNanos), kind, hp))
     }
 
     fun accept(article: ArchivedRealityArticle) {
@@ -123,7 +130,10 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
             }
             else -> null
         }
-        if (kind != null) accept(Context(article.articleId, Time(article.perceivedAt, article.monotonicTimeNanos), kind))
+        val hp = (article.payload as? ArchivedActiveHpBarMeasured)?.let {
+            HpGeometry(it.barLeft, it.barTop, it.barRight, it.barBottom, it.sourceWidth, it.sourceHeight)
+        }
+        if (kind != null) accept(Context(article.articleId, Time(article.perceivedAt, article.monotonicTimeNanos), kind, hp))
     }
 
     private fun accept(name: String, reference: BattleCalibrationPreviewReference) {
@@ -186,9 +196,68 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         return activeWindows().any { at in it.from..it.until }
     }
 
-    private fun best(slot: BattleCalibrationPreviewSlot, candidates: List<BattleCalibrationPreviewReference>): BattleCalibrationPreviewReference? =
-        (if (slot == BattleCalibrationPreviewSlot.ANNOUNCEMENT) preferredAnnouncement(candidates) else null)
+    private fun best(slot: BattleCalibrationPreviewSlot, candidates: List<BattleCalibrationPreviewReference>): BattleCalibrationPreviewReference? {
+        if (slot == BattleCalibrationPreviewSlot.PLAYER_HP || slot == BattleCalibrationPreviewSlot.OPPONENT_HP) {
+            val windows = activeWindows()
+            val cues = context.filter { cue ->
+                (cue.kind == Kind.PLAYER_HP || cue.kind == Kind.OPPONENT_HP) &&
+                    windows.any { requireNotNull(cue.time.value(monotonicOnly)) in it.from..it.until }
+            }
+            // HP is sampled much more frequently than its saved raw image. A
+            // broad battle window can include the camera transition after bars
+            // disappear. Prefer a nearby source frame, from either HP side:
+            // the opposite bar still exposes a miscalibrated own-side box.
+            if (cues.isNotEmpty()) return preferredHp(slot, candidates, cues)
+            // Older/start-only recordings have no measured HP opportunity.
+            // Keep their honest raw pixels rather than hiding bad calibration.
+        }
+        return (if (slot == BattleCalibrationPreviewSlot.ANNOUNCEMENT) preferredAnnouncement(candidates) else null)
             ?: candidates.reduceOrNull { old, next -> if (newer(next, old)) next else old }
+    }
+
+    private fun preferredHp(
+        slot: BattleCalibrationPreviewSlot,
+        candidates: List<BattleCalibrationPreviewReference>,
+        cues: List<Context>,
+    ): BattleCalibrationPreviewReference? {
+        val tolerance = HP_FRAME_TOLERANCE_MILLIS * if (monotonicOnly) 1_000_000L else 1L
+        val opportunities = cues.mapNotNull { cue ->
+            val at = requireNotNull(cue.time.value(monotonicOnly))
+            val nearby = candidates.mapNotNull { reference ->
+                val captured = if (monotonicOnly) requireNotNull(reference.capturedAtNanos) else reference.capturedAtMillis
+                val distance = kotlin.math.abs(captured.toDouble() - at)
+                (reference to distance).takeIf { distance <= tolerance && sameSourceSize(reference, cue) }
+            }
+            val closest = nearby.minWithOrNull(compareBy<Pair<BattleCalibrationPreviewReference, Double>> { it.second }
+                .thenByDescending { containsMeasuredHp(slot, it.first, cue) }
+                .thenByDescending { if (monotonicOnly) it.first.capturedAtNanos else it.first.capturedAtMillis }
+                .thenByDescending { it.first.articleId })?.first
+            closest?.let { cue to it }
+        }
+        return opportunities.maxWithOrNull(compareBy<Pair<Context, BattleCalibrationPreviewReference>> {
+            requireNotNull(it.first.time.value(monotonicOnly))
+        }.thenBy { containsMeasuredHp(slot, it.second, it.first) }
+            .thenBy { it.first.id })?.second
+    }
+
+    private fun containsMeasuredHp(
+        slot: BattleCalibrationPreviewSlot,
+        reference: BattleCalibrationPreviewReference,
+        cue: Context,
+    ): Boolean {
+        if ((slot == BattleCalibrationPreviewSlot.PLAYER_HP) != (cue.kind == Kind.PLAYER_HP)) return false
+        val hp = cue.hp ?: return false
+        val crop = reference.provenance
+        if (!sameSourceSize(reference, cue)) return false
+        return hp.left >= crop.bounds.left && hp.top >= crop.bounds.top &&
+            hp.right <= crop.bounds.right && hp.bottom <= crop.bounds.bottom
+    }
+
+    private fun sameSourceSize(reference: BattleCalibrationPreviewReference, cue: Context): Boolean {
+        val hp = cue.hp ?: return true
+        return (hp.sourceWidth == null || hp.sourceWidth == reference.provenance.sourceWidth) &&
+            (hp.sourceHeight == null || hp.sourceHeight == reference.provenance.sourceHeight)
+    }
 
     private fun terminalAt(monotonic: Boolean): Long? = terminals.entries.asSequence()
         .filter { it.key.second == monotonic }.mapNotNull { it.value.time.value(monotonic) }.minOrNull()
@@ -288,6 +357,9 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         private const val MAX_REFERENCES_PER_SLOT = 2_048
         private const val MAX_CONTEXT_EVENTS = 8_192
         private const val MAX_BARRIERS = 512
+        // Recent HP observations normally arrive about one 125 ms frame apart;
+        // a half-second gap can already be a completely bar-free camera phase.
+        private const val HP_FRAME_TOLERANCE_MILLIS = 150L
         private val slots = mapOf(
             "PlayerActiveSpeciesTextCrop" to BattleCalibrationPreviewSlot.PLAYER_SPECIES,
             "OpponentActiveSpeciesTextCrop" to BattleCalibrationPreviewSlot.OPPONENT_SPECIES,

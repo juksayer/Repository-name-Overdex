@@ -314,6 +314,8 @@ selects one Match's existing `CropCaptured` evidence in observed battle windows 
 only changed images while the directory LCD is visible. These are untinted source
 pixels, not OCR reconstructions or a new screen-capture loop. HP previews show
 the calibrated HP observation territory, which can be wider than the tracked bar.
+When HP measurements are available, HP samples stay near a measured UI frame;
+either side can support the frame so a bad own-side calibration remains visible.
 Navigation-only sessions and post-battle crops do not replace those battle samples.
 Announcement previews prefer a nearby charged-move or entry cue. Compact archives
 retain a bounded raw sample for each of the seven preview slots independently of

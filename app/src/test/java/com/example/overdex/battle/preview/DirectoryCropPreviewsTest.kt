@@ -203,6 +203,73 @@ class DirectoryCropPreviewsTest {
         assertEquals("battle", selected.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).articleId)
     }
 
+    @Test fun `HP preview stays on the closest measured frame instead of a later camera transition`() {
+        val rows = listOf(
+            event("start", "a", MatchStarted, 9_000, ns(9)),
+            hp("player-bar", "a", 10),
+            hp("opponent-bar", "a", 10, ActivePokemonSide.OPPONENT),
+            crop("actual-bar", "a", "PlayerHpEvidenceCrop", 10_005, ns(10) + 5_000_000),
+            crop("one-frame-later", "a", "PlayerHpEvidenceCrop", 10_120, ns(10) + 120_000_000),
+            crop("bar-free-camera", "a", "PlayerHpEvidenceCrop", 10_564, ns(10) + 564_000_000),
+            crop("latest-species", "a", "PlayerActiveSpeciesTextCrop", 10_564, ns(10) + 564_000_000))
+        for (order in listOf(rows, rows.reversed())) {
+            val selected = DirectoryCropSelection("a").also { order.forEach(it::accept) }
+            assertEquals("actual-bar", selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+            // The correction is HP-only: other fields retain their battle window.
+            assertEquals("latest-species", selected.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).articleId)
+        }
+    }
+
+    @Test fun `opposite HP frames qualify a raw miscalibrated own box without own recognition`() {
+        val wrong = crop("wrong-own-box", "a", "PlayerHpEvidenceCrop", 10_100, ns(10) + 100_000_000)
+            .let { it.copy(payload = (it.payload as CropCaptured).let { captured ->
+                captured.copy(cropProvenance = captured.cropProvenance.copy(bounds = BattleCropBounds(400, 500, 500, 600)))
+            }) }
+        val rows = listOf(hp("opponent-1", "a", 10, ActivePokemonSide.OPPONENT),
+            hp("opponent-2", "a", 10, ActivePokemonSide.OPPONENT)
+                .copy(perceivedAt = 10_100, monotonicTimeNanos = ns(10) + 100_000_000), wrong)
+        val live = DirectoryCropSelection("a").also { rows.forEach(it::accept) }
+        assertEquals("wrong-own-box", live.crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+        assertEquals(BattleCropBounds(400, 500, 500, 600), live.crops.getValue(DirectoryCropSlot.PLAYER_HP).provenance.bounds)
+        val archive = RealityArticleArchiveMapper.createArchive(MatchId("a"), rows)
+        val compact = MatchArchiveArticleSelector.select(archive.articles, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        assertEquals(live.crops, DirectoryCropSelection.fromArchivedArticles("a", compact)?.crops)
+    }
+
+    @Test fun `distant HP pixels stay absent when measured UI frames exist but start only fallback remains raw`() {
+        val start = event("start", "a", MatchStarted, 9_000, ns(9))
+        val distant = crop("camera", "a", "PlayerHpEvidenceCrop", 10_564, ns(10) + 564_000_000)
+        val selected = DirectoryCropSelection("a")
+        selected.accept(start)
+        selected.accept(distant)
+        assertEquals("camera", selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+        selected.accept(hp("player", "a", 10))
+        selected.accept(hp("opponent", "a", 10, ActivePokemonSide.OPPONENT))
+        assertFalse(selected.crops.containsKey(DirectoryCropSlot.PLAYER_HP))
+        val archive = RealityArticleArchiveMapper.createArchive(MatchId("a"), listOf(start, distant,
+            hp("player", "a", 10), hp("opponent", "a", 10, ActivePokemonSide.OPPONENT)))
+        assertFalse(MatchArchiveArticleSelector.select(archive.articles, MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+            .any { it.payload is ArchivedCropCaptured })
+    }
+
+    @Test fun `same frame HP geometry resolves a tie without requiring it as a gate`() {
+        val contained = crop("a-contained", "a", "PlayerHpEvidenceCrop", 10_000, ns(10))
+        val outside = crop("z-outside", "a", "PlayerHpEvidenceCrop", 10_000, ns(10))
+            .let { it.copy(payload = (it.payload as CropCaptured).let { captured ->
+                captured.copy(cropProvenance = captured.cropProvenance.copy(bounds = BattleCropBounds(400, 500, 500, 600)))
+            }) }
+        val rows = listOf(hp("player", "a", 10), hp("opponent", "a", 10, ActivePokemonSide.OPPONENT), contained, outside)
+        val selected = DirectoryCropSelection("a").also { rows.forEach(it::accept) }
+        assertEquals("a-contained", selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+        val otherSourceSize = contained.let { it.copy(payload = (it.payload as CropCaptured).let { captured ->
+            captured.copy(cropProvenance = captured.cropProvenance.copy(sourceWidth = 540, sourceHeight = 1200))
+        }) }
+        val mismatched = DirectoryCropSelection("a").also {
+            (rows.take(2) + otherSourceSize).forEach(it::accept)
+        }
+        assertFalse(mismatched.crops.containsKey(DirectoryCropSlot.PLAYER_HP))
+    }
+
     @Test fun `navigation boundary and terminal stop exclude later raw evidence`() {
         val selected = DirectoryCropSelection("a")
         selected.accept(event("start", "a", MatchStarted, 10_000, ns(10)))
