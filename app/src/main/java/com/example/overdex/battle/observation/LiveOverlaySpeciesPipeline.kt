@@ -237,6 +237,12 @@ internal class LiveOverlaySpeciesPipeline(
                 val knownNames = match.pokemonKnowledge.getAllSpeciesNames()
                 for (firstWaitingCrop in crops) {
                     var sample = firstWaitingCrop
+                    // Acceptance and publication resolve the same candidate. Keep
+                    // that work within this crop rather than scanning the full
+                    // catalogue again after publishing its raw OCR testimony.
+                    val readingResolver = FastOverlaySpeciesReadingResolver { text ->
+                        FastOverlaySpeciesResolver.resolveDetailed(text, knownNames)
+                    }
                     val queuedAt = System.nanoTime()
                     var admittedAt = queuedAt
                     var nativeReadNanos = 0L
@@ -260,7 +266,7 @@ internal class LiveOverlaySpeciesPipeline(
                                     sample.capturedAtMonotonicTimeNanos)) return@withReadingTurn null
                             val context = OcrSourceContext(sample.crop.cropProvenance.sourceWidth, sample.crop.overlayBounds)
                             recognizeCandidates(sample.bitmap, context, heightProfile) { rawText ->
-                                FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                                readingResolver.resolve(rawText) != null
                             }.also {
                                 nativeReadNanos = this.nativeReadNanos
                                 passes = readCount
@@ -319,7 +325,7 @@ internal class LiveOverlaySpeciesPipeline(
                     }
 
                     val resolvedReading = readings.firstNotNullOfOrNull { reading ->
-                        FastOverlaySpeciesResolver.resolveDetailed(reading.text, knownNames)
+                        readingResolver.resolve(reading.text)
                             ?.let { resolution -> reading to resolution }
                     }
                     if (resolvedReading == null) continue
@@ -434,6 +440,20 @@ internal data class FastOverlaySpeciesResolution(
     val confidence: Float,
     val basis: String
 )
+
+/** One crop's OCR treatments share results, including rejected candidate text. */
+internal class FastOverlaySpeciesReadingResolver(
+    private val resolveUncached: (String) -> FastOverlaySpeciesResolution?,
+) {
+    private val resolutions = mutableMapOf<String, FastOverlaySpeciesResolution?>()
+
+    fun resolve(rawText: String): FastOverlaySpeciesResolution? {
+        // getOrPut would repeat the expensive lookup for a cached null. The
+        // exact text is the key because casing also contributes to confidence.
+        if (resolutions.containsKey(rawText)) return resolutions[rawText]
+        return resolveUncached(rawText).also { resolutions[rawText] = it }
+    }
+}
 
 /** Lenient single-frame matching equivalent to Overmon's exact/prefix path. */
 internal object FastOverlaySpeciesResolver {
