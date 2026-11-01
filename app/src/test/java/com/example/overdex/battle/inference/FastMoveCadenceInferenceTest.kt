@@ -509,6 +509,56 @@ class FastMoveCadenceInferenceTest {
         assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
     }
 
+    @Test fun `supported spectral versions preserve preferences while incomplete legal pools stay unresolved`() = runBlocking {
+        for (version in listOf("spectral-sequence-v1", "spectral-sequence-v2")) {
+            for (complete in listOf(true, false)) {
+                val engine = audioEngine()
+                engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+                for ((id, at) in listOf("first" to 2_000_000_000L, "second" to 3_500_000_000L)) {
+                    val input = weakReferenceSound(id, at)
+                    val sound = input.payload as FastMoveSoundMeasured
+                    assertTrue(engine.accept(input.copy(payload = sound.copy(
+                        analysisVersion = version,
+                        referenceCandidates = sound.referenceCandidates.filter { complete || it.moveName != "Tackle" },
+                        referenceSearchScopes = listOf(
+                            com.example.overdex.battle.custody.FastMoveSoundSearchScope(
+                                ActivePokemonSide.PLAYER, "Abomasnow", listOf("Powder Snow")),
+                            com.example.overdex.battle.custody.FastMoveSoundSearchScope(
+                                ActivePokemonSide.OPPONENT, "Electrode", listOf("Spark", "Tackle")),
+                        ),
+                    ))).isEmpty())
+                }
+                val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
+                assertEquals("$version complete=$complete", if (complete) "Spark" else null,
+                    snapshot.audioPreference?.moveName)
+                assertNull(snapshot.identifiedMoveName)
+                assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
+            }
+        }
+    }
+
+    @Test fun `unrecognized spectral version cannot create a preference identity or legacy onset cadence`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        for (at in listOf(2_000_000_000L, 3_000_000_000L, 4_000_000_000L)) {
+            val input = weakReferenceSound("unknown-$at", at)
+            val sound = input.payload as FastMoveSoundMeasured
+            assertTrue(engine.accept(input.copy(payload = sound.copy(
+                analysisVersion = "spectral-sequence-v999",
+                audible = true,
+                onsetOffsetNanos = 0L,
+                soundDurationNanos = 300_000_000L,
+                spectralCentroidHz = 1_000f,
+                attackingSide = ActivePokemonSide.OPPONENT,
+                soundOnsetMonotonicNanos = at,
+            ))).isEmpty())
+        }
+        val snapshot = engine.candidateSnapshot(ActivePokemonSide.OPPONENT)!!
+        assertNull(snapshot.audioPreference)
+        assertNull(snapshot.identifiedMoveName)
+        assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
+    }
+
     @Test fun `a weak preference expires and later confirmed audio replaces the low confidence status`() = runBlocking {
         val engine = audioEngine()
         engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))

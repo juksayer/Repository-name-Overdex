@@ -526,8 +526,12 @@ class FastMoveCadenceInference(
         }
 
         val sound = article.payload as? FastMoveSoundMeasured
-        if (sound != null) return if (sound.analysisVersion == FastMoveReferenceMatcher.VERSION)
-            acceptReferenceSound(article, sound) else acceptSoundCadence(article, sound)
+        if (sound != null) return when {
+            FastMoveReferenceMatcher.supportsAnalysisVersion(sound.analysisVersion) -> acceptReferenceSound(article, sound)
+            sound.analysisVersion == null -> acceptSoundCadence(article, sound)
+            // Unknown spectral formats cannot be reinterpreted as legacy onset testimony.
+            else -> emptyList()
+        }
 
         val cadence = when (val payload = article.payload) {
             is ActiveHpBarMotionCadenceMeasured -> CadenceInput(

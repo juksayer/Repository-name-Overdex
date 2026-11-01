@@ -6,7 +6,7 @@ import kotlin.math.*
 data class FastMoveSoundReference(val moveName: String, val sha256: String, val audio: Pcm16Audio)
 
 /**
- * Compares a 400 ms spectral sequence against eligible local references. Both the original
+ * Compares up to a 416 ms spectral sequence against eligible local references. Both the original
  * spectrum and its changing component must agree. A loud clip or a legal move alone cannot win.
  * Offsets describe the matched portion; reference length is NOT the PvP turn duration.
  */
@@ -53,11 +53,16 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
     }
 
     private fun fit(query: List<FloatArray>, reference: List<FloatArray>): Fit? {
-        if (min(query.size, reference.size) < MATCH_FRAMES) return null
-        var best = Fit(-1f, 0, 0, MATCH_FRAMES)
-        // Sliding diagonal sums avoid rescoring the same 400 ms segment at every offset.
-        val ring = FloatArray(MATCH_FRAMES)
-        for (offset in -query.size + MATCH_FRAMES..reference.size - MATCH_FRAMES) {
+        // Bite's complete bundled effect is 354 ms: 21 available spectral frames.
+        // Compare its actual span instead of silently omitting this legal alternative.
+        // Longer references still use 25 frames; neither PCM padding/repetition nor
+        // an arbitrarily tiny reference can manufacture additional matching evidence.
+        val frames = min(MATCH_FRAMES, reference.size)
+        if (frames < MIN_REFERENCE_FRAMES || query.size < frames) return null
+        var best = Fit(-1f, 0, 0, frames)
+        // Sliding diagonal sums avoid rescoring the same segment at every offset.
+        val ring = FloatArray(frames)
+        for (offset in -query.size + frames..reference.size - frames) {
             val q0 = max(0, -offset)
             val r0 = max(0, offset)
             val length = min(query.size - q0, reference.size - r0)
@@ -75,13 +80,13 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
                         q[bin + 6] * r[bin + 6] + q[bin + 7] * r[bin + 7]
                     bin += 8
                 }
-                val slot = i % MATCH_FRAMES
-                if (i >= MATCH_FRAMES) sum -= ring[slot]
+                val slot = i % frames
+                if (i >= frames) sum -= ring[slot]
                 ring[slot] = dot
                 sum += dot
-                if (i >= MATCH_FRAMES - 1 && sum / MATCH_FRAMES > best.score) {
-                    best = Fit((sum / MATCH_FRAMES).coerceIn(0f, 1f),
-                        q0 + i - MATCH_FRAMES + 1, r0 + i - MATCH_FRAMES + 1, MATCH_FRAMES)
+                if (i >= frames - 1 && sum / frames > best.score) {
+                    best = Fit((sum / frames).coerceIn(0f, 1f),
+                        q0 + i - frames + 1, r0 + i - frames + 1, frames)
                 }
             }
         }
@@ -107,12 +112,23 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
     }
 
     companion object {
-        const val VERSION = "spectral-sequence-v1"
+        const val VERSION = "spectral-sequence-v2"
+
+        /**
+         * v2 only adds complete short-reference comparisons. Saved v1 scores for
+         * longer references retain the same meaning; downstream pool-completeness
+         * checks still reject any requested alternative that v1 could not score.
+         */
+        internal fun supportsAnalysisVersion(version: String?): Boolean =
+            version == "spectral-sequence-v1" || version == VERSION
+
         private const val RATE = 8_000
         private const val SIZE = 256
         private const val HOP = 128
         private const val HOP_NANOS = 16_000_000L
         private const val MATCH_FRAMES = 25
+        // 21 overlapping windows span 352 ms, the shortest complete bundled effect.
+        private const val MIN_REFERENCE_FRAMES = 21
         private fun moveKey(name: String) = name.uppercase().filter(Char::isLetterOrDigit)
 
         /** Retention/presentation floor only, never a confirmed match or a probability. */

@@ -46,11 +46,15 @@ class FastMoveReferenceMatcherTest {
         assertNull(FastMoveReferenceMatcher.plausibleCandidate(emptyList()))
     }
 
-    @Test fun `narrowed comparison still rejects silence and a reference too short to measure`() {
+    @Test fun `narrowed comparison rejects silence undersized query and genuinely undersized reference`() {
         assertTrue(matcher.measureMono8k(ShortArray(9_600), setOf("Water Gun")).isEmpty())
         val bite = references.first { it.moveName == "Bite" }
+        // Query windows remain at least the original 416 ms, independent of a short reference.
         assertTrue(matcher.measure(bite.audio, setOf("Bite")).isEmpty())
-        assertTrue(matcher.measure(references.first { it.moveName == "Water Gun" }.audio, setOf("Bite")).isEmpty())
+        val tiny = bite.copy(audio = Pcm16Audio(8_000, 1,
+            StatChangeSoundMatcher.mono8k(bite.audio).copyOf(2_000)))
+        assertTrue(FastMoveReferenceMatcher(listOf(tiny))
+            .measure(references.first { it.moveName == "Water Gun" }.audio, setOf("Bite")).isEmpty())
     }
 
     @Test fun `clean target sounds survive volume changes and reject the competing move`() {
@@ -77,10 +81,42 @@ class FastMoveReferenceMatcherTest {
         }
     }
 
-    @Test fun `short unresolved Bite sample cannot be forced into a different move`() {
+    @Test fun `complete short Bite reference remains eligible in Blastoise comparisons`() {
         val bite = references.first { it.moveName == "Bite" }
-        val ranked = matcher.measureMono8k(StatChangeSoundMatcher.mono8k(bite.audio).copyOf(9_600))
-        assertFalse("${ranked.take(2)}", FastMoveReferenceMatcher.accepts(ranked))
+        val ranked = matcher.measureMono8k(StatChangeSoundMatcher.mono8k(bite.audio).copyOf(9_600),
+            setOf("Bite", "Rollout", "Water Gun"))
+        assertEquals(setOf("Bite", "Rollout", "Water Gun"), ranked.map { it.moveName }.toSet())
+        assertEquals("Bite", ranked.first().moveName)
+        assertEquals(352_000_000L, ranked.first().matchedDurationNanos)
+        assertEquals("Bite", FastMoveReferenceMatcher.plausibleCandidate(ranked)?.moveName)
+        // Full coverage does not waive the independent changing-spectrum margin.
+        assertFalse("${ranked.take(3)}", FastMoveReferenceMatcher.accepts(ranked))
+    }
+
+    @Test fun `short Bite matching preserves volume alignment and excludes off pool names`() {
+        val mono = StatChangeSoundMatcher.mono8k(references.first { it.moveName == "Bite" }.audio)
+        for (volume in listOf(.4f, 1f)) {
+            val query = ShortArray(9_600)
+            mono.forEachIndexed { index, sample -> query[1_024 + index] = (sample * volume).toInt().toShort() }
+            val ranked = matcher.measureMono8k(query, setOf("Bite", "Rollout", "Water Gun"))
+            val best = ranked.first()
+            assertEquals("Bite", best.moveName)
+            assertEquals(1_024L * 1_000_000_000L / 8_000, best.matchingOffsetNanos)
+            assertEquals(0L, best.referenceOffsetNanos)
+            assertEquals(352_000_000L, best.matchedDurationNanos)
+            assertEquals("Bite", FastMoveReferenceMatcher.plausibleCandidate(ranked)?.moveName)
+            assertFalse("$volume ${ranked.take(3)}", FastMoveReferenceMatcher.accepts(ranked))
+        }
+    }
+
+    @Test fun `short Bite candidate does not force a negative or competing sound into that identity`() {
+        val allowed = setOf("Bite", "Rollout", "Water Gun")
+        val waterGun = matcher.measure(references.first { it.moveName == "Water Gun" }.audio, allowed)
+        assertEquals(allowed, waterGun.map { it.moveName }.toSet())
+        assertEquals("Water Gun", waterGun.first().moveName)
+        assertTrue(FastMoveReferenceMatcher.accepts(waterGun))
+        val tone = ShortArray(9_600) { (10_000 * kotlin.math.sin(it * 2 * Math.PI * 900 / 8000)).toInt().toShort() }
+        assertFalse(FastMoveReferenceMatcher.accepts(matcher.measureMono8k(tone, allowed)))
     }
 
     @Test fun `silence music only and a tone do not manufacture move identity`() {
