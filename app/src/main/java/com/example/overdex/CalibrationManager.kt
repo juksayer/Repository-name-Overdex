@@ -182,6 +182,11 @@ class CalibrationManager(context: Context) {
             .putFloat("charge_move_execution_w", calibration.chargeMoveExecutionRegion.width)
             .putFloat("charge_move_execution_h", calibration.chargeMoveExecutionRegion.height)
 
+            .putFloat("qte_progress_text_x", calibration.qteProgressTextRegion.x)
+            .putFloat("qte_progress_text_y", calibration.qteProgressTextRegion.y)
+            .putFloat("qte_progress_text_w", calibration.qteProgressTextRegion.width)
+            .putFloat("qte_progress_text_h", calibration.qteProgressTextRegion.height)
+
             .putFloat("qte_type_icons_x", calibration.qteTypeIconsRegion.x)
             .putFloat("qte_type_icons_y", calibration.qteTypeIconsRegion.y)
             .putFloat("qte_type_icons_w", calibration.qteTypeIconsRegion.width)
@@ -665,6 +670,7 @@ class CalibrationManager(context: Context) {
             trainerHpRegion = trainerHpRegion,
             opponentHpRegion = opponentHpRegion,
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
+            qteProgressTextRegion = loadExtraRegion("qte_progress_text", BattleCalibration().qteProgressTextRegion),
             qteTypeIconsRegion = loadExtraRegion("qte_type_icons", BattleCalibration().qteTypeIconsRegion),
             exitIconRegion = loadExtraRegion("exit_icon", BattleCalibration().exitIconRegion),
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,

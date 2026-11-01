@@ -957,13 +957,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture",
             BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture",
+            BattleWitnessContracts.qteProgressTextCapture to "QTE Progress Text Capture",
             BattleWitnessContracts.playerChargeMoveControlsCapture to "Player Charge Move Controls Capture"
         ).forEach { (contract, name) ->
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
-                isEnabled = if (contract == BattleWitnessContracts.playerHpEvidenceCapture) activeHpEvidenceLive else battleEvidenceLive,
+                isEnabled = when (contract) {
+                    BattleWitnessContracts.playerHpEvidenceCapture -> activeHpEvidenceLive
+                    // Do not require a successful Get Ready read to preserve
+                    // the text that will help calibrate that transition.
+                    BattleWitnessContracts.qteProgressTextCapture -> {
+                        { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE }
+                    }
+                    else -> battleEvidenceLive
+                },
                 captureIntervalNanos = when (contract) {
                     BattleWitnessContracts.playerHpEvidenceCapture -> hpArtifactIntervalNanos
                     BattleWitnessContracts.chargeMoveExecutionCapture -> combatCadenceIntervalNanos
+                    BattleWitnessContracts.qteProgressTextCapture -> 500_000_000L
                     BattleWitnessContracts.playerChargeMoveControlsCapture -> inactiveTimerIntervalNanos
                     else -> 200_000_000L
                 },

@@ -36,6 +36,7 @@ enum class BattleRegionId {
     PLAYER_HP,
     OPPONENT_HP,
     CHARGE_MOVE_EXECUTION,
+    QTE_PROGRESS_TEXT,
     QTE_TYPE_ICONS,
     EXIT_ICON,
     PLAYER_CHARGE_MOVE_CONTROLS,
@@ -69,6 +70,7 @@ enum class BattleRegionId {
         PLAYER_HP -> calibration.trainerHpRegion
         OPPONENT_HP -> calibration.opponentHpRegion
         CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
+        QTE_PROGRESS_TEXT -> calibration.qteProgressTextRegion
         QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
         EXIT_ICON -> calibration.exitIconRegion
         PLAYER_CHARGE_MOVE_CONTROLS -> calibration.trainerChargeMoveControlsRegion
@@ -192,6 +194,7 @@ object BattleCropContracts {
     val playerTeamStatus = BattleCropContract("PlayerTeamStatusCrop", BattleRegionId.PLAYER_TEAM_INFO)
     val opponentTeamStatus = BattleCropContract("OpponentTeamStatusCrop", BattleRegionId.OPPONENT_TEAM_INFO)
     val chargeMoveExecution = BattleCropContract("ChargeMoveExecutionCrop", BattleRegionId.CHARGE_MOVE_EXECUTION)
+    val qteProgressText = BattleCropContract("QteProgressTextCrop", BattleRegionId.QTE_PROGRESS_TEXT)
     // Raw calibration samples; moving glyph classification requires measured examples.
     val qteTypeIcons = BattleCropContract("QteTypeIconsCrop", BattleRegionId.QTE_TYPE_ICONS)
     val exitIcon = BattleCropContract("ExitIconCrop", BattleRegionId.EXIT_ICON)
@@ -300,6 +303,7 @@ object BattleWitnessContracts {
     val playerTeamStatusCapture = BattleWitnessContract("PLAYER_TEAM_STATUS_CAPTURE", BattleCropContracts.playerTeamStatus, CropCaptured::class)
     val opponentTeamStatusCapture = BattleWitnessContract("OPPONENT_TEAM_STATUS_CAPTURE", BattleCropContracts.opponentTeamStatus, CropCaptured::class)
     val chargeMoveExecutionCapture = BattleWitnessContract("CHARGE_MOVE_EXECUTION_CAPTURE", BattleCropContracts.chargeMoveExecution, CropCaptured::class)
+    val qteProgressTextCapture = BattleWitnessContract("QTE_PROGRESS_TEXT_CAPTURE", BattleCropContracts.qteProgressText, CropCaptured::class)
     val playerChargeMoveControlsCapture = BattleWitnessContract("PLAYER_CHARGE_MOVE_CONTROLS_CAPTURE", BattleCropContracts.playerChargeMoveControls, CropCaptured::class)
     val matchOutcomeCropCapture = BattleWitnessContract(
         witnessId = "MATCH_OUTCOME_CROP_CAPTURE",

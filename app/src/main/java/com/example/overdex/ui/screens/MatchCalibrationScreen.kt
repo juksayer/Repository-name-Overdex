@@ -203,6 +203,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP,
             CalibrationRegion.OPPONENT_HP,
             CalibrationRegion.CHARGE_MOVE_EXECUTION,
+            CalibrationRegion.QTE_PROGRESS_TEXT,
             CalibrationRegion.QTE_TYPE_ICONS,
             CalibrationRegion.EXIT_ICON,
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS,
@@ -245,6 +246,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP -> "Trainer HP"
             CalibrationRegion.OPPONENT_HP -> "Opponent HP"
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> "Charge-Move Execution"
+            CalibrationRegion.QTE_PROGRESS_TEXT -> "QTE Progress Text (Nice / Great / Excellent)"
             CalibrationRegion.QTE_TYPE_ICONS -> "QTE Type Icons"
             CalibrationRegion.EXIT_ICON -> "Exit Icon"
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
@@ -291,6 +293,7 @@ fun MatchCalibrationScreen(
         CalibrationRegion.TRAINER_HP -> calibration.trainerHpRegion
         CalibrationRegion.OPPONENT_HP -> calibration.opponentHpRegion
         CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.chargeMoveExecutionRegion
+        CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.qteProgressTextRegion
         CalibrationRegion.QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
         CalibrationRegion.EXIT_ICON -> calibration.exitIconRegion
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
@@ -365,6 +368,7 @@ fun MatchCalibrationScreen(
             CalibrationRegion.TRAINER_HP -> calibration.copy(trainerHpRegion = updated)
             CalibrationRegion.OPPONENT_HP -> calibration.copy(opponentHpRegion = updated)
             CalibrationRegion.CHARGE_MOVE_EXECUTION -> calibration.copy(chargeMoveExecutionRegion = updated)
+            CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.copy(qteProgressTextRegion = updated)
             CalibrationRegion.QTE_TYPE_ICONS -> calibration.copy(qteTypeIconsRegion = updated)
             CalibrationRegion.EXIT_ICON -> calibration.copy(exitIconRegion = updated)
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)

@@ -113,6 +113,12 @@ data class BattleCalibration(
         width = (1075f - 5f) / 1080f,
         height = (1940f - 500f) / 2400f
     ),
+    // One fixed text position is shared by NICE!, GREAT!, and EXCELLENT!.
+    // Measured on the retained 672 x 1493 QTE frames; separate from the
+    // higher species/charged-move announcement and the broad execution image.
+    val qteProgressTextRegion: AnchorRegion = AnchorRegion(
+        x = 0.12f, y = 0.26f, width = 0.76f, height = 0.075f
+    ),
     // Experimental QTE glyph territory, shared by the live guide and CRT editor.
     // This starting box is for measurement, not a claim that all 18 types fit it.
     val qteTypeIconsRegion: AnchorRegion = AnchorRegion(
