@@ -383,6 +383,27 @@
       "sha256": "a147dbec566253cacf71822ae97b4ed97e98294f17f04eb6911c64429a16a22b",
       "purpose": "recognition_excerpt",
       "replayEligible": false
+    },
+    {
+      "file": "recorded_20261102_mud_slap_excerpt.wav",
+      "moveName": "Mud Slap",
+      "sha256": "c432a27e2e2f9dc8aef470641ac9de6e2216f561a35f46ba693de3c547cc3dec",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
+    },
+    {
+      "file": "recorded_20261102_poison_sting_excerpt.wav",
+      "moveName": "Poison Sting",
+      "sha256": "58f7fdebe88ad1c4f5d3a07665b9316f5a897ac94b934db2b9dacbdfeb0e9fa3",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
+    },
+    {
+      "file": "recorded_20261102_steel_wing_excerpt.wav",
+      "moveName": "Steel Wing",
+      "sha256": "c54b7785b78bed5be63479549d29907391e67c0a3b877c360c87aeb3da0d7c0b",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
     }
   ]
 }

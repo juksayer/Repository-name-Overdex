@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "scope": "Human-labeled recognition excerpts; legal alternatives may share signatures. Not complete replay effects or a live accuracy claim.",
+  "samples": [
+    {
+      "derived": {
+        "byteCount": 9644,
+        "channelCount": 1,
+        "file": "mud-slap-reference.wav",
+        "frameCount": 4800,
+        "pcmSha256": "4700ed6015f2231c179ec1ef45a1cf20c6b2526d3ef5c233a6b3f22d1d095fc5",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "c432a27e2e2f9dc8aef470641ac9de6e2216f561a35f46ba693de3c547cc3dec"
+      },
+      "id": "mud-slap-reference",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Mud Slap",
+      "notes": "Recognition candidate only. Exact unmodified PCM trim from single retained playback window. No complete replay SFX claim.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 4800,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18520,
+        "rmsPcm16": 5105.442101041136,
+        "zeroSampleCount": 524
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/d499cc9b80edf0632b020fbfa16aa9e5d56159450d3f54820b77aa8a479557a1.wav",
+        "audioArticleId": "429c4f6f-c3f4-404f-8755-991085e8cba0",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 20674608407770,
+        "perceivedAt": 1793640067263,
+        "sampleRateHz": 8000,
+        "sha256": "d499cc9b80edf0632b020fbfa16aa9e5d56159450d3f54820b77aa8a479557a1"
+      },
+      "speciesName": "Gastrodon",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 600000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 4800,
+        "startFrame": 4800,
+        "windowOffsetNanos": 600000000
+      },
+      "runtimeFile": "recorded_20261102_mud_slap_excerpt.wav",
+      "sourceArchive": {
+        "matchId": "ac4655c2-efff-47dd-ac00-d6efa4ff7a7b",
+        "path": "moondrop/2026-11-02_11-19-45_ac4655c2-efff-47dd-ac00-d6efa4ff7a7b.odxmatch.zip",
+        "sha256": "3192fa94a64c2108ca1d1345bd930dee9232f9b1f40bf55c51e9234d437cf0ea"
+      },
+      "confirmation": {
+        "note": "User confirms Gastrodon Mud Slap, Drapion Poison Sting, Skarmory Steel Wing. Both phones music 0 percent, sound effects 100 percent; other team idle. Second battle attacker continuous. Labels come from user-equipped moves and corroborating species intervals, not old matcher choices.",
+        "source": "user"
+      }
+    },
+    {
+      "derived": {
+        "byteCount": 16044,
+        "channelCount": 1,
+        "file": "poison-sting-reference.wav",
+        "frameCount": 8000,
+        "pcmSha256": "7cd31b0da6cf7c215309d174192106e3c92cce4424a2cd1dc91de4f99081e42a",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "58f7fdebe88ad1c4f5d3a07665b9316f5a897ac94b934db2b9dacbdfeb0e9fa3"
+      },
+      "id": "poison-sting-reference",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Poison Sting",
+      "notes": "Recognition candidate only. Exact unmodified PCM trim from single retained playback window. No complete replay SFX claim.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 8000,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18208,
+        "rmsPcm16": 3107.8155172484094,
+        "zeroSampleCount": 591
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/8bf7df704d338ecba227e111f6f896aba0f6f1f6522143f25acbbbebd814174b.wav",
+        "audioArticleId": "586297ed-8a44-492f-a6da-ddfce7bf08ba",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 20724422855081,
+        "perceivedAt": 1793640117077,
+        "sampleRateHz": 8000,
+        "sha256": "8bf7df704d338ecba227e111f6f896aba0f6f1f6522143f25acbbbebd814174b"
+      },
+      "speciesName": "Drapion",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1000000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 8000,
+        "startFrame": 1600,
+        "windowOffsetNanos": 200000000
+      },
+      "runtimeFile": "recorded_20261102_poison_sting_excerpt.wav",
+      "sourceArchive": {
+        "matchId": "ac4655c2-efff-47dd-ac00-d6efa4ff7a7b",
+        "path": "moondrop/2026-11-02_11-19-45_ac4655c2-efff-47dd-ac00-d6efa4ff7a7b.odxmatch.zip",
+        "sha256": "3192fa94a64c2108ca1d1345bd930dee9232f9b1f40bf55c51e9234d437cf0ea"
+      },
+      "confirmation": {
+        "note": "User confirms Gastrodon Mud Slap, Drapion Poison Sting, Skarmory Steel Wing. Both phones music 0 percent, sound effects 100 percent; other team idle. Second battle attacker continuous. Labels come from user-equipped moves and corroborating species intervals, not old matcher choices.",
+        "source": "user"
+      }
+    },
+    {
+      "derived": {
+        "byteCount": 15244,
+        "channelCount": 1,
+        "file": "steel-wing-reference.wav",
+        "frameCount": 7600,
+        "pcmSha256": "d030cb7d1a2cd459d91f9f0e93c3c9081b6f6b1a68e6f75a455a7c94efe07479",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "c54b7785b78bed5be63479549d29907391e67c0a3b877c360c87aeb3da0d7c0b"
+      },
+      "id": "steel-wing-reference",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Steel Wing",
+      "notes": "Recognition candidate only. Exact unmodified PCM trim from single retained playback window. No complete replay SFX claim.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 7600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 15556,
+        "rmsPcm16": 2267.8452974772053,
+        "zeroSampleCount": 3574
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/f087eb400b37a116ef196a30e52943d11fa312205571438e5a4140ef92a75c80.wav",
+        "audioArticleId": "e9b3f932-2f6a-4325-ada0-14fd4b0c2e92",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 280580569192656,
+        "perceivedAt": 1793640192454,
+        "sampleRateHz": 8000,
+        "sha256": "f087eb400b37a116ef196a30e52943d11fa312205571438e5a4140ef92a75c80"
+      },
+      "speciesName": "Skarmory",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 950000000,
+        "endFrameExclusive": 9200,
+        "frameCount": 7600,
+        "startFrame": 1600,
+        "windowOffsetNanos": 200000000
+      },
+      "runtimeFile": "recorded_20261102_steel_wing_excerpt.wav",
+      "sourceArchive": {
+        "matchId": "e9248848-fa32-40f7-8333-2554ca6e08b7",
+        "path": "pixel/2026-11-02_11-19-16_e9248848-fa32-40f7-8333-2554ca6e08b7.odxmatch.zip",
+        "sha256": "884629879c4247ab49fe8e448de456c082bc212a45ed29a397c965da9b5ab460"
+      },
+      "confirmation": {
+        "note": "User confirms Gastrodon Mud Slap, Drapion Poison Sting, Skarmory Steel Wing. Both phones music 0 percent, sound effects 100 percent; other team idle. Second battle attacker continuous. Labels come from user-equipped moves and corroborating species intervals, not old matcher choices.",
+        "source": "user"
+      }
+    }
+  ]
+}
