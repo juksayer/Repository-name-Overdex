@@ -402,6 +402,12 @@ fun MoveSelectionStep(
     nextLabel: String = "NEXT",
     onSelectedIndexChange: (Int) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    HandheldListSync(
+        listState = listState,
+        selectedIndex = selectedIndex,
+        totalItems = moves.size + if (showNext) 1 else 0,
+    )
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(
             text = title,
@@ -412,6 +418,7 @@ fun MoveSelectionStep(
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -419,6 +426,7 @@ fun MoveSelectionStep(
                 val move = moves[index]
                 TerminalMenuOption(
                     label = move.name,
+                    modifier = Modifier.semantics { selected = selectedIndex == index },
                     selected = selectedIndex == index,
                     status = if (selectedMoves.contains(move.name)) "SELECTED" else null
                 )
@@ -429,6 +437,7 @@ fun MoveSelectionStep(
                     Spacer(modifier = Modifier.height(16.dp))
                     TerminalButton(
                         text = nextLabel,
+                        modifier = Modifier.semantics { selected = selectedIndex == moves.size },
                         selected = selectedIndex == moves.size
                     )
                 }

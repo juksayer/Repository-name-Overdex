@@ -185,7 +185,7 @@ fun HandheldListSync(
     listIndexMapping: (Int) -> Int? = { it },
     totalItems: Int
 ) {
-    LaunchedEffect(selectedIndex) {
+    LaunchedEffect(listState, selectedIndex, totalItems) {
         val listIndex = listIndexMapping(selectedIndex) ?: return@LaunchedEffect
         val layoutInfo = listState.layoutInfo
         val visibleItems = layoutInfo.visibleItemsInfo

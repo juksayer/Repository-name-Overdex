@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,6 +28,7 @@ import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
+import com.example.overdex.ui.components.HandheldListSync
 import com.example.overdex.ui.components.TerminalHeader
 import com.example.overdex.ui.components.TerminalMenuOption
 import com.example.overdex.ui.components.rememberHandheldNavigationController
@@ -357,12 +359,13 @@ fun CurrentBattleTeamScreen(
 }
 
 @Composable
-private fun CurrentTeamOverview(
+internal fun CurrentTeamOverview(
     team: CurrentBattleTeam,
     selectedIndex: Int,
     showLaunch: Boolean = false,
     showLibrary: Boolean = false,
 ) {
+    val listState = rememberLazyListState()
     val addActionIndex = team.members.size.takeIf { team.members.size < 3 }
     val launchActionIndex = if (team.members.size == 3 && showLaunch) team.members.size else null
     val clearActionIndex = if (team.members.isNotEmpty()) {
@@ -370,8 +373,18 @@ private fun CurrentTeamOverview(
             (if (addActionIndex != null) 1 else 0) +
             (if (launchActionIndex != null) 1 else 0)
     } else null
+    val actionCount = (if (addActionIndex != null) 1 else 0) +
+        (if (launchActionIndex != null) 1 else 0) +
+        (if (clearActionIndex != null) 1 else 0) + (if (showLibrary) 1 else 0)
+    HandheldListSync(
+        listState = listState,
+        selectedIndex = selectedIndex,
+        listIndexMapping = { it + if (team.members.isEmpty()) 1 else 0 },
+        totalItems = team.members.size + actionCount + if (team.members.isEmpty()) 1 else 0,
+    )
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
