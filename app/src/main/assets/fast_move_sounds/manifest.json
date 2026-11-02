@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "source": "Pokemon GO asset collection supplied by the user; original files preserved.",
-  "notes": "Filename labels are candidate identities. Runtime requires global spectral separation, active legal pools and repeated independent occurrences. Clip length is not move duration.",
+  "source": "User-supplied Pokemon GO assets and provenance-bound excerpts from user-recorded Overdex playback audio; original sources preserved.",
+  "notes": "Filename labels and recorded excerpts are candidate identities. Runtime restricts comparisons to active legal move pools and requires spectral separation plus independent occurrences. Clip length is not move duration. Entries with replayEligible=false are recognition-only excerpts, never reconstructed replay playback.",
   "references": [
     {
       "file": "001-0_pound.wav",
@@ -362,6 +362,27 @@
       "file": "611-0_infestation.wav",
       "moveName": "Infestation",
       "sha256": "2e1e7500eef011dc30b89749d7bd58e8b0ef7ea9ee51b70ad57841fa13050b62"
+    },
+    {
+      "file": "recorded_20261101_confusion_excerpt.wav",
+      "moveName": "Confusion",
+      "sha256": "4bcc3f5021a1c2643087e1923ae4fdaf9fd0aab1b747e513376d4b7032183c04",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
+    },
+    {
+      "file": "recorded_20261101_rock_smash_excerpt.wav",
+      "moveName": "Rock Smash",
+      "sha256": "8f9829c98658e0292bcc54f73754ac1fca16fb79b47aa40cb004b9d774880681",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
+    },
+    {
+      "file": "recorded_20261101_bubble_excerpt.wav",
+      "moveName": "Bubble",
+      "sha256": "a147dbec566253cacf71822ae97b4ed97e98294f17f04eb6911c64429a16a22b",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
     }
   ]
 }

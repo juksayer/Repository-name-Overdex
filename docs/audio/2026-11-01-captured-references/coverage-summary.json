@@ -1,0 +1,26 @@
+{
+  "scope": "Checked-in gamemaster move IDs referenced by species/form fastMoves or chargedMoves; not a live-game completeness claim.",
+  "catalogue_sha256": "35a7db4b61c77dad0f17e0e321a56c4cb384905538820a565baafd368d7f9895",
+  "fast": {
+    "manifest_sha256": "7eb8a68097eb71c45d9a047f268591eb580279fd3bcf5fd5e13f2f0acc772c70",
+    "manifest_reference_entries": 75,
+    "manifest_distinct_names": 74,
+    "unique_names": 96,
+    "exact_covered_names": 73,
+    "exact_missing_names": 23,
+    "status_counts": {
+      "catalogue_category_review": 1,
+      "covered_exact_name": 73,
+      "family_reference_needs_validation": 16,
+      "missing_source_asset": 5,
+      "special_action_review": 1
+    },
+    "unusable_manifest_files": [],
+    "unresolved_move_ids": []
+  },
+  "charged": {
+    "exact_covered_names": 177,
+    "exact_missing_names": 47
+  },
+  "coverageMeaning": "Hash-valid recognition references, including recognition-only excerpts; not complete replay effects or recognition accuracy."
+}

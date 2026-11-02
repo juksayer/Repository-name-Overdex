@@ -1,0 +1,594 @@
+{
+  "version": 1,
+  "scope": "Independent battle and music/device challenges plus quiet rejection fixtures; not live precision/recall.",
+  "samples": [
+    {
+      "derived": {
+        "byteCount": 13484,
+        "channelCount": 1,
+        "file": "bubble-holdout-01.wav",
+        "frameCount": 6720,
+        "pcmSha256": "b21c915cbb55e6a004784178d05444529416a0b597581ef6ceba9ec5325f907c",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "800c999c733df31041838862b80ec16c3b65d9911df37300f49a37a448d7f01b"
+      },
+      "id": "bubble-holdout-01",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Bubble",
+      "notes": "Different battle, quiet lead and matching burst/body. Window boundary clips final tail. Use as independent query, not training.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 6720,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18535,
+        "rmsPcm16": 5644.659822856805,
+        "zeroSampleCount": 86
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/49642e08e7c7650773b13380d21b4f9bdd10b63874e21173498ef46d2681339f.wav",
+        "audioArticleId": "ad430196-553c-48c2-9fe2-3eba9353e4ac",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1389224884928,
+        "perceivedAt": 1793565671656,
+        "sampleRateHz": 8000,
+        "sha256": "49642e08e7c7650773b13380d21b4f9bdd10b63874e21173498ef46d2681339f"
+      },
+      "speciesName": "Mantine",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 840000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 6720,
+        "startFrame": 2880,
+        "windowOffsetNanos": 360000000
+      },
+      "sourceArchive": {
+        "matchId": "c94670ec-aac6-4d49-994a-361598686b3b",
+        "path": "moondrop/2026-11-01_14-37-38_c94670ec-aac6-4d49-994a-361598686b3b.odxmatch.zip",
+        "sha256": "472e5427c767ad600e64a96c9eb940a570479996f7fee05a3a902fe327b472d3"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; music slider0% on Moondrop and20% on Pixel; SFX100% both. Video reviewed independently for attack context.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "bubble-holdout-01.wav",
+      "expectedMove": "Bubble",
+      "legalMoves": [
+        "Bubble",
+        "Bullet Seed",
+        "Wing Attack",
+        "Counter",
+        "Lick"
+      ],
+      "scope": "Different battle from its runtime reference"
+    },
+    {
+      "derived": {
+        "byteCount": 16044,
+        "channelCount": 1,
+        "file": "confusion-holdout-02.wav",
+        "frameCount": 8000,
+        "pcmSha256": "1b5a883edb5642c0e608d6c03dd7de4471a819e91ef7563443f2456dad8b30f8",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "ec23217590a106c72dc8f350c6832295f5c5ac2d03c350a15be8cd57b20a9e87"
+      },
+      "id": "confusion-holdout-02",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Confusion",
+      "notes": "Different battle; corresponding repeated motif, includes full remainder of capture. Source sound extends outside window.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 8000,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18553,
+        "rmsPcm16": 4009.4114214090077,
+        "zeroSampleCount": 12
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/1a3d9eaf12255d98fadece70821be4f986588a463d3364cce890501a76e22f1b.wav",
+        "audioArticleId": "928f8463-41c3-4820-b736-4faaec703404",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1512789288397,
+        "perceivedAt": 1793565795221,
+        "sampleRateHz": 8000,
+        "sha256": "1a3d9eaf12255d98fadece70821be4f986588a463d3364cce890501a76e22f1b"
+      },
+      "speciesName": "Golduck",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1000000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 8000,
+        "startFrame": 1600,
+        "windowOffsetNanos": 200000000
+      },
+      "sourceArchive": {
+        "matchId": "6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8",
+        "path": "moondrop/2026-11-01_14-42-03_6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8.odxmatch.zip",
+        "sha256": "b5e41851b3d4419305078595e6c584b4479b2d3c4f8ceda3f183751c36cb4f20"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; Moondrop music slider0% and SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "confusion-holdout-02.wav",
+      "expectedMove": "Confusion",
+      "legalMoves": [
+        "Confusion",
+        "Water Gun",
+        "Mud Shot"
+      ],
+      "scope": "Different battle from its runtime reference"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "rock-smash-holdout-02.wav",
+        "frameCount": 9600,
+        "pcmSha256": "77217ee4cc90b10329aede9272e22d68b3a3e14d1706fa209aedabe63889afe9",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "3070cac4c2a2322f93d898b363594bc02c25ce5f66d48b12a37d1932e0894218"
+      },
+      "id": "rock-smash-holdout-02",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Rock Smash",
+      "notes": "Different battle. Low-level beginning is already underway at window start; keep whole window to avoid discarding onset. Strong decaying attack repeated with quiet end.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 17879,
+        "rmsPcm16": 3118.890908122763,
+        "zeroSampleCount": 30
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/3070cac4c2a2322f93d898b363594bc02c25ce5f66d48b12a37d1932e0894218.wav",
+        "audioArticleId": "16b5759f-f218-443a-b176-757801e23665",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1614259720019,
+        "perceivedAt": 1793565896691,
+        "sampleRateHz": 8000,
+        "sha256": "3070cac4c2a2322f93d898b363594bc02c25ce5f66d48b12a37d1932e0894218"
+      },
+      "speciesName": "Camerupt",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8",
+        "path": "moondrop/2026-11-01_14-42-03_6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8.odxmatch.zip",
+        "sha256": "b5e41851b3d4419305078595e6c584b4479b2d3c4f8ceda3f183751c36cb4f20"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; Moondrop music slider0% and SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "rock-smash-holdout-02.wav",
+      "expectedMove": "Rock Smash",
+      "legalMoves": [
+        "Ember",
+        "Rock Smash",
+        "Incinerate",
+        "Water Gun",
+        "Mud Shot"
+      ],
+      "scope": "Different battle from its runtime reference"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "mantine-idle-negative-02.wav",
+        "frameCount": 9600,
+        "pcmSha256": "ae5b3d507e3338d36a53d5a49617166687d45c9105404ca0624cf6ed83f43c3c",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "f73f5db266826bbf0e843674bd0a676c2b0e76a893db40d057e5dc05a708180b"
+      },
+      "id": "mantine-idle-negative-02",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Bubble",
+      "notes": "Very low amplitude: RMS0.00124FS, peak0.0103FS. A negative availability/quiet window, not a Bubble reference.",
+      "role": "rejected",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 337,
+        "rmsPcm16": 40.611524688196575,
+        "zeroSampleCount": 3894
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/f73f5db266826bbf0e843674bd0a676c2b0e76a893db40d057e5dc05a708180b.wav",
+        "audioArticleId": "a8503634-15bb-4b6e-9567-9561ca4bc6d6",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1656407168098,
+        "perceivedAt": 1793565938839,
+        "sampleRateHz": 8000,
+        "sha256": "f73f5db266826bbf0e843674bd0a676c2b0e76a893db40d057e5dc05a708180b"
+      },
+      "speciesName": "Mantine",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8",
+        "path": "moondrop/2026-11-01_14-42-03_6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8.odxmatch.zip",
+        "sha256": "b5e41851b3d4419305078595e6c584b4479b2d3c4f8ceda3f183751c36cb4f20"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; Moondrop music slider0% and SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "mantine-idle-negative-02.wav",
+      "expectedMove": null,
+      "legalMoves": [
+        "Bubble",
+        "Bullet Seed",
+        "Wing Attack",
+        "Counter",
+        "Lick"
+      ],
+      "scope": "Quiet captured comparison; no positive identity assertion"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "camerupt-idle-negative-02.wav",
+        "frameCount": 9600,
+        "pcmSha256": "eb275706f1bcc5679722e57b386583f177137c5f80444f2e7ff3cf12c16b5fa0",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "7542c64e759a304e7dbc73962124ae32ea2c268f5cf574d93c17b5cb576e32c8"
+      },
+      "id": "camerupt-idle-negative-02",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Rock Smash",
+      "notes": "Very low amplitude: RMS0.00048FS. A quiet-window negative, not a move reference.",
+      "role": "rejected",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 188,
+        "rmsPcm16": 15.854195685474975,
+        "zeroSampleCount": 6615
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/7542c64e759a304e7dbc73962124ae32ea2c268f5cf574d93c17b5cb576e32c8.wav",
+        "audioArticleId": "b2244c70-808a-4d0c-8365-7226376d0c79",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1592979777633,
+        "perceivedAt": 1793565875411,
+        "sampleRateHz": 8000,
+        "sha256": "7542c64e759a304e7dbc73962124ae32ea2c268f5cf574d93c17b5cb576e32c8"
+      },
+      "speciesName": "Camerupt",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8",
+        "path": "moondrop/2026-11-01_14-42-03_6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8.odxmatch.zip",
+        "sha256": "b5e41851b3d4419305078595e6c584b4479b2d3c4f8ceda3f183751c36cb4f20"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; Moondrop music slider0% and SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "camerupt-idle-negative-02.wav",
+      "expectedMove": null,
+      "legalMoves": [
+        "Ember",
+        "Rock Smash",
+        "Incinerate",
+        "Water Gun",
+        "Mud Shot"
+      ],
+      "scope": "Quiet captured comparison; no positive identity assertion"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "bubble-pixel-music-holdout.wav",
+        "frameCount": 9600,
+        "pcmSha256": "a8df001d2b9204df689f221dcea6e69d40e1ceb3ef6ed170fe14e31462436bd2",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "314bbde200aa58ea27b85da8fb1040f930cbb6a2fa173da3a02aea61de7c222e"
+      },
+      "id": "bubble-pixel-music-holdout",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Bubble",
+      "notes": "Other-device captured playback with music20% and SFX100%. User-confirmed opposing equipped move; conservative stable species interval. Not a training reference.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 25361,
+        "rmsPcm16": 6055.27847598,
+        "zeroSampleCount": 2
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/314bbde200aa58ea27b85da8fb1040f930cbb6a2fa173da3a02aea61de7c222e.wav",
+        "audioArticleId": "1c971e42-d18f-49e5-ac9e-8201886e17fb",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 272053925580691,
+        "perceivedAt": 1793565677831,
+        "sampleRateHz": 8000,
+        "sha256": "314bbde200aa58ea27b85da8fb1040f930cbb6a2fa173da3a02aea61de7c222e"
+      },
+      "speciesName": "Mantine",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "e4d79fd5-aec3-4c35-a852-db1f246653cf",
+        "path": "pixel/2026-11-01_14-38-43_e4d79fd5-aec3-4c35-a852-db1f246653cf.odxmatch.zip",
+        "sha256": "e0d7ad2c86a18efda6b89adb1dcc88479800b5eed8987ad66c34463c7b9fc879"
+      },
+      "confirmation": {
+        "note": "Confirmed Golduck Confusion, Camerupt Rock Smash, Mantine Bubble. Pixel music20%, SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "bubble-pixel-music-holdout.wav",
+      "expectedMove": "Bubble",
+      "legalMoves": [
+        "Bubble",
+        "Bullet Seed",
+        "Wing Attack",
+        "Counter",
+        "Lick"
+      ],
+      "scope": "Cross-device/music challenge"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "confusion-pixel-music-holdout.wav",
+        "frameCount": 9600,
+        "pcmSha256": "24387d46dd456a14c5f3499bf42077caa873e752a6a12c6da45475c39a5f79c3",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "cadc09762618a3b423567195cee5463b047dd36d8e9d6e0d5901c02742d9137b"
+      },
+      "id": "confusion-pixel-music-holdout",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Confusion",
+      "notes": "Other-device captured playback with music20% and SFX100%. User-confirmed opposing equipped move; conservative stable species interval. Not a training reference.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 14963,
+        "rmsPcm16": 3889.7216701787715,
+        "zeroSampleCount": 2
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/cadc09762618a3b423567195cee5463b047dd36d8e9d6e0d5901c02742d9137b.wav",
+        "audioArticleId": "6dc7e628-2961-436f-ac7a-652ce26ae999",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 272170042253509,
+        "perceivedAt": 1793565793948,
+        "sampleRateHz": 8000,
+        "sha256": "cadc09762618a3b423567195cee5463b047dd36d8e9d6e0d5901c02742d9137b"
+      },
+      "speciesName": "Golduck",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "74448a41-194d-4314-acc4-829ade1965d9",
+        "path": "pixel/2026-11-01_14-42-34_74448a41-194d-4314-acc4-829ade1965d9.odxmatch.zip",
+        "sha256": "d7ec4394330f851a661ebe4d54f0b4f910ed8e64c3ae2415bdc2b3fae4be1056"
+      },
+      "confirmation": {
+        "note": "Confirmed Golduck Confusion, Camerupt Rock Smash, Mantine Bubble. Pixel music20%, SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "confusion-pixel-music-holdout.wav",
+      "expectedMove": "Confusion",
+      "legalMoves": [
+        "Confusion",
+        "Water Gun",
+        "Mud Shot"
+      ],
+      "scope": "Cross-device/music challenge"
+    },
+    {
+      "derived": {
+        "byteCount": 19244,
+        "channelCount": 1,
+        "file": "rock-smash-pixel-music-holdout.wav",
+        "frameCount": 9600,
+        "pcmSha256": "75153e369bb0854c9a133f4b276e82e7db070396b91e03272c1c65c95ef3e2b9",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "c6cbd88c378140395deaec01987a41c0be9df4a370d87b9f9ecdb819e4aa1ca4"
+      },
+      "id": "rock-smash-pixel-music-holdout",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Rock Smash",
+      "notes": "Other-device captured playback with music20% and SFX100%. User-confirmed opposing equipped move; conservative stable species interval. Not a training reference.",
+      "role": "holdout",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18240,
+        "rmsPcm16": 2550.8365576520514,
+        "zeroSampleCount": 6
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/c6cbd88c378140395deaec01987a41c0be9df4a370d87b9f9ecdb819e4aa1ca4.wav",
+        "audioArticleId": "a3fad646-6870-44a8-8cb5-7aedbca6f234",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 272219855637638,
+        "perceivedAt": 1793565843761,
+        "sampleRateHz": 8000,
+        "sha256": "c6cbd88c378140395deaec01987a41c0be9df4a370d87b9f9ecdb819e4aa1ca4"
+      },
+      "speciesName": "Camerupt",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1200000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 9600,
+        "startFrame": 0,
+        "windowOffsetNanos": 0
+      },
+      "sourceArchive": {
+        "matchId": "74448a41-194d-4314-acc4-829ade1965d9",
+        "path": "pixel/2026-11-01_14-42-34_74448a41-194d-4314-acc4-829ade1965d9.odxmatch.zip",
+        "sha256": "d7ec4394330f851a661ebe4d54f0b4f910ed8e64c3ae2415bdc2b3fae4be1056"
+      },
+      "confirmation": {
+        "note": "Confirmed Golduck Confusion, Camerupt Rock Smash, Mantine Bubble. Pixel music20%, SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "file": "rock-smash-pixel-music-holdout.wav",
+      "expectedMove": "Rock Smash",
+      "legalMoves": [
+        "Ember",
+        "Rock Smash",
+        "Incinerate",
+        "Water Gun",
+        "Mud Shot"
+      ],
+      "scope": "Cross-device/music challenge"
+    }
+  ]
+}

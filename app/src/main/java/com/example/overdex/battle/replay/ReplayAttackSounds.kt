@@ -5,13 +5,36 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /** Reconstructed playback cues, never evidence about the captured match. */
 data class ReplayAttackSoundEvent(val atNanos: Long, val moveName: String, val charged: Boolean)
 
 internal fun replayAttackSoundsBetween(events: List<ReplayAttackSoundEvent>, from: Long, to: Long) =
     if (to <= from) emptyList() else events.filter { it.atNanos > from && it.atNanos <= to }
+
+/** Recognition excerpts are not complete replay effects. Unmarked legacy assets remain playable. */
+internal fun replayAttackSoundFiles(manifestText: String, moveNames: Set<String>): List<Pair<String, String>> {
+    val requested = moveNames.map(String::lowercase).toSet()
+    val result = mutableListOf<Pair<String, String>>()
+    val references = Json.parseToJsonElement(manifestText).jsonObject.getValue("references").jsonArray
+    for (value in references) {
+        val reference = value.jsonObject
+        val replayEligible = reference["replayEligible"]
+        if (replayEligible != null && replayEligible != JsonPrimitive(true)) continue
+        val name = reference.getValue("moveName").jsonPrimitive.content.lowercase()
+        if (name in requested) {
+            // Preserve variant order and the loader's existing fallback when
+            // one eligible asset cannot be opened.
+            result += name to reference.getValue("file").jsonPrimitive.content
+        }
+    }
+    return result
+}
 
 /** Loads only the moves used in this replay; all playback uses media volume. */
 class ReplayAttackSounds(private val context: Context) {
@@ -32,20 +55,18 @@ class ReplayAttackSounds(private val context: Context) {
             val directory = if (charged) "charged_move_sounds" else "fast_move_sounds"
             val names = events.filter { it.charged == charged }.map { it.moveName.lowercase() }.toSet()
             if (names.isEmpty()) continue
-            val manifest = try {
-                context.assets.open("$directory/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
+            val references = try {
+                context.assets.open("$directory/manifest.json").bufferedReader().use {
+                    replayAttackSoundFiles(it.readText(), names)
+                }
             } catch (e: java.io.IOException) {
                 android.util.Log.w("ReplayAttackSounds", "Audio manifest unavailable: $directory", e)
                 continue
             }
-            val references = manifest.getJSONArray("references")
-            for (i in 0 until references.length()) {
-                val reference = references.getJSONObject(i)
-                val name = reference.getString("moveName").lowercase()
-                if (name !in names) continue
+            for ((name, file) in references) {
                 synchronized(this@ReplayAttackSounds) {
                     if (!released && (charged to name) !in samples) {
-                        try { context.assets.openFd("$directory/${reference.getString("file")}").use {
+                        try { context.assets.openFd("$directory/$file").use {
                             samples[charged to name] = pool.load(it, 1)
                         } } catch (e: java.io.IOException) {
                             android.util.Log.w("ReplayAttackSounds", "Audio unavailable: $name", e)

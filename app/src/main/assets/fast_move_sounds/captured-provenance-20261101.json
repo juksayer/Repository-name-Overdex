@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "scope": "Recognition excerpts, not complete replay effects; no confidence or general accuracy claim.",
+  "samples": [
+    {
+      "derived": {
+        "byteCount": 16044,
+        "channelCount": 1,
+        "file": "confusion-reference-01.wav",
+        "frameCount": 8000,
+        "pcmSha256": "b75824c0c527a2d981fb316d893d8fb1af92c1afe9ce53223afd2f60fcc6f77d",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "4bcc3f5021a1c2643087e1923ae4fdaf9fd0aab1b747e513376d4b7032183c04"
+      },
+      "id": "confusion-reference-01",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Confusion",
+      "notes": "Repeated Confusion motif; starts after 100ms of already-running audio. Bounded excerpt, not certified complete isolated effect.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 8000,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18481,
+        "rmsPcm16": 4009.5848654973,
+        "zeroSampleCount": 1
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/974130c5032c28b9ac0f60799faea7a9f5eba5de4f15c6ebcf7283519ad46e7d.wav",
+        "audioArticleId": "9a513b7f-7130-4c55-9250-402c09dddfe2",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1300821228308,
+        "perceivedAt": 1793565583253,
+        "sampleRateHz": 8000,
+        "sha256": "974130c5032c28b9ac0f60799faea7a9f5eba5de4f15c6ebcf7283519ad46e7d"
+      },
+      "speciesName": "Golduck",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1000000000,
+        "endFrameExclusive": 8800,
+        "frameCount": 8000,
+        "startFrame": 800,
+        "windowOffsetNanos": 100000000
+      },
+      "sourceArchive": {
+        "matchId": "c94670ec-aac6-4d49-994a-361598686b3b",
+        "path": "moondrop/2026-11-01_14-37-38_c94670ec-aac6-4d49-994a-361598686b3b.odxmatch.zip",
+        "sha256": "472e5427c767ad600e64a96c9eb940a570479996f7fee05a3a902fe327b472d3"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; music slider0% on Moondrop and20% on Pixel; SFX100% both. Video reviewed independently for attack context.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "runtimeFile": "recorded_20261101_confusion_excerpt.wav"
+    },
+    {
+      "derived": {
+        "byteCount": 17484,
+        "channelCount": 1,
+        "file": "rock-smash-reference-01.wav",
+        "frameCount": 8720,
+        "pcmSha256": "39f9102b5fbb3fcac6193efa6f134359fa97a32e3cf41e1ea9c66f14fdd33244",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "8f9829c98658e0292bcc54f73754ac1fca16fb79b47aa40cb004b9d774880681"
+      },
+      "id": "rock-smash-reference-01",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Rock Smash",
+      "notes": "Quiet lead, attack envelope, decaying tail and quiet end. Best available near-isolated complete example; no digital clipping.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 8720,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18098,
+        "rmsPcm16": 3278.6286043799955,
+        "zeroSampleCount": 28
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/4ca2dad7d219487c32fc776c79117bc2fee42ac6cc16b988ca29b2d71fdb3117.wav",
+        "audioArticleId": "0fda1774-b789-4733-b283-021e86bc3f09",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1330024390848,
+        "perceivedAt": 1793565612456,
+        "sampleRateHz": 8000,
+        "sha256": "4ca2dad7d219487c32fc776c79117bc2fee42ac6cc16b988ca29b2d71fdb3117"
+      },
+      "speciesName": "Camerupt",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1090000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 8720,
+        "startFrame": 880,
+        "windowOffsetNanos": 110000000
+      },
+      "sourceArchive": {
+        "matchId": "c94670ec-aac6-4d49-994a-361598686b3b",
+        "path": "moondrop/2026-11-01_14-37-38_c94670ec-aac6-4d49-994a-361598686b3b.odxmatch.zip",
+        "sha256": "472e5427c767ad600e64a96c9eb940a570479996f7fee05a3a902fe327b472d3"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; music slider0% on Moondrop and20% on Pixel; SFX100% both. Video reviewed independently for attack context.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "runtimeFile": "recorded_20261101_rock_smash_excerpt.wav"
+    },
+    {
+      "derived": {
+        "byteCount": 16044,
+        "channelCount": 1,
+        "file": "bubble-reference-02.wav",
+        "frameCount": 8000,
+        "pcmSha256": "8d3fb60787e881aaa601112dd2c595c28c71121c965112d84a2edc64bf9936e3",
+        "sampleRateHz": 8000,
+        "sampleWidthBytes": 2,
+        "sha256": "a147dbec566253cacf71822ae97b4ed97e98294f17f04eb6911c64429a16a22b"
+      },
+      "id": "bubble-reference-02",
+      "labelBasis": "Human-confirmed equipped move; not automatic acoustic identity.",
+      "matcherDuration": {
+        "analysisVersion": "spectral-sequence-v2",
+        "interpretation": "Necessary duration only; no quality, identity, or admission verdict.",
+        "meetsMinimum": true,
+        "minimumMono8kFrames": 2816
+      },
+      "moveName": "Bubble",
+      "notes": "Quiet lead, repeated initial burst followed by watery modulated body. Bounded 1s excerpt; tail extends outside window.",
+      "role": "reference",
+      "signal": {
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 8000,
+        "interpretation": "Level diagnostics only; no identity or cleanliness verdict.",
+        "peakAbsolutePcm16": 18535,
+        "rmsPcm16": 5596.240137862653,
+        "zeroSampleCount": 77
+      },
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/356eada59562076779e550e1f320035ba650d7c5cb13e55600a51a14bc144946.wav",
+        "audioArticleId": "95b793f9-45c3-4c45-b17a-83b4b7af3e7c",
+        "byteCount": 19244,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "channelCount": 1,
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "durationNanos": 1200000000,
+        "frameCount": 9600,
+        "monotonicTimeNanos": 1632456108943,
+        "perceivedAt": 1793565914888,
+        "sampleRateHz": 8000,
+        "sha256": "356eada59562076779e550e1f320035ba650d7c5cb13e55600a51a14bc144946"
+      },
+      "speciesName": "Mantine",
+      "trim": {
+        "clockBasis": "Exact source sample frames; displayed nanoseconds are rounded down.",
+        "durationNanos": 1000000000,
+        "endFrameExclusive": 9600,
+        "frameCount": 8000,
+        "startFrame": 1600,
+        "windowOffsetNanos": 200000000
+      },
+      "sourceArchive": {
+        "matchId": "6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8",
+        "path": "moondrop/2026-11-01_14-42-03_6b9c1ef8-ce81-4bf1-b237-4a8aabfa48a8.odxmatch.zip",
+        "sha256": "b5e41851b3d4419305078595e6c584b4479b2d3c4f8ceda3f183751c36cb4f20"
+      },
+      "confirmation": {
+        "note": "User confirmed Golduck=Confusion; Camerupt=Rock Smash; Mantine=Bubble; Moondrop music slider0% and SFX100%.",
+        "source": "user"
+      },
+      "processing": "Whole PCM frames copied; original rate, channels, and levels retained. WAV header rebuilt.",
+      "runtimeFile": "recorded_20261101_bubble_excerpt.wav"
+    }
+  ]
+}
