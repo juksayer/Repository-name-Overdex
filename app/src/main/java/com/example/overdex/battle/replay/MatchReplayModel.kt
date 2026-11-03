@@ -621,7 +621,8 @@ class MatchReplayModel(
                     lastEvidenceAtNanos = atNanos,
                     moveName = null,
                     anchorPriority = 1,
-                    evidenceKinds = setOf("ATTACK_INCOMING") + listOfNotNull(transition?.basis),
+                    evidenceKinds = setOf(if (isReplayShieldPromptCue(article)) "SHIELD_PROMPT" else "ATTACK_INCOMING") +
+                        listOfNotNull(transition?.basis),
                     preparationAtNanos = transition?.presentationAtNanos ?: atNanos,
                     transition = transition,
                 )

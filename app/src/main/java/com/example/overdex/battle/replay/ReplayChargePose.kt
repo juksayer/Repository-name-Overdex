@@ -10,16 +10,23 @@ data class ReplayChargePose(
     val iconAlpha: Float,
 ) {
     companion object {
-        /** Temporary sprite focus during the player's QTE; layout and badges keep their sizes. */
-        fun qteSpriteScale(action: ReplayChargedMoveAction?, cursorNanos: Long, player: Boolean): Float {
-            if (action?.side != "PLAYER" || action.phase != ReplayChargePhase.CHARGING) return 1f
-            // Both edges use the replay clock, including the known release time.
-            // There is no animation state to carry across pauses or reverse scrubs.
+        /** Cursor-driven framing throughout either side's recorded charge preparation. */
+        fun qteFocusAmount(action: ReplayChargedMoveAction?, cursorNanos: Long): Float {
+            if (action == null || action.side !in setOf("PLAYER", "OPPONENT") ||
+                action.phase != ReplayChargePhase.CHARGING) return 0f
+            // Both edges use source-time replay boundaries, so pause and reverse scrub
+            // cannot retain a stale scale or position from a different charge.
             val ramp = minOf(action.elapsedNanos.toDouble(), (action.startedAtNanos - cursorNanos).toDouble())
                 .div(250_000_000.0).coerceIn(0.0, 1.0).toFloat()
-            val focus = ramp * ramp * (3f - 2f * ramp)
-            return 1f + focus * if (player) 0.20f else -0.15f
+            return ramp * ramp * (3f - 2f * ramp)
         }
+
+        fun qteSpriteScale(action: ReplayChargedMoveAction?, cursorNanos: Long, player: Boolean): Float =
+            1f + qteFocusAmount(action, cursorNanos) * if (player) 0.20f else -0.15f
+
+        /** Fine positioning is measured in physical pixels, independent of device density. */
+        fun qteSpriteTranslationXPixels(action: ReplayChargedMoveAction?, cursorNanos: Long, player: Boolean): Float =
+            qteFocusAmount(action, cursorNanos) * if (player) 20f else -10f
 
         fun at(action: ReplayChargedMoveAction, player: Boolean): ReplayChargePose {
             val amplitude = if (player) 48f else 24f
