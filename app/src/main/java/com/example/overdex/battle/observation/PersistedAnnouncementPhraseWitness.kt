@@ -23,7 +23,8 @@ class PersistedAnnouncementPhraseWitness(
     private val phrase: String,
     private val payload: TestimonyPayload,
     override val observerId: ObserverId,
-    override val name: String
+    override val name: String,
+    private val textSources: Set<String> = setOf("ANNOUNCEMENT_WITNESS"),
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -32,20 +33,12 @@ class PersistedAnnouncementPhraseWitness(
         val sourceId = SourceId(observerId.id)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
-                var phraseWasVisible = false
+                val episodes = AnnouncementPhraseEpisodes { announcementContainsPhrase(it, phrase) }
                 match.articles.collect { article ->
-                    if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
+                    if (article.sourceId.id !in textSources) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
-                    val phraseIsVisible = announcementContainsPhrase(text, phrase)
-
-                    if (!phraseIsVisible) {
-                        phraseWasVisible = false
-                        return@collect
-                    }
-                    if (phraseWasVisible) return@collect
-
-                    phraseWasVisible = true
                     val monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
+                    if (!episodes.accept(article.sourceId.id, text, monotonicTimeNanos)) return@collect
                     match.custody.submitTestimony(
                         sourceId = sourceId,
                         payload = payload,
@@ -67,7 +60,8 @@ class PersistedAnnouncementPhraseWitness(
     companion object {
         fun getReady(artifactStore: FileCropArtifactStore) = PersistedAnnouncementPhraseWitness(
             artifactStore, "GETREADY", GetReadyWitnessed,
-            ObserverId("GET_READY_WITNESS", ObservationSource.SCREEN_CAPTURE), "Get Ready"
+            ObserverId("GET_READY_WITNESS", ObservationSource.SCREEN_CAPTURE), "Get Ready",
+            textSources = ANNOUNCEMENT_PHASE_TEXT_SOURCES,
         )
 
         fun chargeMoveUsed(artifactStore: FileCropArtifactStore) = PersistedAnnouncementPhraseWitness(
@@ -75,6 +69,28 @@ class PersistedAnnouncementPhraseWitness(
             ObserverId("CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS", ObservationSource.SCREEN_CAPTURE),
             "Charge Move Used Announcement"
         )
+    }
+}
+
+/** Only these calibrated text lanes can supply the early charge-phase cues. */
+internal val ANNOUNCEMENT_PHASE_TEXT_SOURCES = setOf("ANNOUNCEMENT_WITNESS", "QTE_PROGRESS_TEXT_WITNESS")
+
+/** Empty readings in another crop cannot rearm a phrase that is still visible. */
+internal class AnnouncementPhraseEpisodes(private val matches: (String) -> Boolean) {
+    private val lastBySource = mutableMapOf<String, Pair<Long, Boolean>>()
+    private var lastEmittedAt: Long? = null
+
+    fun accept(source: String, text: String, at: Long): Boolean {
+        val previous = lastBySource[source]
+        if (previous != null && at <= previous.first) return false
+        val alreadyVisible = lastBySource.values.any { (time, visible) ->
+            visible && at - time in 0..6_000_000_000L
+        }
+        val seen = matches(text)
+        lastBySource[source] = at to seen
+        if (!seen || alreadyVisible || lastEmittedAt?.let { at <= it } == true) return false
+        lastEmittedAt = at
+        return true
     }
 }
 

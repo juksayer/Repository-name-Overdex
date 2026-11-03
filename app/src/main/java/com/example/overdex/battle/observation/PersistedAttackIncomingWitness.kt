@@ -42,10 +42,10 @@ class PersistedAttackIncomingWitness(
                         }
                         else -> Unit
                     }
-                    if (article.sourceId.id != "ANNOUNCEMENT_WITNESS") return@collect
+                    if (article.sourceId.id !in ANNOUNCEMENT_PHASE_TEXT_SOURCES) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect
                     val at = article.monotonicTimeNanos ?: return@collect
-                    if (!episodes.accept(text, at)) return@collect
+                    if (!episodes.accept(text, at, article.sourceId.id)) return@collect
                     // Recognition is complete here. Preserve the raw announcement
                     // as its own article and publish the warning with that source
                     // time and reference; no downstream text interpretation is needed.
@@ -59,17 +59,14 @@ class PersistedAttackIncomingWitness(
 
 /** One warning per appearance, rearmed for the next opponent charge. */
 internal class IncomingAttackAnnouncementEpisodes {
-    private var visible = false
-    private var lastReadAt: Long? = null
+    private val episodes = AnnouncementPhraseEpisodes(::announcementContainsIncomingAttackCue)
 
-    fun accept(text: String, at: Long): Boolean {
-        val previous = lastReadAt
-        if (previous != null && at <= previous) return false
-        val seen = announcementContainsPhrase(text, "ATTACKINCOMING")
-        // Also recover when the intervening empty announcement crops were not read.
-        val fresh = seen && (!visible || previous == null || at - previous > 6_000_000_000L)
-        visible = seen
-        lastReadAt = at
-        return fresh
-    }
+    fun accept(text: String, at: Long, source: String = "ANNOUNCEMENT_WITNESS"): Boolean =
+        episodes.accept(source, text, at)
 }
+
+/** Exact phase vocabulary; grades and general shield mentions are not start cues. */
+internal fun announcementContainsIncomingAttackCue(text: String): Boolean =
+    announcementContainsPhrase(text, "ATTACKINCOMING") ||
+        announcementContainsPhrase(text, "USEAPROTECTSHIELD") ||
+        announcementContainsPhrase(text, "NOPROTECTSHIELDSREMAINING")

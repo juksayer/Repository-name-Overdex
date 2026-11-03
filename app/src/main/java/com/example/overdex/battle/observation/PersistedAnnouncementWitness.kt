@@ -20,11 +20,12 @@ import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
-/** Reads announcement text only from verified, preserved announcement crops. */
+/** Reads text only from the configured verified, preserved announcement crop. */
 class PersistedAnnouncementWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("ANNOUNCEMENT_WITNESS", ObserverSource.SCREEN_CAPTURE),
-    override val name: String = "Announcement"
+    override val name: String = "Announcement",
+    private val cropContract: BattleCropContract = BattleCropContracts.announcement,
 ) : Observer {
     private var scope: CoroutineScope? = null
     override fun start(match: Match) {
@@ -71,7 +72,7 @@ class PersistedAnnouncementWitness(
                 }
                 match.articles
                     .filter { article ->
-                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.announcement.cropName
+                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropContract.cropName
                     }
                     // Keep reading current frames. The HUD permanently leaves
                     // the calibrated announcement band clear; OCR never blinks it.

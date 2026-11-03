@@ -1018,6 +1018,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Announcement Crop Capture")
         )
         observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore))
+        // Read the independently calibrated higher QTE band without publishing
+        // its grades or partial words into the species/used-move announcement lane.
+        observationDispatcher.register(PersistedAnnouncementWitness(cropArtifactStore,
+            observerId = ObserverId("QTE_PROGRESS_TEXT_WITNESS", ObserverSource.SCREEN_CAPTURE),
+            name = "QTE Progress Text",
+            cropContract = com.example.overdex.battle.observation.BattleCropContracts.qteProgressText))
         val qteSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
             savedRegion = { DroidballService.qteCalibrationRegion ?: calibrationManager.load().qteTypeIconsRegion }
         )
