@@ -143,7 +143,9 @@ fun MatchReplayScreen(
 ) {
     val referencedNames = remember(archive) { MatchReplayModel.referencedSpeciesNames(archive) }
     var speciesResolved by remember(archive) { mutableStateOf(false) }
+    var fastMoveTypesResolved by remember(archive) { mutableStateOf(false) }
     var fastMovesResolved by remember(archive) { mutableStateOf(false) }
+    var chargedMoveTypesResolved by remember(archive) { mutableStateOf(false) }
     var chargedMovesResolved by remember(archive) { mutableStateOf(false) }
     val speciesIds by produceState<Map<String, Int>>(emptyMap(), archive) {
         value = referencedNames.mapNotNull { name -> resolveSpeciesId(name)?.let { name to it } }.toMap()
@@ -152,6 +154,7 @@ fun MatchReplayScreen(
     var cropProgress by remember(archive) { mutableStateOf(ReplayCropProgress("READING ARCHIVE")) }
     var cropError by remember(archive) { mutableStateOf<String?>(null) }
     val archivedCropIdentities by produceState<List<ReplayIdentityObservation>?>(null, archive) {
+        value = null
         value = try {
             resolveArchivedSpeciesCrops(archive) { cropProgress = it }
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -170,11 +173,13 @@ fun MatchReplayScreen(
         }
     }
     val fastMoveTypes by produceState<Map<String, PokemonType>>(emptyMap(), archive) {
-        value = archive.articles.mapNotNull { article ->
-            val identified = article.payload as? ArchivedFastMoveIdentified ?: return@mapNotNull null
-            resolveFastMoveType(identified.speciesName, identified.moveName)
-                ?.let { identified.moveName.uppercase().filter(Char::isLetterOrDigit) to it }
-        }.toMap()
+        value = archive.articles.mapNotNull { it.payload as? ArchivedFastMoveIdentified }
+            .distinctBy { it.speciesName to it.moveName }
+            .mapNotNull { identified ->
+                resolveFastMoveType(identified.speciesName, identified.moveName)
+                    ?.let { identified.moveName.uppercase().filter(Char::isLetterOrDigit) to it }
+            }.toMap()
+        fastMoveTypesResolved = true
     }
     val fastMovesBySpecies by produceState<Map<String, List<Move>>>(emptyMap(), archive, referencedNames) {
         value = referencedNames.associateWith { resolveFastMoves(it) }
@@ -191,17 +196,84 @@ fun MatchReplayScreen(
                     move.moveName.uppercase().filter(Char::isLetterOrDigit) to it
                 }
             }.toMap()
+        chargedMoveTypesResolved = true
     }
-    val model = remember(archive, speciesIds, archivedCropIdentities, fastMoveTypes, fastMovesBySpecies, chargedMoveTypes, chargedMovesBySpecies) {
-        MatchReplayModel(
-            archive,
-            speciesIds,
-            archivedCropIdentities.orEmpty(),
-            fastMoveTypes,
-            fastMovesBySpecies,
-            chargedMoveTypes,
-            chargedMovesBySpecies,
-        )
+    val modelInputsReady = speciesResolved && fastMoveTypesResolved && fastMovesResolved &&
+        chargedMoveTypesResolved && chargedMovesResolved && archivedCropIdentities != null
+    val preparedModel by produceState<MatchReplayModel?>(
+        null,
+        archive,
+        modelInputsReady,
+        speciesIds,
+        archivedCropIdentities,
+        fastMoveTypes,
+        fastMovesBySpecies,
+        chargedMoveTypes,
+        chargedMovesBySpecies,
+    ) {
+        value = null
+        if (modelInputsReady) {
+            value = withContext(Dispatchers.Default) {
+                MatchReplayModel(
+                    archive,
+                    speciesIds,
+                    archivedCropIdentities.orEmpty(),
+                    fastMoveTypes,
+                    fastMovesBySpecies,
+                    chargedMoveTypes,
+                    chargedMovesBySpecies,
+                )
+            }
+        }
+    }
+    val model = preparedModel
+    if (model == null) {
+        SideEffect {
+            onUp { }
+            onDown { }
+            onLeft { }
+            onRight { }
+            onA { }
+            onB { onBack() }
+            onLcdTap { }
+            onLcdDrag { }
+        }
+        PublishMatchLcd(onLcdContentUpdate) {
+            MatchLcdColumn {
+                MatchLcdText("PREPARING REPLAY…")
+                MatchLcdText(
+                    cropProgress.stage +
+                        if (cropProgress.total > 0) " ${cropProgress.completed}/${cropProgress.total}" else ""
+                )
+                if (cropProgress.total > 0) {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { cropProgress.completed.toFloat() / cropProgress.total },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = TerminalGreen,
+                    )
+                } else {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = TerminalGreen,
+                    )
+                }
+                cropError?.let { MatchLcdText(it) }
+                MatchLcdButton("BACK", onBack)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF163721))
+                .border(1.dp, TerminalGreen),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("PREPARING REPLAY…", color = TerminalGreen, fontSize = 24.sp)
+                Text(cropProgress.stage, color = TerminalGreen.copy(alpha = 0.7f), fontSize = 12.sp)
+            }
+        }
+        return
     }
     val playbackStart = playbackWindow?.startNanos ?: model.startNanos
     val playbackEnd = playbackWindow?.endNanos ?: model.endNanos
@@ -275,7 +347,7 @@ fun MatchReplayScreen(
     )
     val replayPreferences = remember(context) { context.getSharedPreferences("match_replay", Context.MODE_PRIVATE) }
     var eventBlipsEnabled by remember(replayPreferences) {
-        mutableStateOf(replayPreferences.getBoolean("event_blips_enabled", true))
+        mutableStateOf(replayPreferences.getBoolean("event_blips_enabled", false))
     }
     var attackSfxEnabled by remember(replayPreferences) {
         mutableStateOf(replayPreferences.getBoolean("attack_sfx_enabled", true))

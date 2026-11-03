@@ -1,8 +1,13 @@
 package com.example.overdex.ui.ODXFi
 
+import android.content.res.Configuration
+import android.view.KeyEvent
+import android.view.ViewConfiguration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.absoluteOffset
@@ -44,10 +49,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -329,6 +338,20 @@ fun ODXFiShell(
         if (owningRoute == null && currentRoute != null) owningRoute = currentRoute
     }
     val instanceId = remember { UUID.randomUUID().toString().take(8) }
+    val remoteFocusRequester = remember { FocusRequester() }
+    val remoteBackPressTracker = remember {
+        RemoteBackPressTracker(ViewConfiguration.getLongPressTimeout().toLong())
+    }
+    val isTelevision = LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK ==
+        Configuration.UI_MODE_TYPE_TELEVISION
+
+    LaunchedEffect(instanceId, currentRoute) {
+        remoteFocusRequester.requestFocus()
+    }
+
+    BackHandler(enabled = isTelevision && currentRoute == owningRoute) {
+        onB()
+    }
 
     DisposableEffect(instanceId) {
         com.example.overdex.diagnostics.DiagnosticLogger.logLifecycle(instanceId, "INIT", currentRoute)
@@ -435,11 +458,83 @@ fun ODXFiShell(
         }
     }
 
+    val remoteKeyModifier = Modifier
+        .onPreviewKeyEvent { composeEvent ->
+            val event = composeEvent.nativeKeyEvent
+            val keyDown = event.action == KeyEvent.ACTION_DOWN
+            val firstPress = keyDown && event.repeatCount == 0
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP -> {
+                    if (keyDown) onUp()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (keyDown) onDown()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    if (keyDown) onLeft()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (keyDown) onRight()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER,
+                KeyEvent.KEYCODE_BUTTON_A -> {
+                    if (firstPress) onA()
+                    true
+                }
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_ESCAPE,
+                KeyEvent.KEYCODE_BUTTON_B -> {
+                    val action = when (event.action) {
+                        KeyEvent.ACTION_DOWN -> remoteBackPressTracker.onDown(
+                            eventTimeMillis = event.eventTime,
+                            downTimeMillis = event.downTime,
+                            repeatCount = event.repeatCount,
+                            isLongPress = event.isLongPress,
+                        )
+                        KeyEvent.ACTION_UP -> remoteBackPressTracker.onUp(
+                            eventTimeMillis = event.eventTime,
+                            downTimeMillis = event.downTime,
+                        )
+                        else -> {
+                            remoteBackPressTracker.cancel()
+                            RemoteBackAction.CONSUME
+                        }
+                    }
+                    if (currentRoute == owningRoute) when (action) {
+                        RemoteBackAction.RETURN -> onB()
+                        RemoteBackAction.RESTORE_NAVIGATION -> remoteFocusRequester.requestFocus()
+                        RemoteBackAction.CONSUME -> Unit
+                    }
+                    true
+                }
+                KeyEvent.KEYCODE_MENU,
+                KeyEvent.KEYCODE_BUTTON_SELECT -> {
+                    if (firstPress) onSelect()
+                    true
+                }
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                KeyEvent.KEYCODE_BUTTON_START -> {
+                    if (firstPress) startAction()
+                    true
+                }
+                else -> false
+            }
+        }
+        .focusRequester(remoteFocusRequester)
+        .focusable()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(PokedexGreen)
             .padding(8.dp)
+            .then(remoteKeyModifier)
     ) {
         // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
         Row(

@@ -3,6 +3,7 @@ package com.example.overdex
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -345,6 +346,15 @@ class MainActivity : ComponentActivity() {
         val preferences = getSharedPreferences(CAPABILITY_PREFERENCES, MODE_PRIVATE)
         if (preferences.getInt(INITIAL_CAPABILITY_PASS_VERSION, 0) >= CAPABILITY_PASS_VERSION) return
 
+        // The TV build is a couch-side browser and archive viewer. Its launcher
+        // session cannot observe a phone battle, so camera and microphone
+        // prompts would be misleading there.
+        if (isTelevisionDevice()) {
+            preferences.edit().putInt(INITIAL_CAPABILITY_PASS_VERSION, CAPABILITY_PASS_VERSION).apply()
+            Log.i("OVERDEX_CAPABILITIES", "Skipped handheld sensor pass on television hardware")
+            return
+        }
+
         val permissions = buildList {
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 add(Manifest.permission.CAMERA)
@@ -365,6 +375,10 @@ class MainActivity : ComponentActivity() {
             initialCapabilitiesLauncher.launch(permissions.toTypedArray())
         }
     }
+
+    private fun isTelevisionDevice(): Boolean =
+        resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK ==
+            Configuration.UI_MODE_TYPE_TELEVISION
 
     override fun onStart() {
         super.onStart()

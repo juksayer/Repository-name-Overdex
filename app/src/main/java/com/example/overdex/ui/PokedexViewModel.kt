@@ -1769,7 +1769,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    suspend fun populateFullPokedex() {
+    suspend fun populateFullPokedex() = withContext(Dispatchers.IO) {
         try {
             val imported = pokemonLoader.loadPokemon()
             val importedMap = imported.pokemon.associateBy { it.id }
