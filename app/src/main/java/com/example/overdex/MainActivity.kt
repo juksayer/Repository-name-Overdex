@@ -1601,7 +1601,7 @@ fun PokedexApp(
                     onSelect = { selectHandler?.invoke() },
                     onSelectLong = { selectLongHandler?.invoke() },
                     onStart = { startHandler?.invoke() },
-                    startLabel = "SAVE AS",
+                    startLabel = "DEVICES",
                     onLcdDrag = { lcdDragHandler?.invoke(it) },
                     onLcdTap = { lcdTapHandler?.invoke() },
                     onLaunchProbe = launchAccessibilityProbe,

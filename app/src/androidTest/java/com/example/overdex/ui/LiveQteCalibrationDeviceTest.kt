@@ -161,6 +161,12 @@ class LiveQteCalibrationDeviceTest {
             MatchCalibrationScreen(CalibrationManager(context), onA = { nextBox = it },
                 onLcdUpdate = { title, details -> lcd = "$title $details" })
         }
+        // A new device may offer Save As. Dismiss it without changing data;
+        // calibration controls intentionally do not act behind a modal.
+        compose.waitForIdle()
+        if (compose.onAllNodesWithText("CANCEL").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithText("CANCEL").performClick()
+        }
         // No edit or save here; inspect the existing device configuration.
         repeat(50) {
             compose.runOnIdle { if (!lcd.contains("QTE Type Icons")) nextBox() }

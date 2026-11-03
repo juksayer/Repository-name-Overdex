@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -25,6 +27,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
@@ -36,6 +39,7 @@ import com.example.overdex.ui.components.TerminalText
 import com.example.overdex.ui.theme.TerminalGreen
 import com.example.overdex.ui.theme.TerminalPurple
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import android.graphics.BitmapFactory
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +48,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.overdex.data.ScreenshotDirectoryManager
 import com.example.overdex.data.MatchCalibrationProfileStore
+import com.example.overdex.data.MatchCalibrationProfile
 import com.example.overdex.data.MatchCalibrationProfileSummary
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
@@ -55,6 +60,10 @@ import com.example.overdex.data.CalibrationScreenshotFilter
 import com.example.overdex.data.CalibrationScreenshotLibrary
 import com.example.overdex.data.CalibrationScreenshotReference
 import com.example.overdex.data.CalibrationImageViewport
+import com.example.overdex.battle.observation.DroidballService
+import com.example.overdex.battle.observation.DroidballRuntimeState
+import java.text.DateFormat
+import java.util.Date
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -109,6 +118,11 @@ fun MatchCalibrationScreen(
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
     var teamSelectCalibration by remember { mutableStateOf(teamSelectCalibrationStore.load()) }
     var activeProfile by remember { mutableStateOf<MatchCalibrationProfileSummary?>(profileStore.activeSummary()) }
+    var savedProfiles by remember { mutableStateOf(profileStore.list()) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+    var showProfileMenu by remember { mutableStateOf(false) }
+    var profileActionError by remember { mutableStateOf<String?>(null) }
+    val droidballRuntime by DroidballService.runtimeState.collectAsState()
     val activeProfileMatchesDetectedDevice = activeProfile?.let {
         it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) &&
             it.screenWidth == detectedScreenWidth && it.screenHeight == detectedScreenHeight
@@ -145,6 +159,7 @@ fun MatchCalibrationScreen(
     var currentImageIndex by remember { mutableIntStateOf(0) }
     val selectedSample = samples.getOrNull(currentImageIndex)
     val screenshotSourceName = selectedSample?.sourceName ?: "NO REFERENCE"
+    val screenshotReferenceName = selectedSample?.reference?.name ?: "No reference selected"
     val sourceFrameSize = selectedSample?.reference?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
     val imageViewport = CalibrationImageViewport.fit(
         containerSize.width, containerSize.height, sourceFrameSize.width, sourceFrameSize.height
@@ -155,6 +170,10 @@ fun MatchCalibrationScreen(
         is CalibrationScreenshotFilter.Shape -> "Shape ${CalibrationScreenshotLibrary.shapeLabel(filter.width, filter.height)}"
         is CalibrationScreenshotFilter.Device -> filter.label
     }
+    val referenceMatchesDevice = selectedSample?.reference?.hasDimensions != true ||
+        CalibrationScreenshotLibrary.sameShape(
+            sourceFrameSize.width, sourceFrameSize.height, detectedScreenWidth, detectedScreenHeight
+        )
     val screenshotFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -397,8 +416,11 @@ fun MatchCalibrationScreen(
 
     val step = 0.005f // Fine adjustment: 0.5% of the published frame.
     val acceleratedStep = step * 4f
+    val calibrationControlsBlocked = showProfileDialog || showProfileMenu || showSaveProfileDialog ||
+        showLibraryDialog || showImagePicker
 
     fun move(dx: Float, dy: Float) {
+        if (calibrationControlsBlocked) return
         val maxX = (1f - activeRegion.width).coerceAtLeast(0f)
         val maxY = (1f - activeRegion.height).coerceAtLeast(0f)
         updateCalibration(
@@ -410,6 +432,7 @@ fun MatchCalibrationScreen(
     }
 
     fun resize(dw: Float, dh: Float) {
+        if (calibrationControlsBlocked) return
         val maxWidth = (1f - activeRegion.x).coerceAtLeast(0.01f)
         val maxHeight = (1f - activeRegion.y).coerceAtLeast(0.01f)
         updateCalibration(
@@ -435,6 +458,21 @@ fun MatchCalibrationScreen(
             ?: "$detectedDeviceModel ${detectedScreenWidth}x$detectedScreenHeight"
         profileSaveError = null
         showSaveProfileDialog = true
+    }
+
+    fun displayProfile(profile: MatchCalibrationProfile) {
+        // Selecting a device is explicit. Never scale its saved boxes to this screen.
+        // The initial device guess must not reopen Save As over an explicit selection.
+        deviceGuessOffered = true
+        calibration = profile.battleCalibration
+        teamSelectCalibration = profile.teamSelectCalibration
+        activeProfile = profileStore.activeSummary()
+        savedProfiles = profileStore.list()
+        battleProfileSaved = true
+        teamSelectProfileSaved = true
+        battleSaveFailed = false
+        teamSelectSaveFailed = false
+        profileActionError = null
     }
 
     fun useDetectedDeviceGuess() {
@@ -466,9 +504,8 @@ fun MatchCalibrationScreen(
             profileSaveError = "The profile could not be saved."
             return
         }
-        activeProfile = MatchCalibrationProfileSummary(
-            saved.id, saved.name, saved.deviceModel, saved.screenWidth, saved.screenHeight, saved.savedAtMillis
-        )
+        activeProfile = profileStore.activeSummary()
+        savedProfiles = profileStore.list()
         battleProfileSaved = calibrationManager.save(calibration)
         teamSelectProfileSaved = teamSelectCalibrationStore.save(teamSelectCalibration, width, height)
         battleSaveFailed = !battleProfileSaved
@@ -503,17 +540,21 @@ fun MatchCalibrationScreen(
         onRight { if (mode == CalibrationMode.POSITION) move(step, 0f) else resize(step, 0f) }
         onRightLong { if (mode == CalibrationMode.POSITION) move(acceleratedStep, 0f) else resize(acceleratedStep, 0f) }
         onA {
-            val currentIndex = matchRegions.indexOf(selectedRegion)
-            selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
+            if (!calibrationControlsBlocked) {
+                val currentIndex = matchRegions.indexOf(selectedRegion)
+                selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
+            }
         }
-        onALong { showLibraryDialog = true }
+        onALong { if (!calibrationControlsBlocked) showLibraryDialog = true }
         onSelect {
-            mode = if (mode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
+            if (!calibrationControlsBlocked) mode = if (mode == CalibrationMode.POSITION) CalibrationMode.SIZE else CalibrationMode.POSITION
         }
         onSelectLong {
-            if (samples.isNotEmpty()) currentImageIndex = (currentImageIndex + 1) % samples.size
+            if (!calibrationControlsBlocked) {
+                if (samples.isNotEmpty()) showImagePicker = true else showLibraryDialog = true
+            }
         }
-        onStart { openSaveProfileDialog() }
+        onStart { savedProfiles = profileStore.list(); showProfileDialog = true }
         onLcdDrag { delta ->
             showLcdTouchHint = false
             val dx = if (imageViewport.width > 0f) delta.x / imageViewport.width else 0f
@@ -521,15 +562,18 @@ fun MatchCalibrationScreen(
             if (mode == CalibrationMode.POSITION) move(dx, dy) else resize(dx, dy)
         }
         onLcdTap {
-            val currentIndex = matchRegions.indexOf(selectedRegion)
-            selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
+            if (!calibrationControlsBlocked) {
+                val currentIndex = matchRegions.indexOf(selectedRegion)
+                selectedRegion = matchRegions[(currentIndex + 1) % matchRegions.size]
+            }
         }
     }
 
     // LCD Update
     LaunchedEffect(
-        selectedRegion, mode, showLcdTouchHint, screenshotSourceName, sourceFrameSize,
+        selectedRegion, mode, showLcdTouchHint, screenshotSourceName, screenshotReferenceName, sourceFrameSize,
         battleProfileSaved, teamSelectProfileSaved, battleSaveFailed, teamSelectSaveFailed, activeProfile,
+        referenceMatchesDevice,
         activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
     ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
@@ -552,7 +596,87 @@ fun MatchCalibrationScreen(
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
-            "HOLD A: IMAGES  $screenshotSourceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] SAVE AS${activeProfile?.let { "  ${it.name}" } ?: ""}"
+            "HOLD A / SELECT: IMAGES  $screenshotSourceName · $screenshotReferenceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] DEVICE CALIBRATIONS${activeProfile?.let { "  ${it.name}" } ?: ""}${if (!referenceMatchesDevice) "  DIFFERENT SCREEN SHAPE" else ""}"
+        )
+    }
+
+    if (showProfileDialog) {
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = { Text("DEVICE CALIBRATIONS", color = TerminalGreen) },
+            text = {
+                Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("This phone: $detectedDeviceModel · ${detectedScreenWidth}×${detectedScreenHeight}",
+                        color = TerminalGreen, fontSize = 11.sp)
+                    Box(Modifier.fillMaxWidth()) {
+                        TextButton(onClick = { savedProfiles = profileStore.list(); showProfileMenu = true },
+                            modifier = Modifier.fillMaxWidth().testTag("calibration-profile-picker")) {
+                            Text("${activeProfile?.name ?: "Choose saved calibration"} ▾", color = TerminalGreen)
+                        }
+                        DropdownMenu(expanded = showProfileMenu, onDismissRequest = { showProfileMenu = false },
+                            modifier = Modifier.heightIn(max = 360.dp)) {
+                            if (savedProfiles.isEmpty()) DropdownMenuItem(
+                                text = { Text("No named calibrations saved") }, enabled = false, onClick = {})
+                            savedProfiles.sortedByDescending { profile ->
+                                profile.deviceModel.equals(detectedDeviceModel, true) &&
+                                    profile.screenWidth == detectedScreenWidth && profile.screenHeight == detectedScreenHeight
+                            }.forEach { profile ->
+                                DropdownMenuItem(modifier = Modifier.testTag("calibration-profile-${profile.id}"), text = {
+                                    Column {
+                                        Text("${if (profile.id == activeProfile?.id) "✓ " else ""}${profile.name}")
+                                        Text("${profile.deviceModel} · ${profile.screenWidth}×${profile.screenHeight}", fontSize = 11.sp)
+                                        Text(profile.workingStatus(), fontSize = 11.sp)
+                                    }
+                                }, onClick = {
+                                    showProfileMenu = false
+                                    val selected = profileStore.activate(profile.id)
+                                    if (selected == null) profileActionError = "Could not load this calibration."
+                                    else displayProfile(selected)
+                                })
+                            }
+                        }
+                    }
+                    activeProfile?.let { profile ->
+                        Text("${profile.deviceModel} · ${profile.screenWidth}×${profile.screenHeight}\n${profile.workingStatus()}",
+                            color = TerminalGreen, fontSize = 12.sp)
+                        Text("Saved ${profile.savedAtMillis.calibrationTimeLabel()}", color = TerminalGreen, fontSize = 10.sp)
+                        profile.workingConfirmedAtMillis?.let { time ->
+                            Text("Working copy kept ${time.calibrationTimeLabel()}", color = TerminalGreen, fontSize = 10.sp)
+                        }
+                    }
+                    Text("Keep a working copy only after checking targets in real battle images. Later adjustments leave that restore point intact.",
+                        color = TerminalGreen, fontSize = 11.sp)
+                    TextButton(onClick = { showProfileDialog = false; openSaveProfileDialog() },
+                        modifier = Modifier.fillMaxWidth().testTag("calibration-profile-save-as")) {
+                        Text("SAVE AS…", color = TerminalGreen)
+                    }
+                    TextButton(enabled = activeProfile != null, onClick = {
+                        val kept = activeProfile?.let { profileStore.confirmWorking(it.id) }
+                        if (kept == null) profileActionError = "Save a named calibration before keeping a working copy."
+                        else displayProfile(kept)
+                    }, modifier = Modifier.fillMaxWidth().testTag("calibration-profile-keep-working")) {
+                        Text("KEEP AS WORKING", color = TerminalGreen)
+                    }
+                    TextButton(enabled = activeProfile?.workingConfirmedAtMillis != null, onClick = {
+                        val restored = activeProfile?.let { profileStore.restoreWorking(it.id) }
+                        if (restored == null) profileActionError = "Could not restore the working copy."
+                        else displayProfile(restored)
+                    }, modifier = Modifier.fillMaxWidth().testTag("calibration-profile-restore-working")) {
+                        Text("RESTORE WORKING", color = if (activeProfile?.workingConfirmedAtMillis != null)
+                            TerminalGreen else TerminalGreen.copy(alpha = .38f))
+                    }
+                    if (activeProfile != null && !activeProfileMatchesDetectedDevice) Text(
+                        "Different device selected. Its boxes are unchanged. Use Save As to keep a copy for this phone before adjusting.",
+                        color = Color(0xFFFFC857), fontSize = 11.sp)
+                    if (droidballRuntime != DroidballRuntimeState.STOPPED) Text(
+                        "Droidball is running. Saved changes apply after observation restarts.",
+                        color = Color(0xFFFFC857), fontSize = 11.sp)
+                    profileActionError?.let { Text(it, color = Color(0xFFFF6B6B), fontSize = 11.sp) }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showProfileDialog = false }) { Text("CLOSE", color = TerminalGreen) } },
+            containerColor = TerminalBlack
         )
     }
 
@@ -710,9 +834,36 @@ fun MatchCalibrationScreen(
         )
     }
 
+    Column(Modifier.fillMaxSize()) {
+        Column(
+            Modifier.fillMaxWidth().background(TerminalBlack).padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Text("START: DEVICE CALIBRATIONS · ${activeProfile?.name ?: "Unsaved device settings"}",
+                color = TerminalGreen, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(activeProfile?.let {
+                "${it.deviceModel} · ${it.screenWidth}×${it.screenHeight} · ${it.workingStatus()}"
+            } ?: "$detectedDeviceModel · ${detectedScreenWidth}×${detectedScreenHeight} · Not confirmed",
+                color = TerminalGreen, fontSize = 10.sp)
+            Text("Reference: $screenshotReferenceName · ${sourceFrameSize.width}×${sourceFrameSize.height}",
+                color = TerminalGreen.copy(alpha = 0.8f), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            activeProfile?.workingConfirmedAtMillis?.let { confirmedAt ->
+                Text("Working copy kept ${confirmedAt.calibrationTimeLabel()}",
+                    color = TerminalGreen.copy(alpha = 0.8f), fontSize = 10.sp)
+            }
+            if (activeProfile != null && !activeProfileMatchesDetectedDevice) Text(
+                "Different device selected. Boxes stay unchanged; save a copy for this phone before adjusting.",
+                color = Color(0xFFFFC857), fontSize = 10.sp)
+            if (!referenceMatchesDevice) Text(
+                "Reference has a different screen shape. Adjustments still change this device's calibration.",
+                color = Color(0xFFFFC857), fontSize = 10.sp)
+            if (droidballRuntime != DroidballRuntimeState.STOPPED) Text(
+                "Droidball is running. Saved changes apply after observation restarts.",
+                color = Color(0xFFFFC857), fontSize = 10.sp)
+            profileActionError?.let { Text(it, color = Color(0xFFFF6B6B), fontSize = 11.sp) }
+        }
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth().weight(1f)
             .onGloballyPositioned { containerSize = it.size.toSize() }
     ) {
         // Reference Image
@@ -759,7 +910,17 @@ fun MatchCalibrationScreen(
             )
         }
     }
+    }
 }
+
+private fun MatchCalibrationProfileSummary.workingStatus(): String = when {
+    workingConfirmedAtMillis == null -> "Saved · not confirmed"
+    differsFromWorkingCheckpoint -> "Edited since confirmation"
+    else -> "User confirmed working"
+}
+
+private fun Long.calibrationTimeLabel(): String =
+    DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(this))
 
 private data class CalibrationSample(
     val model: Any,

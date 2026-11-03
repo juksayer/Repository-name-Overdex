@@ -11,6 +11,7 @@ import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -218,6 +219,48 @@ class CalibrationPersistenceTest {
         assertEquals(first.battleCalibration, CalibrationManager(context).load())
         assertNotNull(MatchCalibrationProfileStore(context).activate(second.id))
         assertEquals(changed, CalibrationManager(context).load())
+    }
+
+    @Test fun `a saved profile is never presented as user confirmed without explicit confirmation`() {
+        val context = TestContext(temporary.newFolder())
+        val profile = saveProfile(context, BattleCalibration())
+        val store = MatchCalibrationProfileStore(context)
+        assertNull(store.activeProfile()!!.workingCheckpoint)
+        assertNull(store.activeSummary()!!.workingConfirmedAtMillis)
+        assertFalse(store.activeSummary()!!.differsFromWorkingCheckpoint)
+        assertNull(store.restoreWorking(profile.id))
+    }
+
+    @Test fun `working restore point survives edits restart and restores both halves exactly`() {
+        val context = TestContext(temporary.newFolder())
+        val original = BattleCalibration(playerSpeciesNameRegion = strip(35f, 241f, 250f, 48f))
+        val profile = saveProfile(context, original)
+        val kept = MatchCalibrationProfileStore(context).confirmWorking(profile.id)!!
+        assertNotNull(kept.workingCheckpoint)
+        val team = kept.teamSelectCalibration.copy(rosterName1 = strip(100f, 1800f, 280f, 90f))
+        assertTrue(CalibrationManager(context).save(original.copy(announcementRegion = strip(80f, 650f, 900f, 95f))))
+        assertTrue(TeamSelectCalibrationStore(context).save(team))
+        val restarted = MatchCalibrationProfileStore(context)
+        assertEquals(kept.workingCheckpoint, restarted.activeProfile()!!.workingCheckpoint)
+        assertTrue(restarted.activeSummary()!!.differsFromWorkingCheckpoint)
+        val restored = restarted.restoreWorking(profile.id)!!
+        assertEquals(original, restored.battleCalibration)
+        assertEquals(kept.teamSelectCalibration, restored.teamSelectCalibration)
+        assertEquals(original, CalibrationManager(context).load())
+        assertEquals(kept.teamSelectCalibration, TeamSelectCalibrationStore(context).load())
+        assertFalse(restarted.activeSummary()!!.differsFromWorkingCheckpoint)
+    }
+
+    @Test fun `save as over an existing name preserves the kept working restore point`() {
+        val context = TestContext(temporary.newFolder())
+        val first = saveProfile(context, BattleCalibration())
+        val checkpoint = MatchCalibrationProfileStore(context).confirmWorking(first.id)!!.workingCheckpoint
+        val overwritten = saveProfile(context, first.battleCalibration.copy(announcementRegion = strip(80f, 650f, 900f, 95f)))
+        assertEquals(first.id, overwritten.id)
+        assertEquals(checkpoint, overwritten.workingCheckpoint)
+        assertTrue(MatchCalibrationProfileStore(context).activeSummary()!!.differsFromWorkingCheckpoint)
+        val separate = saveProfile(context, first.battleCalibration, "Another device calibration")
+        assertNull(separate.workingCheckpoint)
     }
 
     private fun saveProfile(context: Context, battle: BattleCalibration, name: String = "Moondrop") =

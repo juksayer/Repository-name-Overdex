@@ -20,6 +20,14 @@ data class MatchCalibrationProfile(
     val screenHeight: Int,
     val savedAtMillis: Long,
     val battleCalibration: BattleCalibration,
+    val teamSelectCalibration: TeamSelectCalibration,
+    /** Explicitly kept by the user; ordinary edits never replace this restore point. */
+    val workingCheckpoint: MatchCalibrationWorkingCheckpoint? = null
+)
+
+data class MatchCalibrationWorkingCheckpoint(
+    val confirmedAtMillis: Long,
+    val battleCalibration: BattleCalibration,
     val teamSelectCalibration: TeamSelectCalibration
 )
 
@@ -29,7 +37,9 @@ data class MatchCalibrationProfileSummary(
     val deviceModel: String,
     val screenWidth: Int,
     val screenHeight: Int,
-    val savedAtMillis: Long
+    val savedAtMillis: Long,
+    val workingConfirmedAtMillis: Long? = null,
+    val differsFromWorkingCheckpoint: Boolean = false
 )
 
 /**
@@ -77,7 +87,8 @@ class MatchCalibrationProfileStore(context: Context) {
             screenHeight = screenHeight.coerceAtLeast(1),
             savedAtMillis = System.currentTimeMillis(),
             battleCalibration = battleCalibration,
-            teamSelectCalibration = teamSelectCalibration
+            teamSelectCalibration = teamSelectCalibration,
+            workingCheckpoint = existing?.let { load(it.id)?.workingCheckpoint }
         )
         if (write(profile) == null) return@synchronized null
         if (!prefs.edit().putString(ACTIVE_PROFILE_ID, profile.id).commit()) return@synchronized null
@@ -104,6 +115,29 @@ class MatchCalibrationProfileStore(context: Context) {
         val profile = load(id) ?: return@synchronized null
         if (!prefs.edit().putString(ACTIVE_PROFILE_ID, id).commit()) return@synchronized null
         profile
+    }
+
+    /** A deliberate user confirmation, never inferred from a save or a target-free screenshot. */
+    fun confirmWorking(id: String): MatchCalibrationProfile? = synchronized(profileLock) {
+        val profile = load(id) ?: return@synchronized null
+        write(profile.copy(workingCheckpoint = MatchCalibrationWorkingCheckpoint(
+            confirmedAtMillis = System.currentTimeMillis(),
+            battleCalibration = profile.battleCalibration,
+            teamSelectCalibration = profile.teamSelectCalibration
+        )))
+    }
+
+    fun restoreWorking(id: String): MatchCalibrationProfile? = synchronized(profileLock) {
+        val profile = load(id) ?: return@synchronized null
+        val checkpoint = profile.workingCheckpoint ?: return@synchronized null
+        val restored = profile.copy(
+            savedAtMillis = System.currentTimeMillis(),
+            battleCalibration = checkpoint.battleCalibration,
+            teamSelectCalibration = checkpoint.teamSelectCalibration
+        )
+        if (write(restored) == null) return@synchronized null
+        if (!prefs.edit().putString(ACTIVE_PROFILE_ID, id).commit()) return@synchronized null
+        restored
     }
 
     private fun load(id: String): MatchCalibrationProfile? {
@@ -136,7 +170,11 @@ class MatchCalibrationProfileStore(context: Context) {
         json.decodeFromString(StoredProfile.serializer(), encoded)
 
     private fun MatchCalibrationProfile.summary() = MatchCalibrationProfileSummary(
-        id, name, deviceModel, screenWidth, screenHeight, savedAtMillis
+        id, name, deviceModel, screenWidth, screenHeight, savedAtMillis,
+        workingCheckpoint?.confirmedAtMillis,
+        workingCheckpoint?.let {
+            battleCalibration != it.battleCalibration || teamSelectCalibration != it.teamSelectCalibration
+        } ?: false
     )
 
     private companion object {
@@ -157,6 +195,14 @@ private data class StoredProfile(
     val screenHeight: Int,
     val savedAtMillis: Long,
     val battleRegions: Map<String, StoredRegion>,
+    val teamSelectRegions: Map<String, StoredRegion>,
+    val workingCheckpoint: StoredWorkingCheckpoint? = null
+)
+
+@Serializable
+private data class StoredWorkingCheckpoint(
+    val confirmedAtMillis: Long,
+    val battleRegions: Map<String, StoredRegion>,
     val teamSelectRegions: Map<String, StoredRegion>
 )
 
@@ -175,7 +221,10 @@ private fun MatchCalibrationProfile.toStored() = StoredProfile(
     screenHeight = screenHeight,
     savedAtMillis = savedAtMillis,
     battleRegions = battleCalibration.toRegionMap(),
-    teamSelectRegions = teamSelectCalibration.toRegionMap()
+    teamSelectRegions = teamSelectCalibration.toRegionMap(),
+    workingCheckpoint = workingCheckpoint?.let {
+        StoredWorkingCheckpoint(it.confirmedAtMillis, it.battleCalibration.toRegionMap(), it.teamSelectCalibration.toRegionMap())
+    }
 )
 
 private fun StoredProfile.toProfile(): MatchCalibrationProfile {
@@ -242,7 +291,15 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
             leagueText = teamSelectRegions.region("league_text", teamDefaults.leagueText),
             restrictions = teamSelectRegions.region("restrictions", teamDefaults.restrictions),
             useThisParty = teamSelectRegions.region("use_this_party", teamDefaults.useThisParty)
-        )
+        ),
+        workingCheckpoint = workingCheckpoint?.let { checkpoint ->
+            val restored = copy(
+                battleRegions = checkpoint.battleRegions,
+                teamSelectRegions = checkpoint.teamSelectRegions,
+                workingCheckpoint = null
+            ).toProfile()
+            MatchCalibrationWorkingCheckpoint(checkpoint.confirmedAtMillis, restored.battleCalibration, restored.teamSelectCalibration)
+        }
     )
 }
 
