@@ -19,6 +19,10 @@ internal data class BattleCalibrationPreviewReference(
     val capturedAtNanos: Long?,
     val artifact: CropArtifactReference,
     val provenance: BattleCropProvenance,
+    /** A reader cited these pixels, or an exact source-frame HP measurement fits inside them. */
+    val targetWitnessed: Boolean = false,
+    /** Optional presentation detail in source pixels; the original search crop stays unchanged. */
+    val targetBounds: BattleCropBounds? = null,
 ) {
     fun samePixels(other: BattleCalibrationPreviewReference): Boolean =
         artifact == other.artifact && provenance == other.provenance
@@ -42,6 +46,9 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
     private data class Window(val from: Long, val until: Long)
     private val history = linkedMapOf<BattleCalibrationPreviewSlot, ArrayDeque<BattleCalibrationPreviewReference>>()
     private val context = ArrayDeque<Context>()
+    private val proofLinks = linkedMapOf<String, List<String>>()
+    private val targetClaims = linkedMapOf<String, Pair<BattleCalibrationPreviewSlot, List<String>>>()
+    private var cachedTargets: Map<BattleCalibrationPreviewSlot, Set<String>>? = null
     private val barriers = ArrayDeque<Context>()
     // First result/stop in each clock domain is permanent, including after a
     // long high-rate tail has left the bounded rolling context history.
@@ -59,6 +66,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
                 // A retained last battle image survives a long navigation-only
                 // tail even after that image leaves the bounded pending history.
                 val candidates = (references.toList() + listOfNotNull(latest[slot])).filter(::eligible)
+                    .map { reference -> withTargetEvidence(slot, reference) }
                 val best = best(slot, candidates)
                 if (best != null) selected[slot] = best
             }
@@ -72,6 +80,15 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
 
     fun accept(article: RealityArticle) {
         if (article.matchId?.value != matchId) return
+        val target = when (val p = article.payload) {
+            is ActivePokemonSpeciesWitnessed -> speciesSlot(p.side.name)
+            is PlayerPokeBallCountMeasured -> BattleCalibrationPreviewSlot.PLAYER_BALLS
+            is OpponentBattleResourceCountMeasured -> BattleCalibrationPreviewSlot.OPPONENT_BALLS
+                .takeIf { p.resource == OpponentBattleResource.POKE_BALLS }
+            GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> BattleCalibrationPreviewSlot.ANNOUNCEMENT
+            else -> null
+        }
+        acceptProof(article.id.value, article.evidenceReferences.orEmpty() + article.predecessorIds.map { it.value }, target)
         val crop = article.payload as? CropCaptured
         if (crop != null) {
             accept(crop.cropProvenance.cropName, BattleCalibrationPreviewReference(article.id.value,
@@ -103,6 +120,15 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
 
     fun accept(article: ArchivedRealityArticle) {
         if (article.matchId != matchId) return
+        val target = when (val p = article.payload) {
+            is ArchivedActivePokemonSpeciesWitnessed -> speciesSlot(p.side)
+            is ArchivedPlayerPokeBallCountMeasured -> BattleCalibrationPreviewSlot.PLAYER_BALLS
+            is ArchivedOpponentBattleResourceCountMeasured -> BattleCalibrationPreviewSlot.OPPONENT_BALLS
+                .takeIf { p.resource == "POKE_BALLS" }
+            ArchivedGetReadyWitnessed, ArchivedAttackIncoming, ArchivedChargeMoveUsedAnnounced -> BattleCalibrationPreviewSlot.ANNOUNCEMENT
+            else -> null
+        }
+        acceptProof(article.articleId, article.evidenceReferences.orEmpty() + article.predecessorIds, target)
         val crop = article.payload as? ArchivedCropCaptured
         if (crop != null) {
             accept(crop.cropName, BattleCalibrationPreviewReference(article.articleId, article.perceivedAt,
@@ -154,7 +180,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
             // eviction too, rather than relying on a previous UI poll.
             if (eligible(oldest)) {
                 best(slot, (listOfNotNull(latest[slot]) + oldest).filter(::eligible))?.let {
-                    latest = latest + (slot to it)
+                    latest = latest + (slot to withTargetEvidence(slot, it))
                 }
             }
         }
@@ -197,6 +223,10 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
     }
 
     private fun best(slot: BattleCalibrationPreviewSlot, candidates: List<BattleCalibrationPreviewReference>): BattleCalibrationPreviewReference? {
+        // An empty later frame must not replace a readable example. Raw fallback
+        // remains available for review when this field has never been read.
+        val witnessed = candidates.filter { it.targetWitnessed || targetWitnessed(slot, it) }
+        if (witnessed.isNotEmpty() && witnessed.size != candidates.size) return best(slot, witnessed)
         if (slot == BattleCalibrationPreviewSlot.PLAYER_HP || slot == BattleCalibrationPreviewSlot.OPPONENT_HP) {
             val windows = activeWindows()
             val cues = context.filter { cue ->
@@ -213,6 +243,50 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         }
         return (if (slot == BattleCalibrationPreviewSlot.ANNOUNCEMENT) preferredAnnouncement(candidates) else null)
             ?: candidates.reduceOrNull { old, next -> if (newer(next, old)) next else old }
+    }
+
+    private fun acceptProof(id: String, references: List<String>, target: BattleCalibrationPreviewSlot?) {
+        if (references.isNotEmpty()) proofLinks[id] = references.distinct()
+        if (target != null && references.isNotEmpty()) targetClaims[id] = target to references.distinct()
+        while (proofLinks.size > MAX_PROOF_LINKS) proofLinks.remove(proofLinks.keys.first())
+        while (targetClaims.size > MAX_CONTEXT_EVENTS) targetClaims.remove(targetClaims.keys.first())
+        cachedTargets = null
+        dirty = true
+    }
+
+    /** Follow explicit custody links, never merely a nearby species or a configured team. */
+    private fun targetReferences(): Map<BattleCalibrationPreviewSlot, Set<String>> = cachedTargets ?: run {
+        val found = mutableMapOf<BattleCalibrationPreviewSlot, MutableSet<String>>()
+        for ((slot, roots) in targetClaims.values) {
+            val seen = mutableSetOf<String>()
+            val pending = ArrayDeque(roots.map { it to 0 })
+            while (pending.isNotEmpty() && seen.size < 512) {
+                val (id, depth) = pending.removeFirst()
+                if (!seen.add(id)) continue
+                found.getOrPut(slot) { mutableSetOf() }.add(id)
+                if (depth < 16) proofLinks[id].orEmpty().forEach { pending.addLast(it to depth + 1) }
+            }
+        }
+        found.mapValues { it.value.toSet() }.also { cachedTargets = it }
+    }
+
+    private fun targetWitnessed(slot: BattleCalibrationPreviewSlot, reference: BattleCalibrationPreviewReference): Boolean {
+        if (reference.articleId in targetReferences()[slot].orEmpty()) return true
+        return measuredHpBounds(slot, reference) != null
+    }
+
+    private fun withTargetEvidence(slot: BattleCalibrationPreviewSlot, reference: BattleCalibrationPreviewReference): BattleCalibrationPreviewReference {
+        val detail = reference.targetBounds ?: measuredHpBounds(slot, reference)
+        return reference.copy(targetWitnessed = reference.targetWitnessed || detail != null || targetWitnessed(slot, reference),
+            targetBounds = detail)
+    }
+
+    private fun measuredHpBounds(slot: BattleCalibrationPreviewSlot, reference: BattleCalibrationPreviewReference): BattleCropBounds? {
+        if (slot != BattleCalibrationPreviewSlot.PLAYER_HP && slot != BattleCalibrationPreviewSlot.OPPONENT_HP) return null
+        val at = if (monotonicOnly) reference.capturedAtNanos else reference.capturedAtMillis
+        return context.lastOrNull { cue -> cue.time.value(monotonicOnly) == at &&
+            cue.hp?.sourceWidth != null && cue.hp.sourceHeight != null && containsMeasuredHp(slot, reference, cue) }
+            ?.hp?.let { BattleCropBounds(it.left, it.top, it.right, it.bottom) }
     }
 
     private fun preferredHp(
@@ -357,6 +431,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         private const val MAX_REFERENCES_PER_SLOT = 2_048
         private const val MAX_CONTEXT_EVENTS = 8_192
         private const val MAX_BARRIERS = 512
+        private const val MAX_PROOF_LINKS = 16_384
         // Recent HP observations normally arrive about one 125 ms frame apart;
         // a half-second gap can already be a completely bar-free camera phase.
         private const val HP_FRAME_TOLERANCE_MILLIS = 150L
@@ -377,6 +452,11 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         private fun hpKind(side: String): Kind? = when (side) {
             "PLAYER" -> Kind.PLAYER_HP
             "OPPONENT" -> Kind.OPPONENT_HP
+            else -> null
+        }
+        private fun speciesSlot(side: String): BattleCalibrationPreviewSlot? = when (side) {
+            "PLAYER" -> BattleCalibrationPreviewSlot.PLAYER_SPECIES
+            "OPPONENT" -> BattleCalibrationPreviewSlot.OPPONENT_SPECIES
             else -> null
         }
         private fun validHp(left: Int, top: Int, right: Int, bottom: Int, fraction: Float, width: Int?, height: Int?): Boolean =

@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import com.example.overdex.battle.archive.*
 import com.example.overdex.battle.artifact.CropArtifactReference
 import com.example.overdex.battle.observation.BattleCropProvenance
+import com.example.overdex.battle.observation.BattleCropBounds
 import com.example.overdex.battle.reality.RealityTimeline
 import java.io.File
 import java.io.ByteArrayOutputStream
@@ -31,7 +32,22 @@ data class DirectoryCropImage(
     val articleId: String,
     /** Original historical crop geometry; never overwritten by an editing draft. */
     val provenance: BattleCropProvenance? = null,
+    /** Evidence that this historical image contained the field's target, not approval of today's profile. */
+    val targetWitnessed: Boolean = false,
+    /** Source-pixel detail for an exactly measured HP bar, independent of the original search crop. */
+    val targetBounds: BattleCropBounds? = null,
 )
+
+/** Presentation-only crop-local detail; never changes the historical provenance or saved search region. */
+fun DirectoryCropImage.hpTargetDetailBounds(slot: DirectoryCropSlot): BattleCropBounds? {
+    if (!targetWitnessed || slot !in listOf(DirectoryCropSlot.PLAYER_HP, DirectoryCropSlot.OPPONENT_HP)) return null
+    val search = provenance?.bounds ?: return null
+    val target = targetBounds ?: return null
+    if (target.left < search.left || target.top < search.top || target.right > search.right ||
+        target.bottom > search.bottom || target.right <= target.left || target.bottom <= target.top) return null
+    return BattleCropBounds(target.left - search.left, target.top - search.top,
+        target.right - search.left, target.bottom - search.top)
+}
 
 data class DirectoryCropPreviewState(
     val matchId: String? = null,
@@ -39,6 +55,9 @@ data class DirectoryCropPreviewState(
     val isLoading: Boolean = false,
 ) {
     val latestCaptureMillis: Long? get() = crops.values.maxOfOrNull { it.capturedAtMillis }
+    val reviewSlots: List<DirectoryCropSlot> get() = DirectoryCropSlot.entries.filter { slot ->
+        crops[slot]?.let { it.bitmap != null && it.targetWitnessed } != true
+    }
 }
 
 
@@ -183,7 +202,8 @@ class DirectoryCropPreviewFeed internal constructor(
                 loaded?.takeIf { validCropDimensions(it.width, it.height, reference) }
                     .also { if (loaded != null && it == null) loaded.recycle() }
             }
-            images[slot] = DirectoryCropImage(bitmap, reference.capturedAtMillis, reference.articleId, reference.provenance)
+            images[slot] = DirectoryCropImage(bitmap, reference.capturedAtMillis, reference.articleId, reference.provenance,
+                reference.targetWitnessed, reference.targetBounds)
             // A null already attempted image is not repeatedly read every poll.
             if (bitmap == null && (!sameMatch || old == null || !reference.samePixels(old))) missing[slot] = reference
         }
@@ -192,7 +212,8 @@ class DirectoryCropPreviewFeed internal constructor(
             for ((slot, reference) in missing) {
                 currentCoroutineContext().ensureActive()
                 val bitmap = bytes[reference.artifact.relativePath]?.let { decodeArchivedCrop(it, reference) }
-                images[slot] = DirectoryCropImage(bitmap, reference.capturedAtMillis, reference.articleId, reference.provenance)
+                images[slot] = DirectoryCropImage(bitmap, reference.capturedAtMillis, reference.articleId, reference.provenance,
+                    reference.targetWitnessed, reference.targetBounds)
             }
         }
         currentCoroutineContext().ensureActive()

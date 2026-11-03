@@ -24,6 +24,119 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DirectoryCropPreviewsTest {
+    @Test fun `battle timing and configured identities do not verify a crop target`() {
+        val selected = DirectoryCropSelection("a")
+        selected.accept(event("start", "a", MatchStarted, 10_000, ns(10)))
+        selected.accept(crop("raw", "a", "PlayerActiveSpeciesTextCrop", 10_000, ns(10)))
+        selected.accept(event("configured", "a", PlayerTeamSlotConfigured(1, "Golbat", 42,
+            "Wing Attack", listOf("Poison Fang")), 10_000, ns(10)))
+        selected.accept(event("uncited-species", "a", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER,
+            "Golbat", 42), 10_000, ns(10)))
+        assertFalse(selected.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).targetWitnessed)
+    }
+
+    @Test fun `cited target survives a newer empty crop and stays specific to its field`() {
+        val rows = listOf(event("start", "a", MatchStarted, 10_000, ns(10)),
+            crop("readable-name", "a", "PlayerActiveSpeciesTextCrop", 10_000, ns(10)),
+            crop("opponent", "a", "OpponentActiveSpeciesTextCrop", 10_000, ns(10)),
+            crop("later-empty", "a", "PlayerActiveSpeciesTextCrop", 11_000, ns(11)),
+            event("name-read", "a", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Golbat", 42),
+                10_000, ns(10)).copy(evidenceReferences = listOf("readable-name")))
+        for (order in listOf(rows, rows.reversed())) {
+            val selected = DirectoryCropSelection("a").also { order.forEach(it::accept) }
+            assertEquals("readable-name", selected.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).articleId)
+            assertTrue(selected.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).targetWitnessed)
+            assertFalse(selected.crops.getValue(DirectoryCropSlot.OPPONENT_SPECIES).targetWitnessed)
+            val archive = RealityArticleArchiveMapper.createArchive(MatchId("a"), order)
+            assertEquals(selected.crops, DirectoryCropSelection.fromBattleArchive(archive)?.crops)
+        }
+    }
+
+    @Test fun `announcement verification follows original crop links not a nearby different QTE crop`() {
+        val rows = listOf(event("start", "a", MatchStarted, 10_000, ns(10)),
+            crop("readable", "a", "AnnouncementCrop", 10_000, ns(10)),
+            event("ocr", "a", RawTestimony("Get Ready!"), 10_000, ns(10))
+                .copy(evidenceReferences = listOf("readable")),
+            event("ready", "a", GetReadyWitnessed, 10_000, ns(10))
+                .copy(evidenceReferences = listOf("ocr")),
+            crop("empty-announcement", "a", "AnnouncementCrop", 11_000, ns(11)),
+            crop("qte", "a", "QteProgressTextCrop", 11_000, ns(11)),
+            event("qte-ready", "a", GetReadyWitnessed, 11_000, ns(11))
+                .copy(evidenceReferences = listOf("qte")))
+        val selected = DirectoryCropSelection("a").also { rows.reversed().forEach(it::accept) }
+        assertEquals("readable", selected.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).articleId)
+        assertTrue(selected.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).targetWitnessed)
+        val unverified = DirectoryCropSelection("a").also { rows.filterNot { row ->
+            row.id.value in setOf("readable", "ocr", "ready") }.forEach(it::accept) }
+        assertFalse(unverified.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).targetWitnessed)
+    }
+
+    @Test fun `HP target verification requires the same frame side source size and contained bar`() {
+        val bar = hp("player-bar", "a", 10)
+        val opponent = hp("opponent-bar", "a", 10, ActivePokemonSide.OPPONENT)
+        val exact = crop("bar", "a", "PlayerHpEvidenceCrop", 10_000, ns(10))
+        val near = exact.copy(id = ArticleId("near"), monotonicTimeNanos = ns(10) + 1_000_000)
+        for ((candidate, expected) in listOf(exact to true, near to false)) {
+            val selected = DirectoryCropSelection("a").also { listOf(bar, opponent, candidate).forEach(it::accept) }
+            val reference = selected.crops.getValue(DirectoryCropSlot.PLAYER_HP)
+            assertEquals(expected, reference.targetWitnessed)
+            assertEquals(if (expected) BattleCropBounds(10, 20, 110, 25) else null, reference.targetBounds)
+            assertEquals((candidate.payload as CropCaptured).cropProvenance, reference.provenance)
+        }
+        val outside = exact.let { it.copy(payload = (it.payload as CropCaptured).let { p ->
+            p.copy(cropProvenance = p.cropProvenance.copy(bounds = BattleCropBounds(400, 500, 500, 600))) }) }
+        val selected = DirectoryCropSelection("a").also { listOf(bar, opponent, outside).forEach(it::accept) }
+        assertFalse(selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).targetWitnessed)
+        assertNull(selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).targetBounds)
+    }
+
+    @Test fun `HP detail uses crop local measured bounds without replacing historical search provenance`() {
+        val provenance = BattleCropProvenance("PlayerHpEvidenceCrop", 1080, 2400,
+            BattleCropBounds(100, 200, 300, 500))
+        val image = DirectoryCropImage(null, 123, "search", provenance, targetWitnessed = true,
+            targetBounds = BattleCropBounds(110, 220, 290, 225))
+        assertEquals(BattleCropBounds(10, 20, 190, 25), image.hpTargetDetailBounds(DirectoryCropSlot.PLAYER_HP))
+        assertSame(provenance, image.provenance)
+        assertEquals(BattleCropBounds(100, 200, 300, 500), image.provenance?.bounds)
+        assertNull(image.hpTargetDetailBounds(DirectoryCropSlot.PLAYER_SPECIES))
+        assertNull(image.copy(targetWitnessed = false).hpTargetDetailBounds(DirectoryCropSlot.PLAYER_HP))
+        assertNull(image.copy(targetBounds = BattleCropBounds(90, 220, 290, 225))
+            .hpTargetDetailBounds(DirectoryCropSlot.PLAYER_HP))
+    }
+
+    @Test fun `shield reading does not verify Pokeball pixels`() {
+        val start = event("start", "a", MatchStarted, 10_000, ns(10))
+        val pixels = crop("balls", "a", "OpponentPokeBallsCrop", 10_000, ns(10))
+        val selected = DirectoryCropSelection("a").also { listOf(start, pixels,
+            event("shields", "a", OpponentBattleResourceCountMeasured(OpponentBattleResource.SHIELDS, 2, 2),
+                10_000, ns(10)).copy(evidenceReferences = listOf("balls"))).forEach(it::accept) }
+        assertFalse(selected.crops.getValue(DirectoryCropSlot.OPPONENT_BALLS).targetWitnessed)
+        selected.accept(event("ball-count", "a", OpponentBattleResourceCountMeasured(OpponentBattleResource.POKE_BALLS, 3, 3),
+            10_000, ns(10)).copy(evidenceReferences = listOf("balls")))
+        assertTrue(selected.crops.getValue(DirectoryCropSlot.OPPONENT_BALLS).targetWitnessed)
+    }
+
+    @Test fun `late target proof refreshes preview status without decoding identical pixels again`() = runBlocking {
+        withRoot { root ->
+            val timeline = InMemoryRealityTimeline().also {
+                it.append(event("start", "a", MatchStarted, 10_000, ns(10)))
+                it.append(crop("name", "a", "PlayerActiveSpeciesTextCrop", 10_000, ns(10)))
+            }
+            var decodes = 0
+            val feed = DirectoryCropPreviewFeed(root,
+                sources = { listOf(MatchArchiveSource(MatchId("a"), timeline)) }, decodeLocal = { decodes++; null })
+            var count = 0
+            val results = feed.states().drop(1).take(2).onEach {
+                if (++count == 1) timeline.append(event("name-read", "a",
+                    ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Golbat", 42), 10_000, ns(10))
+                    .copy(evidenceReferences = listOf("name")))
+            }.toList()
+            assertEquals(listOf(false, true), results.map { it.crops.getValue(DirectoryCropSlot.PLAYER_SPECIES).targetWitnessed })
+            assertEquals(1, decodes)
+            assertTrue("Missing pixels still require review", DirectoryCropSlot.PLAYER_SPECIES in results.last().reviewSlots)
+        }
+    }
+
     @Test fun `newest captured crop wins even when older evidence arrives later`() {
         val selected = DirectoryCropSelection("a")
         selected.accept(event("start", "a", MatchStarted, 0, 0))

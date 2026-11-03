@@ -76,6 +76,11 @@ fun DirectoryCropPreviewLcd(
                     maxLines = 1, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
                 if (state.isLoading && !focused) Text("Loading", color = CropPreviewText,
                     fontSize = 8.sp, lineHeight = 10.sp, style = CropPreviewTextStyle)
+                if (state.reviewSlots.isNotEmpty()) Text("Review ${state.reviewSlots.size}",
+                    Modifier.testTag("directory-crop-review")
+                        .then(if (editor != null) Modifier.clickable { editor.select(state.reviewSlots.first()) } else Modifier)
+                        .padding(start = 3.dp), color = CropReview, fontSize = 8.sp, lineHeight = 10.sp,
+                    style = CropPreviewTextStyle)
             }
             CropPreviewPair(state, DirectoryCropSlot.PLAYER_SPECIES, DirectoryCropSlot.OPPONENT_SPECIES,
                 timeFormat, Modifier.weight(1.1f), editor)
@@ -85,7 +90,7 @@ fun DirectoryCropPreviewLcd(
                 timeFormat, Modifier.weight(1f), editor)
             CropPreviewTile(DirectoryCropSlot.ANNOUNCEMENT, state.crops[DirectoryCropSlot.ANNOUNCEMENT],
                 timeFormat, Modifier.fillMaxWidth().weight(1.3f), editor)
-            if (focused) Text(editor?.notice ?: "A Edit · B Directory · arrows select",
+            if (focused) Text(editor?.notice ?: "A Check position · B Directory · arrows select. Empty? Check the full image first.",
                 color = CropPreviewText, fontSize = 8.sp, lineHeight = 9.sp,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
         }
@@ -114,13 +119,20 @@ private fun CropPreviewTile(
     val capturedTime = crop?.let { timeFormat.format(Date(it.capturedAtMillis)) }
     val source = editor?.takeIf { it.focused }?.frame?.bitmap
     val region = editor?.snapshot?.calibration?.directoryCropRegion(slot)
-    val calibrationPreview = source != null && region != null
     val isSelected = editor?.controls?.selectedSlot == slot
+    // Inspect one current saved rectangle without replacing every historical
+    // target example with a frame where that target may never have appeared.
+    val calibrationPreview = source != null && region != null && isSelected
+    val hpDetail = crop?.hpTargetDetailBounds(slot)?.takeIf { bounds -> bitmap != null &&
+        bounds.left >= 0 && bounds.top >= 0 && bounds.right <= bitmap.width && bounds.bottom <= bitmap.height }
+    val needsReview = calibrationPreview || crop?.targetWitnessed != true || bitmap == null
     val availability = when {
-        calibrationPreview -> "Calibration preview"
+        calibrationPreview -> "Current calibration on reference image. Target unverified; check the full image before moving the box."
         crop == null -> "Not saved"
         bitmap == null -> "Image unavailable"
-        else -> "Captured $capturedTime"
+        hpDetail != null -> "Measured HP bar detail from historical search crop, captured $capturedTime. Original search crop and current calibration are unchanged."
+        crop.targetWitnessed -> "Target read in historical crop, captured $capturedTime. Current calibration may differ."
+        else -> "Target not verified in historical crop, captured $capturedTime. Review the full image and crop position."
     }
     Column(modifier.testTag("directory-crop-$tag")
         .then(if (isSelected) Modifier.border(1.dp, CropSelection) else Modifier)
@@ -130,15 +142,25 @@ private fun CropPreviewTile(
             stateDescription = availability
             if (editor != null) selected = isSelected
         }) {
-        Text(label, color = if (isSelected) CropSelection else CropPreviewText, fontSize = 8.sp, lineHeight = 9.sp,
+        Text("$label · ${when { calibrationPreview -> "Current crop"; needsReview -> "Review"; hpDetail != null -> "Bar detail"; else -> "Read" }}",
+            color = when { isSelected -> CropSelection; needsReview -> CropReview; else -> CropPreviewText }, fontSize = 8.sp, lineHeight = 9.sp,
             maxLines = 1, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
         Box(Modifier.fillMaxWidth().weight(1f).background(Color.Black), contentAlignment = Alignment.Center) {
             if (calibrationPreview) {
                 SourceCropImage(requireNotNull(source), requireNotNull(region), "$label calibration preview",
                     Modifier.fillMaxSize().testTag("directory-crop-image-$tag"))
             } else if (bitmap != null) {
-                Image(bitmap.asImageBitmap(), "$label crop, captured at $capturedTime",
-                    Modifier.fillMaxSize().testTag("directory-crop-image-$tag"), contentScale = ContentScale.Fit)
+                if (hpDetail != null) {
+                    val image = remember(bitmap) { bitmap.asImageBitmap() }
+                    val painter = remember(image, hpDetail) { BitmapPainter(image,
+                        IntOffset(hpDetail.left, hpDetail.top),
+                        IntSize(hpDetail.right - hpDetail.left, hpDetail.bottom - hpDetail.top)) }
+                    Image(painter, "$label measured bar detail, captured at $capturedTime",
+                        Modifier.fillMaxSize().testTag("directory-crop-image-$tag"), contentScale = ContentScale.Fit)
+                } else {
+                    Image(bitmap.asImageBitmap(), "$label crop, captured at $capturedTime",
+                        Modifier.fillMaxSize().testTag("directory-crop-image-$tag"), contentScale = ContentScale.Fit)
+                }
             } else {
                 Text(availability, color = CropPreviewText.copy(alpha = .7f),
                     fontSize = 8.sp, lineHeight = 9.sp, maxLines = 1,
@@ -235,4 +257,5 @@ private fun DirectoryCropSlot.label() = when (this) {
 
 private val CropPreviewText = Color(0xFFD4E7CF)
 private val CropSelection = Color(0xFFA9F28F)
+private val CropReview = Color(0xFFFFD889)
 private val CropPreviewTextStyle = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))

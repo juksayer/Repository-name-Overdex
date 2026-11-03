@@ -49,6 +49,21 @@ class DirectoryCropEditorDeviceTest {
     private val currentCalibration = AtomicReference(calibration)
     private val enabled = mutableStateOf(true)
 
+    @Test fun reviewPromptSelectsTheFirstUnverifiedCropAndOpensTheExistingCorrectionRoute() {
+        showEditor()
+        compose.onNodeWithTag("directory-crop-review").performClick()
+        awaitSource()
+        compose.onNodeWithTag("directory-crop-player_species").assertIsSelected()
+        compose.onNodeWithText("Your name · Current crop").assertIsDisplayed()
+        compose.runOnIdle {
+            assertEquals(0, saveCalls.get())
+            assertTrue(editor.confirm())
+        }
+        compose.onNodeWithTag("directory-crop-position-editor").assertIsDisplayed()
+        compose.onNodeWithTag("directory-crop-cancel").performClick()
+        compose.runOnIdle { assertEquals(0, saveCalls.get()) }
+    }
+
     @Test fun tapThenAAndDragPansRealSourcePixelsWhileBCancelsWithoutSaving() {
         showEditor()
         assertEquals(0, loadCalls.get())

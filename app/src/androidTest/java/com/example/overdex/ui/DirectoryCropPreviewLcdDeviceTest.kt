@@ -23,6 +23,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.battle.preview.DirectoryCropImage
 import com.example.overdex.battle.preview.DirectoryCropPreviewState
 import com.example.overdex.battle.preview.DirectoryCropSlot
+import com.example.overdex.battle.observation.BattleCropBounds
+import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.ui.components.DirectoryCropPreviewLcd
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -66,6 +68,47 @@ class DirectoryCropPreviewLcdDeviceTest {
         compose.onNodeWithText(timestamp).assertIsDisplayed()
         compose.mainClock.advanceTimeBy(60_000)
         compose.onNodeWithText(timestamp).assertIsDisplayed()
+    }
+
+    @Test fun rawCapturesPromptReviewAndHistoricalTargetReadDoesNotApproveCurrentCalibration() {
+        val state = mutableStateOf(DirectoryCropPreviewState(matchId = "recorded-match", crops = mapOf(
+            DirectoryCropSlot.PLAYER_SPECIES to DirectoryCropImage(quadrantBitmap(), CAPTURE_TIME, "raw"),
+            DirectoryCropSlot.OPPONENT_SPECIES to DirectoryCropImage(quadrantBitmap(), CAPTURE_TIME, "read",
+                targetWitnessed = true),
+        )))
+        showPreview(state)
+        compose.onNodeWithText("Review 6").assertIsDisplayed()
+        compose.onNodeWithText("Your name · Review").assertIsDisplayed()
+        compose.onNodeWithText("Opponent name · Read").assertIsDisplayed()
+        compose.onNodeWithTag(slotTag(DirectoryCropSlot.PLAYER_SPECIES)).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                "Target not verified in historical crop, captured ${formatTime(CAPTURE_TIME)}. Review the full image and crop position."))
+        compose.onNodeWithTag(slotTag(DirectoryCropSlot.OPPONENT_SPECIES)).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                "Target read in historical crop, captured ${formatTime(CAPTURE_TIME)}. Current calibration may differ."))
+        compose.onNodeWithTag(imageTag(DirectoryCropSlot.PLAYER_SPECIES)).assertIsDisplayed()
+    }
+
+    @Test fun measuredHpDetailFillsTheTileWithoutReplacingTheWideSearchCrop() {
+        val searchBitmap = Bitmap.createBitmap(40, 80, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(AndroidColor.BLACK)
+            for (y in 30 until 35) for (x in 5 until 35) setPixel(x, y, AndroidColor.RED)
+        }
+        val provenance = BattleCropProvenance("PlayerHpEvidenceCrop", 100, 200, BattleCropBounds(20, 40, 60, 120))
+        val crop = DirectoryCropImage(searchBitmap, CAPTURE_TIME, "wide-search", provenance,
+            targetWitnessed = true, targetBounds = BattleCropBounds(25, 70, 55, 75))
+        showPreview(mutableStateOf(DirectoryCropPreviewState("battle", mapOf(DirectoryCropSlot.PLAYER_HP to crop))))
+        compose.onNodeWithText("Your HP · Bar detail").assertIsDisplayed()
+        compose.onNodeWithTag(slotTag(DirectoryCropSlot.PLAYER_HP)).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,
+                "Measured HP bar detail from historical search crop, captured ${formatTime(CAPTURE_TIME)}. Original search crop and current calibration are unchanged."))
+        val rendered = compose.onNodeWithTag(imageTag(DirectoryCropSlot.PLAYER_HP)).captureToImage().asAndroidBitmap()
+        assertEquals(AndroidColor.RED, rendered.getPixel(rendered.width / 2, rendered.height / 2))
+        assertEquals("The search bitmap remains full sized", 40, searchBitmap.width)
+        assertEquals(80, searchBitmap.height)
+        assertEquals(AndroidColor.BLACK, searchBitmap.getPixel(20, 40))
+        assertEquals(provenance, crop.provenance)
+        assertEquals(BattleCropBounds(20, 40, 60, 120), crop.provenance?.bounds)
     }
 
     @Test fun sevenUntintedCropsFitTheExistingLcdWithoutStretching() {
