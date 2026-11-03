@@ -50,6 +50,7 @@ import com.example.overdex.data.ScreenshotDirectoryManager
 import com.example.overdex.data.MatchCalibrationProfileStore
 import com.example.overdex.data.MatchCalibrationProfile
 import com.example.overdex.data.MatchCalibrationProfileSummary
+import com.example.overdex.data.CalibrationProfileCompatibility
 import com.example.overdex.battle.observation.TeamSelectCalibration
 import com.example.overdex.battle.observation.TeamSelectCalibrationStore
 import com.example.overdex.ui.theme.TerminalBlack
@@ -121,12 +122,17 @@ fun MatchCalibrationScreen(
     var savedProfiles by remember { mutableStateOf(profileStore.list()) }
     var showProfileDialog by remember { mutableStateOf(false) }
     var showProfileMenu by remember { mutableStateOf(false) }
+    var showOtherDeviceProfiles by remember { mutableStateOf(false) }
     var profileActionError by remember { mutableStateOf<String?>(null) }
     val droidballRuntime by DroidballService.runtimeState.collectAsState()
     val activeProfileMatchesDetectedDevice = activeProfile?.let {
-        it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) &&
-            it.screenWidth == detectedScreenWidth && it.screenHeight == detectedScreenHeight
+        CalibrationProfileCompatibility.matchesDevice(it, detectedDeviceModel,
+            detectedScreenWidth, detectedScreenHeight)
     } == true
+    val matchingDeviceProfiles = CalibrationProfileCompatibility.visibleProfiles(savedProfiles,
+        detectedDeviceModel, detectedScreenWidth, detectedScreenHeight)
+    val visibleDeviceProfiles = CalibrationProfileCompatibility.visibleProfiles(savedProfiles,
+        detectedDeviceModel, detectedScreenWidth, detectedScreenHeight, showOtherDeviceProfiles)
     var deviceGuessOffered by rememberSaveable { mutableStateOf(false) }
     var showSaveProfileDialog by remember { mutableStateOf(false) }
     var profileName by remember { mutableStateOf("") }
@@ -445,8 +451,8 @@ fun MatchCalibrationScreen(
 
     fun openSaveProfileDialog() {
         val matchingActiveProfile = activeProfile?.takeIf {
-            it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) &&
-                it.screenWidth == detectedScreenWidth && it.screenHeight == detectedScreenHeight
+            CalibrationProfileCompatibility.matchesDevice(it, detectedDeviceModel,
+                detectedScreenWidth, detectedScreenHeight)
         }
         // An active profile can arrive from another phone through restored app
         // data. On a new device, offer Android's current full-display bounds
@@ -554,7 +560,11 @@ fun MatchCalibrationScreen(
                 if (samples.isNotEmpty()) showImagePicker = true else showLibraryDialog = true
             }
         }
-        onStart { savedProfiles = profileStore.list(); showProfileDialog = true }
+        onStart {
+            savedProfiles = profileStore.list()
+            showOtherDeviceProfiles = false
+            showProfileDialog = true
+        }
         onLcdDrag { delta ->
             showLcdTouchHint = false
             val dx = if (imageViewport.width > 0f) delta.x / imageViewport.width else 0f
@@ -609,6 +619,22 @@ fun MatchCalibrationScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("This phone: $detectedDeviceModel · ${detectedScreenWidth}×${detectedScreenHeight}",
                         color = TerminalGreen, fontSize = 11.sp)
+                    Text(if (showOtherDeviceProfiles) "All saved devices · ${visibleDeviceProfiles.size} profiles"
+                        else "This device · ${matchingDeviceProfiles.size} matching profiles",
+                        color = TerminalGreen, fontSize = 11.sp,
+                        modifier = Modifier.testTag("calibration-profile-filter-status"))
+                    if (savedProfiles.size > matchingDeviceProfiles.size) TextButton(onClick = {
+                        showProfileMenu = false
+                        showOtherDeviceProfiles = !showOtherDeviceProfiles
+                    }, modifier = Modifier.fillMaxWidth().testTag("calibration-profile-show-other-devices")) {
+                        Text(if (showOtherDeviceProfiles) "SHOW ONLY THIS DEVICE"
+                            else "SHOW OTHER DEVICES (${savedProfiles.size - matchingDeviceProfiles.size})",
+                            color = TerminalGreen)
+                    }
+                    if (matchingDeviceProfiles.isEmpty() && !showOtherDeviceProfiles) Text(
+                        "No saved calibration matches this model and screen size. Save a profile for this device, or show other devices to review a reference.",
+                        color = Color(0xFFFFC857), fontSize = 11.sp,
+                        modifier = Modifier.testTag("calibration-profile-no-device-match"))
                     Box(Modifier.fillMaxWidth()) {
                         TextButton(onClick = { savedProfiles = profileStore.list(); showProfileMenu = true },
                             modifier = Modifier.fillMaxWidth().testTag("calibration-profile-picker")) {
@@ -616,12 +642,10 @@ fun MatchCalibrationScreen(
                         }
                         DropdownMenu(expanded = showProfileMenu, onDismissRequest = { showProfileMenu = false },
                             modifier = Modifier.heightIn(max = 360.dp)) {
-                            if (savedProfiles.isEmpty()) DropdownMenuItem(
-                                text = { Text("No named calibrations saved") }, enabled = false, onClick = {})
-                            savedProfiles.sortedByDescending { profile ->
-                                profile.deviceModel.equals(detectedDeviceModel, true) &&
-                                    profile.screenWidth == detectedScreenWidth && profile.screenHeight == detectedScreenHeight
-                            }.forEach { profile ->
+                            if (visibleDeviceProfiles.isEmpty()) DropdownMenuItem(
+                                text = { Text(if (savedProfiles.isEmpty()) "No named calibrations saved"
+                                    else "No profiles for this device") }, enabled = false, onClick = {})
+                            visibleDeviceProfiles.forEach { profile ->
                                 DropdownMenuItem(modifier = Modifier.testTag("calibration-profile-${profile.id}"), text = {
                                     Column {
                                         Text("${if (profile.id == activeProfile?.id) "✓ " else ""}${profile.name}")
@@ -692,9 +716,8 @@ fun MatchCalibrationScreen(
                         fontSize = 12.sp,
                     )
                     activeProfile?.takeIf {
-                        !it.deviceModel.equals(detectedDeviceModel, ignoreCase = true) ||
-                            it.screenWidth != detectedScreenWidth ||
-                            it.screenHeight != detectedScreenHeight
+                        !CalibrationProfileCompatibility.matchesDevice(it, detectedDeviceModel,
+                            detectedScreenWidth, detectedScreenHeight)
                     }?.let { current ->
                         Text(
                             "ACTIVE PROFILE: ${current.deviceModel}  ${current.screenWidth}×${current.screenHeight}",

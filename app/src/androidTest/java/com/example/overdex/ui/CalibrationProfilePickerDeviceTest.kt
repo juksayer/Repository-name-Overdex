@@ -29,6 +29,35 @@ import org.junit.Test
 class CalibrationProfilePickerDeviceTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    @Test fun unmatchedDeviceOffersReferencesWithoutSilentlySelectingAnotherProfile() {
+        val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
+        try {
+            val store = MatchCalibrationProfileStore(context)
+            val foreign = store.saveAs("Other phone", "Other manufacturer and model", 1080, 2280,
+                BattleCalibration(), TeamSelectCalibration.measured1080x2400)!!
+            var start: () -> Unit = {}
+            compose.setContent {
+                CompositionLocalProvider(LocalContext provides context,
+                    LocalActivityResultRegistryOwner provides compose.activity) {
+                    MatchCalibrationScreen(CalibrationManager(context), onStart = { start = it })
+                }
+            }
+            // Decline the initial Save As suggestion without saving or activating anything.
+            compose.onNodeWithText("CANCEL").performClick()
+            compose.runOnIdle { start() }
+            compose.onNodeWithTag("calibration-profile-no-device-match").assertIsDisplayed()
+            compose.onNodeWithTag("calibration-profile-show-other-devices").performScrollTo().performClick()
+            compose.onNodeWithTag("calibration-profile-picker").performClick()
+            compose.onNodeWithTag("calibration-profile-${foreign.id}").assertIsDisplayed().performClick()
+            compose.onNodeWithText("SAVE CALIBRATION AS").assertDoesNotExist()
+            compose.runOnIdle {
+                assertEquals(foreign.id, store.activeProfile()!!.id)
+                assertEquals(1, store.list().size)
+                assertEquals(foreign.battleCalibration, store.activeProfile()!!.battleCalibration)
+            }
+        } finally { context.cleanUp() }
+    }
+
     @Test fun startModalSelectsSavedDeviceAndRestoresBothCalibrationHalves() {
         val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
         try {
@@ -54,6 +83,10 @@ class CalibrationProfilePickerDeviceTest {
             }
             compose.runOnIdle { start() }
             compose.onNodeWithText("DEVICE CALIBRATIONS").assertIsDisplayed()
+            compose.onNodeWithTag("calibration-profile-picker").performClick()
+            compose.onNodeWithTag("calibration-profile-${foreign.id}").assertDoesNotExist()
+            compose.onNodeWithTag("calibration-profile-${first.id}").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("calibration-profile-show-other-devices").performScrollTo().performClick()
             compose.onNodeWithTag("calibration-profile-picker").performClick()
             compose.onNodeWithTag("calibration-profile-${foreign.id}").performScrollTo().performClick()
             compose.onNodeWithText("SAVE CALIBRATION AS").assertDoesNotExist()
