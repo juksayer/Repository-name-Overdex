@@ -979,6 +979,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 controlLayout = playerChargeControlLayout,
             ))
         }
+        val battlePhaseTextSampling = com.example.overdex.battle.observation.BattlePhaseTextSampling()
+        observationDispatcher.register(battlePhaseTextSampling)
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture",
             BattleWitnessContracts.chargeMoveExecutionCapture to "Charge Move Execution Capture",
@@ -988,11 +990,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observationDispatcher.register(CropCaptureWitness(input, calibration, contract, cropArtifactStore,
                 isEnabled = when (contract) {
                     BattleWitnessContracts.playerHpEvidenceCapture -> activeHpEvidenceLive
-                    // Do not require a successful Get Ready read to preserve
-                    // the text that will help calibrate that transition.
-                    BattleWitnessContracts.qteProgressTextCapture -> {
-                        { session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE }
-                    }
+                    // Real combat can admit phase text even when GO was missed;
+                    // its observation never fabricates the Match start clock.
+                    BattleWitnessContracts.qteProgressTextCapture -> { { battlePhaseTextSampling.isEnabled() } }
                     else -> battleEvidenceLive
                 },
                 captureIntervalNanos = when (contract) {

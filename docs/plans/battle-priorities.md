@@ -55,6 +55,12 @@ overlaps a promising audio window; charged-phase recognition and positive
 ordinary-play evidence are the next bounded step before combining weaker audio
 with HP support. This is not a completed live recognition-speed fix.
 
+November 4 charged-phase attention: [late-entry sampling and shield fallback](../verification/2026-11-04-charge-phase-attention.md)
+now accept independent in-progress battle proof when GO was missed, without
+fabricating a Match Start. The original archive supplies that proof before its
+missed warning crop. Recovery of the faded warning's text, positive ordinary-play
+visibility, and a new live battle check remain separate acceptance work.
+
 October 28 pre-flight addition at the user's request: [Team Select collection review](../verification/2026-10-28-field-team-collection.md)
 offers reviewed card imports, existing-card links and named team saving before
 battle. Owned storage now preserves canonical form names. Historical match

@@ -23,24 +23,11 @@ class PersistedAttackIncomingWitness(
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
             witnessScope.launch {
                 val episodes = IncomingAttackAnnouncementEpisodes()
-                val shieldText = ShieldDecisionTextEvidence()
-                var battleStarted = false
+                val shieldText = BattleShieldDecisionTextEvidence()
                 match.articles.collect { article ->
-                    when (val payload = article.payload) {
-                        MatchStarted -> { battleStarted = true; shieldText.reset() }
-                        is MatchEnded, ObservationRestartedByUser, ScreenIgnoredByUser -> {
-                            battleStarted = false; shieldText.reset()
-                        }
-                        ChargeMoveUsedAnnounced -> shieldText.reset()
-                        is PlayerChargeMoveLabelRead -> if (battleStarted) {
-                            val at = article.monotonicTimeNanos ?: return@collect
-                            shieldText.accept(payload.slot, payload.text, payload.basis, at,
-                                article.perceivedAt, article.id.value)?.let { signal ->
-                                match.custody.submitTestimony(SourceId("SHIELD_DECISION_TEXT_WITNESS"),
-                                    AttackIncoming, signal.wall, null, signal.ids, signal.at)
-                            }
-                        }
-                        else -> Unit
+                    shieldText.accept(article)?.let { signal ->
+                        match.custody.submitTestimony(SourceId("SHIELD_DECISION_TEXT_WITNESS"),
+                            AttackIncoming, signal.wall, null, signal.ids, signal.at)
                     }
                     if (article.sourceId.id !in ANNOUNCEMENT_PHASE_TEXT_SOURCES) return@collect
                     val text = (article.payload as? RawTestimony)?.data as? String ?: return@collect

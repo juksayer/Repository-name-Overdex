@@ -14,6 +14,55 @@ import org.junit.rules.TemporaryFolder
 class PersistedAttackIncomingWitnessTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
+    @Test fun `registered witness recognizes late battle shield fragments without inventing Match Start`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("late-shield-warning", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge())
+        val witness = PersistedAttackIncomingWitness(FileCropArtifactStore(temporaryFolder.root))
+        val at = System.nanoTime()
+        fun submit(source: String, payload: TestimonyPayload, offsetMillis: Long, refs: List<String> = emptyList()) {
+            custody.submitTestimony(SourceId(source), payload, 10_000L + offsetMillis,
+                null, refs, at + offsetMillis * 1_000_000L)
+        }
+        try {
+            witness.start(match)
+            submit("LATE_PLAYER_SPECIES_FIXTURE",
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Bulbasaur", 1), 1000)
+            submit("LATE_OPPONENT_SPECIES_FIXTURE",
+                ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Pikachu", 25), 2000)
+            submit("LATE_DAMAGE_FIXTURE",
+                ActiveHpBarDamageTickMeasured(ActivePokemonSide.OPPONENT, .9f, .8f, .1f), 3000)
+            submit("LEFT_CHARGE_LABEL_FIXTURE", PlayerChargeMoveLabelRead(1, "NOT"), 4000, listOf("left-crop"))
+            submit("RIGHT_CHARGE_LABEL_FIXTURE", PlayerChargeMoveLabelRead(2, "NOW"), 4800, listOf("right-crop"))
+
+            withTimeout(5_000) {
+                while (timeline.getArticles().none { it.sourceId.id == "SHIELD_DECISION_TEXT_WITNESS" }) delay(10)
+                match.awaitAcceptedEvidencePublished()
+            }
+            val articles = timeline.getArticles()
+            val warning = articles.single { it.payload is AttackIncoming }
+            val proof = listOf("LATE_PLAYER_SPECIES_FIXTURE", "LATE_OPPONENT_SPECIES_FIXTURE", "LATE_DAMAGE_FIXTURE",
+                "LEFT_CHARGE_LABEL_FIXTURE", "RIGHT_CHARGE_LABEL_FIXTURE").map { source ->
+                articles.single { it.sourceId.id == source }
+            }
+            assertEquals(SourceId("SHIELD_DECISION_TEXT_WITNESS"), warning.sourceId)
+            assertEquals(at + 4_000_000_000L, warning.monotonicTimeNanos)
+            assertEquals(14_000L, warning.perceivedAt)
+            assertEquals(proof.map { it.id.value }.toSet(), warning.evidenceReferences?.toSet())
+            assertNotNull(warning.sequenceNumber)
+            assertTrue("Late combat admission must not manufacture a start boundary",
+                articles.none { it.payload is MatchStarted || it.payload is CountdownGlyphWitnessed })
+            assertEquals(listOf("left-crop"), proof[3].evidenceReferences)
+            assertEquals(listOf("right-crop"), proof[4].evidenceReferences)
+            assertEquals(PlayerChargeMoveLabelRead(1, "NOT"), proof[3].payload)
+            assertEquals(PlayerChargeMoveLabelRead(2, "NOW"), proof[4].payload)
+        } finally {
+            witness.stop()
+            match.release()
+        }
+    }
+
     @Test fun `recognized warning is typed once with original announcement and capture time preserved`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
