@@ -79,11 +79,16 @@ class FieldTeamEditor(
     private var writingDraft: FieldTeamDraft? = null
     private var writingRevision: Long? = null
 
-    fun open(team: CurrentBattleTeam) {
+    fun open(team: CurrentBattleTeam) = open(team, useWhenReady = false)
+
+    /** Explicitly recalled loadouts need no new card import or second, buried apply action. */
+    fun useSavedTeam(team: CurrentBattleTeam) = open(team, useWhenReady = true)
+
+    private fun open(team: CurrentBattleTeam, useWhenReady: Boolean) {
         scanRoster = null
         suspendedScanDraft = null
         _draft.value = null
-        load {
+        load(useWhenReady) {
             List(3) { index ->
                 team.members.firstOrNull { it.slot == index + 1 }?.let { member ->
                     val pokemon = exactSpecies(member.speciesName, member.speciesId)
@@ -259,7 +264,7 @@ class FieldTeamEditor(
         }, error = null)
     }
 
-    private fun load(slots: suspend () -> List<FieldTeamSlot>) {
+    private fun load(useWhenReady: Boolean = false, slots: suspend () -> List<FieldTeamSlot>) {
         if (!canEdit()) { close(); return }
         job?.cancel()
         val version = ++revision
@@ -282,10 +287,15 @@ class FieldTeamEditor(
                     })
                 }
                 if (_speciesNames.value.isEmpty()) _speciesNames.value = knowledge.getAllSpeciesNames().sorted()
-                if (version == revision && canEdit()) _draft.value = before.copy(slots = withCandidates,
-                    loading = false, error = collectionError,
-                    collectionEnabled = saveToCollection != null && collectionError == null)
-                else if (version == revision) close()
+                if (version == revision && canEdit()) {
+                    val loaded = before.copy(slots = withCandidates, loading = false, error = collectionError,
+                        collectionEnabled = saveToCollection != null && collectionError == null)
+                    _draft.value = loaded
+                    if (useWhenReady) {
+                        if (loaded.ready) useTeam()
+                        else _draft.value = loaded.copy(error = "This saved team's moves need review. Finish all three slots before using it.")
+                    }
+                } else if (version == revision) close()
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 if (version == revision) _draft.value = before.copy(error = error.message ?: "Could not load the team.")

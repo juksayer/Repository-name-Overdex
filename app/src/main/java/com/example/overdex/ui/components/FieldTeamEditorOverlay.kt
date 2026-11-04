@@ -60,10 +60,11 @@ fun FieldTeamEditorOverlay(
                 LazyColumn(Modifier.weight(1f, fill = false)) {
                     items(savedTeams, key = { it.id }) { saved ->
                         Column(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = !team.loading) {
-                            editor.open(saved.team); picker = null
+                            editor.useSavedTeam(saved.team); picker = null
                         }.padding(vertical = 10.dp)) {
                             Text(saved.name, color = ink, fontWeight = FontWeight.Bold)
                             Text(saved.team.members.joinToString(" · ") { it.speciesName }, color = ink, fontSize = 11.sp)
+                            Text("USE THIS TEAM", color = ink, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -183,7 +184,6 @@ fun FieldTeamEditorOverlay(
                             !team.loading && (member.chargedMoves.size < 2 || move.name in member.chargedMoves),
                             Modifier.fillMaxWidth()) { editor.toggleCharged(slot, move.name) }
                     }
-                    Text("${team.slots.count { it.ready }}/3 move sets selected", color = ink, fontSize = 12.sp)
                     if (team.collectionEnabled) {
                         FieldTeamInput("Team name", team.teamName, "Give this team a name", enabled = !team.loading,
                             onValueChange = editor::setTeamName)
@@ -194,8 +194,9 @@ fun FieldTeamEditorOverlay(
                     } else {
                         Text("Tap USE THIS TEAM to save these moves.", color = ink, fontSize = 10.sp)
                     }
-                    FieldTeamAction("USE THIS TEAM", team.ready, Modifier.fillMaxWidth()) { editor.useTeam() }
                 }
+                Text("${team.slots.count { it.ready }}/3 move sets selected", color = ink, fontSize = 12.sp)
+                FieldTeamAction("USE THIS TEAM", team.ready, Modifier.fillMaxWidth()) { editor.useTeam() }
             }
         }
         if (team.loading) Text("Loading team…", color = ink, fontSize = 12.sp)

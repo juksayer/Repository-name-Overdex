@@ -39,12 +39,13 @@ class FieldTeamEditorOverlayDeviceTest {
         compose.setContent { FieldTeamEditorOverlay(editor, emptyList(), 330.dp) {} }
         compose.onNodeWithText("USE THIS TEAM").assertIsDisplayed().assertIsNotEnabled()
         repeat(3) { index ->
-            compose.onNodeWithText("${index + 1}").performClick()
+            compose.onNodeWithText("${index + 1}").performScrollTo().performClick()
             compose.onNodeWithText("○ Volt Switch").performScrollTo().performClick()
             compose.onNodeWithText("○ Thunder Punch").performScrollTo().performClick()
+            compose.onNodeWithText("USE THIS TEAM").assertIsDisplayed()
         }
         compose.onNodeWithText("3/3 move sets selected").assertIsDisplayed()
-        compose.onNodeWithText("Tap USE THIS TEAM to save these moves.").assertIsDisplayed()
+        compose.onNodeWithText("Tap USE THIS TEAM to save these moves.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("USE THIS TEAM").assertIsEnabled().performClick()
         compose.runOnIdle {
             assertEquals(listOf("Volt Switch", "Volt Switch", "Volt Switch"), result!!.members.map { it.fastMoveName })
@@ -52,16 +53,28 @@ class FieldTeamEditorOverlayDeviceTest {
         }
     }
 
-    @Test fun savedLineupCanBeLoadedAndRescanRemainsAvailable() {
+    @Test fun savedLineupCanBeAppliedWithOneSelection() {
+        var result: CurrentBattleTeam? = null
+        val editor = FieldTeamEditor(knowledge, scope, { true }) { result = it }
+        compose.runOnIdle { editor.openScan(List(3) { null }) }
+        compose.setContent { FieldTeamEditorOverlay(editor, listOf(SavedBattleTeam("saved", "Electric team", saved)),
+            330.dp) {} }
+        compose.onNodeWithText("SAVED TEAMS").performClick()
+        compose.onNodeWithText("Electric team").assertIsDisplayed()
+        compose.onNodeWithText("USE THIS TEAM").assertIsDisplayed()
+        compose.onNodeWithText("Electric team").performClick()
+        compose.runOnIdle {
+            assertEquals(saved, result)
+            assertNull(editor.draft.value)
+        }
+    }
+
+    @Test fun rescanRemainsAvailableBeforeSelectingSavedLineup() {
         var rescanned = false
         val editor = FieldTeamEditor(knowledge, scope, { true }) {}
         compose.runOnIdle { editor.openScan(List(3) { null }) }
         compose.setContent { FieldTeamEditorOverlay(editor, listOf(SavedBattleTeam("saved", "Electric team", saved)),
             330.dp) { rescanned = true } }
-        compose.onNodeWithText("SAVED TEAMS").performClick()
-        compose.onNodeWithText("Electric team").performClick()
-        compose.onNodeWithText("3/3 move sets selected").assertIsDisplayed()
-        compose.runOnIdle { assertEquals("card-1", editor.draft.value!!.slots[0].ownedPokemonId) }
         compose.onNodeWithText("RESCAN").assertIsDisplayed().performClick()
         compose.runOnIdle { assertTrue(rescanned); assertNull(editor.draft.value) }
     }

@@ -82,6 +82,128 @@ class FieldTeamEditorTest {
         } finally { scope.cancel() }
     }
 
+    @Test fun `saved three species loadout applies its moves without importing or borrowing an owned card`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val references = listOf(
+                Pokemon(776, "Turtonator", listOf(PokemonType.FIRE, PokemonType.DRAGON), "Alola",
+                    fastMoves = listOf(Move("Incinerate", PokemonType.FIRE, 20, 20, true)),
+                    chargedMoves = listOf("Brutal Swing", "Dragon Pulse").map { Move(it, PokemonType.DARK, 50, 35, false) }),
+                Pokemon(323, "Camerupt", listOf(PokemonType.FIRE, PokemonType.GROUND), "Hoenn",
+                    fastMoves = listOf("Incinerate", "Rock Smash").map { Move(it, PokemonType.FIRE, 20, 20, true) },
+                    chargedMoves = listOf("Rock Tomb", "Earth Power", "Overheat").map { Move(it, PokemonType.GROUND, 50, 50, false) }),
+                Pokemon(711, "Gourgeist (Average)", listOf(PokemonType.GHOST, PokemonType.GRASS), "Kalos",
+                    fastMoves = listOf(Move("Incinerate", PokemonType.FIRE, 20, 20, true)),
+                    chargedMoves = listOf("Seed Bomb", "Shadow Ball").map { Move(it, PokemonType.GHOST, 50, 40, false) }),
+            )
+            val catalogue = object : PokemonKnowledge {
+                override suspend fun getPokemonByName(name: String) = references.firstOrNull { it.name == name }
+                override suspend fun getPokemonById(id: Int) = references.firstOrNull { it.id == id }
+                override suspend fun getAllSpeciesNames() = references.map { it.name }.toSet()
+            }
+            val savedTeam = CurrentBattleTeam(references.mapIndexed { index, pokemon ->
+                CurrentBattleTeamMember(index + 1, pokemon.id, pokemon.name, "Incinerate",
+                    pokemon.chargedMoves.take(2).map { it.name })
+            })
+            val cameruptCard = OwnedPokemon(id = "camerupt-card", speciesId = 323, speciesName = "Camerupt",
+                cp = 1498, fastMove = "Rock Smash", chargedMove1 = "Overheat")
+            var selected: CurrentBattleTeam? = null
+            var imports = 0
+            val editor = FieldTeamEditor(catalogue, scope, { true }, loadOwnedCards = { listOf(cameruptCard) },
+                saveToCollection = { imports++; collectionTeam(it) }, save = { selected = it })
+            editor.openScan(listOf("Turtonator", "Camerupt", null))
+            editor.useSavedTeam(savedTeam)
+
+            assertEquals(savedTeam, selected)
+            assertEquals("Gourgeist (Average)", selected!!.members[2].speciesName)
+            assertTrue(selected!!.members.all { it.ownedPokemonId == null })
+            assertEquals(0, imports)
+            assertNull(editor.draft.value)
+            assertEquals("Rock Smash", cameruptCard.fastMove)
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `direct saved team use preserves linked specimen ids`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var selected: CurrentBattleTeam? = null
+            val editor = FieldTeamEditor(knowledge, scope, { true }) { selected = it }
+            editor.useSavedTeam(saved())
+            assertEquals(saved(), selected)
+            assertNull(editor.draft.value)
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `outdated saved move remains editable instead of being applied`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var selected: CurrentBattleTeam? = null
+            val editor = FieldTeamEditor(knowledge, scope, { true }) { selected = it }
+            val outdated = saved().copy(members = saved().members.map { it.copy(fastMoveName = "Incinerate") })
+            editor.useSavedTeam(outdated)
+            assertNull(selected)
+            assertFalse(editor.draft.value!!.loading)
+            assertFalse(editor.draft.value!!.ready)
+            assertTrue(editor.draft.value!!.error!!.contains("saved team's moves need review"))
+            repeat(3) { editor.chooseFast(it, "Volt Switch") }
+            editor.useTeam()
+            assertEquals(saved(), selected)
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `direct saved team use cannot replace an unavailable exact form`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var saves = 0
+            val fallback = object : PokemonKnowledge by knowledge {
+                override suspend fun getPokemonByName(name: String) = species
+            }
+            val editor = FieldTeamEditor(fallback, scope, { true }) { saves++ }
+            editor.useSavedTeam(saved().copy(members = saved().members.map { it.copy(speciesName = "Raichu (Alolan)") }))
+            assertEquals(0, saves)
+            assertFalse(editor.draft.value!!.ready)
+            assertTrue(editor.draft.value!!.error!!.contains("Raichu (Alolan)"))
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `match starting during saved team lookup prevents its application`() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val ready = CompletableDeferred<Unit>()
+        try {
+            var allowed = true
+            var saves = 0
+            val delayed = object : PokemonKnowledge by knowledge {
+                override suspend fun getPokemonByName(name: String): Pokemon? { ready.await(); return species }
+            }
+            val editor = FieldTeamEditor(delayed, scope, { allowed }) { saves++ }
+            editor.useSavedTeam(saved())
+            assertTrue(editor.draft.value!!.loading)
+            allowed = false
+            ready.complete(Unit)
+            assertEquals(0, saves)
+            assertNull(editor.draft.value)
+        } finally { scope.cancel() }
+    }
+
+    @Test fun `failed direct saved team write keeps loaded team available for retry`() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            var attempts = 0
+            var selected: CurrentBattleTeam? = null
+            val editor = FieldTeamEditor(knowledge, scope, { true }) {
+                if (++attempts == 1) error("Storage unavailable")
+                selected = it
+            }
+            editor.useSavedTeam(saved())
+            assertNull(selected)
+            assertTrue(editor.draft.value!!.ready)
+            assertEquals("Storage unavailable", editor.draft.value!!.error)
+            editor.useTeam()
+            assertEquals(saved(), selected)
+            assertNull(editor.draft.value)
+        } finally { scope.cancel() }
+    }
+
     @Test fun `reopening a pending scan keeps partial moves without saving or reusing an owned card`() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
