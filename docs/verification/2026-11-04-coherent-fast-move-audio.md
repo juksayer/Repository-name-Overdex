@@ -72,3 +72,55 @@ SHA-256 is
 Existing recordings, calibration, and collection data were retained. A fresh
 battle on this build is still needed to assess live identification speed and
 phone performance.
+
+## Follow-up: query length and filters
+
+At the user's request, an offline comparison tested longer captured queries and
+five filter variants. No further live setting or production source was changed.
+
+The matching projection is 8 kHz mono, 16-bit PCM: a 3.6-second buffer needs
+57,600 bytes, compared with 19,200 bytes for 1.2 seconds. Memory is not the main
+constraint. Longer queries search more possible positions while the compared
+signature remains at most 416 ms. They do not automatically measure multiple
+attack cycles.
+
+Two recordings with continuous AAC audio supplied nine reviewed moments. Each
+was compared using 1.2-, 2.4-, and 3.6-second clips ending at the same instant:
+**27 queries, with no additional strict acceptances at either longer length**.
+Five QTE/menu/replacement controls remained unaccepted at every length. The
+normal-play move labels in these recordings are unconfirmed, and one accepted
+comparison deliberately crosses a switch boundary, so the two acceptances per
+length are not a move-recognition success rate. In one normal-play comparison,
+the selected passage moved two seconds further into the past at the longer
+length. These results do not demonstrate faster identification.
+
+Filtering was compared against the same 114-case corpus, applying the transform
+to both queries and references with unchanged acceptance thresholds:
+
+| Setting | Failed positive expectations, out of 25 | False acceptances on 34 rejection cases |
+| --- | ---: | ---: |
+| Current baseline | 0 | 0 |
+| High-pass 120 Hz | 1 | 0 |
+| High-pass 250 Hz | 1 | 0 |
+| Low-pass 3 kHz | 0 | 0 |
+| Background-floor 10th percentile | 2 | 0 |
+| Background-floor 30th percentile | 1 | 0 |
+
+The 25 positive checks include seven clean reference smoke checks and 18 recorded
+fixtures. The other 55 cases are the latest match's exploratory comparisons,
+reported separately. The filters did not resolve the early Turtonator ambiguity
+or remove the known wrong Ember comparisons; the low-pass option preserved the
+baseline without establishing a benefit. This bounded experiment does not rule
+out other useful filters or longer context with a different recognition model.
+
+Before a selective longer retry can run live, two corroboration paths must stop
+assuming all queries are 1.2 seconds. They need the actual source intervals from
+`AudioCaptured` to reject overlapping evidence. Retry budgeting also needs to use
+availability/end time, because a longer tail moves the query start backward.
+Full-window legal-context protection must remain, with a short fast path after
+switches and positive ordinary-play evidence before an extended retry.
+
+The original audio/video and archived measurements remain unchanged. Exact
+source hashes, source times, filter parameters, scores, and selected passage
+times are retained in the private experiment reports. Desktop timings are not
+phone performance measurements.
