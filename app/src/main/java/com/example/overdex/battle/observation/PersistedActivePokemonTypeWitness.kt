@@ -47,11 +47,10 @@ class PersistedActivePokemonTypeWitness(
                                 )
                                 emptyList()
                             }
-                        val types = matches.mapNotNull { it.type }
-                        if (types.size !in 1..2 || types.distinct().size != types.size) return@collect
+                        val reading = ActiveTypeIconReading.from(matches) ?: return@collect
                         match.custody.submitTestimony(
-                            sourceId, ActivePokemonTypesWitnessed(side, types, matches.minOf { it.similarity }),
-                            article.perceivedAt, matches.minOf { it.similarity }, listOf(article.id.value),
+                            sourceId, ActivePokemonTypesWitnessed(side, reading.types, reading.similarity),
+                            article.perceivedAt, reading.similarity, listOf(article.id.value),
                             article.monotonicTimeNanos ?: return@collect
                         )
                     } finally { bitmap.recycle() }
