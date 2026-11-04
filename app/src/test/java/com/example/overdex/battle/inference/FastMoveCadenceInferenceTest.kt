@@ -510,7 +510,7 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test fun `supported spectral versions preserve preferences while incomplete legal pools stay unresolved`() = runBlocking {
-        for (version in listOf("spectral-sequence-v1", "spectral-sequence-v2")) {
+        for (version in listOf("spectral-sequence-v1", "spectral-sequence-v2", "spectral-sequence-v3")) {
             for (complete in listOf(true, false)) {
                 val engine = audioEngine()
                 engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
@@ -535,6 +535,68 @@ class FastMoveCadenceInferenceTest {
                 assertEquals(setOf("Spark", "Tackle"), snapshot.remainingMoveNames.toSet())
             }
         }
+    }
+
+    @Test fun `coherent fire comparisons and one HP interval cannot manufacture identity when phase text is blank`() = runBlocking {
+        val player = Pokemon(776, "Turtonator", listOf(PokemonType.FIRE, PokemonType.DRAGON), "Alola",
+            fastMoves = listOf(move("Ember", 2, 6), move("Fire Spin", 3, 10), move("Incinerate", 5, 20)),
+            chargedMoves = emptyList())
+        val opponent = Pokemon(861, "Grimmsnarl", listOf(PokemonType.DARK, PokemonType.FAIRY), "Galar",
+            fastMoves = listOf(move("Bite", 1, 2), move("Low Kick", 2, 5), move("Sucker Punch", 2, 8)),
+            chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(player, opponent))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, player.name, player.id)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, opponent.name, opponent.id)))
+        // This observer missed GO. Independent HP loss opens the in-progress listening gate.
+        engine.accept(sourceLoss("incoming", 17_100_000_000L))
+        val scopes = listOf(player to ActivePokemonSide.PLAYER, opponent to ActivePokemonSide.OPPONENT).map { (pokemon, side) ->
+            com.example.overdex.battle.custody.FastMoveSoundSearchScope(side, pokemon.name, pokemon.fastMoves.map { it.name })
+        }
+        fun candidate(name: String, original: Float, changing: Float, queryMs: Long, referenceMs: Long) =
+            com.example.overdex.battle.custody.FastMoveSoundCandidate(name, "reference-$name", original, changing,
+                queryMs * 1_000_000L, referenceMs * 1_000_000L,
+                if (name == "Bite") 352_000_000L else 416_000_000L)
+        fun measured(id: String, at: Long, scores: List<com.example.overdex.battle.custody.FastMoveSoundCandidate>) =
+            article(id, FastMoveSoundMeasured(true, 0L, 100_000_000L, 1000f, .4f,
+                analysisVersion = "spectral-sequence-v3", referenceCandidates = scores,
+                referenceSearchScopes = scopes)).copy(monotonicTimeNanos = at)
+        // Fresh coherent rematches of the November 4 recording, not rewritten v2 measurements.
+        val first = measured("first", 17_328_453_000L, listOf(
+            candidate("Incinerate", .9535752f, .9020159f, 592, 32),
+            candidate("Ember", .9228257f, .9070820f, 608, 208),
+            candidate("Fire Spin", .9164432f, .8706139f, 544, 16),
+            candidate("Bite", .8503954f, .6484616f, 640, 0),
+            candidate("Low Kick", .8819520f, .8184547f, 784, 0),
+            candidate("Sucker Punch", .9444755f, .9248655f, 784, 192),
+        ))
+        assertTrue(engine.accept(first).none { (it.payload as? FastMoveIdentified)?.side == ActivePokemonSide.PLAYER })
+        for ((index, at) in listOf(18_358_000_000L, 20_978_000_000L).withIndex()) {
+            val loss = sourceLoss("outgoing-$index", at, ActivePokemonSide.OPPONENT)
+            engine.accept(loss)
+            val use = fastUse("use-$index", ActivePokemonSide.PLAYER, player.name)
+            engine.accept(use.copy(monotonicTimeNanos = at, predecessorIds = listOf(loss.id),
+                payload = (use.payload as FastMoveUseObserved).copy(evidenceKinds = listOf("HP_DAMAGE_TICK"))))
+        }
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER)?.identifiedMoveName)
+        engine.accept(article("blank-announcement", com.example.overdex.battle.custody.RawTestimony(""))
+            .copy(monotonicTimeNanos = 34_170_000_000L, sourceId = SourceId("ANNOUNCEMENT_WITNESS")))
+        engine.accept(article("blank-control", com.example.overdex.battle.custody.PlayerChargeMoveLabelRead(1, ""))
+            .copy(monotonicTimeNanos = 34_170_000_000L))
+        // The preserved image contains Attack Incoming, but OCR supplied no phase cue.
+        // A direct interval and repeated original-spectrum wins do not remove that uncertainty.
+        val second = measured("second", 33_926_936_000L, listOf(
+            candidate("Incinerate", .9713871f, .8661393f, 0, 1584),
+            candidate("Ember", .9163615f, .8858381f, 208, 576),
+            candidate("Fire Spin", .9260681f, .8668878f, 160, 528),
+            candidate("Bite", .8958102f, .6999019f, 64, 0),
+            candidate("Low Kick", .9021972f, .8291097f, 256, 0),
+            candidate("Sucker Punch", .9254873f, .9121563f, 0, 608),
+        ))
+        assertTrue(engine.accept(second).none { (it.payload as? FastMoveIdentified)?.side == ActivePokemonSide.PLAYER })
+        val snapshot = engine.candidateSnapshot(ActivePokemonSide.PLAYER)!!
+        assertNull(snapshot.identifiedMoveName)
+        assertNull(snapshot.audioPreference)
+        assertEquals(setOf("Ember", "Fire Spin", "Incinerate"), snapshot.remainingMoveNames.toSet())
     }
 
     @Test fun `unrecognized spectral version cannot create a preference identity or legacy onset cadence`() = runBlocking {

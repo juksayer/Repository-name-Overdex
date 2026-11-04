@@ -7,13 +7,13 @@ data class FastMoveSoundReference(val moveName: String, val sha256: String, val 
 
 /**
  * Compares up to a 416 ms spectral sequence against eligible local references. Both the original
- * spectrum and its changing component must agree. A loud clip or a legal move alone cannot win.
+ * spectrum and its changing component describe the same aligned passage. A loud clip or a legal
+ * move alone cannot win.
  * Offsets describe the matched portion; reference length is NOT the PvP turn duration.
  */
 class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
     private data class Features(val original: List<FloatArray>, val changing: List<FloatArray>)
     private data class Prepared(val reference: FastMoveSoundReference, val key: String, val features: Features)
-    private data class Fit(val score: Float, val queryStart: Int, val referenceStart: Int, val frames: Int)
     private val prepared = references.map { Prepared(it, moveKey(it.moveName), features(StatChangeSoundMatcher.mono8k(it.audio))) }
 
     /** Full-catalogue comparison retained for offline diagnostics. Live callers supply an allowlist. */
@@ -42,55 +42,16 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
         if (mono.size < SIZE + (MATCH_FRAMES - 1) * HOP || mono.maxOf { abs(it.toInt()) } < 120) return emptyList()
         val query = features(mono)
         return eligible.mapNotNull { ref ->
-            val original = fit(query.original, ref.features.original) ?: return@mapNotNull null
-            val changing = fit(query.changing, ref.features.changing) ?: return@mapNotNull null
+            val frames = min(MATCH_FRAMES, ref.features.original.size)
+            if (frames < MIN_REFERENCE_FRAMES) return@mapNotNull null
+            val fit = fitCoherentSequences(query.original, query.changing,
+                ref.features.original, ref.features.changing, frames) ?: return@mapNotNull null
             FastMoveSoundCandidate(ref.reference.moveName, ref.reference.sha256,
-                original.score, changing.score,
-                changing.queryStart * HOP_NANOS, changing.referenceStart * HOP_NANOS,
-                ((changing.frames - 1) * HOP + SIZE) * 1_000_000_000L / RATE)
+                fit.originalSimilarity, fit.changingSimilarity,
+                fit.queryStart * HOP_NANOS, fit.referenceStart * HOP_NANOS,
+                ((fit.frames - 1) * HOP + SIZE) * 1_000_000_000L / RATE)
         }.groupBy { it.moveName }.map { (_, variants) -> variants.maxBy { it.similarity } }
             .sortedByDescending { it.similarity }
-    }
-
-    private fun fit(query: List<FloatArray>, reference: List<FloatArray>): Fit? {
-        // Bite's complete bundled effect is 354 ms: 21 available spectral frames.
-        // Compare its actual span instead of silently omitting this legal alternative.
-        // Longer references still use 25 frames; neither PCM padding/repetition nor
-        // an arbitrarily tiny reference can manufacture additional matching evidence.
-        val frames = min(MATCH_FRAMES, reference.size)
-        if (frames < MIN_REFERENCE_FRAMES || query.size < frames) return null
-        var best = Fit(-1f, 0, 0, frames)
-        // Sliding diagonal sums avoid rescoring the same segment at every offset.
-        val ring = FloatArray(frames)
-        for (offset in -query.size + frames..reference.size - frames) {
-            val q0 = max(0, -offset)
-            val r0 = max(0, offset)
-            val length = min(query.size - q0, reference.size - r0)
-            var sum = 0f
-            for (i in 0 until length) {
-                val q = query[q0 + i]; val r = reference[r0 + i]
-                var dot = 0f
-                var bin = 0
-                // Fixed 64-bin vectors. Unrolling avoids ART's per-bin loop overhead while
-                // preserving both independent score thresholds for each eligible reference.
-                while (bin < 64) {
-                    dot += q[bin] * r[bin] + q[bin + 1] * r[bin + 1] +
-                        q[bin + 2] * r[bin + 2] + q[bin + 3] * r[bin + 3] +
-                        q[bin + 4] * r[bin + 4] + q[bin + 5] * r[bin + 5] +
-                        q[bin + 6] * r[bin + 6] + q[bin + 7] * r[bin + 7]
-                    bin += 8
-                }
-                val slot = i % frames
-                if (i >= frames) sum -= ring[slot]
-                ring[slot] = dot
-                sum += dot
-                if (i >= frames - 1 && sum / frames > best.score) {
-                    best = Fit((sum / frames).coerceIn(0f, 1f),
-                        q0 + i - frames + 1, r0 + i - frames + 1, frames)
-                }
-            }
-        }
-        return best
     }
 
     private fun features(samples: ShortArray): Features {
@@ -112,15 +73,81 @@ class FastMoveReferenceMatcher(references: List<FastMoveSoundReference>) {
     }
 
     companion object {
-        const val VERSION = "spectral-sequence-v2"
+        const val VERSION = "spectral-sequence-v3"
 
         /**
-         * v2 only adds complete short-reference comparisons. Saved v1 scores for
-         * longer references retain the same meaning; downstream pool-completeness
-         * checks still reject any requested alternative that v1 could not score.
+         * Historical v1/v2 scores remain readable. Their two spectral maxima may describe
+         * different passages, so only v3 can support inference requiring a coherent pair.
          */
         internal fun supportsAnalysisVersion(version: String?): Boolean =
-            version == "spectral-sequence-v1" || version == VERSION
+            version == "spectral-sequence-v1" || version == "spectral-sequence-v2" || version == VERSION
+
+        internal data class CoherentFit(
+            val originalSimilarity: Float,
+            val changingSimilarity: Float,
+            val queryStart: Int,
+            val referenceStart: Int,
+            val frames: Int,
+        )
+
+        /** Both scores and offsets refer to one passage, chosen by their mean similarity. */
+        internal fun fitCoherentSequences(
+            queryOriginal: List<FloatArray>, queryChanging: List<FloatArray>,
+            referenceOriginal: List<FloatArray>, referenceChanging: List<FloatArray>, frames: Int,
+        ): CoherentFit? {
+            if (frames < MIN_REFERENCE_FRAMES || queryOriginal.size < frames ||
+                referenceOriginal.size < frames || queryChanging.size != queryOriginal.size ||
+                referenceChanging.size != referenceOriginal.size) return null
+            var best: CoherentFit? = null
+            var bestMean = -1f
+            // Sliding diagonal sums keep the two components on exactly the same source frames.
+            val originalRing = FloatArray(frames)
+            val changingRing = FloatArray(frames)
+            for (offset in -queryOriginal.size + frames..referenceOriginal.size - frames) {
+                val q0 = max(0, -offset)
+                val r0 = max(0, offset)
+                val length = min(queryOriginal.size - q0, referenceOriginal.size - r0)
+                var originalSum = 0f
+                var changingSum = 0f
+                for (i in 0 until length) {
+                    val q = queryOriginal[q0 + i]; val r = referenceOriginal[r0 + i]
+                    val qc = queryChanging[q0 + i]; val rc = referenceChanging[r0 + i]
+                    var originalDot = 0f
+                    var changingDot = 0f
+                    var bin = 0
+                    while (bin < 64) {
+                        originalDot += q[bin] * r[bin] + q[bin + 1] * r[bin + 1] +
+                            q[bin + 2] * r[bin + 2] + q[bin + 3] * r[bin + 3] +
+                            q[bin + 4] * r[bin + 4] + q[bin + 5] * r[bin + 5] +
+                            q[bin + 6] * r[bin + 6] + q[bin + 7] * r[bin + 7]
+                        changingDot += qc[bin] * rc[bin] + qc[bin + 1] * rc[bin + 1] +
+                            qc[bin + 2] * rc[bin + 2] + qc[bin + 3] * rc[bin + 3] +
+                            qc[bin + 4] * rc[bin + 4] + qc[bin + 5] * rc[bin + 5] +
+                            qc[bin + 6] * rc[bin + 6] + qc[bin + 7] * rc[bin + 7]
+                        bin += 8
+                    }
+                    val slot = i % frames
+                    if (i >= frames) {
+                        originalSum -= originalRing[slot]
+                        changingSum -= changingRing[slot]
+                    }
+                    originalRing[slot] = originalDot
+                    changingRing[slot] = changingDot
+                    originalSum += originalDot
+                    changingSum += changingDot
+                    if (i < frames - 1) continue
+                    val original = (originalSum / frames).coerceIn(0f, 1f)
+                    val changing = (changingSum / frames).coerceIn(0f, 1f)
+                    val mean = (original + changing) * .5f
+                    if (mean > bestMean) {
+                        bestMean = mean
+                        best = CoherentFit(original, changing,
+                            q0 + i - frames + 1, r0 + i - frames + 1, frames)
+                    }
+                }
+            }
+            return best
+        }
 
         private const val RATE = 8_000
         private const val SIZE = 256

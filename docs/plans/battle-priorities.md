@@ -47,6 +47,14 @@ are starting points; a task is not complete merely because a class or test exist
 Next substantial slice: species/form preservation and the paired-match Fast Move
 audit (orders 1–2). Finish and measure one bounded change before adding readers.
 
+November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
+now give both spectral scores and timing offsets from the same sound passage.
+Recorded checks preserve the supported identities, but Turtonator's early
+Incinerate remains unresolved. A visible, missed Attack Incoming announcement
+overlaps a promising audio window; charged-phase recognition and positive
+ordinary-play evidence are the next bounded step before combining weaker audio
+with HP support. This is not a completed live recognition-speed fix.
+
 October 28 pre-flight addition at the user's request: [Team Select collection review](../verification/2026-10-28-field-team-collection.md)
 offers reviewed card imports, existing-card links and named team saving before
 battle. Owned storage now preserves canonical form names. Historical match

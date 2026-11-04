@@ -58,13 +58,53 @@ class FastMoveReferenceMatcherTest {
     }
 
     @Test fun `clean target sounds survive volume changes and reject the competing move`() {
-        for (name in listOf("Water Gun", "Powder Snow", "Spark", "Tackle")) {
+        for (name in listOf("Water Gun", "Powder Snow", "Spark", "Tackle", "Incinerate", "Ember", "Fire Spin")) {
             val ref = references.first { it.moveName == name }
             val mono = StatChangeSoundMatcher.mono8k(ref.audio)
             val clipped = mono.take(9_600).map { (it * .4f).toInt().toShort() }.toShortArray()
             val ranked = matcher.measure(Pcm16Audio(8_000, 1, clipped))
             assertEquals(name, ranked.first().moveName)
             assertTrue("$name ${ranked.take(2)}", FastMoveReferenceMatcher.accepts(ranked))
+        }
+    }
+
+    @Test fun `original and changing maxima from different passages cannot become one good fit`() {
+        fun spectrum(bin: Int) = FloatArray(64).apply { this[bin] = 1f }
+        val reference = List(25) { spectrum(0) }
+        val queryOriginal = List(50) { spectrum(if (it < 25) 0 else 1) }
+        val queryChanging = List(50) { spectrum(if (it < 25) 1 else 0) }
+        // Each component has a perfect 25-frame match, but in opposite halves of the query.
+        val fit = requireNotNull(FastMoveReferenceMatcher.fitCoherentSequences(
+            queryOriginal, queryChanging, reference, reference, 25))
+        assertEquals(1f, fit.originalSimilarity + fit.changingSimilarity, .00001f)
+        assertFalse(fit.originalSimilarity >= .93f && fit.changingSimilarity >= .80f)
+        assertEquals(0, fit.referenceStart)
+        assertEquals(25, fit.frames)
+    }
+
+    @Test fun `coherent fit chooses the strongest joint passage and reports its actual offsets`() {
+        fun spectrum(similarity: Float) = FloatArray(64).apply {
+            this[0] = similarity
+            this[1] = kotlin.math.sqrt(1f - similarity * similarity)
+        }
+        val reference = List(25) { spectrum(1f) }
+        val queryOriginal = List(75) { spectrum(when { it < 25 -> 1f; it < 50 -> 0f; else -> .9f }) }
+        val queryChanging = List(75) { spectrum(when { it < 25 -> 0f; it < 50 -> 1f; else -> .9f }) }
+        val fit = requireNotNull(FastMoveReferenceMatcher.fitCoherentSequences(
+            queryOriginal, queryChanging, reference, reference, 25))
+        assertEquals(50, fit.queryStart)
+        assertEquals(0, fit.referenceStart)
+        assertEquals(.9f, fit.originalSimilarity, .00001f)
+        assertEquals(.9f, fit.changingSimilarity, .00001f)
+    }
+
+    @Test fun `historic versions remain readable but only v3 guarantees shared source alignment`() {
+        assertEquals("spectral-sequence-v3", FastMoveReferenceMatcher.VERSION)
+        for (version in listOf("spectral-sequence-v1", "spectral-sequence-v2", "spectral-sequence-v3")) {
+            assertTrue(FastMoveReferenceMatcher.supportsAnalysisVersion(version))
+        }
+        for (version in listOf(null, "", "spectral-sequence-v4")) {
+            assertFalse(FastMoveReferenceMatcher.supportsAnalysisVersion(version))
         }
     }
 
