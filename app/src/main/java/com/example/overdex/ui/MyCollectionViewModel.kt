@@ -111,7 +111,12 @@ class MyCollectionViewModel(application: Application) : AndroidViewModel(applica
 
     fun removeOwnedPokemon(id: String) {
         viewModelScope.launch {
-            ownedPokemonDao.deleteOwnedPokemon(id)
+            deleteOwnedPokemon(id)
         }
+    }
+
+    /** Delete only this owned card; archived matches and saved lineup snapshots are independent. */
+    suspend fun deleteOwnedPokemon(id: String) {
+        ownedPokemonDao.deleteOwnedPokemon(id)
     }
 }

@@ -1,5 +1,6 @@
 package com.example.overdex.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.overdex.model.OwnedPokemon
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.MyCollectionViewModel
 import com.example.overdex.ui.PokedexViewModel
@@ -33,42 +35,119 @@ fun SpecimenDetailScreen(
     collectionViewModel: MyCollectionViewModel,
     onEdit: (String) -> Unit,
     onRecords: (String) -> Unit = {},
+    onDeleteSuccess: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val ownedPokemon by collectionViewModel.getOwnedPokemon(ownedId).collectAsState(initial = null)
     var species by remember { mutableStateOf<Pokemon?>(null) }
+    LaunchedEffect(ownedPokemon) {
+        ownedPokemon?.let { species = pokedexViewModel.getPokemonById(it.speciesId) }
+    }
+    val spriteUrl = ownedPokemon?.let { owned ->
+        pokedexViewModel.spriteProvider.getSpriteUrl(id = owned.speciesId, isShiny = owned.isShiny,
+            isShadow = owned.isShadow, isPurified = owned.isPurified)
+    }
+    OwnedPokemonCardDetailScreen(ownedId, ownedPokemon, species, spriteUrl,
+        deleteOwnedCard = collectionViewModel::deleteOwnedPokemon,
+        onEdit = onEdit, onRecords = onRecords, onDeleteSuccess = onDeleteSuccess,
+        onBack = onBack, pokedexViewModel = pokedexViewModel)
+}
+
+/** Shared production detail and its LCD/physical controls, independently exercisable with isolated storage. */
+@Composable
+internal fun OwnedPokemonCardDetailScreen(
+    ownedId: String,
+    ownedPokemon: OwnedPokemon?,
+    species: Pokemon?,
+    spriteUrl: String?,
+    deleteOwnedCard: suspend (String) -> Unit,
+    onEdit: (String) -> Unit,
+    onRecords: (String) -> Unit,
+    onDeleteSuccess: () -> Unit,
+    onBack: () -> Unit,
+    pokedexViewModel: PokedexViewModel? = null,
+) {
     
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
+    var showDeleteConfirm by remember(ownedId) { mutableStateOf(false) }
+    var confirmDeleteSelected by remember(ownedId) { mutableStateOf(false) }
+    var deleting by remember(ownedId) { mutableStateOf(false) }
+    var deleteError by remember(ownedId) { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(ownedPokemon) {
-        ownedPokemon?.let {
-            if (species == null) {
-                species = pokedexViewModel.getPokemonById(it.speciesId)
+    fun openDeleteConfirmation() {
+        if (ownedPokemon == null || deleting) return
+        confirmDeleteSelected = false
+        deleteError = null
+        showDeleteConfirm = true
+    }
+
+    fun cancelDelete() {
+        if (!deleting) showDeleteConfirm = false
+    }
+
+    fun deleteCard() {
+        if (!showDeleteConfirm || deleting || ownedPokemon == null) return
+        deleting = true
+        deleteError = null
+        scope.launch {
+            try {
+                deleteOwnedCard(ownedId)
+                onDeleteSuccess()
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                deleteError = "Could not delete this card. Please retry."
+            } finally {
+                deleting = false
             }
         }
     }
 
+    BackHandler(enabled = showDeleteConfirm) { cancelDelete() }
+
     ODXFiShell(
         onUp = {
-            scope.launch {
+            if (showDeleteConfirm) {
+                if (!deleting) confirmDeleteSelected = false
+            } else scope.launch {
                 scrollState.animateScrollBy(-500f)
             }
         },
         onDown = {
-            scope.launch {
+            if (showDeleteConfirm) {
+                if (!deleting) confirmDeleteSelected = true
+            } else scope.launch {
                 scrollState.animateScrollBy(500f)
             }
         },
-        onStart = { onEdit(ownedId) },
-        onA = { onRecords(ownedId) },
-        onB = onBack,
+        onStart = { if (!showDeleteConfirm && !deleting) onEdit(ownedId) },
+        onSelect = { if (!showDeleteConfirm) openDeleteConfirmation() },
+        onA = {
+            if (showDeleteConfirm) {
+                if (confirmDeleteSelected) deleteCard() else cancelDelete()
+            } else if (ownedPokemon != null) onRecords(ownedId)
+        },
+        onB = { if (showDeleteConfirm) cancelDelete() else onBack() },
         viewModel = pokedexViewModel,
         showBattleOverlay = false,
         lcdContent = {
-            Column(Modifier.fillMaxWidth()) {
-                TerminalButton(text = "BATTLE RECORDS", onClick = { onRecords(ownedId) })
-                TerminalText("[A] RECORDS · [START] EDIT · [B] BACK", fontSize = 11.sp)
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (showDeleteConfirm) {
+                    TerminalButton(text = "KEEP CARD", selected = !confirmDeleteSelected,
+                        onClick = if (deleting) null else ::cancelDelete)
+                    TerminalButton(text = if (deleting) "DELETING…" else "DELETE CARD",
+                        selected = confirmDeleteSelected,
+                        onClick = if (deleting) null else ::deleteCard)
+                    TerminalText("[↑/↓] CHOOSE · [A] CONFIRM · [B] CANCEL", fontSize = 11.sp)
+                } else if (ownedPokemon != null) {
+                    TerminalButton(text = "BATTLE RECORDS", onClick = { onRecords(ownedId) })
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        TerminalButton(text = "EDIT CARD", modifier = Modifier.weight(1f), onClick = { onEdit(ownedId) })
+                        TerminalButton(text = "DELETE CARD", modifier = Modifier.weight(1f), onClick = ::openDeleteConfirmation)
+                    }
+                    TerminalText("[A] RECORDS · [START] EDIT · [SELECT] DELETE · [B] BACK", fontSize = 11.sp)
+                }
             }
         },
     ) { _ ->
@@ -76,6 +155,21 @@ fun SpecimenDetailScreen(
         if (owned == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 TerminalText(text = "SPECIMEN NOT FOUND")
+            }
+            return@ODXFiShell
+        }
+
+        if (showDeleteConfirm) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                TerminalHeader("delete card?")
+                TerminalText(owned.displayName ?: species?.name ?: owned.speciesName ?: "Pokémon card", fontSize = 24.sp)
+                TerminalText("${species?.name ?: owned.speciesName.orEmpty()} · CP ${owned.cp ?: "---"}")
+                TerminalText("ID: ${owned.id.takeLast(8).uppercase()}", fontSize = 11.sp)
+                TerminalText("Delete this card from all binders? Recorded matches and saved teams will stay.")
+                TerminalText("This cannot be undone. Your other cards are kept.")
+                deleteError?.let { TerminalText(it, color = TerminalPurple) }
+                TerminalText(if (deleting) "Deleting card…" else "Choose KEEP CARD or DELETE CARD on the LCD.")
             }
             return@ODXFiShell
         }
@@ -121,12 +215,6 @@ fun SpecimenDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val spriteUrl = pokedexViewModel.spriteProvider.getSpriteUrl(
-                    id = owned.speciesId,
-                    isShiny = owned.isShiny,
-                    isShadow = owned.isShadow,
-                    isPurified = owned.isPurified
-                )
                 AsyncImage(
                     model = spriteUrl,
                     contentDescription = species?.name,

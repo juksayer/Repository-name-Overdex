@@ -1139,6 +1139,7 @@ fun PokedexApp(
                     collectionViewModel = collectionViewModel,
                     onEdit = { ownedId -> navController.navigate("specimens/edit/$ownedId") },
                     onRecords = { ownedId -> navController.navigate("battle_records?ownedId=${android.net.Uri.encode(ownedId)}") },
+                    onDeleteSuccess = { navController.debugPopBackStack() },
                     onBack = { navController.debugPopBackStack() }
                 )
             }
