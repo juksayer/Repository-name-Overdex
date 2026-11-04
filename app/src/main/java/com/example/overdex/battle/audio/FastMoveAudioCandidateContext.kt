@@ -127,7 +127,13 @@ internal class FastMoveAudioCandidateContext(
             state.types[side]?.let { observed ->
                 val compatible = references.names.zip(references.pokemon)
                     .filter { (_, pokemon) -> pokemon?.types?.toSet() == observed.values }
-                references = PokemonFormCandidates(compatible.map { it.first }, compatible.map { it.second })
+                // Type recognition may contradict a clean active identity. It
+                // can narrow a known legal family, but cannot erase that family
+                // (or its configured player move) when no form is compatible.
+                // Keep the type Article in the evidence even when it conflicts.
+                if (compatible.isNotEmpty()) {
+                    references = PokemonFormCandidates(compatible.map { it.first }, compatible.map { it.second })
+                }
             }
             val legal = references.fastMoves.map { it.name }.toSet()
             if (legal.isEmpty()) continue

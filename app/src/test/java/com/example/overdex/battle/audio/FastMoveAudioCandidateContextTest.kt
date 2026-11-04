@@ -23,12 +23,18 @@ class FastMoveAudioCandidateContextTest {
     private val spark = move("Spark", PokemonType.ELECTRIC)
     private val charm = move("Charm", PokemonType.FAIRY)
     private val voltSwitch = move("Volt Switch", PokemonType.ELECTRIC)
+    private val shadowClaw = move("Shadow Claw", PokemonType.GHOST)
+    private val hex = move("Hex", PokemonType.GHOST)
+    private val poisonSting = move("Poison Sting", PokemonType.POISON)
+    private val infestation = move("Infestation", PokemonType.BUG)
     private val combusken = pokemon(256, "Combusken", listOf(PokemonType.FIRE, PokemonType.FIGHTING), ember, peck)
     private val golbat = pokemon(42, "Golbat", listOf(PokemonType.POISON, PokemonType.FLYING), wingAttack)
+    private val gengar = pokemon(94, "Gengar", listOf(PokemonType.GHOST, PokemonType.POISON), shadowClaw, hex)
+    private val drapion = pokemon(452, "Drapion", listOf(PokemonType.POISON, PokemonType.DARK), poisonSting, infestation)
     private val skarmory = pokemon(227, "Skarmory", listOf(PokemonType.STEEL, PokemonType.FLYING), airSlash)
     private val raichu = pokemon(26, "Raichu", listOf(PokemonType.ELECTRIC), spark, charm)
     private val alolan = pokemon(26, "Raichu (Alolan)", listOf(PokemonType.ELECTRIC, PokemonType.PSYCHIC), spark, voltSwitch)
-    private val catalogue = listOf(combusken, golbat, skarmory, raichu, alolan)
+    private val catalogue = listOf(combusken, golbat, gengar, drapion, skarmory, raichu, alolan)
 
     private fun move(name: String, type: PokemonType) = Move(name, type, 5, 8, true, 2)
     private fun pokemon(id: Int, name: String, types: List<PokemonType>, vararg moves: Move) =
@@ -100,10 +106,75 @@ class FastMoveAudioCandidateContextTest {
         assertNull(context.snapshot(at(11), at(13)))
     }
 
+    @Test fun `recorded contradictory player types retain configured legal moves and source time boundaries`() = runBlocking {
+        for ((pokemon, configuredMove, wrongType) in listOf(
+            Triple(golbat, wingAttack.name, PokemonType.WATER),
+            Triple(gengar, shadowClaw.name, PokemonType.WATER),
+            Triple(drapion, poisonSting.name, PokemonType.ELECTRIC),
+        )) {
+            val context = FastMoveAudioCandidateContext(knowledge())
+            context.observe(config(1, 1, pokemon, configuredMove))
+            context.observe(species(player, pokemon, 3, slot = 1))
+            context.observe(species(opponent, combusken, 4))
+            val before = snapshot(context)
+            val typeId = "contradictory-${pokemon.name}-type"
+            context.observe(article(typeId, at(12), ActivePokemonTypesWitnessed(player, listOf(wrongType), .99f)))
+
+            assertFalse("${pokemon.name}: a new type reading invalidates earlier async work", context.isCurrent(before))
+            assertNull("${pokemon.name}: changed context cannot label crossed PCM", context.snapshot(at(11), at(13)))
+            val after = snapshot(context, 14)
+            assertEquals(before.sideMoves, after.sideMoves)
+            assertEquals(pokemon.name, after.sideSpeciesNames[player])
+            assertEquals(setOf(configuredMove), after.sideMoves[player])
+            assertEquals(setOf("Ember", "Peck", configuredMove), after.allowedMoveNames)
+            assertTrue("${pokemon.name}: both legal pools remain available", after.allActiveSidesKnown)
+            assertTrue("${pokemon.name}: preserve conflicting raw evidence", typeId in after.sideEvidenceIds.getValue(player))
+        }
+    }
+
+    @Test fun `contradictory opponent types preserve known form alternatives without inventing candidates`() = runBlocking {
+        val context = FastMoveAudioCandidateContext(knowledge())
+        context.observe(species(opponent, raichu, 3))
+        context.observe(article("water-icons", at(5), ActivePokemonTypesWitnessed(opponent,
+            listOf(PokemonType.WATER), .99f)))
+        val result = snapshot(context)
+        assertEquals(setOf("Spark", "Charm", "Volt Switch"), result.allowedMoveNames)
+        assertEquals("Raichu", result.sideSpeciesNames[opponent])
+        assertFalse(result.allActiveSidesKnown)
+        assertTrue("water-icons" in result.sideEvidenceIds.getValue(opponent))
+    }
+
+    @Test fun `contradictory types cannot revive an unknown player or apply a departed species configuration`() = runBlocking {
+        val context = FastMoveAudioCandidateContext(knowledge())
+        context.observe(config(1, 1, golbat, "Wing Attack"))
+        context.observe(article("types-without-player", at(2), ActivePokemonTypesWitnessed(player,
+            listOf(PokemonType.WATER), .99f)))
+        assertNull("Types and configuration are not an active identity", context.snapshot(at(3), at(4)))
+        context.observe(species(player, golbat, 5, slot = 1))
+        context.observe(species(opponent, combusken, 6))
+        context.observe(cue(12, "SWITCH", player))
+        context.observe(article("types-after-switch", at(13), ActivePokemonTypesWitnessed(player,
+            listOf(PokemonType.WATER), .99f)))
+        val unknown = snapshot(context, 14)
+        assertEquals(setOf("Ember", "Peck"), unknown.allowedMoveNames)
+        assertFalse(unknown.allActiveSidesKnown)
+        assertFalse(player in unknown.sideMoves)
+
+        context.observe(species(player, gengar, 18))
+        context.observe(article("gengar-water", at(19), ActivePokemonTypesWitnessed(player,
+            listOf(PokemonType.WATER), .99f)))
+        val successor = snapshot(context, 20)
+        assertEquals(setOf("Shadow Claw", "Hex"), successor.sideMoves[player])
+        assertFalse("Wing Attack" in successor.allowedMoveNames)
+        assertFalse("Departed configuration cannot support the new species", "config-1-1" in successor.evidenceIds)
+    }
+
     @Test fun `unknown regional reference does not fall back to ordinary dex`() = runBlocking {
         val context = FastMoveAudioCandidateContext(knowledge())
         context.observe(article("unknown-form", at(3),
             ActivePokemonSpeciesWitnessed(opponent, "Raichu (Unknown)", 26)))
+        context.observe(article("unknown-form-types", at(5), ActivePokemonTypesWitnessed(opponent,
+            listOf(PokemonType.WATER), .99f)))
         assertNull(context.snapshot(at(10), at(12)))
     }
 
@@ -115,6 +186,8 @@ class FastMoveAudioCandidateContextTest {
         }
         val context = FastMoveAudioCandidateContext(incomplete)
         context.observe(species(opponent, raichu, 3))
+        context.observe(article("incomplete-form-types", at(5), ActivePokemonTypesWitnessed(opponent,
+            listOf(PokemonType.WATER), .99f)))
         assertNull(context.snapshot(at(10), at(12)))
     }
 
@@ -127,6 +200,8 @@ class FastMoveAudioCandidateContextTest {
         assertEquals(setOf("Spark"), result.sideMoves[player])
         assertEquals(setOf("Spark", "Charm", "Volt Switch"), result.sideMoves[opponent])
         context.observe(config(12, 1, raichu, "Ember"))
+        context.observe(article("contradictory-player-types", at(13), ActivePokemonTypesWitnessed(player,
+            listOf(PokemonType.WATER), .99f)))
         result = snapshot(context, 14)
         assertEquals("Impossible configured moves cannot enter the audio pool", setOf("Spark", "Charm"), result.sideMoves[player])
         assertFalse("Ember" in result.allowedMoveNames)
@@ -155,9 +230,12 @@ class FastMoveAudioCandidateContextTest {
         context.observe(article("resolved", at(3), PlayerActiveIdentityResolved("Raichu", alolan.name, 26, 1,
             at(3), "SPRITE_FORM")))
         context.observe(species(player, raichu, 5))
+        context.observe(article("regional-player-water", at(7), ActivePokemonTypesWitnessed(player,
+            listOf(PokemonType.WATER), .99f)))
         val result = snapshot(context)
         assertEquals(setOf("Volt Switch"), result.sideMoves[player])
         assertEquals(alolan.name, result.sideSpeciesNames[player])
+        assertFalse("Contradictory types cannot restore ordinary-form moves", "Charm" in result.allowedMoveNames)
     }
 
     @Test fun `resolved ordinary successor replaces regional form even without an entry cue`() = runBlocking {
