@@ -61,6 +61,14 @@ fabricating a Match Start. The original archive supplies that proof before its
 missed warning crop. Recovery of the faded warning's text, positive ordinary-play
 visibility, and a new live battle check remain separate acceptance work.
 
+November 4 independent boundary investigation: [source-frame charge transitions](../verification/2026-11-04-independent-charge-boundaries.md)
+show charged controls and inactive cards fading together before the QTE camera,
+bubbles, or shield panel. Next slice: measure positive normal-control chrome,
+confirm with independent bubble/shield graphics, and append a source-timed,
+bounded transition for Timeline and Replay. Exit loss and pop/haptic milestones
+arrive later and cannot define the earliest boundary. The investigation is
+complete; the new automatic visual detector is not yet implemented or validated.
+
 October 28 pre-flight addition at the user's request: [Team Select collection review](../verification/2026-10-28-field-team-collection.md)
 offers reviewed card imports, existing-card links and named team saving before
 battle. Owned storage now preserves canonical form names. Historical match
