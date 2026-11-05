@@ -1,21 +1,18 @@
 # Directory and LCD review — November 5, 2026
 
-Review outcome: the trainer requested reverting the control-cross trial.
-The previous enlarged portrait keyboard arrangement has been restored. The
-cross layout below describes the rejected trial, not the current layout.
-All other requested changes remain pending separate review.
+The trainer clarified the restoration target with the October 29 Match Summary
+screenshot: a tall CRT above a compact LCD between two vertical button columns.
+The enlarged keyboard console and the control-cross trial are both superseded.
 
-The trainer requested one change at a time, with a review before the next change.
-The first slice is the enlarged **portrait typing controls only**:
+- Fixed 170 dp bottom console, with 56 dp columns and 36 dp high buttons.
+- Left: Up, Down, Left, Right. Right: A, B, SELECT, START/contextual STOP.
+- Opening the keyboard keeps the same physical shell geometry, including in
+  binder mode. QWERTY, local swipe recognition, and existing keyboard scrolling
+  remain available inside the smaller LCD.
 
-- Left cross: Up above Left/Right, Down below.
-- Right cross: START above SELECT/B, A below. Existing contextual START actions
-  and labels remain meaningful.
-- Keep the keyboard full width above the two crosses. Browsing and binder
-  controls remain unchanged.
-
-Do not fold the following requested changes into that preview. They remain
-pending the trainer's review and can be implemented in separate small slices:
+The trainer requested one change at a time, with review before the next change.
+The following requested changes remain pending and can be implemented in
+separate small slices:
 
 1. Remove the idle swipe instruction line. Put instructions in a real How-to
    section; its final location/directory entry has not been chosen. Preserve

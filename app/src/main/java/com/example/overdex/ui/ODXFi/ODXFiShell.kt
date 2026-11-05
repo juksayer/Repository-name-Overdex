@@ -736,7 +736,7 @@ fun ODXFiShell(
                 )
                 InstrumentButton(
                     modifier = controlModifier,
-                    label = if (isBinderMode) null else if (keyboardVisible) "SEL" else "SELECT",
+                    label = if (isBinderMode) null else "SELECT",
                     icon = if (isBinderMode) Icons.Default.Search else null,
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
@@ -787,39 +787,21 @@ fun ODXFiShell(
                 .background(instrumentBezelColor, RoundedCornerShape(4.dp))
                 .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
                 .padding(vertical = 8.dp)
-            if (panel.controlsBelowLcd) {
-                // Typing uses the full LCD width; instrument controls remain
-                // available in two rows instead of squeezing the letter keys.
-                Column(panelModifier) {
-                    Lcd(Modifier.weight(1f).fillMaxWidth())
-                    Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
-                        horizontalArrangement = Arrangement.SpaceEvenly) {
-                        NavigationButtons()
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
-                        horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ActionButtons()
-                    }
+            // The physical console stays compact while its LCD changes content.
+            // Typing must not relocate either instrument-button column.
+            Row(panelModifier,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    NavigationButtons()
                 }
-            } else {
-                // Browsing keeps the original console. Rotated binder typing
-                // retains side controls and grows the rotated LCD's width.
-                Row(panelModifier,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        NavigationButtons()
-                    }
-                    Lcd(Modifier.weight(1f).fillMaxHeight())
-                    Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        ActionButtons()
-                    }
+                Lcd(Modifier.weight(1f).fillMaxHeight())
+                Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    ActionButtons()
                 }
             }
         }
