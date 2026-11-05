@@ -81,6 +81,93 @@ class ReplayFastMoveScheduleTest {
         assertEquals(ns(7.0), cycles.last().impactAtNanos)
     }
 
+    @Test fun `terminal boundary preserves witnessed hit before jitter corrected impact`() {
+        val inputs = listOf(witness("first", 2.0), witness("final", 3.9)).map {
+            it.copy(windowEndNanos = ns(3.95), endsAtTerminalBoundary = true)
+        }
+        val cycles = ReplayFastMoveSchedule.build(inputs)
+        assertEquals(listOf(ns(2.0), ns(3.9)), cycles.map { it.impactAtNanos })
+        assertEquals(ns(2.0), cycles.last().startedAtNanos)
+        assertEquals(setOf("final"), cycles.last().witness.articleIds)
+        assertEquals(setOf(ns(3.9)), cycles.last().witness.sourceTimesNanos)
+        assertNotNull(cycles.last().actionAt(ns(3.8)))
+        assertNull(cycles.last().actionAt(ns(3.95)))
+    }
+
+    @Test fun `terminal fallback cannot fit an otherwise incomplete or impossible cycle`() {
+        val shortWindow = witness("too-short", .2).copy(
+            windowEndNanos = ns(.3), endsAtTerminalBoundary = true)
+        assertTrue(ReplayFastMoveSchedule.build(listOf(shortWindow)).isEmpty())
+        val ordinaryBoundary = listOf(witness("first", 2.0), witness("later", 3.9))
+            .map { it.copy(windowEndNanos = ns(3.95)) }
+        assertEquals(1, ReplayFastMoveSchedule.build(ordinaryBoundary).size)
+    }
+
+    @Test fun `finishing fast move tied to recipient faint uses outgoing window and reverse scrubs`() {
+        val archive = battle(listOf(
+            hit("final", "PLAYER", 2.0),
+            event("ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 2.0),
+            event("end", ArchivedMatchEnded("WIN"), 2.1),
+        ))
+        val original = MatchArchiveSerializer.serialize(archive)
+        val model = model(archive)
+        val before = model.sceneAt(ns(1.5))
+        val final = before.fastMoveActions.single { it.side == "PLAYER" }
+        assertEquals(setOf("final"), final.sourceArticleIds)
+        assertEquals(ns(0.0), final.startedAtNanos)
+        assertEquals(ns(2.0), final.impactAtNanos)
+        assertFalse(before.opponent!!.isFainted)
+        assertTrue(model.sceneAt(ns(2.05)).opponent!!.isFainted)
+        assertTrue(model.sceneAt(ns(2.05)).fastMoveActions.isEmpty())
+        assertEquals(before, model.sceneAt(ns(1.5)))
+        assertEquals(original, MatchArchiveSerializer.serialize(archive))
+    }
+
+    @Test fun `recorded final fast move stays before KO without inventing energy or a concession hit`() {
+        val model = model(battle(listOf(
+            hit("first", "PLAYER", 2.0), hit("final", "PLAYER", 3.9),
+            event("ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 3.95),
+            event("end", ArchivedMatchEnded("WIN"), 4.0),
+        )))
+        val final = model.sceneAt(ns(3.8)).fastMoveActions.single { it.side == "PLAYER" }
+        assertEquals(setOf("final"), final.sourceArticleIds)
+        assertEquals(ns(3.9), final.impactAtNanos)
+        assertTrue(model.sceneAt(ns(4.0)).fastMoveActions.isEmpty())
+        assertEquals(0, model.sceneAt(ns(4.0)).playerGeneratedEnergy)
+        assertEquals(0, model.sceneAt(ns(4.0)).playerSpentEnergy)
+        val conceded = model(battle(listOf(event("end", ArchivedMatchEnded("WIN"), 3.95))))
+        assertTrue((0..50).all { conceded.sceneAt(ns(it / 10.0)).fastMoveActions.isEmpty() })
+    }
+
+    @Test fun `terminal fallback cannot attack an already fainted recipient`() {
+        for (repeatedFaint in listOf(false, true)) {
+            val articles = listOfNotNull(
+                event("ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 2.0),
+                event("repeated-ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 3.7)
+                    .takeIf { repeatedFaint },
+                hit("after-ko", "PLAYER", 3.7),
+                event("end", ArchivedMatchEnded("WIN"), 3.8),
+            )
+            val model = model(battle(articles))
+            assertTrue("repeated faint=$repeatedFaint", (0..45).all { step ->
+                model.sceneAt(ns(step / 10.0)).fastMoveActions.none { "after-ko" in it.sourceArticleIds }
+            })
+        }
+    }
+
+    @Test fun `terminal fallback can hit an active replacement after earlier recipient faint`() {
+        val model = model(battle(listOf(
+            event("ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 2.0),
+            event("replacement", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134), 2.1),
+            hit("replacement-hit", "PLAYER", 3.8),
+            event("end", ArchivedMatchEnded("WIN"), 3.9),
+        )))
+        val scene = model.sceneAt(ns(3.7))
+        assertEquals("Vaporeon", scene.opponent!!.speciesName)
+        assertFalse(scene.opponent.isFainted)
+        assertEquals(setOf("replacement-hit"), scene.fastMoveActions.single { it.side == "PLAYER" }.sourceArticleIds)
+    }
+
     @Test fun `unknown moves do not acquire an invented duration or lose separate half second hits`() {
         val cycles = ReplayFastMoveSchedule.build(listOf(
             witness("a", 1.0).copy(durationNanos = null),

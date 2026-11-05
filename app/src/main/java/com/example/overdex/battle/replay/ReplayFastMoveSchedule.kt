@@ -16,6 +16,7 @@ internal data class ReplayFastMoveWitness(
     val articleIds: Set<String>,
     val sourceTimesNanos: Set<Long>,
     val damageTicks: List<ReplayFastMoveDamage> = emptyList(),
+    val endsAtTerminalBoundary: Boolean = false,
 )
 
 /** Settled damage on the recipient, linked by the use's source Article IDs. */
@@ -118,14 +119,26 @@ internal object ReplayFastMoveSchedule {
                     ))
                     continue
                 }
-                val impact = if (expected != null &&
+                var impact = if (expected != null &&
                     (abs(witness.observedAtNanos - expected) <= tolerance ||
                         (separateDamage && witness.observedAtNanos < expected))) expected
                     else maxOf(witness.observedAtNanos, witness.windowStartNanos + duration)
+                var start = impact - duration
                 // Both combatants must remain on the field for this cycle. Charge
                 // sequences, switches, faints and match boundaries split windows.
-                if (impact > witness.windowEndNanos) continue
-                val cycle = ReplayFastMoveCycle(witness, impact - duration, impact)
+                if (impact > witness.windowEndNanos) {
+                    // Cadence correction must not push an already witnessed
+                    // finishing impact beyond its faint/result and erase it.
+                    // Fit only the existing jitter allowance before that boundary;
+                    // retain its source time and never overlap the preceding hit.
+                    if (!witness.endsAtTerminalBoundary ||
+                        witness.observedAtNanos > witness.windowEndNanos) continue
+                    impact = witness.observedAtNanos
+                    start = maxOf(witness.windowStartNanos, impact - duration,
+                        previousImpact ?: witness.windowStartNanos)
+                    if (impact - start < duration - tolerance) continue
+                }
+                val cycle = ReplayFastMoveCycle(witness, start, impact)
                 cycles += cycle
                 lastKnownCycle = cycle
             }

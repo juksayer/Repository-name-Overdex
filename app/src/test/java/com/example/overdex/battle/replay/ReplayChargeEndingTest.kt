@@ -40,8 +40,113 @@ class ReplayChargeEndingTest {
     @Test fun `a result does not authorize starting a new charge or completing an open QTE`() {
         val model = model(timed("ready", ArchivedGetReadyWitnessed, 3),
             timed("result", ArchivedMatchEnded("WIN"), 5), timed("late", spend("PLAYER"), 8))
+        assertEquals(ReplayChargePhase.CHARGING, model.sceneAt(4 * SECOND).chargedMoveActions.single().phase)
         assertTrue(model.sceneAt(6 * SECOND).chargedMoveActions.isEmpty())
         assertTrue(model.sceneAt(8 * SECOND).chargedMoveActions.isEmpty())
+    }
+
+    @Test fun `concession during QTE preserves preparation and supported grades without completing the move`() {
+        val archive = MatchArchive(matchId = "test", articles = listOf(
+            timed("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323), 0),
+            timed("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Vaporeon", 134), 0),
+            timed("go", ArchivedMatchStarted, 1),
+            timed("pb", ArchivedPlayerPokeBallCountMeasured(3, 3), 2),
+            timed("ob", ArchivedOpponentBattleResourceCountMeasured("POKE_BALLS", 2, 3), 2),
+            timed("hp", ArchivedActiveHpBarMeasured("OPPONENT", 10, 20, 210, 32, .8f), 2),
+            timed("ready", ArchivedGetReadyWitnessed, 3),
+            timed("nice", motion(), 3).copy(monotonicTimeNanos = 3 * SECOND + 500_000_000L),
+            timed("great", motion(), 4),
+            timed("excellent", motion(), 4).copy(monotonicTimeNanos = 4 * SECOND + 500_000_000L),
+            timed("result", ArchivedMatchEnded("WIN"), 5),
+            timed("post-result-pulse", motion(), 6),
+            // Older inference can span the boundary. Replay must use only the
+            // actual pre-result pulses, leaving this original Article untouched.
+            timed("crossing-pattern", ArchivedChargeMoveQteVibrationPatternInferred(
+                "PLAYER", 3, 2 * SECOND + 500_000_000L, "TEST"), 3)
+                .copy(monotonicTimeNanos = 3 * SECOND + 500_000_000L)
+                .copy(predecessorIds = listOf("ready", "nice", "great", "post-result-pulse")),
+            timed("late-ready", ArchivedGetReadyWitnessed, 7),
+            timed("late-spend", ArchivedChargedMoveEnergySpent("PLAYER", "Camerupt", "Earth Power", 55, "TEST"), 8),
+            timed("late-announcement", ArchivedRawText("Camerupt used Earth Power!"), 9)
+                .copy(sourceId = "ANNOUNCEMENT_WITNESS"),
+        ))
+        val original = MatchArchiveSerializer.serialize(archive)
+        val model = MatchReplayModel(archive, chargedMovesBySpeciesName = mapOf(
+            "Camerupt" to listOf(com.example.overdex.model.Move("Earth Power", PokemonType.GROUND, 90, 55, false))))
+        val before = model.sceneAt(4 * SECOND + 600_000_000L)
+        assertEquals(ReplayChargePhase.CHARGING, before.chargedMoveActions.single().phase)
+        assertEquals(3, before.chargedMoveActions.single().qteLevel)
+        assertEquals("EXCELLENT", before.qteMilestone)
+        assertEquals(.8f, before.opponentHp!!.filledFraction)
+        assertEquals(listOf(3 * SECOND + 500_000_000L, 4 * SECOND, 4 * SECOND + 500_000_000L),
+            model.hapticEventsBetween(3 * SECOND, 5 * SECOND).map { it.atNanos })
+        for (second in 5L..9L) {
+            val after = model.sceneAt(second * SECOND)
+            assertEquals("WIN", after.outcome)
+            assertTrue(after.chargedMoveActions.isEmpty())
+            assertNull(after.qteMilestone)
+            assertEquals(0, after.playerSpentEnergy)
+            assertEquals(0, after.playerEnergy!!.spent)
+            assertEquals(3, after.playerResources.pokeBalls)
+            assertEquals(2, after.opponentResources.pokeBalls)
+            assertFalse(after.opponent!!.isFainted)
+        }
+        assertTrue(model.attackSoundEvents.none { it.charged })
+        assertTrue(model.hapticEventsBetween(5 * SECOND, model.endNanos).isEmpty())
+        assertEquals(before, model.sceneAt(4 * SECOND + 600_000_000L))
+        assertEquals(original, MatchArchiveSerializer.serialize(archive))
+    }
+
+    @Test fun `result cannot turn one earlier motion pulse into an inferred QTE grade`() {
+        val model = model(
+            timed("ready", ArchivedGetReadyWitnessed, 3),
+            timed("one-before", motion(), 4),
+            timed("result", ArchivedMatchEnded("WIN"), 5),
+            timed("two-after", motion(), 6),
+            timed("three-after", motion(), 7),
+        )
+        val before = model.sceneAt(4 * SECOND + 100_000_000L)
+        assertEquals(ReplayChargePhase.CHARGING, before.chargedMoveActions.single().phase)
+        assertEquals(0, before.chargedMoveActions.single().qteLevel)
+        assertNull(before.qteMilestone)
+        assertNull(model.sceneAt(6 * SECOND).qteMilestone)
+        assertTrue(model.hapticEventsBetween(model.startNanos, model.endNanos).isEmpty())
+    }
+
+    @Test fun `post-result opponent spend cannot change the performer of earlier QTE evidence`() {
+        val model = model(
+            timed("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Example", 25), 0),
+            timed("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sneasel", 215), 0),
+            timed("go", ArchivedMatchStarted, 0),
+            timed("nice", motion(), 1),
+            timed("great", motion(), 2),
+            timed("excellent", motion(), 3),
+            timed("player-spend", spend("PLAYER"), 4),
+            timed("closing-cue", ArchivedChargeMoveUsedAnnounced, 4),
+            timed("result", ArchivedMatchEnded("WIN"), 5),
+            timed("post-result-opponent-spend", spend("OPPONENT"), 6),
+        )
+        assertEquals("EXCELLENT", model.sceneAt(3 * SECOND + 100_000_000L).qteMilestone)
+        assertEquals(listOf(SECOND, 2 * SECOND, 3 * SECOND),
+            model.hapticEventsBetween(0, model.endNanos).map { it.atNanos })
+        assertEquals(0, model.sceneAt(6 * SECOND).opponentSpentEnergy)
+    }
+
+    @Test fun `late publication of a pre-result charge still retains its strike and energy cost`() {
+        val model = model(
+            timed("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Example", 25), 0),
+            timed("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sneasel", 215), 0),
+            timed("go", ArchivedMatchStarted, 1),
+            timed("ready", ArchivedGetReadyWitnessed, 3),
+            timed("result", ArchivedMatchEnded("WIN"), 5),
+            timed("delayed-spend", spend("PLAYER"), 4).copy(perceivedAt = 4_000, recordedAt = 20_000),
+        )
+        assertEquals(ReplayChargePhase.CHARGING,
+            model.sceneAt(3 * SECOND + 500_000_000L).chargedMoveActions.single().phase)
+        assertEquals(ReplayChargePhase.STRIKING, model.sceneAt(5 * SECOND).chargedMoveActions.single().phase)
+        assertEquals(45, model.sceneAt(5 * SECOND).playerSpentEnergy)
+        assertEquals(45, model.sceneAt(5 * SECOND).playerEnergy!!.spent)
+        assertTrue(model.attackSoundEvents.any { it.charged && it.atNanos == 4 * SECOND })
     }
 
     @Test fun `latest Camerupt recording retains known charges without guessing the missing final move from its button label`() {

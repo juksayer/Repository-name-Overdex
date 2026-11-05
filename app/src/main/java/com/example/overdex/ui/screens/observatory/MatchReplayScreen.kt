@@ -86,7 +86,7 @@ import com.example.overdex.battle.replay.MatchReplayModel
 import com.example.overdex.battle.replay.ReplayCombatant
 import com.example.overdex.battle.replay.ReplayIdentityObservation
 import com.example.overdex.battle.replay.ReplayHpState
-import com.example.overdex.battle.replay.ReplayFaintPose
+import com.example.overdex.battle.replay.ReplayCombatantEndPose
 import com.example.overdex.battle.replay.ReplayAttackSounds
 import com.example.overdex.battle.replay.replayAttackSoundsBetween
 import com.example.overdex.battle.replay.ReplayTransportSounds
@@ -834,11 +834,8 @@ internal fun ReplayCombatantSlot(
     qteSpriteScale: Float = 1f,
     qteSpriteTranslationXPixels: Float = 0f,
 ) {
-    val faintPose = combatant?.let {
-        ReplayFaintPose.at(it.knockoutPresentationAtNanos ?: it.faintedAtNanos ?: it.defeatedAtNanos,
-            cursorNanos, useBackSprite, it.knockoutFinishByNanos)
-    }
-    val down = faintPose != null
+    val endPose = ReplayCombatantEndPose.at(combatant, cursorNanos, useBackSprite)
+    val inactive = endPose != null
     Box(
         modifier = modifier.height(150.dp),
         contentAlignment = Alignment.Center
@@ -860,7 +857,7 @@ internal fun ReplayCombatantSlot(
                         ?.let(::replaySpriteVisibleTopFraction) ?: 0f
                 },
                 contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted"
-                    else if (down) "${combatant.speciesName}, defeated" else combatant.speciesName,
+                    else if (inactive) "${combatant.speciesName}, defeated" else combatant.speciesName,
                 modifier = Modifier
                     .requiredSize(spriteSize)
                     // Pokémon GO places the player's back-facing combatant
@@ -872,16 +869,16 @@ internal fun ReplayCombatantSlot(
                         // The bundled Turtonator front/rear art faces opposite
                         // to the other battle sprites. Face the other combatant
                         // before applying the KO rotation; keep the PNG intact.
-                        val focusScale = if (down) 1f else qteSpriteScale
+                        val focusScale = if (inactive) 1f else qteSpriteScale
                         scaleX = focusScale * if (speciesId == 776) -1f else 1f
                         scaleY = focusScale
                         // Fit artwork can contain transparent top padding and letterboxing.
                         // Pivot on the visible head, preserving its top as the body shrinks.
-                        transformOrigin = if (useBackSprite || down) TransformOrigin.Center
+                        transformOrigin = if (useBackSprite || inactive) TransformOrigin.Center
                             else TransformOrigin(0.5f, visibleTop)
                         // Keep fading on the transformed layer so a separate
                         // opacity layer cannot clip the falling sprite.
-                        alpha = faintPose?.opacity ?: if (down) 0.6f else 1f
+                        alpha = endPose?.opacity ?: 1f
                         // Cursor-driven pixels: pausing and scrubbing preserve the pose.
                         val attackOffset = chargedAction?.let { ReplayChargePose.at(it, useBackSprite).risePixels }
                             ?: fastAction?.let {
@@ -903,15 +900,15 @@ internal fun ReplayCombatantSlot(
                             }
                             ?: 0f
                         // Fine positioning uses physical pixels, independent of display density.
-                        translationX = (faintPose?.shakePixels ?: 0f) +
-                            if (down) 0f else qteSpriteTranslationXPixels
-                        rotationZ = faintPose?.rotationDegrees ?: 0f
-                        translationY = (if (down) faintPose?.dropPixels ?: 0f else attackOffset) +
+                        translationX = (endPose?.shakePixels ?: 0f) + (endPose?.withdrawalPixels ?: 0f) +
+                            if (inactive) 0f else qteSpriteTranslationXPixels
+                        rotationZ = endPose?.rotationDegrees ?: 0f
+                        translationY = (if (inactive) endPose?.dropPixels ?: 0f else attackOffset) +
                             if (useBackSprite) 25f else 0f
                     },
                 contentScale = ContentScale.Fit,
-                colorFilter = if (down) {
-                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(faintPose?.saturation ?: 1f) })
+                colorFilter = if (inactive) {
+                    ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(endPose?.saturation ?: 1f) })
                 } else null
             )
         }

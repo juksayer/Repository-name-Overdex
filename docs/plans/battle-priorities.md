@@ -70,6 +70,16 @@ bounded transition for Timeline and Replay. Exit loss and pop/haptic milestones
 arrive later and cannot define the earliest boundary. The investigation is
 complete; the new automatic visual detector is not yet implemented or validated.
 
+November 4 ending audit: [interrupted QTE and terminal-hit replay](../verification/2026-11-04-concession-and-final-hit-replay.md)
+preserves preparation before a concession result and retains recorded finishing
+Fast Moves that cadence smoothing previously pushed beyond a faint boundary.
+Completed finishing charged projectiles remain supported. Result-only defeat
+uses a neutral withdrawal instead of a fabricated faint. The next capture slice
+is the missing terminal HP-loss/settling observation: validate the retained
+Dewpider pulse/faint interval against source frames before deriving a final hit.
+Some archives lack the hit itself, and early-concession result attention still
+needs coverage; these rendering repairs do not close either recording gap.
+
 October 28 pre-flight addition at the user's request: [Team Select collection review](../verification/2026-10-28-field-team-collection.md)
 offers reviewed card imports, existing-card links and named team saving before
 battle. Owned storage now preserves canonical form names. Historical match
