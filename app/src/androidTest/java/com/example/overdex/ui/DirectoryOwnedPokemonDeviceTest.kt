@@ -38,7 +38,10 @@ class DirectoryOwnedPokemonDeviceTest {
     private val database = lazy { Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
         PokedexDatabase::class.java).build() }
 
-    @Composable private fun Harness(save: suspend (OwnedPokemon) -> Unit) {
+    @Composable private fun Harness(
+        speciesCatalogue: List<Pokemon> = catalogue,
+        save: suspend (OwnedPokemon) -> Unit,
+    ) {
         val tree = remember { InstrumentTree(listOf(DirectoryNode("BATTLE", listOf(
             DirectoryNode("Add Pokémon", OwnedPokemonField.entries.map { ActionNode(it.label, InstrumentCommand.EditNewOwnedPokemon(it)) }),
             ActionNode("Current Team", InstrumentCommand.OpenCurrentTeam),
@@ -48,9 +51,9 @@ class DirectoryOwnedPokemonDeviceTest {
             searchSpecies = { query, regions -> combine(query, regions) { q, range ->
                 // Static PagingData otherwise emits no load-state update, so the
                 // real editor correctly keeps rejecting choices as still loading.
-                PagingData.from(catalogue.filter { it.name.contains(q, true) && it.id in range },
+                PagingData.from(speciesCatalogue.filter { it.name.contains(q, true) && it.id in range },
                     sourceLoadStates = LoadStates(LoadState.NotLoading(false), LoadState.NotLoading(true), LoadState.NotLoading(true)))
-            } }, loadSpecies = { id -> catalogue.find { it.id == id } }, savePokemon = save,
+            } }, loadSpecies = { id -> speciesCatalogue.find { it.id == id } }, savePokemon = save,
             onFinished = { tree.collapse("/BATTLE/Add Pokémon"); state = tree.getState() })
         SideEffect { editor = registration; treeState = state }
         fun activate() {
@@ -66,6 +69,10 @@ class DirectoryOwnedPokemonDeviceTest {
             keyboardPreviewOnCrt = registration.keyboardPreviewOnCrt, onKeyActivated = registration.key, lcdLines = registration.lcdLines,
             onUp = { if (!registration.up()) { tree.moveSelection(-1); state = tree.getState() } },
             onDown = { if (!registration.down()) { tree.moveSelection(1); state = tree.getState() } },
+            onUpLong = { registration.hold(-1) },
+            onDownLong = { registration.hold(1) },
+            onUpPressChanged = { if (!it) registration.hold(0) },
+            onDownPressChanged = { if (!it) registration.hold(0) },
             onLeft = { if (!registration.left()) { tree.collapseOrParent(); state = tree.getState() } },
             onRight = { if (!registration.right()) { tree.openOrEnterSelected(); state = tree.getState() } },
             onA = { if (!registration.confirm()) activate() },
@@ -92,6 +99,39 @@ class DirectoryOwnedPokemonDeviceTest {
             button("▼")
         }
         error("Could not navigate to $field")
+    }
+
+    @Test fun holdingSpeciesNavigationRepeatsThroughShellAndStopsOnRelease() {
+        val species = (1..200).map { pikachu.copy(id = it, name = "Species $it") }
+        compose.setContent { Harness(species) {} }
+        openBranch(); button("A")
+        compose.waitUntil { editor.selectedPath.endsWith("/choice/0") }
+        button("▼")
+        compose.runOnIdle { assertTrue(editor.selectedPath.endsWith("/choice/1")) }
+        compose.onNodeWithContentDescription("Down").performTouchInput { longClick(durationMillis = 2500) }
+        compose.waitForIdle()
+        val afterDown = editor.selectedPath.substringAfterLast('/').toInt()
+        assertTrue("Held Down stopped after reaching choice $afterDown", afterDown > 6)
+        compose.mainClock.advanceTimeBy(800)
+        compose.runOnIdle { assertEquals(afterDown, editor.selectedPath.substringAfterLast('/').toInt()) }
+        compose.onNodeWithContentDescription("Up").performTouchInput { longClick(durationMillis = 1200) }
+        compose.waitForIdle()
+        val afterUp = editor.selectedPath.substringAfterLast('/').toInt()
+        assertTrue("Held Up did not browse backward", afterUp < afterDown)
+        compose.mainClock.advanceTimeBy(800)
+        compose.runOnIdle { assertEquals(afterUp, editor.selectedPath.substringAfterLast('/').toInt()) }
+
+        // A new region replaces the options. Repeats must use that new list too.
+        repeat(2) { compose.onNodeWithContentDescription("Right").performTouchInput { click() } }
+        compose.waitUntil {
+            editor.nodes.any { it.path.endsWith("/choice/0") && it.node.name == "#152 Species 152" }
+        }
+        compose.onNodeWithContentDescription("Down").performTouchInput { longClick(durationMillis = 1800) }
+        compose.waitForIdle()
+        val afterRegionChange = editor.selectedPath.substringAfterLast('/').toInt()
+        assertTrue("Held navigation ignored the refreshed regional list", afterRegionChange in 4..48)
+        compose.mainClock.advanceTimeBy(800)
+        compose.runOnIdle { assertEquals(afterRegionChange, editor.selectedPath.substringAfterLast('/').toInt()) }
     }
 
     @Test fun addWithButtonsKeepsDirectoryAndSavesOneSharedCardOnlyAtSave() {

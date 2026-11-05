@@ -187,7 +187,11 @@ fun rememberDirectoryOwnedPokemonEditor(
         }
         choiceIndex = choices.indexOfFirst { it.move?.name == selectedMove }.coerceAtLeast(0)
     }
-    val moveChoiceNow by rememberUpdatedState<(Int, Int) -> Unit>(::moveChoice)
+    // A local callable reference can compare equal while capturing an older
+    // choices list. Refresh the lambda so held repeats see loaded/paged options.
+    val moveChoiceNow by rememberUpdatedState<(Int, Int) -> Unit>({ direction, steps ->
+        moveChoice(direction, steps)
+    })
     LaunchedEffect(heldDirection, editing, keyboard.isFocused) {
         if (heldDirection == 0 || !isPicker || keyboard.isFocused) return@LaunchedEffect
         val began = SystemClock.uptimeMillis()
