@@ -673,93 +673,93 @@ fun ODXFiShell(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            @Composable fun NavigationButtons() {
+            @Composable fun NavigationButton(direction: Int) {
                 InstrumentButton(
                     modifier = controlModifier,
-                    icon = Icons.Default.ArrowDropUp,
-                    contentDescription = "Up",
+                    icon = when (direction) {
+                        0 -> Icons.Default.ArrowDropUp
+                        1 -> Icons.Default.ArrowDropDown
+                        2 -> Icons.AutoMirrored.Filled.ArrowLeft
+                        else -> Icons.AutoMirrored.Filled.ArrowRight
+                    },
+                    contentDescription = listOf("Up", "Down", "Left", "Right")[direction],
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = onUp,
-                    onLongClick = onUpLong,
-                    onPressChanged = onUpPressChanged,
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    icon = Icons.Default.ArrowDropDown,
-                    contentDescription = "Down",
-                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = onDown,
-                    onLongClick = onDownLong,
-                    onPressChanged = onDownPressChanged,
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    icon = Icons.AutoMirrored.Filled.ArrowLeft,
-                    contentDescription = "Left",
-                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = onLeft,
-                    onLongClick = onLeftLong,
-                    onPressChanged = if (isBinderMode) onLeftPressChanged else null
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    icon = Icons.AutoMirrored.Filled.ArrowRight,
-                    contentDescription = "Right",
-                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = onRight,
-                    onLongClick = onRightLong,
-                    onPressChanged = if (isBinderMode) onRightPressChanged else null
+                    onClick = when (direction) {
+                        0 -> onUp
+                        1 -> onDown
+                        2 -> onLeft
+                        else -> onRight
+                    },
+                    onLongClick = when (direction) {
+                        0 -> onUpLong
+                        1 -> onDownLong
+                        2 -> onLeftLong
+                        else -> onRightLong
+                    },
+                    onPressChanged = when (direction) {
+                        0 -> onUpPressChanged
+                        1 -> onDownPressChanged
+                        2 -> if (isBinderMode) onLeftPressChanged else null
+                        else -> if (isBinderMode) onRightPressChanged else null
+                    },
                 )
             }
 
+            @Composable fun NavigationButtons() {
+                repeat(4) { NavigationButton(it) }
+            }
+
+            @Composable fun ActionButton(action: Int) {
+                when (action) {
+                    0 -> InstrumentButton(
+                        modifier = controlModifier,
+                        label = "A",
+                        labelRotationDegrees = if (isBinderMode) 90f else 0f,
+                        onClick = onA,
+                        onLongClick = onALong,
+                    )
+                    1 -> InstrumentButton(
+                        modifier = controlModifier,
+                        label = "B",
+                        labelRotationDegrees = if (isBinderMode) 90f else 0f,
+                        onClick = {
+                            val isOwner = currentRoute == owningRoute
+                            com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
+                            if (isOwner) {
+                                onB()
+                            } else {
+                                android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
+                            }
+                        },
+                    )
+                    2 -> InstrumentButton(
+                        modifier = controlModifier,
+                        label = if (isBinderMode) null else "SELECT",
+                        icon = if (isBinderMode) Icons.Default.Search else null,
+                        iconRotationDegrees = if (isBinderMode) 90f else 0f,
+                        contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
+                        onClick = onSelect,
+                        onLongClick = onSelectLong,
+                    )
+                    else -> InstrumentButton(
+                        modifier = controlModifier,
+                        // Contextual actions retain their own key rather than
+                        // claiming to Stop Droidball while editing a card.
+                        label = startLabel ?: if (onStart != null && deploymentState == null) "START" else when (currentDeploymentState) {
+                            InstrumentDeploymentState.OBSERVING,
+                            InstrumentDeploymentState.DEPLOYING,
+                            InstrumentDeploymentState.READY,
+                            InstrumentDeploymentState.RETURNING -> "STOP"
+                            else -> "START"
+                        },
+                        onClick = startAction,
+                        enabled = onStart != null || currentDeploymentState != InstrumentDeploymentState.RETURNING,
+                    )
+                }
+            }
+
             @Composable fun ActionButtons() {
-                InstrumentButton(
-                    modifier = controlModifier,
-                    label = "A",
-                    labelRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = onA,
-                    onLongClick = onALong
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    label = "B",
-                    labelRotationDegrees = if (isBinderMode) 90f else 0f,
-                    onClick = {
-                        val isOwner = currentRoute == owningRoute
-                        com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
-                        if (isOwner) {
-                            onB()
-                        } else {
-                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
-                        }
-                    }
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    label = if (isBinderMode) null else if (keyboardVisible) "SEL" else "SELECT",
-                    icon = if (isBinderMode) Icons.Default.Search else null,
-                    iconRotationDegrees = if (isBinderMode) 90f else 0f,
-                    contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
-                    onClick = onSelect,
-                    onLongClick = onSelectLong
-                )
-                InstrumentButton(
-                    modifier = controlModifier,
-                    // An explicit contextual callback without an explicit
-                    // session state retains its own START key. It must not
-                    // claim to Stop Droidball while editing a card or message.
-                    label = startLabel ?: if (onStart != null && deploymentState == null) "START" else when (currentDeploymentState) {
-                        InstrumentDeploymentState.OBSERVING, 
-                        InstrumentDeploymentState.DEPLOYING,
-                        InstrumentDeploymentState.READY,
-                        InstrumentDeploymentState.RETURNING -> "STOP"
-                        else -> "START"
-                    }, 
-                    // Modules inherit the live session control unless they own
-                    // an explicit Start action, such as replay or calibration.
-                    onClick = startAction,
-                    enabled = onStart != null || currentDeploymentState != InstrumentDeploymentState.RETURNING,
-                )
+                repeat(4) { ActionButton(it) }
             }
 
             @Composable fun Lcd(modifier: Modifier) {
@@ -788,19 +788,39 @@ fun ODXFiShell(
                 .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
                 .padding(vertical = 8.dp)
             if (panel.controlsBelowLcd) {
-                // Typing uses the full LCD width; instrument controls remain
-                // available in two rows instead of squeezing the letter keys.
+                // Wide letter keys stay above the controls. Directions form a
+                // familiar cross on the left; action keys form a second cross
+                // on the right, with Start above Select/B and A below.
                 Column(panelModifier) {
                     Lcd(Modifier.weight(1f).fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
-                        horizontalArrangement = Arrangement.SpaceEvenly) {
-                        NavigationButtons()
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
-                        horizontalArrangement = Arrangement.SpaceEvenly) {
-                        ActionButtons()
+                    Row(
+                        Modifier.fillMaxWidth().height(panel.controlHeight * 3),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            Modifier.width(panel.controlWidth * 3),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            NavigationButton(0)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                NavigationButton(2)
+                                NavigationButton(3)
+                            }
+                            NavigationButton(1)
+                        }
+                        Column(
+                            Modifier.width(panel.controlWidth * 3),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            ActionButton(3)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                ActionButton(2)
+                                ActionButton(1)
+                            }
+                            ActionButton(0)
+                        }
                     }
                 }
             } else {
