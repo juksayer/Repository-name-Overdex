@@ -106,7 +106,7 @@ fun BattleTeamLibraryScreen(
         onA = ::activate, onB = ::back,
         onSelect = { if (keyboard.isVisible) keyboard.close() else if (!editingName && choice != null) useChoice(edit = true) },
         onStart = { if (editingName) finishSave() else beginSave() }, startLabel = "SAVE",
-        keyboardController = keyboard, keyboardPrompt = "TEAM NAME: $name", onKeyActivated = ::key,
+        keyboardController = keyboard, onKeyActivated = ::key,
         lcdContent = if (keyboard.isVisible) null else {{
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(4.dp)) {
                 message?.let { Text(it, color = TerminalGreen, fontSize = 11.sp) }

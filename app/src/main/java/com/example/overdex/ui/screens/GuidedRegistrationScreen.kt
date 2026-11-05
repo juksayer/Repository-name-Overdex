@@ -103,7 +103,6 @@ fun GuidedRegistrationScreen(
             }
         },
         keyboardController = keyboard,
-        keyboardPrompt = if (choosingSpecies) "SPECIES: $queryText" else null,
         onKeyActivated = ::key,
         lcdContent = if (keyboard.isVisible) null else {
             {

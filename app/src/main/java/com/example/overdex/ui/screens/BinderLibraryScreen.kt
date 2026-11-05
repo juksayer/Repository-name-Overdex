@@ -59,7 +59,11 @@ fun BinderLibraryScreen(
         maxCp = draft.rules.maxCp?.toString().orEmpty()
         changePage(BinderPage.EDIT)
     }
-    fun input(field: String) { inputField = field; keyboard.open() }
+    fun input(field: String) {
+        inputField = field
+        if (field == "search") selected = 0
+        keyboard.open()
+    }
     fun key(key: String) {
         val old = when (inputField) { "min" -> minCp; "max" -> maxCp; "search" -> queryText; else -> draft.displayName }
         val next = when (key) { "DELETE" -> old.dropLast(1); "SPACE" -> "$old "; else -> if (key.startsWith("TYPE:")) old else old + key }
@@ -161,7 +165,6 @@ fun BinderLibraryScreen(
         onStart = { if (keyboard.isVisible) keyboard.handleStart() else if (page == BinderPage.LIBRARY) edit() else if (page == BinderPage.EDIT) save() else changePage(BinderPage.EDIT) },
         startLabel = if (page == BinderPage.LIBRARY) "+" else "SAVE",
         keyboardController = keyboard, onKeyActivated = ::key,
-        keyboardPrompt = when (inputField) { "min" -> "MIN CP: $minCp"; "max" -> "MAX CP: $maxCp"; "search" -> "SPECIES: $queryText"; else -> "NAME: ${draft.displayName}" },
         lcdContent = if (keyboard.isVisible) null else {{
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(4.dp)) {
                 Text(hint, color = TerminalGreen, fontSize = 11.sp)

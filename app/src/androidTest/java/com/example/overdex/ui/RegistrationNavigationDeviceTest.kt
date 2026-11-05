@@ -12,6 +12,7 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.overdex.model.Pokemon
 import com.example.overdex.ui.ODXFi.InstrumentButton
+import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.components.*
 import com.example.overdex.ui.screens.SpeciesSearchStep
 import kotlinx.coroutines.delay
@@ -85,5 +86,34 @@ class RegistrationNavigationDeviceTest {
         compose.onNodeWithText("S").assertIsDisplayed().performClick()
         compose.onNodeWithText("TYPING").assertIsDisplayed()
         compose.runOnIdle { assertEquals("S", text) }
+    }
+
+    @Test fun binderTypingKeepsItsCrtSelectionAndOnlyOneQueryPreview() {
+        val keyboard = TerminalKeyboardController(keepVisibleAfterInput = true)
+        var query by mutableStateOf("RAI")
+        var selectedCard: MutableIntState? = null
+        compose.setContent {
+            ODXFiShell(showBattleOverlay = false, isBinderMode = true,
+                keyboardController = keyboard, keyboardPreviewOnCrt = "SEARCH: $query",
+                onKeyActivated = { query += it }, onB = { keyboard.handleB() }) {
+                val selection = remember { mutableIntStateOf(3) }
+                SideEffect { selectedCard = selection }
+                Text("SELECTED CARD ${selection.intValue}")
+            }
+        }
+        compose.runOnIdle { selectedCard!!.intValue = 8; keyboard.open() }
+        compose.onNodeWithText("SELECTED CARD 8").assertIsDisplayed()
+        compose.onAllNodesWithText("SEARCH: RAI").assertCountEquals(1)
+        compose.onNodeWithText("SEARCH: RAI").assertIsDisplayed()
+        compose.onAllNodesWithText("S").onFirst().performClick()
+        compose.onNodeWithText("SEARCH: RAIS").assertIsDisplayed()
+        compose.onNodeWithContentDescription("End typing").performClick()
+        compose.runOnIdle { assertTrue(keyboard.isVisible); assertFalse(keyboard.isFocused) }
+        compose.onNodeWithText("SEARCH: RAIS").assertIsDisplayed()
+        compose.onNodeWithText("SELECTED CARD 8").assertIsDisplayed()
+        compose.runOnIdle { keyboard.handleB() }
+        compose.onNodeWithText("SEARCH: RAIS").assertDoesNotExist()
+        compose.onNodeWithText("SELECTED CARD 8").assertIsDisplayed()
+        compose.runOnIdle { assertEquals("RAIS", query) }
     }
 }

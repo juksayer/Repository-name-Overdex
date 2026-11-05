@@ -179,12 +179,6 @@ fun EditSpecimenScreen(
         },
         viewModel = pokedexViewModel,
         keyboardController = keyboardController,
-        keyboardPrompt = when (selectedIndex) {
-            0 -> "NICKNAME: ${editedState?.displayName.orEmpty()}"
-            1 -> "CP: ${editedState?.cp ?: ""}"
-            TEAMS_INDEX -> "TEAMS: $teamsDraft"
-            else -> "SELECT MOVE"
-        },
         lcdContent = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TypeIconText(editedState?.displayName ?: species?.name.orEmpty(), color = TerminalGreen, fontSize = 16.sp)

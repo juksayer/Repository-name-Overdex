@@ -63,7 +63,7 @@ class DirectoryOwnedPokemonDeviceTest {
         LaunchedEffect(Unit) { route = "main_menu" }
         CompositionLocalProvider(com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides route) {
         ODXFiShell(showBattleOverlay = false, keyboardController = registration.keyboard,
-            keyboardPrompt = registration.keyboardPrompt, onKeyActivated = registration.key, lcdLines = registration.lcdLines,
+            keyboardPreviewOnCrt = registration.keyboardPreviewOnCrt, onKeyActivated = registration.key, lcdLines = registration.lcdLines,
             onUp = { if (!registration.up()) { tree.moveSelection(-1); state = tree.getState() } },
             onDown = { if (!registration.down()) { tree.moveSelection(1); state = tree.getState() } },
             onLeft = { registration.left() }, onRight = { registration.right() },
@@ -103,7 +103,12 @@ class DirectoryOwnedPokemonDeviceTest {
             compose.waitUntil { editor.nodes.any { it.node.name.contains("Pikachu") } }
             button("START")
             "PIKA".forEach { key(it.toString()) }
+            compose.onAllNodesWithText("SEARCH: PIKA").assertCountEquals(1)
+            val query = compose.onNodeWithText("SEARCH: PIKA").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            val controls = compose.onNodeWithContentDescription("Up").fetchSemanticsNode().boundsInRoot
+            assertTrue("Typed query must remain on the CRT above the LCD controls", query.bottom < controls.top)
             key("END")
+            compose.onNodeWithText("SEARCH: PIKA").assertIsDisplayed()
             compose.waitUntil { editor.nodes.any { it.node.name == "#025 Pikachu" } && editor.nodes.none { it.node.name == "#001 Bulbasaur" } }
             compose.runOnIdle { assertTrue(editor.keyboard.isVisible); assertFalse(editor.keyboard.isFocused) }
             button("A")

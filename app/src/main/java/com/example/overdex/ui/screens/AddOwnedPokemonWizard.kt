@@ -323,7 +323,6 @@ fun AddOwnedPokemonWizard(
             }
         },
         keyboardController = keyboardController,
-        keyboardPrompt = if (keyboardController.isFocused) "TYPE: $localSearchQuery  ·  END: RESULTS" else "↑↓ BROWSE · ←→ REGION · SELECT: TYPE",
         onKeyActivated = { key ->
             if (keyboardController.isVisible) {
                 handleActivatedKey(key)

@@ -1,9 +1,10 @@
 # Audio position and LCD input experiments
 
-November 4, 2026. These are source-audited proposals from the user's latest
-ideas, not implemented recognition or keyboard changes. Fast Move fidelity
-remains the priority. The user is performing an ending/cry test; do not interrupt
-capture or install a replacement build during that session.
+November 4, 2026; keyboard clarification and first implementation November 5.
+Audio-position work and larger keyboard layouts remain source-audited proposals.
+The duplicated LCD input header has now been removed, as described below.
+Fast Move fidelity remains the priority. The user is performing an ending/cry
+test; do not interrupt capture or install a replacement build during that session.
 
 ## Position within overlapping move sounds
 
@@ -83,11 +84,19 @@ columns. Buttons are 56×36 dp. Four keyboard rows have 6 dp gaps and a 20–32 
 height clamp; merely enlarging the panel cannot enlarge keys beyond that cap.
 
 The active shared LCD path is `ui/components/PokedexComponents.kt`, not the
-similarly named simple `InstrumentLCD` function in `ODXFiShell.kt`. Its keyboard
-branch renders one optional 9 sp prompt line plus a 2 dp gap; ordinary LCD content
-is excluded while typing. Source inspection has not located the user's reported
-double confirmation. Identify the actual screen before removing text that may
-be the only preview of the field/value. An optional clarification is pending.
+similarly named simple `InstrumentLCD` function in `ODXFiShell.kt`. The user
+clarified that the duplication was across displays: the LCD keyboard header
+repeated information already on the CRT, rather than two confirmation rows
+inside the LCD.
+
+The November 5 first slice removes that optional 9 sp header and its 2 dp gap.
+Flows with an existing CRT field keep it. Pokédex/owned-binder searches, directory
+species search and Trainer Comms now put their otherwise sole query/draft
+preview on the CRT. The shared CRT content stays at one stable composition call
+site, so opening the keyboard does not reset a binder's selected card. The
+keyboard uses the reclaimed LCD space within the existing key-size limits;
+shell dimensions and keyboard layout have not changed. See the
+[implementation checks](../verification/2026-11-05-keyboard-lcd-space.md).
 
 The useful first layout experiment is keyboard-only: move the CRT's lower edge
 up, enlarge the LCD, and narrow control columns while retaining large physical
@@ -117,8 +126,9 @@ See [Android text input](https://developer.android.com/develop/ui/compose/text/u
 Validate geometry in the emulator: long field text, ABC/QWERTY/token switching,
 SELECT/START labels, numbers, two-column move choices, END/B behavior, save once,
 focus restoration, binder rotation and LCD touch ownership. Then obtain a phone
-check after the user's battle recording has finished. This document does not
-claim the duplicate row has been removed or that QWERTY/swipe is implemented.
+check after the user's battle recording has finished. QWERTY/swipe and the larger
+panel geometry are still proposals; the November 5 header fix does not implement
+them.
 
 ## Turning if/then ideas into useful evidence rules
 

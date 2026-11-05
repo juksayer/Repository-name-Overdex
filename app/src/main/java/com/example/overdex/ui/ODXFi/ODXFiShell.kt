@@ -82,6 +82,7 @@ import com.example.overdex.ui.components.LiveMoveAnalysisPanel
 import com.example.overdex.ui.components.OverlayState
 import com.example.overdex.ui.components.StatusIndicator
 import com.example.overdex.ui.components.TerminalKeyboardController
+import com.example.overdex.ui.components.TypeIconText
 import com.example.overdex.ui.components.glassShield
 import com.example.overdex.ui.lcdDisplayEffect
 import com.example.overdex.ui.theme.PokedexGreen
@@ -305,7 +306,8 @@ fun ODXFiShell(
     lcdLines: List<String> = emptyList(),
     lcdContent: (@Composable () -> Unit)? = null,
     lcdEdgeToEdgeContent: Boolean = false,
-    keyboardPrompt: String? = null,
+    /** Optional CRT input preview for screens whose main content does not show the query/draft. */
+    keyboardPreviewOnCrt: String? = null,
     title: String? = null,
     breadcrumb: String? = null,
     keyboardController: TerminalKeyboardController? = null,
@@ -623,7 +625,22 @@ fun ODXFiShell(
                                 }
                             )
                     ) {
-                        content(battleMemory)
+                        // Keep the content call site stable when typing starts/stops:
+                        // binder paging and directory state belong to this composition.
+                        Column(Modifier.fillMaxSize()) {
+                            if (keyboardController?.isVisible == true && keyboardPreviewOnCrt != null) {
+                                TypeIconText(
+                                    text = keyboardPreviewOnCrt,
+                                    color = TerminalGreen,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 3,
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                )
+                            }
+                            Box(Modifier.weight(1f).fillMaxWidth()) { content(battleMemory) }
+                        }
                     }
 
                 // HUD Overlay Layer (Kept clean and sharp)
@@ -714,7 +731,6 @@ fun ODXFiShell(
                 lcdLines = lcdLines,
                 lcdContent = lcdContent,
                 keyboardController = keyboardController,
-                keyboardPrompt = keyboardPrompt,
                 onKeyActivated = onKeyActivated,
                 onDrag = onLcdDrag,
                 onTap = onLcdTap,

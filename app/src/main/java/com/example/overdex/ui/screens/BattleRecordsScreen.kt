@@ -98,7 +98,6 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
     }
     BackHandler { back() }
     ODXFiShell(viewModel = viewModel, showBattleOverlay = false, keyboardController = keyboard,
-        keyboardPrompt = "${fieldLabels[field]}: ${fieldValue(field)}",
         onKeyActivated = ::key,
         onUp = { when { replay != null -> replayUp(); keyboard.isVisible -> keyboard.handleUp(); filters -> field = (field - 1).coerceAtLeast(0); else -> selected = (selected - 1).coerceAtLeast(0) } },
         onDown = { when { replay != null -> replayDown(); keyboard.isVisible -> keyboard.handleDown(); filters -> field = (field + 1).coerceAtMost(5); else -> selected = (selected + 1).coerceAtMost((rows.size - 1).coerceAtLeast(0)) } },

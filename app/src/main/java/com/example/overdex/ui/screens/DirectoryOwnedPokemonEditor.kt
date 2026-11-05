@@ -30,7 +30,7 @@ class DirectoryOwnedPokemonEditor(
     val nodes: List<FlattenedNode>,
     val selectedPath: String,
     val keyboard: TerminalKeyboardController,
-    val keyboardPrompt: String?,
+    val keyboardPreviewOnCrt: String?,
     val lcdLines: List<String>,
     val activate: (OwnedPokemonField) -> Unit,
     val up: () -> Boolean,
@@ -266,8 +266,9 @@ fun rememberDirectoryOwnedPokemonEditor(
         nodes = nodes,
         selectedPath = if (isPicker && choices.isNotEmpty()) "$optionPrefix$choiceIndex" else tree.selectedPath,
         keyboard = keyboard,
-        keyboardPrompt = editing?.let { field -> if (field == OwnedPokemonField.SPECIES) "SEARCH: $queryText · END: BROWSE"
-            else "${field.label}: ${field.value(draft)} · B: DONE" },
+        keyboardPreviewOnCrt = if (editing == OwnedPokemonField.SPECIES) {
+            "SEARCH: ${queryText.ifBlank { "_" }}"
+        } else null,
         lcdLines = lcdLines,
         activate = ::activate,
         up = { vertical(-1) }, down = { vertical(1) }, left = { horizontal(-1) }, right = { horizontal(1) },

@@ -633,7 +633,7 @@ fun PokedexApp(
                     frameCount = frameCount,
                     showBattleOverlay = false,
                     keyboardController = registration.keyboard,
-                    keyboardPrompt = registration.keyboardPrompt,
+                    keyboardPreviewOnCrt = registration.keyboardPreviewOnCrt,
                     onKeyActivated = registration.key,
                     lcdLines = directoryLcdLines,
                     lcdContent = if (showCropPreviews) {
@@ -933,7 +933,7 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
-                    keyboardPrompt = "SEARCH: ${pokedexSearchQuery.ifBlank { "_" }}",
+                    keyboardPreviewOnCrt = "SEARCH: ${pokedexSearchQuery.ifBlank { "_" }}",
                     lcdContent = pokedexLcdContent,
                     isBinderMode = true
                 ) { _ ->
@@ -1095,7 +1095,7 @@ fun PokedexApp(
                     deploymentState = deploymentState,
                     frameCount = frameCount,
                     keyboardController = keyboardController,
-                    keyboardPrompt = "SEARCH OWNED: ${ownedSearchQuery.ifBlank { "_" }}",
+                    keyboardPreviewOnCrt = "SEARCH OWNED: ${ownedSearchQuery.ifBlank { "_" }}",
                     onKeyActivated = { key -> keyActivatedHandler?.invoke(key) },
                     lcdContent = ownedBinderLcdContent,
                     isBinderMode = true,

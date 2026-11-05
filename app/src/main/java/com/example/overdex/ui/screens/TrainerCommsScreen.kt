@@ -189,7 +189,7 @@ fun TrainerCommsScreen(
         viewModel = viewModel,
         showBattleOverlay = false,
         keyboardController = keyboard,
-        keyboardPrompt = if (keyboard.isVisible) draft.takeLast(70).ifEmpty { "MESSAGE" } else null,
+        keyboardPreviewOnCrt = draft.takeLast(70).ifEmpty { "MESSAGE" },
         onKeyActivated = { key -> keyboard.activateKey(key, ::inputKey) },
         onUp = { if (keyboard.isFocused) keyboard.handleUp() else selectedRow = (selectedRow - 1).coerceAtLeast(0) },
         onDown = { if (keyboard.isFocused) keyboard.handleDown() else selectedRow = (selectedRow + 1).coerceAtMost((rowCount - 1).coerceAtLeast(0)) },
