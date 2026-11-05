@@ -64,6 +64,7 @@ visibility, and a new live battle check remain separate acceptance work.
 November 4 independent boundary investigation: [source-frame charge transitions](../verification/2026-11-04-independent-charge-boundaries.md)
 show charged controls and inactive cards fading together before the QTE camera,
 bubbles, or shield panel. Next slice: measure positive normal-control chrome,
+use fresh nonzero HP on both current combatants to exclude faint transitions,
 confirm with independent bubble/shield graphics, and append a source-timed,
 bounded transition for Timeline and Replay. Exit loss and pop/haptic milestones
 arrive later and cannot define the earliest boundary. The investigation is

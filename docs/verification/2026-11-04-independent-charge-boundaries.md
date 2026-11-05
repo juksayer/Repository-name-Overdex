@@ -19,10 +19,47 @@ Keep two events distinct:
 2. **A particular charged interface appears:** positive evidence of the player's
    bubble task or the opponent's shield choice. Preserve its own later time.
 
-The first event needs corroboration: a faint, replacement, menu, obstruction,
-or result can also change the controls. The second validates and classifies an
-earlier candidate without pretending that the bubble task or shield panel was
-already visible at the earlier time.
+Use HP context before treating a fade as ambiguous: both active Pokémon must be
+alive for QTE/shield choice, whereas a faint follows HP depletion. Fresh,
+positively nonzero measurements of both current combatants across the boundary
+therefore supply the independent faint-exclusion evidence missing from the
+initial investigation. The same control fade with depletion/faint evidence is a
+different event, not a competing explanation for healthy combatants.
+
+A replacement, menu, obstruction, or result can also change controls. The later
+positive interface observation validates and classifies an earlier candidate
+without pretending that bubbles or the shield panel were already visible at
+the earlier time.
+
+## HP context gate — user correction
+
+Distinguish the game's HP state from what the sampler managed to see:
+
+| HP evidence at the control transition | Treatment |
+| --- | --- |
+| Both current combatants have fresh, positively nonzero HP, with continuity across the fade | Eligible charged-preparation candidate; a faint is inconsistent with that observed continuity. Use the later interface to establish player QTE versus opponent shield choice. |
+| HP depletion or a corroborated faint/resource decrease affects either current combatant | Associate the fade with faint/replacement; do not promote it to charged preparation for that appearance. |
+| Either HP bar is missing, stale, obstructed, too close to pixel tolerance, or belongs to a departing appearance | HP context is unknown. Do not substitute an old positive value or declare zero from disappearance. |
+
+Measure both bars from the same shared source frame where possible and retain
+their Articles/times around the fade. A positive reading before a final hit is
+not proof of positive HP afterward. Likewise, a replacement's full bar must not
+be combined with the departing Pokémon's controls or identity.
+
+The HP condition applies to sequence entry. A later charged impact can deplete
+the defender's HP; that later faint does not invalidate the correctly observed
+earlier QTE/shield start. Keep those source times separate when checking conflicts.
+
+An empty HP bar need not survive long enough to be sampled. Existing faint
+inference therefore also uses the side's Poké Ball count decrease and appearance
+context. Missing an exact zero frame does not establish survival. Conversely,
+an unmeasurable bar is not a zero-HP observation.
+
+This gate uses existing independent `ActiveHpBarMeasured` geometry/fill and its
+Article source timestamps; the live HP reader measures both sides from one frame.
+The proposed transition inference must additionally bind these measurements to
+the current appearances and invalidate them at faint/switch/capture boundaries.
+The gate is specified here, not yet wired into a new production phase detector.
 
 ## Source-time observations
 
@@ -80,7 +117,9 @@ evidence. Keep these unavailable lanes explicit rather than manufacturing loss.
 
 These are concrete exclusions in the reviewed source: the November 4 faint at
 about 59.05 seconds fades both controls and cards, then opens replacement
-selection. Drapion at 97 seconds has no inactive card at all; another opponent
+selection. It demonstrates why HP/faint context accompanies the fade, not why
+faint and charge remain ambiguous when both combatants are positively alive.
+Drapion at 97 seconds has no inactive card at all; another opponent
 charge follows around 99.5 seconds. Card disappearance therefore corroborates
 an early candidate when available, but cannot be mandatory for every combatant.
 
@@ -142,7 +181,9 @@ play, muted audio, lag, or interrupted playback.
 3. Report raw **baseline appearance changed/faded** measurements. Invalid,
    clipped, obscured, shifted, or uncalibrated crops remain unknown. Require
    stable positive baseline and independently changing chrome territories before
-   making a transition candidate. A missing-circle search result is inadequate.
+   making a transition candidate. Apply the HP context gate above: retain fresh
+   nonzero evidence for both current appearances and reject depletion/faint
+   contradictions. A missing-circle search result is inadequate.
 4. Add independent positive shield-graphic and bubble-task recognition. A
    pending candidate opens their short attention window; Get Ready is additional
    evidence rather than the only way these readers can run.
@@ -162,7 +203,9 @@ Do not silently replace a wide uncertainty interval with the first failed read.
 
 Before enabling automatic boundaries, check ordinary idle play; changing energy
 fills; touch rings and enlarged buttons; one centered charged move; switches;
-faints/replacement dialogs; last-Pokémon/no-shield cases; both phase directions;
+faints/replacement dialogs; fresh positive versus stale/missing/zero HP; a final
+hit between samples; a later charged impact causing a faint; appearance
+replacement; last-Pokémon/no-shield cases; both phase directions;
 menu/result screens; incorrect profiles; overlays; capture gaps; and delayed
 publication. Validate archive round-trip and old-archive replay compatibility.
 
