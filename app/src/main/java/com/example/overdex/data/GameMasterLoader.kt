@@ -35,6 +35,8 @@ class GameMasterLoader(
 
     fun allPokemon(): List<GameMasterPokemon> = gameMaster.pokemon
 
+    fun allMoves(): List<GameMasterMove> = gameMaster.moves
+
     /** Includes Pokémon GO's visible base name as an alias for form-specific entries. */
     fun allPokemonNames(): Set<String> = gameMaster.pokemon
         .flatMap { listOf(it.speciesName, it.speciesName.substringBefore(" (")) }

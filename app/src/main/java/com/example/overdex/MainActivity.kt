@@ -564,8 +564,12 @@ fun PokedexApp(
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
+    val terminalSwipeWords by androidx.compose.runtime.produceState<List<String>>(emptyList(), viewModel) {
+        value = viewModel.loadTerminalSwipeWords()
+    }
 
     CompositionLocalProvider(
+        com.example.overdex.ui.components.LocalTerminalSwipeWords provides terminalSwipeWords,
         com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides currentRoute,
         com.example.overdex.ui.ODXFi.LocalDroidballSessionControl provides
             com.example.overdex.ui.ODXFi.DroidballSessionControl(deploymentState, viewModel::toggleObservation),

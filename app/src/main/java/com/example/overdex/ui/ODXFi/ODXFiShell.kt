@@ -531,162 +531,151 @@ fun ODXFiShell(
         .focusRequester(remoteFocusRequester)
         .focusable()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PokedexGreen)
-            .padding(8.dp)
-            .then(remoteKeyModifier)
-    ) {
-        // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
-        Row(
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val keyboardVisible = keyboardController?.isVisible == true
+        val panel = keyboardPanelDimensions(maxHeight, keyboardVisible, isBinderMode)
+        val controlModifier = Modifier.size(panel.controlWidth, panel.controlHeight)
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 2.dp, start = 2.dp),
-            verticalAlignment = Alignment.Top
+                .fillMaxSize()
+                .background(PokedexGreen)
+                .padding(8.dp)
+                .then(remoteKeyModifier)
         ) {
-            // The empty dock stays in place while the single body is in the field.
-            Box(Modifier.size(54.dp)) {
-                if (journey.shellOwnsBody) DroidballAcknowledgingBody(
-                    // Travel remains screen-left even when the binder rotates the body.
-                    modifier = Modifier.fillMaxSize()
-                        .absoluteOffset(x = 54.dp * DROIDBALL_BODY_DIAMETER_FRACTION * droidballPose.xBodies)
-                        .rotate(if (isBinderMode) 90f else 0f),
-                    pose = droidballPose.copy(xBodies = 0f),
-                    interactive = isLogoInteractive && journey.phase == DroidballJourneyPhase.DOCKED &&
-                        currentRoute == owningRoute,
-                    resetKey = journey.generation to currentRoute,
-                )
-            }
-
-            Spacer(modifier = Modifier.width(24.dp))
-
+            // Top Lights (PWR/Red, OBS/Amber, LINK/Green)
             Row(
-                modifier = Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
-                StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
-                StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
-            }
-        }
-
-        // Main Screen Area (Dominant Portrait CRT)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.3f) // Increase dominance of CRT
-                .background(instrumentBezelColor, RoundedCornerShape(4.dp))
-                .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
-                .padding(
-                    bottom = 8.dp,
-                    start = 8.dp,
-                    end = 8.dp
-                )
-                .glassShield() // The Glass Shield enforcement point
-        ) {
-            Text(
-                text = "oDX-Fi",
-                color = Color.Black.copy(alpha = 0.4f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 2.sp,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 5.dp)
-            )
+                    .fillMaxWidth()
+                    .padding(bottom = 2.dp, start = 2.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                // The empty dock stays in place while the single body is in the field.
+                Box(Modifier.size(54.dp)) {
+                    if (journey.shellOwnsBody) DroidballAcknowledgingBody(
+                        // Travel remains screen-left even when the binder rotates the body.
+                        modifier = Modifier.fillMaxSize()
+                            .absoluteOffset(x = 54.dp * DROIDBALL_BODY_DIAMETER_FRACTION * droidballPose.xBodies)
+                            .rotate(if (isBinderMode) 90f else 0f),
+                        pose = droidballPose.copy(xBodies = 0f),
+                        interactive = isLogoInteractive && journey.phase == DroidballJourneyPhase.DOCKED &&
+                            currentRoute == owningRoute,
+                        resetKey = journey.generation to currentRoute,
+                    )
+                }
 
+                Spacer(modifier = Modifier.width(24.dp))
+
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
+                    StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
+                    StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
+                }
+            }
+
+            // Main Screen Area (Dominant Portrait CRT)
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = crtTopBezel)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(if (isBinderMode) Color(0xFF241A12) else PokedexScreen)
-                    .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                    .fillMaxWidth()
+                    .weight(1.3f) // Increase dominance of CRT
+                    .background(instrumentBezelColor, RoundedCornerShape(4.dp))
+                    .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
+                    .padding(
+                        bottom = 8.dp,
+                        start = 8.dp,
+                        end = 8.dp
+                    )
+                    .glassShield() // The Glass Shield enforcement point
             ) {
-                RotatedInstrumentViewport(
-                    active = isBinderMode,
-                    modifier = Modifier.fillMaxSize(),
-                    rotationDegrees = 90f
+                Text(
+                    text = "oDX-Fi",
+                    color = Color.Black.copy(alpha = 0.4f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 5.dp)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = crtTopBezel)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(if (isBinderMode) Color(0xFF241A12) else PokedexScreen)
+                        .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
                 ) {
-                    // Application Layer (Shader applied here)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            // A binder is viewed as a physical object on a tabletop. Keep
-                            // the CRT shader for instrument screens, but do not bend,
-                            // vignette, or scan-line the binder pages.
-                            .then(
-                                if (filterSettings.isEnabled && !isBinderMode) {
-                                    Modifier.lcdDisplayEffect(filterSettings)
-                                } else {
-                                    Modifier
-                                }
-                            )
+                    RotatedInstrumentViewport(
+                        active = isBinderMode,
+                        modifier = Modifier.fillMaxSize(),
+                        rotationDegrees = 90f
                     ) {
-                        // Keep the content call site stable when typing starts/stops:
-                        // binder paging and directory state belong to this composition.
-                        Column(Modifier.fillMaxSize()) {
-                            if (keyboardController?.isVisible == true && keyboardPreviewOnCrt != null) {
-                                TypeIconText(
-                                    text = keyboardPreviewOnCrt,
-                                    color = TerminalGreen,
-                                    fontSize = 12.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    maxLines = 3,
-                                    modifier = Modifier.fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        // Application Layer (Shader applied here)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                // A binder is viewed as a physical object on a tabletop. Keep
+                                // the CRT shader for instrument screens, but do not bend,
+                                // vignette, or scan-line the binder pages.
+                                .then(
+                                    if (filterSettings.isEnabled && !isBinderMode) {
+                                        Modifier.lcdDisplayEffect(filterSettings)
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        ) {
+                            // Keep the content call site stable when typing starts/stops:
+                            // binder paging and directory state belong to this composition.
+                            Column(Modifier.fillMaxSize()) {
+                                if (keyboardController?.isVisible == true && keyboardPreviewOnCrt != null) {
+                                    TypeIconText(
+                                        text = keyboardPreviewOnCrt,
+                                        color = TerminalGreen,
+                                        fontSize = 12.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 3,
+                                        modifier = Modifier.fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    )
+                                }
+                                Box(Modifier.weight(1f).fillMaxWidth()) { content(battleMemory) }
+                            }
+                        }
+
+                    // HUD Overlay Layer (Kept clean and sharp)
+                    if (showBattleOverlay && serviceMode) {
+                        Column {
+                            if (overlayState == OverlayState.EXPANDED) {
+                                EnemyTeamMemoryOverlay(
+                                    opponent = presentationState.team.opponent,
+                                    tactical = presentationState.tactical,
+                                    spriteProvider = viewModel?.spriteProvider
+                                        ?: com.example.overdex.data.LocalSpriteProvider(context.assets)
+                                )
+
+                                // Live Move Analysis Panel - Displays moves for the active enemy
+                                LiveMoveAnalysisPanel(
+                                    opponent = presentationState.team.opponent,
+                                    tactical = presentationState.tactical
                                 )
                             }
-                            Box(Modifier.weight(1f).fillMaxWidth()) { content(battleMemory) }
                         }
                     }
 
-                // HUD Overlay Layer (Kept clean and sharp)
-                if (showBattleOverlay && serviceMode) {
-                    Column {
-                        if (overlayState == OverlayState.EXPANDED) {
-                            EnemyTeamMemoryOverlay(
-                                opponent = presentationState.team.opponent,
-                                tactical = presentationState.tactical,
-                                spriteProvider = viewModel?.spriteProvider
-                                    ?: com.example.overdex.data.LocalSpriteProvider(context.assets)
-                            )
-
-                            // Live Move Analysis Panel - Displays moves for the active enemy
-                            LiveMoveAnalysisPanel(
-                                opponent = presentationState.team.opponent,
-                                tactical = presentationState.tactical
-                            )
-                        }
                     }
-                }
-
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        // Permanent Front Panel Assembly (Compressed Lower Console)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(170.dp) // Compressed from 220dp
-                .background(instrumentBezelColor, RoundedCornerShape(4.dp))
-                .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Navigation Column (Left)
-            Column(
-                modifier = Modifier.width(56.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            @Composable fun NavigationButtons() {
                 InstrumentButton(
+                    modifier = controlModifier,
                     icon = Icons.Default.ArrowDropUp,
                     contentDescription = "Up",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
@@ -695,6 +684,7 @@ fun ODXFiShell(
                     onPressChanged = onUpPressChanged,
                 )
                 InstrumentButton(
+                    modifier = controlModifier,
                     icon = Icons.Default.ArrowDropDown,
                     contentDescription = "Down",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
@@ -703,6 +693,7 @@ fun ODXFiShell(
                     onPressChanged = onDownPressChanged,
                 )
                 InstrumentButton(
+                    modifier = controlModifier,
                     icon = Icons.AutoMirrored.Filled.ArrowLeft,
                     contentDescription = "Left",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
@@ -711,6 +702,7 @@ fun ODXFiShell(
                     onPressChanged = if (isBinderMode) onLeftPressChanged else null
                 )
                 InstrumentButton(
+                    modifier = controlModifier,
                     icon = Icons.AutoMirrored.Filled.ArrowRight,
                     contentDescription = "Right",
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
@@ -720,40 +712,16 @@ fun ODXFiShell(
                 )
             }
 
-            // Instrumentation Display (Center). The LCD is physical hardware;
-            // Binder mode rotates only the pixels shown inside its fixed frame.
-            InstrumentLCD(
-                presentationState = presentationState,
-                deploymentState = currentDeploymentState,
-                frameCount = frameCount,
-                lcdLine1 = lcdLine1,
-                lcdLine2 = lcdLine2,
-                lcdLines = lcdLines,
-                lcdContent = lcdContent,
-                keyboardController = keyboardController,
-                onKeyActivated = onKeyActivated,
-                onDrag = onLcdDrag,
-                onTap = onLcdTap,
-                contentRotationDegrees = if (isBinderMode) 90f else 0f,
-                edgeToEdgeContent = isBinderMode || lcdEdgeToEdgeContent,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            )
-
-            // Action Column (Right)
-            Column(
-                modifier = Modifier.width(56.dp).fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            @Composable fun ActionButtons() {
                 InstrumentButton(
+                    modifier = controlModifier,
                     label = "A",
                     labelRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = onA,
                     onLongClick = onALong
                 )
                 InstrumentButton(
+                    modifier = controlModifier,
                     label = "B",
                     labelRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
@@ -767,7 +735,8 @@ fun ODXFiShell(
                     }
                 )
                 InstrumentButton(
-                    label = if (isBinderMode) null else "SELECT",
+                    modifier = controlModifier,
+                    label = if (isBinderMode) null else if (keyboardVisible) "SEL" else "SELECT",
                     icon = if (isBinderMode) Icons.Default.Search else null,
                     iconRotationDegrees = if (isBinderMode) 90f else 0f,
                     contentDescription = if (isBinderMode) "Search Pokédex" else "Select",
@@ -775,6 +744,7 @@ fun ODXFiShell(
                     onLongClick = onSelectLong
                 )
                 InstrumentButton(
+                    modifier = controlModifier,
                     // An explicit contextual callback without an explicit
                     // session state retains its own START key. It must not
                     // claim to Stop Droidball while editing a card or message.
@@ -790,6 +760,67 @@ fun ODXFiShell(
                     onClick = startAction,
                     enabled = onStart != null || currentDeploymentState != InstrumentDeploymentState.RETURNING,
                 )
+            }
+
+            @Composable fun Lcd(modifier: Modifier) {
+                InstrumentLCD(
+                    presentationState = presentationState,
+                    deploymentState = currentDeploymentState,
+                    frameCount = frameCount,
+                    lcdLine1 = lcdLine1,
+                    lcdLine2 = lcdLine2,
+                    lcdLines = lcdLines,
+                    lcdContent = lcdContent,
+                    keyboardController = keyboardController,
+                    onKeyActivated = onKeyActivated,
+                    onDrag = onLcdDrag,
+                    onTap = onLcdTap,
+                    contentRotationDegrees = if (isBinderMode) 90f else 0f,
+                    edgeToEdgeContent = isBinderMode || lcdEdgeToEdgeContent || keyboardVisible,
+                    modifier = modifier
+                )
+            }
+
+            val panelModifier = Modifier
+                .fillMaxWidth()
+                .height(panel.panelHeight)
+                .background(instrumentBezelColor, RoundedCornerShape(4.dp))
+                .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
+                .padding(vertical = 8.dp)
+            if (panel.controlsBelowLcd) {
+                // Typing uses the full LCD width; instrument controls remain
+                // available in two rows instead of squeezing the letter keys.
+                Column(panelModifier) {
+                    Lcd(Modifier.weight(1f).fillMaxWidth())
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
+                        horizontalArrangement = Arrangement.SpaceEvenly) {
+                        NavigationButtons()
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth().height(panel.controlHeight),
+                        horizontalArrangement = Arrangement.SpaceEvenly) {
+                        ActionButtons()
+                    }
+                }
+            } else {
+                // Browsing keeps the original console. Rotated binder typing
+                // retains side controls and grows the rotated LCD's width.
+                Row(panelModifier,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        NavigationButtons()
+                    }
+                    Lcd(Modifier.weight(1f).fillMaxHeight())
+                    Column(Modifier.width(panel.controlWidth).fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally) {
+                        ActionButtons()
+                    }
+                }
             }
         }
     }

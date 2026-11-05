@@ -1,15 +1,20 @@
 package com.example.overdex.ui.components
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
  * Controller for the hardware-driven TerminalKeyboard firmware module.
  */
 class TerminalKeyboardController(
-    initialLayout: List<List<String>> = TestKeyboardLayout,
+    initialLayout: List<List<String>> = QwertyLayout,
     private val keepVisibleAfterInput: Boolean = false,
 ) {
+    /** Invalidates pending gesture suggestions when instrument controls edit/finish input. */
+    var inputRevision by mutableIntStateOf(0)
+        private set
+    /** A field may reopen letters without replacing the trainer's ABC/QWERTY choice. */
+    var primaryLetterLayout by mutableStateOf(if (initialLayout == LettersLayout) LettersLayout else QwertyLayout)
+        private set
     var layout by mutableStateOf(initialLayout)
     var isVisible by mutableStateOf(false)
     var isFocused by mutableStateOf(false)
@@ -18,11 +23,13 @@ class TerminalKeyboardController(
     var currentCol by mutableIntStateOf(0)
 
     fun open() {
+        inputRevision++
         isVisible = true
         isFocused = true
     }
 
     fun close() {
+        inputRevision++
         isVisible = false
         isFocused = false
     }
@@ -33,7 +40,10 @@ class TerminalKeyboardController(
     }
 
     fun updateLayout(newLayout: List<List<String>>) {
-        layout = newLayout
+        inputRevision++
+        // Existing fields request LettersLayout to leave numeric/move pages. Keep their
+        // meaning of "letters" while remembering the layout selected by the trainer.
+        layout = if (newLayout == LettersLayout || newLayout == QwertyLayout) primaryLetterLayout else newLayout
         currentRow = 0
         currentCol = 0
     }
@@ -93,18 +103,26 @@ class TerminalKeyboardController(
             handleStart()
         } else if (key == "#") {
             handleModeSwitch()
+        } else if ((key == "ABC" || key == "QWERTY") && isTextPage()) {
+            primaryLetterLayout = if (key == "ABC") LettersLayout else QwertyLayout
+            updateLayout(primaryLetterLayout)
         } else if (key.isNotEmpty()) {
             onKeyActivated(key)
         }
     }
 
     /**
-     * Toggles between primary (Letters) and secondary (Token) layouts.
+     * Toggles between the selected letter layout and the number/type page.
+     * Numeric and whole-move choice grids own their input and are left unchanged.
      */
     fun handleModeSwitch() {
-        val nextLayout = if (layout == LettersLayout) TokenLayout else LettersLayout
-        updateLayout(nextLayout)
+        when (layout) {
+            LettersLayout, QwertyLayout -> updateLayout(TokenLayout)
+            TokenLayout -> updateLayout(primaryLetterLayout)
+        }
     }
+
+    private fun isTextPage(): Boolean = layout == LettersLayout || layout == QwertyLayout || layout == TokenLayout
 
     /**
      * Deletes the last character of the query.
@@ -133,6 +151,7 @@ class TerminalKeyboardController(
      */
     fun handleStart(): Boolean {
         if (isVisible) {
+            inputRevision++
             if (keepVisibleAfterInput) releaseFocus() else close()
             return true
         }

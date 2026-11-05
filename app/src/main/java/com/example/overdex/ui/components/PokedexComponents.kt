@@ -170,6 +170,8 @@ fun InstrumentLCD(
     edgeToEdgeContent: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val keyboardVisible = keyboardController?.isVisible == true
+    val compactPadding = edgeToEdgeContent || keyboardVisible
     val latestIdentifiedPokemon = presentationState.timeline.events
         .lastOrNull {
             it.type == SemanticTimelineEventType.POKEMON_IDENTIFIED
@@ -179,7 +181,7 @@ fun InstrumentLCD(
             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
             .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
             .then(
-                if (lcdContent == null && (onDrag != null || onTap != null)) {
+                if (!keyboardVisible && lcdContent == null && (onDrag != null || onTap != null)) {
                     Modifier.pointerInput(Unit) {
                         detectDragGestures(
                             onDrag = { change, dragAmount ->
@@ -192,7 +194,7 @@ fun InstrumentLCD(
                     }
                 } else Modifier
             )
-            .padding(if (edgeToEdgeContent) 3.dp else 8.dp)
+            .padding(if (compactPadding) 3.dp else 8.dp)
     ) {
         // LCD Surface
         Column(
@@ -201,9 +203,9 @@ fun InstrumentLCD(
                 .background(Color(0xFF121510)) // Dim greenish-black LCD
                 .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
                 .padding(
-                    horizontal = if (edgeToEdgeContent) 2.dp else 8.dp,
+                    horizontal = if (compactPadding) 2.dp else 8.dp,
                     vertical = when {
-                        edgeToEdgeContent -> 2.dp
+                        compactPadding -> 2.dp
                         keyboardController?.isVisible == true -> 4.dp
                         else -> 12.dp
                     }
@@ -225,6 +227,7 @@ fun InstrumentLCD(
                     currentRow = keyboardController.currentRow,
                     currentColumn = keyboardController.currentCol,
                     isFocused = keyboardController.isFocused,
+                    inputRevision = keyboardController.inputRevision,
                     onKeyActivated = { key -> keyboardController.activateKey(key) { onKeyActivated?.invoke(it) } },
                     modifier = Modifier.weight(1f).fillMaxWidth()
                 )

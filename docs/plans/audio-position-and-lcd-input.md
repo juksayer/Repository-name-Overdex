@@ -1,8 +1,9 @@
 # Audio position and LCD input experiments
 
 November 4, 2026; keyboard clarification and first implementation November 5.
-Audio-position work and larger keyboard layouts remain source-audited proposals.
-The duplicated LCD input header has now been removed, as described below.
+Audio-position work remains a source-audited proposal. The duplicated LCD input
+header was removed first; a second November 5 slice adds expanded typing space,
+QWERTY and local Pokémon/move swipe suggestions, as described below.
 Fast Move fidelity remains the priority. The user is performing an ending/cry
 test; do not interrupt capture or install a replacement build during that session.
 
@@ -94,41 +95,36 @@ Flows with an existing CRT field keep it. Pokédex/owned-binder searches, direct
 species search and Trainer Comms now put their otherwise sole query/draft
 preview on the CRT. The shared CRT content stays at one stable composition call
 site, so opening the keyboard does not reset a binder's selected card. The
-keyboard uses the reclaimed LCD space within the existing key-size limits;
-shell dimensions and keyboard layout have not changed. See the
+first slice uses the reclaimed LCD space within its then-existing key-size
+limits. See the
 [implementation checks](../verification/2026-11-05-keyboard-lcd-space.md).
 
-The useful first layout experiment is keyboard-only: move the CRT's lower edge
-up, enlarge the LCD, and narrow control columns while retaining large physical
-targets. A candidate is a roughly 220–226 dp lower panel, 48 dp control columns,
-and 40–44 dp letter-key ceiling. Those numbers are trial values; measure short
-screens and text scaling before selecting them. Change parent columns and button
-geometry together; preserve ordinary/binder layout and the CRT GlassShield.
+The second slice targets a 390 dp portrait typing console: full-width LCD above
+two rows of 48 dp instrument buttons. Binder typing keeps 48 dp side controls
+and targets a 420 dp console, increasing the rotated keyboard's logical width.
+Actual viewport height limits growth; short screens retain a CRT preview and
+keyboard scrolling. Ordinary browsing retains its 170 dp panel and 56×36 dp
+controls. Letter keys now grow to 48 dp high. The earlier 220–226 dp proposal
+would have left ten QWERTY columns too narrow; panel enlargement alone was not
+enough. Physical comfort still needs trainer review.
 
-Keep one compact field/value preview. Remove duplicated confirmation/instruction
-text where actually found. Preserve one clear finish action plus physical A/B
-behavior. Reclaiming a row should enlarge the keys or result area visibly.
+QWERTY is the default letter page, with ABC available. Token switching and
+reopening a field preserve the chosen primary page. Numeric and whole-move
+choice grids remain separate.
 
-QWERTY can be an optional primary letter layout, preserving the current layout
-for comparison. The controller currently toggles LettersLayout ↔ TokenLayout and
-several workflows reset LettersLayout explicitly. A new constant alone would
-fall back to ABC after changing pages. Preserve numeric and move-choice grids.
-QWERTY has more keys across a row, so test horizontal targets as well as height.
+The user chose to keep typing inside the LCD because Android's keyboard does
+not fit the instrument's appearance. The custom keyboard now compares a finger
+trace with the bundled species/move catalogue off the UI thread, using measured
+key positions before rotation. It proposes up to three canonical names, entered
+only after the trainer taps a choice. This is a domain recognizer, not general
+language prediction; nicknames and chat still support ordinary taps. Unmatched,
+canceled or multi-pointer gestures enter nothing. Original text is not silently
+replaced. See the [implementation and acceptance checks](../verification/2026-11-05-lcd-qwerty-swipe.md).
 
-The custom grid has no gesture recognizer. Swipe-to-type inside it requires its
-own path recognition and correction UI. Species/move catalogue suggestions are
-a useful limited-vocabulary input source. Another experiment is a real LCD text
-field using the installed Android keyboard; gesture availability then belongs
-to that keyboard, not the custom LCD grid. Release and restore shell navigation
-focus correctly. Ordinary keyboard dictionaries may not know the domain names.
-See [Android text input](https://developer.android.com/develop/ui/compose/text/user-input).
-
-Validate geometry in the emulator: long field text, ABC/QWERTY/token switching,
-SELECT/START labels, numbers, two-column move choices, END/B behavior, save once,
-focus restoration, binder rotation and LCD touch ownership. Then obtain a phone
-check after the user's battle recording has finished. QWERTY/swipe and the larger
-panel geometry are still proposals; the November 5 header fix does not implement
-them.
+Remaining comfort checks include long names, font scaling and repeated real
+finger gestures on each phone. Larger-screen typing and recognizer tuning can
+follow that evidence. The audio-position experiment above has not been wired
+into production recognition by this keyboard work.
 
 ## Turning if/then ideas into useful evidence rules
 

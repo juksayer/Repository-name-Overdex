@@ -168,6 +168,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val cryProvider = LocalCryProvider(application.assets)
 
     private val gameMasterLoader = GameMasterLoader(application)
+    private val terminalSwipeVocabulary = com.example.overdex.data.TerminalSwipeVocabulary(gameMasterLoader)
+    suspend fun loadTerminalSwipeWords(): List<String> = terminalSwipeVocabulary.load()
     private val pokemonRepository = PokemonRepository(
         pokemonDao = pokemonDao,
         spriteProvider = spriteProvider,
