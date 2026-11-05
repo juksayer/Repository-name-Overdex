@@ -19,7 +19,7 @@ class KeyboardPanelDimensionsTest {
 
     @Test fun `typing expands the panel and gives controls 48 dp targets`() {
         assertEquals(
-            KeyboardPanelDimensions(430.dp, 48.dp, 48.dp, true),
+            KeyboardPanelDimensions(390.dp, 48.dp, 48.dp, true),
             keyboardPanelDimensions(800.dp, true, false),
         )
         assertEquals(
@@ -33,11 +33,11 @@ class KeyboardPanelDimensionsTest {
         assertEquals(244.dp, keyboardPanelDimensions(480.dp, true, true).panelHeight)
     }
 
-    @Test fun `short screen fits the directional cross and leaves room for keys`() {
-        val panel = keyboardPanelDimensions(360.dp, true, false)
-        assertEquals(220.dp, panel.panelHeight)
-        assertTrue(panel.controlHeight >= 28.dp)
-        assertTrue(panel.panelHeight - panel.controlHeight * 3 - 24.dp > 0.dp)
+    @Test fun `short screen keeps both control rows reachable and leaves a CRT preview`() {
+        assertEquals(
+            KeyboardPanelDimensions(220.dp, 48.dp, 48.dp, true),
+            keyboardPanelDimensions(360.dp, true, false),
+        )
     }
 
     @Test fun `exceptionally short viewport fits controls inside its remaining height`() {
@@ -45,8 +45,5 @@ class KeyboardPanelDimensionsTest {
         assertEquals(90.dp, panel.panelHeight)
         assertEquals(18.5.dp, panel.controlHeight)
         assertTrue(panel.controlHeight * 4 + 16.dp <= panel.panelHeight)
-        val portrait = keyboardPanelDimensions(230.dp, true, false)
-        assertTrue(portrait.controlHeight > 0.dp)
-        assertTrue(portrait.panelHeight - portrait.controlHeight * 3 - 24.dp > 0.dp)
     }
 }

@@ -1,5 +1,10 @@
 # Directory and LCD review — November 5, 2026
 
+Review outcome: the trainer requested reverting the control-cross trial.
+The previous enlarged portrait keyboard arrangement has been restored. The
+cross layout below describes the rejected trial, not the current layout.
+All other requested changes remain pending separate review.
+
 The trainer requested one change at a time, with a review before the next change.
 The first slice is the enlarged **portrait typing controls only**:
 

@@ -1,5 +1,9 @@
 # Portrait typing control crosses — November 5, 2026
 
+**Reverted after review:** the trainer requested restoring the previous ODX-Fi
+shell controls. The observations below record the trial and are historical;
+they do not describe the currently restored portrait arrangement.
+
 ## Scope
 
 This checkpoint implements only the enlarged portrait typing controls. The
@@ -57,3 +61,23 @@ Private backups, screenshots, and test output:
 This verifies installation, layout, and input delivery. The trainer's assessment
 of typing comfort and preferred control placement remains the review boundary
 before the next queued change.
+
+## Revert verification
+
+The trainer requested reverting the shell trial. Restored both production files
+and their two tests to the behavior of `34cb372d` (apart from removing two
+pre-existing trailing spaces). The prior two control rows and 390 dp portrait
+typing panel are restored; the earlier full-width QWERTY keyboard and local
+swipe recognition remain.
+
+- All 1,721 JVM tests passed; debug and instrumentation APK assembly passed.
+- Installed on the Moondrop and visually confirmed the prior portrait rows via
+  BATTLE → Add Pokémon → Species → START. No card was created or saved.
+- All 49 protected files remain present. Only the Firestore local cache changed;
+  match archive inventories match exactly.
+- Installed APK SHA-256 matches the build:
+  `c44ffe58ed024ae11fad6a32f3a7c1581c51c891f9693f507c7ed95c4dd49739`.
+- No new emulator instrumentation run was required for this restoration. The
+  17-test result above applies only to the now-reverted trial.
+- Backup and restored-layout screenshot:
+  `/home/sean/overdex-device-backups/2026-11-05-revert-control-crosses/`.
