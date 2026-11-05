@@ -62,6 +62,10 @@ class KeyboardPanelGeometryDeviceTest {
         assertTrue("The LCD stays between the columns", after.first().right <= grid.left)
         assertTrue("The LCD stays between the columns", grid.right <= actions.first().left)
         compose.onNodeWithText("SEARCH: RAI").assertIsDisplayed()
+        compose.onNodeWithText("Q").assertHeightIsAtLeast(26.dp)
+        // The compact strip leaves enough room for the bottom row immediately,
+        // before navigation scrolls the grid to the selected utility key.
+        compose.onNodeWithContentDescription("End typing").assertIsDisplayed()
         compose.onNodeWithText("P").assertIsDisplayed().performTouchInput { click() }
         compose.runOnIdle { assertEquals(listOf("P"), entered) }
         repeat(3) {

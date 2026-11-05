@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import com.example.overdex.ui.theme.TerminalBlack
 import com.example.overdex.ui.theme.TerminalGreen
 
@@ -93,28 +95,34 @@ fun TerminalKeyboard(
         val rowGap = 4.dp
         Column(Modifier.fillMaxSize()) {
             if (letterPage) {
+                // Reserve a small, constant strip so candidates do not move the
+                // letters during a gesture or after its comparison completes.
                 Row(
-                    Modifier.fillMaxWidth().height(44.dp)
+                    Modifier.fillMaxWidth().height(24.dp)
+                        .clipToBounds()
                         .horizontalScroll(rememberScrollState())
-                        .testTag("Swipe suggestions"),
+                        .testTag("Swipe suggestions")
+                        .semantics {
+                            stateDescription = when {
+                                matching -> "Finding names"
+                                noMatch -> "No name matched"
+                                recognizer == null -> "Tap typing available"
+                                else -> "Swipe typing ready"
+                            }
+                        },
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (suggestions.isEmpty()) {
+                    if (suggestions.isEmpty() && (matching || noMatch)) {
                         Text(
-                            text = when {
-                                matching -> "Finding names…"
-                                noMatch -> "No name matched · tap to type"
-                                recognizer == null -> "Tap to type"
-                                else -> "Slide across letters · tap a name"
-                            },
+                            text = if (matching) "Finding names…" else "No name matched · tap to type",
                             color = TerminalGreen.copy(alpha = 0.7f),
                             fontFamily = FontFamily.Monospace,
                             fontSize = 10.sp,
                         )
                     } else suggestions.forEach { word ->
                         Box(
-                            Modifier.height(44.dp)
+                            Modifier.height(24.dp)
                                 .background(TerminalGreen.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
                                 .border(1.dp, TerminalGreen.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                                 .clickable { enter(word) }

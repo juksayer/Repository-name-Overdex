@@ -10,13 +10,19 @@ The enlarged keyboard console and the control-cross trial are both superseded.
   binder mode. QWERTY, local swipe recognition, and existing keyboard scrolling
   remain available inside the smaller LCD.
 
+The spacing refinement removes the idle swipe-instruction line and
+reduces its fixed suggestion strip from 44 dp to 24 dp, returning that space to
+the letter rows without moving the shell or controls. Actual suggestions and
+matching feedback remain in the strip.
+
 The trainer requested one change at a time, with review before the next change.
 The following requested changes remain pending and can be implemented in
 separate small slices:
 
-1. Remove the idle swipe instruction line. Put instructions in a real How-to
-   section; its final location/directory entry has not been chosen. Preserve
-   actual word suggestions, loading/failure feedback and gesture geometry.
+1. Put keyboard instructions in a real How-to section; its final location or
+   directory entry has not been chosen. The idle swipe instruction is removed
+   by the spacing refinement above. Preserve actual word suggestions,
+   loading/failure feedback and gesture geometry.
 2. Simplify directory presentation: lowercase labels with the requested
    Pokémon/Droidball name exceptions; remove `+` and trailing `/`; show branch
    elbows/open hierarchy. Presentation changes must preserve internal paths,

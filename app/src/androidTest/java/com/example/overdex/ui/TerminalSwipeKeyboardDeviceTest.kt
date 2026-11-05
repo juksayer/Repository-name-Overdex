@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -29,13 +30,14 @@ class TerminalSwipeKeyboardDeviceTest {
     private fun showKeyboard(
         layout: List<List<String>> = QwertyLayout,
         controller: TerminalKeyboardController? = null,
+        keyboardModifier: Modifier = Modifier.size(360.dp, 280.dp),
     ) {
         compose.setContent {
             TerminalKeyboard(
                 layout = controller?.layout ?: layout,
                 currentRow = controller?.currentRow ?: 0,
                 currentColumn = controller?.currentCol ?: 0,
-                modifier = Modifier.size(360.dp, 280.dp),
+                modifier = keyboardModifier,
                 isFocused = controller?.isFocused ?: true,
                 onKeyActivated = { key ->
                     if (controller == null) emitted += key else controller.activateKey(key, emitted::add)
@@ -49,9 +51,11 @@ class TerminalSwipeKeyboardDeviceTest {
             // The recognizer is prepared off the UI thread; an ordinary idle check
             // alone need not mean that gesture input has been installed yet.
             compose.waitUntil(10_000) {
-                compose.onAllNodesWithText("Slide across letters · tap a name")
+                compose.onAllNodes(hasTestTag("Swipe suggestions") and
+                    SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Swipe typing ready"))
                     .fetchSemanticsNodes().isNotEmpty()
             }
+            compose.onNodeWithText("Slide across letters · tap a name").assertDoesNotExist()
         }
     }
 
@@ -93,18 +97,45 @@ class TerminalSwipeKeyboardDeviceTest {
         compose.onNodeWithContentDescription("Insert PIKACHU", useUnmergedTree = true).assertDoesNotExist()
     }
 
-    @Test fun swipingProposesANameAndOnlyAnExplicitChoiceInsertsIt() {
-        showKeyboard()
+    @Test fun compactSuggestionChipDoesNotTakeTapsFromTheFirstLetterRow() {
+        showKeyboard(keyboardModifier = Modifier.size(220.dp, 144.dp))
         trace("PIKACHU")
         compose.waitUntil(10_000) {
             compose.onAllNodesWithContentDescription("Insert PIKACHU", useUnmergedTree = true)
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithText("Q").performTouchInput { click(Offset(center.x, 2f)) }
+        compose.runOnIdle { assertEquals(listOf("Q"), emitted) }
+        compose.onNodeWithContentDescription("Insert PIKACHU", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun repeatedSwipesKeepKeysStillAndOnlyAnExplicitChoiceInsertsAName() {
+        showKeyboard()
+        fun letterBounds() = "QPAZM".map { letter ->
+            compose.onNodeWithText(letter.toString(), useUnmergedTree = true)
+                .fetchSemanticsNode().boundsInRoot
+        }
+        val originalBounds = letterBounds()
+        trace("PIKACHU")
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("Insert PIKACHU", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals("Showing candidates must not move the alphabet", originalBounds, letterBounds())
+        // Start a new gesture while old candidates are visible. Clearing those
+        // candidates must leave the measured letter positions unchanged.
+        trace("PIKACHU")
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("Insert PIKACHU", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals("A second swipe must use the same key positions", originalBounds, letterBounds())
         compose.runOnIdle { assertTrue("Swipe emitted keys before choosing a name: $emitted", emitted.isEmpty()) }
         compose.onNodeWithContentDescription("Insert PIKACHU", useUnmergedTree = true)
             .assertIsDisplayed().performTouchInput { click() }
         compose.runOnIdle { assertEquals(listOf("PIKACHU"), emitted) }
         compose.onNodeWithContentDescription("Insert PIKACHU", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals("Choosing a name must not move the alphabet", originalBounds, letterBounds())
     }
 
     @Test fun cancelingANameGestureDoesNotInsertOrOfferItsPartialPath() {
@@ -171,10 +202,10 @@ class TerminalSwipeKeyboardDeviceTest {
     @Test fun anUnmatchedPathDoesNotBecomeAnUnrelatedNameOrKey() {
         showKeyboard()
         trace("QAZ")
-        // Returning to the normal hint confirms that the asynchronous comparison
-        // finished, so this assertion does not race a later suggestion.
+        // Wait for the actual completed result rather than racing a comparison
+        // that has not yet published its busy state.
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Finding names…").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithText("No name matched · tap to type").fetchSemanticsNodes().isNotEmpty()
         }
         assertNoInsertionOrCandidate()
     }
@@ -204,7 +235,8 @@ class TerminalSwipeKeyboardDeviceTest {
             }
         }
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Slide across letters · tap a name")
+            compose.onAllNodes(hasTestTag("Swipe suggestions") and
+                SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Swipe typing ready"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
         // Inject through an unrotated parent. These measured world coordinates
