@@ -21,6 +21,10 @@ outline folder/file icons from **Instrument rails**:
 
 - Green monospace rows, connected branch rails/elbows, purple active ancestors,
   a quiet selection background, and open/closed folder icons.
+- Density refinement: use the selected Instrument mono (Share Tech Mono)
+  typeface, bundled locally, and 26 dp minimum headings with 3 dp vertical
+  padding. Keep 16 sp letters and 20 sp line height; wrapping and larger text
+  can increase the row height rather than clip it.
 - Structural labels are lowercase with Pokémon/Droidball name exceptions.
   Custom binder names and inline species/move choices preserve their spelling;
   internal paths and saved identities do not change.

@@ -44,11 +44,13 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.overdex.R
 import com.example.overdex.model.navigation.ActionNode
 import com.example.overdex.model.navigation.DirectoryNode
 import com.example.overdex.model.navigation.FlattenedNode
@@ -65,6 +67,7 @@ private val DirectorySelected = Color(0xFFCCFFD7)
 private val DirectoryBranch = Color(0xFF367646)
 private val DirectoryAncestor = Color(0xFFBD93E8)
 private val DirectorySelectionWash = Color(0xFF122D1A)
+private val DirectoryTypeface = FontFamily(Font(R.font.share_tech_mono_regular))
 
 @Composable
 fun DirectoryTree(
@@ -145,9 +148,9 @@ fun DirectoryTree(
                         .padding(start = (12 + flattened.depth.coerceAtLeast(0) * 17).dp, end = 5.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 30.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 26.dp)
                             .onSizeChanged { headingHeight = it.height }
-                            .padding(vertical = 5.dp),
+                            .padding(vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (node.icon == TreeNodeIcon.BINDER) {
@@ -162,7 +165,7 @@ fun DirectoryTree(
                             color = color,
                             fontSize = 16.sp,
                             lineHeight = 20.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = DirectoryTypeface,
                             fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
                             modifier = Modifier.weight(1f),
                         )
@@ -173,7 +176,7 @@ fun DirectoryTree(
                             color = if (isSelected) DirectorySelected else DirectoryPhosphor.copy(alpha = 0.8f),
                             fontSize = 13.sp,
                             lineHeight = 17.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = DirectoryTypeface,
                             modifier = Modifier.fillMaxWidth().padding(start = 24.dp, bottom = 5.dp),
                         )
                     }
