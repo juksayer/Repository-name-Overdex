@@ -564,6 +564,10 @@ fun PokedexApp(
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
+    com.example.overdex.ui.navigation.DirectorySearchResetEffect(currentRoute) {
+        viewModel.resetSearchSession()
+        openPokedexSearchOnList = false
+    }
     val terminalSwipeWords by androidx.compose.runtime.produceState<List<String>>(emptyList(), viewModel) {
         value = viewModel.loadTerminalSwipeWords()
     }

@@ -134,6 +134,64 @@ class DirectoryOwnedPokemonDeviceTest {
         compose.runOnIdle { assertEquals(afterRegionChange, editor.selectedPath.substringAfterLast('/').toInt()) }
     }
 
+    @Test fun returningFromSpeciesSearchResetsQueryAndRegionWithoutDiscardingCardDraft() {
+        val pidgey = pikachu.copy(id = 16, name = "Pidgey")
+        val chikorita = pikachu.copy(id = 152, name = "Chikorita", region = "Johto")
+        var saved: OwnedPokemon? = null
+        compose.setContent { Harness(catalogue + pidgey + chikorita) { saved = it } }
+        openBranch(); button("A")
+        compose.waitUntil { editor.nodes.any { it.node.name == "#025 Pikachu" } }
+        button("▼"); button("A")
+        field(OwnedPokemonField.NICKNAME); button("A"); key("Z"); button("B")
+        field(OwnedPokemonField.CP); button("A"); "1499".forEach { key(it.toString()) }; button("B")
+        field(OwnedPokemonField.FAST_MOVE); button("A"); button("▼"); button("A")
+        field(OwnedPokemonField.SHADOW); button("A")
+        field(OwnedPokemonField.SHINY); button("A")
+        field(OwnedPokemonField.TEAMS); button("A"); "Great".forEach { key(it.toString()) }; button("B")
+        button("B"); button("B") // Return to and close Add Pokémon, keeping the unsaved card.
+        button("A"); button("▼"); button("A")
+        button("START"); key("P"); key("I"); key("END")
+        compose.onNodeWithContentDescription("Right").performTouchInput { click() }
+        compose.waitUntil {
+            editor.lcdLines.firstOrNull() == "CHOOSE SPECIES · Kanto" &&
+                editor.nodes.any { it.node.name == "#025 Pikachu" } &&
+                editor.nodes.any { it.node.name == "#016 Pidgey" } &&
+                editor.nodes.none { it.node.name == "#001 Bulbasaur" || it.node.name == "#152 Chikorita" }
+        }
+        compose.onNodeWithText("SEARCH: PI").assertIsDisplayed()
+        button("▼")
+        compose.runOnIdle { assertTrue(editor.selectedPath.endsWith("/choice/1")) }
+        button("B") // Leave the picker, then the Add Pokémon branch.
+        repeat(3) { button("B") }
+        compose.runOnIdle { assertEquals("/BATTLE", treeState.selectedPath); assertNull(saved) }
+        button("▼"); button("A"); button("▼"); button("A")
+        compose.waitUntil {
+            editor.lcdLines.firstOrNull() == "CHOOSE SPECIES · All" &&
+                editor.nodes.any { it.node.name == "#001 Bulbasaur" } &&
+                editor.nodes.any { it.node.name == "#152 Chikorita" }
+        }
+        compose.runOnIdle {
+            assertEquals("SEARCH: _", editor.keyboardPreviewOnCrt)
+            assertTrue(editor.selectedPath.endsWith("/choice/0"))
+            assertFalse(editor.keyboard.isVisible)
+        }
+        compose.mainClock.advanceTimeBy(800)
+        compose.runOnIdle { assertTrue(editor.selectedPath.endsWith("/choice/0")) }
+        button("B")
+        field(OwnedPokemonField.SAVE); button("A")
+        compose.waitUntil { saved != null }
+        compose.runOnIdle {
+            val card = requireNotNull(saved)
+            assertEquals(25, card.speciesId)
+            assertEquals("Z", card.displayName)
+            assertEquals(1499, card.cp)
+            assertEquals("Thunder Shock", card.fastMove)
+            assertTrue(card.isShadow)
+            assertTrue(card.isShiny)
+            assertEquals(listOf("Great"), card.teams)
+        }
+    }
+
     @Test fun addWithButtonsKeepsDirectoryAndSavesOneSharedCardOnlyAtSave() {
         val allowSave = CompletableDeferred<Unit>()
         var writes = 0

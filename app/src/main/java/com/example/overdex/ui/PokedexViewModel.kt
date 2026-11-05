@@ -1958,6 +1958,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         else -> "Unknown"
     }
 
+    /** Searches last for a module visit, not for the process-owned battle session. */
+    fun resetSearchSession() {
+        _searchQuery.value = ""
+        _searchRequest.value = SearchRequest()
+    }
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
         _searchRequest.value =

@@ -96,7 +96,15 @@ fun rememberDirectoryOwnedPokemonEditor(
     fun finishField() {
         editing = null
         keyboard.close()
+        // Search belongs to this picker session; the unsaved card remains in draft.
+        query.value = ""
+        region.value = RegistrationRegion.ALL
+        choiceIndex = 0
         heldDirection = 0
+    }
+
+    LaunchedEffect(inBranch) {
+        if (!inBranch) finishField()
     }
 
     fun save() {
