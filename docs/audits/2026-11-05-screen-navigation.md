@@ -129,6 +129,12 @@ product choice could route this redundant entry to the existing saved-match
 directory or deliberately retire its navigation. This audit changes neither the
 menu nor retained source.
 
+**Subsequent resolution, November 5:** the user approved consolidating this flow.
+BATTLE → Match History now opens the existing archive browser, and each selected
+match opens its own summary before inspection/replay. The old History route
+redirects for restored navigation; the unused repository/screen source is retained.
+See [Match History verification](../verification/2026-11-05-match-history.md).
+
 ### P2 — Legacy Shared Timeline has unreachable overflow content
 
 **Classification:** legacy-active surface with stranded content; not a proposal

@@ -41,6 +41,8 @@ class MatchSummaryNavigationDeviceTest {
                 Box(Modifier.size(320.dp, 260.dp).glassShield()) {
                     MatchSummaryScreen(fixture(), fullExportAvailable = true,
                         onOpenMatches = { actions += "open" }, onInspect = { actions += "inspect" },
+                        onExportReplayOnly = { actions += "replay-only" },
+                        onOpenExportedMatch = { actions += "open-exported" },
                         onExportCompact = { actions += "compact" }, onExportFull = { actions += "full" },
                         onBack = { actions += "back" }, onUp = { up = it }, onDown = { down = it },
                         onLeft = { left = it }, onRight = { right = it }, onA = { a = it }, onB = { b = it },
@@ -58,22 +60,23 @@ class MatchSummaryNavigationDeviceTest {
         compose.onNodeWithText("RECORDING").assertIsDisplayed()
         repeat(8) { compose.runOnIdle { up() }; compose.waitForIdle() }
         compose.onNodeWithText("YOU WIN").assertIsDisplayed()
-        val labels = listOf("OPEN RECORDED MATCHES", "INSPECT TIMELINE / REPLAY", "EXPORT COMPACT", "EXPORT FULL", "BACK")
+        val labels = listOf("OPEN MATCH HISTORY", "INSPECT TIMELINE / REPLAY", "EXPORT REPLAY ONLY",
+            "EXPORT COMPACT", "EXPORT FULL", "OPEN EXPORTED MATCH", "BACK")
         labels.forEachIndexed { i, label ->
             if (i > 0) { compose.runOnIdle { right() }; compose.waitForIdle() }
             compose.onNodeWithText(label).assertIsDisplayed().assertIsSelected()
             compose.runOnIdle { a() }
         }
-        compose.runOnIdle { assertEquals(listOf("open", "inspect", "compact", "full", "back"), actions); b() }
+        compose.runOnIdle { assertEquals(listOf("open", "inspect", "replay-only", "compact", "full", "open-exported", "back"), actions); b() }
         assertEquals("back", actions.last())
         compose.runOnIdle { left() }; compose.waitForIdle()
-        compose.onNodeWithText("EXPORT FULL").assertIsDisplayed().assertIsSelected()
+        compose.onNodeWithText("OPEN EXPORTED MATCH").assertIsDisplayed().assertIsSelected()
     }
 
     @Test fun summaryRefreshesWhenCanonicalArchiveArrives() {
         val current = mutableStateOf<MatchArchive?>(null)
         compose.setContent { Box(Modifier.size(300.dp, 300.dp).glassShield()) { MatchSummaryScreen(current.value) } }
-        compose.onNodeWithText("No recorded matches yet. Open Recorded Matches to browse available archives.").assertIsDisplayed()
+        compose.onNodeWithText("No recorded matches yet. Open Match History to browse saved matches.").assertIsDisplayed()
         compose.runOnIdle { current.value = fixture() }
         compose.onNodeWithText("YOU WIN").assertIsDisplayed()
     }
@@ -107,13 +110,13 @@ class MatchSummaryNavigationDeviceTest {
             var lcd by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
             Column {
                 Box(Modifier.size(320.dp, 300.dp).glassShield()) {
-                    MatchArchiveViewerScreen(fixture(), onBack = {}, onRight = { right = it }, onA = { a = it },
+                    MatchArchiveViewerScreen(fixture(), onBack = {}, onOpenEditor = {}, onRight = { right = it }, onA = { a = it },
                         onB = { b = it }, onLcdContentUpdate = { lcd = it })
                 }
                 Box(Modifier.size(220.dp, 170.dp)) { lcd?.invoke() }
             }
         }
-        repeat(3) { compose.runOnIdle { right() }; compose.waitForIdle() }
+        repeat(4) { compose.runOnIdle { right() }; compose.waitForIdle() }
         compose.onNodeWithText("ARTICLE DETAILS").assertIsDisplayed().assertIsSelected()
         compose.runOnIdle { a() }; compose.waitForIdle()
         compose.onNodeWithText("CLOSE DETAILS").assertIsDisplayed()

@@ -348,11 +348,10 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     icon = TreeNodeIcon.BINDER,
                 ),
                 DirectoryNode("Match", listOf(
-                    ActionNode("Match Summary", InstrumentCommand.OpenBattleLogs),
                     ActionNode("Replay Editor", InstrumentCommand.OpenReplayEditor)
                 )),
                 ActionNode("Records", InstrumentCommand.OpenBattleRecords),
-                ActionNode("History", InstrumentCommand.OpenBattleHistory)
+                ActionNode("Match History", InstrumentCommand.OpenBattleHistory)
             )),
             ActionNode("INTUEOR", InstrumentCommand.OpenSignalObservatory),
             ActionNode("PROFILE", InstrumentCommand.OpenProfile)

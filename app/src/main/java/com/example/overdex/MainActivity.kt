@@ -87,7 +87,6 @@ import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.screens.AccessibilityProbeScreen
 import com.example.overdex.ui.screens.AddOwnedPokemonWizard
-import com.example.overdex.ui.screens.BattleHistoryScreen
 import com.example.overdex.ui.screens.BattlePreviewScreen
 import com.example.overdex.ui.screens.BattleTimelineScreen
 import com.example.overdex.ui.screens.CalibrationScreen
@@ -542,7 +541,7 @@ fun PokedexApp(
                 InstrumentCommand.ManageBinders -> navController.navigate("binders")
                 InstrumentCommand.OpenCurrentTeam -> navController.navigate("current_battle_team")
                 InstrumentCommand.AddSpecimen -> navController.navigate("guided_registration")
-                InstrumentCommand.OpenBattleHistory -> navController.navigate("battle_history")
+                InstrumentCommand.OpenBattleHistory -> navController.navigate("match_archive_directory")
                 InstrumentCommand.OpenBattleRecords -> navController.navigate("battle_records")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("timeline_viewer")
                 InstrumentCommand.OpenReplayEditor -> navController.navigate("replay_editor")
@@ -717,27 +716,12 @@ fun PokedexApp(
                     ownedId = entry.arguments?.getString("ownedId"), onBack = { navController.debugPopBackStack() })
             }
             composable("battle_history") {
-                ODXFiShell(
-                    showBattleOverlay = false,
-                    viewModel = viewModel,
-                    filterSettings = filterSettings,
-                    onFilterSettingsChange = { filterSettings = it },
-                    onStart = { viewModel.toggleObservation() },
-                    onSelect = { /* Reserved */ },
-                    onLaunchProbe = launchAccessibilityProbe,
-                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
-                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
-                    deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    onB = { navController.debugPopBackStack() }
-                ) { _ ->
-                    BattleHistoryScreen(
-                        viewModel = viewModel,
-                        onBattleClick = { id -> 
-                            navController.navigate("module/battle.summary/OFFLINE/View details for battle $id.")
-                        },
-                        onBack = { navController.debugPopBackStack() }
-                    )
+                // Preserve restored navigation from older builds without exposing the stub.
+                LaunchedEffect(Unit) {
+                    navController.navigate("match_archive_directory") {
+                        popUpTo("battle_history") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             }
             composable("battle_log") {
@@ -1337,52 +1321,63 @@ fun PokedexApp(
                     )
                 }
             }
-            composable("timeline_viewer") {
-                var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
-                val archiveSource by viewModel.latestMatchArchiveSource.collectAsState()
-                var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-                var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+            // Keep the existing destination ID for Android-restored latest-summary stacks.
+            listOf("timeline_viewer", "match_summary?archiveUri={archiveUri}").forEach { summaryRoute ->
+                composable(summaryRoute, arguments = listOf(
+                    navArgument("archiveUri") { type = NavType.StringType; nullable = true; defaultValue = null }
+                )) { entry ->
+                    val selectedArchiveUri = entry.arguments?.getString("archiveUri")?.let(Uri::parse)
+                    var matchLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+                    val archiveSource by viewModel.latestMatchArchiveSource.collectAsState()
+                    var upHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var downHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var leftHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var rightHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var aHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+                    var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-                ODXFiShell(
-                    lcdContent = matchLcdContent,
-                    showBattleOverlay = false,
-                    viewModel = viewModel,
-                    filterSettings = filterSettings,
-                    onFilterSettingsChange = { filterSettings = it },
-                    onLaunchProbe = launchAccessibilityProbe,
-                    onLaunchObservatory = { navController.navigate("timeline_viewer") },
-                    onLaunchMatchCalibration = { navController.navigate("match_calibration") },
-                    deploymentState = deploymentState,
-                    frameCount = frameCount,
-                    onUp = { upHandler?.invoke() },
-                    onDown = { downHandler?.invoke() },
-                    onLeft = { leftHandler?.invoke() },
-                    onRight = { rightHandler?.invoke() },
-                    onA = { aHandler?.invoke() },
-                    onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
-                ) {
-                    MatchSummaryRoute(
-                        source = archiveSource,
-                        directory = archiveDirectoryManager,
-                        onLcdContentUpdate = { matchLcdContent = it },
-                        onOpenExportedMatch = onOpenArchive,
-                        onBack = { navController.debugPopBackStack() },
-                        onOpenMatches = { navController.navigate("match_archive_directory") },
-                        onInspect = { archive, uri ->
-                            openedArchiveUri.value = uri
-                            openedArchive.value = archive
-                        },
-                        onUp = { upHandler = it },
-                        onDown = { downHandler = it },
-                        onLeft = { leftHandler = it },
-                        onRight = { rightHandler = it },
-                        onA = { aHandler = it },
-                        onB = { bHandler = it }
-                    )
+                    ODXFiShell(
+                        lcdContent = matchLcdContent,
+                        showBattleOverlay = false,
+                        viewModel = viewModel,
+                        filterSettings = filterSettings,
+                        onFilterSettingsChange = { filterSettings = it },
+                        onLaunchProbe = launchAccessibilityProbe,
+                        onLaunchObservatory = { navController.navigate("timeline_viewer") },
+                        onLaunchMatchCalibration = { navController.navigate("match_calibration") },
+                        deploymentState = deploymentState,
+                        frameCount = frameCount,
+                        onUp = { upHandler?.invoke() },
+                        onDown = { downHandler?.invoke() },
+                        onLeft = { leftHandler?.invoke() },
+                        onRight = { rightHandler?.invoke() },
+                        onA = { aHandler?.invoke() },
+                        onB = { bHandler?.invoke() ?: navController.debugPopBackStack() }
+                    ) {
+                        MatchSummaryRoute(
+                            source = archiveSource,
+                            directory = archiveDirectoryManager,
+                            onLcdContentUpdate = { matchLcdContent = it },
+                            onOpenExportedMatch = onOpenArchive,
+                            onBack = { navController.debugPopBackStack() },
+                            onOpenMatches = {
+                                if (!navController.popBackStack("match_archive_directory", false)) {
+                                    navController.navigate("match_archive_directory") { launchSingleTop = true }
+                                }
+                            },
+                            selectedArchiveUri = selectedArchiveUri,
+                            onInspect = { archive, uri ->
+                                openedArchiveUri.value = uri
+                                openedArchive.value = archive
+                            },
+                            onUp = { upHandler = it },
+                            onDown = { downHandler = it },
+                            onLeft = { leftHandler = it },
+                            onRight = { rightHandler = it },
+                            onA = { aHandler = it },
+                            onB = { bHandler = it }
+                        )
+                    }
                 }
             }
             composable("match_archive_directory") {
@@ -1392,8 +1387,7 @@ fun PokedexApp(
                 var bHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
                 var lcdLine1 by remember { mutableStateOf<String?>(null) }
                 var lcdLine2 by remember { mutableStateOf<String?>(null) }
-                val scope = rememberCoroutineScope()
-                val context = androidx.compose.ui.platform.LocalContext.current
+                var historyLcdContent by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
                 ODXFiShell(
                     showBattleOverlay = false,
@@ -1407,6 +1401,7 @@ fun PokedexApp(
                     frameCount = frameCount,
                     lcdLine1 = lcdLine1,
                     lcdLine2 = lcdLine2,
+                    lcdContent = historyLcdContent,
                     onUp = { upHandler?.invoke() },
                     onDown = { downHandler?.invoke() },
                     onA = { aHandler?.invoke() },
@@ -1416,28 +1411,7 @@ fun PokedexApp(
                         archiveDirectoryManager = archiveDirectoryManager,
                         onBack = { navController.popBackStack() },
                         onOpenArchive = { uri ->
-                            if (archiveLoadInProgress.value) return@MatchArchiveDirectoryScreen
-                            archiveLoadInProgress.value = true
-                            scope.launch {
-                                try {
-                                    val archive = withContext(Dispatchers.IO) {
-                                        val inputStream = context.contentResolver.openInputStream(uri)
-                                            ?: throw java.io.IOException("Unable to open the selected archive.")
-                                        com.example.overdex.battle.archive.MatchArchivePackageReader.read(inputStream, context.filesDir)
-                                    }
-                                    openedArchiveUri.value = uri
-                                    openedArchive.value = archive
-                                } catch (e: Exception) {
-                                    Log.e("ARCHIVE_OPEN", "Failed to open archive", e)
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        "Failed to open archive: ${e.message}",
-                                        android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                } finally {
-                                    archiveLoadInProgress.value = false
-                                }
-                            }
+                            navController.navigate("match_summary?archiveUri=${Uri.encode(uri.toString())}")
                         },
                         isLoading = archiveLoadInProgress.value,
                         onUp = { upHandler = it },
@@ -1447,7 +1421,8 @@ fun PokedexApp(
                         onLcdUpdate = { line1, line2 ->
                             lcdLine1 = line1
                             lcdLine2 = line2
-                        }
+                        },
+                        onLcdContentUpdate = { historyLcdContent = it }
                     )
                 }
             }

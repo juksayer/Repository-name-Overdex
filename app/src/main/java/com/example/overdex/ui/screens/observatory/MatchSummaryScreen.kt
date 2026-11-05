@@ -47,26 +47,45 @@ fun MatchSummaryRoute(
     onB: (() -> Unit) -> Unit,
     onLcdContentUpdate: ((@Composable () -> Unit)?) -> Unit,
     onOpenExportedMatch: () -> Unit = {},
+    selectedArchiveUri: Uri? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var archive by remember { mutableStateOf<MatchArchive?>(null) }
-    var uri by remember { mutableStateOf<Uri?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    // A history selection owns this summary even when a newer live match exists.
+    val liveSource = source.takeIf { selectedArchiveUri == null }
+    var archive by remember(selectedArchiveUri, liveSource) { mutableStateOf<MatchArchive?>(null) }
+    var uri by remember(selectedArchiveUri, liveSource) { mutableStateOf<Uri?>(null) }
+    var loading by remember(selectedArchiveUri, liveSource) { mutableStateOf(true) }
+    var error by remember(selectedArchiveUri, liveSource) { mutableStateOf<String?>(null) }
     var exporting by remember { mutableStateOf(false) }
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var exportProgress by remember { mutableStateOf<Float?>(null) }
 
-    LaunchedEffect(source, directory) {
+    LaunchedEffect(liveSource, directory, selectedArchiveUri) {
         loading = true
         error = null
+        if (selectedArchiveUri != null) {
+            try {
+                archive = withContext(Dispatchers.IO) {
+                    BattleRecordStore(context).readArchive(selectedArchiveUri)
+                }
+                uri = selectedArchiveUri
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                // Never substitute the newest match when this selection is unavailable.
+                error = "Unable to read the selected match: ${failure.message}"
+            } finally {
+                loading = false
+            }
+            return@LaunchedEffect
+        }
         var lastSaved: ArchiveDirectoryManager.ArchiveEntry? = null
         while (isActive) {
             try {
                 val loaded = withContext(Dispatchers.IO) {
-                    if (source != null) {
-                        source.snapshot() to null
+                    if (liveSource != null) {
+                        liveSource.snapshot() to null
                     } else {
                         val newest = directory.listArchives().maxByOrNull { it.lastModified }
                         if (newest == null) null to null
@@ -118,7 +137,7 @@ fun MatchSummaryRoute(
         }
     }
 
-    MatchSummaryScreen(archive, loading, error, source != null, exporting, exportStatus, exportProgress,
+    MatchSummaryScreen(archive, loading, error, liveSource != null, exporting, exportStatus, exportProgress,
         onOpenMatches, { archive?.let { onInspect(it, uri) } },
         { export(MatchArchiveExportMode.COMPACT_CITED_EVIDENCE) },
         { export(MatchArchiveExportMode.FULL_FORENSIC) }, onBack,
@@ -200,7 +219,7 @@ fun MatchSummaryScreen(
     PublishMatchLcd(onLcdContentUpdate) {
         MatchLcdColumn {
             MatchLcdText("↑/↓ SCROLL   ←/→ ACTION   A SELECT")
-            MatchLcdButton("OPEN RECORDED MATCHES", { activate(SummaryAction.OPEN_MATCHES) }, selected = selected == SummaryAction.OPEN_MATCHES)
+            MatchLcdButton("OPEN MATCH HISTORY", { activate(SummaryAction.OPEN_MATCHES) }, selected = selected == SummaryAction.OPEN_MATCHES)
             if (archive != null) {
                 MatchLcdButton("INSPECT TIMELINE / REPLAY", { activate(SummaryAction.INSPECT) }, selected = selected == SummaryAction.INSPECT)
                 MatchLcdButton("EXPORT REPLAY ONLY", { activate(SummaryAction.REPLAY_ONLY) },
@@ -232,7 +251,7 @@ fun MatchSummaryScreen(
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
                 error != null -> TerminalText(error)
-                summary == null -> TerminalText("No recorded matches yet. Open Recorded Matches to browse available archives.")
+                summary == null -> TerminalText("No recorded matches yet. Open Match History to browse saved matches.")
                 else -> {
                     TerminalText(when (summary.result) {
                         "WIN" -> "YOU WIN"
