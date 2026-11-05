@@ -81,12 +81,35 @@ Android-test APK SHA-256:
 Private build logs, native output and screenshots:
 `/home/sean/overdex-device-backups/2026-11-05-lcd-swipe/`.
 
-Neither physical phone was connected. No phone install or capture interruption
-occurred. Ideal/noisy path tests and emulator pointer checks demonstrate the
+Neither physical phone was connected during the initial emulator checks.
+Ideal/noisy path tests and emulator pointer checks demonstrate the
 bounded behavior; they do not establish real-finger speed or recognition rates.
 Phone comfort, large font scales, longer names and recognition tuning remain
 acceptance work. No battle inference, recorded Articles or original audio were
 changed by this feature.
+
+## Moondrop installation later November 5
+
+The user reconnected the Moondrop. It was unlocked, with no Droidball service or
+MediaProjection running. Replacement installation succeeded; the installed APK
+hash matches the app hash above.
+
+A readable 2,932,224-byte backup protects 49 files containing databases,
+preferences, calibration profiles/reference images, registration state and replay
+edits. After installation and launch, no protected paths are missing or added.
+All protected files retain their hashes except Firestore's local cache. The
+51-entry match archive inventory is unchanged. The source recordings were not
+deleted or copied as part of this settings backup.
+
+Physical navigation: Directory → OVERDEX → Search opens the expanded rotated
+QWERTY keyboard with all rows, side controls, CRT query and ready swipe hint.
+The phone is left there with an empty query for the trainer's comfort test.
+No recording was interrupted and no phone instrumentation was run. Real-finger
+speed, gesture recognition rates and the portrait keyboard still need trainer
+acceptance; this is an installation and visible-layout check.
+
+Private backup and before/after evidence:
+`/home/sean/overdex-device-backups/2026-11-05-keyboard-install/`.
 
 Primary implementation references:
 [Compose gesture ownership and consumption](https://developer.android.com/develop/ui/compose/touch-input/pointer-input/understand-gestures),
