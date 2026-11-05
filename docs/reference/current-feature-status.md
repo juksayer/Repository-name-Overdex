@@ -4,6 +4,11 @@ Reviewed October 20, 2026; Trainer Comms updated after checkpoint `474bd5f`.
 This includes local untracked source. Source inspection establishes implementation
 boundaries; it does not establish live recognition accuracy.
 
+November 4 test-status refresh: use the [consolidated outstanding acceptance
+tests](../plans/outstanding-tests.md) for current unfinished checks. The older
+paragraphs below retain their review dates; later verification supersedes claims
+such as missing type normalization or missing centered-control support.
+
 ## Where to find the plans
 
 - [First-release checklist](../plans/first-release.md): October 23 scope for a

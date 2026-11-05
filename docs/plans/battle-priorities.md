@@ -6,6 +6,8 @@ over unrelated presentation work. This is the active ordered backlog; the
 [feature inventory](../reference/current-feature-status.md) records broader gaps.
 The [first-release checklist](first-release.md), added October 23, defines which
 of these capabilities need to be dependable for the initial training/recording beta.
+The [outstanding acceptance tests](outstanding-tests.md), reconciled November 4,
+separate remaining device checks from completed tests and implementation gaps.
 
 ## Work order
 
