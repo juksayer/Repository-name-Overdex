@@ -172,6 +172,7 @@ Sources: [ending gaps](../verification/2026-11-04-concession-and-final-hit-repla
 [visual review](../reference/fast-move-visual-review.md),
 [scorecards proposal](calibration-scorecards.md),
 [audio experiment](../verification/2026-11-04-coherent-fast-move-audio.md),
+[audio-position and LCD-input proposals](audio-position-and-lcd-input.md),
 [feature boundaries](../reference/current-feature-status.md),
 [Comms plan](trainer-comms-sharing.md), [release scope](first-release.md).
 
