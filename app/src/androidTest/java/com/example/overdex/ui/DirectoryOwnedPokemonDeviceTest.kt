@@ -66,9 +66,10 @@ class DirectoryOwnedPokemonDeviceTest {
             keyboardPreviewOnCrt = registration.keyboardPreviewOnCrt, onKeyActivated = registration.key, lcdLines = registration.lcdLines,
             onUp = { if (!registration.up()) { tree.moveSelection(-1); state = tree.getState() } },
             onDown = { if (!registration.down()) { tree.moveSelection(1); state = tree.getState() } },
-            onLeft = { registration.left() }, onRight = { registration.right() },
+            onLeft = { if (!registration.left()) { tree.collapseOrParent(); state = tree.getState() } },
+            onRight = { if (!registration.right()) { tree.openOrEnterSelected(); state = tree.getState() } },
             onA = { if (!registration.confirm()) activate() },
-            onB = { if (!registration.back()) { tree.navigateBack(); state = tree.getState() } },
+            onB = { if (!registration.back()) { tree.collapseOrParent(); state = tree.getState() } },
             onStart = { registration.start() }, onSelect = { registration.select() }) {
             MainMenuScreen(true, {}, registration.nodes, registration.selectedPath)
         }
@@ -139,8 +140,8 @@ class DirectoryOwnedPokemonDeviceTest {
             assertFalse(card.isShadow)
             assertTrue(card.isPurified)
             assertEquals(listOf("Great", "Electric"), card.teams)
-            compose.onNodeWithText("+ Add Pokémon/").assertIsDisplayed()
-            compose.onNodeWithText("Current Team").assertIsDisplayed()
+            compose.onNodeWithText("add Pokémon").assertIsDisplayed()
+            compose.onNodeWithText("current team").assertIsDisplayed()
         } finally { if (database.isInitialized()) database.value.close() }
     }
 

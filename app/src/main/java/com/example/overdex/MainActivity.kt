@@ -667,9 +667,11 @@ fun PokedexApp(
                     onUpPressChanged = { if (!it) registration.hold(0) },
                     onDownPressChanged = { if (!it) registration.hold(0) },
                     onLeft = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.LEFT))) registration.left() },
+                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.LEFT)) &&
+                        !registration.left()) viewModel.handleLeft() },
                     onRight = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.RIGHT))) registration.right() },
+                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.RIGHT)) &&
+                        !registration.right()) viewModel.handleRight() },
                     onA = { if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && cropEditor.confirm()) && !registration.confirm()) viewModel.handleA() },
                     onB = { if (phase == MainMenuPhase.READY &&

@@ -16,6 +16,26 @@ the letter rows without moving the shell or controls. Actual suggestions and
 matching feedback remain in the strip.
 
 The trainer requested one change at a time, with review before the next change.
+The next accepted slice combines the **Phosphor branches** study with the
+outline folder/file icons from **Instrument rails**:
+
+- Green monospace rows, connected branch rails/elbows, purple active ancestors,
+  a quiet selection background, and open/closed folder icons.
+- Structural labels are lowercase with Pokémon/Droidball name exceptions.
+  Custom binder names and inline species/move choices preserve their spelling;
+  internal paths and saved identities do not change.
+- Right opens a closed folder; Right again enters its first child. A has the
+  same folder behavior and activates files. Right never activates a file.
+- Left closes the selected open folder and its descendants. Otherwise it returns
+  to the parent and closes every child-folder branch at the level being left,
+  including nested expansions. The parent remains open. B follows Left after
+  an active editor has handled its own Back action.
+- Left from another top-level entry returns to the first entry and clears open
+  branches without launching anything. Selection alone does not open folders.
+- Keyboard, registration and calibration controls retain input priority.
+
+This slice implements the directory appearance and navigation below. The LCD's
+contextual content, sounds and shell geometry are separate review decisions.
 The following requested changes remain pending and can be implemented in
 separate small slices:
 
@@ -23,18 +43,11 @@ separate small slices:
    directory entry has not been chosen. The idle swipe instruction is removed
    by the spacing refinement above. Preserve actual word suggestions,
    loading/failure feedback and gesture geometry.
-2. Simplify directory presentation: lowercase labels with the requested
-   Pokémon/Droidball name exceptions; remove `+` and trailing `/`; show branch
-   elbows/open hierarchy. Presentation changes must preserve internal paths,
-   saved names and individual Pokémon identities.
-3. Directional tree navigation: Right expands a selected folder; Left collapses
-   the current folder or returns toward its parent. From any top-level entry,
-   Left returns selection to the top of the directory without launching it.
-4. Show a selected folder's children in the CRT hierarchy and child preview in
+2. Show a selected folder's child preview in
    the LCD; leaf selection can show the page's purpose or useful instructions.
    Preserve the inline Add Pokémon instructions that the trainer likes. Keep
    calibration crop review/editing reachable when changing the default LCD.
-5. Remove fake default LCD status, previous battle data, `idle`, `---` and shield
+3. Remove fake default LCD status, previous battle data, `idle`, `---` and shield
    counters when a module supplies no context. Preserve meaningful unknown
    editable fields, actual replay data, real errors and availability reports.
    The ODX-Fi manages collections/records; live battle presentation is Droidball.

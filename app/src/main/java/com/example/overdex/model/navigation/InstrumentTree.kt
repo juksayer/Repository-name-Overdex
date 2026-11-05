@@ -105,7 +105,7 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         
         return when (val node = flattened.node) {
             is DirectoryNode -> {
-                toggle(flattened.path)
+                openOrEnterSelected()
                 null
             }
             is ActionNode -> {
@@ -119,6 +119,50 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         if (project().none { it.path == path }) return null
         selectedPath = path
         return executeSelected()
+    }
+
+    /** Right opens a folder, or enters its first child when it is already open. */
+    fun openOrEnterSelected(): Boolean {
+        val selected = project().find { it.path == selectedPath } ?: return false
+        val folder = selected.node as? DirectoryNode ?: return false
+        val firstChild = folder.children.firstOrNull() ?: return false
+        if (expandedPaths.add(selected.path)) return true
+        selectedPath = "${selected.path}/${firstChild.name}"
+        return true
+    }
+
+    /**
+     * Left closes the current open folder. Returning to a parent also clears all
+     * child folders at the level being left, so hidden sibling branches do not
+     * unexpectedly reappear the next time that parent is entered.
+     */
+    fun collapseOrParent(): Boolean {
+        val projection = project()
+        val selectedIndex = projection.indexOfFirst { it.path == selectedPath }
+        val selected = projection.getOrNull(selectedIndex) ?: return false
+        if (selected.node is DirectoryNode && selected.isExpanded) {
+            clearFolderExpansion(selected.node, selected.path)
+            return true
+        }
+
+        if (selected.depth > 0) {
+            // Names may contain slashes: depth and preorder define the actual
+            // parent, while path strings remain opaque existing identifiers.
+            val parent = projection.take(selectedIndex).lastOrNull { it.depth == selected.depth - 1 }
+                ?: return false
+            val folder = parent.node as? DirectoryNode ?: return false
+            folder.children.filterIsInstance<DirectoryNode>().forEach { child ->
+                clearFolderExpansion(child, "${parent.path}/${child.name}")
+            }
+            selectedPath = parent.path
+            return true
+        }
+
+        val firstRoot = projection.firstOrNull()?.path ?: return false
+        if (selectedPath == firstRoot) return false
+        expandedPaths.clear()
+        selectedPath = firstRoot
+        return true
     }
 
     fun navigateBack(): Boolean {
@@ -140,11 +184,11 @@ class InstrumentTree(initialNodes: List<TreeNode>) {
         if (selectedPath == path || selectedPath.startsWith("$path/")) selectedPath = path
     }
 
-    private fun toggle(path: String) {
-        if (expandedPaths.contains(path)) {
-            expandedPaths.remove(path)
-        } else {
-            expandedPaths.add(path)
+    /** Exact actual descendants, not path prefixes that could also match a slash in a name. */
+    private fun clearFolderExpansion(folder: DirectoryNode, path: String) {
+        expandedPaths.remove(path)
+        folder.children.filterIsInstance<DirectoryNode>().forEach { child ->
+            clearFolderExpansion(child, "$path/${child.name}")
         }
     }
 

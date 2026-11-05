@@ -389,6 +389,16 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         _treeState.value = instrumentTree.getState()
     }
 
+    fun handleLeft() {
+        instrumentTree.collapseOrParent()
+        _treeState.value = instrumentTree.getState()
+    }
+
+    fun handleRight() {
+        instrumentTree.openOrEnterSelected()
+        _treeState.value = instrumentTree.getState()
+    }
+
     fun handleA() {
         instrumentTree.executeSelected()?.let { command ->
             _pendingCommand.tryEmit(command)
@@ -404,10 +414,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun handleB() {
-        if (!instrumentTree.navigateBack()) {
-            // Root back action if needed, or ignore
-        }
-        _treeState.value = instrumentTree.getState()
+        handleLeft()
     }
 
     fun finishDirectoryRegistration() {

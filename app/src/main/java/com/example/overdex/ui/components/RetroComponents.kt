@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
@@ -50,6 +60,12 @@ import com.example.overdex.ui.theme.TerminalPurple
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
+private val DirectoryPhosphor = Color(0xFF76ED91)
+private val DirectorySelected = Color(0xFFCCFFD7)
+private val DirectoryBranch = Color(0xFF367646)
+private val DirectoryAncestor = Color(0xFFBD93E8)
+private val DirectorySelectionWash = Color(0xFF122D1A)
+
 @Composable
 fun DirectoryTree(
     visibleNodes: List<FlattenedNode>,
@@ -60,61 +76,163 @@ fun DirectoryTree(
 ) {
     val scrollState = rememberScrollState()
     val treeModifier = if (scrollEnabled) {
-        modifier
-            .fillMaxWidth()
-            .verticalScroll(scrollState)
+        modifier.fillMaxWidth().verticalScroll(scrollState)
     } else {
         modifier.fillMaxWidth()
     }
-
-    Column(
-        modifier = treeModifier,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        visibleNodes.forEach { flattened ->
+    val rows = remember(visibleNodes, selectedPath) { directoryRows(visibleNodes, selectedPath) }
+    // Adjacent rows share their rail edges, including when names wrap or a card
+    // field displays its value underneath. Spacing lives inside each row.
+    Column(modifier = treeModifier) {
+        rows.forEachIndexed { index, presentation ->
+            val flattened = presentation.row
             key(flattened.path) {
                 val isSelected = selectedPath == flattened.path
-                val label = when (val node = flattened.node) {
-                    is DirectoryNode -> {
-                        val prefix = if (flattened.isExpanded) "- " else "+ "
-                        "$prefix${node.name}/"
-                    }
-                    is ActionNode -> node.name
+                val node = flattened.node
+                val directory = node as? DirectoryNode
+                val color = when {
+                    isSelected -> DirectorySelected
+                    presentation.isActiveAncestor -> DirectoryAncestor
+                    else -> DirectoryPhosphor
                 }
-
                 val requester = remember { BringIntoViewRequester() }
-
-                // Behavioral trigger: Bring into view when selection status or the tree structure changes
+                var headingHeight by remember { mutableIntStateOf(0) }
                 LaunchedEffect(isSelected, visibleNodes) {
-                    if (isSelected) {
-                        requester.bringIntoView()
-                    }
+                    if (isSelected) requester.bringIntoView()
                 }
-
-                Column(Modifier.bringIntoViewRequester(requester)) {
-                    TerminalMenuOption(
-                        label = label,
-                        selected = isSelected,
-                        leadingIcon = when (flattened.node.icon) {
-                            TreeNodeIcon.BINDER -> {
-                                { BinderDirectoryIcon(color = if (isSelected) TerminalGreen else TerminalDimGreen) }
+                Column(
+                    Modifier.fillMaxWidth()
+                        .padding(top = if (flattened.depth == 0 && index > 0) 6.dp else 0.dp)
+                        .bringIntoViewRequester(requester)
+                        .testTag("directory-node:${flattened.path}")
+                        .background(if (isSelected) DirectorySelectionWash else Color.Transparent,
+                            RoundedCornerShape(2.dp))
+                        .clickable { onNodeSelected(flattened) }
+                        .semantics(mergeDescendants = true) {
+                            selected = isSelected
+                            if (directory != null) {
+                                stateDescription = if (flattened.isExpanded) "open folder" else "closed folder"
                             }
-                            null -> null
-                        },
-                        modifier = Modifier
-                            .padding(start = (flattened.depth * 16).dp),
-                        onClick = { onNodeSelected(flattened) }
-                    )
-                    (flattened.node as? ActionNode)?.detail?.let { detail ->
+                        }
+                        .drawBehind {
+                            val cursorWidth = 12.dp.toPx()
+                            val branchWidth = 17.dp.toPx()
+                            val lineWidth = 1.dp.toPx()
+                            val centerY = if (headingHeight > 0) headingHeight / 2f else size.height / 2f
+                            presentation.continuingAncestors.forEachIndexed { level, continues ->
+                                if (continues) {
+                                    val x = cursorWidth + level * branchWidth + 7.dp.toPx()
+                                    drawLine(DirectoryBranch, Offset(x, 0f), Offset(x, size.height), lineWidth)
+                                }
+                            }
+                            if (flattened.depth > 0) {
+                                val start = cursorWidth + (flattened.depth - 1) * branchWidth
+                                val x = start + 7.dp.toPx()
+                                drawLine(DirectoryBranch, Offset(x, 0f),
+                                    Offset(x, if (presentation.hasFollowingSibling) size.height else centerY), lineWidth)
+                                drawLine(DirectoryBranch, Offset(x, centerY),
+                                    Offset(start + branchWidth, centerY), lineWidth)
+                            }
+                            if (isSelected) {
+                                val x = 4.dp.toPx()
+                                val radius = 3.dp.toPx()
+                                drawLine(DirectorySelected, Offset(x, centerY - radius),
+                                    Offset(x + radius, centerY), lineWidth)
+                                drawLine(DirectorySelected, Offset(x + radius, centerY),
+                                    Offset(x, centerY + radius), lineWidth)
+                            }
+                        }
+                        .padding(start = (12 + flattened.depth.coerceAtLeast(0) * 17).dp, end = 5.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 30.dp)
+                            .onSizeChanged { headingHeight = it.height }
+                            .padding(vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (node.icon == TreeNodeIcon.BINDER) {
+                            BinderDirectoryIcon(color, Modifier.size(17.dp)
+                                .semantics { contentDescription = "Binder" })
+                        } else {
+                            DirectoryNodeIcon(directory != null, flattened.isExpanded, color)
+                        }
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            text = presentation.label,
+                            color = color,
+                            fontSize = 16.sp,
+                            lineHeight = 20.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    (node as? ActionNode)?.detail?.let { detail ->
                         TypeIconText(
                             text = detail,
-                            color = if (isSelected) TerminalGreen else TerminalDimGreen,
+                            color = if (isSelected) DirectorySelected else DirectoryPhosphor.copy(alpha = 0.8f),
                             fontSize = 13.sp,
-                            modifier = Modifier.padding(start = (flattened.depth * 16 + 28).dp, bottom = 4.dp),
+                            lineHeight = 17.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, bottom = 5.dp),
                         )
                     }
                 }
             }
+        }
+    }
+}
+
+/** Small outline folder/file family matching the instrument's binder glyph. */
+@Composable
+private fun DirectoryNodeIcon(isFolder: Boolean, isExpanded: Boolean, color: Color) {
+    Canvas(Modifier.size(17.dp).semantics {
+        contentDescription = when {
+            !isFolder -> "File"
+            isExpanded -> "Open folder"
+            else -> "Closed folder"
+        }
+    }) {
+        val unit = size.minDimension / 20f
+        val outline = Stroke(width = 1.4f * unit)
+        fun path(block: Path.() -> Unit) = Path().apply(block)
+        if (isFolder) {
+            val back = path {
+                moveTo(2f * unit, 16f * unit)
+                lineTo(2f * unit, 5f * unit)
+                quadraticTo(2f * unit, 3.5f * unit, 3.5f * unit, 3.5f * unit)
+                lineTo(8f * unit, 3.5f * unit)
+                lineTo(10f * unit, 6f * unit)
+                lineTo(17f * unit, 6f * unit)
+                lineTo(17f * unit, if (isExpanded) 8f * unit else 16f * unit)
+                if (!isExpanded) { lineTo(2f * unit, 16f * unit); close() }
+            }
+            drawPath(back, color, style = outline)
+            if (isExpanded) {
+                drawPath(path {
+                    moveTo(2f * unit, 16f * unit)
+                    lineTo(5f * unit, 8.5f * unit)
+                    lineTo(19f * unit, 8.5f * unit)
+                    lineTo(16f * unit, 16f * unit)
+                    close()
+                }, color, style = outline)
+            }
+        } else {
+            drawPath(path {
+                moveTo(4f * unit, 2f * unit)
+                lineTo(12f * unit, 2f * unit)
+                lineTo(17f * unit, 7f * unit)
+                lineTo(17f * unit, 18f * unit)
+                lineTo(4f * unit, 18f * unit)
+                close()
+                moveTo(12f * unit, 2f * unit)
+                lineTo(12f * unit, 7f * unit)
+                lineTo(17f * unit, 7f * unit)
+                moveTo(7f * unit, 11f * unit)
+                lineTo(14f * unit, 11f * unit)
+                moveTo(7f * unit, 14f * unit)
+                lineTo(13f * unit, 14f * unit)
+            }, color, style = outline)
         }
     }
 }
