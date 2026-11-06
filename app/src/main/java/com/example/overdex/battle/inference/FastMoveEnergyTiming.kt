@@ -21,6 +21,7 @@ import java.util.TreeMap
  * schedule prevents that allowance from accumulating into extra cycles.
  */
 internal class FastMoveEnergyTiming {
+    enum class ReservationDecision { RESERVED, DEFERRED_UNKNOWN_FAINT_END, REJECTED }
     private data class Pause(val start: Long, var end: Long)
     private data class Reservation(
         val observedAt: Long,
@@ -104,8 +105,11 @@ internal class FastMoveEnergyTiming {
         faintTimes.getOrPut(side) { TreeSet() }.add(at)
     }
 
-    fun reserve(side: ActivePokemonSide, observedAt: Long, duration: Long): Boolean {
-        if (duration <= 0 || matchEnd?.let { observedAt >= it } == true) return false
+    fun reserve(side: ActivePokemonSide, observedAt: Long, duration: Long): Boolean =
+        reserveDecision(side, observedAt, duration) == ReservationDecision.RESERVED
+
+    fun reserveDecision(side: ActivePokemonSide, observedAt: Long, duration: Long): ReservationDecision {
+        if (duration <= 0 || matchEnd?.let { observedAt >= it } == true) return ReservationDecision.REJECTED
         val lag = minOf(duration / 4, MAX_CAPTURE_LAG_NANOS)
         var earliestStart = subtract(subtract(observedAt, lag), duration)
         // Without GO or an appearance boundary, one in-flight completion may
@@ -116,18 +120,34 @@ internal class FastMoveEnergyTiming {
         // Neither side can generate Fast Move energy while a fainted opponent
         // has not yet been replaced. An unreadable entry keeps this unavailable.
         val faintPauses = faintTimes.flatMap { (faintedSide, times) ->
-            times.map { it to (appearanceBoundaries[faintedSide]?.higher(it) ?: Long.MAX_VALUE) }
+            times.map { it to appearanceBoundaries[faintedSide]?.higher(it) }
         }
+        val closedFaintPauses = faintPauses.mapNotNull { (start, end) -> end?.let { start to it } }
+        val openFaintPauses = faintPauses.filter { it.second == null }.map { it.first to Long.MAX_VALUE }
         val cameraPauses = chargedHpCamera.windows().map { it.first to add(it.last, 1L) }
-        val pauses = ((chargedPauses + decisionPauses).map { it.start to it.end } + faintPauses + cameraPauses)
+        val knownPauses = ((chargedPauses + decisionPauses).map { it.start to it.end } + closedFaintPauses + cameraPauses)
             .sortedBy { it.first }
         // A delayed capture is not permission to reinterpret an observation
         // made during a known pause as an earlier completed attack.
         if (chargedHpCamera.isChargeImpact(observedAt) ||
             (chargedPauses + decisionPauses).any { observedAt >= it.start && observedAt < it.end } ||
-            faintPauses.any { (start, end) -> observedAt > start && observedAt < end }) return false
-        val candidate = Reservation(observedAt, duration, earliestStart, pauses)
+            closedFaintPauses.any { (start, end) -> observedAt > start && observedAt < end })
+            return ReservationDecision.REJECTED
         val accepted = reservations.getOrPut(side) { mutableListOf() }
+        val candidate = Reservation(observedAt, duration, earliestStart, knownPauses)
+        // Unknown vacancy is the only retryable timing failure. First establish
+        // that GO, full cycles, known pauses and previously published credits
+        // already permit this particular witnessed use. Deferral reserves no
+        // energy and never converts a burst into a later attack.
+        if (!fitsSchedule(accepted, candidate)) return ReservationDecision.REJECTED
+        val withOpenFaints = candidate.copy(pauses = (knownPauses + openFaintPauses).sortedBy { it.first })
+        if (openFaintPauses.any { (start, end) -> observedAt > start && observedAt < end } ||
+            !fitsSchedule(accepted, withOpenFaints)) return ReservationDecision.DEFERRED_UNKNOWN_FAINT_END
+        accepted += withOpenFaints
+        return ReservationDecision.RESERVED
+    }
+
+    private fun fitsSchedule(accepted: List<Reservation>, candidate: Reservation): Boolean {
         val ordered = (accepted + candidate).sortedBy { it.observedAt }
         var previousEnd: Long? = null
         for (use in ordered) {
@@ -141,7 +161,6 @@ internal class FastMoveEnergyTiming {
             if (start > latestStart) return false
             previousEnd = add(start, use.duration)
         }
-        accepted += candidate
         return true
     }
 

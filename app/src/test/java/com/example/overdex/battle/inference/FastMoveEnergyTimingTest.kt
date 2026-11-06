@@ -192,6 +192,118 @@ class FastMoveEnergyTimingTest {
         assertEquals(1, engine.accept(opponentUse("full-cycle", 5.5)).size)
     }
 
+    @Test fun `late Rocket replacement retries original Charm hits in source order without extra cycles`() = runBlocking {
+        val engine = engine(charm)
+        engine.accept(article("go", MatchStarted, 0.0))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(side, "Gardevoir"), 0.0))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Houndour"), 0.0))
+        val proof = identity(charm)
+        engine.accept(proof)
+        assertTrue(engine.accept(use("before-full-cycle", 1.236, "Gardevoir")).isEmpty())
+        listOf(8.458, 10.153, 11.462, 12.963, 19.001).forEachIndexed { index, at ->
+            assertEquals(1, engine.accept(use("earlier-$index", at, "Gardevoir")).size)
+        }
+        // The old faint reaches Custody before an entry captured just one
+        // second later. No energy is published while that vacancy is unknown.
+        engine.accept(article("faint", ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Houndour", null, "BALL_COUNT"), 15.405))
+        val first = use("after-entry-first", 20.352, "Gardevoir")
+        val second = use("after-entry-second", 22.354, "Gardevoir")
+        listOf(second, first).forEach { assertTrue(engine.accept(it).isEmpty()) }
+        assertTrue(engine.accept(first.copy(id = ArticleId("duplicate-source"))).isEmpty())
+
+        val entry = article("replacement", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Liepard"), 16.388)
+        val restored = engine.accept(entry)
+        assertEquals(listOf(first, second), restored.map { it.observedArticle })
+        assertEquals(listOf(nanos(20.352), nanos(22.354)), restored.map { it.observedArticle.monotonicTimeNanos })
+        assertEquals(listOf(8, 8), restored.map { it.payload.totalEnergyGenerated })
+        assertTrue(restored.all { it.predecessorIds == listOf(it.observedArticle.id, proof.id) })
+        assertSame(first, restored.first().observedArticle)
+        // The next recorded impact still cannot fit another full Charm cycle.
+        assertTrue(engine.accept(use("too-close-after-restoration", 23.405, "Gardevoir")).isEmpty())
+        assertTrue(engine.accept(entry.copy(id = ArticleId("repeated-entry"))).isEmpty())
+        assertTrue(engine.accept(proof.copy(id = ArticleId("repeated-proof"))).isEmpty())
+        assertTrue(engine.accept(article("no-new-hit", RawTestimony("clock"), 100.0)).isEmpty())
+    }
+
+    @Test fun `replacement retries the opposite attacker's pending hits for either fainted side`() = runBlocking {
+        for (faintedSide in ActivePokemonSide.entries) {
+            val attacker = if (faintedSide == side) ActivePokemonSide.OPPONENT else side
+            val engine = engine(charm)
+            engine.accept(article("go", MatchStarted, 0.0))
+            engine.accept(article("attacker", ActivePokemonSpeciesWitnessed(attacker, "Gardevoir"), 0.0))
+            engine.accept(article("former", ActivePokemonSpeciesWitnessed(faintedSide, "Former"), 0.0))
+            engine.accept(identity(charm).let {
+                it.copy(payload = (it.payload as FastMoveIdentified).copy(side = attacker))
+            })
+            engine.accept(article("faint", ActivePokemonFaintedWitnessed(faintedSide, "Former", null, "BALL_COUNT"), 2.0))
+            val hit = use("waiting-hit", 7.0, "Gardevoir").let {
+                it.copy(payload = (it.payload as FastMoveUseObserved).copy(
+                    attackingSide = attacker, damagedSide = faintedSide))
+            }
+            assertTrue(engine.accept(hit).isEmpty())
+            val recovered = engine.accept(article("replacement", ActivePokemonSpeciesWitnessed(faintedSide, "Replacement"), 5.0))
+            assertSame(hit, recovered.single().observedArticle)
+            assertEquals(attacker, recovered.single().payload.side)
+            assertEquals(8, recovered.single().payload.totalEnergyGenerated)
+        }
+    }
+
+    @Test fun `a scan does not close a vacancy and a known closed pause still rejects its pending hit`() = runBlocking {
+        val engine = engine(charm)
+        engine.accept(article("go", MatchStarted, 0.0))
+        engine.accept(identity(charm))
+        engine.accept(article("former", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Former"), 0.0))
+        engine.accept(article("faint", ActivePokemonFaintedWitnessed(ActivePokemonSide.OPPONENT, "Former", null, "BALL_COUNT"), 2.0))
+        val insideVacancy = use("inside-vacancy", 3.5, "Gardevoir")
+        assertTrue(engine.accept(insideVacancy).isEmpty())
+        assertTrue(engine.accept(article("scan", SpeciesCheckMeasured(
+            ActivePokemonSide.OPPONENT, 1, "OPENED", "ENTRY", nanos(2.1), 0, nanos(1.5)), 4.0)).isEmpty())
+        val entry = article("replacement", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Replacement"), 5.0)
+        assertTrue(engine.accept(entry).isEmpty())
+        assertTrue(engine.accept(identity(charm, at = 6.0)).isEmpty())
+        assertTrue(engine.accept(insideVacancy.copy(id = ArticleId("repeated-invalid"))).isEmpty())
+        assertEquals(1, engine.accept(use("full-cycle-after-entry", 6.5, "Gardevoir")).size)
+        assertTrue(engine.accept(entry.copy(id = ArticleId("repeated-entry"))).isEmpty())
+    }
+
+    @Test fun `deferred old hit cannot displace an already reserved later cycle`() = runBlocking {
+        val engine = engine(charm)
+        engine.accept(article("go", MatchStarted, 0.0))
+        engine.accept(identity(charm))
+        engine.accept(article("former", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Former"), 0.0))
+        val alreadyPublished = engine.accept(use("already-published", 7.5, "Gardevoir")).single()
+        engine.accept(article("late-faint", ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Former", null, "BALL_COUNT"), 2.0))
+        assertTrue(engine.accept(use("crowded-old-hit", 7.4, "Gardevoir")).isEmpty())
+        assertTrue(engine.accept(article("replacement", ActivePokemonSpeciesWitnessed(
+            ActivePokemonSide.OPPONENT, "Replacement"), 5.0)).isEmpty())
+        assertEquals(8, alreadyPublished.payload.totalEnergyGenerated)
+        assertEquals(nanos(7.5), alreadyPublished.observedArticle.monotonicTimeNanos)
+        assertEquals(1, engine.accept(use("next-full-cycle", 9.0, "Gardevoir")).size)
+    }
+
+    @Test fun `only unknown faint end defers while early bursts known phases and result remain rejected`() {
+        val timing = FastMoveEnergyTiming()
+        val reserved = FastMoveEnergyTiming.ReservationDecision.RESERVED
+        val deferred = FastMoveEnergyTiming.ReservationDecision.DEFERRED_UNKNOWN_FAINT_END
+        val rejected = FastMoveEnergyTiming.ReservationDecision.REJECTED
+        timing.observe(article("go", MatchStarted, 0.0))
+        timing.fainted(ActivePokemonSide.OPPONENT, nanos(.1))
+        assertEquals(rejected, timing.reserveDecision(side, nanos(1.236), nanos(1.5)))
+        assertEquals(deferred, timing.reserveDecision(side, nanos(3.0), nanos(1.5)))
+        timing.appearanceStarted(ActivePokemonSide.OPPONENT, nanos(1.0))
+        assertEquals(reserved, timing.reserveDecision(side, nanos(3.0), nanos(1.5)))
+        timing.fainted(ActivePokemonSide.OPPONENT, nanos(3.1))
+        assertEquals(rejected, timing.reserveDecision(side, nanos(3.2), nanos(1.5)))
+        timing.observe(article("qte", GetReadyWitnessed, 4.0))
+        assertEquals(rejected, timing.reserveDecision(side, nanos(6.0), nanos(1.5)))
+        timing.observe(article("result", MatchEnded(BattleResult.WIN), 7.0))
+        assertEquals(rejected, timing.reserveDecision(side, nanos(8.0), nanos(1.5)))
+    }
+
     @Test fun `late historical appearance still bounds that pokemon's earliest completed move`() = runBlocking {
         val engine = engine(incinerate, charm)
         fun appearance(id: String, species: String, slot: Int, at: Double) = article(id,
