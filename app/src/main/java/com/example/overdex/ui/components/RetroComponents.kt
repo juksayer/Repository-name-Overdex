@@ -338,34 +338,45 @@ fun TerminalMenuOption(
     }
 }
 
-/** Compact three-ring binder glyph for the Directory Tree. */
+/** Open ring binder with card pockets, legible in the Directory Tree's small icon cell. */
 @Composable
 private fun BinderDirectoryIcon(
     color: Color,
-    modifier: Modifier = Modifier.size(width = 15.dp, height = 17.dp),
+    modifier: Modifier = Modifier.size(17.dp),
 ) {
     Canvas(modifier = modifier) {
-        val stroke = (size.minDimension * 0.09f).coerceAtLeast(1f)
-        val spineX = size.width * 0.24f
-        drawRoundRect(
-            color = color,
-            topLeft = Offset(stroke / 2f, stroke / 2f),
-            size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
-            cornerRadius = CornerRadius(size.width * 0.12f),
-            style = Stroke(width = stroke),
-        )
-        drawLine(
-            color = color,
-            start = Offset(spineX, stroke),
-            end = Offset(spineX, size.height - stroke),
-            strokeWidth = stroke,
-        )
-        repeat(3) { index ->
-            drawCircle(
-                color = color,
-                radius = stroke * 0.72f,
-                center = Offset(spineX, size.height * (0.25f + index * 0.25f)),
-            )
+        val unit = size.minDimension / 20f
+        val outline = Stroke(width = 1.3f * unit)
+        // Flat pocket sheets and a visible gap distinguish the binder from a book.
+        drawPath(Path().apply {
+            moveTo(1.4f * unit, 3f * unit)
+            lineTo(8.6f * unit, 3.8f * unit)
+            lineTo(8.6f * unit, 17.2f * unit)
+            lineTo(1.4f * unit, 16.4f * unit)
+            close()
+            moveTo(11.4f * unit, 3.8f * unit)
+            lineTo(18.6f * unit, 3f * unit)
+            lineTo(18.6f * unit, 16.4f * unit)
+            lineTo(11.4f * unit, 17.2f * unit)
+            close()
+        }, color, style = outline)
+        for (x in listOf(3.2f, 13.3f)) {
+            for (y in listOf(5.4f, 11f)) {
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset(x * unit, y * unit),
+                    size = androidx.compose.ui.geometry.Size(3.5f * unit, 4.1f * unit),
+                    cornerRadius = CornerRadius(0.3f * unit),
+                    style = Stroke(width = unit),
+                )
+            }
+        }
+        repeat(3) { ring ->
+            val y = (6.5f + ring * 3.5f) * unit
+            drawPath(Path().apply {
+                moveTo(8.2f * unit, y)
+                cubicTo(8.2f * unit, y - unit, 11.8f * unit, y - unit, 11.8f * unit, y)
+            }, color, style = Stroke(width = unit))
         }
     }
 }
