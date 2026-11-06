@@ -88,11 +88,13 @@ fun MainMenuScreen(
                 onPhaseChange(phase)
                 for (i in 1..bootLines.size) {
                     bootStep = i
-                    val baseDelay = if (i < 3) 400L else 100L
+                    val baseDelay = if (i < 3) 650L else 500L
                     delay(baseDelay)
                 }
 
-                delay(200L)
+                // Together with the final line delay, leave the completed boot
+                // text and trainer details visible for three seconds.
+                delay(2_500L)
 
                 // 2. The tree already exists directly below the boot viewport.
                 // Move the single surface by one viewport using explicit offsets;
@@ -165,7 +167,7 @@ fun MainMenuScreen(
 private suspend fun scrollBootSurface(
     scrollState: androidx.compose.foundation.ScrollState,
     destinationPx: Int,
-    durationNanos: Long = 720_000_000L,
+    durationNanos: Long = 1_500_000_000L,
 ) {
     if (destinationPx <= 0) return
     val startedAt = System.nanoTime()
