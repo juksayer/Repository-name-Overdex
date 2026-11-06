@@ -354,7 +354,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 ActionNode("Match History", InstrumentCommand.OpenBattleHistory)
             )),
             ActionNode("INTUEOR", InstrumentCommand.OpenSignalObservatory),
-            ActionNode("PROFILE", InstrumentCommand.OpenProfile)
+            ActionNode("PROFILE", InstrumentCommand.OpenProfile),
+            ActionNode("Calibration", InstrumentCommand.OpenDirectoryCalibration)
         )
     )
 

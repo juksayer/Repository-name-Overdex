@@ -603,15 +603,14 @@ fun PokedexApp(
                     onFinished = viewModel::finishDirectoryRegistration,
                 )
                 val currentRegistration by rememberUpdatedState(registration)
-                LaunchedEffect(viewModel) {
-                    viewModel.pendingCommand.collect { command ->
-                        if (command is InstrumentCommand.EditNewOwnedPokemon) {
-                            currentRegistration.activate(command.field)
-                        }
-                    }
-                }
+                val directoryLcd = remember { com.example.overdex.ui.components.DirectoryLcdController() }
+                val selectedCommand = (registration.nodes.firstOrNull {
+                    it.path == registration.selectedPath
+                }?.node as? com.example.overdex.model.navigation.ActionNode)?.command
+                val showCropPreviews = directoryLcd.calibrationOpen && registration.lcdLines.isEmpty() &&
+                    !registration.keyboard.isVisible
                 val directoryLcdLines = registration.lcdLines.takeIf { it.isNotEmpty() }
-                    ?: interruptedObservationNotice?.let { notice ->
+                    ?: interruptedObservationNotice?.takeUnless { showCropPreviews }?.let { notice ->
                         buildList {
                             add("OBSERVATION INTERRUPTED")
                             if (notice.recoveredMatchCount > 0) {
@@ -625,14 +624,20 @@ fun PokedexApp(
                             add("[START] NEW SESSION")
                         }
                     } ?: emptyList()
-                val showCropPreviews = directoryLcdLines.isEmpty() && !registration.keyboard.isVisible
                 val cropEditor = rememberDirectoryCropEditor(
                     enabled = showCropPreviews,
                     loadFrame = viewModel::loadDirectoryCalibrationFrame,
                     loadCalibration = viewModel::loadDirectoryCalibration,
                     saveCalibration = viewModel::saveDirectoryCalibration,
                 )
-                androidx.activity.compose.BackHandler(enabled = showCropPreviews && cropEditor.focused) { cropEditor.back() }
+                LaunchedEffect(viewModel) {
+                    viewModel.pendingCommand.collect { command ->
+                        if (command is InstrumentCommand.EditNewOwnedPokemon) {
+                            currentRegistration.activate(command.field)
+                        } else directoryLcd.activate(command, cropEditor)
+                    }
+                }
+                androidx.activity.compose.BackHandler(enabled = showCropPreviews) { directoryLcd.back(cropEditor) }
                 ODXFiShell(
 
                     instrumentState = instrumentState,
@@ -643,44 +648,60 @@ fun PokedexApp(
                     keyboardPreviewOnCrt = registration.keyboardPreviewOnCrt,
                     onKeyActivated = registration.key,
                     lcdLines = directoryLcdLines,
-                    lcdContent = if (showCropPreviews) {
-                        {
-                            // Subscribe only while the directory's normal LCD is visible.
-                            val crops by viewModel.directoryCropPreviews.collectAsStateWithLifecycle()
-                            DirectoryCropPreviewLcd(state = crops, editor = cropEditor)
+                    lcdContent = when {
+                        showCropPreviews -> {
+                            {
+                                // Subscribe only when calibration is explicitly requested.
+                                val crops by viewModel.directoryCropPreviews.collectAsStateWithLifecycle()
+                                DirectoryCropPreviewLcd(state = crops, editor = cropEditor)
+                            }
                         }
-                    } else null,
+                        directoryLcdLines.isEmpty() && !registration.keyboard.isVisible -> {
+                            {
+                                com.example.overdex.ui.components.DirectorySelectionPreviewLcd(
+                                    registration.nodes, registration.selectedPath
+                                )
+                            }
+                        }
+                        else -> null
+                    },
                     lcdEdgeToEdgeContent = showCropPreviews,
 
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onUp = {
                         if (phase == MainMenuPhase.READY &&
-                            !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.UP)) && !registration.up()) viewModel.handleUp()
+                            !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.UP, cropEditor)) && !registration.up()) viewModel.handleUp()
                     },
                     onDown = {
                         if (phase == MainMenuPhase.READY &&
-                            !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.DOWN)) && !registration.down()) {
-                            val atLast = registration.nodes.lastOrNull()?.path == registration.selectedPath
-                            if (!(showCropPreviews && cropEditor.enter(atLast))) viewModel.handleDown()
-                        }
+                            !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.DOWN, cropEditor)) && !registration.down()) viewModel.handleDown()
                     },
-                    onUpLong = { registration.hold(-1) },
-                    onDownLong = { registration.hold(1) },
+                    onUpLong = { if (!showCropPreviews) registration.hold(-1) },
+                    onDownLong = { if (!showCropPreviews) registration.hold(1) },
                     onUpPressChanged = { if (!it) registration.hold(0) },
                     onDownPressChanged = { if (!it) registration.hold(0) },
                     onLeft = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.LEFT)) &&
+                        !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.LEFT, cropEditor)) &&
                         !registration.left()) viewModel.handleLeft() },
                     onRight = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.direction(DirectoryCropEditDirection.RIGHT)) &&
+                        !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.RIGHT, cropEditor)) &&
                         !registration.right()) viewModel.handleRight() },
                     onA = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.confirm()) && !registration.confirm()) viewModel.handleA() },
+                        !(showCropPreviews && directoryLcd.confirm(cropEditor)) && !registration.confirm()) viewModel.handleA() },
+                    onALong = {
+                        if (phase == MainMenuPhase.READY && !directoryLcd.calibrationOpen &&
+                            registration.lcdLines.isEmpty() && !registration.keyboard.isVisible &&
+                            selectedCommand == InstrumentCommand.LaunchDroidball) {
+                            directoryLcd.holdA(selectedCommand, cropEditor)
+                        }
+                    },
                     onB = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && cropEditor.back()) && !registration.back()) viewModel.handleB() },
+                        !(showCropPreviews && directoryLcd.back(cropEditor)) && !registration.back()) viewModel.handleB() },
                     onStart = {
-                        if (phase == MainMenuPhase.READY && !registration.start()) {
+                        if (phase == MainMenuPhase.READY &&
+                            !(showCropPreviews && (cropEditor.editing || cropEditor.saving)) && !registration.start()) {
+                            if (showCropPreviews) directoryLcd.close(cropEditor)
                             if (deploymentState == InstrumentDeploymentState.IDLE) {
                                 navController.navigate("droidball_readiness")
                             } else {
@@ -688,7 +709,7 @@ fun PokedexApp(
                             }
                         }
                     },
-                    onSelect = { if (phase == MainMenuPhase.READY) registration.select() },
+                    onSelect = { if (phase == MainMenuPhase.READY && !showCropPreviews) registration.select() },
                     onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
@@ -703,7 +724,7 @@ fun PokedexApp(
                         onPhaseChange = { phase = it },
                         onNodeSelected = { node ->
                             if (!cropEditor.editing && !cropEditor.saving) {
-                                if (cropEditor.focused) cropEditor.back()
+                                directoryLcd.close(cropEditor)
                                 if (!registration.chooseNode(node)) viewModel.handleTreeNode(node.path)
                             }
                         }

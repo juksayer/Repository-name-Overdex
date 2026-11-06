@@ -28,6 +28,8 @@ sealed interface InstrumentCommand {
     data object OpenSignalObservatory : InstrumentCommand
     data object OpenBattlePreview : InstrumentCommand
     data object OpenMatchCalibration : InstrumentCommand
+    /** Review captured battle crops on the directory LCD, without deploying Droidball. */
+    data object OpenDirectoryCalibration : InstrumentCommand
     data object OpenTournament : InstrumentCommand
     data object OpenFilterSettings : InstrumentCommand
 }

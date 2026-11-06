@@ -306,12 +306,16 @@ ball-check window so the first hidden frames do not exhaust the check.
 
 ## Owned cards and editing
 
-The Directory Tree's default LCD shows raw battle captures of species names, HP,
-Poké Ball, and announcement images through
+The Directory Tree's default LCD previews the selected folder's actual children
+or a single workflow's purpose and controls through
+[DirectorySelectionPreviewLcd.kt](app/src/main/java/com/example/overdex/ui/components/DirectorySelectionPreviewLcd.kt).
+Calibration is explicitly requested through the Calibration directory entry or
+Hold A on Launch Droidball. Only that mode shows raw battle captures of species
+names, HP, Poké Ball, and announcement images through
 [DirectoryCropPreviewLcd.kt](app/src/main/java/com/example/overdex/ui/components/DirectoryCropPreviewLcd.kt).
 [DirectoryCropPreviews.kt](app/src/main/java/com/example/overdex/battle/preview/DirectoryCropPreviews.kt)
 selects one Match's existing `CropCaptured` evidence in observed battle windows by capture time and decodes
-only changed images while the directory LCD is visible. These are untinted source
+only changed images while the calibration LCD is requested. These are untinted source
 pixels, not OCR reconstructions or a new screen-capture loop. HP previews show
 the calibrated HP observation territory, which can be wider than the tracked bar.
 When HP measurements are available, HP samples stay near a measured UI frame;
@@ -322,7 +326,10 @@ retain a bounded raw sample for each of the seven preview slots independently of
 that field's recognition success, using the same selection policy as the LCD.
 Cold launch can restore retained images from the latest useful battle archive;
 unsaved crops and unavailable media remain explicit. Contextual registration
-controls, the keyboard, and interrupted-observation notices retain LCD priority.
+controls and the keyboard retain LCD priority. Explicit calibration can temporarily
+cover an interrupted-observation notice without acknowledging it; closing the
+panel restores that notice. Ordinary Down at the last directory entry never
+enters calibration. See the [directory LCD verification](docs/verification/2026-11-05-directory-lcd-context.md).
 
 [EditSpecimenScreen.kt](app/src/main/java/com/example/overdex/ui/screens/EditSpecimenScreen.kt)
 edits the persistent owned card, including multiple named team memberships.

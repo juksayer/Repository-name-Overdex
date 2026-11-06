@@ -70,7 +70,7 @@ data class DirectoryCropEditState(
     val isEditing: Boolean get() = draft != null
     val dirty: Boolean get() = draft?.dirty == true
 
-    /** The shell calls this only for Down while its last visible directory row is selected. */
+    /** Optional focus helper; ordinary directory Down no longer calls this transition. */
     fun enterFromDirectory(atLastVisibleEntry: Boolean): DirectoryCropEditState =
         if (selectedSlot == null && atLastVisibleEntry) copy(selectedSlot = slots.first()) else this
 
