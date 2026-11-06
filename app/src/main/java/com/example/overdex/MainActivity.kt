@@ -75,6 +75,7 @@ import com.example.overdex.model.SharedEvent
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.navigation.InstrumentCommand
 import com.example.overdex.model.navigation.HomeScreenStyle
+import com.example.overdex.model.navigation.DesktopPointerController
 import com.example.overdex.model.navigation.OverdextopAction
 import com.example.overdex.model.navigation.OverdextopController
 import com.example.overdex.model.navigation.OverdextopDirection
@@ -502,6 +503,7 @@ fun PokedexApp(
     }
     var homeStyle by remember { mutableStateOf(homePreferences.read()) }
     val homeController = remember { OverdextopController() }
+    val desktopPointer = remember { DesktopPointerController() }
     var explorerOpen by remember { mutableStateOf(false) }
     com.example.overdex.ui.navigation.MatchSummaryReturnEffect(
         pending = viewModel.pendingMatchSummary,
@@ -664,6 +666,7 @@ fun PokedexApp(
                             } else viewModel.launchInstrumentProgram(action.command)
                         }
                         OverdextopAction.OpenExplorer -> {
+                            desktopPointer.clearTargets()
                             homeController.home()
                             explorerOpen = true
                         }
@@ -671,6 +674,7 @@ fun PokedexApp(
                         OverdextopAction.OpenSettings -> homeController.openSettings()
                         is OverdextopAction.ChooseHomeStyle -> {
                             if (homePreferences.write(action.style)) {
+                                desktopPointer.clearTargets()
                                 homeStyle = action.style
                                 explorerOpen = false
                                 homeController.home()
@@ -683,13 +687,29 @@ fun PokedexApp(
 
                 fun confirmHomeEntry(entry: OverdextopEntry = homeController.selectedEntry) {
                     if (phase != MainMenuPhase.READY) return
-                    if (homeController.select(entry.id)) homeController.confirm()?.let(::performHomeAction)
+                    if (homeController.select(entry.id)) {
+                        val action = homeController.confirm()
+                        // A failed settings save stays on this surface, so its
+                        // measured targets must remain available for a retry.
+                        if (action !is OverdextopAction.ChooseHomeStyle) desktopPointer.clearTargets()
+                        action?.let(::performHomeAction)
+                    }
+                }
+
+                fun moveHomeSelection(direction: OverdextopDirection) {
+                    homeController.move(direction)
+                    if (desktopPointer.enabled) desktopPointer.centerOnTarget(homeController.selectedEntry.id)
+                }
+
+                fun toggleDesktopInput() {
+                    if (phase != MainMenuPhase.READY || !usingHomeLauncher) return
+                    if (desktopPointer.toggle()) desktopPointer.centerOnTarget(homeController.selectedEntry.id)
                 }
 
                 fun returnFromHomeSurface() {
                     if (phase != MainMenuPhase.READY) return
                     when {
-                        usingHomeLauncher -> homeController.back()
+                        usingHomeLauncher -> if (homeController.back()) desktopPointer.clearTargets()
                         showCropPreviews && directoryLcd.back(cropEditor) -> Unit
                         registration.back() -> Unit
                         homeStyle == HomeScreenStyle.OVERDEXTOP && explorerOpen -> {
@@ -734,9 +754,25 @@ fun PokedexApp(
                                     com.example.overdex.ui.components.OverdextopLcd(
                                         controller = homeController,
                                         onOpen = { confirmHomeEntry() },
-                                        onPrograms = { homeController.openPrograms() },
+                                        onPrograms = {
+                                            if (homeController.surface != OverdextopSurface.PROGRAMS) {
+                                                desktopPointer.clearTargets()
+                                            }
+                                            homeController.openPrograms()
+                                        },
                                         onExplorer = { performHomeAction(OverdextopAction.OpenExplorer) },
                                         homeStyle = homeStyle,
+                                        trackpadMode = desktopPointer.enabled,
+                                        onToggleTrackpad = ::toggleDesktopInput,
+                                        onPointerDrag = { dx, dy, width, height ->
+                                            desktopPointer.moveBy(dx, dy, width, height)
+                                        },
+                                        onPointerTap = {
+                                            desktopPointer.tap()?.let { targetId ->
+                                                homeController.entries.firstOrNull { it.id == targetId }
+                                                    ?.let(::confirmHomeEntry)
+                                            }
+                                        },
                                     )
                                 }
                             }
@@ -762,12 +798,12 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onUp = {
-                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.UP)
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) moveHomeSelection(OverdextopDirection.UP)
                         else if (phase == MainMenuPhase.READY &&
                             !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.UP, cropEditor)) && !registration.up()) viewModel.handleUp()
                     },
                     onDown = {
-                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.DOWN)
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) moveHomeSelection(OverdextopDirection.DOWN)
                         else if (phase == MainMenuPhase.READY &&
                             !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.DOWN, cropEditor)) && !registration.down()) viewModel.handleDown()
                     },
@@ -775,11 +811,11 @@ fun PokedexApp(
                     onDownLong = { if (!usingHomeLauncher && !showCropPreviews) registration.hold(1) },
                     onUpPressChanged = { if (!it) registration.hold(0) },
                     onDownPressChanged = { if (!it) registration.hold(0) },
-                    onLeft = { if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.LEFT)
+                    onLeft = { if (phase == MainMenuPhase.READY && usingHomeLauncher) moveHomeSelection(OverdextopDirection.LEFT)
                         else if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.LEFT, cropEditor)) &&
                         !registration.left()) viewModel.handleLeft() },
-                    onRight = { if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.RIGHT)
+                    onRight = { if (phase == MainMenuPhase.READY && usingHomeLauncher) moveHomeSelection(OverdextopDirection.RIGHT)
                         else if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.RIGHT, cropEditor)) &&
                         !registration.right()) viewModel.handleRight() },
@@ -810,7 +846,7 @@ fun PokedexApp(
                         }
                     },
                     onSelect = {
-                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.openPrograms()
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) toggleDesktopInput()
                         else if (phase == MainMenuPhase.READY && !showCropPreviews) registration.select()
                     },
                     onLaunchProbe = launchAccessibilityProbe,
@@ -832,6 +868,7 @@ fun PokedexApp(
                                     controller = homeController,
                                     revealCount = revealedCount,
                                     homeStyle = homeStyle,
+                                    pointerController = desktopPointer.takeIf { phase == MainMenuPhase.READY },
                                     onEntryActivated = { confirmHomeEntry(it) },
                                 )
                             }

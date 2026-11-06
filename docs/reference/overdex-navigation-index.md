@@ -29,16 +29,22 @@ for the advisory work inventory. Source documents do not authorize new work.
 
 ## Navigate by the problem
 
-The November 6 home launcher is `Overdextop`, rendered inside the unchanged
+The November 6 desktop home launcher is rendered inside the unchanged
 ODX-Fi CRT. Its shortcuts and programs menu share the existing
 `InstrumentCommand` routes; Explorer keeps the directory available. Start with
-[OverdextopController and catalog](../../app/src/main/java/com/example/overdex/model/navigation/Overdextop.kt),
+[home controller and catalog](../../app/src/main/java/com/example/overdex/model/navigation/Overdextop.kt),
 [CRT/LCD presentation](../../app/src/main/java/com/example/overdex/ui/components/OverdextopComponents.kt),
 and [HomeScreenPreferences](../../app/src/main/java/com/example/overdex/data/HomeScreenPreferences.kt).
-MainActivity owns launching and the saved Overdextop/Directory choice. The
+MainActivity owns launching and the saved Desktop/Directory choice. The
 directory's Home Screen entry opens that same choice. A confirms, B returns,
-and Select opens programs on the desktop; Start retains its Droidball action.
-The Android LCD is not a pointer trackpad yet.
+and Select toggles the LCD between context and trackpad; Start retains its
+Droidball action. LCD relative motion moves the CRT pointer, and a separate tap
+opens its measured target. Physical arrows and A still work in either mode.
+[DesktopPointerController](../../app/src/main/java/com/example/overdex/model/navigation/DesktopPointerController.kt)
+owns normalized position, clipped target bounds, and hit testing. The launcher
+supplies the trackpad and pointer inside the existing display areas; ODXFiShell
+geometry and CRT GlassShield remain unchanged. Other modules retain their
+existing LCD and physical controls.
 
 For private tournament invitations, check-in, pairings and results, start with
 [TournamentScreen](../../app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt),

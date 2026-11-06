@@ -243,7 +243,7 @@ class OverdextopDeviceTest {
     @Test fun aSmallLargeTextLcdKeepsAllActionsVisibleWhileItsDescriptionScrolls() {
         val controller = OverdextopController().apply {
             openSettings()
-            check(select("home_overdextop"))
+            check(select("home_desktop"))
         }
         val actions = mutableListOf<String>()
         compose.setContent {

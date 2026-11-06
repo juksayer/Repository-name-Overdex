@@ -69,7 +69,7 @@ object OverdextopCatalog {
     )
 
     val settingsEntries: List<OverdextopEntry> = listOf(
-        OverdextopEntry("home_overdextop", "Overdextop", "Use desktop shortcuts and the programs menu at home.", OverdextopIcon.PROGRAMS, OverdextopAction.ChooseHomeStyle(HomeScreenStyle.OVERDEXTOP)),
+        OverdextopEntry("home_desktop", "desktop", "Use desktop shortcuts and the programs menu at home.", OverdextopIcon.PROGRAMS, OverdextopAction.ChooseHomeStyle(HomeScreenStyle.OVERDEXTOP)),
         OverdextopEntry("home_directory", "directory tree", "Use the directory tree as the home screen.", OverdextopIcon.EXPLORER, OverdextopAction.ChooseHomeStyle(HomeScreenStyle.DIRECTORY)),
     )
 

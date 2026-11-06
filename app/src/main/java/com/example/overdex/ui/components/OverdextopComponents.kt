@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,19 +27,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -46,7 +58,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.overdex.R
+import com.example.overdex.model.navigation.DesktopPointerController
 import com.example.overdex.model.navigation.HomeScreenStyle
 import com.example.overdex.model.navigation.OverdextopAction
 import com.example.overdex.model.navigation.OverdextopController
@@ -66,29 +80,54 @@ fun OverdextopCrt(
     controller: OverdextopController,
     revealCount: Int = Int.MAX_VALUE,
     homeStyle: HomeScreenStyle = HomeScreenStyle.OVERDEXTOP,
+    pointerController: DesktopPointerController? = null,
     onEntryActivated: (OverdextopEntry) -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().testTag("overdextop-crt")) {
-        Text(
-            text = when (controller.surface) {
-                OverdextopSurface.DESKTOP -> "overdextop"
-                OverdextopSurface.PROGRAMS -> "programs"
-                OverdextopSurface.SETTINGS -> "home screen"
-            },
-            fontFamily = DesktopTypeface,
-            fontSize = 21.sp,
-            lineHeight = 25.sp,
-            color = DesktopSelected,
-            modifier = Modifier.padding(bottom = 9.dp),
-        )
-        Spacer(Modifier.fillMaxWidth().height(1.dp).background(DesktopRail))
-        Spacer(Modifier.height(12.dp))
-        key(controller.surface) {
-            if (controller.surface == OverdextopSurface.DESKTOP) {
-                DesktopShortcuts(controller, revealCount, onEntryActivated)
-            } else {
-                DesktopProgramList(controller, homeStyle, onEntryActivated)
+    var viewportCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val attachmentMotionBaseline = remember(pointerController) { pointerController?.motionRevision ?: 0L }
+    DisposableEffect(pointerController, controller.surface) {
+        pointerController?.beginSurface(controller.surface)
+        pointerController?.centerOnTarget(controller.selectedEntry.id)
+        onDispose { pointerController?.clearTargets() }
+    }
+    // Layout, scroll, and keyboard selection may change what lies under the
+    // pointer. Only movement made during this attachment changes selection;
+    // returning to the launcher must not consume an old movement revision.
+    LaunchedEffect(pointerController?.motionRevision) {
+        if (pointerController?.enabled == true && pointerController.motionRevision > attachmentMotionBaseline) {
+            pointerController.hoveredTargetId?.let(controller::select)
+        }
+    }
+    Box(Modifier.fillMaxSize().clipToBounds().testTag("overdextop-crt")
+        .onGloballyPositioned { coordinates ->
+            viewportCoordinates = coordinates
+            pointerController?.setViewport(coordinates.size.width.toFloat(), coordinates.size.height.toFloat())
+        }) {
+        Column(Modifier.fillMaxSize()) {
+            Text(
+                text = when (controller.surface) {
+                    OverdextopSurface.DESKTOP -> "home"
+                    OverdextopSurface.PROGRAMS -> "programs"
+                    OverdextopSurface.SETTINGS -> "home screen"
+                },
+                fontFamily = DesktopTypeface,
+                fontSize = 21.sp,
+                lineHeight = 25.sp,
+                color = DesktopSelected,
+                modifier = Modifier.padding(bottom = 9.dp),
+            )
+            Spacer(Modifier.fillMaxWidth().height(1.dp).background(DesktopRail))
+            Spacer(Modifier.height(12.dp))
+            key(controller.surface) {
+                if (controller.surface == OverdextopSurface.DESKTOP) {
+                    DesktopShortcuts(controller, revealCount, pointerController, viewportCoordinates, onEntryActivated)
+                } else {
+                    DesktopProgramList(controller, homeStyle, pointerController, viewportCoordinates, onEntryActivated)
+                }
             }
+        }
+        if (pointerController?.enabled == true) {
+            DesktopCursor(pointerController)
         }
     }
 }
@@ -97,6 +136,8 @@ fun OverdextopCrt(
 private fun DesktopShortcuts(
     controller: OverdextopController,
     revealCount: Int,
+    pointerController: DesktopPointerController?,
+    viewportCoordinates: LayoutCoordinates?,
     onEntryActivated: (OverdextopEntry) -> Unit,
 ) {
     val revealedEntries = controller.entries.take(revealCount.coerceAtLeast(0))
@@ -114,6 +155,8 @@ private fun DesktopShortcuts(
                             entry = entry,
                             isSelected = controller.selectedEntry.id == entry.id,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
+                            pointerController = pointerController,
+                            viewportCoordinates = viewportCoordinates,
                             onActivate = { onEntryActivated(entry) },
                         )
                     }
@@ -126,6 +169,8 @@ private fun DesktopShortcuts(
             DesktopProgramRow(
                 entry = programs,
                 isSelected = controller.selectedEntry.id == programs.id,
+                pointerController = pointerController,
+                viewportCoordinates = viewportCoordinates,
                 onActivate = { onEntryActivated(programs) },
             )
         }
@@ -137,13 +182,17 @@ private fun DesktopShortcut(
     entry: OverdextopEntry,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
+    pointerController: DesktopPointerController?,
+    viewportCoordinates: LayoutCoordinates?,
     onActivate: () -> Unit,
 ) {
     val requester = remember { BringIntoViewRequester() }
     LaunchedEffect(isSelected) { if (isSelected) requester.bringIntoView() }
     val color = if (isSelected) DesktopSelected else DesktopPhosphor
+    TrackPointerTargetLifetime(pointerController, entry.id)
     Column(
         modifier = modifier
+            .desktopPointerTarget(pointerController, entry.id, viewportCoordinates)
             .bringIntoViewRequester(requester)
             .testTag("overdextop-entry:${entry.id}")
             .background(if (isSelected) DesktopSelectionWash else Color.Transparent, RoundedCornerShape(4.dp))
@@ -172,6 +221,8 @@ private fun DesktopShortcut(
 private fun DesktopProgramList(
     controller: OverdextopController,
     homeStyle: HomeScreenStyle,
+    pointerController: DesktopPointerController?,
+    viewportCoordinates: LayoutCoordinates?,
     onEntryActivated: (OverdextopEntry) -> Unit,
 ) {
     Column(
@@ -187,6 +238,8 @@ private fun DesktopProgramList(
                     entry = entry,
                     isSelected = controller.selectedEntry.id == entry.id,
                     current = currentStyle,
+                    pointerController = pointerController,
+                    viewportCoordinates = viewportCoordinates,
                     onActivate = { onEntryActivated(entry) },
                 )
             }
@@ -199,13 +252,17 @@ private fun DesktopProgramRow(
     entry: OverdextopEntry,
     isSelected: Boolean,
     current: Boolean = false,
+    pointerController: DesktopPointerController?,
+    viewportCoordinates: LayoutCoordinates?,
     onActivate: () -> Unit,
 ) {
     val requester = remember { BringIntoViewRequester() }
     LaunchedEffect(isSelected) { if (isSelected) requester.bringIntoView() }
     val color = if (isSelected) DesktopSelected else DesktopPhosphor
+    TrackPointerTargetLifetime(pointerController, entry.id)
     Row(
         modifier = Modifier.fillMaxWidth()
+            .desktopPointerTarget(pointerController, entry.id, viewportCoordinates)
             .bringIntoViewRequester(requester)
             .testTag("overdextop-entry:${entry.id}")
             .background(if (isSelected) DesktopSelectionWash else Color.Transparent, RoundedCornerShape(3.dp))
@@ -236,6 +293,55 @@ private fun DesktopProgramRow(
     }
 }
 
+@Composable
+private fun TrackPointerTargetLifetime(pointer: DesktopPointerController?, id: String) {
+    DisposableEffect(pointer, id) {
+        onDispose { pointer?.removeTarget(id) }
+    }
+}
+
+private fun Modifier.desktopPointerTarget(
+    pointer: DesktopPointerController?,
+    id: String,
+    viewport: LayoutCoordinates?,
+): Modifier = if (pointer == null) this else onGloballyPositioned { coordinates ->
+    if (viewport?.isAttached == true && coordinates.isAttached) {
+        // Clipping matters: off-screen menu rows must not remain pointer targets.
+        val bounds = viewport.localBoundingBoxOf(coordinates, clipBounds = true)
+        if (bounds.width > 0f && bounds.height > 0f) {
+            pointer.setTarget(id, bounds.left, bounds.top, bounds.right, bounds.bottom)
+        } else {
+            pointer.removeTarget(id)
+        }
+    }
+}
+
+@Composable
+private fun DesktopCursor(pointer: DesktopPointerController) {
+    // This overlay is decorative. A full-viewport accessibility label here
+    // would mask the actual shortcuts and menu rows underneath it.
+    Canvas(Modifier.fillMaxSize().zIndex(1f).testTag("overdextop-pointer")) {
+        val x = pointer.pixelX
+        val y = pointer.pixelY
+        val unit = 1.dp.toPx()
+        val directionX = if (x + 17f * unit > size.width) -1f else 1f
+        val directionY = if (y + 23f * unit > size.height) -1f else 1f
+        fun point(dx: Float, dy: Float) = Offset(x + dx * unit * directionX, y + dy * unit * directionY)
+        val cursor = Path().apply {
+            moveTo(x, y)
+            point(0f, 19f).let { lineTo(it.x, it.y) }
+            point(5f, 15f).let { lineTo(it.x, it.y) }
+            point(9f, 23f).let { lineTo(it.x, it.y) }
+            point(12f, 21f).let { lineTo(it.x, it.y) }
+            point(8f, 13f).let { lineTo(it.x, it.y) }
+            point(16f, 13f).let { lineTo(it.x, it.y) }
+            close()
+        }
+        drawPath(cursor, Color(0xFF080F0B), style = Stroke(3f * unit))
+        drawPath(cursor, DesktopSelected)
+    }
+}
+
 /** The LCD keeps direct-touch actions available while GlassShield protects the CRT. */
 @Composable
 fun OverdextopLcd(
@@ -244,37 +350,132 @@ fun OverdextopLcd(
     onPrograms: () -> Unit,
     onExplorer: () -> Unit,
     homeStyle: HomeScreenStyle,
+    trackpadMode: Boolean = false,
+    onToggleTrackpad: () -> Unit = {},
+    onPointerDrag: (deltaX: Float, deltaY: Float, padWidth: Float, padHeight: Float) -> Unit = { _, _, _, _ -> },
+    onPointerTap: () -> Unit = {},
 ) {
     val entry = controller.selectedEntry
     Column(Modifier.fillMaxSize().testTag("overdextop-lcd")) {
-        Column(
-            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-                .testTag("overdextop-lcd-summary"),
-        ) {
-            Text(
-                text = entry.description,
-                color = DesktopPhosphor,
-                fontFamily = DesktopTypeface,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-            )
-            if (controller.surface == OverdextopSurface.SETTINGS) {
-                Spacer(Modifier.height(5.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            if (trackpadMode) {
+                Box(
+                    modifier = Modifier.testTag("overdextop-programs-button")
+                        .clickable(role = Role.Button, onClick = onPrograms)
+                        .heightIn(min = 30.dp).padding(horizontal = 5.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("programs", color = DesktopPhosphor, fontFamily = DesktopTypeface,
+                        fontSize = 12.sp, lineHeight = 15.sp)
+                }
+                Spacer(Modifier.weight(1f))
+            }
+            Box(
+                modifier = Modifier.testTag("overdextop-input-mode")
+                    .clickable(role = Role.Button, onClick = onToggleTrackpad)
+                    .semantics {
+                        contentDescription = if (trackpadMode) "Show LCD context" else "Use LCD trackpad"
+                        stateDescription = if (trackpadMode) "Trackpad" else "Context"
+                    }
+                    .heightIn(min = 30.dp).padding(horizontal = 5.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
-                    text = "current: ${if (homeStyle == HomeScreenStyle.OVERDEXTOP) "overdextop" else "directory"}",
+                    text = if (trackpadMode) "context" else "trackpad",
                     color = DesktopSelected,
+                    fontFamily = DesktopTypeface,
+                    fontSize = 12.sp,
+                    lineHeight = 15.sp,
+                )
+            }
+        }
+        if (trackpadMode) {
+            DesktopTrackpad(Modifier.weight(1f).fillMaxWidth(), onPointerDrag, onPointerTap)
+        } else {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .testTag("overdextop-lcd-summary"),
+            ) {
+                Text(
+                    text = entry.description,
+                    color = DesktopPhosphor,
                     fontFamily = DesktopTypeface,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                 )
+                if (controller.surface == OverdextopSurface.SETTINGS) {
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        text = "current: ${if (homeStyle == HomeScreenStyle.OVERDEXTOP) "desktop" else "directory"}",
+                        color = DesktopSelected,
+                        fontFamily = DesktopTypeface,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                    )
+                }
             }
         }
-        Spacer(Modifier.height(5.dp))
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            DesktopLcdButton("open", "overdextop-open", Modifier.weight(1f), onOpen)
-            DesktopLcdButton("programs", "overdextop-programs-button", Modifier.weight(1f), onPrograms)
-            DesktopLcdButton("Explorer", "overdextop-explorer-button", Modifier.weight(1f), onExplorer)
+        if (!trackpadMode) {
+            Spacer(Modifier.height(5.dp))
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                DesktopLcdButton("open", "overdextop-open", Modifier.weight(1f), onOpen)
+                DesktopLcdButton("programs", "overdextop-programs-button", Modifier.weight(1f), onPrograms)
+                DesktopLcdButton("Explorer", "overdextop-explorer-button", Modifier.weight(1f), onExplorer)
+            }
         }
+    }
+}
+
+@Composable
+private fun DesktopTrackpad(
+    modifier: Modifier,
+    onDrag: (Float, Float, Float, Float) -> Unit,
+    onTap: () -> Unit,
+) {
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnTap by rememberUpdatedState(onTap)
+    Box(
+        modifier = modifier.testTag("overdextop-trackpad")
+            .background(DesktopSelectionWash, RoundedCornerShape(3.dp))
+            .semantics { contentDescription = "LCD trackpad" }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var lastPosition = down.position
+                    var accumulated = Offset.Zero
+                    var dragging = false
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (change.isConsumed) break
+                        val delta = change.position - lastPosition
+                        lastPosition = change.position
+                        accumulated += delta
+                        if (!dragging && accumulated.getDistance() > viewConfiguration.touchSlop) {
+                            dragging = true
+                            change.consume()
+                            // Include movement before crossing touch slop, rather than
+                            // dropping a significant part of a short LCD gesture.
+                            currentOnDrag(accumulated.x, accumulated.y, size.width.toFloat(), size.height.toFloat())
+                        } else if (dragging) {
+                            change.consume()
+                            if (delta != Offset.Zero) {
+                                currentOnDrag(delta.x, delta.y, size.width.toFloat(), size.height.toFloat())
+                            }
+                        }
+                        if (!change.pressed) {
+                            if (!dragging) {
+                                change.consume()
+                                currentOnTap()
+                            }
+                            break
+                        }
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("trackpad", color = DesktopRail, fontFamily = DesktopTypeface, fontSize = 12.sp)
     }
 }
 
