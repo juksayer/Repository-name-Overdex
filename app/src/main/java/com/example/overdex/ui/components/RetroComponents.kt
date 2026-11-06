@@ -340,7 +340,7 @@ fun TerminalMenuOption(
 
 /** Open ring binder with card pockets, legible in the Directory Tree's small icon cell. */
 @Composable
-private fun BinderDirectoryIcon(
+internal fun BinderDirectoryIcon(
     color: Color,
     modifier: Modifier = Modifier.size(17.dp),
 ) {

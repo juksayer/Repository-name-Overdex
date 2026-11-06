@@ -356,7 +356,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             )),
             ActionNode("INTUEOR", InstrumentCommand.OpenSignalObservatory),
             ActionNode("PROFILE", InstrumentCommand.OpenProfile),
-            ActionNode("Calibration", InstrumentCommand.OpenDirectoryCalibration)
+            ActionNode("Calibration", InstrumentCommand.OpenDirectoryCalibration),
+            ActionNode("Home Screen", InstrumentCommand.OpenHomeSettings)
         )
     )
 
@@ -379,6 +380,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     // Command handling
     private val _pendingCommand = MutableSharedFlow<InstrumentCommand>(extraBufferCapacity = 1)
     val pendingCommand = _pendingCommand.asSharedFlow()
+
+    /** Desktop shortcuts and the directory dispatch the same existing workflows. */
+    fun launchInstrumentProgram(command: InstrumentCommand) {
+        _pendingCommand.tryEmit(command)
+    }
 
     fun handleUp() {
         instrumentTree.moveSelection(-1)

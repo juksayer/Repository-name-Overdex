@@ -32,4 +32,6 @@ sealed interface InstrumentCommand {
     data object OpenDirectoryCalibration : InstrumentCommand
     data object OpenTournament : InstrumentCommand
     data object OpenFilterSettings : InstrumentCommand
+    /** Choose the shell's home launcher without changing any module or saved data. */
+    data object OpenHomeSettings : InstrumentCommand
 }

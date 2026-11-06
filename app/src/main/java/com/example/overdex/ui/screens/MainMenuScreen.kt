@@ -25,7 +25,9 @@ fun MainMenuScreen(
     selectedPath: String = "",
     trainerIdentity: TrainerIdentity? = null,
     onPhaseChange: (MainMenuPhase) -> Unit = {},
-    onNodeSelected: (FlattenedNode) -> Unit = {}
+    onNodeSelected: (FlattenedNode) -> Unit = {},
+    revealEntryCount: Int = visibleNodes.size,
+    homeContent: (@Composable (revealedCount: Int, ready: Boolean) -> Unit)? = null,
 ) {
     // Local state for the sequential lines
     var phase by remember(hasBootedInSession) {
@@ -40,7 +42,7 @@ fun MainMenuScreen(
     var bootStep by remember(hasBootedInSession) { mutableIntStateOf(if (hasBootedInSession) 99 else 0) }
     var menuRevealCount by remember(hasBootedInSession) {
         mutableIntStateOf(
-            if (hasBootedInSession) visibleNodes.size else 0
+            if (hasBootedInSession) revealEntryCount else 0
         )
     }
 
@@ -57,7 +59,7 @@ fun MainMenuScreen(
         )
     }
 
-    val currentVisibleNodes by rememberUpdatedState(visibleNodes)
+    val currentEntryCount by rememberUpdatedState(revealEntryCount)
     val currentOnBootComplete by rememberUpdatedState(onBootComplete)
 
     // Resizing the CRT or refreshing directory contents must not restart boot.
@@ -75,7 +77,7 @@ fun MainMenuScreen(
         phase = MainMenuPhase.MENU_BUILD
         while (true) {
             delay(200L)
-            if (menuRevealCount >= currentVisibleNodes.size) break
+            if (menuRevealCount >= currentEntryCount) break
             menuRevealCount++
         }
         phase = MainMenuPhase.READY
@@ -109,12 +111,16 @@ fun MainMenuScreen(
             }
         } else {
             val ready = phase == MainMenuPhase.READY
-            DirectoryTree(
-                visibleNodes = if (ready) visibleNodes else visibleNodes.take(menuRevealCount),
-                selectedPath = if (ready) selectedPath else "",
-                onNodeSelected = { if (ready) onNodeSelected(it) },
-                scrollEnabled = ready,
-            )
+            if (homeContent != null) {
+                homeContent(if (ready) revealEntryCount else menuRevealCount, ready)
+            } else {
+                DirectoryTree(
+                    visibleNodes = if (ready) visibleNodes else visibleNodes.take(menuRevealCount),
+                    selectedPath = if (ready) selectedPath else "",
+                    onNodeSelected = { if (ready) onNodeSelected(it) },
+                    scrollEnabled = ready,
+                )
+            }
         }
     }
 }

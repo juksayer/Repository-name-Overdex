@@ -29,6 +29,17 @@ for the advisory work inventory. Source documents do not authorize new work.
 
 ## Navigate by the problem
 
+The November 6 home launcher is `Overdextop`, rendered inside the unchanged
+ODX-Fi CRT. Its shortcuts and programs menu share the existing
+`InstrumentCommand` routes; Explorer keeps the directory available. Start with
+[OverdextopController and catalog](../../app/src/main/java/com/example/overdex/model/navigation/Overdextop.kt),
+[CRT/LCD presentation](../../app/src/main/java/com/example/overdex/ui/components/OverdextopComponents.kt),
+and [HomeScreenPreferences](../../app/src/main/java/com/example/overdex/data/HomeScreenPreferences.kt).
+MainActivity owns launching and the saved Overdextop/Directory choice. The
+directory's Home Screen entry opens that same choice. A confirms, B returns,
+and Select opens programs on the desktop; Start retains its Droidball action.
+The Android LCD is not a pointer trackpad yet.
+
 For private tournament invitations, check-in, pairings and results, start with
 [TournamentScreen](../../app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt),
 [TournamentEngine](../../app/src/main/java/com/example/overdex/tournament/TournamentEngine.kt)

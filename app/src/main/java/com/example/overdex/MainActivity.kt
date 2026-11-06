@@ -74,6 +74,12 @@ import com.example.overdex.model.OwnedPokemonBinder
 import com.example.overdex.model.SharedEvent
 import com.example.overdex.model.TrainerIdentity
 import com.example.overdex.model.navigation.InstrumentCommand
+import com.example.overdex.model.navigation.HomeScreenStyle
+import com.example.overdex.model.navigation.OverdextopAction
+import com.example.overdex.model.navigation.OverdextopController
+import com.example.overdex.model.navigation.OverdextopDirection
+import com.example.overdex.model.navigation.OverdextopEntry
+import com.example.overdex.model.navigation.OverdextopSurface
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.ui.MyCollectionViewModel
@@ -491,6 +497,12 @@ fun PokedexApp(
     val interruptedObservationNotice by viewModel.interruptedObservationNotice.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val homePreferences = remember(context.applicationContext) {
+        com.example.overdex.data.HomeScreenPreferences(context.applicationContext)
+    }
+    var homeStyle by remember { mutableStateOf(homePreferences.read()) }
+    val homeController = remember { OverdextopController() }
+    var explorerOpen by remember { mutableStateOf(false) }
     com.example.overdex.ui.navigation.MatchSummaryReturnEffect(
         pending = viewModel.pendingMatchSummary,
         onOpenSummary = {
@@ -605,12 +617,16 @@ fun PokedexApp(
                 )
                 val currentRegistration by rememberUpdatedState(registration)
                 val directoryLcd = remember { com.example.overdex.ui.components.DirectoryLcdController() }
-                val selectedCommand = (registration.nodes.firstOrNull {
+                val usingHomeLauncher = !explorerOpen && (homeStyle == HomeScreenStyle.OVERDEXTOP ||
+                    homeController.surface != OverdextopSurface.DESKTOP)
+                val selectedCommand = if (usingHomeLauncher) {
+                    (homeController.selectedEntry.action as? OverdextopAction.OpenProgram)?.command
+                } else (registration.nodes.firstOrNull {
                     it.path == registration.selectedPath
                 }?.node as? com.example.overdex.model.navigation.ActionNode)?.command
-                val showCropPreviews = directoryLcd.calibrationOpen && registration.lcdLines.isEmpty() &&
+                val showCropPreviews = !usingHomeLauncher && directoryLcd.calibrationOpen && registration.lcdLines.isEmpty() &&
                     !registration.keyboard.isVisible
-                val directoryLcdLines = registration.lcdLines.takeIf { it.isNotEmpty() }
+                val directoryLcdLines = registration.lcdLines.takeIf { !usingHomeLauncher && it.isNotEmpty() }
                     ?: interruptedObservationNotice?.takeUnless { showCropPreviews }?.let { notice ->
                         buildList {
                             add("OBSERVATION INTERRUPTED")
@@ -631,14 +647,76 @@ fun PokedexApp(
                     loadCalibration = viewModel::loadDirectoryCalibration,
                     saveCalibration = viewModel::saveDirectoryCalibration,
                 )
+
+                fun performHomeAction(action: OverdextopAction) {
+                    when (action) {
+                        is OverdextopAction.OpenProgram -> {
+                            homeController.home()
+                            if (action.command == InstrumentCommand.OpenDirectoryCalibration) {
+                                explorerOpen = true
+                                // Leave an unfinished Add Pokémon branch selected only
+                                // when returning to it, not when explicitly opening crops.
+                                val calibrationRow = treeState.visibleNodes.firstOrNull {
+                                    (it.node as? com.example.overdex.model.navigation.ActionNode)?.command == action.command
+                                }
+                                if (calibrationRow != null) viewModel.handleTreeNode(calibrationRow.path)
+                                else viewModel.launchInstrumentProgram(action.command)
+                            } else viewModel.launchInstrumentProgram(action.command)
+                        }
+                        OverdextopAction.OpenExplorer -> {
+                            homeController.home()
+                            explorerOpen = true
+                        }
+                        OverdextopAction.OpenPrograms -> homeController.openPrograms()
+                        OverdextopAction.OpenSettings -> homeController.openSettings()
+                        is OverdextopAction.ChooseHomeStyle -> {
+                            if (homePreferences.write(action.style)) {
+                                homeStyle = action.style
+                                explorerOpen = false
+                                homeController.home()
+                            } else {
+                                Toast.makeText(context, "Could not save the home screen. Please try again.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+
+                fun confirmHomeEntry(entry: OverdextopEntry = homeController.selectedEntry) {
+                    if (phase != MainMenuPhase.READY) return
+                    if (homeController.select(entry.id)) homeController.confirm()?.let(::performHomeAction)
+                }
+
+                fun returnFromHomeSurface() {
+                    if (phase != MainMenuPhase.READY) return
+                    when {
+                        usingHomeLauncher -> homeController.back()
+                        showCropPreviews && directoryLcd.back(cropEditor) -> Unit
+                        registration.back() -> Unit
+                        homeStyle == HomeScreenStyle.OVERDEXTOP && explorerOpen -> {
+                            explorerOpen = false
+                            homeController.home()
+                        }
+                        else -> viewModel.handleB()
+                    }
+                }
+
                 LaunchedEffect(viewModel) {
                     viewModel.pendingCommand.collect { command ->
-                        if (command is InstrumentCommand.EditNewOwnedPokemon) {
+                        if (command == InstrumentCommand.OpenHomeSettings) {
+                            if (directoryLcd.close(cropEditor)) {
+                                explorerOpen = false
+                                homeController.openSettings()
+                            }
+                        } else if (command is InstrumentCommand.EditNewOwnedPokemon) {
                             currentRegistration.activate(command.field)
                         } else directoryLcd.activate(command, cropEditor)
                     }
                 }
-                androidx.activity.compose.BackHandler(enabled = showCropPreviews) { directoryLcd.back(cropEditor) }
+                androidx.activity.compose.BackHandler(enabled = phase == MainMenuPhase.READY &&
+                    (showCropPreviews || (usingHomeLauncher && homeController.surface != OverdextopSurface.DESKTOP) ||
+                        (homeStyle == HomeScreenStyle.OVERDEXTOP && explorerOpen))) {
+                    returnFromHomeSurface()
+                }
                 ODXFiShell(
 
                     instrumentState = instrumentState,
@@ -650,6 +728,19 @@ fun PokedexApp(
                     onKeyActivated = registration.key,
                     lcdLines = directoryLcdLines,
                     lcdContent = when {
+                        usingHomeLauncher && directoryLcdLines.isEmpty() -> {
+                            {
+                                if (phase == MainMenuPhase.READY) {
+                                    com.example.overdex.ui.components.OverdextopLcd(
+                                        controller = homeController,
+                                        onOpen = { confirmHomeEntry() },
+                                        onPrograms = { homeController.openPrograms() },
+                                        onExplorer = { performHomeAction(OverdextopAction.OpenExplorer) },
+                                        homeStyle = homeStyle,
+                                    )
+                                }
+                            }
+                        }
                         showCropPreviews -> {
                             {
                                 // Subscribe only when calibration is explicitly requested.
@@ -671,37 +762,45 @@ fun PokedexApp(
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },
                     onUp = {
-                        if (phase == MainMenuPhase.READY &&
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.UP)
+                        else if (phase == MainMenuPhase.READY &&
                             !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.UP, cropEditor)) && !registration.up()) viewModel.handleUp()
                     },
                     onDown = {
-                        if (phase == MainMenuPhase.READY &&
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.DOWN)
+                        else if (phase == MainMenuPhase.READY &&
                             !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.DOWN, cropEditor)) && !registration.down()) viewModel.handleDown()
                     },
-                    onUpLong = { if (!showCropPreviews) registration.hold(-1) },
-                    onDownLong = { if (!showCropPreviews) registration.hold(1) },
+                    onUpLong = { if (!usingHomeLauncher && !showCropPreviews) registration.hold(-1) },
+                    onDownLong = { if (!usingHomeLauncher && !showCropPreviews) registration.hold(1) },
                     onUpPressChanged = { if (!it) registration.hold(0) },
                     onDownPressChanged = { if (!it) registration.hold(0) },
-                    onLeft = { if (phase == MainMenuPhase.READY &&
+                    onLeft = { if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.LEFT)
+                        else if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.LEFT, cropEditor)) &&
                         !registration.left()) viewModel.handleLeft() },
-                    onRight = { if (phase == MainMenuPhase.READY &&
+                    onRight = { if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.move(OverdextopDirection.RIGHT)
+                        else if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && directoryLcd.direction(DirectoryCropEditDirection.RIGHT, cropEditor)) &&
                         !registration.right()) viewModel.handleRight() },
-                    onA = { if (phase == MainMenuPhase.READY &&
+                    onA = { if (phase == MainMenuPhase.READY && usingHomeLauncher) confirmHomeEntry()
+                        else if (phase == MainMenuPhase.READY &&
                         !(showCropPreviews && directoryLcd.confirm(cropEditor)) && !registration.confirm()) viewModel.handleA() },
                     onALong = {
-                        if (phase == MainMenuPhase.READY && !directoryLcd.calibrationOpen &&
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher &&
+                            selectedCommand == InstrumentCommand.LaunchDroidball) {
+                            performHomeAction(OverdextopAction.OpenProgram(InstrumentCommand.OpenDirectoryCalibration))
+                        } else if (phase == MainMenuPhase.READY && !directoryLcd.calibrationOpen &&
                             registration.lcdLines.isEmpty() && !registration.keyboard.isVisible &&
                             selectedCommand == InstrumentCommand.LaunchDroidball) {
                             directoryLcd.holdA(selectedCommand, cropEditor)
                         }
                     },
-                    onB = { if (phase == MainMenuPhase.READY &&
-                        !(showCropPreviews && directoryLcd.back(cropEditor)) && !registration.back()) viewModel.handleB() },
+                    onB = { returnFromHomeSurface() },
                     onStart = {
                         if (phase == MainMenuPhase.READY &&
-                            !(showCropPreviews && (cropEditor.editing || cropEditor.saving)) && !registration.start()) {
+                            !(showCropPreviews && (cropEditor.editing || cropEditor.saving)) &&
+                            (usingHomeLauncher || !registration.start())) {
                             if (showCropPreviews) directoryLcd.close(cropEditor)
                             if (deploymentState == InstrumentDeploymentState.IDLE) {
                                 navController.navigate("droidball_readiness")
@@ -710,7 +809,10 @@ fun PokedexApp(
                             }
                         }
                     },
-                    onSelect = { if (phase == MainMenuPhase.READY && !showCropPreviews) registration.select() },
+                    onSelect = {
+                        if (phase == MainMenuPhase.READY && usingHomeLauncher) homeController.openPrograms()
+                        else if (phase == MainMenuPhase.READY && !showCropPreviews) registration.select()
+                    },
                     onLaunchProbe = launchAccessibilityProbe,
                     onLaunchObservatory = { navController.navigate("timeline_viewer") },
                     onLaunchMatchCalibration = { navController.navigate("match_calibration") },
@@ -723,6 +825,17 @@ fun PokedexApp(
                         selectedPath = if (showCropPreviews && cropEditor.focused) "" else registration.selectedPath,
                         trainerIdentity = trainerIdentity,
                         onPhaseChange = { phase = it },
+                        revealEntryCount = if (usingHomeLauncher) homeController.entries.size else registration.nodes.size,
+                        homeContent = if (usingHomeLauncher) {
+                            { revealedCount, _ ->
+                                com.example.overdex.ui.components.OverdextopCrt(
+                                    controller = homeController,
+                                    revealCount = revealedCount,
+                                    homeStyle = homeStyle,
+                                    onEntryActivated = { confirmHomeEntry(it) },
+                                )
+                            }
+                        } else null,
                         onNodeSelected = { node ->
                             if (!cropEditor.editing && !cropEditor.saving) {
                                 directoryLcd.close(cropEditor)

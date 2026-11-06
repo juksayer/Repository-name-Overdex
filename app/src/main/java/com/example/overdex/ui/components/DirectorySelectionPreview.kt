@@ -93,6 +93,9 @@ private fun workflowPreview(node: ActionNode, title: String): DirectorySelection
         InstrumentCommand.OpenDirectoryCalibration ->
             "Review captured battle crops and adjust their positions in the directory LCD." to
                 listOf("A review crops · B return")
+        InstrumentCommand.OpenHomeSettings ->
+            "Choose Overdextop or the directory as your home screen. Both open the same programs and saved Pokémon." to
+                listOf("A open", "Up / Down choose · A save · B return")
         InstrumentCommand.OpenMatchCalibration ->
             "Choose a battle reference image and adjust the saved crop boxes for your device." to
                 listOf("A open", "Inside: A next crop · Select move / resize", "Arrows adjust · Start profiles · B return")
