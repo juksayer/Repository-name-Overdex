@@ -29,6 +29,14 @@ for the advisory work inventory. Source documents do not authorize new work.
 
 ## Navigate by the problem
 
+For private tournament invitations, check-in, pairings and results, start with
+[TournamentScreen](../../app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt),
+[TournamentEngine](../../app/src/main/java/com/example/overdex/tournament/TournamentEngine.kt)
+and [TournamentRepository](../../app/src/main/java/com/example/overdex/tournament/TournamentRepository.kt).
+The Battle → Tournaments route reuses Trainer Comms accounts and contacts, with
+separate event membership. Tournament result decisions never rewrite battle
+testimony. See the [November 5 acceptance record](../verification/2026-11-05-tournaments.md).
+
 | Problem or task | Start here | Trace next |
 | --- | --- | --- |
 | Start/Stop, service return, missing recording | [PokedexViewModel](../../app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt) | `startObservation`, permission transition, `deployInstrument`, `startFreshMatch`; then Droidball service/session and archive checkpoint callers. |

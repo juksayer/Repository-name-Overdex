@@ -304,6 +304,37 @@ Poké Ball counts require visible badge/slot pixels. A covered or blank crop is
 unavailable evidence, not a zero-survivor count. Entry and faint cues open a brief
 ball-check window so the first hidden frames do not exhaust the check.
 
+## Private tournaments
+
+Battle → Tournaments opens
+[TournamentScreen.kt](app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt).
+It uses the shared ODX-Fi shell: the CRT displays rooms, roster, bracket and history;
+the LCD owns actions and the terminal keyboard. Private invitations use registered
+Trainer Comms contacts and stable account IDs. Tournament membership is separate
+from immutable conversation membership, allowing a host to invite trainers while
+registration is open without changing an existing conversation.
+
+[TournamentEngine.kt](app/src/main/java/com/example/overdex/tournament/TournamentEngine.kt)
+owns single-elimination progression, byes, series targets, settings acknowledgements,
+agreed results and reasoned host resolutions. A GO battle is one played engagement;
+a bracket series may contain several battles. Two entrants require a first-to-three
+final; three require at least a first-to-two final. A complete event needs at least
+three played battles. Ending early preserves its actual results without a champion.
+
+[TournamentRepository.kt](app/src/main/java/com/example/overdex/tournament/TournamentRepository.kt)
+and [FirebaseTournamentBackend.kt](app/src/main/java/com/example/overdex/tournament/FirebaseTournamentBackend.kt)
+keep event observation account-scoped and server-confirmed. Host transactions read
+current attendance and participant reports, then advance the expected battle key
+once. Participants own their responses; the host cannot forge another player's
+readiness or report. Settings revisions invalidate old check-ins. Firebase rules
+protect event membership and roles independently of the UI. Cached rooms are marked
+and cannot advance competition progress.
+
+Tournament reports and organizer decisions do not alter the Reality Timeline,
+owned-card history or original match archives. Recording attachment and automatic
+archive matching are not part of this first version. See the
+[implementation and acceptance record](docs/verification/2026-11-05-tournaments.md).
+
 ## Owned cards and editing
 
 The Directory Tree's default LCD previews the selected folder's actual children

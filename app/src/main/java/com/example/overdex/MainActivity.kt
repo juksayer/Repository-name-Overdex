@@ -543,6 +543,7 @@ fun PokedexApp(
                 InstrumentCommand.AddSpecimen -> navController.navigate("guided_registration")
                 InstrumentCommand.OpenBattleHistory -> navController.navigate("match_archive_directory")
                 InstrumentCommand.OpenBattleRecords -> navController.navigate("battle_records")
+                InstrumentCommand.OpenTournament -> navController.navigate("tournaments")
                 InstrumentCommand.OpenBattleLogs -> navController.navigate("timeline_viewer")
                 InstrumentCommand.OpenReplayEditor -> navController.navigate("replay_editor")
 
@@ -867,6 +868,21 @@ fun PokedexApp(
                     onViewTimeline = { navController.navigate("shared_timeline") },
                     onChat = { navController.navigate("private_chat") },
                     onBack = { navController.debugPopBackStack() }
+                )
+            }
+            composable("tournaments") {
+                com.example.overdex.ui.screens.TournamentScreen(
+                    services = com.example.overdex.tournament.TournamentServices.get(context.applicationContext),
+                    comms = trainerComms,
+                    viewModel = viewModel,
+                    onBack = { navController.debugPopBackStack() },
+                    onOpenComms = { navController.navigate("private_chat") },
+                    onOpenPokemonGo = {
+                        val intent = context.packageManager.getLaunchIntentForPackage("com.nianticlabs.pokemongo")
+                        if (intent == null) Toast.makeText(context, "Pokémon GO is not installed.", Toast.LENGTH_LONG).show()
+                        else try { context.startActivity(intent) }
+                        catch (_: RuntimeException) { Toast.makeText(context, "Could not open Pokémon GO.", Toast.LENGTH_LONG).show() }
+                    },
                 )
             }
             composable("private_chat") {

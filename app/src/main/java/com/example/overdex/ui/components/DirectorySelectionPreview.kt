@@ -75,6 +75,9 @@ private fun workflowPreview(node: ActionNode, title: String): DirectorySelection
         InstrumentCommand.OpenBattleHistory ->
             "Browse recorded matches, newest first. Open a match’s summary, then its timeline or replay." to
                 listOf("A open", "Inside: Up / Down choose · A summary · B return")
+        InstrumentCommand.OpenTournament ->
+            "Host or join a private single-elimination tournament. Prepare with your opponent, then confirm each battle’s result." to
+                listOf("A open", "Inside: Up / Down choose · Left / Right action", "A confirm · B return")
         InstrumentCommand.OpenBattleRecords ->
             "Find recorded battle events by Pokémon, move, opponent, and other filters." to
                 listOf("A open", "In results: Up / Down choose · A replay", "Start filters · Select change event · B return")

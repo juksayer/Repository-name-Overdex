@@ -351,7 +351,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     ActionNode("Replay Editor", InstrumentCommand.OpenReplayEditor)
                 )),
                 ActionNode("Records", InstrumentCommand.OpenBattleRecords),
-                ActionNode("Match History", InstrumentCommand.OpenBattleHistory)
+                ActionNode("Match History", InstrumentCommand.OpenBattleHistory),
+                ActionNode("Tournaments", InstrumentCommand.OpenTournament)
             )),
             ActionNode("INTUEOR", InstrumentCommand.OpenSignalObservatory),
             ActionNode("PROFILE", InstrumentCommand.OpenProfile),

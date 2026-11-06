@@ -9,6 +9,10 @@ tests](../plans/outstanding-tests.md) for current unfinished checks. The older
 paragraphs below retain their review dates; later verification supersedes claims
 such as missing type normalization or missing centered-control support.
 
+November 5 tournament update: Battle → Tournaments now opens private hosted
+single-elimination rooms with invitations, check-in, pairing preparation and
+confirmed results. See the [tournament implementation and acceptance record](../verification/2026-11-05-tournaments.md).
+
 ## Where to find the plans
 
 - [First-release checklist](../plans/first-release.md): October 23 scope for a
@@ -124,7 +128,7 @@ crop quality and form-specific artwork remain open.
 | Owned-card detail | [SpecimenDetailScreen](../../app/src/main/java/com/example/overdex/ui/screens/SpecimenDetailScreen.kt) renders `PlaceholderContent()` for Timeline, League Eligibility, and Notes. Battle History and team memberships have real wiring. | Implement or remove these unfinished sections. Notes also need a persisted field/editor; binder restrictions already exist and are a separate feature from this placeholder. |
 | Pokédex artwork | [PokemonDetailScreen](../../app/src/main/java/com/example/overdex/ui/screens/PokemonDetailScreen.kt) has a long-press TODO. | Choose an actual action, or remove the obsolete TODO. It is not evidence that the Pokédex itself is unfinished. |
 | Android backup/restore | The manifest enables backup; [data_extraction_rules.xml](../../app/src/main/res/xml/data_extraction_rules.xml) and [backup_rules.xml](../../app/src/main/res/xml/backup_rules.xml) remain sample templates. | Define treatment of calibration, owned cards, teams, archives, caches, and machine/device-specific state, then test restore. No backup behavior was changed in this review. |
-| Tournaments | The old roadmap lists them; `OpenTournament` remains a command with no producer or handler found. | Future organization should build on Trainer Comms conversations and membership. Tournament structure itself is not implemented. |
+| Tournaments | Battle → Tournaments opens the hosted single-elimination lobby. It shares Trainer Comms accounts/profiles and contact discovery, with separate mutable event membership. | First version supports 2–16 checked-in entrants, named invitations, explicit reports/confirmation and host resolutions. Join codes, notifications, archive attachments and additional formats remain future work; see the [acceptance record](../verification/2026-11-05-tournaments.md). |
 
 ## Maintenance, not new features
 

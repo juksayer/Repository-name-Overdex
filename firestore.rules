@@ -5,6 +5,19 @@
 // trainerConversations/{ID}/messages/{stable ID}: immutable text, senderId/name, client sentAt,
 //   serverSentAt. Read/list requires membership; create binds sender to authenticated UID.
 // Email/password exist only in Firebase Authentication, never in public profile documents.
+// Tournament lobby v1 data model (all reads require an invited, non-anonymous account):
+// tournaments/{ID}: schemaVersion=1, immutable ownerId/createdAt, memberIds (1-16 unique
+//   account UIDs, includes host), phase, activeBattles (up to eight battleKey -> two UID
+//   pairs), revision (host increments by one), settingsRevision (lobby rules version),
+//   payload (bounded serialized event), updatedAt.
+//   Host is authoritative for settings, invitations, bracket and audited resolutions.
+// tournaments/{ID}/entrants/{UID}: own accepted/checkedIn/declined booleans,
+//   settingsRevision (must acknowledge current rules version), updatedAt;
+//   lobby only. Acceptance and decline are mutually exclusive; checking in needs acceptance.
+// tournaments/{ID}/preparations/{battleKey_UID}: own playerId/battleKey/ready/result/note,
+//   updatedAt; only while that battle key is active. Host cannot forge another response.
+// The bracket engine validates the serialized payload and three-battle completion rule;
+// rules independently protect room membership, bounded routing data and response authorship.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -90,6 +103,131 @@ service cloud.firestore {
         allow create: if member(id) && messageId.matches('[A-Za-z0-9_-]{1,80}') && validMessage(request.resource.data);
         // Retry reads the same ID in a transaction; messages are never overwritten.
         allow update, delete: if false;
+      }
+    }
+
+    function tournament(id) { return /databases/$(database)/documents/tournaments/$(id); }
+    function tournamentMember(id) {
+      return signedIn() && request.auth.uid in get(tournament(id)).data.memberIds;
+    }
+    function validTournamentMembers(members, ownerId) {
+      let encoded = members.join('|');
+      // Round-trip equality rejects non-string values and embedded separators. One bounded
+      // regex then checks every UID, staying within the expression budget at sixteen players.
+      return members is list && members.size() >= 1 && members.size() <= 16
+        && members.toSet().size() == members.size() && ownerId in members
+        && encoded.split('[|]') == members
+        && encoded.matches('[A-Za-z0-9_-]{1,128}([|][A-Za-z0-9_-]{1,128}){0,15}');
+    }
+    function validTournamentPair(players, members) {
+      // Membership in the already validated UID list also validates both UID types/lengths.
+      return players is list && players.size() == 2 && players[0] != players[1]
+        && members.hasAll(players);
+    }
+    function validTournamentBattleAt(battles, keys, members, index) {
+      return keys.size() <= index || (keys[index].matches('[A-Za-z0-9_-]{1,80}')
+        && validTournamentPair(battles[keys[index]], members));
+    }
+    function validTournamentBattles(battles, members) {
+      let keys = battles.keys();
+      return battles.size() <= 8
+        && validTournamentBattleAt(battles, keys, members, 0)
+        && validTournamentBattleAt(battles, keys, members, 1)
+        && validTournamentBattleAt(battles, keys, members, 2)
+        && validTournamentBattleAt(battles, keys, members, 3)
+        && validTournamentBattleAt(battles, keys, members, 4)
+        && validTournamentBattleAt(battles, keys, members, 5)
+        && validTournamentBattleAt(battles, keys, members, 6)
+        && validTournamentBattleAt(battles, keys, members, 7);
+    }
+    function validTournament(d) {
+      return d.keys().hasAll(['schemaVersion', 'ownerId', 'memberIds', 'phase', 'activeBattles',
+          'revision', 'settingsRevision', 'payload', 'createdAt', 'updatedAt'])
+        && d.keys().hasOnly(['schemaVersion', 'ownerId', 'memberIds', 'phase', 'activeBattles',
+          'revision', 'settingsRevision', 'payload', 'createdAt', 'updatedAt'])
+        && d.schemaVersion is int && d.schemaVersion == 1
+        && validTournamentMembers(d.memberIds, d.ownerId)
+        && d.phase in ['LOBBY', 'ACTIVE', 'COMPLETED', 'ENDED_EARLY']
+        && (!(d.phase in ['ACTIVE', 'COMPLETED']) || d.memberIds.size() >= 2)
+        && d.activeBattles is map
+        && (d.phase == 'ACTIVE' || d.activeBattles.size() == 0)
+        && validTournamentBattles(d.activeBattles, d.memberIds)
+        && d.revision is int && d.revision >= 0 && d.revision <= 1000000
+        && d.settingsRevision is int && d.settingsRevision >= 0 && d.settingsRevision <= d.revision
+        && shortText(d.payload, 120000)
+        && d.createdAt is timestamp && d.updatedAt is timestamp && d.updatedAt == request.time;
+    }
+    function validTournamentTransition(before, after) {
+      return (before.phase == 'LOBBY' && after.phase in ['LOBBY', 'ACTIVE', 'ENDED_EARLY'])
+        || (before.phase == 'ACTIVE' && after.phase in ['ACTIVE', 'COMPLETED', 'ENDED_EARLY']);
+    }
+    function validTournamentAttendance(d) {
+      return d.keys().hasAll(['accepted', 'checkedIn', 'declined', 'settingsRevision', 'updatedAt'])
+        && d.keys().hasOnly(['accepted', 'checkedIn', 'declined', 'settingsRevision', 'updatedAt'])
+        && d.accepted is bool && d.checkedIn is bool && d.declined is bool
+        && !(d.accepted && d.declined) && (!d.checkedIn || (d.accepted && !d.declined))
+        && d.settingsRevision is int && d.settingsRevision >= 0 && d.settingsRevision <= 1000000
+        && d.updatedAt is timestamp && d.updatedAt == request.time;
+    }
+    function tournamentAttendanceOwner(id, playerId) {
+      let event = getAfter(tournament(id)).data;
+      return own(playerId) && playerId in event.memberIds && event.phase == 'LOBBY'
+        && request.resource.data.settingsRevision == event.settingsRevision;
+    }
+    function validTournamentPreparation(d, documentId) {
+      return d.keys().hasAll(['playerId', 'battleKey', 'ready', 'result', 'note', 'updatedAt'])
+        && d.keys().hasOnly(['playerId', 'battleKey', 'ready', 'result', 'note', 'updatedAt'])
+        && uid(d.playerId) && d.playerId == request.auth.uid
+        && d.battleKey is string && d.battleKey.matches('[A-Za-z0-9_-]{1,80}')
+        && documentId == d.battleKey + '_' + d.playerId
+        && d.ready is bool && d.result in ['NONE', 'WIN', 'LOSS', 'DRAW', 'DISPUTE']
+        && (d.result in ['NONE', 'DISPUTE'] || d.ready)
+        && d.note is string && d.note.size() <= 240
+        && d.updatedAt is timestamp && d.updatedAt == request.time;
+    }
+    function activeTournamentPlayer(id, d) {
+      let event = get(tournament(id)).data;
+      return tournamentMember(id) && event.phase == 'ACTIVE'
+        && d.battleKey in event.activeBattles
+        && request.auth.uid in event.activeBattles[d.battleKey];
+    }
+    match /tournaments/{id} {
+      // Missing gets support retry/transaction existence checks, without exposing any room.
+      allow get: if signedIn() && (!exists(tournament(id)) || request.auth.uid in resource.data.memberIds);
+      allow list: if signedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if signedIn() && id.matches('[A-Za-z0-9_-]{1,80}')
+        && validTournament(request.resource.data) && own(request.resource.data.ownerId)
+        && request.resource.data.phase == 'LOBBY' && request.resource.data.revision == 0
+        && request.resource.data.settingsRevision == 0
+        && request.resource.data.createdAt == request.time;
+      allow update: if own(resource.data.ownerId) && validTournament(request.resource.data)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1
+        && (request.resource.data.settingsRevision == resource.data.settingsRevision
+          || (resource.data.phase == 'LOBBY'
+            && request.resource.data.settingsRevision == resource.data.settingsRevision + 1))
+        && validTournamentTransition(resource.data, request.resource.data)
+        && (resource.data.phase == 'LOBBY'
+          ? request.resource.data.memberIds.toSet().hasAll(resource.data.memberIds)
+          : request.resource.data.memberIds == resource.data.memberIds);
+      allow delete: if false;
+      match /entrants/{playerId} {
+        allow get, list: if tournamentMember(id);
+        allow create, update: if tournamentAttendanceOwner(id, playerId)
+          && validTournamentAttendance(request.resource.data);
+        allow delete: if false;
+      }
+      match /preparations/{preparationId} {
+        allow get, list: if tournamentMember(id);
+        allow create: if signedIn() && validTournamentPreparation(request.resource.data, preparationId)
+          && activeTournamentPlayer(id, request.resource.data);
+        allow update: if signedIn() && validTournamentPreparation(request.resource.data, preparationId)
+          && request.resource.data.playerId == resource.data.playerId
+          && request.resource.data.battleKey == resource.data.battleKey
+          && activeTournamentPlayer(id, request.resource.data);
+        allow delete: if false;
       }
     }
     // Includes the obsolete unauthenticated pair-ID chat paths.

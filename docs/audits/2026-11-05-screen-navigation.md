@@ -292,6 +292,10 @@ inventory of dormant source, not a deletion list.
   [InstrumentCommand.kt:31–32](../../app/src/main/java/com/example/overdex/model/navigation/InstrumentCommand.kt#L31).
   Neither has an emitter or handler. They are not evidence of a broken current
   menu, because no current action emits them.
+  **Tournament follow-up, November 5:** `OpenTournament` now has a Battle →
+  Tournaments producer and a `tournaments` route. The private lobby/bracket is
+  implemented; see the [acceptance record](../verification/2026-11-05-tournaments.md).
+  The original finding remains applicable to `OpenFilterSettings`.
 - The shell accepts `onLaunchProbe`, `onLaunchObservatory`,
   `onLaunchMatchCalibration`, and `onFilterSettingsChange` at
   [ODXFiShell.kt:294–301](../../app/src/main/java/com/example/overdex/ui/ODXFi/ODXFiShell.kt#L294),
