@@ -26,6 +26,131 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastMoveUseInferenceTest {
+    @Test fun `three recorded Pixel Incinerate plateaus fuse despite two pixel end cap jitter without a known move`() {
+        for (reverseDelivery in listOf(false, true)) for ((index, fixture) in pixelIncineratePlateaus().withIndex()) {
+            val inference = startedInference()
+            val samples = fixture.articles("recorded-$index")
+            val outputs = (if (reverseDelivery) samples.reversed() else samples)
+                .flatMap { inference.accept(it) } + inference.flush()
+            val use = outputs.single()
+            assertEquals(fixture.lossAt, use.observedArticle.monotonicTimeNanos)
+            assertEquals("recorded-$index-loss", use.observedArticle.id.value)
+            assertTrue(use.predecessorIds.contains(ArticleId("recorded-$index-pulse")))
+            assertEquals(samples.map { it.id }.toSet(), use.predecessorIds.toSet())
+            assertTrue("HP_PLATEAU_CONTINUITY" in use.payload.evidenceKinds)
+            // The plateau and the changed percentage never create another use.
+            assertTrue(inference.flush().isEmpty())
+        }
+    }
+
+    @Test fun `a real later HP loss stays a separate hit even when the end caps also jitter`() {
+        val fixture = pixelIncineratePlateaus().first()
+        val inference = startedInference()
+        val nextAt = 176_409_000_000L
+        val samples = fixture.articles("actual-hit").map { a ->
+            val hp = a.payload as? com.example.overdex.battle.custody.ActiveHpBarMeasured
+            if (hp != null && a.monotonicTimeNanos!! >= nextAt) {
+                val inner = hp.barRight - hp.barLeft - 4
+                a.copy(payload = hp.copy(filledFraction = hp.filledFraction - 4f / inner))
+            } else a
+        } + article("next-real-loss", nextAt, ActiveHpBarDamageTickMeasured(
+            ActivePokemonSide.PLAYER, fixture.after, fixture.after - 4f / 189f, 4f / 189f))
+        val outputs = samples.sortedBy { it.monotonicTimeNanos }
+            .flatMap { inference.accept(it) } + inference.flush()
+        assertEquals(2, outputs.size)
+        val earlier = outputs.first { ArticleId("actual-hit-loss") in it.predecessorIds }
+        val later = outputs.first { ArticleId("next-real-loss") in it.predecessorIds }
+        assertNotEquals(earlier.payload.useId, later.payload.useId)
+        assertTrue(ArticleId("actual-hit-pulse") in later.predecessorIds)
+        assertTrue(ArticleId("next-real-loss") !in earlier.predecessorIds)
+    }
+
+    @Test fun `end cap compensation does not join relocated healing mismatched or missing endpoint evidence`() {
+        val fixture = pixelIncineratePlateaus().first()
+        for (mode in listOf("relocated", "healing", "wrong initial endpoint", "missing final endpoint",
+            "initial offset then drift")) {
+            val inference = startedInference()
+            val samples = fixture.articles("negative").mapNotNull { a ->
+                val hp = a.payload as? com.example.overdex.battle.custody.ActiveHpBarMeasured
+                    ?: return@mapNotNull a
+                val at = a.monotonicTimeNanos!!
+                if (mode == "missing final endpoint" && at > fixture.pulseAt - 200_000_000L)
+                    return@mapNotNull null
+                when {
+                    mode == "initial offset then drift" -> {
+                        // Both frames are within 1.5px of each other, but the
+                        // later edge is 2.8px from the measured damage endpoint.
+                        // Initial tolerance must not become another drift budget.
+                        val lossPixels = if (at == fixture.lossAt) 1.4f else 2.8f
+                        a.copy(payload = hp.copy(barLeft = 42, barRight = 235,
+                            filledFraction = fixture.after - lossPixels / 189f))
+                    }
+                    mode == "relocated" && at > fixture.lossAt ->
+                        a.copy(payload = hp.copy(barLeft = hp.barLeft + 3, barRight = hp.barRight + 3))
+                    mode == "healing" && at > fixture.lossAt ->
+                        a.copy(payload = hp.copy(filledFraction = hp.filledFraction + 3f / (hp.barRight - hp.barLeft - 4)))
+                    mode == "wrong initial endpoint" -> a.copy(payload = hp.copy(filledFraction = hp.filledFraction + .04f))
+                    else -> a
+                }
+            }
+            val outputs = samples.flatMap { inference.accept(it) } + inference.flush()
+            assertEquals(mode, 2, outputs.size)
+            assertEquals(setOf("negative-loss", "negative-pulse"), outputs.flatMap {
+                it.predecessorIds.map { id -> id.value }
+            }.toSet())
+            assertTrue(mode, outputs.none { "HP_PLATEAU_CONTINUITY" in it.payload.evidenceKinds })
+        }
+    }
+
+    private data class PixelPlateauSample(val at: Long, val fraction: Float, val left: Int, val right: Int)
+    private data class PixelIncineratePlateau(
+        val lossAt: Long, val pulseAt: Long, val before: Float, val after: Float,
+        val samples: List<PixelPlateauSample>,
+    ) {
+        fun articles(prefix: String): List<RealityArticle> = buildList {
+            add(RealityArticle(ArticleId("$prefix-loss"), lossAt / 1_000_000L, lossAt / 1_000_000L,
+                SourceId("recorded-plateau"), ActiveHpBarDamageTickMeasured(
+                    ActivePokemonSide.PLAYER, before, after, before - after), monotonicTimeNanos = lossAt))
+            samples.forEachIndexed { index, sample ->
+                add(RealityArticle(ArticleId("$prefix-hp-$index"), sample.at / 1_000_000L, sample.at / 1_000_000L,
+                    SourceId("recorded-plateau"), com.example.overdex.battle.custody.ActiveHpBarMeasured(
+                        ActivePokemonSide.PLAYER, sample.left, 780, sample.right, 798, sample.fraction, 672, 1419),
+                    monotonicTimeNanos = sample.at))
+            }
+            add(RealityArticle(ArticleId("$prefix-pulse"), pulseAt / 1_000_000L, pulseAt / 1_000_000L,
+                SourceId("recorded-plateau"), HpBarBorderPulse(ActivePokemonSide.PLAYER,
+                    ApertureStatus.PRESENT, .96f, 13), monotonicTimeNanos = pulseAt))
+        }.sortedBy { it.monotonicTimeNanos }
+    }
+
+    // Pixel 5486f7ad, 2026-11-06. Source times are relative to MatchRecordStarted;
+    // the fixture retains measured X bounds/fractions, while Y stays a valid bar.
+    private fun pixelIncineratePlateaus() = listOf(
+        PixelIncineratePlateau(175_869_597_311L, 176_751_447_035L, .90909094f, .8042328f, listOf(
+            PixelPlateauSample(175_869_597_311L, .8042328f, 42, 235),
+            PixelPlateauSample(176_126_000_000L, .8042328f, 42, 235),
+            PixelPlateauSample(176_221_000_000L, .8042328f, 42, 235),
+            PixelPlateauSample(176_409_000_000L, .8031915f, 43, 235),
+            PixelPlateauSample(176_564_000_000L, .8042328f, 42, 235),
+            PixelPlateauSample(176_751_447_035L, .8128342f, 42, 233))),
+        PixelIncineratePlateau(182_113_223_350L, 182_599_244_336L, .8031915f, .70212764f, listOf(
+            PixelPlateauSample(182_113_223_350L, .7037037f, 42, 235),
+            PixelPlateauSample(182_257_000_000L, .70212764f, 43, 235),
+            PixelPlateauSample(182_428_000_000L, .7037037f, 42, 235),
+            PixelPlateauSample(182_485_000_000L, .7074468f, 42, 234),
+            PixelPlateauSample(182_599_244_336L, .7112299f, 42, 233))),
+        PixelIncineratePlateau(187_833_249_805L, 188_823_943_758L, .7089947f, .6137566f, listOf(
+            PixelPlateauSample(187_833_249_805L, .6137566f, 42, 235),
+            PixelPlateauSample(188_010_000_000L, .6137566f, 42, 235),
+            PixelPlateauSample(188_166_000_000L, .61170214f, 43, 235),
+            PixelPlateauSample(188_211_000_000L, .61170214f, 43, 235),
+            PixelPlateauSample(188_351_000_000L, .6137566f, 42, 235),
+            PixelPlateauSample(188_403_000_000L, .6137566f, 42, 235),
+            PixelPlateauSample(188_589_000_000L, .6137566f, 42, 235),
+            PixelPlateauSample(188_652_000_000L, .6137566f, 42, 235),
+            PixelPlateauSample(188_823_943_758L, .62234044f, 41, 233))),
+    )
+
     @Test fun `recorded Golbat plateau stutter belongs to first hit while next HP decrease stays separate`() {
         // Moondrop b933d564, +21.667/+21.941/+22.223s. The middle onset
         // flashes on the same HP plateau; the last loss is distinct raw evidence.

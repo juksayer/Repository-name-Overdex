@@ -440,14 +440,25 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             samples.zipWithNext().any { (a, b) -> b.monotonicTimeNanos!! - a.monotonicTimeNanos!! > MAX_PLATEAU_GAP_NANOS }) return null
         val first = samples.first().payload as ActiveHpBarMeasured
         if (first.sourceWidth == null) return null
+        val firstWidth = first.barRight - first.barLeft
+        val firstInset = max(2, firstWidth / 80)
+        val firstInner = firstWidth - 2 * firstInset
+        if (firstInner <= 0 || abs(first.filledFraction - damage.afterFraction) * firstInner > 1.5f)
+            return null
+        val filledEdge = first.barLeft + firstInset + damage.afterFraction * firstInner
         if (samples.any { sample ->
                 val hp = sample.payload as ActiveHpBarMeasured
                 val width = hp.barRight - hp.barLeft
-                val inner = width - 2 * max(2, width / 80)
+                val inset = max(2, width / 80)
+                val inner = width - 2 * inset
+                // A two-pixel end-cap shift changes the denominator while the
+                // physical filled edge can stay exactly still. Compare that
+                // edge, retaining the same bounded geometry and pixel limits.
+                val currentFilledEdge = hp.barLeft + inset + hp.filledFraction * inner
                 inner <= 0 || width.toFloat() / (hp.barBottom - hp.barTop) !in 6f..30f ||
                     hp.sourceWidth != first.sourceWidth || hp.sourceHeight != first.sourceHeight ||
                     abs(hp.barLeft - first.barLeft) > 2 || abs(hp.barRight - first.barRight) > 2 ||
-                    abs(hp.filledFraction - damage.afterFraction) * inner > 1.5f
+                    abs(currentFilledEdge - filledEdge) > 1.5f
             }) return null
         return samples.map { UseEvidence(it, "HP_PLATEAU_CONTINUITY", 0f) }
     }
