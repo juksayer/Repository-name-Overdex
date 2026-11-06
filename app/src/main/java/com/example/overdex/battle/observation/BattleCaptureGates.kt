@@ -33,14 +33,17 @@ class TeamResourceSnapshotGate(
     private var scope: CoroutineScope? = null
     private val remainingByCrop = cropNames.associateWith { 0 }.toMutableMap()
     private val criticalHpSides = mutableSetOf<ActivePokemonSide>()
+    private val lastHpSampleAtBySide = mutableMapOf<ActivePokemonSide, Long>()
+    private val speciesAtBySide = mutableMapOf<ActivePokemonSide, Long>()
     private var faintWatchUntil = Long.MIN_VALUE
     private var resourceWatchUntil = Long.MIN_VALUE
     private val speciesBySide = mutableMapOf<ActivePokemonSide, String>()
+    private var ended = false
 
     @Synchronized fun isEnabled(cropName: String): Boolean =
-        remainingByCrop.getOrDefault(cropName, 0) > 0 ||
+        !ended && (remainingByCrop.getOrDefault(cropName, 0) > 0 ||
             (cropName in cropNames && now() < resourceWatchUntil) ||
-            (cropName in pokeBallCropNames && now() < faintWatchUntil)
+            (cropName in pokeBallCropNames && now() < faintWatchUntil))
 
     @Synchronized fun captured(cropName: String) {
         val remaining = remainingByCrop.getOrDefault(cropName, 0)
@@ -62,25 +65,34 @@ class TeamResourceSnapshotGate(
     }
 
     /** Entry/faint animations can hide a badge for the first two frames. */
-    @Synchronized internal fun requestFaintWatch() {
+    @Synchronized internal fun requestFaintWatch(observedAt: Long = now()) {
         requestPokeBallSnapshot()
-        faintWatchUntil = now() + 3_000_000_000L
+        faintWatchUntil = maxOf(faintWatchUntil, observedAt + FAINT_WATCH_NANOS)
     }
 
-    @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String) {
+    @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String, observedAt: Long = now()) {
+        if (ended || speciesAtBySide[side]?.let { observedAt < it } == true) return
+        speciesAtBySide[side] = observedAt
         val previous = speciesBySide.put(side, species)
         if (!species.equals(previous, ignoreCase = true)) {
+            criticalHpSides -= side
+            lastHpSampleAtBySide[side] = maxOf(lastHpSampleAtBySide[side] ?: Long.MIN_VALUE, observedAt)
             requestResourceWatch()
             requestFaintWatch()
         }
     }
 
-    /** Red HP is an early warning. A later ball-count decrease remains the faint evidence. */
-    @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, filledFraction: Float) {
+    /** Fresh red HP keeps observation available; only a later ball decrease establishes a faint. */
+    @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, filledFraction: Float, observedAt: Long = now()) {
+        val current = now()
+        if (ended || !filledFraction.isFinite() || filledFraction !in 0f..1f ||
+            observedAt > current || current - observedAt >= FAINT_WATCH_NANOS ||
+            lastHpSampleAtBySide[side]?.let { observedAt <= it } == true) return
+        lastHpSampleAtBySide[side] = observedAt
         when {
-            side !in criticalHpSides && filledFraction <= CRITICAL_HP_FRACTION -> {
-                criticalHpSides += side
-                requestFaintWatch()
+            filledFraction <= CRITICAL_HP_FRACTION -> {
+                if (criticalHpSides.add(side)) requestFaintWatch(observedAt)
+                else faintWatchUntil = maxOf(faintWatchUntil, observedAt + FAINT_WATCH_NANOS)
             }
             side in criticalHpSides && filledFraction >= CRITICAL_HP_REARM_FRACTION -> {
                 criticalHpSides -= side
@@ -98,6 +110,7 @@ class TeamResourceSnapshotGate(
 
     override fun start(match: Match) {
         if (scope != null) return
+        synchronized(this) { clearPending(); ended = false }
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
             gateScope.launch {
                 match.articles.collect { article ->
@@ -108,8 +121,10 @@ class TeamResourceSnapshotGate(
                         ) { requestResourceWatch(); requestFaintWatch() }
                         is MatchStarted -> { requestResourceWatch(); requestFaintWatch() }
                         com.example.overdex.battle.custody.ChargeMoveUsedAnnounced -> requestResourceWatch()
-                        is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName)
-                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction)
+                        is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName,
+                            article.monotonicTimeNanos ?: now())
+                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction,
+                            article.monotonicTimeNanos ?: now())
                         is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction)
                         is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty() && payload.cueKind != "FAST_MOVE_IMPACT") {
                             requestFaintWatch()
@@ -118,7 +133,7 @@ class TeamResourceSnapshotGate(
                             payload.status == "OPENED" &&
                             payload.reason in setOf("ENTRY", "SWITCH", "FAINT")
                         ) { requestResourceWatch(); requestFaintWatch() }
-                        is MatchEnded -> clearPending()
+                        is MatchEnded -> observeMatchEnded()
                     }
                 }
             }
@@ -128,12 +143,19 @@ class TeamResourceSnapshotGate(
     override fun stop() {
         scope?.cancel("Resource snapshot gate stopped")
         scope = null
+        observeMatchEnded()
+    }
+
+    @Synchronized internal fun observeMatchEnded() {
+        ended = true
         clearPending()
     }
 
     @Synchronized private fun clearPending() {
         remainingByCrop.keys.forEach { remainingByCrop[it] = 0 }
         criticalHpSides.clear()
+        lastHpSampleAtBySide.clear()
+        speciesAtBySide.clear()
         speciesBySide.clear()
         faintWatchUntil = Long.MIN_VALUE
         resourceWatchUntil = Long.MIN_VALUE
@@ -143,6 +165,7 @@ class TeamResourceSnapshotGate(
         const val REQUIRED_SAMPLES = 2
         const val CRITICAL_HP_FRACTION = 0.20f
         const val CRITICAL_HP_REARM_FRACTION = 0.24f
+        const val FAINT_WATCH_NANOS = 3_000_000_000L
     }
 }
 
