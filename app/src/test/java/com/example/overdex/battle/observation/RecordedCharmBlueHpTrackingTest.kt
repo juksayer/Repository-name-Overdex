@@ -141,7 +141,10 @@ class RecordedCharmBlueHpTrackingTest {
                 when {
                     (y == 40 || y == 50) && x in 20 until (if (cropped) 240 else 220) -> 0xff3388ee.toInt()
                     (x == 20 || x == rightCap) && y in 40..50 -> 0xff3388ee.toInt()
-                    x in 23 until fillEnd && y in 42 until 49 -> 0xff1effbc.toInt()
+                    // A genuine 7%-remaining bar is red. Keeping it green would
+                    // contradict the endpoint and model an obscured fragment.
+                    x in 23 until fillEnd && y in 42 until 49 ->
+                        if (fillEnd <= 36) 0xffee3540.toInt() else 0xff1effbc.toInt()
                     else -> 0xff182825.toInt()
                 }
             }

@@ -115,7 +115,8 @@ essential; this recording does **not** establish a performance improvement from
 the new policy.
 
 Species-location evidence is collected separately by a read-only archive analysis
-utility. Device/source dimensions, exact available crop provenance, species/form,
+utility, [profile_hp_locations.py](../../scripts/analysis/README.md). Source
+dimensions, exact available crop provenance, species/form,
 side, observed extents, modal bins and cited Articles remain associated. Unknown
 battle phase is not relabeled ordinary home, and stale/conflicting identity is
 excluded. These records are reviewable hints, not automatically applied device
@@ -128,8 +129,10 @@ and Android-test APKs build successfully. Thirteen acquisition regressions cover
 centered/off-center discovery, provisional lock rejection, species/reset/resize,
 camera movement, ownership, obstruction and existing recorded-source pixels.
 The diagnostic tests retain cache, old-frame, source-clock and recovery-boundary
-checks with the new search order. Emulator and installation results follow in
-the subsequent color/occlusion validation.
+checks with the new search order. The subsequent
+[color/occlusion validation](2026-11-07-hp-fill-consistency.md) records all 1,922
+final unit tests, four emulator checks and verified Moondrop installation.
+
 Fresh battle acceptance still requires a recording of the new build, comparing
 ordinary-play recovery frequency, geometry CPU and accepted readings. No live
 accuracy or throughput improvement is claimed from a build or generated fixture.

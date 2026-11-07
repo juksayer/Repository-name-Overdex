@@ -74,7 +74,12 @@ windows. All 1,917 unit tests and both APK builds pass. Species-specific locatio
 evidence is collected separately as reviewable records, without applying unknown
 camera phases as home-position presets. The video also exposes countdown-digit
 occlusion and missing GO/charged-phase recognition, so overall battle accuracy
-remains open. Fresh post-change live measurements, rather than the old Sierra or
+remains open. [HP fill consistency checks](../verification/2026-11-07-hp-fill-consistency.md)
+now reject substantial interrupted fill under every outline color and obviously
+low endpoints whose fill remains overwhelmingly green. They abstain rather than
+guess hidden HP. All 1,922 unit tests, 17 host profile checks and four emulator
+integration checks pass; the tested build is installed on the Moondrop with user
+data preserved. Fresh post-change live measurements, rather than the old Sierra or
 pre-change profiled match, must establish any speedup. Shell appearance remains
 deferred.
 

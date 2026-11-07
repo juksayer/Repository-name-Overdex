@@ -171,7 +171,8 @@ class ActiveHpBarMeasurerTest {
             when {
                 x in 20 until 220 && (y in 40..42 || y in 60..62) -> 0xffff8a20.toInt()
                 (x in 20..22 || x in 217..219) && y in 40..62 -> 0xffff8a20.toInt()
-                x in 23 until 72 && y in 44..58 -> 0xff1effbc.toInt()
+                // At a quarter full the remaining HP is yellow, not green.
+                x in 23 until 72 && y in 44..58 -> 0xfff7ee59.toInt()
                 x in 72 until 145 && y in 44..58 -> 0xffff8a20.toInt()
                 else -> 0xff182825.toInt()
             }
@@ -194,6 +195,58 @@ class ActiveHpBarMeasurerTest {
             }.singleOrNull()
             assertNotNull(result)
             assertEquals(0.20f, result!!.filledFraction, 0.03f)
+        }
+    }
+
+    @Test
+    fun `countdown or pointer interruption cannot turn green fill into a shortened endpoint for any outline`() {
+        for (outline in listOf(0xffeeeeee.toInt(), 0xffff8a20.toInt(), 0xff3388ee.toInt())) {
+            // The first gap reproduces a short left fragment. The second leaves
+            // more than 35% visible, proving continuity is checked independently
+            // of the low-green contradiction guard.
+            for (gap in listOf(65..94, 130..150)) {
+                val bars = syntheticBar(outline = outline, fillEnd = 214, gap = gap)
+                assertTrue("An interrupted green fill is unreadable: outline=$outline gap=$gap", bars.isEmpty())
+            }
+        }
+    }
+
+    @Test
+    fun `separated low hp fill segments remain unreadable for every outline color`() {
+        for (outline in listOf(0xffeeeeee.toInt(), 0xffff8a20.toInt(), 0xff3388ee.toInt())) {
+            for (fill in listOf(0xfff7ee59.toInt(), 0xffee3540.toInt())) {
+                assertTrue(syntheticBar(outline = outline, fillEnd = 72, gap = 38..45) { fill }.isEmpty())
+            }
+        }
+    }
+
+    @Test
+    fun `a continuous strongly green low endpoint is rejected without inventing a corrected fraction`() {
+        for (outline in listOf(0xffeeeeee.toInt(), 0xffff8a20.toInt(), 0xff3388ee.toInt())) {
+            for (fillEnd in listOf(36, 72, 88)) {
+                assertTrue("Low green fragment cannot establish HP: outline=$outline end=$fillEnd",
+                    syntheticBar(outline = outline, fillEnd = fillEnd).isEmpty())
+            }
+        }
+    }
+
+    @Test
+    fun `marginal and mixed transition colors do not become color inferred hp`() {
+        // The guard deliberately leaves a margin below the green/yellow colour
+        // transition rather than turning that transition into an exact HP rule.
+        val marginal = syntheticBar(fillEnd = 100).single()
+        assertEquals(.40f, marginal.filledFraction, .03f)
+        val mixed = syntheticBar(fillEnd = 72) { x ->
+            if (x < 46) 0xff1effbc.toInt() else 0xfff7ee59.toInt()
+        }.single()
+        assertEquals(.25f, mixed.filledFraction, .03f)
+    }
+
+    @Test
+    fun `small compression gaps still preserve a continuous readable endpoint`() {
+        for (outline in listOf(0xffeeeeee.toInt(), 0xffff8a20.toInt(), 0xff3388ee.toInt())) {
+            val bar = syntheticBar(outline = outline, fillEnd = 150, gap = 75..76).single()
+            assertEquals(.65f, bar.filledFraction, .03f)
         }
     }
 
@@ -267,5 +320,19 @@ class ActiveHpBarMeasurerTest {
         requireNotNull(appearance)
         assertTrue(appearance.orangeFraction > 0.95f)
         assertTrue(appearance.whiteFraction < 0.01f)
+    }
+
+    private fun syntheticBar(
+        outline: Int = 0xffeeeeee.toInt(),
+        fillEnd: Int,
+        gap: IntRange = IntRange.EMPTY,
+        fill: (Int) -> Int = { 0xff1effbc.toInt() },
+    ): List<ActiveHpBarMeasurement> = ActiveHpBarMeasurer.measureAll(240, 120, 200) { x, y ->
+        when {
+            (y == 40 || y == 62) && x in 20 until 220 -> outline
+            (x == 20 || x == 219) && y in 40..62 -> outline
+            x in 23 until fillEnd && x !in gap && y in 44..58 -> fill(x)
+            else -> 0xff182825.toInt()
+        }
     }
 }

@@ -340,8 +340,7 @@ internal object ActiveHpBarMeasurer {
                     colorMask = top.colorMask,
                 )
                 if (edgeSupport < MIN_VERTICAL_EDGE_SUPPORT) continue
-                measureFill(left, top.y, right, bottom.y, width, pixelAt,
-                    requireContinuousFill = top.colorMask == 8)?.let { measurement ->
+                measureFill(left, top.y, right, bottom.y, width, pixelAt)?.let { measurement ->
                     val widthRatio = measurement.width.toFloat() / (expectedBarWidth ?: width)
                     val targetWidthRatio = if (expectedBarWidth != null) 1f else EXPECTED_WIDTH_RATIO
                     val widthScore = (1f - abs(widthRatio - targetWidthRatio) / WIDTH_RATIO_TOLERANCE)
@@ -433,7 +432,6 @@ internal object ActiveHpBarMeasurer {
         bottom: Int,
         cropWidth: Int,
         pixelAt: HpPixels,
-        requireContinuousFill: Boolean,
     ): ActiveHpBarMeasurement? {
         val inset = max(2, (right - left) / 80)
         val innerLeft = left + inset
@@ -446,13 +444,23 @@ internal object ActiveHpBarMeasurer {
         if (innerRight - innerLeft < 24 || innerBottom - innerTop < 3) return null
 
         val requiredFilledRows = max(2, (innerBottom - innerTop + 1) / 2)
+        var filledColumnCount = 0
+        var greenFilledColumnCount = 0
         val filledColumns = BooleanArray(innerRight - innerLeft) { index ->
             val x = innerLeft + index
             var filledRows = 0
+            var greenRows = 0
             for (y in innerTop until innerBottom) {
-                if (isSaturatedFill(pixelAt(x, y))) filledRows++
+                val flags = pixelAt(x, y)
+                if (isSaturatedFill(flags)) filledRows++
+                if (isGreenFill(flags)) greenRows++
             }
-            filledRows >= requiredFilledRows
+            (filledRows >= requiredFilledRows).also { filled ->
+                if (filled) {
+                    filledColumnCount++
+                    if (greenRows >= requiredFilledRows) greenFilledColumnCount++
+                }
+            }
         }
         val firstFilledIndex = filledColumns.indexOfFirst { it }
         if (firstFilledIndex < 0) return null
@@ -472,17 +480,24 @@ internal object ActiveHpBarMeasurer {
             }
         }
         val minimumFilledWidth = max(4, filledColumns.size / 40)
-        // A blue pulse/overlay can interrupt the green interior. If another
+        // A countdown, pointer, or pulse can interrupt any outline's interior. If another
         // substantial fill segment continues beyond that hole, the left fragment
         // is not a valid HP endpoint. Abstain instead of bridging unseen pixels
         // or publishing a large, false loss from the shortened fragment.
-        if (requireContinuousFill && longestRun(lastFilledIndex + 1, filledColumns.size) {
+        if (longestRun(lastFilledIndex + 1, filledColumns.size) {
                 filledColumns[it]
             } >= minimumFilledWidth) return null
         val filledWidth = lastFilledIndex - firstFilledIndex + 1
         if (filledWidth < minimumFilledWidth) return null
 
         val fraction = ((lastFilledIndex + 1).toFloat() / filledColumns.size).coerceIn(0f, 1f)
+        // A short, overwhelmingly green fragment contradicts a low-HP endpoint.
+        // Keep a broad margin below the green/yellow transition and require
+        // strong agreement across filled interior columns, so mixed transition
+        // colours do not become a new colour-derived HP estimate. Only abstain;
+        // the unseen remainder must never be reconstructed from its colour.
+        if (fraction <= MAX_GREEN_LOW_HP_FRACTION &&
+            greenFilledColumnCount >= filledColumnCount * MIN_GREEN_COLUMN_FRACTION) return null
         val outlineCoverage = (right - left).toFloat() / cropWidth
         val confidence = (0.62f + (outlineCoverage.coerceAtMost(1f) * 0.20f) +
             (filledWidth.toFloat() / filledColumns.size * 0.18f)).coerceIn(0f, 1f)
@@ -536,7 +551,8 @@ internal object ActiveHpBarMeasurer {
                 val yellow = r >= 145 && g >= 145 && b <= 135 && abs(r - g) <= 55
                 val red = r >= 145 && g <= 130 && b <= 145 && r - g >= 65
                 flags[i] = ((if (neutral) 1 else 0) or (if (orange) 2 else 0) or (if (blueOutline) 8 else 0) or
-                    (if ((green || yellow || red) && !orange) 4 else 0)).toByte()
+                    (if ((green || yellow || red) && !orange) 4 else 0) or
+                    (if (green && !orange) 16 else 0)).toByte()
             }
         }
         operator fun invoke(x: Int, y: Int): Int = flags[y * width + x].toInt()
@@ -544,7 +560,10 @@ internal object ActiveHpBarMeasurer {
 
     private fun isTrackableOutline(flags: Int) = flags and 11 != 0
     private fun isSaturatedFill(flags: Int) = flags and 4 != 0
+    private fun isGreenFill(flags: Int) = flags and 16 != 0
 
+    private const val MAX_GREEN_LOW_HP_FRACTION = .35f
+    private const val MIN_GREEN_COLUMN_FRACTION = .90f
     private const val EDGE_SEARCH_RADIUS = 3
     private const val MIN_EDGE_MARGIN_PX = 2
     private const val MIN_VERTICAL_EDGE_SUPPORT = 0.55f
