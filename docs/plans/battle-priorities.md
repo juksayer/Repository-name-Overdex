@@ -49,6 +49,16 @@ are starting points; a task is not complete merely because a class or test exist
 Next substantial slice: species/form preservation and the paired-match Fast Move
 audit (orders 1–2). Finish and measure one bounded change before adding readers.
 
+November 7 HP pipeline progress: [stage diagnostics](../verification/2026-11-07-hp-observation-diagnostics.md)
+now separate successful feed publication, enabled/disabled HP reader receipt,
+locator outcomes, Custody submission, and actual Timeline append. Bounded,
+bitmap-free counters produce five-second and terminal summaries without changing
+source times or inventing attacks. All 1,877 unit tests and 14 emulator checks pass;
+the tested build is installed on the Moondrop. Next acceptance is one short real
+controlled battle to locate the delay or observation gap before tuning recognition.
+This is diagnostic implementation, not a claimed
+Fast Move accuracy or speed improvement. Shell appearance remains deferred.
+
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.
 Recorded checks preserve the supported identities, but Turtonator's early

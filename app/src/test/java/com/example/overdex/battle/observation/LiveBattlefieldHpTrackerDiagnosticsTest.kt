@@ -1,0 +1,165 @@
+package com.example.overdex.battle.observation
+
+import com.example.overdex.battle.custody.ActivePokemonSide
+import com.example.overdex.data.BattleCalibration
+import org.junit.Assert.*
+import org.junit.Test
+
+class LiveBattlefieldHpTrackerDiagnosticsTest {
+    private val player = ActivePokemonSide.PLAYER
+    private val opponent = ActivePokemonSide.OPPONENT
+    private val regions = mapOf(
+        player to BattleCropBounds(35, 367, 241, 1080),
+        opponent to BattleCropBounds(312, 381, 576, 863),
+    )
+
+    @Test fun `shared source timestamp returns the same measurement and outcome without rescanning`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val bars = listOf(bar(40), bar(400))
+        val first = tracker.read(0, scan = { bars })
+        val second = tracker.read(0, scan = { error("A second witness must reuse the pass") })
+
+        assertSame(first, second)
+        assertEquals(mapOf(player to bars[0], opponent to bars[1]), first.measurements)
+        assertEquals(setOf(HpBarLocatorOutcome.FOUND), first.outcomes.values.toSet())
+    }
+
+    @Test fun `older source records out of order without replacing the latest shared result`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val latest = tracker.read(500_000_000, scan = { listOf(bar(40), bar(400)) })
+        val old = tracker.read(499_999_999, scan = { error("Old frames cannot rewind the tracker") })
+
+        assertTrue(old.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.OUT_OF_ORDER_FRAME), old.outcomes.values.toSet())
+        assertSame(latest, tracker.read(500_000_000, scan = { error("Latest result must remain cached") }))
+    }
+
+    @Test fun `initial missing calibration does not scan or claim missing bars`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val result = tracker.read(0, regionMap = mapOf(player to regions.getValue(player)),
+            scan = { error("Invalid calibration must not scan") })
+
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.INVALID_CALIBRATION), result.outcomes.values.toSet())
+    }
+
+    @Test fun `no candidates and a deferred recovery search remain different facts`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val scanned = mutableListOf<BattleCropBounds>()
+        val scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement> = { scanned += it; emptyList() }
+
+        assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), tracker.read(0, scan = scan).outcomes.values.toSet())
+        assertEquals(listOf(BattleCropBounds(0, 367, 672, 1080)), scanned)
+        val deferred = tracker.read(249_999_999, scan = scan)
+        assertEquals(setOf(HpBarLocatorOutcome.RECOVERY_SCAN_THROTTLED), deferred.outcomes.values.toSet())
+        assertEquals("No extra pixel scan before the existing 250 ms boundary", 1, scanned.size)
+        assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), tracker.read(250_000_000, scan = scan).outcomes.values.toSet())
+        assertEquals(2, scanned.size)
+    }
+
+    @Test fun `tracked sides still scan in their existing local windows before wide recovery`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val bars = listOf(bar(40), bar(400))
+        tracker.read(0, scan = { bars })
+        val windows = BattlefieldHpTracker().also { it.assign(672, 0, regions, bars) }
+            .trackingWindows(672, regions)
+        val scanned = mutableListOf<BattleCropBounds>()
+        val result = tracker.read(33_000_000, scan = { bounds ->
+            scanned += bounds
+            bars.filter { it.left >= bounds.left && it.right <= bounds.right }
+        })
+
+        assertEquals(windows, scanned)
+        assertEquals(mapOf(player to bars[0], opponent to bars[1]), result.measurements)
+        assertEquals(setOf(HpBarLocatorOutcome.FOUND), result.outcomes.values.toSet())
+    }
+
+    @Test fun `observable filtering preserves raw candidates for the obscured diagnostic`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        val result = tracker.read(0, scan = { listOf(bar(40), bar(400)) }, canObserve = { false })
+
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.OBSCURED_CANDIDATES), result.outcomes.values.toSet())
+    }
+
+    @Test fun `a lone centered bar remains unassigned instead of acquiring an invented owner`() {
+        val centered = bar(240)
+        val result = LiveBattlefieldHpTracker(BattleCalibration()).read(0, scan = { listOf(centered) })
+
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.UNASSIGNED_CANDIDATES), result.outcomes.values.toSet())
+    }
+
+    @Test fun `observable unowned geometry prevents claiming that obstruction explains a side`() {
+        val hidden = bar(40)
+        val unowned = bar(240)
+        val result = LiveBattlefieldHpTracker(BattleCalibration()).read(0,
+            scan = { listOf(hidden, unowned) }, canObserve = { it != hidden })
+
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.UNASSIGNED_CANDIDATES), result.outcomes.values.toSet())
+    }
+
+    @Test fun `different vertical bands allow one found and one obscured result without guessing ownership`() {
+        val separateBands = mapOf(
+            player to BattleCropBounds(35, 367, 241, 550),
+            opponent to BattleCropBounds(312, 570, 576, 863),
+        )
+        val own = bar(40).copy(top = 400, bottom = 417)
+        val enemy = bar(400)
+        val result = LiveBattlefieldHpTracker(BattleCalibration()).read(0, regionMap = separateBands,
+            scan = { listOf(own, enemy) }, canObserve = { it != enemy })
+
+        assertEquals(mapOf(player to own), result.measurements)
+        assertEquals(HpBarLocatorOutcome.FOUND, result.outcomes[player])
+        assertEquals(HpBarLocatorOutcome.OBSCURED_CANDIDATES, result.outcomes[opponent])
+    }
+
+    @Test fun `wide recovery diagnostics describe the candidates used for the final assignment`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        tracker.read(0, scan = { listOf(bar(40), bar(400)) })
+        val scanned = mutableListOf<BattleCropBounds>()
+        val result = tracker.read(250_000_000, scan = { bounds ->
+            scanned += bounds
+            if (bounds.left == 0 && bounds.right == 672) emptyList() else listOf(bar(240))
+        })
+
+        assertEquals(3, scanned.size)
+        assertEquals(BattleCropBounds(0, 367, 672, 1080), scanned.last())
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
+    }
+
+    @Test fun `resetting a combatant invalidates cached diagnostics and preserves recovery timing behavior`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        tracker.read(0, scan = { listOf(bar(40), bar(400)) })
+        tracker.reset(player)
+        val scanned = mutableListOf<BattleCropBounds>()
+        val result = tracker.read(0, scan = { bounds -> scanned += bounds; emptyList() })
+
+        assertEquals("Remaining local lock then immediate wide recovery after reset", 2, scanned.size)
+        assertTrue(result.measurements.isEmpty())
+        assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
+    }
+
+    @Test fun `frame size change clears locks and scans the new full calibrated band`() {
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration())
+        tracker.read(0, scan = { listOf(bar(40), bar(400)) })
+        val scanned = mutableListOf<BattleCropBounds>()
+        val result = tracker.read(33_000_000, width = 700,
+            scan = { bounds -> scanned += bounds; emptyList() })
+
+        assertEquals(listOf(BattleCropBounds(0, 367, 700, 1080)), scanned)
+        assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
+    }
+
+    private fun LiveBattlefieldHpTracker.read(
+        at: Long,
+        width: Int = 672,
+        regionMap: Map<ActivePokemonSide, BattleCropBounds> = regions,
+        scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement>,
+        canObserve: (ActiveHpBarMeasurement) -> Boolean = { true },
+    ) = measureFrameWithDiagnostics(width, 1493, at, { regionMap }, scan, canObserve)
+
+    private fun bar(left: Int) = ActiveHpBarMeasurement(left, 600, left + 192, 617, .8f, .95f)
+}

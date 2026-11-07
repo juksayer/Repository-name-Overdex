@@ -537,7 +537,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     }
                     DroidballOverlayPresentation.showAcceptedTeamSelect()
                 }
-                if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed")
+                if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed",
+                    awaitAcceptedEvidence = true, releaseAfterArchive = false)
                 // Result music and OCR can arrive seconds apart. Preserve late comparisons
                 // in the same completed archive instead of losing them after the first save.
                 if ((article.payload is com.example.overdex.battle.custody.MatchResultMusicMeasured ||
@@ -1236,8 +1237,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         _frameCount.value = match.frameCount
                     }
                     is DroidballSignal.Stopped -> {
-                        _activeMatch.value?.let { retainAndArchiveMatch(it, "capture stopped") }
-                        _deploymentState.value = InstrumentDeploymentState.IDLE
+                        // Unexpected projection/service termination must take the
+                        // same observer flush and archive drain as an explicit Stop.
+                        stopObservation(automaticReason = "capture stopped")
                     }
                     is DroidballSignal.Error -> {
                         Log.e("DROIDBALL_SERVICE", "Error: ${signal.message}")
@@ -1332,8 +1334,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     }
                     is DroidballSignal.BeginNextMatch -> {
                         if (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.RESULT) {
+                            observationDispatcher.stopAll()
+                            retainAndArchiveMatch(match, "next match", awaitAcceptedEvidence = true)
                             session.end()
-                            match.release()
                             startFreshMatch(resultCode, data, startCaptureService = false)
                         }
                     }
@@ -1343,10 +1346,9 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                         // A manual boundary saves an incomplete match honestly when result OCR
                         // was missed. Reuse the live projection, never its token for a new display.
                         observationDispatcher.stopAll()
-                        retainAndArchiveMatch(match, "next match requested")
+                        retainAndArchiveMatch(match, "next match requested", awaitAcceptedEvidence = true)
                         fieldTeamEditor.close()
                         session.end()
-                        match.release()
                         startFreshMatch(resultCode, data, startCaptureService = false)
                     }
                 }
@@ -1386,14 +1388,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun retainAndArchiveMatch(match: Match, reason: String, awaitAcceptedEvidence: Boolean = false) {
+    private fun retainAndArchiveMatch(
+        match: Match, reason: String, awaitAcceptedEvidence: Boolean = false,
+        releaseAfterArchive: Boolean = awaitAcceptedEvidence,
+    ) {
         if (!retainedMatchIds.add(match.matchId)) {
             if (awaitAcceptedEvidence) {
                 // A result may have saved this Match while the surrounding
                 // session stayed open. Refresh that same archive after draining
                 // the final evidence/stop reason; do not add another ledger entry.
                 archiveCompletedMatch(MatchArchiveSource(MatchId(match.matchId), match.realityTimeline),
-                    reason, match)
+                    reason, match, releaseAfterArchive)
             }
             return
         }
@@ -1410,14 +1415,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             _latestMatchArchiveSource.value = source
             summaryHandoff.offer(source)
         }
-        archiveCompletedMatch(source, reason, if (awaitAcceptedEvidence) match else null)
+        archiveCompletedMatch(source, reason, if (awaitAcceptedEvidence) match else null, releaseAfterArchive)
     }
 
-    private fun archiveCompletedMatch(source: MatchArchiveSource, reason: String, drainingMatch: Match? = null) {
+    private fun archiveCompletedMatch(
+        source: MatchArchiveSource, reason: String, drainingMatch: Match? = null,
+        releaseDrainingMatch: Boolean = true,
+    ) {
         archiveScope.launch {
             runCatching {
-                // Capture stops immediately. Before taking the archive snapshot,
-                // let already-accepted testimony and the automatic-stop reason
+                // Before taking the archive snapshot, let already-accepted
+                // testimony (including any final diagnostic or stop reason)
                 // finish publishing on Match's separate serial dispatcher.
                 if (drainingMatch != null) kotlinx.coroutines.withTimeout(30_000L) {
                     drainingMatch.awaitAcceptedEvidencePublished()
@@ -1436,7 +1444,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     // Summary/ledger readers retain the Timeline, not its worker.
                     // Accepted evidence is drained and durable; close the idle
                     // Match executor instead of keeping it alive after auto-stop.
-                    drainingMatch?.release()
+                    if (releaseDrainingMatch) drainingMatch?.release()
                     archiveDirectoryManager.deleteMatchCheckpoint(source.matchId)
                     runCatching {
                         val entry = archiveDirectoryManager.listArchives().firstOrNull { it.uri == uri }
@@ -1503,7 +1511,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 System.currentTimeMillis(), 1f, emptyList(), System.nanoTime()
             )
             retainAndArchiveMatch(match, automaticReason ?: "Droidball stopped",
-                awaitAcceptedEvidence = automaticReason != null)
+                awaitAcceptedEvidence = true)
         }
         _droidballSession.value?.end()
         _droidballSession.value = null

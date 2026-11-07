@@ -220,6 +220,18 @@ object RealityArticleArchiveMapper {
                 visibleCount = p.visibleCount,
                 maximumCount = p.maximumCount
             )
+            is com.example.overdex.battle.custody.HpObservationPipelineMeasured -> ArchivedHpObservationPipelineMeasured(
+                windowStartedAtNanos = p.windowStartedAtNanos,
+                windowEndedAtNanos = p.windowEndedAtNanos,
+                reason = p.reason,
+                histogramUpperBoundsNanos = p.histogramUpperBoundsNanos,
+                window = p.window,
+                cumulative = p.cumulative,
+                pendingSubmissions = p.pendingSubmissions,
+                oldestPendingAgeNanos = p.oldestPendingAgeNanos,
+                latestPublicationStreamId = p.latestPublicationStreamId,
+                latestPublicationSequenceNumber = p.latestPublicationSequenceNumber,
+            )
             is ActiveHpBarMeasured -> ArchivedActiveHpBarMeasured(
                 side = p.side.name,
                 barLeft = p.barLeft,

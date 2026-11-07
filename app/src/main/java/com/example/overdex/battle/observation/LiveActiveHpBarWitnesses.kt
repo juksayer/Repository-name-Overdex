@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.BufferOverflow
@@ -103,7 +104,14 @@ internal class LiveActiveHpBarWitness(
         activeMatch = match
         lastEnabled = null
         lastSpeciesNames.clear()
+        match.beginHpObservationDiagnostics(input::latestVisualPublication)
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { witnessScope ->
+            witnessScope.launch {
+                while (true) {
+                    delay(5_000)
+                    match.publishHpObservationDiagnostics(HpDiagnosticSummaryReason.PERIODIC)
+                }
+            }
             witnessScope.launch {
                 match.articles.collect { article ->
                     when (val payload = article.payload) {
@@ -111,12 +119,14 @@ internal class LiveActiveHpBarWitness(
                             if (lastSpeciesNames[payload.side] != payload.speciesName) {
                                 tracker.observeSpecies(payload.side, payload.speciesName,
                                     article.monotonicTimeNanos ?: return@collect)
+                                match.hpObservationDiagnostics.resetContinuity(payload.side)
                                 lastSpeciesNames[payload.side] = payload.speciesName
                             }
                         }
                         is SpeciesCheckMeasured -> if (payload.status == "OPENED" && payload.reason == "EMPTY_HP") {
                             synchronized(stateLock) {
                                 tracker.reset(payload.side)
+                                match.hpObservationDiagnostics.resetContinuity(payload.side)
                                 lastSpeciesNames.remove(payload.side)
                             }
                         }
@@ -130,18 +140,31 @@ internal class LiveActiveHpBarWitness(
                     // one side advance the tracker while the other still needed
                     // the preceding frame, silently losing that side's sample.
                     input.supplyFrames { frame ->
+                        val receivedAtNanos = System.nanoTime()
                         val enabled = isEnabled()
+                        match.hpObservationDiagnostics.onFrameReceived(
+                            frame.capturedAtMonotonicTimeNanos, receivedAtNanos, frame.publication, enabled,
+                        )
                         if (lastEnabled != enabled) availability(match, enabled, frame.capturedAtWallTimeMillis)
                         if (!enabled) {
                             match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos, false)
                             return@supplyFrames
                         }
-                        val measurements = tracker.measureFrame(frame)
+                        val locateStartedAtNanos = System.nanoTime()
+                        val located = tracker.measureFrameWithDiagnostics(frame)
+                        match.hpObservationDiagnostics.onLocationCompleted(
+                            frame.capturedAtMonotonicTimeNanos, locateStartedAtNanos, System.nanoTime(),
+                            located.outcomes.mapValues { it.value.name },
+                        )
+                        val measurements = located.measurements
                         match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos,
                             measurements.keys.containsAll(ActivePokemonSide.entries))
                         measurements.forEach { (side, measurement) ->
                             val appearance = ActiveHpBarBorderAppearanceMeasurer.measure(frame.bitmap, measurement)
                             val recipientVisual = FastMoveRecipientVisualSampler.sample(frame.bitmap, measurement)
+                            match.hpObservationDiagnostics.onSubmission(
+                                side, frame.capturedAtMonotonicTimeNanos, System.nanoTime(),
+                            )
                             match.custody.submitTestimony(
                                 sourceId = sources.getValue(side),
                                 payload = ActiveHpBarMeasured(
@@ -176,6 +199,7 @@ internal class LiveActiveHpBarWitness(
 
     override fun stop() {
         if (lastEnabled == true) activeMatch?.let { availability(it, false, System.currentTimeMillis()) }
+        activeMatch?.publishHpObservationDiagnostics(HpDiagnosticSummaryReason.SESSION_STOP)
         activeMatch = null
         scope?.cancel("Live active HP bars witness stopped")
         scope = null

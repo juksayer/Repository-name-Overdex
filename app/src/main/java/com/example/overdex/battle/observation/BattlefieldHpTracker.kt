@@ -5,6 +5,28 @@ import com.example.overdex.data.BattleCalibration
 import com.example.overdex.model.observation.CapturedVisualFrame
 import kotlin.math.abs
 
+/** Search/assignment facts only; these do not assert a hidden bar or battle phase. */
+internal enum class HpBarLocatorOutcome {
+    FOUND,
+    INVALID_CALIBRATION,
+    OUT_OF_ORDER_FRAME,
+    NO_CANDIDATE,
+    OBSCURED_CANDIDATES,
+    UNASSIGNED_CANDIDATES,
+    RECOVERY_SCAN_THROTTLED,
+}
+
+internal data class HpBarFrameDiagnostics(
+    val measurements: Map<ActivePokemonSide, ActiveHpBarMeasurement>,
+    val outcomes: Map<ActivePokemonSide, HpBarLocatorOutcome>,
+) {
+    companion object {
+        fun unavailable(outcome: HpBarLocatorOutcome) = HpBarFrameDiagnostics(
+            emptyMap(), ActivePokemonSide.entries.associateWith { outcome },
+        )
+    }
+}
+
 /**
  * One geometry pass shared by the two HP witnesses. Search stays inside the
  * calibrated vertical battlefield band, but includes both horizontal end caps
@@ -16,7 +38,7 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
     private var lastWideScanAt: Long? = null
     private var cachedAt: Long? = null
     private var cachedSize: Pair<Int, Int>? = null
-    private var cached = emptyMap<ActivePokemonSide, ActiveHpBarMeasurement>()
+    private var cached = HpBarFrameDiagnostics(emptyMap(), emptyMap())
 
     @Synchronized fun reset(side: ActivePokemonSide) {
         tracker.reset(side)
@@ -38,48 +60,99 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
 
     fun measure(frame: CapturedVisualFrame, side: ActivePokemonSide): ActiveHpBarMeasurement? = measureFrame(frame)[side]
 
-    @Synchronized fun measureFrame(frame: CapturedVisualFrame): Map<ActivePokemonSide, ActiveHpBarMeasurement> {
+    fun measureFrame(frame: CapturedVisualFrame): Map<ActivePokemonSide, ActiveHpBarMeasurement> =
+        measureFrameWithDiagnostics(frame).measurements
+
+    @Synchronized fun measureFrameWithDiagnostics(frame: CapturedVisualFrame): HpBarFrameDiagnostics {
         val bitmap = frame.bitmap
-        val size = bitmap.width to bitmap.height
+        return measureFrameWithDiagnostics(
+            width = bitmap.width,
+            height = bitmap.height,
+            at = frame.capturedAtMonotonicTimeNanos,
+            resolveRegions = {
+                mapOf(
+                    ActivePokemonSide.PLAYER to BattleCropContracts.playerHpEvidence,
+                    ActivePokemonSide.OPPONENT to BattleCropContracts.opponentHpEvidence,
+                ).mapNotNull { (owner, contract) ->
+                    contract.resolveRect(calibration, bitmap.width, bitmap.height)?.let {
+                        owner to BattleCropBounds(it.left, it.top, it.right, it.bottom)
+                    }
+                }.toMap()
+            },
+            scan = { bounds ->
+                val w = bounds.right - bounds.left
+                val h = bounds.bottom - bounds.top
+                val pixels = IntArray(w * h)
+                bitmap.getPixels(pixels, 0, w, bounds.left, bounds.top, w, h)
+                ActiveHpBarMeasurer.measureAll(w, h, bitmap.width * 2 / 7, pixels).map {
+                    it.copy(left = it.left + bounds.left, right = it.right + bounds.left,
+                        top = it.top + bounds.top, bottom = it.bottom + bounds.top)
+                }
+            },
+            canObserve = { frame.canObserve(BattleCropBounds(it.left, it.top, it.right, it.bottom)) },
+        )
+    }
+
+    /** Pure scan seam: live pixels and recorded/test candidates use the same cache and search policy. */
+    @Synchronized internal fun measureFrameWithDiagnostics(
+        width: Int,
+        height: Int,
+        at: Long,
+        resolveRegions: () -> Map<ActivePokemonSide, BattleCropBounds>,
+        scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement>,
+        canObserve: (ActiveHpBarMeasurement) -> Boolean,
+    ): HpBarFrameDiagnostics {
+        val size = width to height
         if (cachedSize != null && cachedSize != size) {
             ActivePokemonSide.entries.forEach(tracker::reset)
             cachedAt = null
             lastWideScanAt = null
         }
-        if (cachedAt != frame.capturedAtMonotonicTimeNanos) {
+        if (cachedAt != at) {
             // Older subscribers may arrive late. Do not rewind either tracker.
-            if (cachedAt?.let { frame.capturedAtMonotonicTimeNanos < it } == true) return emptyMap()
-            val regions = mapOf(
-                ActivePokemonSide.PLAYER to BattleCropContracts.playerHpEvidence,
-                ActivePokemonSide.OPPONENT to BattleCropContracts.opponentHpEvidence,
-            ).mapNotNull { (owner, contract) ->
-                contract.resolveRect(calibration, bitmap.width, bitmap.height)?.let {
-                    owner to BattleCropBounds(it.left, it.top, it.right, it.bottom)
+            if (cachedAt?.let { at < it } == true) {
+                return HpBarFrameDiagnostics.unavailable(HpBarLocatorOutcome.OUT_OF_ORDER_FRAME)
+            }
+            val regions = resolveRegions()
+            if (regions.size != 2) return HpBarFrameDiagnostics.unavailable(HpBarLocatorOutcome.INVALID_CALIBRATION)
+            var rawCandidates = emptyList<ActiveHpBarMeasurement>()
+            var observableCandidates = emptyList<ActiveHpBarMeasurement>()
+            fun scanWindows(windows: List<BattleCropBounds>): List<ActiveHpBarMeasurement> {
+                val raw = mutableListOf<ActiveHpBarMeasurement>()
+                observableCandidates = windows.flatMap { bounds ->
+                    scan(bounds).also(raw::addAll).filter(canObserve)
                 }
-            }.toMap()
-            if (regions.size != 2) return emptyMap()
-            fun scan(bounds: BattleCropBounds): List<ActiveHpBarMeasurement> {
-                val w = bounds.right - bounds.left
-                val h = bounds.bottom - bounds.top
-                val pixels = IntArray(w * h)
-                bitmap.getPixels(pixels, 0, w, bounds.left, bounds.top, w, h)
-                return ActiveHpBarMeasurer.measureAll(w, h, bitmap.width * 2 / 7, pixels).map {
-                    it.copy(left = it.left + bounds.left, right = it.right + bounds.left,
-                        top = it.top + bounds.top, bottom = it.bottom + bounds.top)
-                }.filter { frame.canObserve(BattleCropBounds(it.left, it.top, it.right, it.bottom)) }
+                rawCandidates = raw
+                return observableCandidates
             }
             // Track locally at frame rate; a full-width search on every frame
             // consumes too much CPU on the physical phone. Recovery is bounded
             // and returns to the calibrated battlefield, including the home lock.
-            val at = frame.capturedAtMonotonicTimeNanos
-            val local = tracker.trackingWindows(bitmap.width, regions).flatMap(::scan)
-            cached = tracker.assign(bitmap.width, at, regions, local)
-            if (cached.size < 2 && lastWideScanAt?.let { at - it < 250_000_000L } != true) {
-                val bounds = BattleCropBounds(0, regions.values.minOf { it.top }, bitmap.width, regions.values.maxOf { it.bottom })
-                cached = tracker.assign(bitmap.width, at, regions, scan(bounds))
+            val windows = tracker.trackingWindows(width, regions)
+            val local = scanWindows(windows)
+            var measurements = tracker.assign(width, at, regions, local)
+            var wideScanPerformed = false
+            if (measurements.size < 2 && lastWideScanAt?.let { at - it < 250_000_000L } != true) {
+                val bounds = BattleCropBounds(0, regions.values.minOf { it.top }, width, regions.values.maxOf { it.bottom })
+                measurements = tracker.assign(width, at, regions, scanWindows(listOf(bounds)))
                 lastWideScanAt = at
+                wideScanPerformed = true
             }
-            cachedAt = frame.capturedAtMonotonicTimeNanos
+            cached = HpBarFrameDiagnostics(measurements, ActivePokemonSide.entries.associateWith { side ->
+                // A band-compatible candidate is not necessarily owned by this
+                // side. Report unassigned geometry rather than guessing why a
+                // combatant's bar was absent or which battle phase was active.
+                val region = regions.getValue(side)
+                fun ActiveHpBarMeasurement.inBand() = top >= region.top && bottom <= region.bottom
+                when {
+                    side in measurements -> HpBarLocatorOutcome.FOUND
+                    windows.isEmpty() && !wideScanPerformed -> HpBarLocatorOutcome.RECOVERY_SCAN_THROTTLED
+                    rawCandidates.none { it.inBand() } -> HpBarLocatorOutcome.NO_CANDIDATE
+                    observableCandidates.none { it.inBand() } -> HpBarLocatorOutcome.OBSCURED_CANDIDATES
+                    else -> HpBarLocatorOutcome.UNASSIGNED_CANDIDATES
+                }
+            })
+            cachedAt = at
             cachedSize = size
         }
         return cached

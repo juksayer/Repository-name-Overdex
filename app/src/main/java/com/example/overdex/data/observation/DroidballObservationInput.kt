@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.CapturedVisualFrame
 import com.example.overdex.model.observation.SessionSource
+import com.example.overdex.model.observation.VisualFramePublication
 
 import com.example.overdex.battle.observation.DroidballService
 import kotlinx.coroutines.flow.collect
@@ -16,6 +17,9 @@ import kotlinx.coroutines.yield
  */
 class DroidballObservationInput : ObservationInput {
     override val source: SessionSource = SessionSource.LIVE_CAPTURE
+
+    override fun latestVisualPublication(): VisualFramePublication? =
+        DroidballService.latestVisualPublication()
 
     /**
      * Supplies frames from the live Droidball capture stream.

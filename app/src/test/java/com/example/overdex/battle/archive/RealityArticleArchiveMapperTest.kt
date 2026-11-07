@@ -92,6 +92,55 @@ class RealityArticleArchiveMapperTest {
         assertEquals(ArchivedPlayerTeamRosterSlotWitnessed(1, "Raichu", 26), old)
     }
 
+    @Test fun `HP pipeline summary retains typed statistics and timing through compact archive`() {
+        val diagnostic = com.example.overdex.battle.observation.HpObservationDiagnostics()
+        diagnostic.onFrameReceived(100L, 200L,
+            com.example.overdex.model.observation.VisualFramePublication(7L, 11L, 150L), true)
+        diagnostic.onLocationCompleted(100L, 210L, 250L,
+            mapOf(ActivePokemonSide.PLAYER to "FOUND", ActivePokemonSide.OPPONENT to "RECOVERY_SCAN_THROTTLED"))
+        diagnostic.onSubmission(ActivePokemonSide.PLAYER, 100L, 300L)
+        diagnostic.onTimelineRecorded(ActivePokemonSide.PLAYER, 100L, 800L)
+        val measured = requireNotNull(diagnostic.takeSummary(900L, null,
+            com.example.overdex.battle.observation.HpDiagnosticSummaryReason.MATCH_END))
+        val mapped = RealityArticleArchiveMapper.map(article("hp-pipeline", measured,
+            monotonicTimeNanos = 900L).copy(sourceId = SourceId("HP_OBSERVATION_PIPELINE")))
+        val selected = MatchArchiveArticleSelector.select(listOf(mapped), MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        assertEquals(listOf(mapped), selected)
+        val archive = MatchArchive(matchId = "match-a", articles = selected)
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        val payload = restored.articles.single().payload as ArchivedHpObservationPipelineMeasured
+        assertEquals("HP_OBSERVATION_PIPELINE", restored.articles.single().sourceId)
+        assertEquals("MATCH_END", payload.reason)
+        assertEquals(7L, payload.latestPublicationStreamId)
+        assertEquals(11L, payload.latestPublicationSequenceNumber)
+        assertEquals(40L, payload.window.locatorDuration.minimumNanos)
+        assertEquals(500L, payload.window.player.submissionToTimeline.minimumNanos)
+        assertEquals(1L, payload.window.opponent.missesByReason["RECOVERY_SCAN_THROTTLED"])
+        assertEquals(0, payload.pendingSubmissions)
+        assertEquals(emptyList<String>(), restored.articles.single().evidenceReferences ?: emptyList<String>())
+    }
+
+    @Test fun `HP pipeline summary preserves unknown metadata and empty timings instead of zero latency`() {
+        val measured = com.example.overdex.battle.custody.HpObservationPipelineMeasured(
+            windowStartedAtNanos = 100L, windowEndedAtNanos = 200L, reason = "SESSION_STOP",
+            histogramUpperBoundsNanos = listOf(1L, Long.MAX_VALUE),
+            window = com.example.overdex.battle.custody.HpPipelineStatistics(framesReceived = 2L,
+                receivesWithoutPublicationMetadata = 2L),
+            cumulative = com.example.overdex.battle.custody.HpPipelineStatistics(),
+            pendingSubmissions = 0, oldestPendingAgeNanos = null,
+            latestPublicationStreamId = null, latestPublicationSequenceNumber = null,
+        )
+        val archive = MatchArchive(matchId = "match-a", articles = listOf(
+            RealityArticleArchiveMapper.map(article("unknown-hp-pipeline", measured))))
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        val payload = restored.articles.single().payload as ArchivedHpObservationPipelineMeasured
+        assertEquals(null, payload.latestPublicationStreamId)
+        assertEquals(null, payload.window.publicationToReceipt.meanNanos)
+        assertEquals(0L, payload.window.publicationToReceipt.sampleCount)
+    }
+
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 

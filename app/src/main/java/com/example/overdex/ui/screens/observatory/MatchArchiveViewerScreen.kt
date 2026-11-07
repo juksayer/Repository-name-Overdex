@@ -1,6 +1,7 @@
 package com.example.overdex.ui.screens.observatory
 
 import com.example.overdex.diagnostics.sourceJobLabel
+import com.example.overdex.diagnostics.HpObservationDiagnosticText
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -384,6 +385,7 @@ private fun ArchiveArticleRow(
             is com.example.overdex.battle.archive.ArchivedPlayerShieldCountMeasured -> "PLAYER SHIELDS [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
             is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
+            is ArchivedHpObservationPipelineMeasured -> HpObservationDiagnosticText.summary(p)
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedPlayerChargeButtonFillHeightMeasured -> "CHARGE FILL HEIGHT [button=${p.slot}, ${p.status}, fraction=${p.fillHeightFraction ?: "unknown"}, tolerance=${p.pixelTolerance}px; layer unknown]"
@@ -508,6 +510,7 @@ private fun ArticleDetailsOverlay(
                 is com.example.overdex.battle.archive.ArchivedPlayerShieldCountMeasured -> "PLAYER SHIELDS [${p.visibleCount}/${p.maximumCount} visible]"
                 is ArchivedPlayerPokeBallCountMeasured -> "PLAYER POKÉ BALLS [${p.visibleCount}/${p.maximumCount} visible]"
                 is ArchivedOpponentBattleResourceCountMeasured -> "OPPONENT ${p.resource.replace('_', ' ')} [${p.visibleCount}/${p.maximumCount} visible]"
+            is ArchivedHpObservationPipelineMeasured -> HpObservationDiagnosticText.details(p)
             is ArchivedActiveHpBarMeasured -> "ACTIVE HP [side=${p.side}, fill=${String.format(Locale.ROOT, "%.1f", p.filledFraction * 100)}%, bounds=${p.barLeft},${p.barTop},${p.barRight},${p.barBottom}]"
             is ArchivedActiveHpBarMotionCadenceMeasured -> "HP MOTION CADENCE [attacker=${p.movingSide}, interval=${String.format(Locale.ROOT, "%.2f", p.intervalNanos / 1_000_000_000.0)}s, excursion=${String.format(Locale.ROOT, "%.1f", p.verticalExcursionPixels)}px]"
             is ArchivedPlayerChargeButtonFillHeightMeasured -> "CHARGE FILL HEIGHT [button=${p.slot}, ${p.status}, fraction=${p.fillHeightFraction ?: "unknown"}, tolerance=${p.pixelTolerance}px; layer unknown]"

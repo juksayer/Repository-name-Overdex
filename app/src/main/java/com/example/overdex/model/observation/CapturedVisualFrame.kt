@@ -3,9 +3,9 @@ package com.example.overdex.model.observation
 import android.graphics.Bitmap
 
 /**
- * One published visual frame and the instant it entered Overdex's evidence
- * pipeline. The bitmap remains transient; its captured times are evidence
- * metadata and travel with the frame to its Witness.
+ * One visual frame and its source receipt times. The bitmap remains transient;
+ * captured times travel with the frame to its Witness. Live-feed publication
+ * progress is separate because conversion and capture-side work take time.
  */
 data class CapturedVisualFrame(
     val bitmap: Bitmap,
@@ -18,4 +18,6 @@ data class CapturedVisualFrame(
     val overlayRegion: com.example.overdex.model.AnchorRegion? = null,
     /** A retained game badge is our own image; these pixels cannot become new testimony. */
     val retainedBadgeRegion: com.example.overdex.model.AnchorRegion? = null,
+    /** Accepted live-feed publication; absent for screenshot or older/custom inputs. */
+    val publication: VisualFramePublication? = null,
 )

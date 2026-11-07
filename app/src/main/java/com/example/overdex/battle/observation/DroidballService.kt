@@ -58,6 +58,8 @@ import com.example.overdex.battle.audio.Pcm16CaptureFormat
 import com.example.overdex.model.observation.CapturedAudioFrame
 import com.example.overdex.model.observation.CapturedDeviceMotionPulse
 import com.example.overdex.model.observation.CapturedVisualFrame
+import com.example.overdex.model.observation.VisualFramePublication
+import com.example.overdex.model.observation.VisualFramePublicationTracker
 import com.example.overdex.ui.components.BattleOverlay
 import com.example.overdex.ui.components.BattleHudOverlayGeometry
 import com.example.overdex.ui.components.DroidballFieldGeometry
@@ -200,6 +202,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
             onBufferOverflow = BufferOverflow.DROP_OLDEST
         )
         val frames = _frames.asSharedFlow()
+
+        private val visualPublications = VisualFramePublicationTracker()
+        fun latestVisualPublication(): VisualFramePublication? = visualPublications.latest()
 
         private val _audioFrames = MutableSharedFlow<CapturedAudioFrame>(
             replay = 0,
@@ -351,6 +356,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var cueCenteredAudio = Pcm16CaptureFormat().cueCollector()
     private var firstFrameLogged = false
     private var lastPublishedFrameNanos: Long? = null
+    private var visualStreamId: Long? = null
 
     private var publicationAttempts = 0L
     private var successEmitCount = 0L
@@ -392,6 +398,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     }
 
     private fun markStopped() {
+        visualStreamId?.let(visualPublications::stopStream)
+        visualStreamId = null
         foregroundStartup.markStopped()
         val current = _captureDiagnostics.value
         _captureDiagnostics.value = current.copy(state = "STOPPED")
@@ -544,6 +552,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 
     private fun setupMediaProjection(resultCode: Int, data: Intent) {
+        val streamId = visualPublications.startStream()
+        visualStreamId = streamId
         firstFrameLogged = false
         publicationAttempts = 0L
         successEmitCount = 0L
@@ -743,17 +753,22 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
                         if (gap > 750_000_000L) _signals.tryEmit(DroidballSignal.VisualCaptureGap(gap))
                     }
                     lastPublishedFrameNanos = capturedAtMonotonicTimeNanos
-                    val frame = CapturedVisualFrame(
-                        bitmap = bitmap,
-                        capturedAtWallTimeMillis = capturedAtWallTimeMillis,
-                        capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos,
-                        displayWidth = width,
-                        displayHeight = height,
-                        overlayRegion = capturedOverlayRegion,
-                        retainedBadgeRegion = badgeExclusionBefore ?: retainedOpponentBadge.exclusion(receivedAtNanos),
-                    )
+                    val retainedBadgeRegion = badgeExclusionBefore ?: retainedOpponentBadge.exclusion(receivedAtNanos)
                     publicationAttempts++
-                    val emitSucceeded = _frames.tryEmit(frame)
+                    // Source receipt precedes conversion and badge work. Stamp actual
+                    // feed publication separately so diagnostics can measure that cost.
+                    val emitSucceeded = visualPublications.publish(streamId, System.nanoTime()) { publication ->
+                        _frames.tryEmit(CapturedVisualFrame(
+                            bitmap = bitmap,
+                            capturedAtWallTimeMillis = capturedAtWallTimeMillis,
+                            capturedAtMonotonicTimeNanos = capturedAtMonotonicTimeNanos,
+                            displayWidth = width,
+                            displayHeight = height,
+                            overlayRegion = capturedOverlayRegion,
+                            retainedBadgeRegion = retainedBadgeRegion,
+                            publication = publication,
+                        ))
+                    }
                     if (emitSucceeded) {
                         successEmitCount++
                     } else {

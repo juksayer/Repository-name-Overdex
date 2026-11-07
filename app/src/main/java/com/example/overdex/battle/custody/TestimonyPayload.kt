@@ -335,6 +335,83 @@ data class OpponentBattleResourceCountMeasured(
 
 enum class OpponentBattleResource { POKE_BALLS, SHIELDS }
 
+/**
+ * Bounded pipeline telemetry, never a battle-event or an inferred missing attack.
+ * Stage counts are independently timed: an earlier submission can be recorded in
+ * a later window. Use cumulative counts and pending submissions for reconciliation.
+ */
+data class HpObservationPipelineMeasured(
+    val windowStartedAtNanos: Long,
+    val windowEndedAtNanos: Long,
+    val reason: String,
+    val histogramUpperBoundsNanos: List<Long>,
+    val window: HpPipelineStatistics,
+    val cumulative: HpPipelineStatistics,
+    val pendingSubmissions: Int,
+    val oldestPendingAgeNanos: Long?,
+    val latestPublicationStreamId: Long?,
+    val latestPublicationSequenceNumber: Long?,
+) : TestimonyPayload
+
+/** Fixed-bin distributions use inclusive upper bounds; percentiles are bucket upper bounds. */
+@kotlinx.serialization.Serializable
+data class HpPipelineTimingStatistics(
+    val sampleCount: Long = 0,
+    val invalidSampleCount: Long = 0,
+    val minimumNanos: Long? = null,
+    val maximumNanos: Long? = null,
+    val meanNanos: Double? = null,
+    val p50UpperBoundNanos: Long? = null,
+    val p90UpperBoundNanos: Long? = null,
+    val p99UpperBoundNanos: Long? = null,
+    val bucketCounts: List<Long> = emptyList(),
+)
+
+@kotlinx.serialization.Serializable
+data class HpPipelineSideStatistics(
+    val locationAttempts: Long = 0,
+    val found: Long = 0,
+    val missesByReason: Map<String, Long> = emptyMap(),
+    val submitted: Long = 0,
+    val recorded: Long = 0,
+    val recordedWithoutSubmission: Long = 0,
+    val pendingEvicted: Long = 0,
+    val duplicateSubmissions: Long = 0,
+    val continuityResets: Long = 0,
+    val nonIncreasingAcceptedSources: Long = 0,
+    val acceptedSourceIntervals: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val sourceToSubmission: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val submissionToTimeline: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val sourceToTimeline: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+)
+
+@kotlinx.serialization.Serializable
+data class HpPipelineStatistics(
+    /** Sequence advances after a known baseline, not a fabricated total for unknown earlier frames. */
+    val publishedSequenceAdvances: Long = 0,
+    val publicationBaselines: Long = 0,
+    val publicationRestarts: Long = 0,
+    val publicationRegressions: Long = 0,
+    val framesReceived: Long = 0,
+    val enabledFramesReceived: Long = 0,
+    val disabledFramesReceived: Long = 0,
+    val receivesWithoutPublicationMetadata: Long = 0,
+    /** Same-stream receive pairs with enabled interpretation at both ends. */
+    val enabledReceiveSequenceAdvances: Long = 0,
+    val enabledReceiveSequenceSkipped: Long = 0,
+    val disabledReceiveSequenceSkipped: Long = 0,
+    val transitionOrUnknownSequenceSkipped: Long = 0,
+    val locationPasses: Long = 0,
+    val receivedSourceIntervals: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val receiptIntervals: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val sourceToPublication: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val publicationToReceipt: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val sourceToReceipt: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val locatorDuration: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val player: HpPipelineSideStatistics = HpPipelineSideStatistics(),
+    val opponent: HpPipelineSideStatistics = HpPipelineSideStatistics(),
+)
+
 /** One visible active HP bar. Source dimensions distinguish global from legacy crop coordinates. */
 data class ActiveHpBarMeasured(
     val side: ActivePokemonSide,

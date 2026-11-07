@@ -284,6 +284,22 @@ data class ArchivedOpponentBattleResourceCountMeasured(
     val maximumCount: Int
 ) : ArchivedTestimonyPayload
 
+/** Shared immutable measurement statistics are serializable; only the transport envelope differs. */
+@Serializable
+@SerialName("hp_observation_pipeline_measured")
+data class ArchivedHpObservationPipelineMeasured(
+    val windowStartedAtNanos: Long,
+    val windowEndedAtNanos: Long,
+    val reason: String,
+    val histogramUpperBoundsNanos: List<Long>,
+    val window: com.example.overdex.battle.custody.HpPipelineStatistics,
+    val cumulative: com.example.overdex.battle.custody.HpPipelineStatistics,
+    val pendingSubmissions: Int,
+    val oldestPendingAgeNanos: Long?,
+    val latestPublicationStreamId: Long?,
+    val latestPublicationSequenceNumber: Long?,
+) : ArchivedTestimonyPayload
+
 @Serializable
 @SerialName("active_hp_bar_measured")
 data class ArchivedActiveHpBarMeasured(

@@ -33,6 +33,7 @@ object BattleRecordDiagnostics {
                 is AudioInputStatus -> "source=${payload.captureSource} state=${payload.state}"
                 is PlayerPokeBallCountMeasured -> "PLAYER POKE_BALLS=${payload.visibleCount}/${payload.maximumCount}"
                 is OpponentBattleResourceCountMeasured -> "${payload.resource}=${payload.visibleCount}/${payload.maximumCount}"
+                is com.example.overdex.battle.custody.HpObservationPipelineMeasured -> HpObservationDiagnosticText.summary(payload)
                 is ActiveHpBarMeasured -> "side=${payload.side} fill=${"%.3f".format(Locale.ROOT, payload.filledFraction)} bounds=${payload.barLeft},${payload.barTop},${payload.barRight},${payload.barBottom}"
                 else -> ""
             }

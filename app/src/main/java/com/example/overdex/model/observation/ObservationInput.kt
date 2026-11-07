@@ -12,6 +12,9 @@ interface ObservationInput {
      */
     val source: SessionSource
 
+    /** Latest accepted live-feed progress, even when a slow reader missed its frames. */
+    fun latestVisualPublication(): VisualFramePublication? = null
+
     /**
      * Supplies visual evidence to a consumer.
      * 
@@ -24,8 +27,8 @@ interface ObservationInput {
 
     /**
      * Supplies visual frames with their capture receipt times. Existing inputs
-     * retain bitmap compatibility while live capture can override this with the
-     * timestamps assigned when the service publishes the frame.
+     * retain bitmap compatibility while live capture can override this with its
+     * source receipt times and independent publication metadata.
      */
     suspend fun supplyFrames(onFrame: suspend (CapturedVisualFrame) -> Unit) {
         supply { bitmap ->

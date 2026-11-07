@@ -83,6 +83,35 @@ class Match(
     private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge, opponentFormReferences)
     private val opponentEnergyForecast = com.example.overdex.battle.forecast.OpponentEnergyForecast()
 
+    /** Measurements of this pipeline only; none of these counters infer battle events. */
+    internal val hpObservationDiagnostics = HpObservationDiagnostics()
+    private val hpDiagnosticLock = Any()
+    private var hpPublicationProgress: (() -> com.example.overdex.model.observation.VisualFramePublication?)? = null
+    private var hpDiagnosticMatchEnded = false
+    private var hpDiagnosticStopped = false
+
+    internal fun beginHpObservationDiagnostics(
+        publicationProgress: () -> com.example.overdex.model.observation.VisualFramePublication?,
+    ) = synchronized(hpDiagnosticLock) {
+        hpPublicationProgress = publicationProgress
+        hpObservationDiagnostics.start(System.nanoTime(), publicationProgress())
+    }
+
+    internal fun publishHpObservationDiagnostics(reason: HpDiagnosticSummaryReason) = synchronized(hpDiagnosticLock) {
+        val progress = hpPublicationProgress ?: return@synchronized
+        if (hpDiagnosticStopped ||
+            (reason == HpDiagnosticSummaryReason.PERIODIC && hpDiagnosticMatchEnded) ||
+            (reason == HpDiagnosticSummaryReason.MATCH_END && hpDiagnosticMatchEnded)) return@synchronized
+        val now = System.nanoTime()
+        val summary = hpObservationDiagnostics.takeSummary(now, progress(), reason) ?: return@synchronized
+        if (reason == HpDiagnosticSummaryReason.MATCH_END) hpDiagnosticMatchEnded = true
+        if (reason == HpDiagnosticSummaryReason.SESSION_STOP) hpDiagnosticStopped = true
+        custody.submitTestimony(
+            SourceId("HP_OBSERVATION_PIPELINE"), summary, System.currentTimeMillis(),
+            null, emptyList(), now,
+        )
+    }
+
     internal fun observeForecastBattlefield(at: Long, bothBarsVisible: Boolean) {
         opponentEnergyForecast.observeBattlefield(at, bothBarsVisible)
     }
@@ -448,6 +477,17 @@ class Match(
                 }
 
                 realityTimeline.append(article)
+                // Record the actual append boundary, independently of the HP
+                // reader's delivery/processing/submission clocks. The Timeline
+                // remains an uninterpreted ledger.
+                (article.payload as? com.example.overdex.battle.custody.ActiveHpBarMeasured)?.let { hp ->
+                    if (article.sourceId.id == BattleWitnessContracts.playerActiveHpBar.witnessId ||
+                        article.sourceId.id == BattleWitnessContracts.opponentActiveHpBar.witnessId) {
+                        article.monotonicTimeNanos?.let { sourceAt ->
+                            hpObservationDiagnostics.onTimelineRecorded(hp.side, sourceAt, System.nanoTime())
+                        }
+                    }
+                }
                 cueSpeciesChecks(article)
                 _articles.tryEmit(article)
                 appendPlayerIdentityDerivations(article)
@@ -624,6 +664,9 @@ class Match(
                         if (derivedArticle.payload is MatchEnded) {
                             speciesChecks.stop()
                             appendFastMoveUseDerivations(derivedArticle)
+                            // Accept the diagnostic flush before downstream
+                            // result handlers take their archive snapshot.
+                            publishHpObservationDiagnostics(HpDiagnosticSummaryReason.MATCH_END)
                         }
                         _articles.tryEmit(derivedArticle)
                         battleMemory.timeline.record(derivedArticle)
