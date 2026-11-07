@@ -592,8 +592,8 @@ class MatchReplayModel(
                     article.payload is ArchivedFastMoveUseObserved && hpEvidence.accepts(article)
             }?.monotonicTimeNanos
             val episode = Episode(charge.index, openingAt, resumedAt,
-                combatantFor("PLAYER", milestone.atNanos)?.identityEstablishedAtNanos,
-                combatantFor("OPPONENT", milestone.atNanos)?.identityEstablishedAtNanos)
+                playerIdentityTrack.appearanceStartAt(milestone.atNanos),
+                opponentIdentityTrack.appearanceStartAt(milestone.atNanos))
             val level = QTE_MILESTONE_LABELS.indexOf(milestone.label)
             if (level <= (highestByEpisode[episode] ?: -1)) false else {
                 highestByEpisode[episode] = level

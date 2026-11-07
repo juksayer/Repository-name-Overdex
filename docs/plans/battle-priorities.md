@@ -94,6 +94,17 @@ The final Earth Power strike, HP loss and KO remain absent from the archive.
 Prior finishing-hit capture and source-timed phase/announcement coverage remain
 the next recording targets; these presentation repairs do not close those gaps.
 
+The user's [recording of actual Replay playback](../verification/2026-11-07-rendered-replay-review.md)
+confirms both intermediate falls, while exposing excessively compressed falling,
+late displayed Poké Ball counts, overlapping QTE grade regressions, and an
+unsupported saved Golbat opener. Presentation repairs address these with cited
+resource projection, appearance-scoped grade progression and a bounded early
+badge contradiction rule. All 1,971 unit tests pass. Actual-screen frame-clock
+playback passes with the full archive and current catalogue, explicitly using
+recorded species testimony because the emulator's optional OCR module remained
+unavailable. Positive recovered-crop OCR and live finishing-hit capture remain
+open. The tested update is installed on the Moondrop with user data preserved.
+
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.
 Recorded checks preserve the supported identities, but Turtonator's early

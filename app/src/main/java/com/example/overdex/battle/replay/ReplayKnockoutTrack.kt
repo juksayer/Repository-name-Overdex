@@ -70,8 +70,10 @@ internal class ReplayKnockoutTrack(
         val counts = cited.mapNotNull { it.pokeBallCount(faint.side) }.sortedBy { it.at }
         if (counts.size != 2) return null
         val (before, after) = counts
+        // This path has a replacement, so a contradictory final 1 -> 0
+        // reading cannot prove the outgoing actor's non-final knockout.
         if (before.at < appearance.atNanos || before.at >= replacementAt || after.at != at ||
-            before.count - after.count != 1) return null
+            before.count - after.count != 1 || after.count < 1) return null
         // A stable unchanged count after entry proves a switch. Do not use a
         // later drop to retroactively turn that departure into a knockout.
         if (articles.any { witness ->
