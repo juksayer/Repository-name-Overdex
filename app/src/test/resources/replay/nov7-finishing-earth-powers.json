@@ -1,0 +1,927 @@
+{
+  "schemaVersion": 1,
+  "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+  "mediaIncluded": false,
+  "articles": [
+    {
+      "articleId": "42600438-b932-42a7-9540-3176031486de",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087044945,
+      "recordedAt": 1794087044954,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147416104353632
+    },
+    {
+      "articleId": "60a5d9df-db37-4832-9d8d-694c539ce37a",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087044946,
+      "recordedAt": 1794087044969,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 1,
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Brutal Swing",
+          "Dragon Pulse"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147416105008324
+    },
+    {
+      "articleId": "c17c83bc-c300-4320-bcfc-3f03ffa27122",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087044946,
+      "recordedAt": 1794087044981,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 2,
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Rock Tomb",
+          "Earth Power"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147416105008324
+    },
+    {
+      "articleId": "bdee6d33-c2e1-49ac-bf73-58e5b630dc29",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087044946,
+      "recordedAt": 1794087044985,
+      "sourceId": "CURRENT_TEAM_CONFIGURATION",
+      "payload": {
+        "kind": "player_team_slot_configured",
+        "slot": 3,
+        "speciesName": "Gourgeist (Average)",
+        "speciesId": 711,
+        "fastMoveName": "Incinerate",
+        "chargedMoveNames": [
+          "Seed Bomb",
+          "Shadow Ball"
+        ],
+        "ownedPokemon": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147416105008324
+    },
+    {
+      "articleId": "ab3ffd02-589a-4e41-84ec-7493e951c2a9",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087133215,
+      "recordedAt": 1794087133797,
+      "sourceId": "VS_SCREEN_WITNESS",
+      "payload": {
+        "kind": "vs_screen_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 498,
+      "evidenceReferences": [
+        "72cea91d-fa6b-4cf0-b931-0771cee6bfb0"
+      ],
+      "monotonicTimeNanos": 147504350197252
+    },
+    {
+      "articleId": "e4c65c05-0938-4064-9834-33a8ab11d7dc",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087145315,
+      "recordedAt": 1794087145476,
+      "sourceId": "TRAINER_INACTIVE_TIMER_OVERLAY",
+      "payload": {
+        "kind": "supporting_match_start",
+        "frameIndex": 25,
+        "upperColorfulPixelFraction": 0.28254238,
+        "lowerColorfulPixelFraction": 0.25789917,
+        "basis": "TRAINER_INACTIVE_TIMER_OVERLAY_CLEARANCE"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 790,
+      "evidenceReferences": [
+        "0c9924ff-1938-40d9-8d87-c5b728824080"
+      ],
+      "monotonicTimeNanos": 147516461871484
+    },
+    {
+      "articleId": "dd808518-cf5c-4234-9237-bc9e78b679d6",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087146147,
+      "recordedAt": 1794087147039,
+      "sourceId": "COUNTDOWN_GLYPH_WITNESS",
+      "payload": {
+        "kind": "countdown_glyph_witnessed",
+        "glyph": "2",
+        "similarity": 0.8272018,
+        "frameIndex": 1,
+        "cropName": "CountdownGlyphCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1493,
+        "cropLeft": 146,
+        "cropTop": 614,
+        "cropRight": 577,
+        "cropBottom": 890,
+        "basis": "COUNTDOWN_GLYPH_TEMPLATE_MATCH"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 832,
+      "evidenceReferences": [
+        "dc9ee34e-b203-48f5-9b57-2bfb79f85553"
+      ],
+      "monotonicTimeNanos": 147517300609945
+    },
+    {
+      "articleId": "382ec3ac-7fbc-457d-9ba3-5b17c2b4a221",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087149220,
+      "recordedAt": 1794087150813,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "ocrText": "Turtonator",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 955,
+      "evidenceReferences": [
+        "e9bd23e1-169d-4fcc-b3df-e4c1e2a3d818",
+        "cea65085-8500-4b7d-8cd3-4fce9717c50c"
+      ],
+      "monotonicTimeNanos": 147520331200022
+    },
+    {
+      "articleId": "10c9ad34-dbb6-4de7-8ac5-94892d6187d0",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087149220,
+      "recordedAt": 1794087150831,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Turtonator",
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "teamSlot": 1,
+        "appearanceStartedAtNanos": 147520331200022,
+        "basis": "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"
+      },
+      "predecessorIds": [
+        "382ec3ac-7fbc-457d-9ba3-5b17c2b4a221",
+        "60a5d9df-db37-4832-9d8d-694c539ce37a"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 147520331200022
+    },
+    {
+      "articleId": "aed62e10-3cf4-48e8-9b02-5d572dfb884e",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087150410,
+      "recordedAt": 1794087151975,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Swampert",
+        "speciesId": 260,
+        "ocrText": "Swampert",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 994,
+      "evidenceReferences": [
+        "e9bd23e1-169d-4fcc-b3df-e4c1e2a3d818",
+        "274d6e83-d414-497a-854a-0d546be78f1b"
+      ],
+      "monotonicTimeNanos": 147521540861638
+    },
+    {
+      "articleId": "ecd9d12e-8b86-4ada-b86f-8e245ca25551",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087148147,
+      "recordedAt": 1794087154417,
+      "sourceId": "COUNTDOWN_AND_COMBAT_START_INFERENCE",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "dd808518-cf5c-4234-9237-bc9e78b679d6",
+        "d270114c-c49b-4413-ac10-890a3cf34573"
+      ],
+      "confidence": 0.75,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 147519300609945
+    },
+    {
+      "articleId": "33a9d0ac-e10a-474c-87bc-84e7d0149684",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087154478,
+      "recordedAt": 1794087161244,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "ocrText": "Turtonator",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1183,
+      "evidenceReferences": [
+        "ecd9d12e-8b86-4ada-b86f-8e245ca25551",
+        "89606776-3c10-48d9-8181-e5ff8ca4f166"
+      ],
+      "monotonicTimeNanos": 147525605107715
+    },
+    {
+      "articleId": "5de64c10-c52f-4a74-9efd-e4e6c8551c53",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087154478,
+      "recordedAt": 1794087162806,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Swampert",
+        "speciesId": 260,
+        "ocrText": "Swampert",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1205,
+      "evidenceReferences": [
+        "ecd9d12e-8b86-4ada-b86f-8e245ca25551",
+        "c6b2ca3b-a35f-48a3-a5d4-e60b39b83dba"
+      ],
+      "monotonicTimeNanos": 147525605107715
+    },
+    {
+      "articleId": "80c46273-2988-4371-b7e8-5f825dbbf161",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087157325,
+      "recordedAt": 1794087163098,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 3,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1209,
+      "evidenceReferences": [
+        "371fd9df-5aa1-4cb8-ac14-aa9e7aba708b",
+        "1f0c995a-56ce-4a71-baf4-107c3bf69010"
+      ],
+      "monotonicTimeNanos": 147528391022254
+    },
+    {
+      "articleId": "a29ee048-3545-49f5-9bc4-b02adbec4cdd",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087186790,
+      "recordedAt": 1794087189574,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Quagsire",
+        "speciesId": 195,
+        "ocrText": "Quagsire",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1727,
+      "evidenceReferences": [
+        "c10d60f5-ce7c-40ba-a6ac-bf67c3f6cc0e"
+      ],
+      "monotonicTimeNanos": 147557905995409
+    },
+    {
+      "articleId": "9e0a3ea0-e6d7-4ffc-9332-5c4e46b0621e",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087185731,
+      "recordedAt": 1794087193648,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Go, Camerupt!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1834,
+      "evidenceReferences": [
+        "34d6fb3b-d47a-4ad1-acc9-2326300b21e6",
+        "606f084d-6c3c-4fa2-aa9b-85f69b6a417d"
+      ],
+      "monotonicTimeNanos": 147556827809255
+    },
+    {
+      "articleId": "dcee4810-8641-4671-a1e0-ceb6e7593ddf",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087190012,
+      "recordedAt": 1794087193710,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1836,
+      "evidenceReferences": [
+        "827df1a5-8be6-4af2-8ea0-f3d16728306c",
+        "c1177794-b054-4b0b-bc04-32817025fdd3"
+      ],
+      "monotonicTimeNanos": 147561070257256
+    },
+    {
+      "articleId": "640d1430-f08a-4dfb-bc06-1e28a3907ec7",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087190012,
+      "recordedAt": 1794087195048,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Swampert",
+        "speciesId": 260,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1892,
+      "evidenceReferences": [
+        "aed62e10-3cf4-48e8-9b02-5d572dfb884e",
+        "80c46273-2988-4371-b7e8-5f825dbbf161",
+        "dcee4810-8641-4671-a1e0-ceb6e7593ddf"
+      ],
+      "monotonicTimeNanos": 147561070257256
+    },
+    {
+      "articleId": "97924054-670f-4436-9004-af4f1c831bc4",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087185731,
+      "recordedAt": 1794087195189,
+      "sourceId": "ENTRY_ANNOUNCEMENT_SPECIES_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Go, Camerupt!",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1901,
+      "evidenceReferences": [
+        "9e0a3ea0-e6d7-4ffc-9332-5c4e46b0621e",
+        "60a5d9df-db37-4832-9d8d-694c539ce37a",
+        "c17c83bc-c300-4320-bcfc-3f03ffa27122",
+        "bdee6d33-c2e1-49ac-bf73-58e5b630dc29"
+      ],
+      "monotonicTimeNanos": 147556827809255
+    },
+    {
+      "articleId": "04357f29-48de-4784-9003-d38aa0681aac",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087185731,
+      "recordedAt": 1794087195202,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Camerupt",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "teamSlot": 2,
+        "appearanceStartedAtNanos": 147556827809255,
+        "basis": "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"
+      },
+      "predecessorIds": [
+        "97924054-670f-4436-9004-af4f1c831bc4",
+        "c17c83bc-c300-4320-bcfc-3f03ffa27122"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 147556827809255
+    },
+    {
+      "articleId": "e4aa2067-29c5-4f40-8b23-20eaa50ce1ec",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087193742,
+      "recordedAt": 1794087198777,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Quagsire",
+        "speciesId": 195,
+        "ocrText": "Quagsire",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2018,
+      "evidenceReferences": [
+        "9e0a3ea0-e6d7-4ffc-9332-5c4e46b0621e",
+        "d6693632-505e-46fa-8458-201cc3451c43"
+      ],
+      "monotonicTimeNanos": 147564861978256
+    },
+    {
+      "articleId": "731500e4-9769-441c-a717-ddc090113c78",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087196112,
+      "recordedAt": 1794087201343,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Camerupt",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2056,
+      "evidenceReferences": [
+        "9e0a3ea0-e6d7-4ffc-9332-5c4e46b0621e",
+        "3c431dd5-9c24-4625-acd0-8ed4466b36aa"
+      ],
+      "monotonicTimeNanos": 147567174560102
+    },
+    {
+      "articleId": "bc3d488b-3f0a-460d-9967-386260fb007d",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087211204,
+      "recordedAt": 1794087213020,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 789,
+        "barRight": 231,
+        "barBottom": 807,
+        "filledFraction": 0.98941797,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9604765,
+      "sequenceNumber": 2443,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147582241128334
+    },
+    {
+      "articleId": "80bc4698-c343-450d-a41c-ff4312d367e5",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087211204,
+      "recordedAt": 1794087213087,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 396,
+        "barTop": 591,
+        "barRight": 588,
+        "barBottom": 609,
+        "filledFraction": 0.19680852,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.89579076,
+      "sequenceNumber": 2445,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147582241128334
+    },
+    {
+      "articleId": "6f619ef1-323b-4567-a21c-7850383b1db7",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087213244,
+      "recordedAt": 1794087213824,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2481,
+      "evidenceReferences": [
+        "4a1fb624-43b4-42f6-8537-5ae4b22888f1",
+        "4ad3b9b1-3862-44e6-a4a2-331bee05d88f"
+      ],
+      "monotonicTimeNanos": 147584323647180
+    },
+    {
+      "articleId": "99daa085-59df-4809-8db7-dda521bdf235",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087222122,
+      "recordedAt": 1794087223112,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 788,
+        "barRight": 230,
+        "barBottom": 806,
+        "filledFraction": 0.9946808,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9296621,
+      "sequenceNumber": 2613,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147593261792719
+    },
+    {
+      "articleId": "e5bdd7c7-1f40-40d6-87e0-b1ec9fb4e024",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087225219,
+      "recordedAt": 1794087225750,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 254,
+        "barTop": 658,
+        "barRight": 447,
+        "barBottom": 675,
+        "filledFraction": 0.98941797,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9277221,
+      "sequenceNumber": 2661,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147596352143719
+    },
+    {
+      "articleId": "8792e4d6-7b2b-4ecb-8a36-813c2e975f0a",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087221172,
+      "recordedAt": 1794087227435,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Camerupt used Earth Powers",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2690,
+      "evidenceReferences": [
+        "5403535e-cd3b-4af6-a9b3-8b14bf322044",
+        "fcc08a8f-a1f2-42a5-97b3-f88642e22679"
+      ],
+      "monotonicTimeNanos": 147592300559104
+    },
+    {
+      "articleId": "e2c39e6d-aee4-4898-a60e-bfe857f8ab69",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087221172,
+      "recordedAt": 1794087227898,
+      "sourceId": "CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "charge_move_used_announced"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2691,
+      "evidenceReferences": [
+        "8792e4d6-7b2b-4ecb-8a36-813c2e975f0a"
+      ],
+      "monotonicTimeNanos": 147592300559104
+    },
+    {
+      "articleId": "bafaf4cc-9281-49b9-b41c-0d648dbb33a4",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087221172,
+      "recordedAt": 1794087228069,
+      "sourceId": "ANNOUNCEMENT_SPECIES_ROSTER_ATTRIBUTION_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Camerupt used Earth Powers",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2697,
+      "evidenceReferences": [
+        "8792e4d6-7b2b-4ecb-8a36-813c2e975f0a"
+      ],
+      "monotonicTimeNanos": 147592300559104
+    },
+    {
+      "articleId": "b52f355a-665f-437b-ad03-9e930db0b537",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087227918,
+      "recordedAt": 1794087231063,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Obstagoon",
+        "speciesId": 862,
+        "ocrText": "Obstagoon",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 2781,
+      "evidenceReferences": [
+        "cf79a73b-8ecd-4964-a7b5-45c7bfbc8e3a"
+      ],
+      "monotonicTimeNanos": 147599056424104
+    },
+    {
+      "articleId": "8e7576bc-583e-4bc8-84d8-14514d3e1ad2",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087228002,
+      "recordedAt": 1794087232332,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 1,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2802,
+      "evidenceReferences": [
+        "25b90eb6-0fdc-475a-947d-3645dccc13e1",
+        "1f3db64b-87a4-455e-a295-fb94c47af473"
+      ],
+      "monotonicTimeNanos": 147599132959796
+    },
+    {
+      "articleId": "278786c6-fbf0-42d8-bc2e-ecf8892360d5",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087228002,
+      "recordedAt": 1794087232875,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Quagsire",
+        "speciesId": 195,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 2847,
+      "evidenceReferences": [
+        "a29ee048-3545-49f5-9bc4-b02adbec4cdd",
+        "6f619ef1-323b-4567-a21c-7850383b1db7",
+        "8e7576bc-583e-4bc8-84d8-14514d3e1ad2"
+      ],
+      "monotonicTimeNanos": 147599132959796
+    },
+    {
+      "articleId": "82bd4cf3-fe33-4b1e-afde-91abd1538b7a",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087234647,
+      "recordedAt": 1794087235772,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 789,
+        "barRight": 231,
+        "barBottom": 806,
+        "filledFraction": 0.98941797,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.96218634,
+      "sequenceNumber": 2926,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147605764115797
+    },
+    {
+      "articleId": "e3c611c9-2cce-4f61-bcb1-8e8a3c71368b",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087234647,
+      "recordedAt": 1794087235795,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 396,
+        "barTop": 590,
+        "barRight": 588,
+        "barBottom": 608,
+        "filledFraction": 0.69148934,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9358599,
+      "sequenceNumber": 2928,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147605764115797
+    },
+    {
+      "articleId": "a9714a3d-a764-411f-93b3-d9a6b313d0f0",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087245128,
+      "recordedAt": 1794087245284,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 788,
+        "barRight": 230,
+        "barBottom": 806,
+        "filledFraction": 0.9946808,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.96394783,
+      "sequenceNumber": 3051,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147616273193644
+    },
+    {
+      "articleId": "93af3d7e-4a5d-4eed-b70b-cd473d7251c3",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087245128,
+      "recordedAt": 1794087245326,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 396,
+        "barTop": 585,
+        "barRight": 588,
+        "barBottom": 603,
+        "filledFraction": 0.23404256,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.8988067,
+      "sequenceNumber": 3052,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147616273193644
+    },
+    {
+      "articleId": "bb86f7ea-10aa-45bd-91ed-7f8c9c39f97b",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087236056,
+      "recordedAt": 1794087248308,
+      "sourceId": "ANNOUNCEMENT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "Get Ready!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3112,
+      "evidenceReferences": [
+        "e945532c-2702-449b-bbec-b6b3cdf43aa5",
+        "e3b80959-d457-49f8-a0d4-8f376c59b6bb"
+      ],
+      "monotonicTimeNanos": 147607188881874
+    },
+    {
+      "articleId": "d52ba81c-bb46-4c3d-a396-52c74abb8b3e",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087236056,
+      "recordedAt": 1794087248332,
+      "sourceId": "GET_READY_WITNESS",
+      "payload": {
+        "kind": "get_ready_witnessed"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3113,
+      "evidenceReferences": [
+        "bb86f7ea-10aa-45bd-91ed-7f8c9c39f97b"
+      ],
+      "monotonicTimeNanos": 147607188881874
+    },
+    {
+      "articleId": "97b50aa5-0dee-46b6-b68d-bdc65a2028b4",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087255680,
+      "recordedAt": 1794087255911,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 790,
+        "barRight": 231,
+        "barBottom": 807,
+        "filledFraction": 0.98941797,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.96218634,
+      "sequenceNumber": 3317,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147626758138875
+    },
+    {
+      "articleId": "75c2900f-56da-4290-b928-3529535c61c9",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087255680,
+      "recordedAt": 1794087255929,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 396,
+        "barTop": 590,
+        "barRight": 588,
+        "barBottom": 608,
+        "filledFraction": 0.07978723,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.886312,
+      "sequenceNumber": 3318,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 147626758138875
+    },
+    {
+      "articleId": "7c2783f5-c385-44ae-9cdb-16cf8fd95785",
+      "matchId": "34d20b55-51d3-49d4-a47f-61c463ed66b9",
+      "perceivedAt": 1794087271465,
+      "recordedAt": 1794087274710,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "a2904a76-dbec-49da-9668-084ceec472a7"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 147642595409337
+    }
+  ]
+}

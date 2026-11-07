@@ -19,6 +19,10 @@ internal object LegalChargedMoveTextResolver {
                     reading == name -> Match(move, 0,
                         "VISIBLE_MOVE_NAME_ALIAS".takeUnless { reading == normalize(move.name) })
                     reading.length < 6 || name.length < 6 -> null
+                    // The recorded finishing test read "Earth Powers". Accept
+                    // only this one extra terminal glyph after a COMPLETE legal
+                    // name; arbitrary suffixes and clipped edges stay rejected.
+                    reading == name + "S" -> Match(move, 1, "OCR_SINGLE_CHARACTER_REPAIR")
                     reading.startsWith(name) || name.startsWith(reading) -> null
                     SpeciesOcrTypography.glyphRepairCost(reading, name) != null ->
                         Match(move, 1, "OCR_LEGAL_GLYPH_REPAIR")

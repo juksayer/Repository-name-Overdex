@@ -129,6 +129,31 @@ class ChargedMoveOcrRepairTest {
         }
     }
 
+    @Test fun `recorded Earth Powers resolves only through Camerupts legal pool and keeps its source evidence`() = runBlocking {
+        val inference = activePair("Camerupt", "Vaporeon")
+        val raw = announcement("Camerupt used Earth Powers")
+        val result = requireNotNull(inference.accept(raw) { null })
+        assertEquals("Camerupt", result.payload.speciesName)
+        assertEquals(ActivePokemonSide.PLAYER, result.payload.side)
+        assertEquals("Earth Power", result.payload.moveName)
+        assertEquals(knowledge.getPokemonByName("Camerupt")!!.chargedMoves.single { it.name == "Earth Power" }.energy,
+            result.payload.energyCost)
+        assertTrue(result.payload.basis.endsWith("OCR_SINGLE_CHARACTER_REPAIR"))
+        assertEquals(raw, result.observedArticle)
+        assertEquals("Camerupt used Earth Powers", (result.observedArticle.payload as RawTestimony).data)
+        assertEquals(listOf(raw.id, ArticleId("p")), result.predecessorIds)
+        assertNull(inference.accept(announcement("Camerupt used Earth Power!")
+            .copy(monotonicTimeNanos = 11_000_000_000L)) { null })
+    }
+
+    @Test fun `trailing S does not override an illegal named actor mirror or unannounced move`() = runBlocking {
+        assertNull(activePair("Camerupt", "Vaporeon").accept(announcement("Vaporeon used Earth Powers")) { null })
+        assertNull(activePair("Camerupt", "Camerupt").accept(announcement("Camerupt used Earth Powers")) { null })
+        assertNull(activePair("Camerupt", "Vaporeon").accept(announcement("Earth Powers")) { null })
+        assertNull(activePair("Camerupt", "Vaporeon").accept(announcement("Camerupt used Earth Powers")
+            .copy(sourceId = SourceId("QTE_PROGRESS_TEXT_WITNESS"))) { null })
+    }
+
     @Test fun `visible Weather Ball resolves through Abomasnows legal Ice variant and debits only once`() = runBlocking {
         val inference = activePair("Abomasnow", "Sneasel")
         val raw = announcement("Abomasnow used Weather Ball!")
