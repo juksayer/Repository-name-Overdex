@@ -46,6 +46,15 @@ supplies the trackpad and pointer inside the existing display areas; ODXFiShell
 geometry and CRT GlassShield remain unchanged. Other modules retain their
 existing LCD and physical controls.
 
+Programs → Settings → Shortcuts configures the 16 existing launcher destinations.
+Each has independent Desktop and Programs flags, saved by HomeScreenPreferences.
+Up/Down selects the destination, Left/Right selects the location, and A changes
+that checkbox. The LCD also offers direct checkbox controls, and trackpad targets
+identify each checkbox separately. Programs remains the desktop footer, and
+Settings remains in Programs so an empty/hidden configuration can be repaired.
+Settings itself may be pinned to the desktop. Destination IDs preserve selection
+when filtering changes the grid; hidden entries never delete their program data.
+
 For private tournament invitations, check-in, pairings and results, start with
 [TournamentScreen](../../app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt),
 [TournamentEngine](../../app/src/main/java/com/example/overdex/tournament/TournamentEngine.kt)

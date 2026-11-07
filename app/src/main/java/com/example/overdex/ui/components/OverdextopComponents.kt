@@ -25,6 +25,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -62,6 +63,7 @@ import androidx.compose.ui.zIndex
 import com.example.overdex.R
 import com.example.overdex.model.navigation.DesktopPointerController
 import com.example.overdex.model.navigation.HomeScreenStyle
+import com.example.overdex.model.navigation.LauncherShortcutLocation
 import com.example.overdex.model.navigation.OverdextopAction
 import com.example.overdex.model.navigation.OverdextopController
 import com.example.overdex.model.navigation.OverdextopEntry
@@ -87,7 +89,7 @@ fun OverdextopCrt(
     val attachmentMotionBaseline = remember(pointerController) { pointerController?.motionRevision ?: 0L }
     DisposableEffect(pointerController, controller.surface) {
         pointerController?.beginSurface(controller.surface)
-        pointerController?.centerOnTarget(controller.selectedEntry.id)
+        pointerController?.centerOnTarget(controller.selectedPointerTargetId)
         onDispose { pointerController?.clearTargets() }
     }
     // Layout, scroll, and keyboard selection may change what lies under the
@@ -108,7 +110,8 @@ fun OverdextopCrt(
                 text = when (controller.surface) {
                     OverdextopSurface.DESKTOP -> "home"
                     OverdextopSurface.PROGRAMS -> "programs"
-                    OverdextopSurface.SETTINGS -> "home screen"
+                    OverdextopSurface.SETTINGS -> "settings"
+                    OverdextopSurface.SHORTCUTS -> "shortcuts"
                 },
                 fontFamily = DesktopTypeface,
                 fontSize = 21.sp,
@@ -119,10 +122,12 @@ fun OverdextopCrt(
             Spacer(Modifier.fillMaxWidth().height(1.dp).background(DesktopRail))
             Spacer(Modifier.height(12.dp))
             key(controller.surface) {
-                if (controller.surface == OverdextopSurface.DESKTOP) {
-                    DesktopShortcuts(controller, revealCount, pointerController, viewportCoordinates, onEntryActivated)
-                } else {
-                    DesktopProgramList(controller, homeStyle, pointerController, viewportCoordinates, onEntryActivated)
+                when (controller.surface) {
+                    OverdextopSurface.DESKTOP -> DesktopShortcuts(
+                        controller, revealCount, pointerController, viewportCoordinates, onEntryActivated)
+                    OverdextopSurface.SHORTCUTS -> ShortcutSettingsList(
+                        controller, pointerController, viewportCoordinates, onEntryActivated)
+                    else -> DesktopProgramList(controller, homeStyle, pointerController, viewportCoordinates, onEntryActivated)
                 }
             }
         }
@@ -294,6 +299,119 @@ private fun DesktopProgramRow(
 }
 
 @Composable
+private fun ShortcutSettingsList(
+    controller: OverdextopController,
+    pointerController: DesktopPointerController?,
+    viewportCoordinates: LayoutCoordinates?,
+    onEntryActivated: (OverdextopEntry) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().testTag("overdextop-shortcuts")
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        controller.entries.forEach { entry ->
+            key(entry.id) {
+                val isSelected = controller.selectedEntry.id == entry.id
+                val requester = remember { BringIntoViewRequester() }
+                LaunchedEffect(isSelected) { if (isSelected) requester.bringIntoView() }
+                val visibility = controller.shortcutVisibility(entry.id)
+                Column(
+                    modifier = Modifier.fillMaxWidth().bringIntoViewRequester(requester)
+                        .testTag("overdextop-shortcut-row:${entry.id}")
+                        .semantics { selected = isSelected }
+                        .background(if (isSelected) DesktopSelectionWash else Color.Transparent, RoundedCornerShape(3.dp))
+                        .padding(top = 7.dp, bottom = 3.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        DesktopIcon(entry.icon, DesktopPhosphor, Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(entry.title, color = if (isSelected) DesktopSelected else DesktopPhosphor,
+                            fontFamily = DesktopTypeface, fontSize = 15.sp, lineHeight = 19.sp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        LauncherShortcutLocation.entries.forEach { location ->
+                            val targetId = controller.shortcutTargetId(entry.id, location)
+                            val editable = controller.shortcutLocationEditable(entry.id, location)
+                            TrackPointerTargetLifetime(pointerController, targetId)
+                            ShortcutLocationToggle(
+                                checked = if (location == LauncherShortcutLocation.DESKTOP) visibility.desktop else visibility.programs,
+                                location = location,
+                                focused = isSelected && controller.selectedShortcutLocation == location,
+                                editable = editable,
+                                label = "${entry.title} on ${shortcutLocationLabel(location)}",
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                                    .testTag("overdextop-shortcut:${entry.id}:${shortcutLocationLabel(location)}")
+                                    .desktopPointerTarget(pointerController.takeIf { editable }, targetId, viewportCoordinates),
+                                onToggle = {
+                                    if (controller.select(targetId)) onEntryActivated(controller.selectedEntry)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun shortcutLocationLabel(location: LauncherShortcutLocation): String = when (location) {
+    LauncherShortcutLocation.DESKTOP -> "desktop"
+    LauncherShortcutLocation.PROGRAMS -> "programs"
+}
+
+@Composable
+private fun ShortcutLocationToggle(
+    checked: Boolean,
+    location: LauncherShortcutLocation,
+    focused: Boolean,
+    editable: Boolean,
+    label: String,
+    modifier: Modifier = Modifier,
+    showFixedLabel: Boolean = true,
+    onToggle: () -> Unit,
+) {
+    val color = when {
+        !editable -> DesktopPhosphor.copy(alpha = .72f)
+        focused -> DesktopSelected
+        else -> DesktopPhosphor
+    }
+    Row(
+        modifier = modifier
+            .border(1.dp, if (focused) DesktopRail else Color.Transparent, RoundedCornerShape(3.dp))
+            .toggleable(value = checked, enabled = editable, role = Role.Checkbox, onValueChange = { onToggle() })
+            .semantics {
+                contentDescription = label
+                selected = focused
+                if (!editable) stateDescription = "Always available"
+            }
+            .heightIn(min = 42.dp).padding(horizontal = 6.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Canvas(Modifier.size(17.dp)) {
+            drawRect(color, style = Stroke(1.5.dp.toPx()))
+            if (checked) {
+                drawPath(Path().apply {
+                    moveTo(size.width * .18f, size.height * .51f)
+                    lineTo(size.width * .42f, size.height * .74f)
+                    lineTo(size.width * .84f, size.height * .25f)
+                }, color, style = Stroke(1.8.dp.toPx()))
+            }
+        }
+        Spacer(Modifier.width(6.dp))
+        Column(Modifier.weight(1f)) {
+            Text(shortcutLocationLabel(location), color = color, fontFamily = DesktopTypeface,
+                fontSize = 12.sp, lineHeight = 15.sp)
+            if (!editable && showFixedLabel) {
+                Text("fixed", color = DesktopPhosphor.copy(alpha = .72f), fontFamily = DesktopTypeface,
+                    fontSize = 11.sp, lineHeight = 14.sp)
+            }
+        }
+    }
+}
+
+@Composable
 private fun TrackPointerTargetLifetime(pointer: DesktopPointerController?, id: String) {
     DisposableEffect(pointer, id) {
         onDispose { pointer?.removeTarget(id) }
@@ -356,9 +474,10 @@ fun OverdextopLcd(
     onPointerTap: () -> Unit = {},
 ) {
     val entry = controller.selectedEntry
+    val shortcutsOpen = controller.surface == OverdextopSurface.SHORTCUTS
     Column(Modifier.fillMaxSize().testTag("overdextop-lcd")) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            if (trackpadMode) {
+            if (trackpadMode || shortcutsOpen) {
                 Box(
                     modifier = Modifier.testTag("overdextop-programs-button")
                         .clickable(role = Role.Button, onClick = onPrograms)
@@ -391,6 +510,35 @@ fun OverdextopLcd(
         }
         if (trackpadMode) {
             DesktopTrackpad(Modifier.weight(1f).fillMaxWidth(), onPointerDrag, onPointerTap)
+        } else if (shortcutsOpen) {
+            val visibility = controller.shortcutVisibility(entry.id)
+            Column(Modifier.weight(1f).fillMaxWidth()) {
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                    .testTag("overdextop-lcd-shortcut-title")) {
+                    Text(entry.title, color = DesktopSelected, fontFamily = DesktopTypeface,
+                        fontSize = 12.sp, lineHeight = 16.sp)
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    LauncherShortcutLocation.entries.forEach { location ->
+                        ShortcutLocationToggle(
+                            checked = if (location == LauncherShortcutLocation.DESKTOP) visibility.desktop else visibility.programs,
+                            location = location,
+                            focused = controller.selectedShortcutLocation == location,
+                            editable = controller.shortcutLocationEditable(entry.id, location),
+                            label = "${entry.title} on ${shortcutLocationLabel(location)}",
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                                .testTag("overdextop-lcd-shortcut-${shortcutLocationLabel(location)}"),
+                            // The CRT already explains the locked recovery entry.
+                            // Preserve LCD room for both controls at larger fonts.
+                            showFixedLabel = false,
+                            onToggle = {
+                                if (controller.select(controller.shortcutTargetId(entry.id, location))) onOpen()
+                            },
+                        )
+                    }
+                }
+            }
         } else {
             Column(
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
@@ -415,7 +563,7 @@ fun OverdextopLcd(
                 }
             }
         }
-        if (!trackpadMode) {
+        if (!trackpadMode && !shortcutsOpen) {
             Spacer(Modifier.height(5.dp))
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 DesktopLcdButton("open", "overdextop-open", Modifier.weight(1f), onOpen)

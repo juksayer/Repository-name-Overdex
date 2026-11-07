@@ -502,7 +502,7 @@ fun PokedexApp(
         com.example.overdex.data.HomeScreenPreferences(context.applicationContext)
     }
     var homeStyle by remember { mutableStateOf(homePreferences.read()) }
-    val homeController = remember { OverdextopController() }
+    val homeController = remember { OverdextopController(initialShortcuts = homePreferences.readShortcuts()) }
     val desktopPointer = remember { DesktopPointerController() }
     var explorerOpen by remember { mutableStateOf(false) }
     com.example.overdex.ui.navigation.MatchSummaryReturnEffect(
@@ -672,6 +672,17 @@ fun PokedexApp(
                         }
                         OverdextopAction.OpenPrograms -> homeController.openPrograms()
                         OverdextopAction.OpenSettings -> homeController.openSettings()
+                        OverdextopAction.OpenShortcuts -> homeController.openShortcuts()
+                        is OverdextopAction.ChangeShortcutLocation -> {
+                            val updated = homeController.shortcuts.withVisibility(
+                                action.destinationId, action.location, action.visible,
+                            )
+                            if (homePreferences.writeShortcuts(updated)) {
+                                homeController.replaceShortcuts(updated)
+                            } else {
+                                Toast.makeText(context, "Could not save the shortcuts. Please try again.", Toast.LENGTH_LONG).show()
+                            }
+                        }
                         is OverdextopAction.ChooseHomeStyle -> {
                             if (homePreferences.write(action.style)) {
                                 desktopPointer.clearTargets()
@@ -687,23 +698,28 @@ fun PokedexApp(
 
                 fun confirmHomeEntry(entry: OverdextopEntry = homeController.selectedEntry) {
                     if (phase != MainMenuPhase.READY) return
-                    if (homeController.select(entry.id)) {
+                    if (entry.id == homeController.selectedEntry.id || homeController.select(entry.id)) {
+                        val previousSurface = homeController.surface
                         val action = homeController.confirm()
-                        // A failed settings save stays on this surface, so its
-                        // measured targets must remain available for a retry.
-                        if (action !is OverdextopAction.ChooseHomeStyle) desktopPointer.clearTargets()
+                        // Preference writes and locked controls stay here. Keep
+                        // measured targets available for another toggle or retry.
+                        if (action !is OverdextopAction.ChooseHomeStyle &&
+                            action !is OverdextopAction.ChangeShortcutLocation &&
+                            (action != null || homeController.surface != previousSurface)) {
+                            desktopPointer.clearTargets()
+                        }
                         action?.let(::performHomeAction)
                     }
                 }
 
                 fun moveHomeSelection(direction: OverdextopDirection) {
                     homeController.move(direction)
-                    if (desktopPointer.enabled) desktopPointer.centerOnTarget(homeController.selectedEntry.id)
+                    if (desktopPointer.enabled) desktopPointer.centerOnTarget(homeController.selectedPointerTargetId)
                 }
 
                 fun toggleDesktopInput() {
                     if (phase != MainMenuPhase.READY || !usingHomeLauncher) return
-                    if (desktopPointer.toggle()) desktopPointer.centerOnTarget(homeController.selectedEntry.id)
+                    if (desktopPointer.toggle()) desktopPointer.centerOnTarget(homeController.selectedPointerTargetId)
                 }
 
                 fun returnFromHomeSurface() {
@@ -769,8 +785,7 @@ fun PokedexApp(
                                         },
                                         onPointerTap = {
                                             desktopPointer.tap()?.let { targetId ->
-                                                homeController.entries.firstOrNull { it.id == targetId }
-                                                    ?.let(::confirmHomeEntry)
+                                                if (homeController.select(targetId)) confirmHomeEntry()
                                             }
                                         },
                                     )
