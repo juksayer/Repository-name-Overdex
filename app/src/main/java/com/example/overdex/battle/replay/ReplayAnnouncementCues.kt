@@ -20,6 +20,18 @@ internal fun isReplayShieldPromptCue(article: ArchivedRealityArticle): Boolean {
 internal fun isReplayGetReadyCue(article: ArchivedRealityArticle): Boolean =
     article.payload is ArchivedGetReadyWitnessed || replayAnnouncementContains(article, "GETREADY")
 
+/** Accepted progression text proves our QTE is in progress, not its start or impact. */
+internal fun replayQteProgressGrade(article: ArchivedRealityArticle): String? {
+    if (article.sourceId != "QTE_PROGRESS_TEXT_WITNESS") return null
+    val text = (article.payload as? ArchivedRawText)?.value?.trim() ?: return null
+    return QTE_PROGRESS_GRADE.matchEntire(text)?.groupValues?.get(1)?.uppercase()
+}
+
+internal fun isReplayPlayerChargeCue(article: ArchivedRealityArticle): Boolean =
+    isReplayGetReadyCue(article) || replayQteProgressGrade(article) != null
+
+private val QTE_PROGRESS_GRADE = Regex("(NICE|GREAT|EXCELLENT)!?", RegexOption.IGNORE_CASE)
+
 private fun replayAnnouncementContains(article: ArchivedRealityArticle, phrase: String): Boolean =
     article.sourceId in ANNOUNCEMENT_PHASE_TEXT_SOURCES &&
         (article.payload as? ArchivedRawText)?.value?.let { announcementContainsPhrase(it, phrase) } == true

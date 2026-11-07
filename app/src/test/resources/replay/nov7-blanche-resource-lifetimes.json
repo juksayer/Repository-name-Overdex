@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 1,
+  "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+  "mediaIncluded": false,
+  "articles": [
+    {
+      "articleId": "efcbebbb-8316-470f-ba5f-6df22217904c",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073533030,
+      "recordedAt": 1794073533039,
+      "sourceId": "DROIDBALL_SESSION",
+      "payload": {
+        "kind": "match_record_started"
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 0,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 133910498744673
+    },
+    {
+      "articleId": "5f1be484-b34f-403b-a216-200d1337b49e",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073575250,
+      "recordedAt": 1794073576143,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "9b3d3bce-6c02-4927-8f9b-83546b6cba45"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 133952701416983
+    },
+    {
+      "articleId": "761287f0-a959-4ef1-b3ef-b5ffd356d92e",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073575334,
+      "recordedAt": 1794073578108,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "ocrText": "Sneasel",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 709,
+      "evidenceReferences": [
+        "80e23ddc-383a-4e1e-90e8-aee6dbced774",
+        "d3029441-81bb-466e-a488-392d73f81792"
+      ],
+      "monotonicTimeNanos": 133952797721214
+    },
+    {
+      "articleId": "90d50e66-3bfe-4ae9-beb7-6148ccba01de",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073576875,
+      "recordedAt": 1794073579344,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Turtonator",
+        "speciesId": 776,
+        "ocrText": "Turtonator",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 743,
+      "evidenceReferences": [
+        "80e23ddc-383a-4e1e-90e8-aee6dbced774",
+        "517c0de2-e29c-4413-b81e-a294ba0d4b02"
+      ],
+      "monotonicTimeNanos": 133954132497598
+    },
+    {
+      "articleId": "ecbef219-d0a8-46b7-a616-208fc3b7b76c",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073581723,
+      "recordedAt": 1794073582164,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 3,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 822,
+      "evidenceReferences": [
+        "0548b6d6-7e08-4b2d-b639-6fbe03072916",
+        "3c91e9da-902a-4076-b387-8a80dc3e10d4"
+      ],
+      "monotonicTimeNanos": 133959175827368
+    },
+    {
+      "articleId": "159b53da-5448-4bf8-9609-691b3a0e25d1",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073593926,
+      "recordedAt": 1794073597455,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "ocrText": "Sealeo",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1129,
+      "evidenceReferences": [
+        "0a0d69f2-e2f7-4f99-8f09-575f5c94e8d1"
+      ],
+      "monotonicTimeNanos": 133971382070753
+    },
+    {
+      "articleId": "02e95f41-5203-4fb1-ae49-e982120bd440",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073598093,
+      "recordedAt": 1794073600318,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1184,
+      "evidenceReferences": [
+        "afa322a2-8788-4b5a-ab75-acbecbecfbeb",
+        "570d60fa-04b7-4c90-99db-5ce341fe71ac"
+      ],
+      "monotonicTimeNanos": 133975544917292
+    },
+    {
+      "articleId": "131ff4bc-62a1-48c1-98de-f8f8bca04ecb",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073598093,
+      "recordedAt": 1794073600955,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sneasel",
+        "speciesId": 215,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1188,
+      "evidenceReferences": [
+        "761287f0-a959-4ef1-b3ef-b5ffd356d92e",
+        "ecbef219-d0a8-46b7-a616-208fc3b7b76c",
+        "02e95f41-5203-4fb1-ae49-e982120bd440"
+      ],
+      "monotonicTimeNanos": 133975544917292
+    },
+    {
+      "articleId": "4c3da124-e6b8-40a5-bd43-f50afe548f11",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073615413,
+      "recordedAt": 1794073615650,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 2,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1562,
+      "evidenceReferences": [
+        "5a69fee6-b6d8-43e5-a345-b740fd32f741",
+        "fdfc819f-019e-429d-856e-8e29a475320e"
+      ],
+      "monotonicTimeNanos": 133992785825293
+    },
+    {
+      "articleId": "4a2dffa5-e0f5-4a65-89fd-44d19ed94f0c",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073620700,
+      "recordedAt": 1794073625280,
+      "sourceId": "QTE_PROGRESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "GREAT!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1721,
+      "evidenceReferences": [
+        "e2f8d63a-7c9e-46ca-8964-933394a5e51f",
+        "be7fb877-34ec-40ab-abac-dc70e2305270"
+      ],
+      "monotonicTimeNanos": 133998116533293
+    },
+    {
+      "articleId": "05cba021-c0ca-4be8-ad4a-78ee53419b99",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073626181,
+      "recordedAt": 1794073627474,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Vaporeon",
+        "speciesId": 134,
+        "ocrText": "Vaporeon",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1782,
+      "evidenceReferences": [
+        "3c5a245d-cc23-4e0e-a204-6dd29de2e3fb"
+      ],
+      "monotonicTimeNanos": 134003628321601
+    },
+    {
+      "articleId": "adb54dcb-22bc-4b1e-97b6-041b5fdb02f8",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073628716,
+      "recordedAt": 1794073630289,
+      "sourceId": "OPPONENT_POKE_BALLS_WITNESS",
+      "payload": {
+        "kind": "opponent_battle_resource_count_measured",
+        "resource": "POKE_BALLS",
+        "visibleCount": 1,
+        "maximumCount": 3
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 1847,
+      "evidenceReferences": [
+        "db89b8d5-4d6b-416e-b9b1-db79fb458f4d",
+        "efe9a5b9-1262-461b-aad5-49bd3a8968f7"
+      ],
+      "monotonicTimeNanos": 134006132294448
+    },
+    {
+      "articleId": "077441ea-1fab-43ac-bd93-00fdcb1e8bcd",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073628716,
+      "recordedAt": 1794073630332,
+      "sourceId": "OPPONENT_POKEMON_FAINT_WITNESS",
+      "payload": {
+        "kind": "active_pokemon_fainted_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Sealeo",
+        "speciesId": 364,
+        "basis": "OPPONENT_POKE_BALL_COUNT_DECREASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.96,
+      "sequenceNumber": 1849,
+      "evidenceReferences": [
+        "159b53da-5448-4bf8-9609-691b3a0e25d1",
+        "4c3da124-e6b8-40a5-bd43-f50afe548f11",
+        "adb54dcb-22bc-4b1e-97b6-041b5fdb02f8"
+      ],
+      "monotonicTimeNanos": 134006132294448
+    },
+    {
+      "articleId": "32124112-0e7a-415b-a73d-a74550324f3a",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073632071,
+      "recordedAt": 1794073633935,
+      "sourceId": "PLAYER_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "PLAYER",
+        "speciesName": "Camerupt",
+        "speciesId": 323,
+        "ocrText": "Camerupt",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1933,
+      "evidenceReferences": [
+        "187ebdab-48de-46ff-b5b0-40d732512a6a"
+      ],
+      "monotonicTimeNanos": 134009528086140
+    },
+    {
+      "articleId": "e7c6a523-6e2c-4a0c-949c-f3e9f7cb2449",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073638061,
+      "recordedAt": 1794073638630,
+      "sourceId": "PLAYER_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "PLAYER",
+        "barLeft": 38,
+        "barTop": 788,
+        "barRight": 230,
+        "barBottom": 806,
+        "filledFraction": 0.39893618,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.9156925,
+      "sequenceNumber": 2118,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 134015505736294
+    },
+    {
+      "articleId": "44c4340c-5a6f-4cc1-8d36-4b560053b2b9",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073638061,
+      "recordedAt": 1794073638704,
+      "sourceId": "OPPONENT_ACTIVE_HP_BAR_WITNESS",
+      "payload": {
+        "kind": "active_hp_bar_measured",
+        "side": "OPPONENT",
+        "barLeft": 394,
+        "barTop": 672,
+        "barRight": 587,
+        "barBottom": 689,
+        "filledFraction": 0.4920635,
+        "sourceWidth": 672,
+        "sourceHeight": 1493
+      },
+      "predecessorIds": [],
+      "confidence": 0.8815013,
+      "sequenceNumber": 2119,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 134015505736294
+    },
+    {
+      "articleId": "ff83b1c3-6d42-49ad-860f-fb36ffc584e0",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073642507,
+      "recordedAt": 1794073650256,
+      "sourceId": "QTE_PROGRESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "NICE!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 2317,
+      "evidenceReferences": [
+        "e41bf7cc-1798-43ed-94a1-49d9b989c83b",
+        "da21a965-8580-4872-bc83-477778086bd5"
+      ],
+      "monotonicTimeNanos": 134019920643756
+    },
+    {
+      "articleId": "a7f4487a-8a9a-4fd5-ada4-3e6ab0e6b70c",
+      "matchId": "a04cb9fd-a9f1-4709-9ce3-e1d5b5f29080",
+      "perceivedAt": 1794073657262,
+      "recordedAt": 1794073660656,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_ended",
+        "result": "WIN"
+      },
+      "predecessorIds": [
+        "f107a5d2-b2eb-4bad-bb35-d20819ae9679"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 134034702886219
+    }
+  ]
+}

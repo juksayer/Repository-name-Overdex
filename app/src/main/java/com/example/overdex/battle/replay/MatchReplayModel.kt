@@ -219,7 +219,8 @@ class MatchReplayModel(
     private val playerHpTrack = ReplayHpTrack(timedArticles, "PLAYER", hpEvidence, fastMoveCycles)
     private val opponentHpTrack = ReplayHpTrack(timedArticles, "OPPONENT", hpEvidence, fastMoveCycles)
     private val replayHapticEvents = buildList {
-        addAll(replayQteMilestones.map { ReplayHapticEvent(it.atNanos, pulseCount = 1) })
+        addAll(replayQteMilestones.filter { it.hapticSupported }
+            .map { ReplayHapticEvent(it.atNanos, pulseCount = 1) })
         actionArticles.forEach { article ->
             val vibration = article.payload as? ArchivedChargeMoveQteVibrationPatternInferred
                 ?: return@forEach
@@ -510,6 +511,15 @@ class MatchReplayModel(
             sequences["reconstructed:${cue.articleId}"] = selected.toMilestones("PLAYER")
             usedPulseIds += selected.map { it.articleId }
         }
+        // A retained grade is independently useful when the earlier Get Ready
+        // and later used-move banner were missed. Its exact source instant and
+        // label are known; no earlier grades, haptics, move or hit are implied.
+        actionArticles.forEach { article ->
+            val grade = replayQteProgressGrade(article) ?: return@forEach
+            val at = article.monotonicTimeNanos ?: return@forEach
+            sequences["progress:${article.articleId}"] = listOf(
+                ReplayQteMilestone(at, grade, "PLAYER", hapticSupported = false))
+        }
         return sequences.mapValues { (_, milestones) ->
             milestones.filter { matchEndNanos == null || it.atNanos < matchEndNanos }
         }
@@ -619,6 +629,10 @@ class MatchReplayModel(
         val recoveredAnnouncements = reconstructNamedChargedMoveAnnouncements()
         val evidence = actionArticles.mapNotNull { article ->
             val atNanos = article.monotonicTimeNanos ?: return@mapNotNull null
+            if (replayQteProgressGrade(article) != null) {
+                return@mapNotNull ReplayChargedMoveUse(
+                    "PLAYER", atNanos, atNanos, null, 1, setOf("QTE_PROGRESS_TEXT"))
+            }
             if (isReplayGetReadyCue(article)) {
                 val selected = selectedPlayerChargeAt(atNanos)
                 val transition = chargeTransitions.forCue(article)
@@ -671,7 +685,7 @@ class MatchReplayModel(
                         }) null else ReplayChargedMoveUse(
                         timedArticles.lastOrNull {
                             it.monotonicTimeNanos!! in (atNanos - CHARGE_MOVE_PREPARATION_MAX_NANOS) until atNanos &&
-                                (isReplayGetReadyCue(it) || isReplayAttackIncomingCue(it))
+                                (isReplayPlayerChargeCue(it) || isReplayAttackIncomingCue(it))
                         }?.let { if (isReplayAttackIncomingCue(it)) "OPPONENT" else "PLAYER" } ?: "UNKNOWN",
                         atNanos, atNanos, null, 3, setOf("CHARGED_MOVE_ANNOUNCEMENT")
                     )
@@ -683,10 +697,26 @@ class MatchReplayModel(
         return evidence.groupBy { it.side }.values.flatMap { sideEvidence ->
             sideEvidence.fold(mutableListOf<ReplayChargedMoveUse>()) { merged, current ->
                 val previous = merged.lastOrNull()
-                if (
+                val progressInterrupted = previous != null &&
+                    ("QTE_PROGRESS_TEXT" in previous.evidenceKinds || "QTE_PROGRESS_TEXT" in current.evidenceKinds) &&
+                    (actionArticles.any { it.monotonicTimeNanos!! in (previous.lastEvidenceAtNanos + 1)..current.animationAtNanos &&
+                        interruptsProgressPreparation(it) } || listOfNotNull(
+                        playerIdentityTrack.nextAppearanceAfter(previous.lastEvidenceAtNanos),
+                        opponentIdentityTrack.nextAppearanceAfter(previous.lastEvidenceAtNanos),
+                    ).any { it <= current.animationAtNanos })
+                if (previous != null && previous.anchorPriority >= 3 &&
+                    "QTE_PROGRESS_TEXT" in current.evidenceKinds &&
+                    current.animationAtNanos - previous.animationAtNanos in 0..750_000_000L &&
+                    !progressInterrupted) {
+                    // The grade can linger as the used-move banner fades in.
+                    // Preserve its text without reopening a completed sequence.
+                    merged[merged.lastIndex] = previous.copy(
+                        lastEvidenceAtNanos = maxOf(previous.lastEvidenceAtNanos, current.lastEvidenceAtNanos),
+                        evidenceKinds = previous.evidenceKinds + current.evidenceKinds)
+                } else if (
                     previous != null &&
                     current.animationAtNanos - (previous.transition?.cueAtNanos ?: previous.preparationAtNanos) <= CHARGE_MOVE_PREPARATION_MAX_NANOS &&
-                    previous.anchorPriority < 3
+                    previous.anchorPriority < 3 && !progressInterrupted
                 ) {
                     val replaceAnchor = current.anchorPriority > previous.anchorPriority
                     merged[merged.lastIndex] = previous.copy(
@@ -706,7 +736,19 @@ class MatchReplayModel(
             if (use.anchorPriority < 3) {
                 // An opening cue without a closing announcement still gets a
                 // bounded charge-up. No grade, move name or impact is invented.
-                use.copy(animationAtNanos = (use.transition?.cueAtNanos ?: use.preparationAtNanos) + CHARGE_MOVE_PREPARATION_MAX_NANOS,
+                val maximumEnd = (use.transition?.cueAtNanos ?: use.preparationAtNanos) + CHARGE_MOVE_PREPARATION_MAX_NANOS
+                // Progress text proves only an in-progress phase. A subsequent
+                // accepted action or identity boundary closes this display hint;
+                // it cannot turn ordinary play into an extra ten-second QTE.
+                val nextAction = if ("QTE_PROGRESS_TEXT" in use.evidenceKinds) actionArticles.firstOrNull {
+                    it.monotonicTimeNanos!! > use.lastEvidenceAtNanos &&
+                        interruptsProgressPreparation(it)
+                }?.monotonicTimeNanos else null
+                val nextEntry = if ("QTE_PROGRESS_TEXT" in use.evidenceKinds) listOfNotNull(
+                    playerIdentityTrack.nextAppearanceAfter(use.lastEvidenceAtNanos),
+                    opponentIdentityTrack.nextAppearanceAfter(use.lastEvidenceAtNanos),
+                ).minOrNull() else null
+                use.copy(animationAtNanos = minOf(maximumEnd, nextAction ?: Long.MAX_VALUE, nextEntry ?: Long.MAX_VALUE),
                     evidenceKinds = use.evidenceKinds + "OPEN_CHARGE_SEQUENCE")
             } else if (use.preparationAtNanos < use.animationAtNanos) use else {
                 // Completed-record presentation can bridge an unobserved QTE
@@ -726,6 +768,11 @@ class MatchReplayModel(
             }
         } }
     }
+
+    private fun interruptsProgressPreparation(article: ArchivedRealityArticle): Boolean =
+        (article.payload is ArchivedFastMoveUseObserved && hpEvidence.accepts(article)) ||
+            isReplayAttackIncomingCue(article) || isReplayGetReadyCue(article) ||
+            (article.payload as? ArchivedChargedMoveEnergySpent)?.side == "OPPONENT"
 
     /** A lingering announcement is supporting text, not another completed attack.
      * A fresh preparation starts a new episode even when the same move is reused.
@@ -1073,7 +1120,11 @@ class MatchReplayModel(
             it.payload is ArchivedActiveHpBarDamageTickMeasured && hpEvidence.acceptsSingleHit(it)
         }.associateBy { it.articleId }
         val chargeWindows = fastMoveChargeWindows + recordedChargedMoveUses.map {
-            it.preparationAtNanos..(it.animationAtNanos + 750_000_000L)
+            // A progress-only phase has no witnessed strike/impact tail. Keep
+            // the first ordinary action that closes it at its original instant.
+            val end = if (!it.isCompleted && "QTE_PROGRESS_TEXT" in it.evidenceKinds)
+                it.animationAtNanos - 1 else it.animationAtNanos + 750_000_000L
+            it.preparationAtNanos..end
         }
         val terminalBoundaries = timedArticles.mapNotNull { article ->
             article.monotonicTimeNanos.takeIf { article.payload is ArchivedActivePokemonFaintedWitnessed ||
@@ -1627,7 +1678,10 @@ data class ReplayHapticEvent(
     val pulseCount: Int
 )
 
-private data class ReplayQteMilestone(val atNanos: Long, val label: String, val side: String)
+private data class ReplayQteMilestone(
+    val atNanos: Long, val label: String, val side: String,
+    val hapticSupported: Boolean = true,
+)
 
 private data class ReplayFastMoveUse(
     val side: String,
