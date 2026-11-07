@@ -46,6 +46,10 @@ supplies the trackpad and pointer inside the existing display areas; ODXFiShell
 geometry and CRT GlassShield remain unchanged. Other modules retain their
 existing LCD and physical controls.
 
+A trackpad contact is limited to the LCD pad's measured rectangle. Leaving any
+edge cancels that contact through release, including re-entry and delivered
+historical touch samples; only a fresh contact inside can move or tap again.
+
 Programs → Settings → Shortcuts configures the 16 existing launcher destinations.
 Each has independent Desktop and Programs flags, saved by HomeScreenPreferences.
 Up/Down selects the destination, Left/Right selects the location, and A changes

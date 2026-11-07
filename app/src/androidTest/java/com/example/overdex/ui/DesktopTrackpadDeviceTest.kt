@@ -221,14 +221,21 @@ class DesktopTrackpadDeviceTest {
         movePointerToMeasuredTarget(pointer, "current_team")
         val before = pointer.x to pointer.y
         val revision = pointer.motionRevision
+        val padBounds = compose.onNodeWithTag("overdextop-trackpad").fetchSemanticsNode().boundsInRoot
 
-        compose.onNodeWithTag("overdextop-trackpad").performTouchInput {
-            down(Offset(1f, height * 0.5f))
+        compose.onRoot().performTouchInput {
+            val inside = Offset(padBounds.left + 1f, padBounds.center.y)
+            down(inside)
+            // Compose drops moves whose latest point is identical to the last
+            // event. Move that point one pixel while keeping it inside the pad.
+            updatePointerTo(pointerId = 0, position = inside + Offset(1f, 0f))
             // Android can batch an excursion and return into one event. Its
             // latest position is inside, but its history must still cancel it.
+            // Root injection keeps both latest and historical coordinates in
+            // the same space, independent of node-local history conversion.
             moveWithHistory(
                 relativeHistoricalTimes = listOf(-8L),
-                historicalCoordinates = listOf(Offset(-1f, height * 0.5f)),
+                historicalCoordinates = listOf(Offset(padBounds.left - 1f, padBounds.center.y)),
             )
             up()
         }
