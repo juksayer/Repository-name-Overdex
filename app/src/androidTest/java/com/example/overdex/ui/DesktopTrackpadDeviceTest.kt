@@ -110,6 +110,140 @@ class DesktopTrackpadDeviceTest {
         }
     }
 
+    @Test fun leavingAnyTrackpadEdgeCancelsTheContactAcrossTheShellAndCrtUntilRelease() {
+        val controller = OverdextopController()
+        val pointer = DesktopPointerController().apply { setEnabled(true) }
+        val actions = mutableListOf<OverdextopAction>()
+        compose.setContent { Handheld(controller, pointer, actions::add) }
+        val trackpad = compose.onNodeWithTag("overdextop-trackpad")
+        val padBounds = trackpad.fetchSemanticsNode().boundsInRoot
+        val crtCenter = compose.onNodeWithTag("overdextop-crt").fetchSemanticsNode().boundsInRoot.center
+        val aCenter = compose.onNodeWithText("A").fetchSemanticsNode().boundsInRoot.center
+        val outsideTargets = listOf(
+            "left" to Offset(-1f, padBounds.height / 2f),
+            "right" to Offset(padBounds.width + 1f, padBounds.height / 2f),
+            "top" to Offset(padBounds.width / 2f, -1f),
+            "bottom" to Offset(padBounds.width / 2f, padBounds.height + 1f),
+        )
+
+        outsideTargets.forEach { (edge, outside) ->
+            compose.runOnIdle {
+                pointer.moveBy(0.5f - pointer.x, 0.4f - pointer.y, 1f, 1f)
+            }
+            val initialRevision = pointer.motionRevision
+            trackpad.performTouchInput {
+                down(Offset(width * 0.4f, height * 0.5f))
+                moveTo(Offset(width * 0.55f, height * 0.5f))
+            }
+            val lastInside = pointer.x to pointer.y
+            val lastInsideRevision = pointer.motionRevision
+            compose.runOnIdle {
+                assertTrue("The $edge case must begin with a working LCD drag", lastInsideRevision > initialRevision)
+            }
+
+            trackpad.performTouchInput { moveTo(outside) }
+            compose.runOnIdle {
+                assertEquals("The first sample beyond $edge must not move the pointer", lastInside, pointer.x to pointer.y)
+                assertEquals(lastInsideRevision, pointer.motionRevision)
+            }
+            trackpad.performTouchInput {
+                // A contact stays captured by its original hit path. Move it over
+                // the actual CRT and hardware, then back into the pad before up.
+                moveTo(crtCenter - padBounds.topLeft)
+                moveTo(aCenter - padBounds.topLeft)
+                moveTo(Offset(width * 0.7f, height * 0.6f))
+                up()
+            }
+            compose.runOnIdle {
+                assertEquals("Leaving $edge must cancel movement even after re-entry", lastInside, pointer.x to pointer.y)
+                assertEquals(lastInsideRevision, pointer.motionRevision)
+                assertTrue("The escaped $edge contact must not activate the CRT or instrument controls", actions.isEmpty())
+            }
+        }
+
+        val beforeFreshContact = pointer.motionRevision
+        trackpad.performTouchInput {
+            swipe(start = Offset(width * 0.3f, height * 0.5f),
+                end = Offset(width * 0.45f, height * 0.5f), durationMillis = 240)
+        }
+        compose.runOnIdle {
+            assertTrue("Lifting the canceled contact must allow a new LCD drag", pointer.motionRevision > beforeFreshContact)
+            assertTrue(actions.isEmpty())
+        }
+        movePointerToMeasuredTarget(pointer, "current_team")
+        compose.onNodeWithTag("overdextop-entry:pokedex").performTouchInput { click() }
+        compose.runOnIdle {
+            assertEquals("GlassShield must still block a separate direct CRT contact", "current_team", controller.selectedEntry.id)
+            assertTrue(actions.isEmpty())
+        }
+        trackpad.performTouchInput { click() }
+        compose.runOnIdle {
+            assertEquals("A fresh valid LCD tap must still open its hovered destination",
+                listOf(OverdextopAction.OpenProgram(InstrumentCommand.OpenCurrentTeam)), actions)
+        }
+    }
+
+    @Test fun aTapLikeContactThatLeavesAndReentersThePadCannotActivate() {
+        val controller = OverdextopController()
+        val pointer = DesktopPointerController().apply { setEnabled(true) }
+        val actions = mutableListOf<OverdextopAction>()
+        compose.setContent { Handheld(controller, pointer, actions::add) }
+        movePointerToMeasuredTarget(pointer, "current_team")
+        val before = pointer.x to pointer.y
+        val revision = pointer.motionRevision
+
+        compose.onNodeWithTag("overdextop-trackpad").performTouchInput {
+            // Stay below touch slop. Escape alone must invalidate a possible tap,
+            // even when no drag was recognized and the finger comes back inside.
+            down(Offset(1f, height * 0.5f))
+            moveTo(Offset(-1f, height * 0.5f))
+            moveTo(Offset(1f, height * 0.5f))
+            up()
+        }
+        compose.runOnIdle {
+            assertEquals(before, pointer.x to pointer.y)
+            assertEquals(revision, pointer.motionRevision)
+            assertTrue("A canceled near-edge contact must not become a tap on re-entry", actions.isEmpty())
+        }
+        compose.onNodeWithTag("overdextop-trackpad").performTouchInput { click() }
+        compose.runOnIdle {
+            assertEquals("Cancellation must end when the escaped finger is released",
+                listOf(OverdextopAction.OpenProgram(InstrumentCommand.OpenCurrentTeam)), actions)
+        }
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test fun anOutsideHistoricalSampleCancelsEvenWhenTheLatestBatchedPositionIsInside() {
+        val controller = OverdextopController()
+        val pointer = DesktopPointerController().apply { setEnabled(true) }
+        val actions = mutableListOf<OverdextopAction>()
+        compose.setContent { Handheld(controller, pointer, actions::add) }
+        movePointerToMeasuredTarget(pointer, "current_team")
+        val before = pointer.x to pointer.y
+        val revision = pointer.motionRevision
+
+        compose.onNodeWithTag("overdextop-trackpad").performTouchInput {
+            down(Offset(1f, height * 0.5f))
+            // Android can batch an excursion and return into one event. Its
+            // latest position is inside, but its history must still cancel it.
+            moveWithHistory(
+                relativeHistoricalTimes = listOf(-8L),
+                historicalCoordinates = listOf(Offset(-1f, height * 0.5f)),
+            )
+            up()
+        }
+        compose.runOnIdle {
+            assertEquals("An outside historical sample must not move the pointer", before, pointer.x to pointer.y)
+            assertEquals(revision, pointer.motionRevision)
+            assertTrue("Batched re-entry must not turn a canceled contact into a tap", actions.isEmpty())
+        }
+        compose.onNodeWithTag("overdextop-trackpad").performTouchInput { click() }
+        compose.runOnIdle {
+            assertEquals("A new contact must work after a canceled batched event",
+                listOf(OverdextopAction.OpenProgram(InstrumentCommand.OpenCurrentTeam)), actions)
+        }
+    }
+
     @Test fun measuredCrtTargetCanBeHoveredAndOpenedFromTheLcdWhileDirectCrtTouchStaysBlocked() {
         val controller = OverdextopController()
         val pointer = DesktopPointerController().apply { setEnabled(true) }

@@ -588,32 +588,46 @@ private fun DesktopTrackpad(
             .semantics { contentDescription = "LCD trackpad" }
             .pointerInput(Unit) {
                 awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
+                    fun insidePad(position: Offset): Boolean =
+                        position.x >= 0f && position.y >= 0f &&
+                            position.x < size.width && position.y < size.height
+
+                    val down = awaitFirstDown()
+                    var cancelled = !insidePad(down.position)
+                    down.consume()
                     var lastPosition = down.position
                     var accumulated = Offset.Zero
                     var dragging = false
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        if (change.isConsumed) break
+                        // Compose retains a down's hit path outside its original
+                        // bounds. Leaving the pad cancels this entire contact,
+                        // even if it re-enters; never forward outside movement or
+                        // turn its release into a tap. Keep owning it until up so
+                        // crossing the CRT or shell controls cannot activate them.
+                        if (change.isConsumed || !insidePad(change.position) ||
+                            change.historical.any { !insidePad(it.position) }) cancelled = true
+                        change.consume()
+                        if (cancelled) {
+                            if (!change.pressed) break
+                            continue
+                        }
                         val delta = change.position - lastPosition
                         lastPosition = change.position
                         accumulated += delta
                         if (!dragging && accumulated.getDistance() > viewConfiguration.touchSlop) {
                             dragging = true
-                            change.consume()
                             // Include movement before crossing touch slop, rather than
                             // dropping a significant part of a short LCD gesture.
                             currentOnDrag(accumulated.x, accumulated.y, size.width.toFloat(), size.height.toFloat())
                         } else if (dragging) {
-                            change.consume()
                             if (delta != Offset.Zero) {
                                 currentOnDrag(delta.x, delta.y, size.width.toFloat(), size.height.toFloat())
                             }
                         }
                         if (!change.pressed) {
                             if (!dragging) {
-                                change.consume()
                                 currentOnTap()
                             }
                             break
