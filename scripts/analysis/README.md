@@ -26,6 +26,14 @@ The JSON contains:
   monotonic clocks are not merged into a single cross-Match interval.
 - Every accepted sample and explicit reasons for abstaining from other samples.
 
+**Each species/form has separate player-side and opponent-side records.** Side
+is part of the grouping key before ranges or modal positions are calculated.
+For example, player Raichu's coordinates cannot widen opponent Raichu's range or
+affect its most common position. Identity confirmation and faint/switch boundaries
+also apply independently to each side, including when both active Pokémon are
+the same species. A missing side remains unknown; the other side supplies no
+substitute location evidence.
+
 Identity association uses source monotonic time, never Article delivery time.
 There is no wall-time fallback or backfilling from a later species reading.
 Conflicting same-time names and same-time identity changes abstain. Faints,

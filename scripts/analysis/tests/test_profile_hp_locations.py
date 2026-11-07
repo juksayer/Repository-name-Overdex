@@ -116,6 +116,48 @@ class HpLocationProfileTest(unittest.TestCase):
         self.assertEqual(3, result["profile_count"])
         self.assertEqual({"Raichu", "Raichu (Alolan)"}, {p["species_name"] for p in result["profiles"]})
 
+    def test_same_species_has_independent_player_and_opponent_ranges_and_modes(self):
+        rows = complete_calibration() + [
+            identity("player-species", side="PLAYER"),
+            identity("opponent-species", side="OPPONENT"),
+            hp("player-a", SECOND, bounds=(20, 200, 210, 218), side="PLAYER"),
+            hp("player-b", 2 * SECOND, bounds=(22, 202, 212, 220), side="PLAYER"),
+            hp("opponent-a", SECOND, bounds=(400, 600, 590, 618), side="OPPONENT"),
+            hp("opponent-b", 2 * SECOND, bounds=(400, 602, 590, 620), side="OPPONENT"),
+        ]
+        result = self.analyze(rows)
+        self.assertEqual(2, result["profile_count"])
+        profiles = {profile["side"]: profile for profile in result["profiles"]}
+        self.assertEqual([20, 200, 212, 220], profiles["PLAYER"]["observed_extent"])
+        self.assertEqual([400, 600, 590, 620], profiles["OPPONENT"]["observed_extent"])
+        for side, prefix, center_y in (("PLAYER", "player", [208, 224]), ("OPPONENT", "opponent", [608, 624])):
+            profile = profiles[side]
+            self.assertEqual("Raichu", profile["species_name"])
+            self.assertEqual(2, profile["sample_count"])
+            self.assertEqual(2, profile["modal_position"]["maximum_bin_sample_count"])
+            self.assertEqual(center_y, profile["modal_position"]["bins"][0]["center_y_range"])
+            self.assertEqual({prefix + "-a", prefix + "-b"},
+                             {sample["hp_article_id"] for sample in profile["samples"]})
+            self.assertEqual({prefix + "-species"},
+                             {sample["identity_article_id"] for sample in profile["samples"]})
+
+    def test_same_species_faint_retires_only_the_affected_side(self):
+        rows = [
+            identity("player-species", side="PLAYER"),
+            identity("opponent-species", side="OPPONENT"),
+            hp("player-before", SECOND, side="PLAYER"),
+            hp("opponent-before", SECOND, side="OPPONENT"),
+            article("player-faint", 2 * SECOND,
+                    {"kind": "active_pokemon_fainted_witnessed", "side": "PLAYER", "speciesName": "Raichu"}),
+            hp("player-after", 3 * SECOND, side="PLAYER"),
+            hp("opponent-after", 3 * SECOND, side="OPPONENT"),
+        ]
+        result = self.analyze(rows)
+        profiles = {profile["side"]: profile for profile in result["profiles"]}
+        self.assertEqual(1, profiles["PLAYER"]["sample_count"])
+        self.assertEqual(2, profiles["OPPONENT"]["sample_count"])
+        self.assertEqual(1, result["skipped_samples"]["NO_UNAMBIGUOUS_ACTIVE_SPECIES"])
+
     def test_exact_hp_provenance_pools_matches_but_keeps_all_citations_and_separate_clocks(self):
         one = self.archive([identity(), hp(), *complete_calibration()], "one.zip")
         two = self.archive([identity("identity2", match="match2"), hp("hp2", match="match2"), *complete_calibration("2", match="match2")], "two.zip", "match2")
