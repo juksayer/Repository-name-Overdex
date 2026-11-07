@@ -83,6 +83,17 @@ data preserved. Fresh post-change live measurements, rather than the old Sierra 
 pre-change profiled match, must establish any speedup. Shell appearance remains
 deferred.
 
+November 7 [Blanche recorded-match review](../verification/2026-11-07-blanche-replay-evidence.md)
+confirms GO capture and preservation of all 188 accepted HP samples, but does not
+establish a midpoint acquisition speedup. Replay now uses accepted QTE progress
+text without inventing a completed attack, and fits late named faints before
+replacement when directly cited identity and same-side ball-decrement evidence
+corroborate them. Both intermediate Blanche falls and the final NICE cue pass a
+production render check using the full archive; all 1,948 unit tests pass.
+The final Earth Power strike, HP loss and KO remain absent from the archive.
+Prior finishing-hit capture and source-timed phase/announcement coverage remain
+the next recording targets; these presentation repairs do not close those gaps.
+
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.
 Recorded checks preserve the supported identities, but Turtonator's early
