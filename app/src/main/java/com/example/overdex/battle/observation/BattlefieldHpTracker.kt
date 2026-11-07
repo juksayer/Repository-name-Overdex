@@ -157,16 +157,24 @@ internal class LiveBattlefieldHpTracker(
                 rawCandidates = raw
                 return observableCandidates
             }
-            // Track locally at frame rate; a full-width search on every frame
-            // consumes too much CPU on the physical phone. Recovery is bounded
-            // and returns to the calibrated battlefield, including the home lock.
-            val windows = tracker.trackingWindows(width, regions)
+            // Start an unlocated side near the middle of its own calibrated
+            // territory. Once measured, follow its actual position instead of
+            // repeatedly searching that territory's full height. The midpoint
+            // is only a search prior: broad crops and moving charge cameras
+            // still need the existing bounded full-band recovery below.
+            val windows = tracker.searchWindows(width, regions)
             val local = if (windows.isEmpty()) emptyList() else timing.measure(HpBarLocatorStage.LOCAL_SEARCH) {
                 scanWindows(windows)
             }
-            var measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, local) }
+            val recoveryAllowed = lastWideScanAt?.let { at - it < 250_000_000L } != true
+            var measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) {
+                // A partial narrow result is provisional when this frame will
+                // also search the full band. Do not let its home-size lock
+                // reject the real bar found by that final recovery pass.
+                tracker.assign(width, at, regions, local, commitPartial = !recoveryAllowed)
+            }
             var wideScanPerformed = false
-            if (measurements.size < 2 && lastWideScanAt?.let { at - it < 250_000_000L } != true) {
+            if (measurements.size < 2 && recoveryAllowed) {
                 val bounds = BattleCropBounds(0, regions.values.minOf { it.top }, width, regions.values.maxOf { it.bottom })
                 val recovered = timing.measure(HpBarLocatorStage.RECOVERY_SEARCH) { scanWindows(listOf(bounds)) }
                 measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, recovered) }
@@ -205,18 +213,45 @@ internal class BattlefieldHpTracker {
 
     fun reset(side: ActivePokemonSide) { tracks.remove(side) }
 
-    fun trackingWindows(width: Int, regions: Map<ActivePokemonSide, BattleCropBounds>): List<BattleCropBounds> =
-        tracks.mapNotNull { (side, track) ->
+    fun searchWindows(width: Int, regions: Map<ActivePokemonSide, BattleCropBounds>): List<BattleCropBounds> =
+        ActivePokemonSide.entries.mapNotNull { side ->
             val region = regions[side] ?: return@mapNotNull null
-            val bar = track.latest
-            val margin = (bar.width * .30f).toInt().coerceAtLeast(12)
-            BattleCropBounds(
-                (bar.left - margin).coerceAtLeast(0),
-                (bar.top - margin).coerceAtLeast(region.top),
-                (bar.right + margin).coerceAtMost(width),
-                (bar.bottom + margin).coerceAtMost(region.bottom),
-            ).takeIf { it.bottom - it.top >= 24 && it.right - it.left >= 32 }
+            tracks[side]?.let { trackingWindow(width, region, it.latest) }
+                ?: acquisitionWindow(width, region)
         }
+
+    fun trackingWindows(width: Int, regions: Map<ActivePokemonSide, BattleCropBounds>): List<BattleCropBounds> =
+        ActivePokemonSide.entries.mapNotNull { side ->
+            val track = tracks[side] ?: return@mapNotNull null
+            val region = regions[side] ?: return@mapNotNull null
+            trackingWindow(width, region, track.latest)
+        }
+
+    private fun trackingWindow(width: Int, region: BattleCropBounds, bar: ActiveHpBarMeasurement): BattleCropBounds? {
+        val margin = (bar.width * .30f).toInt().coerceAtLeast(12)
+        return BattleCropBounds(
+            (bar.left - margin).coerceAtLeast(0),
+            (bar.top - margin).coerceAtLeast(region.top),
+            (bar.right + margin).coerceAtMost(width),
+            (bar.bottom + margin).coerceAtMost(region.bottom),
+        ).takeIf { it.bottom - it.top >= 24 && it.right - it.left >= 32 }
+    }
+
+    private fun acquisitionWindow(width: Int, region: BattleCropBounds): BattleCropBounds? {
+        val centerY = region.top + (region.bottom - region.top) / 2
+        // The central third leaves room for the full outline and a modest
+        // initial camera offset. Small, tightly calibrated crops keep their
+        // available height. Horizontal margin retains both real end caps when
+        // the saved crop hugs the bar; this never changes the saved calibration.
+        val halfHeight = ((region.bottom - region.top) / 6).coerceAtLeast(24)
+        val marginX = (width * 2 / 7 * .30f).toInt().coerceAtLeast(12)
+        return BattleCropBounds(
+            (region.left - marginX).coerceAtLeast(0),
+            (centerY - halfHeight).coerceAtLeast(region.top),
+            (region.right + marginX).coerceAtMost(width),
+            (centerY + halfHeight).coerceAtMost(region.bottom),
+        ).takeIf { it.bottom - it.top >= 24 && it.right - it.left >= 32 }
+    }
 
     fun measure(
         width: Int,
@@ -253,6 +288,7 @@ internal class BattlefieldHpTracker {
         at: Long,
         regions: Map<ActivePokemonSide, BattleCropBounds>,
         measurements: List<ActiveHpBarMeasurement>,
+        commitPartial: Boolean = true,
     ): Map<ActivePokemonSide, ActiveHpBarMeasurement> {
         // A thick outline, or a white sprite behind it, can generate several
         // nested row pairs for one bar. Keep the strongest rectangle when the
@@ -300,7 +336,9 @@ internal class BattlefieldHpTracker {
             }
             possible.singleOrNull()?.let { selected[it] = bar }
         }
-        selected.forEach { (side, bar) -> tracks[side] = Track(tracks[side]?.home ?: bar, bar, at) }
+        if (commitPartial || selected.size == ActivePokemonSide.entries.size) {
+            selected.forEach { (side, bar) -> tracks[side] = Track(tracks[side]?.home ?: bar, bar, at) }
+        }
         return selected
     }
 

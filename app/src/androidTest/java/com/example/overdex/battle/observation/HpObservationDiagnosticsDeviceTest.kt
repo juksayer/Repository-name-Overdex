@@ -46,6 +46,37 @@ import org.junit.Test
 
 /** Real Bitmap -> live witness -> Custody -> Match -> Timeline, without private battle assets. */
 class HpObservationDiagnosticsDeviceTest {
+    @Test fun centeredAcquisitionPublishesBothMeasuredBarsWithoutWideRecovery() = runBlocking {
+        val fixture = PipelineFixture()
+        try {
+            fixture.start()
+            fixture.deliver(0, player = true, opponent = true, barTop = 136)
+            fixture.drain()
+            fixture.witness.stop()
+            fixture.drain()
+
+            val counts = fixture.summaries().single { it.reason == "SESSION_STOP" }.cumulative
+            val locator = requireNotNull(counts.locatorBreakdown)
+            assertEquals(1L, counts.locationPasses)
+            assertEquals(1L, locator.localSearch.calls)
+            assertEquals(0L, locator.recoverySearch.calls)
+            assertEquals(2L, locator.pixelExtraction.calls)
+            assertEquals(1L, counts.player.recorded)
+            assertEquals(1L, counts.opponent.recorded)
+            val geometry = fixture.timeline.getArticles().filter { it.payload is ActiveHpBarMeasured }
+            assertEquals(2, geometry.size)
+            geometry.forEach { article ->
+                val hp = article.payload as ActiveHpBarMeasured
+                assertTrue(hp.barTop in 135..137 && hp.barBottom in 157..159)
+                assertEquals(fixture.sourceAt(0), article.monotonicTimeNanos)
+                assertEquals(fixture.wallAt(0), article.perceivedAt)
+            }
+            assertNoInventedBattleEvents(fixture.timeline)
+        } finally {
+            fixture.close()
+        }
+    }
+
     @Test fun actualFramesDistinguishFoundMissingAndDisabledAndArchiveBothFlushes() = runBlocking {
         val fixture = PipelineFixture()
         try {
@@ -221,8 +252,8 @@ class HpObservationDiagnosticsDeviceTest {
         }
         fun sourceAt(index: Int) = sourceBase + index * 300_000_000L
         fun wallAt(index: Int) = 1_700_000_000_000L + index * 300L
-        suspend fun deliver(index: Int, player: Boolean, opponent: Boolean) {
-            val bitmap = bitmapWithBars(player, opponent).also(bitmaps::add)
+        suspend fun deliver(index: Int, player: Boolean, opponent: Boolean, barTop: Int = 100) {
+            val bitmap = bitmapWithBars(player, opponent, barTop).also(bitmaps::add)
             input.deliver(CapturedVisualFrame(bitmap, wallAt(index), sourceAt(index)))
         }
         suspend fun drain() = withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
@@ -272,19 +303,19 @@ class HpObservationDiagnosticsDeviceTest {
         const val WIDTH = 700
         const val HEIGHT = 420
 
-        fun bitmapWithBars(player: Boolean, opponent: Boolean): Bitmap {
+        fun bitmapWithBars(player: Boolean, opponent: Boolean, barTop: Int): Bitmap {
             val pixels = IntArray(WIDTH * HEIGHT) { 0xff182825.toInt() }
             fun bar(left: Int) {
                 val right = left + 220
                 for (x in left until right) {
-                    pixels[100 * WIDTH + x] = 0xffeeeeee.toInt()
-                    pixels[122 * WIDTH + x] = 0xffeeeeee.toInt()
+                    pixels[barTop * WIDTH + x] = 0xffeeeeee.toInt()
+                    pixels[(barTop + 22) * WIDTH + x] = 0xffeeeeee.toInt()
                 }
-                for (y in 100..122) {
+                for (y in barTop..barTop + 22) {
                     pixels[y * WIDTH + left] = 0xffeeeeee.toInt()
                     pixels[y * WIDTH + right - 1] = 0xffeeeeee.toInt()
                 }
-                for (x in left + 3 until left + 160) for (y in 105 until 118) {
+                for (x in left + 3 until left + 160) for (y in barTop + 5 until barTop + 18) {
                     pixels[y * WIDTH + x] = 0xff1effbc.toInt()
                 }
             }

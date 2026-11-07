@@ -64,11 +64,19 @@ remains unknown, and nested search/sub-stage totals must not be added. All 1,904
 unit tests and two emulator integration checks pass, and the profiler is installed
 on the Moondrop. A streamed-outline experiment preserved candidates on 21
 workloads but regressed important phone CPU timings, so it was reverted before
-installation. A fresh live internal breakdown remains the next acceptance step;
-the old Sierra recording proves no new speedup.
-Use the measured live stages before selecting the next repair. This is diagnostic
-implementation, not a claimed Fast Move accuracy or speed improvement. Shell
-appearance remains deferred.
+installation. The first [profiled Moondrop match and supporting video](../verification/2026-11-07-profiled-match-and-hp-acquisition.md)
+now preserve all 207 accepted HP readings and identify geometry as 92.23% of
+locator thread CPU; monitor admission is negligible. Wide recovery accounts for
+77.02% of locator CPU, overlapping geometry. A positively verified ordinary-play
+window supports the same conclusion. Midpoint-first bounded acquisition now
+precedes existing same-frame wide recovery; tracked bars keep their actual local
+windows. All 1,917 unit tests and both APK builds pass. Species-specific location
+evidence is collected separately as reviewable records, without applying unknown
+camera phases as home-position presets. The video also exposes countdown-digit
+occlusion and missing GO/charged-phase recognition, so overall battle accuracy
+remains open. Fresh post-change live measurements, rather than the old Sierra or
+pre-change profiled match, must establish any speedup. Shell appearance remains
+deferred.
 
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.

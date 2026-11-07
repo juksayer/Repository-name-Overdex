@@ -56,12 +56,16 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         val scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement> = { scanned += it; emptyList() }
 
         assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), tracker.read(0, scan = scan).outcomes.values.toSet())
-        assertEquals(listOf(BattleCropBounds(0, 367, 672, 1080)), scanned)
+        val narrow = BattlefieldHpTracker().searchWindows(672, regions)
+        val wide = BattleCropBounds(0, 367, 672, 1080)
+        assertEquals(narrow + wide, scanned)
         val deferred = tracker.read(249_999_999, scan = scan)
-        assertEquals(setOf(HpBarLocatorOutcome.RECOVERY_SCAN_THROTTLED), deferred.outcomes.values.toSet())
-        assertEquals("No extra pixel scan before the existing 250 ms boundary", 1, scanned.size)
+        assertEquals("Inspected narrow windows contain no candidate; the wide search is deferred",
+            setOf(HpBarLocatorOutcome.NO_CANDIDATE), deferred.outcomes.values.toSet())
+        assertEquals(narrow + wide + narrow, scanned)
+        assertEquals(0, requireNotNull(deferred.timings).stages[HpBarLocatorStage.RECOVERY_SEARCH]?.calls ?: 0)
         assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), tracker.read(250_000_000, scan = scan).outcomes.values.toSet())
-        assertEquals(2, scanned.size)
+        assertEquals(narrow + wide + narrow + narrow + wide, scanned)
     }
 
     @Test fun `tracked sides still scan in their existing local windows before wide recovery`() {
@@ -144,7 +148,8 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         val scanned = mutableListOf<BattleCropBounds>()
         val result = tracker.read(0, scan = { bounds -> scanned += bounds; emptyList() })
 
-        assertEquals("Remaining local lock then immediate wide recovery after reset", 2, scanned.size)
+        assertEquals("Remaining local lock and missing-side acquisition then immediate wide recovery after reset", 3, scanned.size)
+        assertEquals(BattleCropBounds(0, 367, 672, 1080), scanned.last())
         assertTrue(result.measurements.isEmpty())
         assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
     }
@@ -156,21 +161,23 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         val result = tracker.read(33_000_000, width = 700,
             scan = { bounds -> scanned += bounds; emptyList() })
 
-        assertEquals(listOf(BattleCropBounds(0, 367, 700, 1080)), scanned)
+        assertEquals(BattlefieldHpTracker().searchWindows(700, regions) + BattleCropBounds(0, 367, 700, 1080), scanned)
         assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
     }
 
-    @Test fun `timings separate actual local and recovery searches without inventing a local scan at acquisition`() {
+    @Test fun `timings separate actual midpoint acquisition recovery and subsequent tracked searches`() {
         var elapsed = 0L
         var cpu = 100L
         val tracker = LiveBattlefieldHpTracker(BattleCalibration(), { elapsed }, { cpu })
         val bars = listOf(bar(40), bar(400))
         val acquired = tracker.read(0, scan = { elapsed += 100; cpu += 40; bars })
         val first = requireNotNull(acquired.timings)
-        assertFalse(first.stages.containsKey(HpBarLocatorStage.LOCAL_SEARCH))
+        // The player's Y=600 bar is outside its initial central-third band;
+        // the opponent is acquired narrowly, then wide recovery finds both.
+        assertEquals(HpBarStageTiming(200, 80, 1), first.stages[HpBarLocatorStage.LOCAL_SEARCH])
         assertEquals(HpBarStageTiming(100, 40, 1), first.stages[HpBarLocatorStage.RECOVERY_SEARCH])
         assertEquals(2, first.stages.getValue(HpBarLocatorStage.ASSIGNMENT).calls)
-        assertEquals(40L, first.threadCpuNanos)
+        assertEquals(120L, first.threadCpuNanos)
 
         val tracked = tracker.read(33_000_000, scan = { bounds ->
             elapsed += 30; cpu += 10
@@ -202,6 +209,7 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         val timing = requireNotNull(tracker.read(0, scan = { elapsed += 123; emptyList() }).timings)
 
         assertNull(timing.threadCpuNanos)
+        assertEquals(HpBarStageTiming(246, null, 1), timing.stages[HpBarLocatorStage.LOCAL_SEARCH])
         assertEquals(HpBarStageTiming(123, null, 1), timing.stages[HpBarLocatorStage.RECOVERY_SEARCH])
     }
 
@@ -211,7 +219,13 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         regionMap: Map<ActivePokemonSide, BattleCropBounds> = regions,
         scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement>,
         canObserve: (ActiveHpBarMeasurement) -> Boolean = { true },
-    ) = measureFrameWithDiagnostics(width, 1493, at, { regionMap }, scan, canObserve)
+    ) = measureFrameWithDiagnostics(width, 1493, at, { regionMap }, { bounds ->
+        // A real crop cannot return a complete bar clipped by the requested window.
+        scan(bounds).filter { bar ->
+            bar.left >= bounds.left && bar.right <= bounds.right &&
+                bar.top >= bounds.top && bar.bottom <= bounds.bottom
+        }
+    }, canObserve)
 
     private fun bar(left: Int) = ActiveHpBarMeasurement(left, 600, left + 192, 617, .8f, .95f)
 }
