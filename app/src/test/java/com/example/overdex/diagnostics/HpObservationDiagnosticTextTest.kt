@@ -30,6 +30,27 @@ class HpObservationDiagnosticTextTest {
             HpObservationDiagnosticText.summary(archived(measurement)))
     }
 
+    @Test fun `later window inherits known publication baseline from cumulative statistics`() {
+        val measurement = measurement(HpPipelineStatistics(publishedSequenceAdvances = 106L,
+            publicationBaselines = 0L)).copy(cumulative = HpPipelineStatistics(
+                publishedSequenceAdvances = 124L, publicationBaselines = 1L))
+        val archived = archived(measurement)
+        assertTrue(HpObservationDiagnosticText.summary(measurement).contains("observed publication advance=106"))
+        assertTrue(HpObservationDiagnosticText.summary(archived).contains("observed publication advance=106"))
+        val details = HpObservationDiagnosticText.details(archived)
+        assertTrue(details.contains("WINDOW\nObserved publication advance: 106; baselines: 0"))
+        assertTrue(details.contains("CUMULATIVE\nObserved publication advance: 124; baselines: 1"))
+    }
+
+    @Test fun `known stream preserves zero publication advance without a new window baseline`() {
+        val measurement = measurement(HpPipelineStatistics()).copy(
+            latestPublicationStreamId = 7L, latestPublicationSequenceNumber = 11L)
+        assertTrue(HpObservationDiagnosticText.summary(measurement).contains("observed publication advance=0"))
+        val details = HpObservationDiagnosticText.details(archived(measurement))
+        assertTrue(details.contains("WINDOW\nObserved publication advance: 0; baselines: 0"))
+        assertTrue(details.contains("Producer stream/sequence: 7/11"))
+    }
+
     @Test fun `research details separate window cumulative disabled intervals and factual misses`() {
         val timing = HpPipelineTimingStatistics(sampleCount = 2, minimumNanos = 1_500_000L,
             maximumNanos = 6_000_000_000L, meanNanos = 3_000_750_000.0,

@@ -54,9 +54,10 @@ now separate successful feed publication, enabled/disabled HP reader receipt,
 locator outcomes, Custody submission, and actual Timeline append. Bounded,
 bitmap-free counters produce five-second and terminal summaries without changing
 source times or inventing attacks. All 1,877 unit tests and 14 emulator checks pass;
-the tested build is installed on the Moondrop. Next acceptance is one short real
-controlled battle to locate the delay or observation gap before tuning recognition.
-This is diagnostic implementation, not a claimed
+the tested build is installed on the Moondrop. The first [Sierra recording](../verification/2026-11-07-sierra-hp-review.md)
+preserves all 660 accepted HP readings, but locator calls average 232 ms and the
+reader skips many published frames. Next, separate internal locator work and
+scheduling before selecting a performance repair. This is diagnostic implementation, not a claimed
 Fast Move accuracy or speed improvement. Shell appearance remains deferred.
 
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)

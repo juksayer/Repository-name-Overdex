@@ -1,7 +1,8 @@
 # HP observation pipeline diagnostics
 
 November 7, 2026. Implementation, automated checks, and Moondrop installation are
-complete. A new real battle is still required to measure the live bottleneck.
+complete. The first [real Sierra recording](2026-11-07-sierra-hp-review.md) now
+supplies live stage measurements and preserves all 660 accepted HP readings.
 This record does not claim a measured live speed improvement or completed Fast
 Move recognition.
 
@@ -129,10 +130,11 @@ checkpoint-recovery boundary.
   `43ae29bb6d82276d9ad740f711a138207c993d16b92df61e65ad725a83760ebd`.
   Android-test APK SHA-256:
   `8cd283b2adb9d54a380e2e1274eb05a8cbc35cb27f14a9904f326e231cdbcf05`.
-- Still required after installation: a short real controlled battle, followed by
-  review of the new summary Articles. Compare publication progress, enabled
-  receives, locator outcomes, and stage delays before naming the bottleneck or
-  claiming a recognition improvement.
+- Initial live acceptance: the Sierra recording preserves 38 summaries including
+  match-end and Stop reports, with every accepted geometry submission recorded.
+  The follow-up review identifies expensive locator elapsed time and unconsumed
+  frames; internal locator profiling and a new validation battle after tuning
+  remain necessary before claiming a recognition improvement.
 
-No tuning target is selected from the new diagnostic until that real recording
-supplies measurements. Shell appearance remains deferred.
+The next tuning investigation is the measured HP reader/locator path. Shell
+appearance remains deferred.

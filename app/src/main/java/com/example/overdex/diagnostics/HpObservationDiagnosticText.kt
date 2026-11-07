@@ -12,17 +12,22 @@ object HpObservationDiagnosticText {
     fun summary(value: HpObservationPipelineMeasured): String = summary(
         value.reason, value.windowEndedAtNanos - value.windowStartedAtNanos,
         value.window, value.pendingSubmissions, value.histogramUpperBoundsNanos,
+        value.latestPublicationStreamId != null || value.cumulative.publicationBaselines > 0L,
     )
 
     fun summary(value: ArchivedHpObservationPipelineMeasured): String = summary(
         value.reason, value.windowEndedAtNanos - value.windowStartedAtNanos,
         value.window, value.pendingSubmissions, value.histogramUpperBoundsNanos,
+        value.latestPublicationStreamId != null || value.cumulative.publicationBaselines > 0L,
     )
 
-    private fun summary(reason: String, duration: Long, counts: HpPipelineStatistics, pending: Int, bounds: List<Long>): String =
+    private fun summary(
+        reason: String, duration: Long, counts: HpPipelineStatistics, pending: Int,
+        bounds: List<Long>, knownPublicationBaseline: Boolean,
+    ): String =
         "HP PIPELINE [$reason; ${milliseconds(duration)} ms; " +
             "received=${counts.framesReceived} enabled=${counts.enabledFramesReceived} disabled=${counts.disabledFramesReceived}; " +
-            "observed publication advance=${publicationAdvance(counts)}; " +
+            "observed publication advance=${publicationAdvance(counts, knownPublicationBaseline)}; " +
             "enabled skips=${counts.enabledReceiveSequenceSkipped}/${counts.enabledReceiveSequenceAdvances}; " +
             "found P/O=${counts.player.found}/${counts.opponent.found}; " +
             "submitted P/O=${counts.player.submitted}/${counts.opponent.submitted}; " +
@@ -32,6 +37,7 @@ object HpObservationDiagnosticText {
             "Timeline P/O ${bucketBound(counts.player.sourceToTimeline.p90UpperBoundNanos, bounds)}/${bucketBound(counts.opponent.sourceToTimeline.p90UpperBoundNanos, bounds)}]"
 
     fun details(value: ArchivedHpObservationPipelineMeasured): String = buildString {
+        val knownPublicationBaseline = value.latestPublicationStreamId != null || value.cumulative.publicationBaselines > 0L
         appendLine(summary(value))
         appendLine("Window source clock: ${value.windowStartedAtNanos}–${value.windowEndedAtNanos} ns")
         appendLine("Producer stream/sequence: ${value.latestPublicationStreamId ?: "unknown"}/${value.latestPublicationSequenceNumber ?: "unknown"}")
@@ -41,14 +47,16 @@ object HpObservationDiagnosticText {
         appendLine("Terminal reports are point-in-time snapshots; in-flight reader or Custody work can finish later.")
         appendLine("Timing percentiles are inclusive histogram bucket bounds, not exact percentile estimates.")
         appendLine()
-        appendStatistics("WINDOW", value.window, value.histogramUpperBoundsNanos)
+        appendStatistics("WINDOW", value.window, value.histogramUpperBoundsNanos, knownPublicationBaseline)
         appendLine()
-        appendStatistics("CUMULATIVE", value.cumulative, value.histogramUpperBoundsNanos)
+        appendStatistics("CUMULATIVE", value.cumulative, value.histogramUpperBoundsNanos, knownPublicationBaseline)
     }.trimEnd()
 
-    private fun StringBuilder.appendStatistics(title: String, counts: HpPipelineStatistics, bounds: List<Long>) {
+    private fun StringBuilder.appendStatistics(
+        title: String, counts: HpPipelineStatistics, bounds: List<Long>, knownPublicationBaseline: Boolean,
+    ) {
         appendLine(title)
-        appendLine("Observed publication advance: ${publicationAdvance(counts)}; baselines: ${counts.publicationBaselines}; restarts: ${counts.publicationRestarts}; stale progress: ${counts.publicationRegressions}")
+        appendLine("Observed publication advance: ${publicationAdvance(counts, knownPublicationBaseline)}; baselines: ${counts.publicationBaselines}; restarts: ${counts.publicationRestarts}; stale progress: ${counts.publicationRegressions}")
         appendLine("Received: ${counts.framesReceived}; enabled: ${counts.enabledFramesReceived}; disabled: ${counts.disabledFramesReceived}; unknown publication metadata: ${counts.receivesWithoutPublicationMetadata}")
         appendLine("Enabled receive sequence advances: ${counts.enabledReceiveSequenceAdvances}; skipped: ${counts.enabledReceiveSequenceSkipped}; disabled skips: ${counts.disabledReceiveSequenceSkipped}; transition/unknown skips: ${counts.transitionOrUnknownSequenceSkipped}")
         appendLine("Locator passes: ${counts.locationPasses}")
@@ -88,8 +96,11 @@ object HpObservationDiagnosticText {
             ?.let { ">${milliseconds(it)} ms (overflow)" } ?: "overflow"
         else -> "<=${milliseconds(bound)} ms"
     }
-    private fun publicationAdvance(counts: HpPipelineStatistics): String =
-        if (counts.publicationBaselines == 0L) "unknown" else counts.publishedSequenceAdvances.toString()
+    private fun publicationAdvance(counts: HpPipelineStatistics, knownPublicationBaseline: Boolean): String =
+        // A reporting window inherits its producer baseline; only new baselines
+        // are counted inside that window. Zero new baselines does not erase it.
+        if (!knownPublicationBaseline && counts.publicationBaselines == 0L) "unknown"
+        else counts.publishedSequenceAdvances.toString()
     private fun duration(nanos: Long?): String = nanos?.let { "${milliseconds(it)} ms" } ?: "unknown"
     private fun milliseconds(nanos: Long): String = decimal(nanos / 1_000_000.0)
     private fun decimal(value: Double): String = String.format(Locale.ROOT, "%.3f", value)
