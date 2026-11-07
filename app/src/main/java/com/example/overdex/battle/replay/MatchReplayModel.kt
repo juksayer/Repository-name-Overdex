@@ -152,8 +152,8 @@ class MatchReplayModel(
     private val knockoutTrack = ReplayKnockoutTrack(timedArticles, mapOf(
         "PLAYER" to playerIdentityTrack.appearances(), "OPPONENT" to opponentIdentityTrack.appearances(),
     ))
-    private val playerResourceTrack = ReplayResourceTrack(timedArticles, "PLAYER")
-    private val opponentResourceTrack = ReplayResourceTrack(timedArticles, "OPPONENT")
+    private val playerResourceTrack = ReplayResourceTrack(timedArticles, "PLAYER", knockoutTrack.knockouts)
+    private val opponentResourceTrack = ReplayResourceTrack(timedArticles, "OPPONENT", knockoutTrack.knockouts)
     private val statChanges = ReplayStatChanges(timedArticles, ::combatantFor)
     private val hpEvidence = ReplayHpEvidence(timedArticles)
     private val chargedEffectivenessWindow = com.example.overdex.battle.inference.ChargedMoveEffectivenessWindow().apply {
@@ -212,6 +212,10 @@ class MatchReplayModel(
                 evidenceKinds = use.evidenceKinds + "PRESENTATION_FIT_BEFORE_SPECIES_CHANGE")
         } else use
     }
+    // Overlapping accepted pulse patterns can each start their own inferred
+    // Nice/Great/Excellent run. Keep their physical testimony for haptics, but
+    // never let a second run lower the supported grade of the same charge.
+    private val visualReplayQteMilestones = highestSupportedQteMilestones()
     private val fastMoveCycles = scheduleFastMoves()
     private val energyTrack = ReplayEnergyTrack(actionArticles.filter {
         it.payload !is ArchivedFastMoveEnergyDerived || playerTeamConfiguration.acceptsDerivedEvidence(it)
@@ -286,7 +290,7 @@ class MatchReplayModel(
             val observedAt = article.monotonicTimeNanos ?: return@firstNotNullOfOrNull null
             glyph.glyph.takeIf { monotonicTimeNanos - observedAt < COUNTDOWN_GLYPH_VISUAL_NANOS }
         }
-        val qteMilestone = replayQteMilestones.lastOrNull { milestone ->
+        val qteMilestone = visualReplayQteMilestones.lastOrNull { milestone ->
             (matchEndNanos == null || monotonicTimeNanos < matchEndNanos) &&
             monotonicTimeNanos - milestone.atNanos in 0 until QTE_MILESTONE_VISUAL_NANOS
         }
@@ -340,7 +344,7 @@ class MatchReplayModel(
             if (!canPerformReplayAction(use.side, use.preparationAtNanos, monotonicTimeNanos)) return@mapNotNull null
             // The grade's brief text may expire, but its growth lasts through
             // this charge's release. Cursor lookup also restores reverse scrubs.
-            val milestone = replayQteMilestones.lastOrNull {
+            val milestone = visualReplayQteMilestones.lastOrNull {
                 it.side == use.side && it.atNanos in use.preparationAtNanos..minOf(monotonicTimeNanos, use.animationAtNanos)
             }
             ReplayChargedMoveAction(
@@ -556,6 +560,47 @@ class MatchReplayModel(
                 side = side,
             )
         }
+
+    /** Display-only projection: retained pulse/grade clocks and haptics are unchanged. */
+    private fun highestSupportedQteMilestones(): List<ReplayQteMilestone> {
+        data class Episode(
+            val chargeIndex: Int,
+            val openingAt: Long?,
+            val resumedFastMoveAt: Long?,
+            val playerAppearanceAt: Long?,
+            val opponentAppearanceAt: Long?,
+        )
+        val highestByEpisode = mutableMapOf<Episode, Int>()
+        return replayQteMilestones.sortedWith(compareBy<ReplayQteMilestone> { it.atNanos }
+            .thenByDescending { QTE_MILESTONE_LABELS.indexOf(it.label) }).filter { milestone ->
+            val charge = recordedChargedMoveUses.withIndex().filter { (_, use) ->
+                use.side == milestone.side && milestone.atNanos >= use.preparationAtNanos &&
+                    if (use.isCompleted) milestone.atNanos <= use.impactAtNanos
+                    else milestone.atNanos < use.animationAtNanos
+            }.maxWithOrNull(compareBy<IndexedValue<ReplayChargedMoveUse>> { it.value.preparationAtNanos }
+                .thenBy { it.index }) ?: return@filter false
+            val preparationAt = charge.value.preparationAtNanos
+            // Fresh preparation or ordinary play marks a new episode even if
+            // an older accepted aggregate pattern overlaps that boundary.
+            val openingAt = actionArticles.lastOrNull { article ->
+                article.monotonicTimeNanos!! in preparationAt..milestone.atNanos &&
+                    if (milestone.side == "PLAYER") isReplayGetReadyCue(article)
+                    else isReplayAttackIncomingCue(article)
+            }?.monotonicTimeNanos
+            val resumedAt = actionArticles.lastOrNull { article ->
+                article.monotonicTimeNanos!! in preparationAt..milestone.atNanos &&
+                    article.payload is ArchivedFastMoveUseObserved && hpEvidence.accepts(article)
+            }?.monotonicTimeNanos
+            val episode = Episode(charge.index, openingAt, resumedAt,
+                combatantFor("PLAYER", milestone.atNanos)?.identityEstablishedAtNanos,
+                combatantFor("OPPONENT", milestone.atNanos)?.identityEstablishedAtNanos)
+            val level = QTE_MILESTONE_LABELS.indexOf(milestone.label)
+            if (level <= (highestByEpisode[episode] ?: -1)) false else {
+                highestByEpisode[episode] = level
+                true
+            }
+        }
+    }
 
 
     private fun payloadLabel(payload: Any): String = when (payload) {

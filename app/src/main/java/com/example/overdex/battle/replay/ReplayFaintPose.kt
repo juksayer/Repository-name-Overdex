@@ -21,17 +21,26 @@ data class ReplayFaintPose(
             val elapsed = cursorNanos - (faintedAtNanos ?: return null)
             if (elapsed < 0) return null
             val duration = finishByNanos?.minus(faintedAtNanos)?.coerceIn(1L, DURATION_NANOS) ?: DURATION_NANOS
-            // Quick replacements compress the whole pose, preserving fall-before-colour-drain.
-            val age = if (duration == DURATION_NANOS) elapsed else
-                (elapsed.coerceAtMost(duration).toDouble() / duration * DURATION_NANOS).toLong()
-            val shakeProgress = (age.toFloat() / SHAKE_NANOS).coerceIn(0f, 1f)
-            val fallProgress = ((age - FALL_START_NANOS).toFloat() / (FALL_END_NANOS - FALL_START_NANOS))
+            // A quick replacement needs its limited time for the fall and the
+            // lying pose. Scaling the normal one-second hold proportionally
+            // left only ~108 ms of rotation in a 550 ms ending interval.
+            // Keep the ordinary sequence intact; condensed intervals reserve
+            // most of their budget for rotation before draining the colour.
+            val fallDuration = if (duration == DURATION_NANOS) FALL_END_NANOS - FALL_START_NANOS else
+                minOf(FALL_END_NANOS - FALL_START_NANOS, duration * 7 / 10).coerceAtLeast(1L)
+            val fadeDuration = if (duration == DURATION_NANOS) DURATION_NANOS - FALL_END_NANOS else
+                minOf(DURATION_NANOS - FALL_END_NANOS, duration / 5)
+            val fallStart = duration - fallDuration - fadeDuration
+            val fallEnd = fallStart + fallDuration
+            val shakeProgress = (elapsed.toFloat() / SHAKE_NANOS).coerceIn(0f, 1f)
+            val fallProgress = ((elapsed - fallStart).toFloat() / fallDuration)
                 .coerceIn(0f, 1f)
             val fall = fallProgress * fallProgress * (3f - 2f * fallProgress)
-            val fade = ((age - FALL_END_NANOS).toFloat() / (DURATION_NANOS - FALL_END_NANOS))
-                .coerceIn(0f, 1f)
+            val fade = if (fadeDuration == 0L) {
+                if (elapsed >= duration) 1f else 0f
+            } else ((elapsed - fallEnd).toFloat() / fadeDuration).coerceIn(0f, 1f)
             return ReplayFaintPose(
-                shakePixels = if (age < SHAKE_NANOS) {
+                shakePixels = if (elapsed < minOf(SHAKE_NANOS, fallStart)) {
                     sin(shakeProgress * PI * 6).toFloat() * 7f * (1f - shakeProgress)
                 } else 0f,
                 // Player faces right; opponent faces left. Each tips with its face upwards.

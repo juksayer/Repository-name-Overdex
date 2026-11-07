@@ -24,7 +24,7 @@ internal class ReplayKnockoutTrack(
         if (current < 0) return@mapNotNull null
         fun matches(index: Int) = index >= 0 && key(appearances[index].speciesName) == key(name)
         val beyondLateWindow = at - appearances[current].atNanos > LATE_FAINT_NANOS
-        val resourceEvidence = if (matches(current - 1) && beyondLateWindow) {
+        val resourceEvidence = if (matches(current - 1)) {
             citedResourceDrop(article, faint, appearances[current - 1], appearances[current].atNanos)
         } else null
         val index = when {
@@ -44,7 +44,8 @@ internal class ReplayKnockoutTrack(
             recordedAtNanos = at, presentationAtNanos = start,
             replacementAtNanos = replacement?.atNanos,
             sourceArticleIds = (listOf(article.articleId) + listOfNotNull(replacement?.articleId) +
-                replacement?.evidenceArticleIds.orEmpty() + resourceEvidence.orEmpty()).distinct(),
+                replacement?.evidenceArticleIds.orEmpty() + resourceEvidence?.articleIds.orEmpty()).distinct(),
+            verifiedPokeBallsAfter = resourceEvidence?.remainingBalls,
         )
     }.distinctBy { it.side to it.appearanceAtNanos }
 
@@ -54,7 +55,7 @@ internal class ReplayKnockoutTrack(
         faint: ArchivedActivePokemonFaintedWitnessed,
         appearance: ReplayIdentityObservation,
         replacementAt: Long,
-    ): List<String>? {
+    ): ResourceDrop? {
         val at = article.monotonicTimeNanos ?: return null
         if (faint.basis !in setOf("${faint.side}_POKE_BALL_COUNT_DECREASE",
                 "${faint.side}_POKE_BALL_COUNT_DECREASE_WITH_BATTLE_CRY")) return null
@@ -78,8 +79,10 @@ internal class ReplayKnockoutTrack(
                     it.at in replacementAt until after.at && it.count == before.count
                 } == true
             }) return null
-        return listOf(identity.articleId, before.articleId, after.articleId)
+        return ResourceDrop(listOf(identity.articleId, before.articleId, after.articleId), after.count)
     }
+
+    private data class ResourceDrop(val articleIds: List<String>, val remainingBalls: Int)
 
     private data class BallCount(val articleId: String, val at: Long, val count: Int)
 
@@ -116,6 +119,8 @@ internal data class ReplayKnockout(
     val presentationAtNanos: Long,
     val replacementAtNanos: Long?,
     val sourceArticleIds: List<String>,
+    /** Completed-archive presentation only; the cited measurement retains its original clock. */
+    val verifiedPokeBallsAfter: Int? = null,
 ) {
     // Leave a visible beat lying down before the next sprite replaces it.
     val finishByNanos: Long? get() = replacementAtNanos?.let {

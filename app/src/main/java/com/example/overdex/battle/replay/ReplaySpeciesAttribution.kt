@@ -74,14 +74,15 @@ internal fun configuredLeadContradicted(articles: List<ArchivedRealityArticle>):
     val actual = (firstBadge.payload as ArchivedActivePokemonSpeciesWitnessed).speciesName
     if (key(actual) == key(lead.speciesName)) return false
     if (firstBadge.monotonicTimeNanos!! <= start) return true
-    // A prompt switch after GO is possible. Only replace the configured lead
-    // when its contradictory replacement was announced BEFORE the countdown ended.
-    return articles.any { article ->
+    // A pre-GO entry is independent opening proof. Otherwise a prompt switch
+    // remains possible, except for the narrowly bounded stale-roster case below.
+    if (articles.any { article ->
         val text = (article.payload as? ArchivedRawText)?.value ?: return@any false
         val name = ENTRY.matchEntire(text.trim())?.groupValues?.get(1) ?: return@any false
         article.sourceId == "ANNOUNCEMENT_WITNESS" && key(name) == key(actual) &&
             article.monotonicTimeNanos?.let { it <= start && firstBadge.monotonicTimeNanos!! - it <= ENTRY_BADGE_WINDOW } == true
-    }
+    }) return true
+    return earlyUnconfiguredPlayerBadgeContradictsLead(articles, start, lead, firstBadge)
 }
 
 private fun key(value: String) = TeamRosterSpeciesAttributor.speciesKey(value)
