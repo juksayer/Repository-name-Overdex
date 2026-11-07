@@ -10,23 +10,51 @@ import com.example.overdex.data.observation.OcrSourceContext
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrPriority
 import kotlinx.coroutines.CancellationException
+import com.google.mlkit.vision.text.Text
 
 object AnnouncementRecognizer {
 
     /** Live announcement path: same warm recognizer, with auditable source filtering. */
     suspend fun recognizeEvidence(
         bitmap: Bitmap, context: OcrSourceContext, profile: OcrHeightProfile,
-    ): List<OcrTextEvidence> {
-        val direct = OcrWordGeometry.read(bitmap, bitmap, 0, "RAW", context, profile,
-            priority = OcrPriority.TRANSIENT)
-        // No extra OCR pass just because our own text was rejected. Native pixels
-        // remain available for future treatments; this avoids growing the OCR queue.
-        if (direct.rawText.isNotBlank()) return listOf(direct)
-        val prepared = highContrastInput(bitmap)
-        return try {
-            listOf(direct, OcrWordGeometry.read(bitmap, prepared, 0, "THRESHOLD_185_2X", context, profile,
-                priority = OcrPriority.TRANSIENT))
-        } finally { prepared.recycle() }
+    ): List<OcrTextEvidence> = withReadingTurn { recognizeEvidence(bitmap, context, profile) }
+
+    /** Admission surrounds crop selection and both native passes, not each pass separately. */
+    internal suspend fun <T> withReadingTurn(
+        priority: OcrPriority = OcrPriority.TRANSIENT,
+        block: suspend ReadingTurn.() -> T,
+    ): T = SharedLatinTextRecognizer.withReadingTurn(priority) { read -> ReadingTurn(read).block() }
+
+    internal class ReadingTurn(private val read: suspend (Bitmap) -> Text) {
+        var nativeReadNanos = 0L
+            private set
+        var readCount = 0
+            private set
+
+        suspend fun recognizeEvidence(
+            bitmap: Bitmap, context: OcrSourceContext, profile: OcrHeightProfile,
+        ): List<OcrTextEvidence> {
+            suspend fun reading(input: Bitmap, treatment: String) =
+                OcrWordGeometry.read(bitmap, input, 0, treatment, context, profile, read = { prepared ->
+                    val startedAt = System.nanoTime()
+                    try { read(prepared) } finally {
+                        nativeReadNanos += System.nanoTime() - startedAt
+                        readCount++
+                    }
+                })
+            val direct = reading(bitmap, "RAW")
+            // Rejected words alone still do not request a second pass.
+            if (direct.rawText.isNotBlank()) return listOf(direct)
+            val prepared = highContrastInput(bitmap)
+            return try {
+                listOf(direct, reading(prepared, "THRESHOLD_185_2X"))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w("ANNOUNCEMENT_RECOGNIZER", "Threshold retry failed; retaining the native reading", error)
+                listOf(direct)
+            } finally { prepared.recycle() }
+        }
     }
 
     internal suspend fun recognize(bitmap: Bitmap, priority: OcrPriority = OcrPriority.NORMAL): RecognitionResult<String> {

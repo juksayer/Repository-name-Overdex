@@ -6,8 +6,8 @@ verification reports, and current call paths. It is not a count of undiscovered
 bugs or a request to repeat every historical test. Grouped rows can share one
 recording; the completion evidence for each row remains separate.
 
-The latest full JVM run passed 1,705 tests with no failures, errors, or skips;
-the debug build and Moondrop replay check passed. Those are completed checks.
+The November 4 baseline JVM run passed 1,705 tests with no failures, errors, or
+skips; its debug build and Moondrop replay check passed. Those are completed checks.
 The remaining work is mainly real-battle acceptance, broader device coverage,
 failure handling, and features whose implementation is still pending.
 
@@ -37,7 +37,7 @@ missed, wrong-side, and unresolved attacks separately.
 | ID / status | Outstanding test | Evidence needed to close it |
 | --- | --- | --- |
 | B01 — Open | Final **Fast Move** KO and possible final faint cry, on both sides | Screen/audio through the result: last real impact, HP depletion/disappearance, faint/ball change, any cry, and result, each with its own time. Replay must show the recorded final attack and correct faint without adding an attack from the result alone. |
-| B02 — Open | Final **Charged Move** KO, on both sides | Record QTE/shield choice through release, damage, faint, and result. Confirm one named move/spend, finishing projectile before KO, correct actor, and no premature end. Synthetic finishing Earth Power already passes; new capture acceptance remains. |
+| B02 — Needs work | Final **Charged Move** KO, on both sides | November 7 paired videos confirm three charged KOs, but the Moondrop archive misses three move announcements and the final KO; the fourth announcement has a recoverable Earth Powers OCR error. Preserve release, damage, faint and result evidence with source times. New announcement scheduling/name repairs need fresh live acceptance; see the controlled finishing review below. |
 | B03 — Partial / needs work | Ending/result matrix | Win, loss, Rocket result, and a draw if naturally available; concession during ordinary play and QTE. In particular, early concession with more than one opponent remaining and unavailable music needs capture-gate work. Last concession's Win and interrupted QTE are verified; this does not close every ending case. |
 | B04 — Partial | Hand-counted attacks versus idle, pauses, overlapping attacks and stutter | One attacker at a time, counted run, five seconds idle, repeat, then reverse sides and include both attacking. Check each perspective for extra/missed/wrong-side uses. Stutter, connection gaps, switches and QTEs must not award impossible attacks/energy. |
 | B05 — Partial | Prompt Fast Move identity and confidence | On held-out battles measure first supported hit/new appearance to correct legal move/side and confirmation. Test overlapping audio and ambiguous cases. A favored low-confidence name must remain distinguishable from confirmation; one side's sound cannot establish the other's move. |
@@ -53,13 +53,15 @@ missed, wrong-side, and unresolved attacks separately.
 
 ### Final-cry hypothesis — B01/B02
 
-The user expects the fainting Pokémon to cry before the match ends and will
-check the next match. Record whether it is audible, its timing, whether the
-screen recording or other retained audio contains it, and whether it resembles
-the entry reference or needs its own reference. The cry matcher accepts a
-`POKEMON_FAINTED` cue, but the faint-triggered PCM request is not currently wired.
-That capture path needs implementation before relying on automatic final-cry
-retention; enable device audio in the screen recorder for this next check.
+The [November 7 controlled finishing test](../verification/2026-11-07-controlled-finishing-test.md)
+confirms the expected species cry near three charged KOs in Pixel audio, with
+ordinary-hit and nonfinishing-charge controls. The same sound also appears on
+entry, so it does not establish a faint alone. Cry PCM survives in the Overdex
+archive too, including a partial final Obstagoon cry labelled as Fast Move
+audio; no typed cry observation was published from it. The existing
+`POKEMON_FAINTED` request remains unwired. Recognition of already retained PCM,
+independent listening triggers and corroborated event interpretation are the
+next work, rather than treating absence of a cry Article as absence of audio.
 
 Compare a normal KO with a concession when possible. A cry may corroborate a
 faint; it cannot by itself establish the exact finishing move or energy, and

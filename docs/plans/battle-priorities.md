@@ -105,6 +105,16 @@ recorded species testimony because the emulator's optional OCR module remained
 unavailable. Positive recovered-crop OCR and live finishing-hit capture remain
 open. The tested update is installed on the Moondrop with user data preserved.
 
+The [November 7 controlled finishing test](../verification/2026-11-07-controlled-finishing-test.md)
+now supplies both viewpoints and useful Pixel audio for three charged KOs plus
+one surviving charged hit. It confirms delayed/missed announcements, zero
+terminal HP testimony, and a final cry fragment already retained under the
+Fast Move audio stream. Legal-pool OCR repair recovers the preserved Earth
+Powers announcement. Latest-after-admission announcement reading and source-age
+diagnostics address stale OCR scheduling; fresh live improvement remains to be
+measured. Recognizing retained cries and corroborating terminal transitions
+remain ahead of further cosmetic Replay work.
+
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.
 Recorded checks preserve the supported identities, but Turtonator's early
