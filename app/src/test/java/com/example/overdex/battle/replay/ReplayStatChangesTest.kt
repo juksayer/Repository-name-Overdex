@@ -17,7 +17,9 @@ class ReplayStatChangesTest {
         assertEquals(action, model.sceneAt(10_500_000_000).statChanges.single())
     }
     @Test fun `unattributed sound and a revoked side remain explicitly uncertain`() {
-        assertNull(model(listOf(sound())).sceneAt(10_000_000_000).statChanges.single().side)
+        val unattributed = model(listOf(sound())).sceneAt(10_000_000_000).statChanges.single()
+        assertNull(unattributed.side)
+        assertNull(unattributed.moveName)
         val corrections = listOf(sound(), resolution("OPPONENT"), resolution(null).copy(articleId = "revised", recordedAt = 50_000))
         assertNull(model(corrections).sceneAt(10_000_000_000).statChanges.single().side)
     }
@@ -39,6 +41,57 @@ class ReplayStatChangesTest {
             sound(), resolution("OPPONENT").copy(evidenceReferences = listOf("sound", "move")),
         ))
         assertTrue(model.sceneAt(10_000_000_000).statChanges.isEmpty())
+    }
+
+    @Test fun `Sierra cue sequence keeps missing Poison Fang attribution unknown and Crunch on its recipient`() {
+        val first = sound().copy(articleId = "first-cue", monotonicTimeNanos = 39_853_217_156L,
+            payload = ArchivedStatChangeSoundMeasured("DEFENSE_DOWN", "sha", .9975f, .8133f, 917_125_000L))
+        val crunchSound = first.copy(articleId = "crunch-cue", monotonicTimeNanos = 50_732_561_849L)
+        val third = first.copy(articleId = "third-cue", monotonicTimeNanos = 62_621_040_850L)
+        val model = MatchReplayModel(MatchArchive(matchId = "test", articles = listOf(
+            event("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Golbat", 42), 1),
+            event("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Pancham", 674), 1),
+            first,
+            crunchSound,
+            event("crunch", ArchivedChargedMoveEnergySpent("OPPONENT", "Pancham", "Crunch", 45, "ANNOUNCEMENT"), 51)
+                .copy(monotonicTimeNanos = 51_050_073_234L),
+            resolution("PLAYER").copy(payload = ArchivedStatChangeObserved("PLAYER", "DEFENSE", -1, 1,
+                "Crunch", "crunch-cue", "AUDIO_CUE_AND_NAMED_CHARGED_MOVE"),
+                monotonicTimeNanos = crunchSound.monotonicTimeNanos, evidenceReferences = listOf("crunch-cue", "crunch")),
+            third,
+        )))
+        assertNull(model.sceneAt(first.monotonicTimeNanos!!).statChanges.single().side)
+        val crunch = model.sceneAt(crunchSound.monotonicTimeNanos!!).statChanges.single()
+        assertEquals("PLAYER", crunch.side)
+        assertEquals("Crunch", crunch.moveName)
+        assertEquals("DEF ↓", crunch.label)
+        assertEquals("Golbat", model.sceneAt(crunchSound.monotonicTimeNanos!!).player?.speciesName)
+        val missingAnnouncement = model.sceneAt(third.monotonicTimeNanos!!).statChanges.single()
+        assertNull(missingAnnouncement.side)
+        assertNull(missingAnnouncement.moveName)
+    }
+
+    @Test fun `player Poison Fang shows its recorded cause on the opponent and in event details`() {
+        val move = event("poison-fang", ArchivedChargedMoveEnergySpent("PLAYER", "Golbat", "Poison Fang", 40,
+            "ANNOUNCEMENT"), 9)
+        val heard = sound().copy(payload = ArchivedStatChangeSoundMeasured("DEFENSE_DOWN", "sha", .99f, .8f,
+            917_125_000L))
+        val attributed = resolution("OPPONENT").copy(payload = ArchivedStatChangeObserved("OPPONENT", "DEFENSE",
+            -1, 1, "Poison Fang", "sound", "AUDIO_CUE_AND_NAMED_CHARGED_MOVE"),
+            evidenceReferences = listOf("sound", "poison-fang"))
+        val replay = MatchReplayModel(MatchArchive(matchId = "test", articles = listOf(
+            event("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Golbat", 42), 1),
+            event("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Pancham", 674), 1),
+            move, heard, attributed,
+        )))
+        val scene = replay.sceneAt(10_000_000_000)
+        val effect = scene.statChanges.single()
+        assertEquals("OPPONENT", effect.side)
+        assertEquals("Pancham", scene.opponent?.speciesName)
+        assertEquals("Poison Fang", effect.moveName)
+        assertEquals("DEF ↓", effect.label)
+        assertTrue(scene.latestEvidenceLabel.contains("Poison Fang"))
+        assertTrue(scene.latestEvidenceLabel.contains("STAT CHANGE"))
     }
 
     private fun model(extra: List<ArchivedRealityArticle>) = MatchReplayModel(MatchArchive(matchId = "test", articles = listOf(

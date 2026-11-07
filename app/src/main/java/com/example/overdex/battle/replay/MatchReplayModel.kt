@@ -552,7 +552,8 @@ class MatchReplayModel(
         is ArchivedMatchResultMusicMeasured -> "RESULT MUSIC: ${payload.theme}"
         is ArchivedMatchResultMusicCompared -> "RESULT MUSIC ${if (payload.agrees) "AGREES" else "CONFLICTS"}: ${payload.recordedResult}"
         is ArchivedStatChangeSoundMeasured -> "STAT SOUND: ${payload.cue.replace('_', ' ')}"
-        is ArchivedStatChangeObserved -> "STAT CHANGE: ${payload.affectedSide ?: "SIDE UNCONFIRMED"} ${payload.stat} ${if (payload.direction > 0) "↑" else "↓"}"
+        is ArchivedStatChangeObserved -> "STAT CHANGE: ${payload.affectedSide ?: "SIDE UNCONFIRMED"} ${payload.stat} ${if (payload.direction > 0) "↑" else "↓"}" +
+            payload.moveName?.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()
         is ArchivedPokemonIdentified -> "SPECIES: ${payload.species}"
         is ArchivedBattleCryCandidatesMeasured -> "BATTLE CRY CANDIDATE"
         is ArchivedActivePokemonFaintedWitnessed -> "FAINTED: ${payload.speciesName ?: payload.side}"

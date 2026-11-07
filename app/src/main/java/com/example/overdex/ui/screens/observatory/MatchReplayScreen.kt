@@ -544,7 +544,7 @@ fun MatchReplayScreen(
             scene.countdownFrame?.let { MatchLcdText(it.lcdLabel) }
             MatchLcdText("RECORDED ENERGY\nP ${energyLedger(scene.playerEnergy)}  O ${energyLedger(scene.opponentEnergy)}")
             scene.statChanges.filter { it.side == null }.forEach {
-                MatchLcdText("${it.label} · SIDE UNCONFIRMED")
+                MatchLcdText("${it.label}${it.moveName?.let { move -> " · $move" }.orEmpty()} · SIDE UNCONFIRMED")
             }
         }
     }
@@ -922,15 +922,15 @@ internal fun ReplayCombatantSlot(
         if (combatant != null) {
             Column(Modifier.align(Alignment.TopCenter).offset(y = if (useBackSprite) 20.dp else (-4).dp)) {
                 statChanges.forEach { change ->
-                    Text(change.label,
-                        color = if (change.direction > 0) Color(0xFF9AFFCC) else Color(0xFFFFB27C),
-                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.graphicsLayer {
+                    val color = if (change.direction > 0) Color(0xFF9AFFCC) else Color(0xFFFFB27C)
+                    Column(Modifier.graphicsLayer {
                             translationY = -change.direction * change.progress * 24f
                             alpha = ((1f - change.progress) * 3f).coerceIn(0f, 1f)
                         }.background(Color(0xD0163721), RoundedCornerShape(5.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)) {
+                        Text(change.label, color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        change.moveName?.let { move -> Text(move, color = color, fontSize = 11.sp) }
+                    }
                 }
             }
         }

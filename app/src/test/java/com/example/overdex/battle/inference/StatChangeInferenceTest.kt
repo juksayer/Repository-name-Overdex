@@ -13,6 +13,8 @@ class StatChangeInferenceTest {
         StatMoveEffect("Rock Tomb", "ATTACK", -1, false),
         StatMoveEffect("Close Combat", "DEFENSE", -2, true),
         StatMoveEffect("Ancient Power", "ATTACK", 1, true),
+        StatMoveEffect("Crunch", "DEFENSE", -1, false),
+        StatMoveEffect("Poison Fang", "DEFENSE", -1, false),
     )
     @Test fun `sound and named move attribute all four changes to the recipient`() {
         for ((move, cue, side, stages) in listOf(
@@ -95,6 +97,34 @@ class StatChangeInferenceTest {
         assertEquals(ActivePokemonSide.OPPONENT, inference.accept(sound("ATTACK_DOWN")).single().payload.affectedSide)
         for (gap in listOf(-7L, 7L)) assertTrue(inference.accept(sound("ATTACK_DOWN")
             .copy(id = ArticleId("sound-$gap"), monotonicTimeNanos = (10 + gap) * 1_000_000_000)).isEmpty())
+    }
+
+    @Test fun `recorded opponent Crunch defense cue affects Golbat on the player side`() {
+        val inference = StatChangeInference(effects)
+        val heard = sound("DEFENSE_DOWN").copy(monotonicTimeNanos = 50_732_561_849L)
+        val crunch = move("Crunch", ActivePokemonSide.OPPONENT).copy(
+            payload = ChargedMoveEnergySpent(ActivePokemonSide.OPPONENT, "Pancham", "Crunch", 45, "ANNOUNCEMENT"),
+            monotonicTimeNanos = 51_050_073_234L,
+            recordedAt = 59_999L,
+        )
+        assertTrue(inference.accept(heard).isEmpty())
+        val change = inference.accept(crunch).single()
+        assertEquals(ActivePokemonSide.PLAYER, change.payload.affectedSide)
+        assertEquals("Crunch", change.payload.moveName)
+        assertEquals(heard.monotonicTimeNanos, change.sound.monotonicTimeNanos)
+    }
+
+    @Test fun `Poison Fang lowers the other side rather than its performer for either actor`() {
+        for (performer in ActivePokemonSide.entries) {
+            val inference = StatChangeInference(effects)
+            inference.accept(move("Poison Fang", performer))
+            val change = inference.accept(sound("DEFENSE_DOWN")).single()
+            val expected = if (performer == ActivePokemonSide.PLAYER) ActivePokemonSide.OPPONENT
+                else ActivePokemonSide.PLAYER
+            assertEquals(expected, change.payload.affectedSide)
+            assertEquals("Poison Fang", change.payload.moveName)
+            assertEquals(1, change.payload.stages)
+        }
     }
 
     private data class Case(val move: String, val cue: String, val side: ActivePokemonSide, val stages: Int)

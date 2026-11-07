@@ -6,7 +6,14 @@ import com.example.overdex.battle.archive.ArchivedStatChangeSoundMeasured
 import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
 import com.example.overdex.battle.audio.StatChangeCue
 
-data class ReplayStatChangeAction(val side: String?, val stat: String, val direction: Int, val progress: Float) {
+data class ReplayStatChangeAction(
+    val side: String?,
+    val stat: String,
+    val direction: Int,
+    val progress: Float,
+    /** Only a recorded attribution supplies a causal move; a cue alone cannot name it. */
+    val moveName: String? = null,
+) {
     val label: String get() = "${if (stat == "ATTACK") "ATK" else "DEF"} ${if (direction > 0) "↑" else "↓"}"
 }
 
@@ -15,7 +22,8 @@ internal class ReplayStatChanges(
     articles: List<ArchivedRealityArticle>,
     private val combatantAt: (String, Long) -> ReplayCombatant?,
 ) {
-    private data class Change(val at: Long, val targetAt: Long, val side: String?, val stat: String, val direction: Int)
+    private data class Change(val at: Long, val targetAt: Long, val side: String?, val stat: String,
+        val direction: Int, val moveName: String?)
     private val changes: List<Change>
     init {
         val byId = articles.associateBy { it.articleId }
@@ -33,7 +41,8 @@ internal class ReplayStatChanges(
             // at the cited move, so a later entrant never inherits the departing one's effect.
             val targetAt = resolution?.evidenceReferences.orEmpty().mapNotNull(byId::get)
                 .singleOrNull { it.payload is ArchivedChargedMoveEnergySpent }?.monotonicTimeNanos ?: at
-            Change(at, targetAt, resolved?.affectedSide, cue.stat, cue.direction)
+            Change(at, targetAt, resolved?.affectedSide, cue.stat, cue.direction,
+                resolved?.moveName?.takeIf(String::isNotBlank))
         }
     }
     fun at(cursor: Long): List<ReplayStatChangeAction> = changes.mapNotNull { change ->
@@ -46,7 +55,8 @@ internal class ReplayStatChanges(
             if (then?.speciesName != now?.speciesName ||
                 then?.identityEstablishedAtNanos != now?.identityEstablishedAtNanos) return@mapNotNull null
         }
-        ReplayStatChangeAction(change.side, change.stat, change.direction, age.toFloat() / DURATION_NANOS)
+        ReplayStatChangeAction(change.side, change.stat, change.direction, age.toFloat() / DURATION_NANOS,
+            change.moveName)
     }
     companion object { const val DURATION_NANOS = 2_000_000_000L }
 }
