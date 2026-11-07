@@ -141,6 +141,56 @@ class RealityArticleArchiveMapperTest {
         assertEquals(0L, payload.window.publicationToReceipt.sampleCount)
     }
 
+    @Test fun `HP internal locator and post sampling statistics survive typed compact archive`() {
+        val diagnostic = com.example.overdex.battle.observation.HpObservationDiagnostics()
+        diagnostic.start(100L, null)
+        diagnostic.onLocationCompleted(100L, 110L, 210L, mapOf(ActivePokemonSide.PLAYER to "FOUND"),
+            com.example.overdex.battle.observation.HpBarLocatorTimings(true, 3L, 50L, mapOf(
+                com.example.overdex.battle.observation.HpBarLocatorStage.LOCAL_SEARCH to
+                    com.example.overdex.battle.observation.HpBarStageTiming(20L, 5L, 1),
+                com.example.overdex.battle.observation.HpBarLocatorStage.PIXEL_EXTRACTION to
+                    com.example.overdex.battle.observation.HpBarStageTiming(10L, null, 2),
+            )))
+        diagnostic.onPostLocatorSampling(ActivePokemonSide.PLAYER, 8L, null)
+        val measured = requireNotNull(diagnostic.takeSummary(300L, null,
+            com.example.overdex.battle.observation.HpDiagnosticSummaryReason.SESSION_STOP))
+        val mapped = RealityArticleArchiveMapper.map(article("internal-hp-timing", measured))
+        val selected = MatchArchiveArticleSelector.select(listOf(mapped), MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
+        val archive = MatchArchive(matchId = "match-a", articles = selected)
+        val restored = MatchArchiveSerializer.deserialize(MatchArchiveSerializer.serialize(archive))
+        assertEquals(archive, restored)
+        val payload = restored.articles.single().payload as ArchivedHpObservationPipelineMeasured
+        val locator = requireNotNull(payload.window.locatorBreakdown)
+        assertEquals(1L, locator.timedPasses)
+        assertEquals(3L, locator.lockWait.minimumNanos)
+        assertEquals(50L, locator.threadCpu.minimumNanos)
+        assertEquals(2L, locator.pixelExtraction.calls)
+        assertEquals(1L, locator.pixelExtraction.cpuUnavailablePasses)
+        assertEquals(null, locator.pixelExtraction.threadCpu.meanNanos)
+        val sampling = requireNotNull(payload.window.player.postLocatorSampling)
+        assertEquals(8L, sampling.elapsed.minimumNanos)
+        assertEquals(null, sampling.threadCpu.meanNanos)
+        assertEquals(null, payload.window.opponent.postLocatorSampling)
+    }
+
+    @Test fun `older HP pipeline JSON loads without internal timing fields or invented CPU values`() {
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val restored = json.decodeFromString(ArchivedTestimonyPayload.serializer(), """{
+            "kind":"hp_observation_pipeline_measured",
+            "windowStartedAtNanos":100,"windowEndedAtNanos":200,"reason":"PERIODIC",
+            "histogramUpperBoundsNanos":[1,9223372036854775807],
+            "window":{"framesReceived":2,"player":{"found":1}},"cumulative":{},
+            "pendingSubmissions":0,"oldestPendingAgeNanos":null,
+            "latestPublicationStreamId":null,"latestPublicationSequenceNumber":null
+        }""") as ArchivedHpObservationPipelineMeasured
+        assertEquals(2L, restored.window.framesReceived)
+        assertEquals(1L, restored.window.player.found)
+        assertEquals(null, restored.window.locatorBreakdown)
+        assertEquals(null, restored.cumulative.locatorBreakdown)
+        assertEquals(null, restored.window.player.postLocatorSampling)
+        assertEquals(null, restored.window.opponent.postLocatorSampling)
+    }
+
     private val matchA = MatchId("match-a")
     private val matchB = MatchId("match-b")
 

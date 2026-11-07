@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.HpObservationPipelineMeasured
 import com.example.overdex.battle.custody.HpPipelineSideStatistics
 import com.example.overdex.battle.custody.HpPipelineStatistics
 import com.example.overdex.battle.custody.HpPipelineTimingStatistics
+import com.example.overdex.battle.custody.HpPipelineLocatorStatistics
+import com.example.overdex.battle.custody.HpPipelineStageTimingStatistics
 import com.example.overdex.model.observation.VisualFramePublication
 import kotlin.math.ceil
 
@@ -107,9 +109,15 @@ class HpObservationDiagnostics(
         startedAtNanos: Long,
         completedAtNanos: Long,
         outcomes: Map<ActivePokemonSide, String>,
+        locatorTimings: HpBarLocatorTimings? = null,
     ) {
         startAt(startedAtNanos)
-        both { locationPasses++; locatorDuration.add(completedAtNanos - startedAtNanos) }
+        both {
+            locationPasses++
+            locatorDuration.add(completedAtNanos - startedAtNanos)
+            val breakdown = locatorBreakdown ?: LocatorStatistics().also { locatorBreakdown = it }
+            breakdown.add(locatorTimings)
+        }
         ActivePokemonSide.entries.forEach { side ->
             val reason = outcomes[side]?.takeIf { it in OUTCOMES } ?: "OTHER"
             sides(side) {
@@ -125,6 +133,19 @@ class HpObservationDiagnostics(
                     sides(side) { nonIncreasingAcceptedSources++ }
                 }
             }
+        }
+    }
+
+    /** Appearance/effect-grid sampling after location; independent of geometry custody timing. */
+    @Synchronized
+    fun onPostLocatorSampling(
+        side: ActivePokemonSide,
+        elapsedNanos: Long,
+        threadCpuNanos: Long? = null,
+    ) {
+        sides(side) {
+            val sampling = postLocatorSampling ?: StageStatistics().also { postLocatorSampling = it }
+            sampling.add(elapsedNanos, threadCpuNanos, 1)
         }
     }
 
@@ -262,6 +283,59 @@ class HpObservationDiagnostics(
         }
     }
 
+    private class StageStatistics {
+        private var calls = 0L
+        private val elapsed = Distribution()
+        private val threadCpu = Distribution()
+        private var cpuUnavailablePasses = 0L
+        fun add(elapsedNanos: Long, cpuNanos: Long?, callCount: Int) {
+            if (callCount <= 0) return
+            calls += callCount
+            elapsed.add(elapsedNanos)
+            if (cpuNanos == null) cpuUnavailablePasses++ else threadCpu.add(cpuNanos)
+        }
+        fun snapshot() = HpPipelineStageTimingStatistics(
+            calls, elapsed.snapshot(), threadCpu.snapshot(), cpuUnavailablePasses,
+        )
+    }
+
+    private class LocatorStatistics {
+        private var timedPasses = 0L
+        private var untimedPasses = 0L
+        private var cacheHitPasses = 0L
+        private val lockWait = Distribution()
+        private val threadCpu = Distribution()
+        private var threadCpuUnavailablePasses = 0L
+        private val stages = HpBarLocatorStage.entries.associateWith { StageStatistics() }
+        fun add(timing: HpBarLocatorTimings?) {
+            if (timing == null) { untimedPasses++; return }
+            timedPasses++
+            lockWait.add(timing.lockWaitNanos)
+            if (timing.threadCpuNanos == null) threadCpuUnavailablePasses++
+            else threadCpu.add(timing.threadCpuNanos)
+            if (!timing.workPerformed) {
+                cacheHitPasses++
+                return // A cached result must never replay the original scan's timings.
+            }
+            timing.stages.forEach { (stage, sample) ->
+                stages.getValue(stage).add(sample.elapsedNanos, sample.cpuNanos, sample.calls)
+            }
+        }
+        fun snapshot() = HpPipelineLocatorStatistics(
+            timedPasses = timedPasses,
+            untimedPasses = untimedPasses,
+            cacheHitPasses = cacheHitPasses,
+            lockWait = lockWait.snapshot(),
+            threadCpu = threadCpu.snapshot(),
+            threadCpuUnavailablePasses = threadCpuUnavailablePasses,
+            localSearch = stages.getValue(HpBarLocatorStage.LOCAL_SEARCH).snapshot(),
+            recoverySearch = stages.getValue(HpBarLocatorStage.RECOVERY_SEARCH).snapshot(),
+            pixelExtraction = stages.getValue(HpBarLocatorStage.PIXEL_EXTRACTION).snapshot(),
+            geometryDetection = stages.getValue(HpBarLocatorStage.GEOMETRY_DETECTION).snapshot(),
+            assignment = stages.getValue(HpBarLocatorStage.ASSIGNMENT).snapshot(),
+        )
+    }
+
     private class SideStatistics {
         var locationAttempts = 0L; var found = 0L
         val misses = linkedMapOf<String, Long>()
@@ -270,12 +344,14 @@ class HpObservationDiagnostics(
         var continuityResets = 0L; var nonIncreasingAcceptedSources = 0L
         val acceptedIntervals = Distribution(); val sourceToSubmission = Distribution()
         val submissionToTimeline = Distribution(); val sourceToTimeline = Distribution()
+        var postLocatorSampling: StageStatistics? = null
         fun snapshot() = HpPipelineSideStatistics(
             locationAttempts, found, misses.toMap(), submitted, recorded,
             recordedWithoutSubmission, pendingEvicted, duplicateSubmissions,
             continuityResets, nonIncreasingAcceptedSources,
             acceptedIntervals.snapshot(), sourceToSubmission.snapshot(),
             submissionToTimeline.snapshot(), sourceToTimeline.snapshot(),
+            postLocatorSampling?.snapshot(),
         )
     }
 
@@ -289,6 +365,7 @@ class HpObservationDiagnostics(
         val receivedSourceIntervals = Distribution(); val receiptIntervals = Distribution()
         val sourceToPublication = Distribution(); val publicationToReceipt = Distribution()
         val sourceToReceipt = Distribution(); val locatorDuration = Distribution()
+        var locatorBreakdown: LocatorStatistics? = null
         val sides = ActivePokemonSide.entries.associateWith { SideStatistics() }
         fun snapshot() = HpPipelineStatistics(
             publishedSequenceAdvances, publicationBaselines, publicationRestarts, publicationRegressions,
@@ -299,6 +376,7 @@ class HpObservationDiagnostics(
             sourceToPublication.snapshot(), publicationToReceipt.snapshot(),
             sourceToReceipt.snapshot(), locatorDuration.snapshot(),
             sides.getValue(ActivePokemonSide.PLAYER).snapshot(), sides.getValue(ActivePokemonSide.OPPONENT).snapshot(),
+            locatorBreakdown?.snapshot(),
         )
     }
 

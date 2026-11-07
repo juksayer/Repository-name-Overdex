@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.HpObservationPipelineMeasured
 import com.example.overdex.battle.custody.HpPipelineSideStatistics
 import com.example.overdex.battle.custody.HpPipelineStatistics
 import com.example.overdex.battle.custody.HpPipelineTimingStatistics
+import com.example.overdex.battle.custody.HpPipelineLocatorStatistics
+import com.example.overdex.battle.custody.HpPipelineStageTimingStatistics
 import java.util.Locale
 
 /** Research/log presentation of supplied counters only; no battle-event interpretation. */
@@ -34,7 +36,8 @@ object HpObservationDiagnosticText {
             "recorded P/O=${counts.player.recorded}/${counts.opponent.recorded}; pending=$pending; " +
             "p90 upper bounds: receipt ${bucketBound(counts.sourceToReceipt.p90UpperBoundNanos, bounds)}, " +
             "locator ${bucketBound(counts.locatorDuration.p90UpperBoundNanos, bounds)}, " +
-            "Timeline P/O ${bucketBound(counts.player.sourceToTimeline.p90UpperBoundNanos, bounds)}/${bucketBound(counts.opponent.sourceToTimeline.p90UpperBoundNanos, bounds)}]"
+            "Timeline P/O ${bucketBound(counts.player.sourceToTimeline.p90UpperBoundNanos, bounds)}/${bucketBound(counts.opponent.sourceToTimeline.p90UpperBoundNanos, bounds)}; " +
+            locatorBrief(counts.locatorBreakdown, bounds) + "]"
 
     fun details(value: ArchivedHpObservationPipelineMeasured): String = buildString {
         val knownPublicationBaseline = value.latestPublicationStreamId != null || value.cumulative.publicationBaselines > 0L
@@ -66,6 +69,7 @@ object HpObservationDiagnosticText {
         appendTiming("Publication → receipt", counts.publicationToReceipt, bounds)
         appendTiming("Source → receipt", counts.sourceToReceipt, bounds)
         appendTiming("Locator duration", counts.locatorDuration, bounds)
+        appendLocatorBreakdown(counts.locatorBreakdown, bounds)
         appendSide("PLAYER", counts.player, bounds)
         appendSide("OPPONENT", counts.opponent, bounds)
     }
@@ -78,6 +82,34 @@ object HpObservationDiagnosticText {
         appendTiming("  Source → submission", counts.sourceToSubmission, bounds)
         appendTiming("  Submission → Timeline", counts.submissionToTimeline, bounds)
         appendTiming("  Source → Timeline", counts.sourceToTimeline, bounds)
+        counts.postLocatorSampling?.let { appendStage("  Post-locator sampling", it, bounds) }
+            ?: appendLine("  Post-locator sampling: not recorded")
+    }
+
+    private fun locatorBrief(value: HpPipelineLocatorStatistics?, bounds: List<Long>): String =
+        value?.let {
+            "internal locator timed=${it.timedPasses} untimed=${it.untimedPasses} cache=${it.cacheHitPasses}; " +
+                "local/recovery calls=${it.localSearch.calls}/${it.recoverySearch.calls}; " +
+                "CPU p90 ${bucketBound(it.threadCpu.p90UpperBoundNanos, bounds)}"
+        } ?: "internal locator timing not recorded"
+
+    private fun StringBuilder.appendLocatorBreakdown(value: HpPipelineLocatorStatistics?, bounds: List<Long>) {
+        if (value == null) { appendLine("Internal locator timing: not recorded"); return }
+        appendLine("Internal locator: timed passes=${value.timedPasses}; untimed passes=${value.untimedPasses}; cache hits=${value.cacheHitPasses}; unavailable thread CPU=${value.threadCpuUnavailablePasses}")
+        appendLine("Search totals overlap pixel/geometry work; do not add all timing rows. Thread CPU is separately measured, not inferred from elapsed time.")
+        appendTiming("Tracker lock wait elapsed", value.lockWait, bounds)
+        appendTiming("Locator thread CPU", value.threadCpu, bounds)
+        appendStage("Local search", value.localSearch, bounds)
+        appendStage("Recovery search", value.recoverySearch, bounds)
+        appendStage("Pixel extraction", value.pixelExtraction, bounds)
+        appendStage("Geometry detection", value.geometryDetection, bounds)
+        appendStage("Assignment", value.assignment, bounds)
+    }
+
+    private fun StringBuilder.appendStage(label: String, value: HpPipelineStageTimingStatistics, bounds: List<Long>) {
+        appendLine("$label: calls=${value.calls}; unavailable thread CPU passes=${value.cpuUnavailablePasses}")
+        appendTiming("$label elapsed per pass", value.elapsed, bounds)
+        appendTiming("$label thread CPU per pass", value.threadCpu, bounds)
     }
 
     private fun StringBuilder.appendTiming(label: String, timing: HpPipelineTimingStatistics, bounds: List<Long>) {

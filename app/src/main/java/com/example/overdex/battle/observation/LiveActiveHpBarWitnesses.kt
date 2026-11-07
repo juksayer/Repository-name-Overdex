@@ -155,13 +155,24 @@ internal class LiveActiveHpBarWitness(
                         match.hpObservationDiagnostics.onLocationCompleted(
                             frame.capturedAtMonotonicTimeNanos, locateStartedAtNanos, System.nanoTime(),
                             located.outcomes.mapValues { it.value.name },
+                            located.timings,
                         )
                         val measurements = located.measurements
                         match.observeForecastBattlefield(frame.capturedAtMonotonicTimeNanos,
                             measurements.keys.containsAll(ActivePokemonSide.entries))
                         measurements.forEach { (side, measurement) ->
+                            val samplingCpuStarted = hpLocatorThreadCpuTimeNanos()
+                            val samplingStarted = System.nanoTime()
                             val appearance = ActiveHpBarBorderAppearanceMeasurer.measure(frame.bitmap, measurement)
                             val recipientVisual = FastMoveRecipientVisualSampler.sample(frame.bitmap, measurement)
+                            val samplingElapsed = System.nanoTime() - samplingStarted
+                            val samplingCpuFinished = hpLocatorThreadCpuTimeNanos()
+                            match.hpObservationDiagnostics.onPostLocatorSampling(
+                                side, samplingElapsed,
+                                if (samplingCpuStarted != null && samplingCpuFinished != null &&
+                                    samplingCpuFinished >= samplingCpuStarted)
+                                    samplingCpuFinished - samplingCpuStarted else null,
+                            )
                             match.hpObservationDiagnostics.onSubmission(
                                 side, frame.capturedAtMonotonicTimeNanos, System.nanoTime(),
                             )

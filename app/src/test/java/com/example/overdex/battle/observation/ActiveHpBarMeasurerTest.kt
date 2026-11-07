@@ -6,6 +6,33 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ActiveHpBarMeasurerTest {
+    @Test fun `discarded scenery fragments preserve the complete accepted candidate list`() {
+        val width = 320
+        val height = 180
+        fun pixel(x: Int, y: Int, fragments: Boolean): Int = when {
+            (y == 90 || y == 112) && x in 62 until 255 -> 0xffeeeeee.toInt()
+            (x == 62 || x == 254) && y in 90..112 -> 0xffeeeeee.toInt()
+            x in 65 until 175 && y in 95 until 108 -> 0xff1effbc.toInt()
+            // Short bright scenery before/after the bar cannot form an outline.
+            fragments && (x in 4..8 || x in 35..39 || x in 280..284 || x in 309..313) -> 0xffeeeeee.toInt()
+            else -> 0xff182825.toInt()
+        }
+        val clean = ActiveHpBarMeasurer.measureAll(width, height) { x, y -> pixel(x, y, false) }
+        assertTrue(clean.isNotEmpty())
+        assertEquals(clean, ActiveHpBarMeasurer.measureAll(width, height) { x, y -> pixel(x, y, true) })
+    }
+
+    @Test fun `many small bright row fragments cannot become an HP bar`() {
+        val result = ActiveHpBarMeasurer.measureAll(320, 180) { x, y ->
+            when {
+                x % 24 in 4..8 -> 0xffeeeeee.toInt()
+                x % 24 in 12..16 && y % 16 in 4..10 -> 0xff1effbc.toInt()
+                else -> 0xff182825.toInt()
+            }
+        }
+        assertTrue(result.isEmpty())
+    }
+
     @Test
     fun `blue scenery on one displaced horizontal edge cannot become a hit`() {
         val bar = ActiveHpBarMeasurement(38, 706, 230, 724, .7446808f, .9f)

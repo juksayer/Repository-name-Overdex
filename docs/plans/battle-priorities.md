@@ -56,9 +56,19 @@ bitmap-free counters produce five-second and terminal summaries without changing
 source times or inventing attacks. All 1,877 unit tests and 14 emulator checks pass;
 the tested build is installed on the Moondrop. The first [Sierra recording](../verification/2026-11-07-sierra-hp-review.md)
 preserves all 660 accepted HP readings, but locator calls average 232 ms and the
-reader skips many published frames. Next, separate internal locator work and
-scheduling before selecting a performance repair. This is diagnostic implementation, not a claimed
-Fast Move accuracy or speed improvement. Shell appearance remains deferred.
+reader skips many published frames. [Internal stage profiling](../verification/2026-11-07-hp-locator-stage-profiling.md)
+is now implemented: optional bounded summaries separate monitor-admission elapsed,
+measured thread CPU, local/recovery search, pixel extraction, geometry, assignment,
+and post-location sampling. Cached calls do not replay earlier work; unknown CPU
+remains unknown, and nested search/sub-stage totals must not be added. All 1,904
+unit tests and two emulator integration checks pass, and the profiler is installed
+on the Moondrop. A streamed-outline experiment preserved candidates on 21
+workloads but regressed important phone CPU timings, so it was reverted before
+installation. A fresh live internal breakdown remains the next acceptance step;
+the old Sierra recording proves no new speedup.
+Use the measured live stages before selecting the next repair. This is diagnostic
+implementation, not a claimed Fast Move accuracy or speed improvement. Shell
+appearance remains deferred.
 
 November 4 Fast Move progress: [coherent audio comparisons](../verification/2026-11-04-coherent-fast-move-audio.md)
 now give both spectral scores and timing offsets from the same sound passage.

@@ -19,7 +19,11 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
         val first = tracker.read(0, scan = { bars })
         val second = tracker.read(0, scan = { error("A second witness must reuse the pass") })
 
-        assertSame(first, second)
+        assertSame(first.measurements, second.measurements)
+        assertSame(first.outcomes, second.outcomes)
+        assertTrue(requireNotNull(first.timings).workPerformed)
+        assertFalse(requireNotNull(second.timings).workPerformed)
+        assertTrue(requireNotNull(second.timings).stages.isEmpty())
         assertEquals(mapOf(player to bars[0], opponent to bars[1]), first.measurements)
         assertEquals(setOf(HpBarLocatorOutcome.FOUND), first.outcomes.values.toSet())
     }
@@ -31,7 +35,10 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
 
         assertTrue(old.measurements.isEmpty())
         assertEquals(setOf(HpBarLocatorOutcome.OUT_OF_ORDER_FRAME), old.outcomes.values.toSet())
-        assertSame(latest, tracker.read(500_000_000, scan = { error("Latest result must remain cached") }))
+        val cached = tracker.read(500_000_000, scan = { error("Latest result must remain cached") })
+        assertSame(latest.measurements, cached.measurements)
+        assertSame(latest.outcomes, cached.outcomes)
+        assertFalse(requireNotNull(cached.timings).workPerformed)
     }
 
     @Test fun `initial missing calibration does not scan or claim missing bars`() {
@@ -151,6 +158,51 @@ class LiveBattlefieldHpTrackerDiagnosticsTest {
 
         assertEquals(listOf(BattleCropBounds(0, 367, 700, 1080)), scanned)
         assertEquals(setOf(HpBarLocatorOutcome.NO_CANDIDATE), result.outcomes.values.toSet())
+    }
+
+    @Test fun `timings separate actual local and recovery searches without inventing a local scan at acquisition`() {
+        var elapsed = 0L
+        var cpu = 100L
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration(), { elapsed }, { cpu })
+        val bars = listOf(bar(40), bar(400))
+        val acquired = tracker.read(0, scan = { elapsed += 100; cpu += 40; bars })
+        val first = requireNotNull(acquired.timings)
+        assertFalse(first.stages.containsKey(HpBarLocatorStage.LOCAL_SEARCH))
+        assertEquals(HpBarStageTiming(100, 40, 1), first.stages[HpBarLocatorStage.RECOVERY_SEARCH])
+        assertEquals(2, first.stages.getValue(HpBarLocatorStage.ASSIGNMENT).calls)
+        assertEquals(40L, first.threadCpuNanos)
+
+        val tracked = tracker.read(33_000_000, scan = { bounds ->
+            elapsed += 30; cpu += 10
+            bars.filter { it.left >= bounds.left && it.right <= bounds.right }
+        })
+        val second = requireNotNull(tracked.timings)
+        assertEquals(HpBarStageTiming(60, 20, 1), second.stages[HpBarLocatorStage.LOCAL_SEARCH])
+        assertFalse(second.stages.containsKey(HpBarLocatorStage.RECOVERY_SEARCH))
+        assertEquals(1, second.stages.getValue(HpBarLocatorStage.ASSIGNMENT).calls)
+        assertEquals(20L, second.threadCpuNanos)
+    }
+
+    @Test fun `cache hit includes only current call lock wait and cpu rather than cached work`() {
+        var elapsed = 0L
+        var cpu = 100L
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration(), { elapsed }, { cpu })
+        tracker.read(0, scan = { elapsed += 100; cpu += 40; listOf(bar(40), bar(400)) })
+        val hit = requireNotNull(tracker.read(0, scan = { error("No cached scan") }).timings)
+
+        assertFalse(hit.workPerformed)
+        assertTrue(hit.stages.isEmpty())
+        assertEquals(0L, hit.lockWaitNanos)
+        assertEquals(0L, hit.threadCpuNanos)
+    }
+
+    @Test fun `unavailable thread clock leaves cpu unknown while preserving elapsed work`() {
+        var elapsed = 0L
+        val tracker = LiveBattlefieldHpTracker(BattleCalibration(), { elapsed }, { null })
+        val timing = requireNotNull(tracker.read(0, scan = { elapsed += 123; emptyList() }).timings)
+
+        assertNull(timing.threadCpuNanos)
+        assertEquals(HpBarStageTiming(123, null, 1), timing.stages[HpBarLocatorStage.RECOVERY_SEARCH])
     }
 
     private fun LiveBattlefieldHpTracker.read(

@@ -271,6 +271,112 @@ class HpObservationDiagnosticsTest {
         assertTrue(reasons.size <= 1)
     }
 
+    @Test fun `internal locator timings preserve elapsed CPU and overlapping stage call counts`() {
+        val diagnostic = HpObservationDiagnostics()
+        diagnostic.onLocationCompleted(100L, 110L, 210L, mapOf(player to "FOUND", opponent to "NO_CANDIDATE"),
+            HpBarLocatorTimings(workPerformed = true, lockWaitNanos = 5L, threadCpuNanos = 70L,
+                stages = mapOf(
+                    HpBarLocatorStage.LOCAL_SEARCH to HpBarStageTiming(30L, 20L, 1),
+                    HpBarLocatorStage.RECOVERY_SEARCH to HpBarStageTiming(40L, 30L, 1),
+                    HpBarLocatorStage.PIXEL_EXTRACTION to HpBarStageTiming(10L, 8L, 3),
+                    HpBarLocatorStage.GEOMETRY_DETECTION to HpBarStageTiming(50L, 35L, 3),
+                    HpBarLocatorStage.ASSIGNMENT to HpBarStageTiming(5L, 4L, 2),
+                )))
+        val summary = diagnostic.finish(300L)
+        val timings = requireNotNull(summary.window.locatorBreakdown)
+        assertEquals(1L, summary.window.locationPasses)
+        assertEquals(1L, timings.timedPasses)
+        assertEquals(0L, timings.untimedPasses)
+        assertEquals(5L, timings.lockWait.minimumNanos)
+        assertEquals(70L, timings.threadCpu.minimumNanos)
+        assertEquals(1L, timings.localSearch.calls)
+        assertEquals(1L, timings.recoverySearch.calls)
+        assertEquals(3L, timings.pixelExtraction.calls)
+        assertEquals(3L, timings.geometryDetection.calls)
+        assertEquals(2L, timings.assignment.calls)
+        assertEquals(1L, timings.pixelExtraction.elapsed.sampleCount) // Three calls aggregated within one pass.
+        assertEquals(10L, timings.pixelExtraction.elapsed.minimumNanos)
+        assertEquals(8L, timings.pixelExtraction.threadCpu.minimumNanos)
+        assertEquals(1L, summary.window.player.found)
+        assertEquals(1L, summary.window.opponent.missesByReason["NO_CANDIDATE"])
+    }
+
+    @Test fun `unavailable thread CPU remains unknown instead of a zero duration sample`() {
+        val diagnostic = HpObservationDiagnostics()
+        diagnostic.onLocationCompleted(100L, 110L, 210L, emptyMap(),
+            HpBarLocatorTimings(true, 5L, null, mapOf(
+                HpBarLocatorStage.GEOMETRY_DETECTION to HpBarStageTiming(60L, null, 2))))
+        val timings = requireNotNull(diagnostic.finish(300L).window.locatorBreakdown)
+        assertEquals(1L, timings.threadCpuUnavailablePasses)
+        assertEquals(0L, timings.threadCpu.sampleCount)
+        assertNull(timings.threadCpu.meanNanos)
+        assertEquals(1L, timings.geometryDetection.cpuUnavailablePasses)
+        assertEquals(0L, timings.geometryDetection.threadCpu.sampleCount)
+        assertEquals(1L, timings.geometryDetection.elapsed.sampleCount)
+        assertEquals(0L, timings.pixelExtraction.calls)
+        assertEquals(0L, timings.pixelExtraction.elapsed.sampleCount)
+        assertNull(timings.pixelExtraction.elapsed.minimumNanos)
+    }
+
+    @Test fun `cache result records its own lock wait CPU but never replays stored scan timings`() {
+        val diagnostic = HpObservationDiagnostics()
+        diagnostic.onLocationCompleted(100L, 110L, 120L, mapOf(player to "FOUND"),
+            HpBarLocatorTimings(false, 2L, 3L, mapOf(
+                HpBarLocatorStage.LOCAL_SEARCH to HpBarStageTiming(100L, 80L, 1))))
+        val timings = requireNotNull(diagnostic.finish(300L).window.locatorBreakdown)
+        assertEquals(1L, timings.timedPasses)
+        assertEquals(1L, timings.cacheHitPasses)
+        assertEquals(2L, timings.lockWait.minimumNanos)
+        assertEquals(3L, timings.threadCpu.minimumNanos)
+        assertEquals(0L, timings.localSearch.calls)
+        assertEquals(0L, timings.localSearch.elapsed.sampleCount)
+    }
+
+    @Test fun `internal stage timing aggregates stay independent across periodic windows`() {
+        val diagnostic = HpObservationDiagnostics(summaryIntervalNanos = 100L)
+        diagnostic.start(100L, null)
+        val timings = HpBarLocatorTimings(true, 2L, 30L, mapOf(
+            HpBarLocatorStage.LOCAL_SEARCH to HpBarStageTiming(50L, 20L, 2)))
+        diagnostic.onLocationCompleted(110L, 120L, 180L, emptyMap(), timings)
+        val first = requireNotNull(diagnostic.takeSummary(200L, null))
+        assertEquals(2L, first.window.locatorBreakdown?.localSearch?.calls)
+        diagnostic.onLocationCompleted(210L, 220L, 280L, emptyMap(), timings)
+        val second = requireNotNull(diagnostic.takeSummary(300L, null))
+        assertEquals(2L, second.window.locatorBreakdown?.localSearch?.calls)
+        assertEquals(4L, second.cumulative.locatorBreakdown?.localSearch?.calls)
+        assertEquals(2L, second.cumulative.locatorBreakdown?.localSearch?.elapsed?.sampleCount)
+        assertEquals(HpObservationDiagnostics.HISTOGRAM_UPPER_BOUNDS_NANOS.size,
+            second.cumulative.locatorBreakdown?.localSearch?.elapsed?.bucketCounts?.size)
+    }
+
+    @Test fun `legacy locator calls explicitly report missing internal timing without fake scan samples`() {
+        val diagnostic = HpObservationDiagnostics()
+        diagnostic.onLocationCompleted(100L, 110L, 210L, emptyMap())
+        val timings = requireNotNull(diagnostic.finish(300L).window.locatorBreakdown)
+        assertEquals(0L, timings.timedPasses)
+        assertEquals(1L, timings.untimedPasses)
+        assertEquals(0L, timings.lockWait.sampleCount)
+        assertEquals(0L, timings.threadCpu.sampleCount)
+        assertEquals(0L, timings.localSearch.calls)
+    }
+
+    @Test fun `post locator sampling stays side specific with separately measured thread CPU`() {
+        val diagnostic = HpObservationDiagnostics()
+        diagnostic.start(100L, null)
+        diagnostic.onPostLocatorSampling(player, 10L, null)
+        diagnostic.onPostLocatorSampling(player, 20L, 12L)
+        val stats = diagnostic.finish(300L).window
+        val sample = requireNotNull(stats.player.postLocatorSampling)
+        assertEquals(2L, sample.calls)
+        assertEquals(2L, sample.elapsed.sampleCount)
+        assertEquals(15.0, requireNotNull(sample.elapsed.meanNanos), .001)
+        assertEquals(1L, sample.threadCpu.sampleCount)
+        assertEquals(12L, sample.threadCpu.minimumNanos)
+        assertEquals(1L, sample.cpuUnavailablePasses)
+        assertNull(stats.opponent.postLocatorSampling)
+        assertEquals(0L, stats.player.submitted) // Timing alone does not submit geometry or infer an attack.
+    }
+
     private fun publication(sequence: Long, at: Long, stream: Long = 1L) =
         VisualFramePublication(stream, sequence, at)
     private fun HpObservationDiagnostics.receive(at: Long, sequence: Long, enabled: Boolean = true, stream: Long = 1L) =

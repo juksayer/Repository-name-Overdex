@@ -367,6 +367,31 @@ data class HpPipelineTimingStatistics(
     val bucketCounts: List<Long> = emptyList(),
 )
 
+/** Per-pass aggregate stage timings. Search totals overlap their pixel/detection sub-stages. */
+@kotlinx.serialization.Serializable
+data class HpPipelineStageTimingStatistics(
+    val calls: Long = 0,
+    val elapsed: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val threadCpu: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    /** One unavailable CPU measurement per timed pass, rather than an invented zero sample. */
+    val cpuUnavailablePasses: Long = 0,
+)
+
+@kotlinx.serialization.Serializable
+data class HpPipelineLocatorStatistics(
+    val timedPasses: Long = 0,
+    val untimedPasses: Long = 0,
+    val cacheHitPasses: Long = 0,
+    val lockWait: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val threadCpu: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    val threadCpuUnavailablePasses: Long = 0,
+    val localSearch: HpPipelineStageTimingStatistics = HpPipelineStageTimingStatistics(),
+    val recoverySearch: HpPipelineStageTimingStatistics = HpPipelineStageTimingStatistics(),
+    val pixelExtraction: HpPipelineStageTimingStatistics = HpPipelineStageTimingStatistics(),
+    val geometryDetection: HpPipelineStageTimingStatistics = HpPipelineStageTimingStatistics(),
+    val assignment: HpPipelineStageTimingStatistics = HpPipelineStageTimingStatistics(),
+)
+
 @kotlinx.serialization.Serializable
 data class HpPipelineSideStatistics(
     val locationAttempts: Long = 0,
@@ -383,6 +408,8 @@ data class HpPipelineSideStatistics(
     val sourceToSubmission: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
     val submissionToTimeline: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
     val sourceToTimeline: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
+    /** Null in older archives which did not measure this stage. */
+    val postLocatorSampling: HpPipelineStageTimingStatistics? = null,
 )
 
 @kotlinx.serialization.Serializable
@@ -410,6 +437,8 @@ data class HpPipelineStatistics(
     val locatorDuration: HpPipelineTimingStatistics = HpPipelineTimingStatistics(),
     val player: HpPipelineSideStatistics = HpPipelineSideStatistics(),
     val opponent: HpPipelineSideStatistics = HpPipelineSideStatistics(),
+    /** Null in older archives which did not retain internal locator timings. */
+    val locatorBreakdown: HpPipelineLocatorStatistics? = null,
 )
 
 /** One visible active HP bar. Source dimensions distinguish global from legacy crop coordinates. */

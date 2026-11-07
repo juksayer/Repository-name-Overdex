@@ -19,6 +19,7 @@ internal enum class HpBarLocatorOutcome {
 internal data class HpBarFrameDiagnostics(
     val measurements: Map<ActivePokemonSide, ActiveHpBarMeasurement>,
     val outcomes: Map<ActivePokemonSide, HpBarLocatorOutcome>,
+    val timings: HpBarLocatorTimings? = null,
 ) {
     companion object {
         fun unavailable(outcome: HpBarLocatorOutcome) = HpBarFrameDiagnostics(
@@ -32,7 +33,11 @@ internal data class HpBarFrameDiagnostics(
  * calibrated vertical battlefield band, but includes both horizontal end caps
  * when the camera shifts. Neither tracking nor recovery writes calibration.
  */
-internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibration) {
+internal class LiveBattlefieldHpTracker(
+    private val calibration: BattleCalibration,
+    private val elapsedTimeNanos: () -> Long = System::nanoTime,
+    private val threadCpuTimeNanos: () -> Long? = ::hpLocatorThreadCpuTimeNanos,
+) {
     private val tracker = BattlefieldHpTracker()
     private val species = mutableMapOf<ActivePokemonSide, Pair<String, Long>>()
     private var lastWideScanAt: Long? = null
@@ -63,9 +68,9 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
     fun measureFrame(frame: CapturedVisualFrame): Map<ActivePokemonSide, ActiveHpBarMeasurement> =
         measureFrameWithDiagnostics(frame).measurements
 
-    @Synchronized fun measureFrameWithDiagnostics(frame: CapturedVisualFrame): HpBarFrameDiagnostics {
+    fun measureFrameWithDiagnostics(frame: CapturedVisualFrame): HpBarFrameDiagnostics = withTiming { timing ->
         val bitmap = frame.bitmap
-        return measureFrameWithDiagnostics(
+        measureFrameLocked(
             width = bitmap.width,
             height = bitmap.height,
             at = frame.capturedAtMonotonicTimeNanos,
@@ -82,25 +87,52 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
             scan = { bounds ->
                 val w = bounds.right - bounds.left
                 val h = bounds.bottom - bounds.top
-                val pixels = IntArray(w * h)
-                bitmap.getPixels(pixels, 0, w, bounds.left, bounds.top, w, h)
-                ActiveHpBarMeasurer.measureAll(w, h, bitmap.width * 2 / 7, pixels).map {
+                val pixels = timing.measure(HpBarLocatorStage.PIXEL_EXTRACTION) {
+                    IntArray(w * h).also { bitmap.getPixels(it, 0, w, bounds.left, bounds.top, w, h) }
+                }
+                timing.measure(HpBarLocatorStage.GEOMETRY_DETECTION) {
+                    ActiveHpBarMeasurer.measureAll(w, h, bitmap.width * 2 / 7, pixels)
+                }.map {
                     it.copy(left = it.left + bounds.left, right = it.right + bounds.left,
                         top = it.top + bounds.top, bottom = it.bottom + bounds.top)
                 }
             },
             canObserve = { frame.canObserve(BattleCropBounds(it.left, it.top, it.right, it.bottom)) },
+            timing = timing,
         )
     }
 
     /** Pure scan seam: live pixels and recorded/test candidates use the same cache and search policy. */
-    @Synchronized internal fun measureFrameWithDiagnostics(
+    internal fun measureFrameWithDiagnostics(
         width: Int,
         height: Int,
         at: Long,
         resolveRegions: () -> Map<ActivePokemonSide, BattleCropBounds>,
         scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement>,
         canObserve: (ActiveHpBarMeasurement) -> Boolean,
+    ): HpBarFrameDiagnostics = withTiming { timing ->
+        measureFrameLocked(width, height, at, resolveRegions, scan, canObserve, timing)
+    }
+
+    private fun withTiming(work: (HpBarLocatorTimingProbe) -> HpBarFrameDiagnostics): HpBarFrameDiagnostics {
+        val cpuStarted = threadCpuTimeNanos()
+        val requestedAt = elapsedTimeNanos()
+        return synchronized(this) {
+            val acquiredAt = elapsedTimeNanos()
+            val timing = HpBarLocatorTimingProbe(elapsedTimeNanos, threadCpuTimeNanos, cpuStarted, acquiredAt - requestedAt)
+            work(timing).copy(timings = timing.finish())
+        }
+    }
+
+    /** Caller holds this tracker's existing monitor for the complete state/scan pass. */
+    private fun measureFrameLocked(
+        width: Int,
+        height: Int,
+        at: Long,
+        resolveRegions: () -> Map<ActivePokemonSide, BattleCropBounds>,
+        scan: (BattleCropBounds) -> List<ActiveHpBarMeasurement>,
+        canObserve: (ActiveHpBarMeasurement) -> Boolean,
+        timing: HpBarLocatorTimingProbe,
     ): HpBarFrameDiagnostics {
         val size = width to height
         if (cachedSize != null && cachedSize != size) {
@@ -129,12 +161,15 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
             // consumes too much CPU on the physical phone. Recovery is bounded
             // and returns to the calibrated battlefield, including the home lock.
             val windows = tracker.trackingWindows(width, regions)
-            val local = scanWindows(windows)
-            var measurements = tracker.assign(width, at, regions, local)
+            val local = if (windows.isEmpty()) emptyList() else timing.measure(HpBarLocatorStage.LOCAL_SEARCH) {
+                scanWindows(windows)
+            }
+            var measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, local) }
             var wideScanPerformed = false
             if (measurements.size < 2 && lastWideScanAt?.let { at - it < 250_000_000L } != true) {
                 val bounds = BattleCropBounds(0, regions.values.minOf { it.top }, width, regions.values.maxOf { it.bottom })
-                measurements = tracker.assign(width, at, regions, scanWindows(listOf(bounds)))
+                val recovered = timing.measure(HpBarLocatorStage.RECOVERY_SEARCH) { scanWindows(listOf(bounds)) }
+                measurements = timing.measure(HpBarLocatorStage.ASSIGNMENT) { tracker.assign(width, at, regions, recovered) }
                 lastWideScanAt = at
                 wideScanPerformed = true
             }
@@ -154,6 +189,10 @@ internal class LiveBattlefieldHpTracker(private val calibration: BattleCalibrati
             })
             cachedAt = at
             cachedSize = size
+        } else {
+            // Cached geometry/outcomes are shared, but cached work timings must
+            // never be reported as a second search or assignment pass.
+            timing.workPerformed = false
         }
         return cached
     }

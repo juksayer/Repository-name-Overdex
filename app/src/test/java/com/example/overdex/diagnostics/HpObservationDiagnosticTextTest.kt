@@ -5,6 +5,8 @@ import com.example.overdex.battle.custody.HpObservationPipelineMeasured
 import com.example.overdex.battle.custody.HpPipelineSideStatistics
 import com.example.overdex.battle.custody.HpPipelineStatistics
 import com.example.overdex.battle.custody.HpPipelineTimingStatistics
+import com.example.overdex.battle.custody.HpPipelineLocatorStatistics
+import com.example.overdex.battle.custody.HpPipelineStageTimingStatistics
 import com.example.overdex.battle.custody.SourceId
 import com.example.overdex.battle.reality.ArticleId
 import com.example.overdex.battle.reality.RealityArticle
@@ -88,6 +90,37 @@ class HpObservationDiagnosticTextTest {
         assertTrue(text.contains("Pending submissions: 2; oldest age: 15.500 ms"))
         assertTrue(text.contains("samples=0; invalid=0; min=unknown; mean=unknown; max=unknown"))
         assertTrue(text.contains("Recorded without submission=0"))
+    }
+
+    @Test fun `internal stage display separates elapsed CPU unavailable samples and overlapping work`() {
+        val elapsed = HpPipelineTimingStatistics(sampleCount = 1L, minimumNanos = 4_000_000L,
+            maximumNanos = 4_000_000L, meanNanos = 4_000_000.0, p50UpperBoundNanos = 4_000_000L,
+            p90UpperBoundNanos = 4_000_000L, p99UpperBoundNanos = 4_000_000L,
+            bucketCounts = listOf(1L, 0L, 0L))
+        val stage = HpPipelineStageTimingStatistics(calls = 2L, elapsed = elapsed,
+            threadCpu = HpPipelineTimingStatistics(), cpuUnavailablePasses = 1L)
+        val counts = HpPipelineStatistics(locatorBreakdown = HpPipelineLocatorStatistics(
+            timedPasses = 3L, untimedPasses = 1L, cacheHitPasses = 1L, lockWait = elapsed,
+            threadCpuUnavailablePasses = 3L, localSearch = stage, recoverySearch = stage,
+            pixelExtraction = stage, geometryDetection = stage, assignment = stage),
+            player = HpPipelineSideStatistics(postLocatorSampling = stage))
+        val value = measurement(counts)
+        assertTrue(HpObservationDiagnosticText.summary(value).contains("local/recovery calls=2/2"))
+        assertTrue(HpObservationDiagnosticText.summary(value).contains("CPU p90 unknown"))
+        val details = HpObservationDiagnosticText.details(archived(value))
+        assertTrue(details.contains("timed passes=3; untimed passes=1; cache hits=1; unavailable thread CPU=3"))
+        assertTrue(details.contains("do not add all timing rows"))
+        assertTrue(details.contains("Thread CPU is separately measured"))
+        assertTrue(details.contains("Geometry detection: calls=2; unavailable thread CPU passes=1"))
+        assertTrue(details.contains("Geometry detection thread CPU per pass: samples=0; invalid=0; min=unknown"))
+        assertTrue(details.contains("Post-locator sampling elapsed per pass: samples=1"))
+        assertTrue(details.contains("Post-locator sampling: not recorded")) // Opponent has no measured sampling.
+    }
+
+    @Test fun `older diagnostic display does not manufacture an internal locator profile`() {
+        val value = measurement(HpPipelineStatistics())
+        assertTrue(HpObservationDiagnosticText.summary(value).contains("internal locator timing not recorded"))
+        assertTrue(HpObservationDiagnosticText.details(archived(value)).contains("Internal locator timing: not recorded"))
     }
 
     private fun measurement(counts: HpPipelineStatistics) = HpObservationPipelineMeasured(
