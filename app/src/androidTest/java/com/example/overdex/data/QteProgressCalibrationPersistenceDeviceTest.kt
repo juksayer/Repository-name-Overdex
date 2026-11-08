@@ -74,6 +74,60 @@ class QteProgressCalibrationPersistenceDeviceTest {
         assertEquals(BattleCalibration().qteProgressTextRegion, loaded.qteProgressTextRegion)
     }
 
+    @Test fun oldFactoryGradeBoxWidensButACurrentSaveAtThoseCoordinatesStaysExact() = isolated { context ->
+        val manager = CalibrationManager(context)
+        val old = manager.load().copy(qteProgressTextRegion = BattleCalibration.PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION)
+        assertTrue(manager.save(old))
+        assertEquals(old, CalibrationManager(context).load())
+        assertTrue(context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE).edit()
+            .putInt("calibration_profile_version", 1).commit())
+        assertEquals(old.copy(qteProgressTextRegion = BattleCalibration.DEFAULT_QTE_PROGRESS_TEXT_REGION),
+            CalibrationManager(context).load())
+
+        val custom = old.copy(qteProgressTextRegion = AnchorRegion(.17f, .27f, .66f, .065f))
+        assertTrue(manager.save(custom))
+        assertTrue(context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE).edit()
+            .putInt("calibration_profile_version", 1).commit())
+        assertEquals(custom, CalibrationManager(context).load())
+    }
+
+    @Test fun anOldWorkingCheckpointCannotRestoreTheNarrowFactoryGradeBox() = isolated { context ->
+        val customAnnouncement = AnchorRegion(.08f, .22f, .84f, .06f)
+        val directory = File(context.filesDir, "calibration_profiles").apply { mkdirs() }
+        val profileFile = File(directory, "old-grade.json")
+        profileFile.writeText("""
+            {
+              "schemaVersion": 2, "id": "old-grade", "name": "Old factory grade",
+              "deviceModel": "Isolated test", "screenWidth": 1080, "screenHeight": 2280,
+              "savedAtMillis": 1,
+              "battleRegions": {
+                "qte_progress_text": {"x":0.12,"y":0.26,"width":0.76,"height":0.075},
+                "announcement": {"x":0.08,"y":0.22,"width":0.84,"height":0.06}
+              },
+              "teamSelectRegions": {},
+              "workingCheckpoint": {
+                "confirmedAtMillis": 1,
+                "battleRegions": {
+                  "qte_progress_text": {"x":0.12,"y":0.26,"width":0.76,"height":0.075},
+                  "announcement": {"x":0.08,"y":0.22,"width":0.84,"height":0.06}
+                },
+                "teamSelectRegions": {}
+              }
+            }
+        """.trimIndent())
+        val before = profileFile.readText()
+        val store = MatchCalibrationProfileStore(context)
+        val loaded = store.activate("old-grade")!!
+        assertEquals(BattleCalibration.DEFAULT_QTE_PROGRESS_TEXT_REGION, loaded.battleCalibration.qteProgressTextRegion)
+        assertEquals(loaded.battleCalibration, loaded.workingCheckpoint!!.battleCalibration)
+        assertEquals(customAnnouncement, loaded.battleCalibration.announcementRegion)
+        assertEquals(before, profileFile.readText())
+        val restored = store.restoreWorking(loaded.id)!!
+        assertEquals(loaded.battleCalibration, restored.battleCalibration)
+        assertEquals(loaded.battleCalibration, CalibrationManager(context).load())
+        assertEquals(loaded.battleCalibration, MatchCalibrationProfileStore(context).activeProfile()!!.workingCheckpoint!!.battleCalibration)
+    }
+
     private fun isolated(test: (Context) -> Unit) {
         val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
         try { test(context) } finally { context.cleanUp() }

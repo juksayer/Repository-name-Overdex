@@ -61,6 +61,7 @@ import com.example.overdex.data.CalibrationScreenshotFilter
 import com.example.overdex.data.CalibrationScreenshotLibrary
 import com.example.overdex.data.CalibrationScreenshotReference
 import com.example.overdex.data.CalibrationImageViewport
+import com.example.overdex.data.BundledCalibrationSampleCatalog
 import com.example.overdex.battle.observation.DroidballService
 import com.example.overdex.battle.observation.DroidballRuntimeState
 import java.text.DateFormat
@@ -1013,16 +1014,23 @@ internal fun loadCalibrationSamples(
     val captured = BattleCalibrationReferenceStore(context.filesDir).latest()?.let { file ->
         CalibrationSample(file, CalibrationScreenshotReference(file.absolutePath, "Latest device capture", 0, 0), "DEVICE CAPTURE")
     }
-    val library = if (userImages.isNotEmpty()) {
-        userImages.map { image ->
+    val userLibrary = userImages.map { image ->
             CalibrationSample(image.uri, CalibrationScreenshotReference(image.uri.toString(), image.name, 0, 0, image.deviceLabel), "YOUR SCREENSHOT")
-        }
-    } else {
-        context.assets.list("battle_samples").orEmpty().sorted().map { name ->
-            CalibrationSample(name, CalibrationScreenshotReference("asset:$name", name, 0, 0), "BUNDLED REFERENCE")
-        }
     }
-    val samples = listOfNotNull(captured) + library
+    val bundledLabels = runCatching {
+        context.assets.open(BundledCalibrationSampleCatalog.ASSET_PATH).bufferedReader().use {
+            BundledCalibrationSampleCatalog.labels(it.readText())
+        }
+    }.getOrDefault(emptyMap())
+    val bundledLibrary = context.assets.list("battle_samples").orEmpty().sorted()
+        .filter { it.substringAfterLast('.', "").lowercase() in setOf("png", "jpg", "jpeg", "webp") }
+        .map { name ->
+            val label = bundledLabels[name]
+            CalibrationSample(name, CalibrationScreenshotReference("asset:$name", label?.name ?: name, 0, 0,
+                label?.deviceLabel), "BUNDLED REFERENCE")
+        }
+    // Keep device-specific reference packs reachable even when a custom folder is selected.
+    val samples = listOfNotNull(captured) + userLibrary + bundledLibrary
     return samples.map { sample ->
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         runCatching {

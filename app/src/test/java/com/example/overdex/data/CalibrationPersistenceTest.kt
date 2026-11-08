@@ -158,7 +158,7 @@ class CalibrationPersistenceTest {
         )
         val saved = saveProfile(context, positioned)
         val file = File(context.filesDir, "calibration_profiles/${saved.id}.json")
-        file.writeText(file.readText().replace("\"schemaVersion\": 2", "\"schemaVersion\": 1"))
+        file.writeText(file.readText().replace("\"schemaVersion\": $MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION", "\"schemaVersion\": 1"))
         val before = file.readText()
 
         repeat(3) {
@@ -261,6 +261,84 @@ class CalibrationPersistenceTest {
         assertTrue(MatchCalibrationProfileStore(context).activeSummary()!!.differsFromWorkingCheckpoint)
         val separate = saveProfile(context, first.battleCalibration, "Another device calibration")
         assertNull(separate.workingCheckpoint)
+    }
+
+    @Test fun `legacy grade migration changes only the exact old default and preserves current saves`() {
+        val context = TestContext(temporary.newFolder())
+        val manager = CalibrationManager(context)
+        val old = manager.load().copy(
+            qteProgressTextRegion = BattleCalibration.PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION,
+            announcementRegion = strip(43f, 650f, 970f, 90f)
+        )
+        val prefs = context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
+        assertTrue(manager.save(old))
+        // Current-version custom coordinates stay exact, including the historical default.
+        assertEquals(old, CalibrationManager(context).load())
+        assertTrue(prefs.edit().putInt("calibration_profile_version", 1).commit())
+        val expected = old.copy(qteProgressTextRegion = BattleCalibration.DEFAULT_QTE_PROGRESS_TEXT_REGION)
+        repeat(2) { assertEquals(expected, CalibrationManager(context).load()) }
+
+        val custom = old.copy(qteProgressTextRegion = old.qteProgressTextRegion.copy(y = .26001f))
+        assertTrue(manager.save(custom))
+        assertTrue(prefs.edit().putInt("calibration_profile_version", 1).commit())
+        assertEquals(custom, CalibrationManager(context).load())
+    }
+
+    @Test fun `old named grade defaults and working checkpoint widen without stale values on switch or restore`() {
+        val context = TestContext(temporary.newFolder())
+        val old = BattleCalibration(
+            qteProgressTextRegion = BattleCalibration.PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION,
+            announcementRegion = strip(43f, 650f, 970f, 90f)
+        )
+        val store = MatchCalibrationProfileStore(context)
+        val first = saveProfile(context, old, "Old default")
+        store.confirmWorking(first.id)!!
+        val firstFile = File(context.filesDir, "calibration_profiles/${first.id}.json")
+        firstFile.writeText(firstFile.readText().replace(
+            "\"schemaVersion\": $MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION", "\"schemaVersion\": 2"))
+        val before = firstFile.readText()
+        val expected = old.copy(qteProgressTextRegion = BattleCalibration.DEFAULT_QTE_PROGRESS_TEXT_REGION)
+        repeat(2) {
+            val loaded = MatchCalibrationProfileStore(context).activeProfile()!!
+            assertEquals(expected, loaded.battleCalibration)
+            assertEquals(expected, loaded.workingCheckpoint!!.battleCalibration)
+            assertFalse(MatchCalibrationProfileStore(context).activeSummary()!!.differsFromWorkingCheckpoint)
+            assertEquals(before, firstFile.readText())
+        }
+
+        val custom = old.copy(qteProgressTextRegion = old.qteProgressTextRegion.copy(height = .08f))
+        val second = saveProfile(context, custom, "Custom")
+        assertEquals(custom, CalibrationManager(context).load())
+        assertEquals(expected, store.activate(first.id)!!.battleCalibration)
+        assertEquals(expected, CalibrationManager(context).load())
+        assertEquals(expected, store.restoreWorking(first.id)!!.battleCalibration)
+        assertEquals(expected, MatchCalibrationProfileStore(context).activeProfile()!!.workingCheckpoint!!.battleCalibration)
+        assertEquals(custom, store.activate(second.id)!!.battleCalibration)
+        assertEquals(custom, CalibrationManager(context).load())
+    }
+
+    @Test fun `current profile keeps historical grade coordinates and old custom checkpoint remains exact`() {
+        val context = TestContext(temporary.newFolder())
+        val historical = BattleCalibration(qteProgressTextRegion = BattleCalibration.PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION)
+        val store = MatchCalibrationProfileStore(context)
+        val current = saveProfile(context, historical, "Deliberate current box")
+        store.confirmWorking(current.id)!!
+        assertEquals(historical, CalibrationManager(context).load())
+        assertEquals(historical, store.restoreWorking(current.id)!!.battleCalibration)
+
+        val custom = historical.copy(qteProgressTextRegion = AnchorRegion(.14f, .25f, .72f, .08f))
+        val oldCustom = saveProfile(context, custom, "Old custom box")
+        store.confirmWorking(oldCustom.id)!!
+        val file = File(context.filesDir, "calibration_profiles/${oldCustom.id}.json")
+        file.writeText(file.readText().replace(
+            "\"schemaVersion\": $MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION", "\"schemaVersion\": 2"))
+        val before = file.readText()
+        val reloaded = MatchCalibrationProfileStore(context).activeProfile()!!
+        assertEquals(custom, reloaded.battleCalibration)
+        assertEquals(custom, reloaded.workingCheckpoint!!.battleCalibration)
+        assertEquals(before, file.readText())
+        assertEquals(custom, store.restoreWorking(oldCustom.id)!!.battleCalibration)
+        assertEquals(historical, store.activate(current.id)!!.battleCalibration)
     }
 
     private fun saveProfile(context: Context, battle: BattleCalibration, name: String = "Moondrop") =

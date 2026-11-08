@@ -1,0 +1,617 @@
+{
+  "schemaVersion": 1,
+  "sourceDirectory": "pixel4calibrationscreenshots",
+  "sourceDevice": "Google Pixel 4",
+  "physicalWidth": 1080,
+  "physicalHeight": 2280,
+  "encoding": {
+    "format": "JPEG",
+    "quality": 94,
+    "chromaSubsampling": "4:4:4",
+    "resized": false,
+    "cropped": false,
+    "systemBarsPreserved": true
+  },
+  "caveats": [
+    "Screenshots were captured from recorded playback; filenames are screenshot creation times, not event timestamps.",
+    "Pointer Location is visible. Regions covered by its diagnostics are not clean recognition examples.",
+    "Source PNGs remain unchanged in the supplied desktop folder."
+  ],
+  "entries": [
+    {
+      "sourceFile": "Screenshot_20261108_151552.png",
+      "sourceSha256": "d48a1532e45aa66bbcf4324c21146cd19c4a50b39e68523b3d5b4717555db35a",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151552-team-select.jpg",
+      "name": "Pixel 4 · Team Select and Great League · 151552",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "team_select",
+        "league",
+        "cp_limit"
+      ],
+      "assetSha256": "0f48d2cf027e818ca3b37f5b0ac65039616e6a853ec42e9310cb7491ead6e311",
+      "assetBytes": 374180
+    },
+    {
+      "sourceFile": "Screenshot_20261108_151620.png",
+      "sourceSha256": "5ec8aa8eb68b014f3c46a742835ea45395b65ec5a33e21527404b93d826d3b10",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151620-versus.jpg",
+      "name": "Pixel 4 · VS Candela · 151620",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "versus"
+      ],
+      "assetSha256": "d3600917f5467e00a75069c63edf938d5516bf064143186c5da76119a768a720",
+      "assetBytes": 543686
+    },
+    {
+      "sourceFile": "Screenshot_20261108_151641.png",
+      "sourceSha256": "110f101365060ff1865f248c233200b46a068e748b926c794179828603a237fb",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151641-entry-white-transition.jpg",
+      "name": "Pixel 4 · White entry transition · 151641",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "transition",
+        "white",
+        "negative_example"
+      ],
+      "assetSha256": "40d9d33f3547eecba45bc72bdfc335413afcd721bbd1c51aac1be503d35ce62f",
+      "assetBytes": 46695
+    },
+    {
+      "sourceFile": "Screenshot_20261108_151920.png",
+      "sourceSha256": "4dcccda813fa890cd193245f71b478f9b460f6cad3f00ab28f64c38810a1d7b4",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151920-countdown-3.jpg",
+      "name": "Pixel 4 · Countdown 3 and player entry · 151920",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "countdown",
+        "player_entry"
+      ],
+      "assetSha256": "bbfaea38b51a9419e2d487e0685ad5d1d5491c78c02951e46c1d3dcf6fb96768",
+      "assetBytes": 432236
+    },
+    {
+      "sourceFile": "Screenshot_20261108_151936.png",
+      "sourceSha256": "5b5e8b3a9a2e6898ccac083adb716624bd8d5c7c6907f4847b57c5ed40abb188",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151936-countdown-2.jpg",
+      "name": "Pixel 4 · Countdown 2 and trainer throw · 151936",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "countdown",
+        "trainer_throw"
+      ],
+      "assetSha256": "c6ce6fa9c9892a017273f8c2b8185ddf0c63a7278b307b8a9f62ca7f07a557bd",
+      "assetBytes": 495274
+    },
+    {
+      "sourceFile": "Screenshot_20261108_151956.png",
+      "sourceSha256": "308e4b73fe8d7cbffab6efc6faee9fb703ce3625375aaf0a48d4611070526586",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-151956-countdown-1.jpg",
+      "name": "Pixel 4 · Countdown 1 and opponent entry · 151956",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "countdown",
+        "opponent_entry"
+      ],
+      "assetSha256": "c4de8956e255e91ac3c97069f7f18e9a717bd87064fdf96d1fce9fe7047fdc02",
+      "assetBytes": 387080
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152009.png",
+      "sourceSha256": "2ee869c4f14a1627a3ea100f9ec2e44130e809681b16867de25cb83d4c85cf39",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152009-go.jpg",
+      "name": "Pixel 4 · GO and opening battle surface · 152009",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "go",
+        "match_start",
+        "two_charged_moves"
+      ],
+      "assetSha256": "5cee3777de62443454d58c4cefb4f1c9dd62770820686d56b2972429c6299546",
+      "assetBytes": 489931
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152027.png",
+      "sourceSha256": "3ff9837f8a716de7bc41d1a5052f72167bd9c102dcf5301bb465567644521c38",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152027-fast-play.jpg",
+      "name": "Pixel 4 · Fast play and charged controls · 152027",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "fast_play",
+        "hp",
+        "team_badges",
+        "two_charged_moves"
+      ],
+      "assetSha256": "c7183b3c4bf58e3b1a67f911c903dd95646c77eb1f800ad0427b986449d968d8",
+      "assetBytes": 527226
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152126.png",
+      "sourceSha256": "a477dbf981412e0d544f7022b92e00bf18df1d5901241da08d31d507c7a1bc2e",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152126-get-ready.jpg",
+      "name": "Pixel 4 · Get Ready · 152126",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "qte_start",
+        "get_ready"
+      ],
+      "assetSha256": "e554eb4743c17305640beca87d2681408fecb377d54585038f2e6827fff7bc21",
+      "assetBytes": 479351
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152147.png",
+      "sourceSha256": "b52a512916cb83325d347bde8dfa115066db46a9306f972fe7d482b4e4c50e69",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152147-qte-nice.jpg",
+      "name": "Pixel 4 · QTE Nice · 152147",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "qte_progress",
+        "nice",
+        "poison_qte"
+      ],
+      "assetSha256": "3b1d9a854f402fce4faa4343ac2567a69d6c0d996f7b59e3d47794e291c016fd",
+      "assetBytes": 458220
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152206.png",
+      "sourceSha256": "027bbd8ed83daaf36c1ec57dcb71181ab64fdfba5ee4f6793db95af275083a9e",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152206-qte-great.jpg",
+      "name": "Pixel 4 · QTE Great · 152206",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "qte_progress",
+        "great",
+        "poison_qte"
+      ],
+      "assetSha256": "35ebe5636eb7d3573eae703bbf3a21ddaabfc6d39c4a506e78046c04e52f4c8c",
+      "assetBytes": 507982
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152222.png",
+      "sourceSha256": "d8901bf415f150d349dbe265a5fa3a84c12578171d111541de778cdb310d1519",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": false,
+      "assetFile": null,
+      "name": "Pixel 4 · QTE Excellent with gallery controls · 152222",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "qte_progress",
+        "excellent",
+        "gallery_overlay",
+        "review_only"
+      ],
+      "reviewOnlyReason": "Gallery/video-player controls are present; not a clean calibration reference.",
+      "testFixture": "androidTest/assets/pixel4_qte_progress/excellent-review.jpg"
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152242.png",
+      "sourceSha256": "ff60646fdf27bf3b701474d63fc36c10c1a8c00847977a08bd4056ca0e628861",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152242-sludge-impact.jpg",
+      "name": "Pixel 4 · Sludge announcement and damage · 152242",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "charge_announcement",
+        "charge_damage"
+      ],
+      "assetSha256": "3856edea5c9f0dcf4401925b9ccf93b0922a4cec0ed7e1947b87eceeae4a1d37",
+      "assetBytes": 557286
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152312.png",
+      "sourceSha256": "18d31027d64ed5fd5cadfd5ac8f125696d850a3913c7e511e4b24829df490f37",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152312-combusken-fainted.jpg",
+      "name": "Pixel 4 · Combusken empty HP and recall spark · 152312",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "faint",
+        "empty_hp",
+        "ball_decrease",
+        "recall_particles"
+      ],
+      "assetSha256": "79bc15ef71c7f5b6607671066d86293b1e29b6aac8b7abeb0b58f6f63d75bf39",
+      "assetBytes": 492992
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152408.png",
+      "sourceSha256": "7d1d820788dc218513edfbc23d282ab822a52f79baa89acf09b34cbc848666b0",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152408-magcargo-entry-arm.jpg",
+      "name": "Pixel 4 · Magcargo entry and trainer arm · 152408",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "opponent_entry",
+        "trainer_arm"
+      ],
+      "assetSha256": "8a5e65903b13f8256b74879a55df13bb0f1fbadbae591e20dd82cfcfea31624e",
+      "assetBytes": 523892
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152452.png",
+      "sourceSha256": "32cebee10f44eae25f98746597c84b2d794992feb07419468c44c38daabec985",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152452-hydro-cannon-impact.jpg",
+      "name": "Pixel 4 · Hydro Cannon announcement and damage · 152452",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "charge_announcement",
+        "charge_damage"
+      ],
+      "assetSha256": "30afff9728b691602e6c7a0e17be1f17bfd4572dfba9473f2b6af730eb092ab5",
+      "assetBytes": 547986
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152517.png",
+      "sourceSha256": "7bf1faf6dd5113cffe19a6b970200ae6a1f77b6c460c71901199283c0e2d8525",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152517-magcargo-empty-hp.jpg",
+      "name": "Pixel 4 · Magcargo empty HP and depleted ball · 152517",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "faint",
+        "empty_hp",
+        "ball_decrease"
+      ],
+      "assetSha256": "818e15f14130c6a09426a6d1e6d4b055a24a193060733a07143edf74b68d7e87",
+      "assetBytes": 568762
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152542.png",
+      "sourceSha256": "d3fba167666fa66b9f0461198aec25b6eda9e283cf75ed065b0d4dc41b791d1b",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152542-flareon-entry.jpg",
+      "name": "Pixel 4 · Flareon entry and full HP · 152542",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "opponent_entry",
+        "hp"
+      ],
+      "assetSha256": "437a0f688d36ffb53f733d8080aac54292a6499e8d5d16c127d1fb7f4986fe64",
+      "assetBytes": 500864
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152702.png",
+      "sourceSha256": "8096249ba837053f5c4ee57adafc0c3ecf7bcc133364c2bc23f35d14ee4d3716",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152702-low-player-hp.jpg",
+      "name": "Pixel 4 · Fast play with low player HP · 152702",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "fast_play",
+        "low_hp"
+      ],
+      "assetSha256": "32ed83f0da0ea192ade9fc5128b3cdeede75331a3d2638de6c30265c2bb0fa81",
+      "assetBytes": 529120
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152823.png",
+      "sourceSha256": "68266fb25d62d4cfff4ad246a67568abe0cdceaf9d2ce3ce8a6dbd3780c08556",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152823-shield-choice-4.jpg",
+      "name": "Pixel 4 · Shield choice and countdown 4 · 152823",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "shield_choice",
+        "decision_timer",
+        "hud_absence"
+      ],
+      "assetSha256": "f45b4e5c33a55d723c1c509c4bebe1e4ededaccd0a788d5a5d452bc415ab854b",
+      "assetBytes": 478629
+    },
+    {
+      "sourceFile": "Screenshot_20261108_152847.png",
+      "sourceSha256": "fde37f4b8909961b605c12086ef32437c402b1625f6452342c424f875fd0636c",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-152847-shield-choice-0.jpg",
+      "name": "Pixel 4 · Shield choice and countdown 0 · 152847",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "shield_choice",
+        "decision_timer"
+      ],
+      "assetSha256": "6716ee5dd75e0443485f3a7d0210491a477038ad3ac461671f2507e405e0e079",
+      "assetBytes": 473479
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153001.png",
+      "sourceSha256": "79592f62d46d8f945827b5b2e1cff253d4ac4129b4e2d74fcc39ed2107264e88",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": false,
+      "calibrationEligible": false,
+      "assetFile": null,
+      "name": "Pixel 4 · Flamethrower with gallery controls · 153001",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "charge_announcement",
+        "gallery_overlay",
+        "review_only"
+      ],
+      "reviewOnlyReason": "Gallery/video-player controls are present; not a clean calibration reference."
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153046.png",
+      "sourceSha256": "5cfc1ceaf66ecddf87227ff5cab9937b367eccbb15e77af85b3317a8128eeb62",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153046-replacement-12.jpg",
+      "name": "Pixel 4 · Forced replacement and countdown 12 · 153046",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "player_faint",
+        "forced_replacement",
+        "decision_timer"
+      ],
+      "assetSha256": "e4d392cd81ae6cdcdbca16a2f3454ee25f8180e1a259cf70a17ef30a570f78ed",
+      "assetBytes": 486949
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153125.png",
+      "sourceSha256": "8d2e1694fab210e68bec5d4ca30e7eef923362df00fb9934ade8d4d81c73572a",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153125-replacement-10.jpg",
+      "name": "Pixel 4 · Forced replacement and countdown 10 · 153125",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "forced_replacement",
+        "decision_timer"
+      ],
+      "assetSha256": "d922e994c5c369ea021a1c902f8978b5418ed3813c79e1e5e983fed50ac83407",
+      "assetBytes": 485301
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153159.png",
+      "sourceSha256": "1d5c30ce656d86a23c0ac80735027c1909ac751c789acb74803017892348e484",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153159-obstagoon-entry.jpg",
+      "name": "Pixel 4 · Obstagoon entry ball · 153159",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "player_entry",
+        "forced_replacement"
+      ],
+      "assetSha256": "b6d2fcfac567029afa13f59cc3b6cdc7c1fa4561651b76aa6c7d2f50d34f807a",
+      "assetBytes": 483839
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153325.png",
+      "sourceSha256": "137bdbc87ff629fa41293fe7b54e6d87433ed9a7bec11059303435871d3196ce",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153325-final-hit-low-hp.jpg",
+      "name": "Pixel 4 · Final encounter and nearly empty opponent HP · 153325",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "final_hit_candidate",
+        "low_hp"
+      ],
+      "assetSha256": "92a4f958359eb69547343c38812947389d4060c11e1f6ea46b08bb7e6906bc60",
+      "assetBytes": 502374
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153343.png",
+      "sourceSha256": "7eee108352a49e017b591e321c1cedcd69d5008276a7eec295f72e2fe49b6a20",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153343-flareon-fainting.jpg",
+      "name": "Pixel 4 · Flareon faint animation · 153343",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "faint_animation",
+        "battle_hud_absence"
+      ],
+      "assetSha256": "4ae05bd9b89c0e2cc2ac2a1aefdae35e144bf11f752665bcc7a83ebdb9678087",
+      "assetBytes": 469888
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153417.png",
+      "sourceSha256": "3a5886410faa1d8bce013b22e00365c1040ebe383276b4a9efc4b8a0aca5ee79",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153417-final-recall-spark.jpg",
+      "name": "Pixel 4 · Final recall spark and empty opponent field · 153417",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "faint",
+        "recall_particles",
+        "battle_hud_absence"
+      ],
+      "assetSha256": "8a4a8adca2d3903eeaa4aeeaa0d3f4910a6d6ac56e5463a417c16ccda14f5f9c",
+      "assetBytes": 464007
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153429.png",
+      "sourceSha256": "044b1c5a42d3118ca96ea99b3336f09547f850f6f9511cbe577e5d3d6267610f",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153429-exit-black-transition.jpg",
+      "name": "Pixel 4 · Black result transition · 153429",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "transition",
+        "black",
+        "negative_example"
+      ],
+      "assetSha256": "35e6feb21f6067b34db29c39c9ee7f77cebbab8e37df45874e2c04f6aec05ea5",
+      "assetBytes": 58312
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153449.png",
+      "sourceSha256": "07cbe5038f3e4a1b52961a8984ece914e7b89214c447b5015cc657fb7ba6a68a",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153449-result-empty-landscape.jpg",
+      "name": "Pixel 4 · Empty result landscape · 153449",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "result_transition",
+        "empty_landscape"
+      ],
+      "assetSha256": "a244205ec6b471ca081947b0730ded77ffcd92ae0a5eadbaa90210707f4e39d9",
+      "assetBytes": 449853
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153514.png",
+      "sourceSha256": "9ca4bdea07e17e950bb50492865ddc78fb533ede8fb5ca27af19b2ccf3a20de1",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153514-result-avatar.jpg",
+      "name": "Pixel 4 · Result avatar before outcome text · 153514",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "result_transition",
+        "avatar"
+      ],
+      "assetSha256": "47b7d05a67b463cc1d7849a710efb638161c483bfc7cd5337527f4f16251de96",
+      "assetBytes": 458563
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153526.png",
+      "sourceSha256": "754add8a97e59b21ee7c3ab283ec33e463f7f51da4d56188bfbf941c5e6cda4a",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153526-you-win.jpg",
+      "name": "Pixel 4 · You Win · 153526",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "result",
+        "win"
+      ],
+      "assetSha256": "d3389f113fe04796c96b3fea740b146088c39af5e15a5de19feabdfec34534b5",
+      "assetBytes": 464298
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153541.png",
+      "sourceSha256": "5c611c12625f621fe65f3024cb7b5614a655745ce4c128bcbf1db9897acd0cca",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153541-badge-glove-84-of-100.jpg",
+      "name": "Pixel 4 · Battle badge glove and progress 84 of 100 · 153541",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "badge",
+        "progress",
+        "post_result"
+      ],
+      "assetSha256": "beb6855c9a57c887101c7414db7a1bf5eae8c9801a7ff481c74ee425e3361323",
+      "assetBytes": 386648
+    },
+    {
+      "sourceFile": "Screenshot_20261108_153555.png",
+      "sourceSha256": "54a3e41b0a8c2d95a7c4f30c906dc7d48f5579e25bd87567d0b13b81d5b3f965",
+      "sourceWidth": 1080,
+      "sourceHeight": 2280,
+      "suppliedInMessage": true,
+      "calibrationEligible": true,
+      "assetFile": "pixel4-20261108-153555-you-win-continue.jpg",
+      "name": "Pixel 4 · You Win and continue control · 153555",
+      "deviceLabel": "Google Pixel 4",
+      "tags": [
+        "result",
+        "win",
+        "continue"
+      ],
+      "assetSha256": "69f2a8fe577dc007044b02bb05707fee95351cd3afa26a7fc10b131b28012606",
+      "assetBytes": 488671
+    }
+  ]
+}

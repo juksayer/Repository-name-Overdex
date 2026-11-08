@@ -44,9 +44,10 @@ data class MatchCalibrationProfileSummary(
 
 /**
  * App-private calibration profiles survive ordinary APK installs and updates.
- * A profile is a complete user-owned snapshot. Reading it never moves a box,
- * even if its coordinates resemble a former default. Defaults apply only to
- * fields that have never been saved.
+ * A profile is a complete user-owned snapshot. Custom coordinates remain exact.
+ * The sole coordinate migration widens the exact factory QTE grade box in
+ * pre-v3 profiles, including their working checkpoints. Current-version saved
+ * boxes remain authoritative even at those historical coordinates.
  */
 class MatchCalibrationProfileStore(context: Context) {
     private val appContext = context.applicationContext
@@ -187,7 +188,7 @@ class MatchCalibrationProfileStore(context: Context) {
 
 @Serializable
 private data class StoredProfile(
-    val schemaVersion: Int = MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION,
+    val schemaVersion: Int = 1,
     val id: String,
     val name: String,
     val deviceModel: String,
@@ -214,6 +215,7 @@ private data class StoredRegion(val x: Float, val y: Float, val width: Float, va
 private fun AnchorRegion.stored() = StoredRegion(x, y, width, height)
 
 private fun MatchCalibrationProfile.toStored() = StoredProfile(
+    schemaVersion = MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION,
     id = id,
     name = name,
     deviceModel = deviceModel,
@@ -257,7 +259,9 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         trainerHpRegion = battleRegions.region("trainer_hp", battleDefaults.trainerHpRegion),
         opponentHpRegion = battleRegions.region("opponent_hp", battleDefaults.opponentHpRegion),
         chargeMoveExecutionRegion = battleRegions.region("charge_move_execution", battleDefaults.chargeMoveExecutionRegion),
-        qteProgressTextRegion = battleRegions.region("qte_progress_text", battleDefaults.qteProgressTextRegion),
+        qteProgressTextRegion = battleRegions.region("qte_progress_text", battleDefaults.qteProgressTextRegion).let {
+            if (schemaVersion < 3) BattleCalibration.widenPreviousQteProgressDefault(it) else it
+        },
         qteTypeIconsRegion = battleRegions.region("qte_type_icons", battleDefaults.qteTypeIconsRegion),
         exitIconRegion = battleRegions.region("exit_icon", battleDefaults.exitIconRegion),
         trainerChargeMoveControlsRegion = battleRegions.region("trainer_charge_move_controls", battleDefaults.trainerChargeMoveControlsRegion),
@@ -303,7 +307,7 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
     )
 }
 
-internal const val MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION = 2
+internal const val MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION = 3
 
 private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(
     "enemy_name" to enemyNameRegion.stored(),

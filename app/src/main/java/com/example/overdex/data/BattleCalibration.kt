@@ -113,12 +113,10 @@ data class BattleCalibration(
         width = (1075f - 5f) / 1080f,
         height = (1940f - 500f) / 2400f
     ),
-    // One fixed text position is shared by NICE!, GREAT!, and EXCELLENT!.
-    // Measured on the retained 672 x 1493 QTE frames; separate from the
-    // higher species/charged-move announcement and the broad execution image.
-    val qteProgressTextRegion: AnchorRegion = AnchorRegion(
-        x = 0.12f, y = 0.26f, width = 0.76f, height = 0.075f
-    ),
+    // NICE!, GREAT!, and EXCELLENT! bounce vertically during their reveal.
+    // Keep that motion inside the visible, editable box rather than adding
+    // unshown padding only at capture time.
+    val qteProgressTextRegion: AnchorRegion = DEFAULT_QTE_PROGRESS_TEXT_REGION,
     // Experimental QTE glyph territory, shared by the live guide and CRT editor.
     // This starting box is for measurement, not a claim that all 18 types fit it.
     val qteTypeIconsRegion: AnchorRegion = AnchorRegion(
@@ -175,6 +173,24 @@ data class BattleCalibration(
     )
 ) {
     companion object {
+        /** Narrow grade box used before the recorded vertical animation was allowed for. */
+        val PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION = AnchorRegion(
+            x = 0.12f, y = 0.26f, width = 0.76f, height = 0.075f
+        )
+
+        /**
+         * Full grade lettering plus vertical motion allowance: the Pixel 4 examples
+         * at 1080 x 2280 fit with 64 px above/below their glyph bounds, and the
+         * retained 672 x 1493 examples fit with 48 px. Horizontal bounds are unchanged.
+         */
+        val DEFAULT_QTE_PROGRESS_TEXT_REGION = AnchorRegion(
+            x = 0.12f, y = 0.23f, width = 0.76f, height = 0.13f
+        )
+
+        /** Only call while reading a version that predates the motion allowance. */
+        internal fun widenPreviousQteProgressDefault(region: AnchorRegion): AnchorRegion =
+            if (region == PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION) DEFAULT_QTE_PROGRESS_TEXT_REGION else region
+
         /** Historical defaults retained for diagnostics and persistence regression coverage. */
         val PREVIOUS_DEFAULT_COUNTDOWN_REGION = AnchorRegion(
             x = 330f / 1080f, y = 110f / 2280f,

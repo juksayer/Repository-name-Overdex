@@ -248,7 +248,7 @@ class CalibrationManager(context: Context) {
             .putFloat("out_of_battle_menu_y", calibration.outOfBattleMenuRegion.y)
             .putFloat("out_of_battle_menu_w", calibration.outOfBattleMenuRegion.width)
             .putFloat("out_of_battle_menu_h", calibration.outOfBattleMenuRegion.height)
-            .putInt(CALIBRATION_PROFILE_VERSION, 1)
+            .putInt(CALIBRATION_PROFILE_VERSION, 2)
             .putLong(CALIBRATION_SAVED_AT_MILLIS, savedAtMillis)
             .commit()
     }
@@ -670,7 +670,12 @@ class CalibrationManager(context: Context) {
             trainerHpRegion = trainerHpRegion,
             opponentHpRegion = opponentHpRegion,
             chargeMoveExecutionRegion = chargeMoveExecutionRegion,
-            qteProgressTextRegion = loadExtraRegion("qte_progress_text", BattleCalibration().qteProgressTextRegion),
+            qteProgressTextRegion = loadExtraRegion("qte_progress_text", BattleCalibration().qteProgressTextRegion).let {
+                // Upgrade only the exact earlier factory grade box. Current saves,
+                // including a deliberate box at the historical coordinates, win.
+                if (prefs.getInt(CALIBRATION_PROFILE_VERSION, 0) < 2)
+                    BattleCalibration.widenPreviousQteProgressDefault(it) else it
+            },
             qteTypeIconsRegion = loadExtraRegion("qte_type_icons", BattleCalibration().qteTypeIconsRegion),
             exitIconRegion = loadExtraRegion("exit_icon", BattleCalibration().exitIconRegion),
             trainerChargeMoveControlsRegion = trainerChargeMoveControlsRegion,

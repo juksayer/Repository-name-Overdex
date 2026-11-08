@@ -203,14 +203,16 @@ class CalibrationProfilePickerDeviceTest {
             val samples = loadCalibrationSamples(context, ScreenshotDirectoryManager(context), userImages = listOf(
                 ScreenshotDirectoryManager.Image(Uri.fromFile(foreignFile), "Moondrop reference", "Moondrop"),
             ))
-            assertEquals(listOf("DEVICE CAPTURE", "YOUR SCREENSHOT"), samples.map { it.sourceName })
-            assertEquals(listOf(672 to 1419, 672 to 1493), samples.map { it.reference.width to it.reference.height })
+            assertEquals(listOf("DEVICE CAPTURE", "YOUR SCREENSHOT"), samples.take(2).map { it.sourceName })
+            assertEquals(listOf(672 to 1419, 672 to 1493), samples.take(2).map { it.reference.width to it.reference.height })
             val compatible = CalibrationScreenshotLibrary.filter(samples.map { it.reference },
                 CalibrationScreenshotFilter.ThisScreen, 1080, 2280)
             assertEquals("This screen retains the Pixel capture even with a selected Moondrop folder",
-                listOf(samples.first().reference), compatible)
+                samples.first().reference, compatible.first())
+            assertEquals("The native Pixel pack remains reachable with a custom folder", 33, compatible.size)
+            assertTrue(compatible.drop(1).all { it.deviceLabel == "Google Pixel 4" && it.width == 1080 && it.height == 2280 })
             assertTrue("The foreign source remains available for deliberate review", foreignFile.isFile)
-            assertEquals(2, CalibrationScreenshotLibrary.filter(samples.map { it.reference },
+            assertEquals(samples.size, CalibrationScreenshotLibrary.filter(samples.map { it.reference },
                 CalibrationScreenshotFilter.All, 1080, 2280).size)
         } finally { context.cleanUp() }
     }
