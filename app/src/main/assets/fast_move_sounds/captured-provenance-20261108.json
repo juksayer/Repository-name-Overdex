@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "scope": "Source-verified recognition-only Fire Fang excerpt from October 25, added November 8. Separate physical attacks and a separate battle are used for verification; this is not a complete replay effect or a live accuracy claim.",
+  "samples": [
+    {
+      "id": "fire-fang-reference",
+      "role": "reference",
+      "moveName": "Fire Fang",
+      "speciesName": "Mawile",
+      "labelBasis": "Human-confirmed equipped move and bounded attacker context; not an automatic acoustic identity.",
+      "notes": "Exact unchanged retained PCM window. Begins within an existing effect and decays to silence. Recognition excerpt only; not a complete replay effect.",
+      "source": {
+        "artifactPath": "artifacts/audio/sha256/751ebfcd5967fd112e25dc7868f5e2df1d08279cd64940df8a7837f44b9dc82b.wav",
+        "sha256": "751ebfcd5967fd112e25dc7868f5e2df1d08279cd64940df8a7837f44b9dc82b",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "durationNanos": 1200000000,
+        "captureSource": "PLAYBACK_POKEMON_GO",
+        "cueKind": "FAST_MOVE_AUDIO_STREAM",
+        "audioArticleId": "7a68b4c8-3a94-48cc-b9ec-3fcbea69b06b",
+        "frameCount": 9600,
+        "perceivedAt": 1792959677554,
+        "monotonicTimeNanos": 89305561898323
+      },
+      "trim": {
+        "startFrame": 0,
+        "frameCount": 9600,
+        "endFrameExclusive": 9600,
+        "windowOffsetNanos": 0,
+        "durationNanos": 1200000000,
+        "clockBasis": "Exact original source PCM frames; no cross-device timing inference."
+      },
+      "derived": {
+        "file": "fire-fang-reference.wav",
+        "sha256": "751ebfcd5967fd112e25dc7868f5e2df1d08279cd64940df8a7837f44b9dc82b",
+        "pcmSha256": "568e9f7bed8cf5edc7938e324f787e601c7a79b44110e8c7240123b19ba9d72a",
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "sampleWidthBytes": 2,
+        "frameCount": 9600,
+        "byteCount": 19244
+      },
+      "runtimeFile": "recorded_20261025_fire_fang_excerpt.wav",
+      "sourceArchive": {
+        "path": "2026-10-25-fire-fang-paired/moondrop.odxmatch.zip",
+        "sha256": "101f88e7e54c276ab9fb2fc6c8c692e4c693343bb3a8c7219fc9c8433b3381e2",
+        "matchId": "b7344c07-2c4e-43f5-9a88-4a09c7dc099f"
+      },
+      "confirmation": {
+        "source": "user",
+        "note": "The user confirmed only Mawile attacked in the original controlled battle and identified its equipped move as Fire Fang. This constraint is scoped to that original battle; it does not apply throughout the separate repeat recording. No music-slider setting is asserted here."
+      },
+      "signal": {
+        "peakAbsolutePcm16": 17018,
+        "clippedSampleCount": 0,
+        "interleavedSampleCount": 9600,
+        "zeroSampleCount": 2855,
+        "rmsPcm16": 1444.088066407886
+      },
+      "processing": "Unmodified complete retained WAV bytes, including original rate, channels, amplitude and header. No resampling, filtering, normalization, subtraction, stitching, synthesis or looping.",
+      "replayEligible": false
+    }
+  ]
+}

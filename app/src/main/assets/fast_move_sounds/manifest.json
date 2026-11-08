@@ -404,6 +404,13 @@
       "sha256": "c54b7785b78bed5be63479549d29907391e67c0a3b877c360c87aeb3da0d7c0b",
       "purpose": "recognition_excerpt",
       "replayEligible": false
+    },
+    {
+      "file": "recorded_20261025_fire_fang_excerpt.wav",
+      "moveName": "Fire Fang",
+      "sha256": "751ebfcd5967fd112e25dc7868f5e2df1d08279cd64940df8a7837f44b9dc82b",
+      "purpose": "recognition_excerpt",
+      "replayEligible": false
     }
   ]
 }

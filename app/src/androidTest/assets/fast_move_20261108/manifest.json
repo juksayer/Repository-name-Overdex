@@ -1,0 +1,1099 @@
+{
+  "version": 1,
+  "scope": "Recognition-only unchanged captured PCM: independent Fire Fang attacks, scoped Arcanine/Garchomp comparisons, overlap rejection and weak/QTE-adjacent controls. Not a live precision/recall result or verified count.",
+  "sourceArchiveVerification": "All original archives were hash-verified and each WAV was byte-compared with its declared archive member during fixture preparation. Portable tests pin those archive hashes and verify committed WAV/source Article hashes; private archives are not required by CI.",
+  "clockBoundary": "All source monotonic/perceived/publication times are original. Focused replay uses actual species identity projection and selected observations; it does not claim a complete battle replay.",
+  "stutterBoundary": "Overlap pair describes the same aligned occurrence; no independently established audio-stutter label is asserted.",
+  "arcanineContextArticles": [
+    {
+      "articleId": "4041bc6f-c81a-459f-be47-a08bc91f1ee0",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150518581,
+      "recordedAt": 1794150519190,
+      "sourceId": "BATTLE_INTERPRETER",
+      "payload": {
+        "kind": "match_started"
+      },
+      "predecessorIds": [
+        "a727beb5-da3d-41d1-af3f-d0f72215fd42"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 364175968965716
+    },
+    {
+      "articleId": "e9a3920a-4664-46c5-9371-4f4394ae360b",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150551231,
+      "recordedAt": 1794150551933,
+      "sourceId": "OPPONENT_SPECIES_OVERLAY_PIPELINE",
+      "payload": {
+        "kind": "active_pokemon_species_witnessed",
+        "side": "OPPONENT",
+        "speciesName": "Garchomp",
+        "speciesId": 445,
+        "ocrText": "Garchomp",
+        "ocrMatchBasis": "EXACT_CATALOGUE_TEXT_EXPECTED_CASE"
+      },
+      "predecessorIds": [],
+      "confidence": 0.98,
+      "sequenceNumber": 1860,
+      "evidenceReferences": [
+        "8ca6b46f-a743-44d1-806b-7e1e1afe70fb"
+      ],
+      "monotonicTimeNanos": 364208579262714
+    },
+    {
+      "articleId": "15e51566-211e-4b43-89ef-745d186c1712",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150572532,
+      "recordedAt": 1794150573650,
+      "sourceId": "PLAYER_ACTIVE_IDENTITY_INFERENCE",
+      "payload": {
+        "kind": "player_active_identity_resolved",
+        "observedSpeciesName": "Arcanine",
+        "speciesName": "Arcanine",
+        "speciesId": 59,
+        "teamSlot": 2,
+        "appearanceStartedAtNanos": 364229890600254,
+        "basis": "PLAYER_SPECIES_AND_UNIQUE_ROSTER_SLOT"
+      },
+      "predecessorIds": [
+        "fdf754ec-6528-450a-ad4a-a151e7b061a3",
+        "74dac07b-2903-43e5-b0ee-2668414384e3"
+      ],
+      "confidence": null,
+      "sequenceNumber": null,
+      "evidenceReferences": null,
+      "monotonicTimeNanos": 364229890600254
+    }
+  ],
+  "qteAdjacentContextArticles": [
+    {
+      "articleId": "96eddad4-5c78-46f4-ac11-552ec20d2077",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150590328,
+      "recordedAt": 1794150590579,
+      "sourceId": "QTE_PROGRESS_TEXT_CAPTURE",
+      "payload": {
+        "kind": "crop_captured",
+        "artifactPath": "artifacts/crops/sha256/11910f066f15755bd0298e06e33df34faafee0af2997f1807826bb1169118d6c.png",
+        "sha256": "11910f066f15755bd0298e06e33df34faafee0af2997f1807826bb1169118d6c",
+        "byteCount": 54544,
+        "mediaType": "image/png",
+        "cropName": "QteProgressTextCrop",
+        "sourceWidth": 672,
+        "sourceHeight": 1419,
+        "cropLeft": 80,
+        "cropTop": 368,
+        "cropRight": 591,
+        "cropBottom": 475,
+        "overlayBounds": {
+          "left": 320.08887,
+          "top": -224.2329,
+          "right": 578.3111,
+          "bottom": 25.336853
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3035,
+      "evidenceReferences": [],
+      "monotonicTimeNanos": 364247714328904
+    },
+    {
+      "articleId": "3644dbb9-46de-43d3-80b1-bf0759a9632b",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150590328,
+      "recordedAt": 1794150592528,
+      "sourceId": "QTE_PROGRESS_TEXT_WITNESS_OCR",
+      "payload": {
+        "kind": "raw_text",
+        "value": "GREAT!",
+        "ocr": {
+          "treatment": "RAW",
+          "rawText": "GREAT!",
+          "acceptedText": "GREAT!",
+          "words": [
+            {
+              "text": "GREAT!",
+              "line": 0,
+              "bounds": {
+                "left": 130.0,
+                "top": 8.0,
+                "right": 378.0,
+                "bottom": 70.0
+              },
+              "violetFraction": 6.503642e-05,
+              "tealFraction": 0.00019510926,
+              "dangerRedFraction": 0.0,
+              "decision": "RETAINED"
+            }
+          ],
+          "sourceFrameWidth": 672,
+          "expectedMinimumHeightAt672": 20.16,
+          "profileSampleCount": 0
+        }
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3072,
+      "evidenceReferences": [
+        "96eddad4-5c78-46f4-ac11-552ec20d2077"
+      ],
+      "monotonicTimeNanos": 364247714328904
+    },
+    {
+      "articleId": "8b3ab444-eb47-4000-81c1-6c0c736dbc1e",
+      "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+      "perceivedAt": 1794150590328,
+      "recordedAt": 1794150592578,
+      "sourceId": "QTE_PROGRESS_TEXT_WITNESS",
+      "payload": {
+        "kind": "raw_text",
+        "value": "GREAT!",
+        "ocr": null
+      },
+      "predecessorIds": [],
+      "confidence": null,
+      "sequenceNumber": 3074,
+      "evidenceReferences": [
+        "96eddad4-5c78-46f4-ac11-552ec20d2077",
+        "3644dbb9-46de-43d3-80b1-bf0759a9632b"
+      ],
+      "monotonicTimeNanos": 364247714328904
+    }
+  ],
+  "samples": [
+    {
+      "id": "fire-fang-distinct-attack",
+      "file": "fire-fang-distinct-attack.wav",
+      "role": "fire-fang-holdout",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "moondrop.odxmatch.zip",
+        "sha256": "101f88e7e54c276ab9fb2fc6c8c692e4c693343bb3a8c7219fc9c8433b3381e2",
+        "matchId": "b7344c07-2c4e-43f5-9a88-4a09c7dc099f"
+      },
+      "sourceAudioArticle": {
+        "articleId": "5d703d5b-4466-45d9-91e7-e960cfcb65b8",
+        "matchId": "b7344c07-2c4e-43f5-9a88-4a09c7dc099f",
+        "perceivedAt": 1792959799925,
+        "recordedAt": 1792959802305,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/9f5a00ba653831e1f70765216c16e23b83df0944d8d81829ee1b15f37a894ed8.wav",
+          "sha256": "9f5a00ba653831e1f70765216c16e23b83df0944d8d81829ee1b15f37a894ed8",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.5421753
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 6111,
+        "evidenceReferences": [
+          "c8a92f97-ff4b-47b7-bacd-9e50f7621572"
+        ],
+        "monotonicTimeNanos": 89427932494099
+      },
+      "derived": {
+        "sha256": "9f5a00ba653831e1f70765216c16e23b83df0944d8d81829ee1b15f37a894ed8",
+        "pcmSha256": "05a6af0c37a558e8b84ff33c6aa7942940bed8b9454c27d81133c499a8c4fbf9",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "expectedMove": "Fire Fang",
+      "knownRecordedMove": "Fire Fang",
+      "labelBasis": "Human-confirmed equipped move + bounded attacker context; not automatic acoustic identity.",
+      "attackContext": "User confirmed only Mawile attacked in this original paired battle; named Fire Fang from equipped-move confirmation/effectiveness. Nearby recipient HP evidence is retained separately. A Vise Grip is recorded around82s in the paired Pixel archive, well outside this selected interval; cross-phone clocks are not treated as exactly aligned.",
+      "legalMoves": [
+        "Astonish",
+        "Bite",
+        "Fire Fang",
+        "Ice Fang",
+        "Fairy Wind",
+        "Air Slash",
+        "Psycho Cut"
+      ],
+      "relativeToRecordedMatchStartSeconds": 140.593814162
+    },
+    {
+      "id": "fire-fang-separate-battle",
+      "file": "fire-fang-separate-battle.wav",
+      "role": "fire-fang-holdout",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "moondrop-repeat.odxmatch.zip",
+        "sha256": "ab86446d45364d3cf0b3fc771d0132c445a4093318d9bd13df307c4e652d7b5c",
+        "matchId": "756c9985-ea6a-4c6b-b96f-00451a0706a6"
+      },
+      "sourceAudioArticle": {
+        "articleId": "c701533e-1dba-4146-a606-b402a68d02e7",
+        "matchId": "756c9985-ea6a-4c6b-b96f-00451a0706a6",
+        "perceivedAt": 1792960571481,
+        "recordedAt": 1792960573852,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/72202db7cc0b7bbbd9b12c504ee54f5cc438a08e2e4de6c8c18a3ea6435381b4.wav",
+          "sha256": "72202db7cc0b7bbbd9b12c504ee54f5cc438a08e2e4de6c8c18a3ea6435381b4",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.51934814
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 4249,
+        "evidenceReferences": [
+          "7efb40fd-1bb4-4a33-a6a7-37d5e0d01b17"
+        ],
+        "monotonicTimeNanos": 90199488479068
+      },
+      "derived": {
+        "sha256": "72202db7cc0b7bbbd9b12c504ee54f5cc438a08e2e4de6c8c18a3ea6435381b4",
+        "pcmSha256": "178b2afc0c540dd23e9fc389f225d4f11f90592422aba50fb1b281619183c1c7",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "expectedMove": "Fire Fang",
+      "knownRecordedMove": "Fire Fang",
+      "labelBasis": "Human-confirmed equipped move + bounded attacker context; not automatic acoustic identity.",
+      "attackContext": "Separate repeat battle: Mawile remains the opponent before its Dragonair switch at~125.8s; selected57.281s interval precedes first retained Vise Grip at~120.3s and all later Galvantula activity. Do not apply original battle idle constraint to entire repeat. Nearby own-side damage supports Mawile attack context; no clip-specific visual uniqueness claim.",
+      "legalMoves": [
+        "Astonish",
+        "Bite",
+        "Fire Fang",
+        "Ice Fang",
+        "Fairy Wind",
+        "Air Slash",
+        "Psycho Cut"
+      ],
+      "relativeToRecordedMatchStartSeconds": 57.28064708
+    },
+    {
+      "id": "arcanine-first",
+      "file": "arcanine-first.wav",
+      "role": "strong-recorded-comparison",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "2026-11-08_09-08-10_48a36312-70d1-4232-a9dd-6d69e1c98a89.odxmatch.zip",
+        "sha256": "bdea0bde54e950e67dd308fefe4d01921b0edee02c7f5d4f8ff18097ace2da02",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89"
+      },
+      "sourceAudioArticle": {
+        "articleId": "3767cdb4-2d28-4809-8411-fe5f41f9cc1d",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150573203,
+        "recordedAt": 1794150574683,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/1a4273e05465f2e474d55747303080f115459caf3b6b3f84b1103bf9db87ed00.wav",
+          "sha256": "1a4273e05465f2e474d55747303080f115459caf3b6b3f84b1103bf9db87ed00",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.31176758
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2552,
+        "evidenceReferences": [
+          "d86aef7f-4d92-4633-b9a9-3f0d0bb9ae33",
+          "15e51566-211e-4b43-89ef-745d186c1712",
+          "74dac07b-2903-43e5-b0ee-2668414384e3",
+          "e9a3920a-4664-46c5-9371-4f4394ae360b"
+        ],
+        "monotonicTimeNanos": 364230617507373
+      },
+      "derived": {
+        "sha256": "1a4273e05465f2e474d55747303080f115459caf3b6b3f84b1103bf9db87ed00",
+        "pcmSha256": "0abfe6a7c2fd9602b4283a5e2bfe1d84c5a5aebfe747b2d012f427779b597841",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "sourceMeasurementArticle": {
+        "articleId": "98e03a3a-d05c-4ef9-a352-ca60557ea81f",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150573203,
+        "recordedAt": 1794150574714,
+        "sourceId": "FAST_MOVE_SOUND_WITNESS",
+        "payload": {
+          "kind": "fast_move_sound_measured",
+          "audible": true,
+          "onsetOffsetNanos": 30000000,
+          "soundDurationNanos": 40000000,
+          "spectralCentroidHz": 2157.4375,
+          "peakAmplitude": 0.11734208,
+          "attackingSide": null,
+          "soundOnsetMonotonicNanos": 364230647507373,
+          "cueAttackingSide": null,
+          "analysisVersion": "spectral-sequence-v3",
+          "referenceCandidates": [
+            {
+              "moveName": "Thunder Fang",
+              "referenceSha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43",
+              "similarity": 0.9916465,
+              "changingSimilarity": 0.9347373,
+              "matchingOffsetNanos": 768000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Snarl",
+              "referenceSha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4",
+              "similarity": 0.919318,
+              "changingSimilarity": 0.73777807,
+              "matchingOffsetNanos": 256000000,
+              "referenceOffsetNanos": 352000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Mud Shot",
+              "referenceSha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24",
+              "similarity": 0.8886578,
+              "changingSimilarity": 0.77258295,
+              "matchingOffsetNanos": 256000000,
+              "referenceOffsetNanos": 464000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Dragon Tail",
+              "referenceSha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48",
+              "similarity": 0.8858036,
+              "changingSimilarity": 0.73660856,
+              "matchingOffsetNanos": 256000000,
+              "referenceOffsetNanos": 96000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Bite",
+              "referenceSha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421",
+              "similarity": 0.87151265,
+              "changingSimilarity": 0.60361403,
+              "matchingOffsetNanos": 320000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 352000000
+            }
+          ],
+          "referenceMatchAccepted": true,
+          "referenceSearchScopes": [
+            {
+              "side": "PLAYER",
+              "speciesName": "Arcanine",
+              "moveNames": [
+                "Bite",
+                "Fire Fang",
+                "Snarl",
+                "Thunder Fang"
+              ],
+              "contextArticleIds": [
+                "15e51566-211e-4b43-89ef-745d186c1712",
+                "74dac07b-2903-43e5-b0ee-2668414384e3"
+              ]
+            },
+            {
+              "side": "OPPONENT",
+              "speciesName": "Garchomp",
+              "moveNames": [
+                "Dragon Tail",
+                "Mud Shot"
+              ],
+              "contextArticleIds": [
+                "e9a3920a-4664-46c5-9371-4f4394ae360b"
+              ]
+            }
+          ]
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2554,
+        "evidenceReferences": [
+          "3767cdb4-2d28-4809-8411-fe5f41f9cc1d"
+        ],
+        "monotonicTimeNanos": 364230617507373
+      },
+      "legalMoves": [
+        "Bite",
+        "Fire Fang",
+        "Snarl",
+        "Thunder Fang",
+        "Dragon Tail",
+        "Mud Shot"
+      ],
+      "labelBasis": "Uncertain user recollection (Thunder Fang, I think); actual matching and production inference are under test. No configured move is supplied."
+    },
+    {
+      "id": "arcanine-overlap",
+      "file": "arcanine-overlap.wav",
+      "role": "overlap-and-opponent-confounded",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "2026-11-08_09-08-10_48a36312-70d1-4232-a9dd-6d69e1c98a89.odxmatch.zip",
+        "sha256": "bdea0bde54e950e67dd308fefe4d01921b0edee02c7f5d4f8ff18097ace2da02",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89"
+      },
+      "sourceAudioArticle": {
+        "articleId": "dbc879de-5c6f-4762-b801-04bac01b8e34",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150574397,
+        "recordedAt": 1794150575904,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/f74f0abe8a7a3cd7c5ecf18ab3e29f5dde1d27fd17934353aeefc05e31d48bc6.wav",
+          "sha256": "f74f0abe8a7a3cd7c5ecf18ab3e29f5dde1d27fd17934353aeefc05e31d48bc6",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.5217285
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2606,
+        "evidenceReferences": [
+          "d86aef7f-4d92-4633-b9a9-3f0d0bb9ae33",
+          "15e51566-211e-4b43-89ef-745d186c1712",
+          "74dac07b-2903-43e5-b0ee-2668414384e3",
+          "e9a3920a-4664-46c5-9371-4f4394ae360b"
+        ],
+        "monotonicTimeNanos": 364231812165096
+      },
+      "derived": {
+        "sha256": "f74f0abe8a7a3cd7c5ecf18ab3e29f5dde1d27fd17934353aeefc05e31d48bc6",
+        "pcmSha256": "b82f5d4dd5443fa416fc21391ae19e7b677ae772b47375cd18f9338af2262c02",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "sourceMeasurementArticle": {
+        "articleId": "a4ddbf34-c6e1-4632-af22-dd5c539b7d72",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150574397,
+        "recordedAt": 1794150575912,
+        "sourceId": "FAST_MOVE_SOUND_WITNESS",
+        "payload": {
+          "kind": "fast_move_sound_measured",
+          "audible": true,
+          "onsetOffsetNanos": 90000000,
+          "soundDurationNanos": 230000000,
+          "spectralCentroidHz": 1448.6396,
+          "peakAmplitude": 0.15860723,
+          "attackingSide": null,
+          "soundOnsetMonotonicNanos": 364231902165096,
+          "cueAttackingSide": null,
+          "analysisVersion": "spectral-sequence-v3",
+          "referenceCandidates": [
+            {
+              "moveName": "Thunder Fang",
+              "referenceSha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43",
+              "similarity": 0.991819,
+              "changingSimilarity": 0.9159434,
+              "matchingOffsetNanos": 64000000,
+              "referenceOffsetNanos": 496000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Dragon Tail",
+              "referenceSha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48",
+              "similarity": 0.97511786,
+              "changingSimilarity": 0.9313401,
+              "matchingOffsetNanos": 768000000,
+              "referenceOffsetNanos": 48000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Snarl",
+              "referenceSha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4",
+              "similarity": 0.9188985,
+              "changingSimilarity": 0.7806986,
+              "matchingOffsetNanos": 688000000,
+              "referenceOffsetNanos": 864000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Mud Shot",
+              "referenceSha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24",
+              "similarity": 0.90641403,
+              "changingSimilarity": 0.84031564,
+              "matchingOffsetNanos": 768000000,
+              "referenceOffsetNanos": 640000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Bite",
+              "referenceSha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421",
+              "similarity": 0.8833823,
+              "changingSimilarity": 0.62056935,
+              "matchingOffsetNanos": 672000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 352000000
+            }
+          ],
+          "referenceMatchAccepted": false,
+          "referenceSearchScopes": [
+            {
+              "side": "PLAYER",
+              "speciesName": "Arcanine",
+              "moveNames": [
+                "Bite",
+                "Fire Fang",
+                "Snarl",
+                "Thunder Fang"
+              ],
+              "contextArticleIds": [
+                "15e51566-211e-4b43-89ef-745d186c1712",
+                "74dac07b-2903-43e5-b0ee-2668414384e3"
+              ]
+            },
+            {
+              "side": "OPPONENT",
+              "speciesName": "Garchomp",
+              "moveNames": [
+                "Dragon Tail",
+                "Mud Shot"
+              ],
+              "contextArticleIds": [
+                "e9a3920a-4664-46c5-9371-4f4394ae360b"
+              ]
+            }
+          ]
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2607,
+        "evidenceReferences": [
+          "dbc879de-5c6f-4762-b801-04bac01b8e34"
+        ],
+        "monotonicTimeNanos": 364231812165096
+      },
+      "legalMoves": [
+        "Bite",
+        "Fire Fang",
+        "Snarl",
+        "Thunder Fang",
+        "Dragon Tail",
+        "Mud Shot"
+      ],
+      "labelBasis": "Uncertain user recollection (Thunder Fang, I think); actual matching and production inference are under test. No configured move is supplied."
+    },
+    {
+      "id": "arcanine-distinct",
+      "file": "arcanine-distinct.wav",
+      "role": "strong-distinct-recorded-comparison",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "2026-11-08_09-08-10_48a36312-70d1-4232-a9dd-6d69e1c98a89.odxmatch.zip",
+        "sha256": "bdea0bde54e950e67dd308fefe4d01921b0edee02c7f5d4f8ff18097ace2da02",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89"
+      },
+      "sourceAudioArticle": {
+        "articleId": "e5c097a3-e0ee-413e-9dfe-5b3a4d6f2e2f",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150575400,
+        "recordedAt": 1794150576820,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/eb561019917f04a8c5807cc6528bd32a33999d0775330924dc35e54b5d3ee728.wav",
+          "sha256": "eb561019917f04a8c5807cc6528bd32a33999d0775330924dc35e54b5d3ee728",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.41079712
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2641,
+        "evidenceReferences": [
+          "d86aef7f-4d92-4633-b9a9-3f0d0bb9ae33",
+          "15e51566-211e-4b43-89ef-745d186c1712",
+          "74dac07b-2903-43e5-b0ee-2668414384e3",
+          "e9a3920a-4664-46c5-9371-4f4394ae360b"
+        ],
+        "monotonicTimeNanos": 364232815253113
+      },
+      "derived": {
+        "sha256": "eb561019917f04a8c5807cc6528bd32a33999d0775330924dc35e54b5d3ee728",
+        "pcmSha256": "bf05375be8af404ec4f8421f1670dace7f1f289196b8c0c7eb5e0913539b2839",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "sourceMeasurementArticle": {
+        "articleId": "2c642c0b-28d8-49cd-a442-073b0fa4c5b5",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150575400,
+        "recordedAt": 1794150576821,
+        "sourceId": "FAST_MOVE_SOUND_WITNESS",
+        "payload": {
+          "kind": "fast_move_sound_measured",
+          "audible": true,
+          "onsetOffsetNanos": 360000000,
+          "soundDurationNanos": 50000000,
+          "spectralCentroidHz": 1755.4888,
+          "peakAmplitude": 0.15892436,
+          "attackingSide": null,
+          "soundOnsetMonotonicNanos": 364233175253113,
+          "cueAttackingSide": null,
+          "analysisVersion": "spectral-sequence-v3",
+          "referenceCandidates": [
+            {
+              "moveName": "Thunder Fang",
+              "referenceSha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43",
+              "similarity": 0.9722669,
+              "changingSimilarity": 0.8514609,
+              "matchingOffsetNanos": 528000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Dragon Tail",
+              "referenceSha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48",
+              "similarity": 0.92648816,
+              "changingSimilarity": 0.80853903,
+              "matchingOffsetNanos": 0,
+              "referenceOffsetNanos": 288000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Snarl",
+              "referenceSha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4",
+              "similarity": 0.9200546,
+              "changingSimilarity": 0.7478183,
+              "matchingOffsetNanos": 48000000,
+              "referenceOffsetNanos": 160000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Mud Shot",
+              "referenceSha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24",
+              "similarity": 0.9066233,
+              "changingSimilarity": 0.79144067,
+              "matchingOffsetNanos": 48000000,
+              "referenceOffsetNanos": 608000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Bite",
+              "referenceSha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421",
+              "similarity": 0.8807372,
+              "changingSimilarity": 0.59495515,
+              "matchingOffsetNanos": 112000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 352000000
+            }
+          ],
+          "referenceMatchAccepted": true,
+          "referenceSearchScopes": [
+            {
+              "side": "PLAYER",
+              "speciesName": "Arcanine",
+              "moveNames": [
+                "Bite",
+                "Fire Fang",
+                "Snarl",
+                "Thunder Fang"
+              ],
+              "contextArticleIds": [
+                "15e51566-211e-4b43-89ef-745d186c1712",
+                "74dac07b-2903-43e5-b0ee-2668414384e3"
+              ]
+            },
+            {
+              "side": "OPPONENT",
+              "speciesName": "Garchomp",
+              "moveNames": [
+                "Dragon Tail",
+                "Mud Shot"
+              ],
+              "contextArticleIds": [
+                "e9a3920a-4664-46c5-9371-4f4394ae360b"
+              ]
+            }
+          ]
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2642,
+        "evidenceReferences": [
+          "e5c097a3-e0ee-413e-9dfe-5b3a4d6f2e2f"
+        ],
+        "monotonicTimeNanos": 364232815253113
+      },
+      "legalMoves": [
+        "Bite",
+        "Fire Fang",
+        "Snarl",
+        "Thunder Fang",
+        "Dragon Tail",
+        "Mud Shot"
+      ],
+      "labelBasis": "Uncertain user recollection (Thunder Fang, I think); actual matching and production inference are under test. No configured move is supplied."
+    },
+    {
+      "id": "arcanine-weak",
+      "file": "arcanine-weak.wav",
+      "role": "weak-recorded-comparison",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "2026-11-08_09-08-10_48a36312-70d1-4232-a9dd-6d69e1c98a89.odxmatch.zip",
+        "sha256": "bdea0bde54e950e67dd308fefe4d01921b0edee02c7f5d4f8ff18097ace2da02",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89"
+      },
+      "sourceAudioArticle": {
+        "articleId": "4edea9c2-f1ac-4ed1-88ae-a1d54c0f47e9",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150579793,
+        "recordedAt": 1794150581138,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/1910bafed5bac14a49178a2c67f48a9c876f46f82425cc3e1ecdac5608edc155.wav",
+          "sha256": "1910bafed5bac14a49178a2c67f48a9c876f46f82425cc3e1ecdac5608edc155",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.51226807
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2783,
+        "evidenceReferences": [
+          "d86aef7f-4d92-4633-b9a9-3f0d0bb9ae33",
+          "15e51566-211e-4b43-89ef-745d186c1712",
+          "74dac07b-2903-43e5-b0ee-2668414384e3",
+          "e9a3920a-4664-46c5-9371-4f4394ae360b"
+        ],
+        "monotonicTimeNanos": 364237208262613
+      },
+      "derived": {
+        "sha256": "1910bafed5bac14a49178a2c67f48a9c876f46f82425cc3e1ecdac5608edc155",
+        "pcmSha256": "edf25757c1dcb4be58f7ac64012056fe3152b15ddabf9b9aa2a4eb70b4599e22",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "sourceMeasurementArticle": {
+        "articleId": "079b7a6e-fd4a-402d-b537-5e9f8a7e2890",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150579793,
+        "recordedAt": 1794150581139,
+        "sourceId": "FAST_MOVE_SOUND_WITNESS",
+        "payload": {
+          "kind": "fast_move_sound_measured",
+          "audible": true,
+          "onsetOffsetNanos": 770000000,
+          "soundDurationNanos": 430000000,
+          "spectralCentroidHz": 1726.7896,
+          "peakAmplitude": 0.18792652,
+          "attackingSide": null,
+          "soundOnsetMonotonicNanos": 364237978262613,
+          "cueAttackingSide": null,
+          "analysisVersion": "spectral-sequence-v3",
+          "referenceCandidates": [
+            {
+              "moveName": "Thunder Fang",
+              "referenceSha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43",
+              "similarity": 0.89634734,
+              "changingSimilarity": 0.8810672,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 64000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Snarl",
+              "referenceSha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4",
+              "similarity": 0.883121,
+              "changingSimilarity": 0.83517265,
+              "matchingOffsetNanos": 736000000,
+              "referenceOffsetNanos": 320000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Dragon Tail",
+              "referenceSha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48",
+              "similarity": 0.85353297,
+              "changingSimilarity": 0.84205025,
+              "matchingOffsetNanos": 736000000,
+              "referenceOffsetNanos": 48000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Mud Shot",
+              "referenceSha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24",
+              "similarity": 0.8229172,
+              "changingSimilarity": 0.8131821,
+              "matchingOffsetNanos": 736000000,
+              "referenceOffsetNanos": 416000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Bite",
+              "referenceSha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421",
+              "similarity": 0.82160157,
+              "changingSimilarity": 0.6527173,
+              "matchingOffsetNanos": 768000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 352000000
+            }
+          ],
+          "referenceMatchAccepted": false,
+          "referenceSearchScopes": [
+            {
+              "side": "PLAYER",
+              "speciesName": "Arcanine",
+              "moveNames": [
+                "Bite",
+                "Fire Fang",
+                "Snarl",
+                "Thunder Fang"
+              ],
+              "contextArticleIds": [
+                "15e51566-211e-4b43-89ef-745d186c1712",
+                "74dac07b-2903-43e5-b0ee-2668414384e3"
+              ]
+            },
+            {
+              "side": "OPPONENT",
+              "speciesName": "Garchomp",
+              "moveNames": [
+                "Dragon Tail",
+                "Mud Shot"
+              ],
+              "contextArticleIds": [
+                "e9a3920a-4664-46c5-9371-4f4394ae360b"
+              ]
+            }
+          ]
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 2784,
+        "evidenceReferences": [
+          "4edea9c2-f1ac-4ed1-88ae-a1d54c0f47e9"
+        ],
+        "monotonicTimeNanos": 364237208262613
+      },
+      "legalMoves": [
+        "Bite",
+        "Fire Fang",
+        "Snarl",
+        "Thunder Fang",
+        "Dragon Tail",
+        "Mud Shot"
+      ],
+      "labelBasis": "Uncertain user recollection (Thunder Fang, I think); actual matching and production inference are under test. No configured move is supplied."
+    },
+    {
+      "id": "arcanine-qte-adjacent",
+      "file": "arcanine-qte-adjacent.wav",
+      "role": "qte-adjacent-recorded-comparison",
+      "replayEligible": false,
+      "sourceArchive": {
+        "path": "2026-11-08_09-08-10_48a36312-70d1-4232-a9dd-6d69e1c98a89.odxmatch.zip",
+        "sha256": "bdea0bde54e950e67dd308fefe4d01921b0edee02c7f5d4f8ff18097ace2da02",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89"
+      },
+      "sourceAudioArticle": {
+        "articleId": "b4b91dcf-a4d0-4705-8b87-81d98c8476e2",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150591207,
+        "recordedAt": 1794150592502,
+        "sourceId": "FAST_MOVE_STREAM_AUDIO_CAPTURE",
+        "payload": {
+          "kind": "audio_captured",
+          "artifactPath": "artifacts/audio/sha256/a59656244dc56119916701c18350d83f21183c23005b111de4456360200a7800.wav",
+          "sha256": "a59656244dc56119916701c18350d83f21183c23005b111de4456360200a7800",
+          "byteCount": 19244,
+          "mediaType": "audio/wav",
+          "sampleRateHz": 8000,
+          "channelCount": 1,
+          "durationNanos": 1200000000,
+          "cueKind": "FAST_MOVE_AUDIO_STREAM",
+          "captureSource": "PLAYBACK_POKEMON_GO",
+          "peakAmplitude": 0.67507935
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 3070,
+        "evidenceReferences": [
+          "d86aef7f-4d92-4633-b9a9-3f0d0bb9ae33",
+          "15e51566-211e-4b43-89ef-745d186c1712",
+          "74dac07b-2903-43e5-b0ee-2668414384e3",
+          "e9a3920a-4664-46c5-9371-4f4394ae360b"
+        ],
+        "monotonicTimeNanos": 364248621415364
+      },
+      "derived": {
+        "sha256": "a59656244dc56119916701c18350d83f21183c23005b111de4456360200a7800",
+        "pcmSha256": "2e696b87db2797feb0a1137e3bb58c4126fb3add5a1f8a5b0f172da9421b9ac9",
+        "byteCount": 19244,
+        "sampleRateHz": 8000,
+        "channelCount": 1,
+        "frameCount": 9600,
+        "sampleWidthBytes": 2
+      },
+      "processing": "Exact original WAV bytes; no filtering, normalization, resampling, mixing or trimming.",
+      "sourceMeasurementArticle": {
+        "articleId": "758e6bcd-563b-4929-8f68-0b655cc51175",
+        "matchId": "48a36312-70d1-4232-a9dd-6d69e1c98a89",
+        "perceivedAt": 1794150591207,
+        "recordedAt": 1794150592507,
+        "sourceId": "FAST_MOVE_SOUND_WITNESS",
+        "payload": {
+          "kind": "fast_move_sound_measured",
+          "audible": true,
+          "onsetOffsetNanos": 10000000,
+          "soundDurationNanos": 270000000,
+          "spectralCentroidHz": 2760.499,
+          "peakAmplitude": 0.3140565,
+          "attackingSide": null,
+          "soundOnsetMonotonicNanos": 364248631415364,
+          "cueAttackingSide": null,
+          "analysisVersion": "spectral-sequence-v3",
+          "referenceCandidates": [
+            {
+              "moveName": "Dragon Tail",
+              "referenceSha256": "18d9724add75b4d2e1ec0ee6cd87d8133d048112f5c1144a9b81d0a11840cb48",
+              "similarity": 0.9167067,
+              "changingSimilarity": 0.8075321,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 16000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Snarl",
+              "referenceSha256": "f18be8a22bcae1019171a1d8927ce72f004ea04e81d92974f6344bf32356baf4",
+              "similarity": 0.9148592,
+              "changingSimilarity": 0.80000824,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 80000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Mud Shot",
+              "referenceSha256": "c114b3060a8a4509f87fcce11c0fb710012486275f410e5c21bbc982e595ac24",
+              "similarity": 0.9105944,
+              "changingSimilarity": 0.85251355,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 320000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Thunder Fang",
+              "referenceSha256": "8586fe41f4fa9b3a7cf3e1fc33d05cd9ab50f0f9979b674505536639801dcf43",
+              "similarity": 0.8750992,
+              "changingSimilarity": 0.80070007,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 464000000,
+              "matchedDurationNanos": 416000000
+            },
+            {
+              "moveName": "Bite",
+              "referenceSha256": "ebef15c9aaefb2c5b42a2242795469d6b67dfbc06c75e86c18eebf065ae10421",
+              "similarity": 0.83203596,
+              "changingSimilarity": 0.5555665,
+              "matchingOffsetNanos": 784000000,
+              "referenceOffsetNanos": 0,
+              "matchedDurationNanos": 352000000
+            }
+          ],
+          "referenceMatchAccepted": false,
+          "referenceSearchScopes": [
+            {
+              "side": "PLAYER",
+              "speciesName": "Arcanine",
+              "moveNames": [
+                "Bite",
+                "Fire Fang",
+                "Snarl",
+                "Thunder Fang"
+              ],
+              "contextArticleIds": [
+                "15e51566-211e-4b43-89ef-745d186c1712",
+                "74dac07b-2903-43e5-b0ee-2668414384e3"
+              ]
+            },
+            {
+              "side": "OPPONENT",
+              "speciesName": "Garchomp",
+              "moveNames": [
+                "Dragon Tail",
+                "Mud Shot"
+              ],
+              "contextArticleIds": [
+                "e9a3920a-4664-46c5-9371-4f4394ae360b"
+              ]
+            }
+          ]
+        },
+        "predecessorIds": [],
+        "confidence": null,
+        "sequenceNumber": 3071,
+        "evidenceReferences": [
+          "b4b91dcf-a4d0-4705-8b87-81d98c8476e2"
+        ],
+        "monotonicTimeNanos": 364248621415364
+      },
+      "legalMoves": [
+        "Bite",
+        "Fire Fang",
+        "Snarl",
+        "Thunder Fang",
+        "Dragon Tail",
+        "Mud Shot"
+      ],
+      "labelBasis": "Uncertain user recollection (Thunder Fang, I think); actual matching and production inference are under test. No configured move is supplied."
+    }
+  ]
+}

@@ -6,6 +6,10 @@ verification reports, and current call paths. It is not a count of undiscovered
 bugs or a request to repeat every historical test. Grouped rows can share one
 recording; the completion evidence for each row remains separate.
 
+Audio reference A01 was updated November 8 after the Fire Fang reference and
+held-out recorded-battle checks. Other rows retain their existing acceptance
+boundaries.
+
 The November 4 baseline JVM run passed 1,705 tests with no failures, errors, or
 skips; its debug build and Moondrop replay check passed. Those are completed checks.
 The remaining work is mainly real-battle acceptance, broader device coverage,
@@ -82,20 +86,21 @@ and [current cue-request dispatch](../../app/src/main/java/com/example/overdex/b
 
 | ID / status | Outstanding test | Evidence needed |
 | --- | --- | --- |
-| A01 — Open | Fire Fang reference | First inspect existing Mawile recordings for a clean usable source; only record again if necessary. Opponent idle, SFX-only capture, several distinct uses plus silence; hold out different uses for validation. |
+| A01 — Completed for recognition, Nov 8 | Fire Fang reference | An unchanged October 25 Mawile excerpt is now bundled for recognition, with a separate attack and a separate battle held out. It is excluded from replay effects; broader live precision and noise checks remain B05. See the November 8 reference report below. |
 | A02 — Open | Zen Headbutt reference | Same clean setup. Preserve exact equipped move and source/clip hashes; a distinct-battle query should validate the reference rather than only matching itself. |
 | A03 — Partial | Poison Sting generalization | Reference already added; validate on a different battle, not another occurrence from the source battle. |
 | A04 — Partial | Mud-Slap versus Mud Shot | Both reference names exist, but held-out Mud-Slap windows remain acoustically ambiguous. Use known equipped moves, HP/cadence and isolated attackers; retain uncertainty if audio does not separate them. |
 
 Confusion, Rock Smash, Bubble, Mud-Slap, Poison Sting and Steel Wing reference
 captures have already been processed. They are not six missing recording tasks.
-The latest checked-in audit has two ordinary named gaps, A01/A02. Sixteen typed
+The latest checked-in audit has one ordinary named source gap, A02. Sixteen typed
 Hidden Power aliases need separate type-family validation; Transform and the
 Struggle catalogue anomaly need a catalogue/behavior decision. The separate
 charged-audio audit lists 47 exact-name gaps; collecting those is lower priority
 than current attack and ending accuracy, not 47 immediate homework assignments.
 
 Sources: [latest capture coverage](../audio/2026-11-02-captured-references/README.md),
+[Fire Fang reference and current gaps](../audio/2026-11-08-fire-fang-reference/README.md),
 [Fast Move gaps](../audio/2026-11-02-captured-references/missing-fast-move-audio.csv),
 [charged gaps](../audio/2026-10-31-coverage/missing-charged-move-audio.csv),
 [held-out findings](../verification/2026-11-02-captured-fast-move-audio.md).

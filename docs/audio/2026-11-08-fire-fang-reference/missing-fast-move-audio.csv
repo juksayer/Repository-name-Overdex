@@ -1,0 +1,20 @@
+name,status,exact_covered,move_ids,types,turns,cycle_seconds,power,energy_gain,energy_cost,example_pokemon,bundled_files,source_files,alias_source_files,family_bundled_files,family_source_files,any_released_example,all_move_ids_unlisted
+Hidden Power (Bug),family_reference_needs_validation,False,HIDDEN_POWER_BUG,bug,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Dark),family_reference_needs_validation,False,HIDDEN_POWER_DARK,dark,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Dragon),family_reference_needs_validation,False,HIDDEN_POWER_DRAGON,dragon,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Electric),family_reference_needs_validation,False,HIDDEN_POWER_ELECTRIC,electric,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Fighting),family_reference_needs_validation,False,HIDDEN_POWER_FIGHTING,fighting,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Fire),family_reference_needs_validation,False,HIDDEN_POWER_FIRE,fire,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Flying),family_reference_needs_validation,False,HIDDEN_POWER_FLYING,flying,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Ghost),family_reference_needs_validation,False,HIDDEN_POWER_GHOST,ghost,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Grass),family_reference_needs_validation,False,HIDDEN_POWER_GRASS,grass,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Ground),family_reference_needs_validation,False,HIDDEN_POWER_GROUND,ground,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Ice),family_reference_needs_validation,False,HIDDEN_POWER_ICE,ice,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Poison),family_reference_needs_validation,False,HIDDEN_POWER_POISON,poison,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Psychic),family_reference_needs_validation,False,HIDDEN_POWER_PSYCHIC,psychic,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Rock),family_reference_needs_validation,False,HIDDEN_POWER_ROCK,rock,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Steel),family_reference_needs_validation,False,HIDDEN_POWER_STEEL,steel,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Hidden Power (Water),family_reference_needs_validation,False,HIDDEN_POWER_WATER,water,3,1.5,9,8,0,Starmie | Porygon | Togepi | Togetic | Unown | Porygon2,,,,237-0_hidden_power.wav,237-0_hidden_power.wav,True,True
+Struggle,catalogue_category_review,False,STRUGGLE,normal,1,0.5,35,0,100,Magearna,,165-0_struggle.wav,,,,False,False
+Transform,special_action_review,False,TRANSFORM,normal,3,1.5,0,0,0,Ditto,,,,,,False,True
+Zen Headbutt,missing_source_asset,False,ZEN_HEADBUTT,psychic,3,1.5,8,6,0,Clefairy | Clefable | Psyduck | Abra | Hypno | Exeggutor,,,,,,True,False

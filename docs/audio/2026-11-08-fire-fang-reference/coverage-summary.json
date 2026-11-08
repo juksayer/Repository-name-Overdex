@@ -1,0 +1,26 @@
+{
+  "scope": "Current local catalogue recognition inventory; not complete replay effects or live accuracy.",
+  "fast": {
+    "manifest_sha256": "784f1583f13a548f0eca603759e0c4fb97d10179b6a1301ea1ada96360ec30b7",
+    "manifest_reference_entries": 79,
+    "manifest_distinct_names": 78,
+    "referenced_move_ids": 98,
+    "unique_names": 96,
+    "exact_covered_names": 77,
+    "exact_missing_names": 19,
+    "status_counts": {
+      "catalogue_category_review": 1,
+      "covered_exact_name": 77,
+      "family_reference_needs_validation": 16,
+      "missing_source_asset": 1,
+      "special_action_review": 1
+    },
+    "manifest_names_outside_species_pools": [
+      "Hidden Power"
+    ],
+    "unusable_manifest_files": [],
+    "unresolved_move_ids": []
+  },
+  "catalogue_sha256": "35a7db4b61c77dad0f17e0e321a56c4cb384905538820a565baafd368d7f9895",
+  "catalogue_timestamp": "2026-06-18 01:53:01"
+}
