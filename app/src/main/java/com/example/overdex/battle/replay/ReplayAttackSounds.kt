@@ -12,7 +12,23 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /** Reconstructed playback cues, never evidence about the captured match. */
-data class ReplayAttackSoundEvent(val atNanos: Long, val moveName: String, val charged: Boolean)
+data class ReplayAttackSoundEvent(
+    val atNanos: Long,
+    val moveName: String,
+    val charged: Boolean,
+    val side: String,
+)
+
+internal data class ReplayAttackSoundMix(val left: Float, val right: Float)
+
+/** Mono effects follow their replay combatant; charged moves fill both channels. */
+internal fun replayAttackSoundMix(event: ReplayAttackSoundEvent): ReplayAttackSoundMix = when {
+    event.charged -> ReplayAttackSoundMix(1f, 1f)
+    event.side == "PLAYER" -> ReplayAttackSoundMix(1f, .25f)
+    event.side == "OPPONENT" -> ReplayAttackSoundMix(.25f, 1f)
+    // Do not invent an owner for an unrecognized side.
+    else -> ReplayAttackSoundMix(1f, 1f)
+}
 
 internal fun replayAttackSoundsBetween(events: List<ReplayAttackSoundEvent>, from: Long, to: Long) =
     if (to <= from) emptyList() else events.filter { it.atNanos > from && it.atNanos <= to }
@@ -81,7 +97,8 @@ class ReplayAttackSounds(private val context: Context) {
         if (released) return
         val id = samples[event.charged to event.moveName.lowercase()] ?: return
         if (id !in ready) return // Never play a late load against a different scene.
-        val stream = pool.play(id, .65f, .65f, 1, 0, speed.coerceIn(.5f, 2f))
+        val mix = replayAttackSoundMix(event)
+        val stream = pool.play(id, mix.left, mix.right, 1, 0, speed.coerceIn(.5f, 2f))
         if (stream != 0) streams += stream
         // Stream IDs are short-lived; bound bookkeeping during long compilations.
         if (streams.size > 32) streams.removeAt(0)

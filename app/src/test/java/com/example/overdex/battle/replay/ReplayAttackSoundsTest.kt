@@ -1,5 +1,12 @@
 package com.example.overdex.battle.replay
 
+import com.example.overdex.battle.archive.ArchivedActiveHpBarBorderPulseObserved
+import com.example.overdex.battle.archive.ArchivedChargedMoveEnergySpent
+import com.example.overdex.battle.archive.ArchivedFastMoveEnergyDerived
+import com.example.overdex.battle.archive.ArchivedGetReadyWitnessed
+import com.example.overdex.battle.archive.ArchivedTestimonyPayload
+import com.example.overdex.battle.archive.ArchivedRealityArticle
+import com.example.overdex.battle.archive.MatchArchive
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -12,8 +19,54 @@ import org.junit.Test
 import java.io.File
 
 class ReplayAttackSoundsTest {
-    private val fast = ReplayAttackSoundEvent(100L, "Spark", false)
-    private val charge = ReplayAttackSoundEvent(200L, "Thunder Punch", true)
+    private val fast = ReplayAttackSoundEvent(100L, "Spark", false, "PLAYER")
+    private val charge = ReplayAttackSoundEvent(200L, "Thunder Punch", true, "PLAYER")
+
+    @Test fun fastMovesFollowTheirCombatantsWithQuarterVolumeInTheOtherChannel() {
+        assertEquals(ReplayAttackSoundMix(1f, .25f), replayAttackSoundMix(fast))
+        assertEquals(ReplayAttackSoundMix(.25f, 1f), replayAttackSoundMix(fast.copy(side = "OPPONENT")))
+    }
+
+    @Test fun chargedMovesUseBothChannelsAtFullVolumeForEitherSide() {
+        for (side in listOf("PLAYER", "OPPONENT")) {
+            assertEquals(ReplayAttackSoundMix(1f, 1f), replayAttackSoundMix(charge.copy(side = side)))
+        }
+    }
+
+    @Test fun unknownSideStaysCenteredInsteadOfInventingAttribution() {
+        assertEquals(ReplayAttackSoundMix(1f, 1f), replayAttackSoundMix(fast.copy(side = "UNKNOWN")))
+    }
+
+    @Test fun reconstructedAttackAudioRetainsTheOwnerRatherThanTheDamageRecipient() {
+        val model = MatchReplayModel(MatchArchive(matchId = "stereo", articles = listOf(
+            timed("player-hit", ArchivedActiveHpBarBorderPulseObserved("OPPONENT", .4f, 8, .3f, .8f), 1_000_000_000L),
+            timed("opponent-hit", ArchivedActiveHpBarBorderPulseObserved("PLAYER", .4f, 8, .3f, .8f), 1_100_000_000L),
+            timed("player-move", ArchivedFastMoveEnergyDerived("PLAYER", "Incinerate", 1, 20, 20, "TEST"), 1_000_000_000L),
+            timed("opponent-move", ArchivedFastMoveEnergyDerived("OPPONENT", "Ice Shard", 1, 10, 10, "TEST"), 1_100_000_000L),
+            timed("charge-ready", ArchivedGetReadyWitnessed, 3_000_000_000L),
+            timed("charge-used", ArchivedChargedMoveEnergySpent("PLAYER", "Turtonator", "Dragon Pulse", 60, "ANNOUNCEMENT"), 8_000_000_000L),
+        )))
+
+        val fastSounds = model.attackSoundEvents.filterNot { it.charged }.associateBy { it.moveName }
+        assertEquals(setOf("Incinerate", "Ice Shard"), fastSounds.keys)
+        assertEquals("PLAYER", fastSounds.getValue("Incinerate").side)
+        assertEquals("OPPONENT", fastSounds.getValue("Ice Shard").side)
+        assertEquals("PLAYER", model.attackSoundEvents.single { it.charged }.side)
+    }
+
+    private fun timed(id: String, payload: ArchivedTestimonyPayload, at: Long) = ArchivedRealityArticle(
+        articleId = id,
+        matchId = "stereo",
+        sourceId = "TEST",
+        perceivedAt = at / 1_000_000L,
+        recordedAt = at / 1_000_000L,
+        monotonicTimeNanos = at,
+        confidence = 1f,
+        payload = payload,
+        predecessorIds = emptyList(),
+        sequenceNumber = null,
+        evidenceReferences = null,
+    )
 
     @Test fun forwardPlaybackDoesNotRepeatBoundarySounds() {
         val events = listOf(fast, charge)

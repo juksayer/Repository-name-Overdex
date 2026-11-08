@@ -259,12 +259,12 @@ class MatchReplayModel(
         (fastMoveCycles.mapNotNull { cycle ->
             val name = cycle.witness.moveName ?: return@mapNotNull null
             if (!canPerformReplayAction(cycle.witness.side, cycle.startedAtNanos, cycle.startedAtNanos)) return@mapNotNull null
-            ReplayAttackSoundEvent(cycle.startedAtNanos, name, false)
+            ReplayAttackSoundEvent(cycle.startedAtNanos, name, false, cycle.witness.side)
         } + recordedChargedMoveUses.mapNotNull { use ->
             val name = use.moveName ?: return@mapNotNull null
             if (matchEndNanos != null && use.animationAtNanos > matchEndNanos) return@mapNotNull null
             if (!use.isCompleted || !canPerformReplayAction(use.side, use.preparationAtNanos, use.animationAtNanos)) return@mapNotNull null
-            ReplayAttackSoundEvent(use.animationAtNanos, name, true)
+            ReplayAttackSoundEvent(use.animationAtNanos, name, true, use.side)
         }).sortedBy { it.atNanos }
     }
 
