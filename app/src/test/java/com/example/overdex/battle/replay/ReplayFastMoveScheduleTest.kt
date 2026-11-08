@@ -177,6 +177,106 @@ class ReplayFastMoveScheduleTest {
         assertTrue(cycles.all { it.actionAt(ns(1.44)) != null && !it.hasReferenceDuration })
     }
 
+    @Test fun `unknown terminal hit keeps a neutral presentation before its exact impact`() {
+        for (end in listOf(2.0, 2.1)) {
+            val source = witness("terminal", 2.0).copy(moveName = null, type = null, durationNanos = null,
+                windowEndNanos = ns(end), endsAtTerminalBoundary = true)
+            val cycle = ReplayFastMoveSchedule.build(listOf(source)).single()
+            assertEquals(ns(1.55), cycle.startedAtNanos)
+            assertEquals(ns(2.0), cycle.impactAtNanos)
+            assertFalse(cycle.hasReferenceDuration)
+            assertNull(cycle.witness.durationNanos)
+            val action = cycle.actionAt(ns(1.8))!!
+            assertNull(action.moveName)
+            assertNull(action.type)
+            assertEquals(setOf("terminal"), action.sourceArticleIds)
+            assertEquals(setOf(ns(2.0)), action.observedAtNanos)
+            assertTrue("TERMINAL_NEUTRAL_PRESENTATION_FIT" in action.evidenceKinds)
+            assertFalse(action.timingReconstructed) // no reference duration is known
+            assertNull(cycle.actionAt(ns(end)))
+            assertEquals(setOf("HP_DAMAGE_TICK"), source.evidenceKinds)
+        }
+    }
+
+    @Test fun `neutral terminal fit cannot cross a zero or too short ordinary play window`() {
+        for (start in listOf(2.0, 1.99, 1.6)) {
+            val source = witness("too-short", 2.0).copy(durationNanos = null,
+                windowStartNanos = ns(start), windowEndNanos = ns(2.0), endsAtTerminalBoundary = true)
+            assertTrue(ReplayFastMoveSchedule.build(listOf(source)).isEmpty())
+        }
+        val ordinaryBoundary = witness("ordinary", 2.0).copy(durationNanos = null, windowEndNanos = ns(2.0))
+        val ordinary = ReplayFastMoveSchedule.build(listOf(ordinaryBoundary)).single()
+        assertEquals(ns(2.0), ordinary.startedAtNanos)
+        assertFalse("TERMINAL_NEUTRAL_PRESENTATION_FIT" in ordinary.witness.evidenceKinds)
+    }
+
+    @Test fun `supported fast hit at result uses closing window without manufacturing faint or energy`() {
+        for (known in listOf(false, true)) {
+            val archive = battle(listOf(hit("final-result", "PLAYER", 2.0),
+                hit("post-result", "PLAYER", 2.1), event("end", ArchivedMatchEnded("WIN"), 2.0)))
+                .let { if (known) it else it.copy(articles = it.articles.filterNot {
+                    it.payload is ArchivedFastMoveIdentified
+                }) }
+            val original = MatchArchiveSerializer.serialize(archive)
+            val model = if (known) model(archive) else MatchReplayModel(archive)
+            val before = model.sceneAt(ns(1.8))
+            val action = before.fastMoveActions.single()
+            assertEquals(setOf("final-result"), action.sourceArticleIds)
+            assertEquals(setOf(ns(2.0)), action.observedAtNanos)
+            assertEquals(ns(2.0), action.impactAtNanos)
+            assertTrue(action.startedAtNanos < ns(2.0))
+            assertNull(before.outcome)
+            val ended = model.sceneAt(ns(2.1))
+            assertEquals("WIN", ended.outcome)
+            assertFalse(ended.opponent!!.isFainted)
+            assertTrue(ended.fastMoveActions.isEmpty())
+            assertEquals(0, ended.playerGeneratedEnergy)
+            assertEquals(0, ended.playerSpentEnergy)
+            assertEquals(before, model.sceneAt(ns(1.8)))
+            assertEquals(original, MatchArchiveSerializer.serialize(archive))
+        }
+    }
+
+    @Test fun `unknown finishing hit at recipient faint remains visible before the fall`() {
+        val archive = battle(listOf(hit("final-neutral", "PLAYER", 2.0),
+            event("ko", ArchivedActivePokemonFaintedWitnessed("OPPONENT", "Sealeo", 364, "BALLS"), 2.0),
+            event("end", ArchivedMatchEnded("WIN"), 2.1)))
+            .let { it.copy(articles = it.articles.filterNot { article ->
+                article.payload is ArchivedFastMoveIdentified
+            }) }
+        val model = MatchReplayModel(archive)
+        val before = model.sceneAt(ns(1.8))
+        val action = before.fastMoveActions.single()
+        assertNull(action.moveName)
+        assertNull(action.type)
+        assertEquals(ns(2.0), action.impactAtNanos)
+        assertTrue("TERMINAL_NEUTRAL_PRESENTATION_FIT" in action.evidenceKinds)
+        assertFalse(before.opponent!!.isFainted)
+        assertTrue(model.sceneAt(ns(2.05)).opponent!!.isFainted)
+        assertTrue(model.sceneAt(ns(2.05)).fastMoveActions.isEmpty())
+    }
+
+    @Test fun `unknown terminal fitting cannot borrow time across charge entry or match start`() {
+        val extraBoundaries = listOf(
+            emptyList(),
+            listOf(event("entry", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Camerupt", 323), 1.8)),
+            listOf(event("charge", ArchivedChargeMoveUsedAnnounced, 1.8)),
+            listOf(event("ready", ArchivedGetReadyWitnessed, 1.8)),
+        )
+        for ((index, boundary) in extraBoundaries.withIndex()) {
+            val start = if (index == 0) 1.8 else 0.0
+            val archive = MatchArchive(matchId = "match", articles = listOf(
+                event("p", ArchivedActivePokemonSpeciesWitnessed("PLAYER", "Galvantula", 596), 0.0),
+                event("o", ArchivedActivePokemonSpeciesWitnessed("OPPONENT", "Sealeo", 364), 0.0),
+                event("go", ArchivedMatchStarted, start),
+            ) + boundary + listOf(hit("terminal", "PLAYER", 2.0), event("end", ArchivedMatchEnded("WIN"), 2.0)))
+            val model = MatchReplayModel(archive)
+            assertTrue("boundary=$index", (0..25).all { step ->
+                model.sceneAt(ns(step / 10.0)).fastMoveActions.isEmpty()
+            })
+        }
+    }
+
     @Test fun `separate settled HP losses survive late confirmation at the reference cadence`() {
         val inputs = listOf(
             witness("first", 3.092).copy(durationNanos = ns(2.5),

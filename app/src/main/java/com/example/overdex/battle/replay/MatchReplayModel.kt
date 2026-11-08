@@ -1115,7 +1115,7 @@ class MatchReplayModel(
         }.filter { use ->
             FastMoveUseEvidence.establishesUse(use.evidenceKinds) &&
                 (matchStartNanos == null || use.observedAtNanos >= matchStartNanos) &&
-                (matchEnd == null || use.observedAtNanos < matchEnd) &&
+                (matchEnd == null || use.observedAtNanos <= matchEnd) &&
                 fastMoveChargeWindows.none { use.observedAtNanos in it }
         }.sortedBy { it.observedAtNanos }
     }
@@ -1197,8 +1197,11 @@ class MatchReplayModel(
                 it.side == recipientSide && it.recordedAtNanos == at &&
                     at <= (it.replacementAtNanos ?: Long.MAX_VALUE)
             }
-            val windowStart = boundaries.lastOrNull { if (hitsAtRecipientFaint) it < at else it <= at } ?: at
-            val windowEnd = boundaries.firstOrNull { if (hitsAtRecipientFaint) it >= at else it > at } ?: Long.MAX_VALUE
+            // A supported hit sharing the result's source instant also closes
+            // ordinary play. Do not start its whole animation after the result.
+            val hitsAtTerminalBoundary = hitsAtRecipientFaint || at == matchEndNanos
+            val windowStart = boundaries.lastOrNull { if (hitsAtTerminalBoundary) it < at else it <= at } ?: at
+            val windowEnd = boundaries.firstOrNull { if (hitsAtTerminalBoundary) it >= at else it > at } ?: Long.MAX_VALUE
             val bufferedMove = bufferedMoveFor(use.side, at)
             val name = identifiedMoveFor(use.side, at) ?: use.moveName ?: bufferedMove?.name
             val reference = name?.let { possibleMoveFor(use.side, at, it) }

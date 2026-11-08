@@ -71,6 +71,21 @@ internal object ReplayFastMoveSchedule {
                 val duration = witness.durationNanos
                 if (duration == null) {
                     // Old/undetermined moves retain their short neutral presentation.
+                    // A terminal hit is already witnessed at this instant. If a
+                    // forward decorative flight would be cut off by its faint
+                    // or result, fit that same neutral glyph before the hit.
+                    // This is not a reference duration or another move use.
+                    if (witness.endsAtTerminalBoundary &&
+                        witness.observedAtNanos <= witness.windowEndNanos &&
+                        witness.observedAtNanos + UNKNOWN_MOVE_VISUAL_NANOS > witness.windowEndNanos) {
+                        val start = witness.observedAtNanos - UNKNOWN_MOVE_VISUAL_NANOS
+                        if (start >= witness.windowStartNanos) {
+                            cycles += ReplayFastMoveCycle(witness.copy(
+                                evidenceKinds = witness.evidenceKinds + "TERMINAL_NEUTRAL_PRESENTATION_FIT"),
+                                start, witness.observedAtNanos)
+                        }
+                        continue
+                    }
                     cycles += ReplayFastMoveCycle(witness, witness.observedAtNanos,
                         witness.observedAtNanos + UNKNOWN_MOVE_VISUAL_NANOS)
                     continue
