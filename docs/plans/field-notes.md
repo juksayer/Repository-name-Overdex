@@ -62,7 +62,7 @@ file picker chooses where to export or which package to preview. Local writing
 and file export do not publish notes, send messages, or add cloud access rules.
 See [portable exchange validation](../verification/2026-11-08-field-notes-exchange.md).
 
-## Nearby exchange acceptance
+## Nearby exchange
 
 The existing QR partner repository holds one local linked trainer identity;
 Trainer Comms is a separate Firebase-backed messaging system, not offline peer
@@ -72,3 +72,8 @@ phones, and feed the same package parser and explicit import preview. A transpor
 delivery is distinct from the recipient saving or favoriting a note. Closing or
 backgrounding the exchange stops discovery, hosting and connections. No automatic
 sharing follows linking, and unlinking does not erase already saved copies.
+
+The journal exchange page now opens that separate nearby screen. The shared
+packet codec and review/save path are unchanged; file exchange remains available
+when the peer packet exceeds 32 KiB. See [nearby validation and remaining physical
+acceptance](../verification/2026-11-08-field-notes-nearby.md).

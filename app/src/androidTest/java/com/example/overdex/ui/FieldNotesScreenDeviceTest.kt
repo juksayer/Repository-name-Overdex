@@ -177,6 +177,34 @@ class FieldNotesScreenDeviceTest {
         compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 061-001")
     }
 
+    @Test fun nearbyExchangeReturnsThroughTheExchangeMenuToTheSameJournalPage() {
+        openJournal()
+        title("The First Step")
+        press("Right")
+        title("Patient Growth")
+        compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 002-001")
+        val turnsBeforeExchange = pageTurns.get()
+
+        action("exchange")
+        compose.onNodeWithTag("field-notes-exchange-crt").assertIsDisplayed()
+        compose.onNode(hasScrollToIndexAction() and
+            hasAnyAncestor(hasTestTag("field-notes-exchange-lcd")))
+            .performScrollToNode(hasTestTag("field-notes-exchange-action:nearby"))
+        compose.onNodeWithTag("field-notes-exchange-action:nearby")
+            .assertIsEnabled().performTouchInput { click() }
+        compose.onNodeWithTag("field-notes-nearby-crt").assertIsDisplayed()
+        compose.onNodeWithTag("field-notes-nearby-auth-code").assertDoesNotExist()
+        // Merely opening this route must not choose receive/find, request permissions or use radios.
+        press("B")
+        compose.onNodeWithTag("field-notes-nearby-crt").assertDoesNotExist()
+        compose.onNodeWithTag("field-notes-exchange-crt").assertIsDisplayed()
+        press("B")
+        title("Patient Growth")
+        compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 002-001")
+        assertEquals("Menu navigation is not a journal page turn", turnsBeforeExchange, pageTurns.get())
+        assertEquals("Both Back presses stay inside the journal destination", 0, exits.get())
+    }
+
     private fun assertAdaptabilityResult() {
         compose.onNodeWithTag("field-notes-result-id:061-001")
             .assertTextEquals("entry 061-001").assertIsDisplayed()

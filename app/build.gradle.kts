@@ -83,6 +83,7 @@ dependencies {
     
     // ML Kit
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    implementation("com.google.android.gms:play-services-nearby:19.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
     
     // Serialization

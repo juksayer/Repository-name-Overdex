@@ -100,6 +100,7 @@ fun FieldNotesScreen(
     val incoming by journal.incoming.collectAsState()
     val exchangeMessage by journal.exchangeMessage.collectAsState()
     var exchangeOpen by rememberSaveable { mutableStateOf(false) }
+    var nearbyOpen by rememberSaveable { mutableStateOf(false) }
     var exportWithCorrections by rememberSaveable { mutableStateOf(false) }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) journal.importFile(uri) else journal.exchangeStatus("File selection canceled. Nothing was imported.")
@@ -146,6 +147,13 @@ fun FieldNotesScreen(
     val personalNote = local.notes.firstOrNull { it.id == displayed?.note?.id }
     val corrections = local.corrections.filter { it.entryId == displayed?.note?.id }
 
+    if (nearbyOpen) {
+        FieldNotesNearbyScreen(viewModel, filterSettings, onFilterSettingsChange,
+            onPreparePackage = journal::preparePackage,
+            onReceived = { bytes -> journal.receivePackage(bytes); nearbyOpen = false; exchangeOpen = true },
+            onBack = { nearbyOpen = false })
+        return
+    }
     if (exchangeOpen) {
         val exportTargets = entries.filterNot { it.note.id.startsWith("personal-") }.map { it.note.id }.toSet() +
             local.notes.filter { it.shareable }.map { it.id }
@@ -159,6 +167,7 @@ fun FieldNotesScreen(
             },
             onImportFile = { importPicker.launch(arrayOf("application/json", "application/octet-stream", "*/*")) },
             onSaveIncoming = journal::saveIncoming, onClearIncoming = journal::clearIncoming,
+            onNearby = { nearbyOpen = true },
             onBack = { if (!busy) exchangeOpen = false })
         return
     }
