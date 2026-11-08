@@ -160,9 +160,24 @@ fun BattleRecordsScreen(viewModel: PokedexViewModel, ownedId: String? = null, on
                 if (!library?.failures.isNullOrEmpty()) TerminalText("${library!!.failures.size} match file(s) could not be read.", color = TerminalPurple, fontSize = 11.sp)
                 LazyColumn(state = list, modifier = Modifier.weight(1f)) {
                     itemsIndexed(rows, key = { _, pair -> "${pair.first.record.matchId}:${pair.second.id}" }) { index, (record, event) ->
-                        TerminalMenuOption(label = "${event.speciesName}: ${event.kind.name.replace('_', ' ')}${event.moveName?.let { " · $it" }.orEmpty()}",
-                            selected = selected == index, status = SimpleDateFormat("MMM d HH:mm", Locale.ROOT).format(Date(record.record.recordedAt))) { selected = index; openReplay(index) }
-                        event.opponentSpecies?.let { TerminalText("  vs $it", fontSize = 11.sp, color = TerminalDimGreen) }
+                        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                            TerminalMenuOption(
+                                label = "${event.speciesName}: ${event.kind.name.replace('_', ' ')}${event.moveName?.let { " · $it" }.orEmpty()}",
+                                selected = selected == index,
+                            ) { selected = index; openReplay(index) }
+                            // Dates have their own full-width line: a long event
+                            // title must not squeeze a trailing status into letters.
+                            TerminalText(
+                                "[ ${SimpleDateFormat("MMM d · HH:mm", Locale.getDefault()).format(Date(record.record.recordedAt))} ]",
+                                modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
+                                fontSize = 11.sp,
+                                color = if (selected == index) TerminalGreen else TerminalDimGreen,
+                            )
+                            event.opponentSpecies?.let {
+                                TerminalText("vs $it", modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
+                                    fontSize = 11.sp, color = TerminalDimGreen)
+                            }
+                        }
                     }
                 }
             }
