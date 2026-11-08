@@ -4,12 +4,32 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LauncherShortcutConfigurationTest {
-    @Test fun `default placement preserves the existing six pins and all programs`() {
+    @Test fun `default placement preserves existing pins and adds field notes in both launchers`() {
         val controller = OverdextopController()
-        assertEquals(listOf("droidball", "pokedex", "current_team", "binders", "match_history", "explorer", "programs"), controller.entries.map { it.id })
+        assertEquals(listOf("droidball", "pokedex", "current_team", "binders", "match_history", "explorer", "field_notes", "programs"), controller.entries.map { it.id })
         controller.openPrograms()
         assertEquals(OverdextopCatalog.destinations, controller.entries)
         assertEquals(OverdextopCatalog.destinations.size, controller.entries.map { it.id }.distinct().size)
+    }
+
+    @Test fun `a new field notes shortcut preserves old hidden choices and can itself stay hidden`() {
+        val previous = LauncherShortcutConfiguration(mapOf(
+            "pokedex" to LauncherShortcutVisibility(false, false),
+            "binders" to LauncherShortcutVisibility(false, true),
+        ))
+        val upgraded = previous.normalized()
+        assertEquals(LauncherShortcutVisibility(false, false), upgraded.visibility("pokedex"))
+        assertEquals(LauncherShortcutVisibility(false, true), upgraded.visibility("binders"))
+        assertEquals(LauncherShortcutVisibility(true, true), upgraded.visibility("field_notes"))
+        val hidden = upgraded.withVisibility("field_notes", LauncherShortcutLocation.DESKTOP, false)
+            .withVisibility("field_notes", LauncherShortcutLocation.PROGRAMS, false)
+        val reopened = OverdextopController(LauncherShortcutConfiguration(hidden.destinations))
+        assertFalse(reopened.entries.any { it.id == "field_notes" })
+        reopened.openPrograms()
+        assertFalse(reopened.entries.any { it.id == "field_notes" })
+        reopened.openShortcuts()
+        assertTrue("Hidden programs remain recoverable in shortcut settings", reopened.select("field_notes"))
+        assertEquals(LauncherShortcutVisibility(false, false), reopened.shortcutVisibility("field_notes"))
     }
 
     @Test fun `ordinary destinations support both desktop only programs only and neither`() {

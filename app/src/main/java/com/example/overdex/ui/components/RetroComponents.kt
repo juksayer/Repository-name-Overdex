@@ -153,11 +153,12 @@ fun DirectoryTree(
                             .padding(vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (node.icon == TreeNodeIcon.BINDER) {
-                            BinderDirectoryIcon(color, Modifier.size(17.dp)
+                        when (node.icon) {
+                            TreeNodeIcon.BINDER -> BinderDirectoryIcon(color, Modifier.size(17.dp)
                                 .semantics { contentDescription = "Binder" })
-                        } else {
-                            DirectoryNodeIcon(directory != null, flattened.isExpanded, color)
+                            TreeNodeIcon.JOURNAL -> JournalDirectoryIcon(color, Modifier.size(17.dp)
+                                .semantics { contentDescription = "Field notes journal" })
+                            null -> DirectoryNodeIcon(directory != null, flattened.isExpanded, color)
                         }
                         Spacer(Modifier.width(7.dp))
                         Text(
@@ -377,6 +378,26 @@ internal fun BinderDirectoryIcon(
                 moveTo(8.2f * unit, y)
                 cubicTo(8.2f * unit, y - unit, 11.8f * unit, y - unit, 11.8f * unit, y)
             }, color, style = Stroke(width = unit))
+        }
+    }
+}
+
+/** Bound journal with page lines, sharing the binder's monochrome outline family. */
+@Composable
+internal fun JournalDirectoryIcon(
+    color: Color,
+    modifier: Modifier = Modifier.size(17.dp),
+) {
+    Canvas(modifier) {
+        val unit = size.minDimension / 20f
+        val outline = Stroke(width = 1.3f * unit)
+        drawRoundRect(color, Offset(4f * unit, 2f * unit),
+            androidx.compose.ui.geometry.Size(13f * unit, 16f * unit),
+            CornerRadius(unit), style = outline)
+        drawLine(color, Offset(7f * unit, 2f * unit), Offset(7f * unit, 18f * unit), outline.width)
+        for (y in listOf(6f, 10f, 14f)) {
+            drawLine(color, Offset(2f * unit, y * unit), Offset(5f * unit, y * unit), outline.width)
+            drawLine(color, Offset(10f * unit, y * unit), Offset(14f * unit, y * unit), outline.width)
         }
     }
 }

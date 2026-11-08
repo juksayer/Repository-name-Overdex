@@ -9,6 +9,7 @@ sealed interface TreeNode {
 
 enum class TreeNodeIcon {
     BINDER,
+    JOURNAL,
 }
 
 data class DirectoryNode(

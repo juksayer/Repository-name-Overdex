@@ -42,7 +42,9 @@ class LauncherShortcutSettingsDeviceTest {
         compose.setContent { Handheld(controller, pointer) }
 
         // Enter settings through the launcher, without bypassing the CRT shield.
-        press("Down"); press("Down"); press("A")
+        repeat((controller.entries.size + 1) / 3) { press("Down") }
+        assertEquals("programs", controller.selectedEntry.id)
+        press("A")
         navigateListTo(controller, "settings")
         press("A")
         navigateListTo(controller, "shortcuts")

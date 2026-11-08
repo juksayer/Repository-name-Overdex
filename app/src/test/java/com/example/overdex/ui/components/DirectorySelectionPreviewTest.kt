@@ -6,10 +6,22 @@ import com.example.overdex.model.navigation.DirectoryNode
 import com.example.overdex.model.navigation.FlattenedNode
 import com.example.overdex.model.navigation.InstrumentCommand
 import com.example.overdex.model.navigation.InstrumentTree
+import com.example.overdex.model.navigation.TreeNodeIcon
 import org.junit.Assert.*
 import org.junit.Test
 
 class DirectorySelectionPreviewTest {
+    @Test fun fieldNotesIsAStandaloneWorkflowWithAJournalAndOwnedCollectionPurpose() {
+        val tree = InstrumentTree(listOf(ActionNode("Field Notes", InstrumentCommand.OpenFieldNotes, TreeNodeIcon.JOURNAL)))
+        val state = tree.getState()
+        val preview = directorySelectionPreview(state.visibleNodes, state.selectedPath)!!
+        assertEquals("field notes", preview.title)
+        assertTrue(preview.description.contains("owned collection"))
+        assertTrue(preview.entries.isEmpty())
+        assertEquals(InstrumentCommand.OpenFieldNotes, tree.executeSelected())
+        assertEquals(TreeNodeIcon.JOURNAL, state.visibleNodes.single().node.icon)
+    }
+
     @Test fun collapsedFolderShowsActualChildrenWithoutNeedingVisibleDescendants() {
         val tree = InstrumentTree(listOf(DirectoryNode("BATTLE", listOf(
             ActionNode("Current Team", InstrumentCommand.OpenCurrentTeam),

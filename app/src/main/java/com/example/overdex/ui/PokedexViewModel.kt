@@ -316,6 +316,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         listOf(
             ActionNode("Launch Droidball", InstrumentCommand.LaunchDroidball),
             ActionNode("OVERDEX", InstrumentCommand.OpenSearch),
+            ActionNode("Field Notes", InstrumentCommand.OpenFieldNotes, TreeNodeIcon.JOURNAL),
             DirectoryNode("BATTLE", listOf(
                 DirectoryNode("Add Pokémon", com.example.overdex.model.OwnedPokemonField.entries.map { field ->
                     ActionNode(field.label, InstrumentCommand.EditNewOwnedPokemon(field))

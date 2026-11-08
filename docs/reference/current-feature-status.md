@@ -15,6 +15,9 @@ confirmed results. See the [tournament implementation and acceptance record](../
 
 ## Where to find the plans
 
+- [Field notes](../plans/field-notes.md): standalone battle-haiku journal and local
+  favorites, preserving the Pokédex presentation. Personal writing and deliberate
+  exchanges between linked trainers follow in a separate slice.
 - [First-release checklist](../plans/first-release.md): October 23 scope for a
   dependable training/recording beta, with acceptance gates and release preparation.
   It limits the initial release without discarding the broader backlog.

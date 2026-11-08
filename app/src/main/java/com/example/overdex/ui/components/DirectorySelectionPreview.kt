@@ -63,6 +63,9 @@ private fun workflowPreview(node: ActionNode, title: String): DirectorySelection
         InstrumentCommand.OpenSearch ->
             "Browse Pokémon species, types, moves, and their reference cards." to
                 listOf("A open binder", "In binder: arrows browse · Select search", "A details · B return")
+        InstrumentCommand.OpenFieldNotes ->
+            "Read field notes and find matching Pokémon in your owned collection." to
+                listOf("A open · B return")
         InstrumentCommand.OpenCurrentTeam ->
             "Review your current team and edit its members or moves. Move changes keep each Pokémon’s battle history." to
                 listOf("A open", "Inside: Up / Down choose · A edit · B return")

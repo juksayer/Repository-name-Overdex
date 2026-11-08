@@ -664,6 +664,10 @@ private fun DesktopIcon(icon: OverdextopIcon, color: Color, modifier: Modifier) 
         BinderDirectoryIcon(color, modifier)
         return
     }
+    if (icon == OverdextopIcon.JOURNAL) {
+        JournalDirectoryIcon(color, modifier)
+        return
+    }
     Canvas(modifier) {
         val unit = size.minDimension / 24f
         val stroke = Stroke(width = 1.4f * unit)
@@ -742,7 +746,7 @@ private fun DesktopIcon(icon: OverdextopIcon, color: Color, modifier: Modifier) 
                 line(2f, 5f, 22f, 5f); line(2f, 12f, 22f, 12f); line(2f, 19f, 22f, 19f)
                 rect(6f, 2f, 3f, 6f); rect(15f, 9f, 3f, 6f); rect(7f, 16f, 3f, 6f)
             }
-            OverdextopIcon.BINDER -> Unit
+            OverdextopIcon.BINDER, OverdextopIcon.JOURNAL -> Unit
         }
     }
 }

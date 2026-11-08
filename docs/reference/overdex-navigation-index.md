@@ -50,7 +50,7 @@ A trackpad contact is limited to the LCD pad's measured rectangle. Leaving any
 edge cancels that contact through release, including re-entry and delivered
 historical touch samples; only a fresh contact inside can move or tap again.
 
-Programs → Settings → Shortcuts configures the 16 existing launcher destinations.
+Programs → Settings → Shortcuts configures the available launcher destinations.
 Each has independent Desktop and Programs flags, saved by HomeScreenPreferences.
 Up/Down selects the destination, Left/Right selects the location, and A changes
 that checkbox. The LCD also offers direct checkbox controls, and trackpad targets
@@ -69,6 +69,7 @@ testimony. See the [November 5 acceptance record](../verification/2026-11-05-tou
 
 | Problem or task | Start here | Trace next |
 | --- | --- | --- |
+| Field notes, haiku, journal favorites | [FieldNotesScreen](../../app/src/main/java/com/example/overdex/ui/screens/FieldNotesScreen.kt), [FieldNotesViewModel](../../app/src/main/java/com/example/overdex/ui/FieldNotesViewModel.kt) | Desktop, Programs and the root directory entry share `field_notes`. The CRT shows the journal or searchable index; LCD actions open species details or distinct owned cards. [FieldNoteRepository](../../app/src/main/java/com/example/overdex/data/FieldNoteRepository.kt) reads the unchanged bundled haiku; [FieldNoteFavoritesStore](../../app/src/main/java/com/example/overdex/data/FieldNoteFavoritesStore.kt) saves stable note IDs locally. Personal composition and linked-trainer exchange remain the [next slice](../plans/field-notes.md). |
 | Start/Stop, service return, missing recording | [PokedexViewModel](../../app/src/main/java/com/example/overdex/ui/PokedexViewModel.kt) | `startObservation`, permission transition, `deployInstrument`, `startFreshMatch`; then Droidball service/session and archive checkpoint callers. |
 | Species absent or late in HUD | [LiveOverlaySpeciesPipeline](../../app/src/main/java/com/example/overdex/battle/observation/LiveOverlaySpeciesPipeline.kt), [SpeciesCheckCoordinator](../../app/src/main/java/com/example/overdex/battle/observation/SpeciesCheckCoordinator.kt) | Check the preserved strip, raw OCR, accepted side/species, capture-to-publication delay, and Match's presentation update. The live pipeline contributes testimony; it is not presentation-only. |
 | Badge OCR versus announcement/cry identity | [PersistedSpeciesWitness](../../app/src/main/java/com/example/overdex/battle/observation/PersistedSpeciesWitness.kt), [PersistedAnnouncementSpeciesWitness](../../app/src/main/java/com/example/overdex/battle/observation/PersistedAnnouncementSpeciesWitness.kt), [DecisiveBattleCrySpeciesWitness](../../app/src/main/java/com/example/overdex/battle/observation/DecisiveBattleCrySpeciesWitness.kt) | [SpeciesTextResolver](../../app/src/main/java/com/example/overdex/battle/observation/SpeciesTextResolver.kt), [SpeciesBadgeTextLocator](../../app/src/main/java/com/example/overdex/battle/observation/SpeciesBadgeTextLocator.kt), [TeamRosterSpeciesAttributor](../../app/src/main/java/com/example/overdex/battle/observation/TeamRosterSpeciesAttributor.kt). Registration with a witness ID in the composition root determines which implementation is active. |

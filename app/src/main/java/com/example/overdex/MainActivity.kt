@@ -553,6 +553,7 @@ fun PokedexApp(
             when (command) {
                 InstrumentCommand.LaunchDroidball -> navController.navigate("droidball_readiness")
                 InstrumentCommand.OpenSearch -> navController.navigate("list")
+                InstrumentCommand.OpenFieldNotes -> navController.navigate("field_notes")
                 InstrumentCommand.OpenCollection -> navController.navigate("specimens/collection?binder=all")
                 is InstrumentCommand.OpenOwnedBinder -> {
                     navController.navigate("specimens/collection?binder=${command.binder.routeKey}")
@@ -1147,7 +1148,7 @@ fun PokedexApp(
                                     mediaManager.warmUp(it.cryUrl)
                                 }
                             }
-                            navController.navigate("detail/$id?binder=true")
+                            navController.navigate(pokemonDetailRoute(id, binderMode = true))
                         },
                         keyboardController = keyboardController,
                         onUp = { upHandler = it },
@@ -1168,17 +1169,22 @@ fun PokedexApp(
                 }
             }
             composable(
-                route = "detail/{id}?binder={binder}",
+                route = POKEMON_DETAIL_ROUTE,
                 arguments = listOf(
                     navArgument("id") { type = NavType.IntType },
                     navArgument("binder") {
                         type = NavType.BoolType
                         defaultValue = false
+                    },
+                    navArgument("origin") {
+                        type = NavType.StringType
+                        defaultValue = "list"
                     }
                 ),
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("id") ?: 0
                 val binderMode = backStackEntry.arguments?.getBoolean("binder") ?: false
+                val originRoute = backStackEntry.arguments?.getString("origin") ?: "list"
                 var pokemon by remember { mutableStateOf<Pokemon?>(null) }
 
                 LaunchedEffect(id) {
@@ -1219,19 +1225,19 @@ fun PokedexApp(
                         },
                         onMoveClick = { moveName ->
                             viewModel.updateSearchQuery(moveName)
-                            navController.debugPopBackStack()
+                            navController.openPokemonSearchFromDetail(originRoute)
                         },
                         onTypeClick = { type ->
                             viewModel.updateTypeFilter(type)
                             viewModel.updateSearchQuery(type.name)
-                            navController.debugPopBackStack()
+                            navController.openPokemonSearchFromDetail(originRoute)
                         },
                         onRegionClick = { region ->
                             viewModel.updateSearchQuery(region)
-                            navController.debugPopBackStack()
+                            navController.openPokemonSearchFromDetail(originRoute)
                         },
                         onEvolutionClick = { evolutionId ->
-                            navController.navigate("detail/$evolutionId?binder=$binderMode")
+                            navController.navigate(pokemonDetailRoute(evolutionId, binderMode, originRoute))
                         },
                         onLaunchProbe = launchAccessibilityProbe,
                         onLaunchObservatory = { navController.navigate("timeline_viewer") },
@@ -1356,6 +1362,18 @@ fun PokedexApp(
                     collectionViewModel = collectionViewModel,
                     onFinish = { navController.debugPopBackStack() },
                     onCancel = { navController.debugPopBackStack() }
+                )
+            }
+            composable("field_notes") {
+                com.example.overdex.ui.screens.FieldNotesScreen(
+                    viewModel = viewModel,
+                    filterSettings = filterSettings,
+                    onFilterSettingsChange = { filterSettings = it },
+                    // Binder mode returns directly to the Pokédex list; journal links
+                    // use the ordinary back stack so B returns to these field notes.
+                    onOpenSpecies = { id -> navController.navigate(pokemonDetailRoute(id, originRoute = "field_notes")) },
+                    onOpenOwned = { id -> navController.navigate("specimens/detail/${android.net.Uri.encode(id)}") },
+                    onBack = { navController.debugPopBackStack() },
                 )
             }
             composable("binders") {
@@ -1863,6 +1881,19 @@ fun PokedexApp(
                 }
             }
         }
+    }
+}
+
+internal const val POKEMON_DETAIL_ROUTE = "detail/{id}?binder={binder}&origin={origin}"
+
+internal fun pokemonDetailRoute(id: Int, binderMode: Boolean = false, originRoute: String = "list"): String =
+    "detail/$id?binder=$binderMode&origin=${if (originRoute == "field_notes") "field_notes" else "list"}"
+
+/** Show a requested filter, removing evolution pages while retaining the journal beneath results. */
+internal fun androidx.navigation.NavController.openPokemonSearchFromDetail(originRoute: String) {
+    navigate("list") {
+        popUpTo(if (originRoute == "field_notes") "field_notes" else "list") { inclusive = false }
+        launchSingleTop = true
     }
 }
 

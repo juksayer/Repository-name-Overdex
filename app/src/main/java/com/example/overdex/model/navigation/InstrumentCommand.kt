@@ -9,6 +9,7 @@ sealed interface InstrumentCommand {
     /** Deploy Droidball and begin the pre-battle assistance session. */
     data object LaunchDroidball : InstrumentCommand
     data object OpenSearch : InstrumentCommand
+    data object OpenFieldNotes : InstrumentCommand
     data object OpenCollection : InstrumentCommand
     data class OpenOwnedBinder(val binder: OwnedPokemonBinder) : InstrumentCommand
     data object ManageBinders : InstrumentCommand

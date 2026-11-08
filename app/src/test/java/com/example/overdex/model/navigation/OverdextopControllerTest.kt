@@ -26,10 +26,12 @@ class OverdextopControllerTest {
         assertEquals("pokedex", controller.selectedEntry.id)
     }
 
-    @Test fun `the programs row is reachable from every bottom column and preserves that column`() {
+    @Test fun `the seventh pin leads to programs and returns through the partial last row`() {
         for (id in listOf("binders", "match_history", "explorer")) {
             val controller = OverdextopController()
             assertTrue(controller.select(id))
+            controller.move(OverdextopDirection.DOWN)
+            assertEquals("field_notes", controller.selectedEntry.id)
             controller.move(OverdextopDirection.DOWN)
             assertEquals("programs", controller.selectedEntry.id)
             controller.move(OverdextopDirection.LEFT)
@@ -37,7 +39,9 @@ class OverdextopControllerTest {
             controller.move(OverdextopDirection.DOWN)
             assertEquals("programs", controller.selectedEntry.id)
             controller.move(OverdextopDirection.UP)
-            assertEquals(id, controller.selectedEntry.id)
+            assertEquals("field_notes", controller.selectedEntry.id)
+            controller.move(OverdextopDirection.UP)
+            assertEquals("binders", controller.selectedEntry.id)
         }
     }
 
@@ -109,6 +113,7 @@ class OverdextopControllerTest {
             "current_team" to InstrumentCommand.OpenCurrentTeam,
             "binders" to InstrumentCommand.OpenOwnedBinder(OwnedPokemonBinder.ALL),
             "match_history" to InstrumentCommand.OpenBattleHistory,
+            "field_notes" to InstrumentCommand.OpenFieldNotes,
         )
         for ((id, command) in expected) {
             controller.select(id)
@@ -124,5 +129,7 @@ class OverdextopControllerTest {
         assertEquals(OverdextopAction.OpenProgram(InstrumentCommand.OpenMatchCalibration), controller.confirm())
         controller.select("crop_calibration")
         assertEquals(OverdextopAction.OpenProgram(InstrumentCommand.OpenDirectoryCalibration), controller.confirm())
+        controller.select("field_notes")
+        assertEquals(OverdextopAction.OpenProgram(InstrumentCommand.OpenFieldNotes), controller.confirm())
     }
 }

@@ -40,7 +40,7 @@ data class LauncherShortcutConfiguration(
 }
 enum class OverdextopIcon {
     DROIDBALL, POKEDEX, TEAM, BINDER, HISTORY, EXPLORER, PROGRAMS,
-    RECORDS, REPLAY, TOURNAMENT, PROFILE, RESEARCH, CALIBRATION, SETTINGS,
+    RECORDS, REPLAY, TOURNAMENT, PROFILE, RESEARCH, CALIBRATION, SETTINGS, JOURNAL,
 }
 
 sealed interface OverdextopAction {
@@ -80,10 +80,11 @@ object OverdextopCatalog {
     private val currentTeam = program("current_team", "current team", "Choose your battle team and edit its moves.", OverdextopIcon.TEAM, InstrumentCommand.OpenCurrentTeam)
     private val binders = program("binders", "binders", "Browse your owned Pokémon cards.", OverdextopIcon.BINDER, InstrumentCommand.OpenOwnedBinder(OwnedPokemonBinder.ALL))
     private val history = program("match_history", "match history", "Review saved battles, summaries, and replays.", OverdextopIcon.HISTORY, InstrumentCommand.OpenBattleHistory)
+    private val fieldNotes = program("field_notes", "field notes", "Read field notes and find the Pokémon in your collection.", OverdextopIcon.JOURNAL, InstrumentCommand.OpenFieldNotes)
     private val explorer = OverdextopEntry("explorer", "explorer", "Browse the complete directory tree.", OverdextopIcon.EXPLORER, OverdextopAction.OpenExplorer)
     private val settings = OverdextopEntry("settings", "settings", "Choose the home screen and where program shortcuts appear.", OverdextopIcon.SETTINGS, OverdextopAction.OpenSettings)
     private val programsEntry = OverdextopEntry("programs", "programs", "Open your programs and settings.", OverdextopIcon.PROGRAMS, OverdextopAction.OpenPrograms)
-    private val defaultDesktopIds = setOf("droidball", "pokedex", "current_team", "binders", "match_history", "explorer")
+    private val defaultDesktopIds = setOf("droidball", "pokedex", "current_team", "binders", "match_history", "explorer", "field_notes")
 
     val desktop: List<OverdextopEntry> get() = desktopEntries(LauncherShortcutConfiguration())
     val programs: List<OverdextopEntry> get() = programEntries(LauncherShortcutConfiguration())
@@ -101,7 +102,7 @@ object OverdextopCatalog {
         program("intueor", "intueor", "Inspect battle signals and recording evidence.", OverdextopIcon.RESEARCH, InstrumentCommand.OpenSignalObservatory),
         program("match_calibration", "match calibration", "Position battle crops and manage device profiles.", OverdextopIcon.CALIBRATION, InstrumentCommand.OpenMatchCalibration),
         program("crop_calibration", "crop previews", "Review captured battle crops in the LCD.", OverdextopIcon.CALIBRATION, InstrumentCommand.OpenDirectoryCalibration),
-        explorer, settings,
+        explorer, fieldNotes, settings,
     )
 
     val settingsEntries: List<OverdextopEntry> = listOf(
