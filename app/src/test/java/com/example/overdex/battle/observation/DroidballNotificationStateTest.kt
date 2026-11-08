@@ -4,6 +4,23 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DroidballNotificationStateTest {
+    @Test fun notificationStartImmediatelyRequestsTheNormalScreenCaptureFlow() {
+        var permissionRequests = 0
+        requestDroidballNotificationStart(request = 1, sessionActive = false) {
+            // MainActivity supplies the ordinary startObservation action, which
+            // opens fresh Android capture consent. No readiness-page tap follows.
+            permissionRequests++
+        }
+        assertEquals(1, permissionRequests)
+    }
+
+    @Test fun ordinaryAppOpenAndAnAlreadyRunningSessionDoNotRequestCaptureAgain() {
+        var permissionRequests = 0
+        requestDroidballNotificationStart(request = 0, sessionActive = false) { permissionRequests++ }
+        requestDroidballNotificationStart(request = 1, sessionActive = true) { permissionRequests++ }
+        assertEquals(0, permissionRequests)
+    }
+
     @Test fun stoppedCaptureOffersStartAndReturnWithoutKeepingAServiceAlive() {
         assertEquals(listOf(DroidballNotificationControl.START, DroidballNotificationControl.OVERDEX),
             droidballNotificationControls(sessionActive = false, registrationMode = false, matchId = null))

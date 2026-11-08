@@ -25,6 +25,15 @@ internal const val DROIDBALL_NEXT_ACTION = "com.example.overdex.DROIDBALL_NEXT"
 
 internal enum class DroidballNotificationControl { START, STOP, NEXT_MATCH, OVERDEX }
 
+/** The notification tap is the app's launch request; Android still asks for capture consent. */
+internal fun requestDroidballNotificationStart(
+    request: Int,
+    sessionActive: Boolean,
+    startObservation: () -> Unit,
+) {
+    if (request > 0 && !sessionActive) startObservation()
+}
+
 internal fun droidballNotificationTargetsCurrentSession(
     requestedSessionId: String?, activeSessionId: String,
     requestedMatchId: String?, activeMatchId: String?,

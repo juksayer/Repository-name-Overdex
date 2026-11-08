@@ -518,9 +518,14 @@ fun PokedexApp(
     )
 
     LaunchedEffect(notificationStartRequest) {
-        if (notificationStartRequest > 0 && !DroidballService.isRunning()) {
+        com.example.overdex.battle.observation.requestDroidballNotificationStart(
+            notificationStartRequest, DroidballService.isRunning(),
+        ) {
             viewModel.markBooted()
-            navController.navigate("droidball_readiness") { launchSingleTop = true }
+            // Start was already explicit in the notification. Use the same
+            // deployment path as the readiness screen's Launch action, without
+            // making the user confirm that app-level request a second time.
+            viewModel.startObservation()
         }
     }
 
