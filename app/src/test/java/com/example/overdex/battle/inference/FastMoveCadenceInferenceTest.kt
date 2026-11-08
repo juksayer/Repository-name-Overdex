@@ -1596,6 +1596,46 @@ class FastMoveCadenceInferenceTest {
     }
 
     @Test
+    fun `delayed Get Ready cannot erase cadence witnessed after a newer charge impact`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(article("used", com.example.overdex.battle.custody.ChargeMoveUsedAnnounced)
+            .copy(monotonicTimeNanos = 10_000_000_000L))
+        assertTrue(engine.accept(fastUseAt("resumed1", 12_000_000_000L)).isEmpty())
+        assertTrue(engine.accept(fastUseAt("resumed2", 12_500_000_000L)).isEmpty())
+
+        // The higher QTE crop was waiting while the independent announcement
+        // lane already read the closing cue. Its actual old clock is retained.
+        val delayed = article("retained-ready", com.example.overdex.battle.custody.GetReadyWitnessed)
+            .copy(monotonicTimeNanos = 8_000_000_000L)
+        assertTrue(engine.accept(delayed).isEmpty())
+        val result = engine.accept(fastUseAt("resumed3", 13_000_000_000L))
+            .single { it.payload is FastMoveIdentified }
+        assertEquals("Water Gun", (result.payload as FastMoveIdentified).moveName)
+        assertEquals(8_000_000_000L, delayed.monotonicTimeNanos)
+        assertTrue(result.predecessorIds.containsAll(listOf(ArticleId("resumed1"), ArticleId("resumed2"), ArticleId("resumed3"))))
+    }
+
+    @Test
+    fun `delayed older impact cannot reopen a newer charged phase to fast cadence`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        engine.accept(article("ready", com.example.overdex.battle.custody.GetReadyWitnessed)
+            .copy(monotonicTimeNanos = 20_000_000_000L))
+        engine.accept(article("older-used", com.example.overdex.battle.custody.ChargeMoveUsedAnnounced)
+            .copy(monotonicTimeNanos = 10_000_000_000L))
+        val qteNoise = (0..2).flatMap { index ->
+            engine.accept(fastUseAt("qte-$index", 23_000_000_000L + index * 500_000_000L))
+        }
+        assertTrue(qteNoise.none { it.payload is FastMoveIdentified })
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.identifiedMoveName)
+        val resumed = (0..2).flatMap { index ->
+            engine.accept(fastUseAt("resumed-$index", 29_000_000_000L + index * 500_000_000L))
+        }
+        assertEquals("Water Gun", (resumed.single { it.payload is FastMoveIdentified }.payload as FastMoveIdentified).moveName)
+    }
+
+    @Test
     fun `missed half second hits cannot turn Water Gun into Powder Snow after a charge`() = runBlocking {
         val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
         engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))

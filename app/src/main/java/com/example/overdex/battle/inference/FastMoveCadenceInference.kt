@@ -163,6 +163,7 @@ class FastMoveCadenceInference(
     // has its own source instant. An early flash must not redate a later HP loss.
     private val rawImpactArticles = linkedMapOf<ArticleId, RealityArticle>()
     private var cadenceFloorNanos = Long.MIN_VALUE
+    private var latestChargeCueAtNanos = Long.MIN_VALUE
     private val audioIdentityGate = FastMoveListeningGate()
     private val audioPreferences = FastMoveAudioPreferenceTracker()
     private var latestEvidenceAtNanos = Long.MIN_VALUE
@@ -241,8 +242,15 @@ class FastMoveCadenceInference(
             else -> null
         }
         if (chargeGuard != null) {
+            val sourceAt = article.monotonicTimeNanos ?: return emptyList()
+            // The two transient OCR crops have independent admission delays.
+            // A retained Get Ready frame can arrive after its used-move cue;
+            // keep that historical testimony without resetting the cadence
+            // accumulated after the newer phase boundary, or moving its floor.
+            if (sourceAt <= latestChargeCueAtNanos) return emptyList()
+            latestChargeCueAtNanos = sourceAt
             audioPreferences.clear()
-            article.monotonicTimeNanos?.let { cadenceFloorNanos = it + chargeGuard }
+            cadenceFloorNanos = sourceAt + chargeGuard
             states.values.forEach {
                 it.cadenceEvidence.clear()
                 it.lastDirectUseArticles.clear()

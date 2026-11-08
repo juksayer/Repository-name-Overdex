@@ -26,10 +26,9 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicReference
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
-/** Reads the latest preserved announcement crop selected after shared OCR admission. */
+/** Retains brief visual text episodes and selects preserved pixels after shared OCR admission. */
 class PersistedAnnouncementWitness internal constructor(
     private val reader: AnnouncementCropReader,
     private val now: () -> Long = System::nanoTime,
@@ -53,12 +52,13 @@ class PersistedAnnouncementWitness internal constructor(
         val rawSourceId = SourceId("${observerId.id}_OCR")
         val heightProfile = OcrHeightProfile(OcrField.ANNOUNCEMENT)
         scope = CoroutineScope(dispatcher + SupervisorJob()).also { witnessScope ->
-            // This bounds scheduling to one artifact reference. Replaced or
-            // out-of-order crops remain immutable Articles in the Timeline.
-            val pending = AtomicReference(PendingAnnouncement())
+            // Keep only bounded artifact references, never queued Bitmaps or
+            // unbounded native requests. Probe results are scheduling hints;
+            // only OCR of the selected preserved crop can produce testimony.
+            val pending = PendingAnnouncementCrops()
             val wake = Channel<Unit>(Channel.CONFLATED)
             witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
-                pending.updateAndGet { it.copy(article = null) }
+                pending.clear()
                 wake.close()
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -69,33 +69,40 @@ class PersistedAnnouncementWitness internal constructor(
                     val capturedAt = article.monotonicTimeNanos ?: return@collect
                     if (capturedAt <= lastOfferedAt) return@collect
                     lastOfferedAt = capturedAt
-                    // Keep the replacement count and selected reference in one
-                    // atomic state, including when admission races this offer.
-                    pending.updateAndGet {
-                        PendingAnnouncement(article, it.replacedTotal + if (it.article == null) 0 else 1)
+                    val visual = try { reader.inspect(article) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) {
+                        Log.w("ANNOUNCEMENT", "Visual scheduling probe failed; retaining latest fallback", error)
+                        null
                     }
+                    currentCoroutineContext().ensureActive()
+                    pending.offer(article, visual)
                     wake.trySend(Unit)
                 }
             }
             witnessScope.launch {
                 val speciesNames = match.pokemonKnowledge.getAllSpeciesNames()
                 for (signal in wake) {
-                    while (pending.get().article != null) {
+                    while (pending.hasPending(now())) {
                         val queuedAt = now()
                         var admittedAt = queuedAt
                         var sample: RealityArticle? = null
                         var nativeReadNanos = 0L
                         var passes = 0
                         var replacedAtSelection = 0L
+                        var selection: PendingAnnouncementCrops.Selection? = null
                         val readings = try {
                             reader.withReadingTurn(OcrPriority.TRANSIENT) { turn ->
                                 currentCoroutineContext().ensureActive()
                                 admittedAt = now()
-                                // Do not choose or load an image while this turn
-                                // is still queued behind another OCR consumer.
-                                val selected = pending.getAndUpdate { it.copy(article = null) }
-                                val article = selected.article
+                                // Native recognition still chooses its crop
+                                // only after admission. The cheap visual probe
+                                // has retained brief messages that a newer blank
+                                // frame must not erase while this turn waits.
+                                val selected = pending.select(admittedAt)
                                     ?: return@withReadingTurn emptyList()
+                                selection = selected
+                                val article = selected.article
                                 sample = article
                                 replacedAtSelection = selected.replacedTotal
                                 try { turn.recognize(article, heightProfile) } finally {
@@ -125,12 +132,22 @@ class PersistedAnnouncementWitness internal constructor(
                                 "processingMs=${(completedAt - admittedAt) / 1_000_000} " +
                                 "totalMs=${(completedAt - capturedAt) / 1_000_000} " +
                                 "passes=$passes replacedPendingTotal=$replacedAtSelection " +
-                                "pending=${if (pending.get().article == null) 0 else 1} " +
+                                "selection=${selection?.kind} buffered=${selection?.pendingCount ?: 0} " +
+                                "coalescedTotal=${selection?.coalescedTotal ?: 0} " +
+                                "overflowTotal=${selection?.overflowTotal ?: 0} expiredTotal=${selection?.expiredTotal ?: 0} " +
+                                "pending=${if (pending.hasPending(completedAt)) 1 else 0} " +
                                 "nonblank=${readings.any { it.rawText.isNotBlank() }}"),
                             article.perceivedAt, null, emptyList(), capturedAt,
                         )
                         // Failed/missing artifacts have no reading to report.
-                        if (readings.isEmpty()) continue
+                        if (readings.isEmpty()) {
+                            selection?.let(pending::failed)
+                            continue
+                        }
+                        selection?.let {
+                            if (readings.none { reading -> reading.rawText.isNotBlank() }) pending.failed(it)
+                            else pending.succeeded(it)
+                        }
                         val context = OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds)
                         var acceptedText = ""
                         val references = mutableListOf(article.id.value)
@@ -163,11 +180,12 @@ class PersistedAnnouncementWitness internal constructor(
         val ENTRY = Regex("^Go,\\s+(.+?)[!.]?$", RegexOption.IGNORE_CASE)
     }
 
-    private data class PendingAnnouncement(val article: RealityArticle? = null, val replacedTotal: Long = 0)
 }
 
 /** The backend grants a turn before the witness chooses its current crop. */
 internal interface AnnouncementCropReader {
+    /** Non-semantic pixel ranking, outside the shared native OCR turn. Null retains the latest fallback. */
+    suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = null
     suspend fun <T> withReadingTurn(priority: OcrPriority, block: suspend (AnnouncementCropReadingTurn) -> T): T
 }
 
@@ -178,6 +196,19 @@ internal interface AnnouncementCropReadingTurn {
 }
 
 private class ArtifactAnnouncementCropReader(private val artifactStore: FileCropArtifactStore) : AnnouncementCropReader {
+    override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
+        val crop = article.payload as CropCaptured
+        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        try {
+            val pixels = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+            val excluded = crop.overlayBounds?.let {
+                listOf(TransientTextProbe.PixelBounds(kotlin.math.floor(it.left).toInt(),
+                    kotlin.math.floor(it.top).toInt(), kotlin.math.ceil(it.right).toInt(), kotlin.math.ceil(it.bottom).toInt()))
+            }.orEmpty()
+            TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height, excluded)
+        } finally { bitmap.recycle() }
+    }
     override suspend fun <T> withReadingTurn(
         priority: OcrPriority,
         block: suspend (AnnouncementCropReadingTurn) -> T,

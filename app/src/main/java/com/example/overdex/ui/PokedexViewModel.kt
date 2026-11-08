@@ -254,7 +254,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     /** A Match record is retained once, whether it ends by a result or capture stops early. */
     private val retainedMatchIds = Collections.synchronizedSet(mutableSetOf<String>())
     // Accessed on the UI collector; only waiting refresh jobs are cancelled, never a write.
-    private val resultMusicArchiveRefreshes = mutableMapOf<String, Job>()
+    private val completedEvidenceArchiveRefreshes = mutableMapOf<String, Job>()
 
     private val _activeMatch = MutableStateFlow<Match?>(null)
     val activeMatch = _activeMatch.asStateFlow()
@@ -539,17 +539,18 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 }
                 if (article.payload is MatchEnded) retainAndArchiveMatch(match, "result witnessed",
                     awaitAcceptedEvidence = true, releaseAfterArchive = false)
-                // Result music and OCR can arrive seconds apart. Preserve late comparisons
-                // in the same completed archive instead of losing them after the first save.
-                if ((article.payload is com.example.overdex.battle.custody.MatchResultMusicMeasured ||
-                    article.payload is com.example.overdex.battle.custody.MatchResultMusicCompared) &&
-                    retainedMatchIds.contains(match.matchId)) {
-                    resultMusicArchiveRefreshes.remove(match.matchId)?.cancel()
-                    resultMusicArchiveRefreshes[match.matchId] = viewModelScope.launch {
+                // Result OCR can beat a retained finishing banner/QTE crop or
+                // result music through recognition. Refresh this same ledger
+                // after useful testimony settles; blank crops and diagnostics
+                // must not keep postponing the save.
+                if (retainedMatchIds.contains(match.matchId) &&
+                    com.example.overdex.battle.archive.shouldRefreshCompletedMatchArchive(article, MatchId(match.matchId))) {
+                    completedEvidenceArchiveRefreshes.remove(match.matchId)?.cancel()
+                    completedEvidenceArchiveRefreshes[match.matchId] = viewModelScope.launch {
                         delay(300)
-                        resultMusicArchiveRefreshes.remove(match.matchId)
+                        completedEvidenceArchiveRefreshes.remove(match.matchId)
                         archiveCompletedMatch(MatchArchiveSource(MatchId(match.matchId), match.realityTimeline),
-                            "result music evidence")
+                            "late completed-match evidence", match, releaseDrainingMatch = false)
                     }
                 }
             }

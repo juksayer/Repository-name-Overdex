@@ -1,0 +1,66 @@
+{
+  "captureDay": "2026-11-07",
+  "derivation": "Uniform point sampling; only thresholded neutral/yellow foreground coordinates retained. No RGB pixels, device UI, account data, or capture timestamps retained. Reconstructed tests use white ink on navy. These are glyph geometry fixtures, not original RGB or semantic OCR acceptance tests.",
+  "sources": [
+    {
+      "fixture": "get-ready-announcement.mask",
+      "sourceFile": "get-ready-announcement-exact.png",
+      "sourcePngSha256": "9d73028ca5cbc91d450f8be62998fddf64e99926a40612d20d3fa9b41fa950d7",
+      "sourceWidth": 572,
+      "sourceHeight": 49,
+      "sampleStep": 2,
+      "maskWidth": 286,
+      "maskHeight": 25
+    },
+    {
+      "fixture": "get-ready-qte.mask",
+      "sourceFile": "get-ready-qte-exact.png",
+      "sourcePngSha256": "22a0ce11d8ace6363a5ee9816fd099b1fc0444d78a4bafdab191e96b3dfba541",
+      "sourceWidth": 511,
+      "sourceHeight": 112,
+      "sampleStep": 2,
+      "maskWidth": 256,
+      "maskHeight": 56
+    },
+    {
+      "fixture": "nice-announcement.mask",
+      "sourceFile": "nice-announcement-exact.png",
+      "sourcePngSha256": "bb952659750e350c97ac232d316cc0bac67431544847072a882180865615213d",
+      "sourceWidth": 572,
+      "sourceHeight": 49,
+      "sampleStep": 2,
+      "maskWidth": 286,
+      "maskHeight": 25
+    },
+    {
+      "fixture": "nice-qte.mask",
+      "sourceFile": "nice-qte-exact.png",
+      "sourcePngSha256": "b7c9660fb25d255e32f69939df830cb2f512797fef56ef557d9558d9f603a7ac",
+      "sourceWidth": 511,
+      "sourceHeight": 112,
+      "sampleStep": 2,
+      "maskWidth": 256,
+      "maskHeight": 56
+    },
+    {
+      "fixture": "rock-tomb-announcement.mask",
+      "sourceFile": "rock-tomb-announcement-exact.png",
+      "sourcePngSha256": "34a0da79dc7e38cd47d5f3569cd01b8257d84c7a8c914b058a49146d3a275ab2",
+      "sourceWidth": 572,
+      "sourceHeight": 49,
+      "sampleStep": 2,
+      "maskWidth": 286,
+      "maskHeight": 25
+    },
+    {
+      "fixture": "rock-tomb-qte.mask",
+      "sourceFile": "rock-tomb-qte-exact.png",
+      "sourcePngSha256": "d0e3f025f24a5a0a61a78c4dca189841cef2f627832ead02a76fbab319202a5a",
+      "sourceWidth": 511,
+      "sourceHeight": 112,
+      "sampleStep": 2,
+      "maskWidth": 256,
+      "maskHeight": 56
+    }
+  ]
+}

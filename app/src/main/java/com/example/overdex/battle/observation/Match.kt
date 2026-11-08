@@ -503,14 +503,17 @@ class Match(
                 ) {
                     _activeHpCropArticles.tryEmit(article)
                 }
-                if (article.payload is ActivePokemonSpeciesWitnessed ||
+                if (!matchEndRecorded && (article.payload is ActivePokemonSpeciesWitnessed ||
                     article.payload is AttackIncoming ||
                     article.payload is GetReadyWitnessed ||
                     article.payload is ChargeMoveUsedAnnounced
-                ) {
+                )) {
                     // Presentation is allowed to react immediately to accepted
                     // evidence. The ViewModel receives the matching signal to
                     // preserve the separate BattleOverlayOpened article.
+                    // Buffered text may describe the finishing QTE after its
+                    // result was already published. Preserve that testimony
+                    // below without reopening the completed battle's live HUD.
                     DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.BattleHudWitnessed)
                 }
@@ -618,8 +621,10 @@ class Match(
                 }
 
                 (article.payload as? CountdownGlyphWitnessed)?.let { glyph ->
-                    DroidballOverlayPresentation.showBattleHud()
-                    DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
+                    if (!matchEndRecorded) {
+                        DroidballOverlayPresentation.showBattleHud()
+                        DroidballService.emitSignal(DroidballSignal.CountdownWitnessed(glyph.glyph))
+                    }
                     // A countdown-shaped battlefield animation may fool this
                     // crop later in combat. It may still remain raw visual
                     // testimony, but it must not open a new battle-cry window.
@@ -630,12 +635,12 @@ class Match(
                     }
                     Log.d("COUNTDOWN_SLICE", "Countdown glyph article received: articleId=${article.id.value}, value=${glyph.glyph}")
                 }
-                if (article.payload is VsScreenWitnessed) {
+                if (!matchEndRecorded && article.payload is VsScreenWitnessed) {
                     DroidballOverlayPresentation.showBattleHud()
                     DroidballService.emitSignal(DroidballSignal.VsScreenWitnessed)
                 }
                 val announcement = (article.payload as? RawTestimony)?.data as? String
-                if (article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
+                if (!matchEndRecorded && article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
                     announcement?.trim()?.uppercase()?.startsWith("GO,") == true
                 ) {
                     DroidballOverlayPresentation.showBattleHud()

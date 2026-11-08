@@ -12,17 +12,17 @@ import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.RecognitionResult
 import com.example.overdex.model.observation.SessionSource
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.time.Duration.Companion.milliseconds
 
 class AnnouncementWitnessTest {
 
@@ -58,29 +58,31 @@ class AnnouncementWitnessTest {
         )
 
         // Act
-        witness.start(match)
-        delay(100.milliseconds)
-        
-        input.triggerFrame()
-        delay(100.milliseconds)
+        try {
+            witness.start(match)
+            input.triggerFrame()
 
-        // Assert
-        val records = custody.getRecords()
-        
-        // 1. Availability Signal
-        assertTrue("Start availability record missing", records.any { it is SourceAvailabilityRecord && it.available })
-        
-        // 2. Input Availability Signal
-        assertTrue("Input availability record missing", records.any { it is SourceInputRecord && it.available })
+            // triggerFrame waits for the subscription and its suspending
+            // callback. Elapsed sleeps cannot prove either under CPU pressure.
+            val records = custody.getRecords()
 
-        // 3. Neutral Testimony
-        val testimony = records.filterIsInstance<TestimonyRecord>()
-        assertEquals("Should submit exactly one testimony", 1, testimony.size)
-        assertEquals(SourceId("TEST_ANNOUNCEMENT"), testimony[0].sourceId)
-        assertEquals(RawTestimony("GO, PIKACHU!"), testimony[0].payload)
-        assertEquals(null, testimony[0].confidence)
-        
-        match.release()
+            // 1. Availability Signal
+            assertTrue("Start availability record missing", records.any { it is SourceAvailabilityRecord && it.available })
+
+            // 2. Input Availability Signal
+            assertTrue("Input availability record missing", records.any { it is SourceInputRecord && it.available })
+
+            // 3. Neutral Testimony
+            val testimony = records.filterIsInstance<TestimonyRecord>()
+            assertEquals("Should submit exactly one testimony", 1, testimony.size)
+            assertEquals(SourceId("TEST_ANNOUNCEMENT"), testimony[0].sourceId)
+            assertEquals(RawTestimony("GO, PIKACHU!"), testimony[0].payload)
+            assertEquals(null, testimony[0].confidence)
+
+        } finally {
+            witness.stop()
+            match.release()
+        }
     }
 
     // --- Fakes ---
@@ -88,19 +90,18 @@ class AnnouncementWitnessTest {
     private class FakeInput : ObservationInput {
         override val source = SessionSource.LIVE_CAPTURE
         private var callback: (suspend (Bitmap) -> Unit)? = null
+        private val subscribed = CompletableDeferred<Unit>()
 
         override suspend fun supply(onVisualData: suspend (Bitmap) -> Unit) {
             callback = onVisualData
+            subscribed.complete(Unit)
         }
 
         suspend fun triggerFrame() {
-            try {
-                @Suppress("UNCHECKED_CAST")
-                val raw = callback as? (suspend (Bitmap?) -> Unit)
-                raw?.invoke(null)
-            } catch (e: Throwable) {
-                // Ignore JVM cast issues
-            }
+            withTimeout(5_000) { subscribed.await() }
+            @Suppress("UNCHECKED_CAST")
+            val raw = requireNotNull(callback) as (suspend (Bitmap?) -> Unit)
+            raw.invoke(null)
         }
     }
 

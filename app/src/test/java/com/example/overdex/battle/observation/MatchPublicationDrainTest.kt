@@ -13,6 +13,48 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MatchPublicationDrainTest {
+    @Test fun `historical charge cues remain preserved after result without reopening the live HUD`() = runBlocking {
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("late-charge-after-result", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = FakePokemonKnowledge())
+        DroidballOverlayPresentation.reset()
+        try {
+            custody.submitTestimony(SourceId("GET_READY_WITNESS"), GetReadyWitnessed,
+                1_000L, null, listOf("opening-ready-crop"), 1_000_000_000L)
+            withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
+            assertEquals(DroidballOverlayMode.BATTLE_HUD, DroidballOverlayPresentation.mode.value)
+
+            custody.submitTestimony(SourceId("YOU_WIN_WITNESS"), RawTestimony("YOU WIN!"),
+                20_000L, null, listOf("result-crop"), 20_000_000_000L)
+            withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
+            assertEquals(1, timeline.getArticles().count { it.payload is MatchEnded })
+            DroidballOverlayPresentation.showSessionPhase(DroidballSessionPhase.RESULT)
+
+            val delayed = listOf(
+                SourceId("GET_READY_WITNESS") to GetReadyWitnessed,
+                SourceId("ATTACK_INCOMING_WITNESS") to AttackIncoming,
+                SourceId("CHARGE_MOVE_USED_ANNOUNCEMENT_WITNESS") to ChargeMoveUsedAnnounced,
+                SourceId("ANNOUNCEMENT_WITNESS") to RawTestimony("Go, Pikachu!"),
+                SourceId(BattleWitnessContracts.countdownGlyph.witnessId) to CountdownGlyphWitnessed("GO", .99f, 1),
+                SourceId("VS_SCREEN_WITNESS") to VsScreenWitnessed,
+            ).mapIndexed { index, (source, payload) ->
+                custody.submitTestimony(source, payload, 10_000L + index,
+                    null, listOf("retained-crop-$index"), 10_000_000_000L + index)
+            }
+            withTimeout(5_000) { match.awaitAcceptedEvidencePublished() }
+            assertEquals(DroidballOverlayMode.RESULT, DroidballOverlayPresentation.mode.value)
+            delayed.forEach { record ->
+                val article = timeline.getArticles().single { it.sequenceNumber == record.sequenceNumber }
+                assertEquals(record.payload, article.payload)
+                assertEquals(record.sourceId, article.sourceId)
+                assertEquals(record.timestamp, article.perceivedAt)
+                assertEquals(record.monotonicTimeNanos, article.monotonicTimeNanos)
+                assertEquals(record.evidenceReferences, article.evidenceReferences)
+            }
+        } finally { match.release(); DroidballOverlayPresentation.reset() }
+    }
+
     @Test fun `immediate drain preserves accepted burst stop reason and offline testimony`() = runBlocking {
         val custody = InMemoryTestimonyCustody()
         val timeline = InMemoryRealityTimeline()
