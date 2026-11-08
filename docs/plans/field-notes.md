@@ -18,7 +18,22 @@ entry ID. That ID also appears on the journal page and can be searched directly;
 it does not change when the favorites filter changes the page counter.
 See the [index follow-up checks](../verification/2026-11-08-field-notes-index.md).
 
-## Next slice: personal writing and trainer exchange
+## Personal writing and syllable notes
+
+The local composer uses the existing LCD keyboard, with lowercase prose,
+punctuation/numbers on Select, and a case switch. Title, poem lines, lesson and
+author are editable. An unfinished draft is autosaved; returning to the directory
+flushes the last keystroke before navigation. Notes require a title and one poem
+line, without enforcing 5/7/5. Species comes from the selected journal page.
+
+Saved personal entries have permanent IDs and revisions. Editing retains their
+identity, creation time and favorites. A syllable suggestion is a separate local
+annotation against an entry ID, revision, line number and original line; optional
+count, pronunciation and replacement wording do not change the original poem.
+The personal journal lives in Android's no-backup directory rather than cloud
+backup. Bundled entries and the original source remain unchanged.
+
+## Trainer exchange
 
 The trainer's own haiku are stored locally. This is a personal notebook with
 deliberate exchanges between linked trainers, rather than a public submission
@@ -39,5 +54,5 @@ queue. There is no inactive submit button in the first slice.
 - A local save is not a delivered submission. Show transfer state and failure
   honestly. Sharing remains an explicit trainer action; no automatic broadcasts.
 
-Composition and trainer exchange require their own implementation and validation.
-The first slice does not publish notes, send messages, or add cloud access rules.
+Trainer exchange requires its own implementation and validation. Local writing
+does not publish notes, send messages, or add cloud access rules.

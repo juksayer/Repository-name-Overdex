@@ -54,6 +54,7 @@ import coil.compose.AsyncImage
 import com.example.overdex.media.FieldNotesPageTurnSound
 import com.example.overdex.model.FieldNoteJournalEntry
 import com.example.overdex.model.OwnedPokemon
+import com.example.overdex.model.SyllableCorrection
 import com.example.overdex.ui.FieldNotesViewModel
 import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
@@ -90,6 +91,14 @@ fun FieldNotesScreen(
     val loading by journal.loading.collectAsState()
     val loadError by journal.loadError.collectAsState()
     val saveError by journal.saveError.collectAsState()
+    val local by journal.localState.collectAsState()
+    val draft by journal.draft.collectAsState()
+    val busy by journal.busy.collectAsState()
+    val editorMessage by journal.editorMessage.collectAsState()
+    var editorOpen by rememberSaveable { mutableStateOf(false) }
+    var correctionOpen by rememberSaveable { mutableStateOf(false) }
+    var mineOnly by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedNoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
     var indexOpen by rememberSaveable { mutableStateOf(false) }
@@ -107,8 +116,9 @@ fun FieldNotesScreen(
     DisposableEffect(pageSound) { onDispose { pageSound.release() } }
     fun playPageTurn() { if (onPageTurn != null) onPageTurn() else pageSound.turn() }
 
-    val pages = remember(entries, favorites, favoritesOnly) {
-        if (favoritesOnly) entries.filter { it.note.id in favorites } else entries
+    val pages = remember(entries, favorites, favoritesOnly, mineOnly, local.notes) {
+        val mine = local.notes.filter { !it.received }.map { it.id }.toSet()
+        entries.filter { (!favoritesOnly || it.note.id in favorites) && (!mineOnly || it.note.id in mine) }
     }
     val current = pages.firstOrNull { it.note.id == selectedNoteId } ?: pages.firstOrNull()
     val pageIndex = pages.indexOf(current)
@@ -120,6 +130,26 @@ fun FieldNotesScreen(
     // This is the raw owned-card stream, independent of any binder's search/filter state.
     val matchingOwned = remember(owned, displayed?.speciesId) {
         owned.filter { it.speciesId == displayed?.speciesId }.distinctBy { it.id }
+    }
+    val personalNote = local.notes.firstOrNull { it.id == displayed?.note?.id }
+    val corrections = local.corrections.filter { it.entryId == displayed?.note?.id }
+
+    if (editorOpen && draft != null) {
+        FieldNoteEditorScreen(viewModel, filterSettings, onFilterSettingsChange, draft!!,
+            journal::updateDraft,
+            onSave = { journal.saveDraftAsNote { id ->
+                selectedNoteId = id; indexOpen = false; query = ""; favoritesOnly = false
+                editorOpen = false; selectedActionId = "edit_note"
+            } },
+            onDiscard = { journal.discardDraft { editorOpen = false } },
+            onBack = { if (!busy) editorOpen = false }, saving = busy, message = editorMessage)
+        return
+    }
+    if (correctionOpen && displayed != null) {
+        SyllableCorrectionEditorScreen(viewModel, filterSettings, onFilterSettingsChange, displayed,
+            onSave = { journal.saveCorrection(it) { correctionOpen = false } },
+            onBack = { if (!busy) correctionOpen = false }, saving = busy, message = editorMessage)
+        return
     }
 
     fun turnPage(delta: Int) {
@@ -151,10 +181,11 @@ fun FieldNotesScreen(
         indexNoteId = null
     }
     fun back() {
+        if (busy) return
         when {
             keyboard.handleB() -> Unit
             indexOpen -> { indexOpen = false; query = ""; selectedActionId = "search" }
-            else -> { query = ""; onBack() }
+            else -> { query = ""; if (draft != null) journal.keepDraft(onBack) else onBack() }
         }
     }
     fun key(key: String) {
@@ -184,6 +215,41 @@ fun FieldNotesScreen(
         if (displayed != null) {
             add(JournalAction("favorite", if (displayed.note.id in favorites) "remove favorite" else "favorite this note", ::toggleFavorite))
         }
+        if (draft != null) add(JournalAction("resume_draft", "resume saved draft") { editorOpen = true })
+        else if (displayed != null) add(JournalAction("write_note", "write about ${displayed.speciesName}") {
+            if (journal.beginDraft(displayed)) editorOpen = true
+        })
+        if (personalNote != null && !personalNote.received) {
+            add(JournalAction("edit_note", "edit my entry") {
+                if (journal.editNote(personalNote.id)) editorOpen = true
+            })
+            add(JournalAction("delete_note", "delete my entry") { pendingDelete = "note:${personalNote.id}" })
+        }
+        if (displayed != null) add(JournalAction("suggest_correction", "suggest a syllable correction") {
+            journal.clearEditorStatus(); correctionOpen = true
+        })
+        if (corrections.isNotEmpty() && !indexOpen) {
+            add(JournalAction("review_corrections", "read my syllable notes (${corrections.size})") {
+                scope.launch { pageScroll.animateScrollTo(pageScroll.maxValue) }
+            })
+            corrections.forEach { correction ->
+                add(JournalAction("delete_correction:${correction.id}", "delete syllable note for line ${correction.lineIndex + 1}") {
+                    pendingDelete = "correction:${correction.id}"
+                })
+            }
+        }
+        if (pendingDelete != null) {
+            add(JournalAction("confirm_delete", "confirm deletion") {
+                val target = pendingDelete ?: return@JournalAction
+                if (target.startsWith("note:")) journal.deleteNote(target.removePrefix("note:")) {
+                    pendingDelete = null; selectedNoteId = null; selectedActionId = "search"
+                } else { journal.deleteCorrection(target.removePrefix("correction:")); pendingDelete = null }
+            })
+            add(JournalAction("cancel_delete", "cancel deletion") { pendingDelete = null })
+        }
+        add(JournalAction("my_notes", if (mineOnly) "show all entries" else "show my entries") {
+            mineOnly = !mineOnly; indexNoteId = null
+        })
         add(JournalAction("collection", if (favoritesOnly) "show all notes" else "show favorites", ::changeCollection))
         if (!indexOpen && current != null) {
             if (pageIndex > 0) add(JournalAction("previous", "previous page") { turnPage(-1) })
@@ -198,7 +264,10 @@ fun FieldNotesScreen(
         matchingOwned.forEach { card ->
             add(JournalAction("owned:${card.id}", card.journalLabel(displayed?.speciesName.orEmpty())) { onOpenOwned(card.id) })
         }
-        if (saveError != null) add(JournalAction("dismiss_error", "dismiss save message", journal::dismissSaveError))
+        if (saveError != null) {
+            add(JournalAction("reload_saved", "retry loading saved journal", journal::retry))
+            add(JournalAction("dismiss_error", "dismiss save message", journal::dismissSaveError))
+        }
         add(JournalAction("back", "return", ::back))
     }
     val actionIndex = actions.indexOfFirst { it.id == selectedActionId }.coerceAtLeast(0)
@@ -343,11 +412,14 @@ fun FieldNotesScreen(
                     }
                 }
             }
-            current == null -> JournalMessage("field notes", if (favoritesOnly)
+            current == null -> JournalMessage("field notes", if (mineOnly)
+                "Your entries will appear here. Show all entries and choose a Pokémon to write about."
+                else if (favoritesOnly)
                 "Your favorite pages will appear here. Return to all notes and mark a page with Select."
                 else "No field notes are available.")
             else -> JournalPage(current, pageIndex + 1, pages.size, current.note.id in favorites,
-                Modifier.verticalScroll(pageScroll))
+                Modifier.verticalScroll(pageScroll), corrections,
+                if (personalNote == null) null else if (personalNote.received) "received entry" else "my entry")
         }
     }
 }
@@ -359,6 +431,8 @@ private fun JournalPage(
     pageCount: Int,
     favorite: Boolean,
     scrollModifier: Modifier,
+    corrections: List<SyllableCorrection>,
+    sourceLabel: String?,
 ) {
     Box(Modifier.fillMaxSize().padding(6.dp)
         .background(JournalPaper, RoundedCornerShape(3.dp))
@@ -393,6 +467,7 @@ private fun JournalPage(
                     lineHeight = 22.sp, modifier = Modifier.padding(top = 7.dp))
             }
             Spacer(Modifier.height(24.dp))
+            sourceLabel?.let { Text(it, color = JournalAccent, fontSize = 11.sp) }
             Text(entry.note.author, color = JournalAccent, fontFamily = FontFamily.Serif,
                 fontStyle = FontStyle.Italic, fontSize = 13.sp, lineHeight = 19.sp)
             Text("entry ${entry.note.id}", color = JournalAccent,
@@ -400,6 +475,19 @@ private fun JournalPage(
                 modifier = Modifier.padding(top = 5.dp).testTag("field-notes-entry-id"))
             if (entry.note.revision > 1) Text("revision ${entry.note.revision}", color = JournalAccent.copy(alpha = 0.7f),
                 fontFamily = FontFamily.Monospace, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
+            if (corrections.isNotEmpty()) {
+                Spacer(Modifier.height(24.dp))
+                Text("MY SYLLABLE NOTES", color = JournalAccent, fontSize = 12.sp)
+                corrections.forEach { correction ->
+                    Text("Line ${correction.lineIndex + 1} · revision ${correction.entryRevision}", color = JournalAccent,
+                        fontSize = 12.sp, modifier = Modifier.padding(top = 14.dp))
+                    Text(correction.originalLine, color = JournalInk, fontSize = 14.sp)
+                    correction.proposedCount?.let { Text("Suggested count: $it", color = JournalInk, fontSize = 13.sp) }
+                    if (correction.pronunciation.isNotBlank()) Text(correction.pronunciation, color = JournalInk, fontSize = 13.sp)
+                    if (correction.replacementLine.isNotBlank()) Text("Suggested line: ${correction.replacementLine}",
+                        color = JournalInk, fontSize = 13.sp)
+                }
+            }
         }
     }
 }

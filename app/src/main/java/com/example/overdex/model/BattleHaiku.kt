@@ -36,7 +36,7 @@ data class FieldNote(
     val title: String,
 
     /**
-     * Three haiku lines.
+     * Poem lines. Traditional 5/7/5 is guidance; preserve intentional variations.
      *
      * lines[0] = 5 syllables
      * lines[1] = 7 syllables
