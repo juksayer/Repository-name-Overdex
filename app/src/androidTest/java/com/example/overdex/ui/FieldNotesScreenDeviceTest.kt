@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
@@ -22,6 +25,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.overdex.diagnostics.DiagnosticLogger
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.screens.FieldNotesScreen
+import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -106,16 +110,7 @@ class FieldNotesScreenDeviceTest {
     @Test fun lcdKeyboardFindsAllDroidballNotesAndDetailsReturnToTheSameProtectedPage() {
         openJournal()
         title("The First Step")
-        action("search")
-        compose.onNodeWithTag("Terminal key grid").assertIsDisplayed()
-        "DROIDBALL".forEach { letter ->
-            compose.onNode(hasText(letter.toString(), substring = false) and
-                hasAnyAncestor(hasTestTag("Terminal key grid")) and
-                !hasAnyAncestor(hasContentDescription("End typing")), useUnmergedTree = true)
-                .performTouchInput { click() }
-        }
-        compose.onNodeWithTag("field-notes-query").assertTextEquals("find: DROIDBALL")
-        compose.onNodeWithContentDescription("End typing").assertIsDisplayed().performTouchInput { click() }
+        enterQuery("DROIDBALL")
         compose.onNodeWithText("4 notes · all species").assertIsDisplayed()
         press("A")
         compose.onNodeWithTag("field-notes-page").assertExists()
@@ -147,6 +142,65 @@ class FieldNotesScreenDeviceTest {
         compose.onNodeWithText("Pages closed at dusk.").assertIsDisplayed()
         compose.onNodeWithTag("field-notes-query").assertDoesNotExist()
         assertEquals("Returning from details is not another page turn", turnsBeforeTouch, pageTurns.get())
+    }
+
+    @Test fun lessonSearchHighlightsThePassageAndKeepsTheEntryIdWhenFavoritesReordersTheBook() {
+        openJournal()
+        title("The First Step")
+        enterQuery("ADAPTABILITY")
+        compose.onNodeWithText("3 notes · all species").assertIsDisplayed()
+        assertAdaptabilityResult()
+        File(context.cacheDir, "field-notes-search-review.png").outputStream().use { output ->
+            assertTrue("Keep the full shell and index for visual review",
+                compose.onRoot().captureToImage().asAndroidBitmap()
+                    .compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+        }
+
+        press("A")
+        title("The Bending Current")
+        compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 061-001")
+        press("SELECT")
+        compose.waitUntil(timeoutMillis = 10_000) {
+            "061-001" in preferences.getStringSet("note_ids", emptySet()).orEmpty()
+        }
+        press("START")
+        title("The Bending Current")
+        compose.onNodeWithText("1 / 1 · favorites").assertIsDisplayed()
+        compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 061-001")
+
+        enterQuery("ADAPTABILITY")
+        compose.onNodeWithTag("field-notes-result:132-001").assertDoesNotExist()
+        compose.onNodeWithTag("field-notes-result:656-001").assertDoesNotExist()
+        assertAdaptabilityResult()
+        press("A")
+        title("The Bending Current")
+        compose.onNodeWithTag("field-notes-entry-id").assertTextEquals("entry 061-001")
+    }
+
+    private fun assertAdaptabilityResult() {
+        compose.onNodeWithTag("field-notes-result-id:061-001")
+            .assertTextEquals("entry 061-001").assertIsDisplayed()
+        val passage = compose.onNodeWithTag("field-notes-result-excerpt:061-001")
+            .assertTextEquals("lesson · Adaptability.").assertIsDisplayed()
+            .fetchSemanticsNode().config[SemanticsProperties.Text].single()
+        assertTrue("The matched lesson word must be visibly highlighted, not merely present in the text",
+            passage.spanStyles.any { span ->
+                span.item.background != Color.Unspecified &&
+                    passage.text.substring(span.start, span.end).equals("Adaptability", ignoreCase = true)
+            })
+    }
+
+    private fun enterQuery(value: String) {
+        action("search")
+        compose.onNodeWithTag("Terminal key grid").assertIsDisplayed()
+        value.forEach { letter ->
+            compose.onNode(hasText(letter.toString(), substring = false) and
+                hasAnyAncestor(hasTestTag("Terminal key grid")) and
+                !hasAnyAncestor(hasContentDescription("End typing")), useUnmergedTree = true)
+                .performTouchInput { click() }
+        }
+        compose.onNodeWithTag("field-notes-query").assertTextEquals("find: $value")
+        compose.onNodeWithContentDescription("End typing").assertIsDisplayed().performTouchInput { click() }
     }
 
     private fun openJournal() {

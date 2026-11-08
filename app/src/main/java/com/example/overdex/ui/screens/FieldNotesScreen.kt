@@ -41,9 +41,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel as composeViewModel
@@ -56,9 +59,11 @@ import com.example.overdex.ui.ODXFi.ODXFiShell
 import com.example.overdex.ui.PokedexViewModel
 import com.example.overdex.ui.components.FilterSettings
 import com.example.overdex.ui.components.rememberTerminalKeyboardController
+import com.example.overdex.ui.fieldnotes.fieldNoteSearchExcerpt
+import com.example.overdex.ui.fieldnotes.fieldNoteSearchRanges
+import com.example.overdex.ui.fieldnotes.searchFieldNotes
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 private val JournalPaper = Color(0xFF101A12)
 private val JournalInk = Color(0xFFD8E8C5)
@@ -107,7 +112,8 @@ fun FieldNotesScreen(
     }
     val current = pages.firstOrNull { it.note.id == selectedNoteId } ?: pages.firstOrNull()
     val pageIndex = pages.indexOf(current)
-    val results = remember(pages, query) { pages.filter { it.matchesJournalQuery(query) } }
+    val searchResults = remember(pages, query) { searchFieldNotes(pages, query) }
+    val results = remember(searchResults) { searchResults.map { it.entry } }
     val resultIndex = results.indexOfFirst { it.note.id == indexNoteId }.coerceAtLeast(0)
     val indexEntry = results.getOrNull(resultIndex)
     val displayed = if (indexOpen) indexEntry else current
@@ -307,15 +313,31 @@ fun FieldNotesScreen(
                         Text("No notes match this search.", color = JournalInk, modifier = Modifier.padding(top = 22.dp))
                     } else LazyColumn(Modifier.weight(1f).padding(top = 12.dp), state = indexList,
                         verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        items(results, key = { it.note.id }) { entry ->
+                        items(searchResults, key = { it.entry.note.id }) { result ->
+                            val entry = result.entry
                             val selected = entry.note.id == indexEntry?.note?.id
                             Column(Modifier.fillMaxWidth()
                                 .background(if (selected) JournalRule.copy(alpha = 0.45f) else Color.Transparent)
                                 .border(1.dp, if (selected) JournalAccent else Color.Transparent)
                                 .padding(9.dp).testTag("field-notes-result:${entry.note.id}")) {
-                                Text("${if (selected) "> " else ""}${entry.speciesName}", color = JournalInk,
+                                Text(highlightedJournalText("${if (selected) "> " else ""}${entry.speciesName}", query), color = JournalInk,
                                     fontSize = 17.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
-                                Text(entry.note.title, color = JournalAccent, fontSize = 12.sp, lineHeight = 17.sp)
+                                Text(highlightedJournalText(entry.note.title, query), color = JournalAccent,
+                                    fontSize = 12.sp, lineHeight = 17.sp)
+                                result.excerpt?.let { excerpt ->
+                                    val passage = fieldNoteSearchExcerpt(excerpt, query)
+                                    Text(
+                                        highlightedJournalText(if (result.excerptIsLesson) "lesson · $passage" else passage, query),
+                                        color = JournalInk, fontSize = 12.sp, lineHeight = 18.sp,
+                                        maxLines = 4, overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(top = 5.dp)
+                                            .testTag("field-notes-result-excerpt:${entry.note.id}"),
+                                    )
+                                }
+                                Text("entry ${entry.note.id}", color = JournalAccent,
+                                    fontFamily = FontFamily.Monospace, fontSize = 10.sp, lineHeight = 15.sp,
+                                    modifier = Modifier.padding(top = 5.dp)
+                                        .testTag("field-notes-result-id:${entry.note.id}"))
                             }
                         }
                     }
@@ -373,6 +395,9 @@ private fun JournalPage(
             Spacer(Modifier.height(24.dp))
             Text(entry.note.author, color = JournalAccent, fontFamily = FontFamily.Serif,
                 fontStyle = FontStyle.Italic, fontSize = 13.sp, lineHeight = 19.sp)
+            Text("entry ${entry.note.id}", color = JournalAccent,
+                fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                modifier = Modifier.padding(top = 5.dp).testTag("field-notes-entry-id"))
             if (entry.note.revision > 1) Text("revision ${entry.note.revision}", color = JournalAccent.copy(alpha = 0.7f),
                 fontFamily = FontFamily.Monospace, fontSize = 10.sp, modifier = Modifier.padding(top = 5.dp))
         }
@@ -401,12 +426,12 @@ private fun JournalLcdAction(action: JournalAction, selected: Boolean, onClick: 
     }
 }
 
-private fun FieldNoteJournalEntry.matchesJournalQuery(query: String): Boolean {
-    val value = query.trim().removePrefix("#").lowercase(Locale.ROOT)
-    if (value.isEmpty()) return true
-    return speciesId.toString() == value || sourceSpeciesId.toString() == value ||
-        speciesName.lowercase(Locale.ROOT).contains(value) || note.title.lowercase(Locale.ROOT).contains(value) ||
-        note.lines.any { it.lowercase(Locale.ROOT).contains(value) }
+private fun highlightedJournalText(text: String, query: String) = buildAnnotatedString {
+    append(text)
+    fieldNoteSearchRanges(text, query).forEach { range ->
+        addStyle(SpanStyle(color = JournalPaper, background = JournalAccent, fontWeight = FontWeight.Bold),
+            range.first, range.last + 1)
+    }
 }
 
 private fun OwnedPokemon.journalLabel(fallbackName: String): String {

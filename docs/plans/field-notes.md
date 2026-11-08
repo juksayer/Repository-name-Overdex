@@ -12,6 +12,12 @@ rustle accompanies an actual page turn; it is excluded from playback capture.
 Favorites refer to stable note IDs, independently of owned cards, equipped moves,
 and battle history. Bundled attribution remains `Unknown Author`.
 
+The index searches species, titles, poem text and lessons. Results include a
+matching excerpt with the literal search term highlighted, plus the permanent
+entry ID. That ID also appears on the journal page and can be searched directly;
+it does not change when the favorites filter changes the page counter.
+See the [index follow-up checks](../verification/2026-11-08-field-notes-index.md).
+
 ## Next slice: personal writing and trainer exchange
 
 The trainer's own haiku are stored locally. This is a personal notebook with
