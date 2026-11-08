@@ -164,6 +164,25 @@ class PersistedAnnouncementWitness internal constructor(
                                 speciesNames.any { it.equals(announcedSpecies, ignoreCase = true) })
                         }
                         currentCoroutineContext().ensureActive()
+                        // Vocabulary repair belongs to this dedicated reader,
+                        // before custody publishes accepted grade text. Native
+                        // OCR remains untouched above; preserve a cited reason
+                        // for the one observed alias rather than teaching the
+                        // Timeline or replay to guess at malformed grades.
+                        if (observerId.id == "QTE_PROGRESS_TEXT_WITNESS" &&
+                            cropContract == BattleCropContracts.qteProgressText) {
+                            resolveQteProgressText(acceptedText)?.let { resolution ->
+                                val receipt = match.custody.submitTestimony(
+                                    SourceId("${observerId.id}_VOCABULARY_RESOLUTION"),
+                                    RawTestimony("basis=${resolution.basis} original=${resolution.originalText} " +
+                                        "accepted=${resolution.acceptedText}"),
+                                    article.perceivedAt, null, references.toList(), capturedAt)
+                                val resolvedArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
+                                references += resolvedArticle.id.value
+                                acceptedText = resolution.acceptedText
+                            }
+                        }
+                        currentCoroutineContext().ensureActive()
                         // Existing consumers receive surviving words; the raw
                         // Articles above retain every word returned by ML Kit.
                         match.custody.submitTestimony(sourceId, RawTestimony(acceptedText), article.perceivedAt,
