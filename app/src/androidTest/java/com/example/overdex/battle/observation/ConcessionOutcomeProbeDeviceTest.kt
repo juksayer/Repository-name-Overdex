@@ -91,7 +91,7 @@ class ConcessionOutcomeProbeDeviceTest {
         }
     }
 
-    @Test fun routineProbeWithReservesRetainsTheWinBeforeBlankAndProducesOneSourceTimedMatchEnd(): Unit = runBlocking {
+    @Test fun promisingProbeWithReservesGetsUrgentOcrBeforeBlankAndProducesOneSourceTimedMatchEnd(): Unit = runBlocking {
         val fixtures = privateFixtures()
         ensureTextRecognitionModule()
         OutcomeTextRecognizer.warmUp()
@@ -123,7 +123,7 @@ class ConcessionOutcomeProbeDeviceTest {
         gate.observeMatchStarted(sourceBase - 5_000 * MS)
         gate.observeActiveHp(ActivePokemonSide.PLAYER, sourceBase, .9f)
         gate.observeActiveHp(ActivePokemonSide.OPPONENT, sourceBase, .8f)
-        assertFalse("Healthy teams with reserves must not use urgent result OCR", gate.isEnabled())
+        assertFalse("Healthy teams with reserves must not use urgent result capture", gate.isEnabled())
         assertTrue("Concessions still require the independent routine check", gate.isProbeEnabled())
         assertEquals(2_000 * MS, MatchOutcomeCaptureGate.PROBE_CAPTURE_INTERVAL_NANOS)
         val entered = CompletableDeferred<Unit>()
@@ -151,14 +151,15 @@ class ConcessionOutcomeProbeDeviceTest {
                 return timeline.getArticles().single { it.sequenceNumber == receipt.sequenceNumber }
             }
             val win = capture("you-win-exact.png", WIN_HASH, 0)
-            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL) == 1 }
-            assertEquals("The routine source must not occupy the urgent OCR lane", 0,
-                SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT))
+            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT) == 1 }
+            assertEquals("A visually promising result is promoted before routine OCR admission", 0,
+                SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL))
             gateNow.addAndGet(2_000 * MS)
             val blank = capture("battle-control-exact.png", CONTROL_HASH, 2_000)
-            // Allow the production asynchronous artifact inspection to finish
-            // before admission. Unit tests separately gate this deterministically.
-            delay(500)
+            // The weak control still receives an ordinary fallback; it must
+            // not take the winning frame's urgent slot or evade inspection.
+            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL) == 1 }
+            assertEquals(1, SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT))
             assertTrue(timeline.getArticles().none { it.payload is MatchEnded })
             release.complete(Unit)
             blocker.join()
@@ -183,8 +184,8 @@ class ConcessionOutcomeProbeDeviceTest {
             val diagnostics = articles.filter { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY" }
             assertEquals("The decisive first probe should cancel the blank and every reader lane", 1, diagnostics.size)
             val diagnostic = (diagnostics.single().payload as RawTestimony).data.toString()
-            assertTrue(diagnostic, diagnostic.contains("lane=PROBE priority=NORMAL"))
-            assertTrue(diagnostic, diagnostic.contains("selection=TEXT_KEYFRAME"))
+            assertTrue(diagnostic, diagnostic.contains("lane=RECENT priority=URGENT"))
+            assertTrue(diagnostic, diagnostic.contains("promotedProbe=true"))
             await { !gate.isProbeEnabled() && !gate.isEnabled() }
             report.put("status", "passed").put("actualMlKit", true)
                 .put("originalSourceClocksPreserved", true).put("diagnostic", diagnostic)

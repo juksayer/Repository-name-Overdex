@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Exercises the real crop -> custody -> text -> phrase -> Match end path without native OCR. */
 class PersistedOutcomeTextWitnessTest {
-    @Test fun `a routine concession frame survives blank scenery and reaches Match end at its own source time`() = runBlocking {
+    @Test fun `visually promising concession frame gets urgent OCR before blank scenery with its own source time`() = runBlocking {
         val reader = ControlledReader(inspector = { article ->
             if (article.label() == "concession-win") TransientTextProbe.Reading(.9f, true, 1L, null)
             else TransientTextProbe.Reading(0f, false, 0L, null)
@@ -46,14 +46,17 @@ class PersistedOutcomeTextWitnessTest {
             fixture.start()
             val win = fixture.capture("concession-win", fixture.clock.get() - 500_000_000L,
                 wall = 54_321L, source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val normal = reader.request(OcrPriority.NORMAL)
-            assertTrue("A routine probe cannot claim urgent admission", reader.requests.none { it.priority == OcrPriority.URGENT })
+            val recent = reader.request(OcrPriority.URGENT)
+            assertTrue("A promising probe must not wait in the routine lane", reader.requests.none { it.priority == OcrPriority.NORMAL })
             assertTrue(reader.reads.isEmpty())
-            fixture.clock.addAndGet(4_000_000_000L)
+            fixture.clock.addAndGet(1_000_000_000L)
             fixture.capture("newer-blank", fixture.clock.get() - 100_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            normal.admit.complete(Unit)
+            val normal = reader.request(OcrPriority.NORMAL)
+            recent.admit.complete(Unit)
             fixture.awaitEnd()
+            withTimeout(5_000) { normal.finished.await() }
+            assertTrue("The decisive promoted probe cancels its waiting blank fallback", normal.cancelled)
 
             assertEquals(listOf(win.id), reader.reads.map { it.id })
             val articles = fixture.timeline.getArticles()
@@ -69,8 +72,44 @@ class PersistedOutcomeTextWitnessTest {
             assertEquals(listOf(phrase.id), end.predecessorIds)
             val latency = articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY" }
             val diagnostic = (latency.payload as RawTestimony).data.toString()
-            assertTrue(diagnostic.contains("lane=PROBE priority=NORMAL"))
-            assertTrue(diagnostic.contains("selection=TEXT_KEYFRAME"))
+            assertTrue(diagnostic.contains("lane=RECENT priority=URGENT"))
+            assertTrue(diagnostic.contains("promotedProbe=true"))
+        } finally { fixture.close() }
+    }
+
+    @Test fun `a queued routine blank cannot hold a later promising win behind normal admission`() = runBlocking {
+        val reader = ControlledReader(inspector = { article ->
+            if (article.label() == "promising-win") TransientTextProbe.Reading(.9f, true, 1L, null)
+            else TransientTextProbe.Reading(0f, false, 0L, null)
+        }) { article ->
+            if (article.label() == "promising-win") listOf(text("YOU WIN!")) else emptyList()
+        }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            fixture.capture("queued-blank", fixture.clock.get() - 500_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            val normal = reader.request(OcrPriority.NORMAL)
+            val win = fixture.capture("promising-win", fixture.clock.get() - 100_000_000L,
+                wall = 54_321L, source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            val urgent = reader.request(OcrPriority.URGENT)
+            assertTrue(reader.reads.isEmpty())
+
+            // The normal request remains blocked; the independently queued
+            // urgent request can read the newly observed result immediately.
+            urgent.admit.complete(Unit)
+            fixture.awaitEnd()
+            withTimeout(5_000) { normal.finished.await() }
+            assertTrue(normal.cancelled)
+            assertEquals(listOf(win.id), reader.reads.map { it.id })
+            val articles = fixture.timeline.getArticles()
+            val end = articles.single { it.payload is MatchEnded }
+            assertEquals(win.perceivedAt, end.perceivedAt)
+            assertEquals(win.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(1, articles.count { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" })
+            val latency = articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY" }
+            assertTrue((latency.payload as RawTestimony).data.toString().contains("promotedProbe=true"))
         } finally { fixture.close() }
     }
 

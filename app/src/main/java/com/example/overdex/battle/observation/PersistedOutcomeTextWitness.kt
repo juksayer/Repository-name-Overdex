@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
 
-/** Reads near-KO results urgently, with independent routine checks for early concessions. */
+/** Reads near-KO and promising result pixels urgently, with routine fallback checks for concessions. */
 class PersistedOutcomeTextWitness internal constructor(
     private val reader: OutcomeCropReader,
     private val now: () -> Long = System::nanoTime,
@@ -71,8 +71,9 @@ class PersistedOutcomeTextWitness internal constructor(
                     }
                 }
             }
-            // Routine checks never enter the urgent result backlog. Keep the
-            // visual inspection separate so its I/O cannot delay an urgent crop.
+            // Inspect the sparse checks separately so their I/O cannot delay
+            // urgent captures. Promising preserved text earns urgent OCR;
+            // weak/blank scenery stays in the bounded routine fallback lane.
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 match.articles.filter { article ->
                     article.sourceId.id == probeSource &&
@@ -85,8 +86,16 @@ class PersistedOutcomeTextWitness internal constructor(
                         null
                     }
                     kotlinx.coroutines.currentCoroutineContext().ensureActive()
-                    probePending.offer(article, visual)
-                    probeWake.trySend(Unit)
+                    if (visual?.hasText == true && visual.signature != 0L) {
+                        val capturedAt = article.monotonicTimeNanos ?: return@collect
+                        if (pending.offer(article, capturedAt, now())) {
+                            recentWake.trySend(Unit)
+                            recoveryWake.trySend(Unit)
+                        }
+                    } else {
+                        probePending.offer(article, visual)
+                        probeWake.trySend(Unit)
+                    }
                 }
             }
             // Pay model startup while the battle is underway, before the brief result.
@@ -157,7 +166,8 @@ class PersistedOutcomeTextWitness internal constructor(
                                 "processingMs=${(completedAt - admittedAt) / 1_000_000} " +
                                 "totalMs=${(completedAt - capturedAt) / 1_000_000} " +
                                 "passes=$passes pending=${if (lane == OutcomeReadLane.PROBE) probeSelection?.pendingCount ?: 0 else remaining.total} " +
-                                "recentPending=${remaining.recent} recoveryPending=${remaining.recovery}" + probeDetails +
+                                "recentPending=${remaining.recent} recoveryPending=${remaining.recovery} " +
+                                "promotedProbe=${article.sourceId.id == probeSource && lane != OutcomeReadLane.PROBE}" + probeDetails +
                                 " nonblank=${readings.any { it.rawText.isNotBlank() }}"),
                             article.perceivedAt, null, emptyList(), capturedAt,
                         )
