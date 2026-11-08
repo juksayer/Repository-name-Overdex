@@ -3,7 +3,7 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.reality.RealityArticle
 
 /** Bounded visual scheduling only. Selected pixels always keep their own source clock. */
-internal class PendingAnnouncementCrops(
+internal class PendingTransientTextCrops(
     private val capacity: Int = 8,
     private val maximumAgeNanos: Long = 10_000_000_000L,
 ) {

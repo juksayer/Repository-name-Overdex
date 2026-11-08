@@ -216,7 +216,7 @@ class InactiveBenchSnapshotGate(
     }
 }
 
-/** Opens the result-text crop only when the live battlefield plausibly disappeared. */
+/** Urgent result attention plus a sparse check for concessions with healthy reserves. */
 class MatchOutcomeCaptureGate(
     private val now: () -> Long = System::nanoTime
 ) : Observer {
@@ -245,6 +245,13 @@ class MatchOutcomeCaptureGate(
                 age in FINAL_MEMBER_HP_LOST_NANOS..FINAL_MEMBER_RECOVERY_NANOS
         }
     }
+
+    /**
+     * A concession can end an established battle with healthy HP and reserves.
+     * Keep a sparse independent check until result text is accepted; an urgent
+     * window already supplies the same crop and suppresses this duplicate lane.
+     */
+    @Synchronized fun isProbeEnabled(): Boolean = !ended && battleStartedAt != null && !isEnabled()
 
     internal fun observeMatchStarted(at: Long) {
         battleStartedAt = at
@@ -336,14 +343,15 @@ class MatchOutcomeCaptureGate(
         finalCriticalHpSides.clear()
     }
 
-    private companion object {
-        const val BATTLEFIELD_ABSENCE_NANOS = 250_000_000L
-        const val FAINT_PROBE_NANOS = 8_000_000_000L
-        const val FINAL_TEAM_PROBE_NANOS = 10_000_000_000L
+    companion object {
+        const val PROBE_CAPTURE_INTERVAL_NANOS = 2_000_000_000L
+        private const val BATTLEFIELD_ABSENCE_NANOS = 250_000_000L
+        private const val FAINT_PROBE_NANOS = 8_000_000_000L
+        private const val FINAL_TEAM_PROBE_NANOS = 10_000_000_000L
         // The final bar can vanish above red, before the last ball dims. This
         // only opens a bounded OCR window; it never declares a winner itself.
-        const val FINAL_MEMBER_HP_LOST_NANOS = 2_000_000_000L
-        const val FINAL_MEMBER_RECOVERY_NANOS = 35_000_000_000L
-        const val CRITICAL_HP_FRACTION = 0.20f
+        private const val FINAL_MEMBER_HP_LOST_NANOS = 2_000_000_000L
+        private const val FINAL_MEMBER_RECOVERY_NANOS = 35_000_000_000L
+        private const val CRITICAL_HP_FRACTION = 0.20f
     }
 }

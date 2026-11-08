@@ -1,11 +1,78 @@
 package com.example.overdex.battle.observation
 
 import com.example.overdex.battle.custody.ActivePokemonSide
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MatchOutcomeCaptureGateTest {
+    @Test fun `sparse result probe stays available with healthy HP and reserves through an early concession`() {
+        var now = 1_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        assertFalse(gate.isProbeEnabled())
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 3)
+        assertFalse("Team Select counts cannot enable a battle result probe", gate.isProbeEnabled())
+        gate.observeMatchStarted(now)
+        gate.observeActiveHp(ActivePokemonSide.PLAYER, now, .9f)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .8f)
+        assertFalse(gate.isEnabled())
+        assertTrue(gate.isProbeEnabled())
+        now += 65_000_000_000L
+        assertFalse("Reserves still do not request expensive urgent result capture", gate.isEnabled())
+        assertTrue("The previously reported minute-long unrecognized result must remain eligible", gate.isProbeEnabled())
+    }
+
+    @Test fun `sparse result probe needs neither ball counts nor red HP after GO`() {
+        val now = 1_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        assertTrue(gate.isProbeEnabled())
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .75f)
+        assertFalse(gate.isEnabled())
+        assertTrue(gate.isProbeEnabled())
+    }
+
+    @Test fun `measured battle HP enables sparse result recovery when GO and badge counts were missed`() {
+        val now = 1_000_000_000L
+        for (side in ActivePokemonSide.entries) {
+            val gate = MatchOutcomeCaptureGate { now }
+            assertFalse(gate.isProbeEnabled())
+            gate.observeActiveHp(side, now, .75f)
+            assertFalse(gate.isEnabled())
+            assertTrue(gate.isProbeEnabled())
+        }
+    }
+
+    @Test fun `urgent result window suppresses duplicate sparse probe and expiry restores it`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        assertTrue(gate.isProbeEnabled())
+        gate.observeResultMusic(now)
+        assertTrue(gate.isEnabled())
+        assertFalse(gate.isProbeEnabled())
+        now += 10_000_000_001L
+        assertFalse(gate.isEnabled())
+        assertTrue(gate.isProbeEnabled())
+        gate.observeMatchEnded()
+        assertFalse(gate.isEnabled())
+        assertFalse(gate.isProbeEnabled())
+        gate.observeResultMusic(now)
+        gate.observeActiveHp(ActivePokemonSide.PLAYER, now, .9f)
+        assertFalse("Historical evidence cannot reopen an accepted result", gate.isProbeEnabled())
+        gate.stop()
+        assertFalse("Stopped observation clears the battle context", gate.isProbeEnabled())
+    }
+
+    @Test fun `sparse probe has its own capture source and shares the calibrated result crop`() {
+        assertEquals(2_000_000_000L, MatchOutcomeCaptureGate.PROBE_CAPTURE_INTERVAL_NANOS)
+        assertEquals("MATCH_OUTCOME_PROBE_CAPTURE", BattleWitnessContracts.matchOutcomeProbeCapture.witnessId)
+        assertEquals(BattleWitnessContracts.matchOutcomeCropCapture.crop, BattleWitnessContracts.matchOutcomeProbeCapture.crop)
+        assertFalse(BattleWitnessContracts.matchOutcomeCropCapture.witnessId == BattleWitnessContracts.matchOutcomeProbeCapture.witnessId)
+    }
+
     @Test fun `result music opens a bounded OCR probe without requiring missing badge counts`() {
         var now = 100_000_000_000L
         val gate = MatchOutcomeCaptureGate { now }

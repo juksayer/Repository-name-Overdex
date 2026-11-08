@@ -9,9 +9,9 @@ import org.junit.Assert.*
 import org.junit.Test
 
 /** Scheduling tests use visual rankings only; no strings stand in for native recognition. */
-class PendingAnnouncementCropsTest {
+class PendingTransientTextCropsTest {
     @Test fun `eight visual episodes survive contention and overflow drops only the oldest`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val frames = (1..9).map { article("frame-$it", it * 100L) }
         frames.forEachIndexed { index, frame -> queue.offer(frame, text(index + 1L)) }
 
@@ -25,7 +25,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `capture age expires old keyframes while retaining a fresh unranked fallback`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("old-one", 0), text(1))
         queue.offer(article("old-two", 100), text(2))
         val fresh = article("fresh-blank", 10_900)
@@ -41,26 +41,26 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a frame exactly ten seconds old is eligible but an older one is not`() {
-        val boundary = PendingAnnouncementCrops()
+        val boundary = PendingTransientTextCrops()
         val source = article("at-age-boundary", 0)
         boundary.offer(source, text(1))
         assertSame(source, boundary.select(10_000 * MS)?.article)
 
-        val expired = PendingAnnouncementCrops()
+        val expired = PendingTransientTextCrops()
         expired.offer(source, text(1))
         assertFalse(expired.hasPending(10_000 * MS + 1))
         assertNull(expired.select(10_000 * MS + 1))
     }
 
     @Test fun `latest fallback cannot revive an expired capture`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("old-unranked", 0), null)
         assertNull(queue.select(10_000 * MS + 1))
         assertFalse(queue.hasPending(10_000 * MS + 1))
     }
 
     @Test fun `continuous equal visual signatures coalesce without changing the retained source clock`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first-readable", 100, wall = 12_345)
         queue.offer(first, text(8, .90f))
         queue.offer(article("slightly-stronger", 300, wall = 54_321), text(8, .94f))
@@ -76,7 +76,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a materially clearer frame replaces the episode using its own later source time`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("initial", 100, wall = 111), text(7, .90f))
         val clearer = article("clearer", 300, wall = 777)
         queue.offer(clearer, text(7, .96f))
@@ -90,7 +90,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `the same visible message after a blank is a new episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first", 0)
         val returned = article("returned", 200)
         queue.offer(first, text(3))
@@ -101,7 +101,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `the same visible message after a different message is a new episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first", 0)
         val middle = article("different", 100)
         val returned = article("returned", 200)
@@ -113,7 +113,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a capture gap beyond one and a half seconds starts a new visual episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first", 0)
         val returned = article("after-gap", 1_501)
         queue.offer(first, text(3))
@@ -123,7 +123,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `one and a half seconds exactly still belongs to the continuous episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first", 0)
         queue.offer(first, text(3))
         queue.offer(article("at-gap-boundary", 1_500), text(3))
@@ -135,7 +135,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `an old coalesced episode cannot discard its still fresh latest frame at expiry`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val frames = (0..11).map { article("continuous-$it", it * 1_000L) }
         frames.forEach { queue.offer(it, text(3)) }
 
@@ -148,7 +148,7 @@ class PendingAnnouncementCropsTest {
 
     @Test fun `false negative or unavailable visual probe keeps the latest native OCR opportunity`() {
         for (visual in listOf(null, blank(), text(0), text(2).copy(hasText = false))) {
-            val queue = PendingAnnouncementCrops()
+            val queue = PendingTransientTextCrops()
             queue.offer(article("earlier", 0), null)
             val latest = article("latest", 100)
             queue.offer(latest, visual)
@@ -162,7 +162,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a text candidate is read before the latest unranked fallback without consuming that fallback`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val readable = article("text", 0)
         val fallback = article("unranked", 100)
         queue.offer(readable, text(2))
@@ -179,7 +179,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `consumed visual content suppresses repeated turns only while continuously visible`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("first", 0), text(1))
         assertNotNull(queue.select(0))
         queue.offer(article("same", 100), text(1))
@@ -193,7 +193,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `failed native attempt permits a subsequent frame of the same visual message`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("attempted", 0), text(1))
         val failed = requireNotNull(queue.select(0))
         queue.failed(failed)
@@ -204,7 +204,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a newer same episode frame captured during a failed read can survive the later blank`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("attempted", 0), text(1))
         val attempted = requireNotNull(queue.select(0))
         val clearer = article("clearer", 100, wall = 78_901)
@@ -222,7 +222,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `successful native read discards its held duplicate without erasing a later different episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("attempted", 0), text(1))
         val attempted = requireNotNull(queue.select(0))
         queue.offer(article("same-during-read", 100), text(1))
@@ -235,7 +235,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `failure of an older episode does not reopen a different consumed episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("older", 0), text(1))
         val older = requireNotNull(queue.select(0))
         queue.offer(article("newer", 100), text(2))
@@ -247,7 +247,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `a current episode evicted for an in flight retry is not mistaken for completed OCR`() {
-        val queue = PendingAnnouncementCrops(capacity = 2)
+        val queue = PendingTransientTextCrops(capacity = 2)
         queue.offer(article("attempted", 0), text(1))
         val attempted = requireNotNull(queue.select(0))
         queue.offer(article("retry", 100), text(1))
@@ -260,7 +260,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `clear drops pending references and a newer capture can start a fresh episode`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         queue.offer(article("queued", 0), text(1))
         queue.offer(article("fallback", 100), blank())
         queue.clear()
@@ -273,7 +273,7 @@ class PendingAnnouncementCropsTest {
     }
 
     @Test fun `missing equal and out of order source times cannot replace a pending capture`() {
-        val queue = PendingAnnouncementCrops()
+        val queue = PendingTransientTextCrops()
         val first = article("first", 100)
         queue.offer(first, text(1))
         queue.offer(article("equal", 100), text(2))
@@ -287,7 +287,7 @@ class PendingAnnouncementCropsTest {
         assertNull(queue.select(200 * MS))
     }
 
-    private fun drain(queue: PendingAnnouncementCrops, nowMillis: Long): List<PendingAnnouncementCrops.Selection> =
+    private fun drain(queue: PendingTransientTextCrops, nowMillis: Long): List<PendingTransientTextCrops.Selection> =
         buildList { while (true) add(queue.select(nowMillis * MS) ?: break) }
 
     private fun text(signature: Long, score: Float = .90f) = TransientTextProbe.Reading(

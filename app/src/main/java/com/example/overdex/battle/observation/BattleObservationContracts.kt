@@ -310,6 +310,11 @@ object BattleWitnessContracts {
         crop = BattleCropContracts.matchOutcome,
         testimonyType = CropCaptured::class
     )
+    val matchOutcomeProbeCapture = BattleWitnessContract(
+        witnessId = "MATCH_OUTCOME_PROBE_CAPTURE",
+        crop = BattleCropContracts.matchOutcome,
+        testimonyType = CropCaptured::class
+    )
     val outOfBattleMenuCapture = BattleWitnessContract("OUT_OF_BATTLE_MENU_CAPTURE", BattleCropContracts.outOfBattleMenu, CropCaptured::class)
     val battlePartyTabsCapture = BattleWitnessContract("BATTLE_PARTY_TABS_CAPTURE", BattleCropContracts.battlePartyTabs, CropCaptured::class)
     val announcementCropCapture = BattleWitnessContract(

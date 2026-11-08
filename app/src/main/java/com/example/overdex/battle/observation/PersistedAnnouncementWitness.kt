@@ -55,7 +55,7 @@ class PersistedAnnouncementWitness internal constructor(
             // Keep only bounded artifact references, never queued Bitmaps or
             // unbounded native requests. Probe results are scheduling hints;
             // only OCR of the selected preserved crop can produce testimony.
-            val pending = PendingAnnouncementCrops()
+            val pending = PendingTransientTextCrops()
             val wake = Channel<Unit>(Channel.CONFLATED)
             witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
                 pending.clear()
@@ -90,7 +90,7 @@ class PersistedAnnouncementWitness internal constructor(
                         var nativeReadNanos = 0L
                         var passes = 0
                         var replacedAtSelection = 0L
-                        var selection: PendingAnnouncementCrops.Selection? = null
+                        var selection: PendingTransientTextCrops.Selection? = null
                         val readings = try {
                             reader.withReadingTurn(OcrPriority.TRANSIENT) { turn ->
                                 currentCoroutineContext().ensureActive()

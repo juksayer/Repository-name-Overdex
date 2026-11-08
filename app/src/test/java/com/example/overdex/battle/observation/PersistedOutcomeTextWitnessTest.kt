@@ -33,6 +33,126 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Exercises the real crop -> custody -> text -> phrase -> Match end path without native OCR. */
 class PersistedOutcomeTextWitnessTest {
+    @Test fun `a routine concession frame survives blank scenery and reaches Match end at its own source time`() = runBlocking {
+        val reader = ControlledReader(inspector = { article ->
+            if (article.label() == "concession-win") TransientTextProbe.Reading(.9f, true, 1L, null)
+            else TransientTextProbe.Reading(0f, false, 0L, null)
+        }) { article ->
+            if (article.label() == "concession-win") listOf(text("YOU WIN!")) else emptyList()
+        }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            val win = fixture.capture("concession-win", fixture.clock.get() - 500_000_000L,
+                wall = 54_321L, source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            val normal = reader.request(OcrPriority.NORMAL)
+            assertTrue("A routine probe cannot claim urgent admission", reader.requests.none { it.priority == OcrPriority.URGENT })
+            assertTrue(reader.reads.isEmpty())
+            fixture.clock.addAndGet(4_000_000_000L)
+            fixture.capture("newer-blank", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            normal.admit.complete(Unit)
+            fixture.awaitEnd()
+
+            assertEquals(listOf(win.id), reader.reads.map { it.id })
+            val articles = fixture.timeline.getArticles()
+            val raw = articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS" }
+            val phrase = articles.single { it.sourceId.id == "YOU_WIN_WITNESS" }
+            val end = articles.single { it.payload is MatchEnded }
+            listOf(raw, phrase, end).forEach {
+                assertEquals(win.perceivedAt, it.perceivedAt)
+                assertEquals(win.monotonicTimeNanos, it.monotonicTimeNanos)
+            }
+            assertEquals(listOf(win.id.value), raw.evidenceReferences)
+            assertEquals(listOf(raw.id.value), phrase.evidenceReferences)
+            assertEquals(listOf(phrase.id), end.predecessorIds)
+            val latency = articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY" }
+            val diagnostic = (latency.payload as RawTestimony).data.toString()
+            assertTrue(diagnostic.contains("lane=PROBE priority=NORMAL"))
+            assertTrue(diagnostic.contains("selection=TEXT_KEYFRAME"))
+        } finally { fixture.close() }
+    }
+
+    @Test fun `a weak visual probe still allows real result text to be read at routine priority`() = runBlocking {
+        val reader = ControlledReader { listOf(text("YOU WIN!")) }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            val win = fixture.capture("weak-probe", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            reader.request(OcrPriority.NORMAL).admit.complete(Unit)
+            fixture.awaitEnd()
+            assertEquals(listOf(win.id), reader.reads.map { it.id })
+            assertTrue(reader.requests.all { it.priority == OcrPriority.NORMAL })
+            val diagnostic = fixture.timeline.getArticles().single {
+                it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY"
+            }.payload as RawTestimony
+            assertTrue(diagnostic.data.toString().contains("selection=LATEST_FALLBACK"))
+        } finally { fixture.close() }
+    }
+
+    @Test fun `stop during a routine visual inspection cannot enqueue a late native result read`() = runBlocking {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val finished = CompletableDeferred<Unit>()
+        val reader = ControlledReader(inspector = {
+            withContext(NonCancellable) {
+                started.complete(Unit)
+                release.await()
+                finished.complete(Unit)
+                TransientTextProbe.Reading(.9f, true, 1L, null)
+            }
+        }) { listOf(text("YOU WIN!")) }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            fixture.capture("late-inspection", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            withTimeout(5_000) { started.await() }
+            fixture.witness.stop()
+            release.complete(Unit)
+            withTimeout(5_000) { finished.await() }
+            fixture.match.awaitAcceptedEvidencePublished()
+            assertTrue(reader.requests.isEmpty())
+            assertTrue(fixture.timeline.getArticles().none {
+                it.sourceId.id.startsWith("MATCH_OUTCOME_TEXT_WITNESS") || it.payload is MatchEnded
+            })
+        } finally { release.complete(Unit); fixture.close() }
+    }
+
+    @Test fun `stop during a routine native read refuses its late text and diagnostics`() = runBlocking {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val reader = ControlledReader {
+            withContext(NonCancellable) {
+                started.complete(Unit)
+                release.await()
+                listOf(text("YOU WIN!"))
+            }
+        }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            fixture.capture("late-probe-read", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            val request = reader.request(OcrPriority.NORMAL)
+            request.admit.complete(Unit)
+            withTimeout(5_000) { started.await() }
+            fixture.witness.stop()
+            release.complete(Unit)
+            withTimeout(5_000) { request.finished.await() }
+            fixture.match.awaitAcceptedEvidencePublished()
+            assertTrue(request.cancelled)
+            assertTrue(fixture.timeline.getArticles().none {
+                it.sourceId.id.startsWith("MATCH_OUTCOME_TEXT_WITNESS") || it.payload is MatchEnded
+            })
+        } finally { release.complete(Unit); fixture.close() }
+    }
+
     @Test fun `routine recovery backlog cannot hide fresh win and its source provenance survives to Match end`() = runBlocking {
         val scheduler = OcrWorkScheduler()
         val backendBusy = CompletableDeferred<Unit>()
@@ -186,24 +306,29 @@ class PersistedOutcomeTextWitnessTest {
             fixture.start()
             fixture.capture("recovery-pending", fixture.at)
             val recovery = reader.request(OcrPriority.NORMAL)
+            fixture.capture("probe-pending", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            val probe = reader.request(OcrPriority.NORMAL, index = 1)
             fixture.capture("fresh-win", fixture.clock.get() - 100_000_000L)
             val recent = reader.request(OcrPriority.URGENT)
             recent.admit.complete(Unit)
             fixture.awaitEnd()
-            withTimeout(5_000) { recovery.finished.await(); recent.finished.await() }
+            withTimeout(5_000) { recovery.finished.await(); recent.finished.await(); probe.finished.await() }
             assertTrue("Waiting recovery turn must be cancelled", recovery.cancelled)
+            assertTrue("Waiting routine probe must be cancelled", probe.cancelled)
             assertEquals(0, reader.activeTurns.get())
             val requestsAfterWin = reader.requests.size
 
             repeat(20) { index ->
-                fixture.capture("after-end-$index", if (index % 2 == 0) fixture.at else fixture.clock.get())
+                fixture.capture("after-end-$index", if (index % 2 == 0) fixture.at else fixture.clock.get(),
+                    source = if (index % 2 == 0) "MATCH_OUTCOME_PROBE_CAPTURE" else "MATCH_OUTCOME_CAPTURE")
             }
             fixture.match.awaitAcceptedEvidencePublished()
             // Give a leaked SharedFlow collector and its workers a chance to react.
             delay(100)
             assertEquals(requestsAfterWin, reader.requests.size)
             assertEquals(listOf("fresh-win"), reader.reads.map { it.label() })
-            assertEquals(22, fixture.timeline.getArticles().count { it.payload is CropCaptured })
+            assertEquals(23, fixture.timeline.getArticles().count { it.payload is CropCaptured })
         } finally { fixture.close() }
     }
 
@@ -223,9 +348,10 @@ class PersistedOutcomeTextWitnessTest {
 
         fun start() { phrase.start(match); witness.start(match) }
 
-        suspend fun capture(label: String, sourceTime: Long, wall: Long = 12_345L): RealityArticle {
+        suspend fun capture(label: String, sourceTime: Long, wall: Long = 12_345L,
+            source: String = "MATCH_OUTCOME_CAPTURE"): RealityArticle {
             // Fake readers use the reference label, and never load a Bitmap or touch ML Kit.
-            val record = custody.submitTestimony(SourceId("MATCH_OUTCOME_CAPTURE"), CropCaptured(
+            val record = custody.submitTestimony(SourceId(source), CropCaptured(
                 CropArtifactReference("artifacts/crops/$label.png", "a".repeat(64), 1),
                 BattleCropProvenance(BattleCropContracts.matchOutcome.cropName, 1080, 2400,
                     BattleCropBounds(100, 400, 900, 600))), wall, null, emptyList(), sourceTime)
@@ -241,7 +367,10 @@ class PersistedOutcomeTextWitnessTest {
         fun close() { witness.stop(); phrase.stop(); match.release() }
     }
 
-    private class ControlledReader(private val read: suspend (RealityArticle) -> List<OcrTextEvidence>) : OutcomeCropReader {
+    private class ControlledReader(
+        private val inspector: suspend (RealityArticle) -> TransientTextProbe.Reading? = { null },
+        private val read: suspend (RealityArticle) -> List<OcrTextEvidence>,
+    ) : OutcomeCropReader {
         class Request(val priority: OcrPriority) {
             val admit = CompletableDeferred<Unit>()
             val finished = CompletableDeferred<Unit>()
@@ -251,6 +380,7 @@ class PersistedOutcomeTextWitnessTest {
         val reads = CopyOnWriteArrayList<RealityArticle>()
         val activeTurns = AtomicInteger()
         override suspend fun warmUp() = Unit
+        override suspend fun inspect(article: RealityArticle) = inspector(article)
         override suspend fun <T> withReadingTurn(priority: OcrPriority,
             block: suspend (OutcomeCropReadingTurn) -> T): T {
             val request = Request(priority)

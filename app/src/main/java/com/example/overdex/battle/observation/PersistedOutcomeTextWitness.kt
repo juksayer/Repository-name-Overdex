@@ -20,10 +20,11 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withContext
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.model.observation.OcrTextEvidence
 
-/** Reads recent result candidates promptly while recovering older crops at routine priority. */
+/** Reads near-KO results urgently, with independent routine checks for early concessions. */
 class PersistedOutcomeTextWitness internal constructor(
     private val reader: OutcomeCropReader,
     private val now: () -> Long = System::nanoTime,
@@ -46,16 +47,22 @@ class PersistedOutcomeTextWitness internal constructor(
             // Only artifact references are queued. Source crops remain in the
             // Timeline even when their live-reading window has expired.
             val pending = OutcomeEvidenceQueue<RealityArticle>()
+            val probePending = PendingTransientTextCrops()
+            val probeSource = BattleWitnessContracts.matchOutcomeProbeCapture.witnessId
             val recentWake = Channel<Unit>(Channel.CONFLATED)
             val recoveryWake = Channel<Unit>(Channel.CONFLATED)
+            val probeWake = Channel<Unit>(Channel.CONFLATED)
             witnessScope.coroutineContext[kotlinx.coroutines.Job]!!.invokeOnCompletion {
                 pending.close()
+                probePending.clear()
                 recentWake.close()
                 recoveryWake.close()
+                probeWake.close()
             }
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 match.articles.filter { article ->
-                    (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
+                    article.sourceId.id != probeSource &&
+                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
                 }.collect { article ->
                     val capturedAt = article.monotonicTimeNanos ?: return@collect
                     if (pending.offer(article, capturedAt, now())) {
@@ -64,26 +71,53 @@ class PersistedOutcomeTextWitness internal constructor(
                     }
                 }
             }
+            // Routine checks never enter the urgent result backlog. Keep the
+            // visual inspection separate so its I/O cannot delay an urgent crop.
+            witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                match.articles.filter { article ->
+                    article.sourceId.id == probeSource &&
+                        (article.payload as? CropCaptured)?.cropProvenance?.cropName == BattleCropContracts.matchOutcome.cropName
+                }.collect { article ->
+                    val visual = try { reader.inspect(article) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) {
+                        Log.w("OutcomeText", "Result probe failed; retaining latest OCR fallback", error)
+                        null
+                    }
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    probePending.offer(article, visual)
+                    probeWake.trySend(Unit)
+                }
+            }
             // Pay model startup while the battle is underway, before the brief result.
             witnessScope.launch { reader.warmUp() }
-            fun launchLane(recent: Boolean, wake: Channel<Unit>) = witnessScope.launch {
-                val lane = if (recent) "RECENT" else "RECOVERY"
-                val priority = if (recent) OcrPriority.URGENT else OcrPriority.NORMAL
+            fun launchLane(lane: OutcomeReadLane, wake: Channel<Unit>) = witnessScope.launch {
+                val priority = if (lane == OutcomeReadLane.RECENT) OcrPriority.URGENT else OcrPriority.NORMAL
                 for (signal in wake) {
-                    while (pending.counts(now()).let { if (recent) it.recent else it.recovery } > 0) {
+                    fun hasPending() = when (lane) {
+                        OutcomeReadLane.RECENT -> pending.counts(now()).recent > 0
+                        OutcomeReadLane.RECOVERY -> pending.counts(now()).recovery > 0
+                        OutcomeReadLane.PROBE -> probePending.hasPending(now())
+                    }
+                    while (hasPending()) {
                         var sample: RealityArticle? = null
                         val queuedAt = now()
                         var admittedAt = queuedAt
                         var nativeReadNanos = 0L
                         var passes = 0
                         var remaining = pending.counts(queuedAt)
+                        var probeSelection: PendingTransientTextCrops.Selection? = null
                         val readings: List<OcrTextEvidence> = try {
                             reader.withReadingTurn(priority) { turn ->
                                 admittedAt = now()
                                 // Selection and expiry happen after admission.
                                 // A newer blank cannot leap over a brief recent result.
-                                val article = if (recent) pending.pollRecent(admittedAt)
-                                    else pending.pollRecovery(admittedAt)
+                                val article = when (lane) {
+                                    OutcomeReadLane.RECENT -> pending.pollRecent(admittedAt)
+                                    OutcomeReadLane.RECOVERY -> pending.pollRecovery(admittedAt)
+                                    OutcomeReadLane.PROBE -> probePending.select(admittedAt)
+                                        ?.also { probeSelection = it }?.article
+                                }
                                 recoveryWake.trySend(Unit) // expiry may have moved work
                                 article ?: return@withReadingTurn emptyList()
                                 sample = article
@@ -104,6 +138,14 @@ class PersistedOutcomeTextWitness internal constructor(
                         val article = sample ?: continue
                         val capturedAt = article.monotonicTimeNanos ?: continue
                         val completedAt = now()
+                        probeSelection?.let {
+                            if (readings.any { reading -> reading.rawText.isNotBlank() }) probePending.succeeded(it)
+                            else probePending.failed(it)
+                        }
+                        val probeDetails = probeSelection?.let {
+                            " selection=${it.kind} probePending=${it.pendingCount} " +
+                                "coalescedTotal=${it.coalescedTotal} overflowTotal=${it.overflowTotal} expiredTotal=${it.expiredTotal}"
+                        }.orEmpty()
                         // queueMs is this backend request's wait. Crop age at
                         // admission also includes time waiting for local selection.
                         match.custody.submitTestimony(
@@ -114,8 +156,9 @@ class PersistedOutcomeTextWitness internal constructor(
                                 "nativeReadMs=${nativeReadNanos / 1_000_000} " +
                                 "processingMs=${(completedAt - admittedAt) / 1_000_000} " +
                                 "totalMs=${(completedAt - capturedAt) / 1_000_000} " +
-                                "passes=$passes pending=${remaining.total} recentPending=${remaining.recent} " +
-                                "recoveryPending=${remaining.recovery} nonblank=${readings.any { it.rawText.isNotBlank() }}"),
+                                "passes=$passes pending=${if (lane == OutcomeReadLane.PROBE) probeSelection?.pendingCount ?: 0 else remaining.total} " +
+                                "recentPending=${remaining.recent} recoveryPending=${remaining.recovery}" + probeDetails +
+                                " nonblank=${readings.any { it.rawText.isNotBlank() }}"),
                             article.perceivedAt, null, emptyList(), capturedAt,
                         )
                         readings.filter { it.rawText.isNotBlank() }.forEach { reading ->
@@ -125,7 +168,7 @@ class PersistedOutcomeTextWitness internal constructor(
                             )
                         }
                         if (readings.any { MatchOutcomeTextResolver.resolve(it.rawText) != null }) {
-                            // Stop collection and both lanes, not just this worker.
+                            // Stop collection and all lanes, not just this worker.
                             // Typed phrase witnesses independently consume the text.
                             pending.close()
                             witnessScope.cancel("Decisive result recorded")
@@ -134,11 +177,12 @@ class PersistedOutcomeTextWitness internal constructor(
                     }
                     // The count check can demote expired recent frames even when
                     // there is no following capture to wake recovery.
-                    if (recent && pending.counts(now()).recovery > 0) recoveryWake.trySend(Unit)
+                    if (lane == OutcomeReadLane.RECENT && pending.counts(now()).recovery > 0) recoveryWake.trySend(Unit)
                 }
             }
-            launchLane(recent = true, recentWake)
-            launchLane(recent = false, recoveryWake)
+            launchLane(OutcomeReadLane.RECENT, recentWake)
+            launchLane(OutcomeReadLane.RECOVERY, recoveryWake)
+            launchLane(OutcomeReadLane.PROBE, probeWake)
         }
     }
 
@@ -148,6 +192,8 @@ class PersistedOutcomeTextWitness internal constructor(
 /** Admission is separate from crop selection, so a waiting turn never fixes stale pixels. */
 internal interface OutcomeCropReader {
     suspend fun warmUp()
+    /** Scheduling hint only; weak/failed probes still retain an OCR fallback. */
+    suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = null
     suspend fun <T> withReadingTurn(priority: OcrPriority, block: suspend (OutcomeCropReadingTurn) -> T): T
 }
 
@@ -159,6 +205,19 @@ internal interface OutcomeCropReadingTurn {
 
 private class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtifactStore) : OutcomeCropReader {
     override suspend fun warmUp() { OutcomeTextRecognizer.warmUp() }
+    override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? = withContext(Dispatchers.IO) {
+        val crop = article.payload as CropCaptured
+        val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@withContext null
+        try {
+            val pixels = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+            val excluded = crop.overlayBounds?.let {
+                listOf(TransientTextProbe.PixelBounds(kotlin.math.floor(it.left).toInt(),
+                    kotlin.math.floor(it.top).toInt(), kotlin.math.ceil(it.right).toInt(), kotlin.math.ceil(it.bottom).toInt()))
+            }.orEmpty()
+            TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height, excluded)
+        } finally { bitmap.recycle() }
+    }
     override suspend fun <T> withReadingTurn(
         priority: OcrPriority,
         block: suspend (OutcomeCropReadingTurn) -> T,
@@ -177,6 +236,8 @@ private class ArtifactOutcomeCropReader(private val artifactStore: FileCropArtif
         })
     }
 }
+
+private enum class OutcomeReadLane { RECENT, RECOVERY, PROBE }
 
 internal enum class MatchOutcomePhrase { WIN, LOSS }
 

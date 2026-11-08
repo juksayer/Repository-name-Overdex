@@ -1146,6 +1146,19 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "Match Outcome Crop Capture"
             )
         )
+        observationDispatcher.register(
+            CropCaptureWitness(
+                input = input,
+                calibration = calibration,
+                contract = BattleWitnessContracts.matchOutcomeProbeCapture,
+                artifactStore = cropArtifactStore,
+                isEnabled = { battleEvidenceLive() && matchOutcomeCaptureGate.isProbeEnabled() },
+                captureIntervalNanos = MatchOutcomeCaptureGate.PROBE_CAPTURE_INTERVAL_NANOS,
+                captureDispatcher = auxiliaryCaptureDispatcher,
+                observerId = ObserverId(BattleWitnessContracts.matchOutcomeProbeCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+                name = "Match Outcome Probe Capture"
+            )
+        )
         observationDispatcher.register(PersistedOutcomeTextWitness(cropArtifactStore))
         observationDispatcher.register(PersistedFastMoveEffectivenessWitness())
         observationDispatcher.register(
