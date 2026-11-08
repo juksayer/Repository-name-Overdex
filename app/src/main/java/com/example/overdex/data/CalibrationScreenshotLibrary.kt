@@ -33,6 +33,17 @@ object CalibrationScreenshotLibrary {
         return abs(ratio / otherRatio - 1.0) <= ASPECT_TOLERANCE
     }
 
+    /** An unreadable header is never evidence that an image belongs to this screen. */
+    fun matchesScreen(reference: CalibrationScreenshotReference?, screenWidth: Int, screenHeight: Int): Boolean =
+        reference?.hasDimensions == true && sameShape(reference.width, reference.height, screenWidth, screenHeight)
+
+    /** Decoders may downsample uniformly, but cannot silently change the source's screen shape. */
+    fun matchesDecodedScreen(reference: CalibrationScreenshotReference?, decodedWidth: Int, decodedHeight: Int,
+        screenWidth: Int, screenHeight: Int): Boolean =
+        matchesScreen(reference, screenWidth, screenHeight) && reference != null &&
+            sameShape(decodedWidth, decodedHeight, reference.width, reference.height) &&
+            sameShape(decodedWidth, decodedHeight, screenWidth, screenHeight)
+
     fun filter(
         references: List<CalibrationScreenshotReference>,
         filter: CalibrationScreenshotFilter,
@@ -41,8 +52,7 @@ object CalibrationScreenshotLibrary {
     ): List<CalibrationScreenshotReference> = references.filter { reference ->
         when (filter) {
             CalibrationScreenshotFilter.All -> true
-            CalibrationScreenshotFilter.ThisScreen -> !reference.hasDimensions ||
-                sameShape(reference.width, reference.height, screenWidth, screenHeight)
+            CalibrationScreenshotFilter.ThisScreen -> matchesScreen(reference, screenWidth, screenHeight)
             is CalibrationScreenshotFilter.Shape ->
                 sameShape(reference.width, reference.height, filter.width, filter.height)
             is CalibrationScreenshotFilter.Device -> reference.deviceLabel == filter.label

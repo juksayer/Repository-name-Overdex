@@ -77,10 +77,10 @@ class DirectoryCropPreviewFeedDeviceTest {
                 crop("whole-frame", frame, "PlayerHpEvidenceCrop", 4, 3, BattleCropBounds(0, 0, 4, 3)),
                 // A standalone PNG is already cropped. The absolute rectangle
                 // locates its origin but must not be applied to the image again.
-                crop("standalone", standalone, "OpponentHpEvidenceCrop", 1080, 2400,
-                    BattleCropBounds(100, 200, 104, 203)),
-                crop("wrong-size", standalone, "AnnouncementCrop", 1080, 2400,
-                    BattleCropBounds(100, 200, 104, 204)),
+                crop("standalone", standalone, "OpponentHpEvidenceCrop", 8, 6,
+                    BattleCropBounds(2, 1, 6, 4)),
+                crop("wrong-size", standalone, "AnnouncementCrop", 8, 6,
+                    BattleCropBounds(2, 1, 6, 5)),
             ))
             val full = requireNotNull(state.crops.getValue(DirectoryCropSlot.PLAYER_HP).bitmap)
             val separate = requireNotNull(state.crops.getValue(DirectoryCropSlot.OPPONENT_HP).bitmap)
@@ -124,7 +124,8 @@ class DirectoryCropPreviewFeedDeviceTest {
             }
             assertTrue(File(root, "artifacts").deleteRecursively())
 
-            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() })
+            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() },
+                screenGeometry = DirectoryCalibrationScreenGeometry(4, 3))
             val restored = withTimeout(5_000) {
                 feed.states().first { it.matchId == MATCH_ID && !it.isLoading }
             }
@@ -144,7 +145,10 @@ class DirectoryCropPreviewFeedDeviceTest {
             articles.forEach(ledger::append)
         }
         val source = MatchArchiveSource(MatchId(MATCH_ID), timeline)
-        val feed = DirectoryCropPreviewFeed(root, sources = { listOf(source) })
+        val feed = DirectoryCropPreviewFeed(root, sources = { listOf(source) },
+            screenGeometry = (articles.first().payload as CropCaptured).cropProvenance.let {
+                DirectoryCalibrationScreenGeometry(it.sourceWidth, it.sourceHeight)
+            })
         return withTimeout(5_000) { feed.states().first { it.matchId == MATCH_ID && !it.isLoading } }
     }
 

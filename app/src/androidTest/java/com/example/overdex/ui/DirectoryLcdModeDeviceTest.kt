@@ -6,6 +6,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.overdex.battle.preview.DirectoryCalibrationFrame
 import com.example.overdex.battle.preview.DirectoryCalibrationFrameOrigin
+import com.example.overdex.battle.preview.DirectoryCalibrationScreenGeometry
 import com.example.overdex.battle.preview.DirectoryCropPreviewState
 import com.example.overdex.battle.preview.DirectoryCropSlot
 import com.example.overdex.data.BattleCalibration
@@ -152,9 +153,11 @@ class DirectoryLcdModeDeviceTest {
             val editor = rememberDirectoryCropEditor(enabled = mode.calibrationOpen,
                 loadFrame = {
                     sourceLoads.incrementAndGet()
-                    DirectoryCalibrationFrame(source, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE)
+                    DirectoryCalibrationFrame(source, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE,
+                        sourceGeometry = DirectoryCalibrationScreenGeometry(200, 200))
                 },
-                loadCalibration = { DirectoryCalibrationSnapshot(BattleCalibration(), "isolated-device-test") },
+                loadCalibration = { DirectoryCalibrationSnapshot(BattleCalibration(), "isolated-device-test",
+                    DirectoryCalibrationScreenGeometry(200, 200), profileMatchesDevice = true) },
                 saveCalibration = { _, _ -> saves.incrementAndGet(); save() })
             SideEffect { lcd = mode; cropEditor = editor; directoryTree = tree }
             fun update(action: () -> Unit) { action(); state = tree.getState() }

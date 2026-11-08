@@ -78,6 +78,15 @@ annotations in `PersonalFieldNotesStore` under Android's no-backup directory.
 rechecks explicit selections before atomic import. This journal path does not
 write battle history or change Timeline testimony. See the current
 [field-note plan](docs/plans/field-notes.md) and its linked validation records.
+`FieldNotesNearbyExchange` supplies the foreground peer transport for the existing
+QR-linked partner. Authentication and transport delivery remain separate from
+the journal's preview and durable save; this is not the Firebase Trainer Comms
+message path.
+
+Calibration reference selection and directory LCD editing require compatible
+source/decoded geometry for the current full display. Foreign profiles are
+review-only, and directory saves recheck the physical device and active profile.
+See [device isolation checks](docs/verification/2026-11-08-calibration-device-isolation.md).
 
 `PokedexViewModel` currently acts as the battle composition root. It creates the
 Match and Droidball session, loads calibration, constructs artifact stores,

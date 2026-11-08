@@ -70,6 +70,7 @@ data class DirectoryCropPreviewState(
 class DirectoryCropPreviewFeed internal constructor(
     private val repositoryRoot: File,
     private val sources: () -> List<MatchArchiveSource>,
+    private val screenGeometry: DirectoryCalibrationScreenGeometry,
     private val decodeLocal: ((DirectoryCropReference) -> Bitmap?)? = null,
 ) {
     private data class LiveSelection(val timeline: RealityTimeline, val selection: DirectoryCropSelection,
@@ -94,7 +95,7 @@ class DirectoryCropPreviewFeed internal constructor(
             currentCoroutineContext().ensureActive()
             val reference = snapshot?.let { completeFrameReference(it) }
             currentCoroutineContext().ensureActive()
-            DirectoryCalibrationFrameLoader.load(repositoryRoot, reference, snapshot?.archiveFile)
+            DirectoryCalibrationFrameLoader.load(repositoryRoot, reference, snapshot?.archiveFile, screenGeometry)
         }
     }
 
@@ -163,7 +164,8 @@ class DirectoryCropPreviewFeed internal constructor(
             val tail = entry.timeline.getArticlesFrom(entry.consumed)
             tail.forEach(entry.selection::accept)
             entry.consumed += tail.size
-            if (entry.selection.crops.isNotEmpty()) return Selected(id, entry.selection.crops, timeline = entry.timeline)
+            val compatible = compatibleCrops(entry.selection.crops)
+            if (compatible.isNotEmpty()) return Selected(id, compatible, timeline = entry.timeline)
         }
         return null
     }
@@ -181,9 +183,14 @@ class DirectoryCropPreviewFeed internal constructor(
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { continue }
             val selection = DirectoryCropSelection.fromBattleArchive(archive) ?: continue
-            return Selected(selection.matchId, selection.crops, file)
+            val compatible = compatibleCrops(selection.crops)
+            if (compatible.isNotEmpty()) return Selected(selection.matchId, compatible, file)
         }
         return null
+    }
+
+    private fun compatibleCrops(crops: Map<DirectoryCropSlot, DirectoryCropReference>) = crops.filterValues {
+        screenGeometry.accepts(it.provenance.sourceWidth, it.provenance.sourceHeight)
     }
 
     private suspend fun renderImages(next: Selected): DirectoryCropPreviewState {

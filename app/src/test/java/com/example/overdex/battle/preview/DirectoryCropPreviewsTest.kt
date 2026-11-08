@@ -16,6 +16,7 @@ import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -24,6 +25,65 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DirectoryCropPreviewsTest {
+    @Test fun `live preview skips foreign and unknown captures without altering their testimony`() = runBlocking {
+        withRoot { root ->
+            fun timeline(id: String, width: Int, height: Int) = InMemoryRealityTimeline().also {
+                it.append(event("start-$id", id, MatchStarted, 0, 0))
+                it.append(crop("crop-$id", id, "PlayerHpEvidenceCrop", 1, 1, width, height))
+            }
+            val foreign = timeline("moondrop", 1080, 2400)
+            val unknown = timeline("unknown", 0, 0)
+            val local = timeline("pixel", 672, 1419)
+            val foreignBefore = foreign.getArticlesFrom(0)
+            var decoded = 0
+            val feed = DirectoryCropPreviewFeed(root, sources = {
+                listOf(MatchArchiveSource(MatchId("moondrop"), foreign),
+                    MatchArchiveSource(MatchId("unknown"), unknown), MatchArchiveSource(MatchId("pixel"), local))
+            }, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2280), decodeLocal = { decoded++; null })
+
+            val state = feed.states().first { !it.isLoading }
+
+            assertEquals("pixel", state.matchId)
+            assertEquals("crop-pixel", state.crops.getValue(DirectoryCropSlot.PLAYER_HP).articleId)
+            assertEquals("Foreign source pixels are never decoded for this device's LCD", 1, decoded)
+            assertEquals(foreignBefore, foreign.getArticlesFrom(0))
+        }
+    }
+
+    @Test fun `a newer imported foreign archive cannot displace this devices older calibration evidence`() = runBlocking {
+        withRoot { root ->
+            saveArchive(root, "2026-11-08_01_pixel.odxmatch.zip", "pixel", true, 672, 1419)
+            saveArchive(root, "2026-11-08_02_moondrop.odxmatch.zip", "moondrop", true, 1080, 2400)
+            saveArchive(root, "2026-11-08_03_unknown.odxmatch.zip", "unknown", true, 0, 0)
+            val filesBefore = File(root, "match_archives").listFiles()!!.associate { it.name to it.readBytes().toList() }
+            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() },
+                screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2280), decodeLocal = { null })
+
+            val state = feed.states().first { !it.isLoading }
+
+            assertEquals("pixel", state.matchId)
+            assertEquals(setOf(DirectoryCropSlot.ANNOUNCEMENT), state.crops.keys)
+            assertEquals(672, state.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).provenance?.sourceWidth)
+            assertEquals(filesBefore, File(root, "match_archives").listFiles()!!.associate { it.name to it.readBytes().toList() })
+        }
+    }
+
+    @Test fun `foreign-only history leaves calibration uncaptured instead of proposing foreign crop corrections`() = runBlocking {
+        withRoot { root ->
+            saveArchive(root, "2026-11-08_01_moondrop.odxmatch.zip", "moondrop", true)
+            var decoded = 0
+            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() },
+                screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2280), decodeLocal = { decoded++; null })
+
+            val state = feed.states().first { !it.isLoading }
+
+            assertNull(state.matchId)
+            assertTrue(state.crops.isEmpty())
+            assertNull(state.latestCaptureMillis)
+            assertEquals(0, decoded)
+        }
+    }
+
     @Test fun `battle timing and configured identities do not verify a crop target`() {
         val selected = DirectoryCropSelection("a")
         selected.accept(event("start", "a", MatchStarted, 10_000, ns(10)))
@@ -123,7 +183,7 @@ class DirectoryCropPreviewsTest {
                 it.append(crop("name", "a", "PlayerActiveSpeciesTextCrop", 10_000, ns(10)))
             }
             var decodes = 0
-            val feed = DirectoryCropPreviewFeed(root,
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400),
                 sources = { listOf(MatchArchiveSource(MatchId("a"), timeline)) }, decodeLocal = { decodes++; null })
             var count = 0
             val results = feed.states().drop(1).take(2).onEach {
@@ -204,7 +264,7 @@ class DirectoryCropPreviewsTest {
             var source = MatchArchiveSource(MatchId("a"), a)
             var polls = 0
             var decodes = 0
-            val feed = DirectoryCropPreviewFeed(root, sources = { polls++; listOf(source) }, decodeLocal = { decodes++; null })
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400), sources = { polls++; listOf(source) }, decodeLocal = { decodes++; null })
             assertEquals(0, polls)
             val emitted = mutableListOf<DirectoryCropPreviewState>()
             feed.states().drop(1).take(3).onEach { state ->
@@ -226,7 +286,7 @@ class DirectoryCropPreviewsTest {
     @Test fun `cancelled initial collection leaves no ongoing archive or timeline work`() = runBlocking {
         withRoot { root ->
             var polls = 0
-            val feed = DirectoryCropPreviewFeed(root, sources = { polls++; emptyList() })
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400), sources = { polls++; emptyList() })
             feed.states().take(1).toList()
             // flowOn may begin the next iteration before downstream cancellation,
             // so verify the unsubscribed feed itself does not keep polling.
@@ -238,7 +298,7 @@ class DirectoryCropPreviewsTest {
 
     @Test fun `newly recovered battle is discovered after an initially empty archive directory`() = runBlocking {
         withRoot { root ->
-            val feed = DirectoryCropPreviewFeed(root, sources = { emptyList() }, decodeLocal = { null })
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400), sources = { emptyList() }, decodeLocal = { null })
             var count = 0
             val results = feed.states().drop(1).take(2).onEach {
                 if (++count == 1) {
@@ -257,7 +317,7 @@ class DirectoryCropPreviewsTest {
             saveArchive(root, "2026-10-29_cold.odxmatch.zip", "cold", true)
             val warm = InMemoryRealityTimeline().also { it.append(event("start-warm", "warm", MatchStarted, 0, 0)); it.append(crop("warm", "warm", "PlayerHpEvidenceCrop", 5, 5)) }
             var source: MatchArchiveSource? = null
-            val feed = DirectoryCropPreviewFeed(root, sources = { listOfNotNull(source) }, decodeLocal = {
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400), sources = { listOfNotNull(source) }, decodeLocal = {
                 source = MatchArchiveSource(MatchId("warm"), warm)
                 null
             })
@@ -522,7 +582,7 @@ class DirectoryCropPreviewsTest {
             val menu = InMemoryRealityTimeline().also { it.append(crop("menu", "menu", "AnnouncementCrop", 20_000, ns(20))) }
             var source = MatchArchiveSource(MatchId("battle"), battle)
             var count = 0
-            val feed = DirectoryCropPreviewFeed(root, sources = { listOf(source) }, decodeLocal = { null })
+            val feed = DirectoryCropPreviewFeed(root, screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2400), sources = { listOf(source) }, decodeLocal = { null })
             val states = feed.states().drop(1).take(2).onEach {
                 if (++count == 1) source = MatchArchiveSource(MatchId("menu"), menu)
             }.toList()
@@ -539,9 +599,10 @@ class DirectoryCropPreviewsTest {
     private fun hp(id: String, match: String, seconds: Long, side: ActivePokemonSide = ActivePokemonSide.PLAYER) =
         event(id, match, ActiveHpBarMeasured(side, 10, 20, 110, 25, .5f, 1080, 2400), seconds * 1000, ns(seconds))
 
-    private fun crop(id: String, match: String, name: String, wall: Long, mono: Long?) = RealityArticle(
+    private fun crop(id: String, match: String, name: String, wall: Long, mono: Long?,
+        sourceWidth: Int = 1080, sourceHeight: Int = 2400) = RealityArticle(
         ArticleId(id), wall, wall, SourceId("TEST"),
-        CropCaptured(reference(byteArrayOf(1, 2, 3)), BattleCropProvenance(name, 1080, 2400, BattleCropBounds(10, 20, 110, 60))),
+        CropCaptured(reference(byteArrayOf(1, 2, 3)), BattleCropProvenance(name, sourceWidth, sourceHeight, BattleCropBounds(10, 20, 110, 60))),
         matchId = MatchId(match), monotonicTimeNanos = mono)
 
     private fun archived(article: RealityArticle): ArchivedRealityArticle =
@@ -552,8 +613,9 @@ class DirectoryCropPreviewsTest {
         return CropArtifactReference("artifacts/crops/sha256/$hash.png", hash, bytes.size.toLong())
     }
 
-    private fun saveArchive(root: File, name: String, id: String, battle: Boolean) {
-        val image = archived(crop("crop-$id", id, "AnnouncementCrop", 1, 1))
+    private fun saveArchive(root: File, name: String, id: String, battle: Boolean,
+        sourceWidth: Int = 1080, sourceHeight: Int = 2400) {
+        val image = archived(crop("crop-$id", id, "AnnouncementCrop", 1, 1, sourceWidth, sourceHeight))
         val archive = MatchArchive(matchId = id, articles = listOf(image) +
             if (battle) listOf(image.copy(articleId = "start-$id", payload = ArchivedMatchStarted)) else emptyList(),
             mediaIncluded = false)

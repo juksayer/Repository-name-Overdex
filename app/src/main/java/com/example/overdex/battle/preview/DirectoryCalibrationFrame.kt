@@ -10,11 +10,20 @@ import com.example.overdex.battle.observation.BattleCropBounds
 import com.example.overdex.battle.observation.BattleCropProvenance
 import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.data.BattleCalibrationReferenceStore
+import com.example.overdex.data.CalibrationScreenshotLibrary
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlinx.coroutines.CancellationException
 
 enum class DirectoryCalibrationFrameOrigin { RECORDED_MATCH_FRAME, SAVED_BATTLE_REFERENCE }
+
+/** The device's full display bounds, independent of application insets or source downscaling. */
+data class DirectoryCalibrationScreenGeometry(val width: Int, val height: Int) {
+    val isKnown: Boolean get() = width > 0 && height > 0
+
+    fun accepts(sourceWidth: Int, sourceHeight: Int): Boolean = isKnown &&
+        CalibrationScreenshotLibrary.sameShape(width, height, sourceWidth, sourceHeight)
+}
 
 /** A complete source image, never a cropped image stretched into new territory. */
 data class DirectoryCalibrationFrame(
@@ -23,7 +32,14 @@ data class DirectoryCalibrationFrame(
     val matchId: String? = null,
     val articleId: String? = null,
     val capturedAtMillis: Long? = null,
-)
+    /** Actual capture dimensions; absence never grants permission to edit this phone's crops. */
+    val sourceGeometry: DirectoryCalibrationScreenGeometry? = null,
+) {
+    fun isEditableOn(screen: DirectoryCalibrationScreenGeometry): Boolean =
+        !bitmap.isRecycled && sourceGeometry?.let { source ->
+            screen.accepts(source.width, source.height) && source.accepts(bitmap.width, bitmap.height)
+        } == true
+}
 
 internal data class DirectoryCalibrationFrameReference(
     val matchId: String,
@@ -85,19 +101,23 @@ internal object DirectoryCalibrationFramePixels {
 internal object DirectoryCalibrationFrameLoader {
     private const val MAX_IMAGE_BYTES = 16L * 1024 * 1024
 
-    fun load(repositoryRoot: File, reference: DirectoryCalibrationFrameReference?, archiveFile: File?): DirectoryCalibrationFrame? {
-        if (reference != null) {
+    fun load(repositoryRoot: File, reference: DirectoryCalibrationFrameReference?, archiveFile: File?,
+        screen: DirectoryCalibrationScreenGeometry): DirectoryCalibrationFrame? {
+        if (!screen.isKnown) return null
+        if (reference != null && screen.accepts(reference.provenance.sourceWidth, reference.provenance.sourceHeight)) {
             val bytes = DirectoryCropArchiveBytes.readLocal(repositoryRoot, reference.artifact)
                 ?: archiveFile?.let { DirectoryCropArchiveBytes.read(it, listOf(reference.artifact))[reference.artifact.relativePath] }
-            val bitmap = bytes?.let { decodeComplete(it, reference.provenance) }
+            val bitmap = bytes?.let { decodeComplete(it, screen, reference.provenance) }
             if (bitmap != null) return DirectoryCalibrationFrame(bitmap, DirectoryCalibrationFrameOrigin.RECORDED_MATCH_FRAME,
-                reference.matchId, reference.articleId, reference.capturedAtMillis)
+                reference.matchId, reference.articleId, reference.capturedAtMillis,
+                DirectoryCalibrationScreenGeometry(reference.provenance.sourceWidth, reference.provenance.sourceHeight))
         }
         val saved = BattleCalibrationReferenceStore(repositoryRoot).latest()
-        val bitmap = saved?.let { readSavedReference(repositoryRoot, it) }?.let { decodeComplete(it) } ?: return null
+        val bitmap = saved?.let { readSavedReference(repositoryRoot, it) }?.let { decodeComplete(it, screen) } ?: return null
         // The reference store has no immutable match/time association. Do not
         // borrow the current preview's attribution for a different saved image.
-        return DirectoryCalibrationFrame(bitmap, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE)
+        return DirectoryCalibrationFrame(bitmap, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE,
+            sourceGeometry = DirectoryCalibrationScreenGeometry(bitmap.width, bitmap.height))
     }
 
     internal fun readSavedReference(repositoryRoot: File, file: File): ByteArray? = try {
@@ -118,10 +138,12 @@ internal object DirectoryCalibrationFrameLoader {
     } catch (cancelled: CancellationException) { throw cancelled }
     catch (_: Exception) { null }
 
-    private fun decodeComplete(bytes: ByteArray, expected: BattleCropProvenance? = null): Bitmap? {
+    private fun decodeComplete(bytes: ByteArray, screen: DirectoryCalibrationScreenGeometry,
+        expected: BattleCropProvenance? = null): Bitmap? {
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, dimensions)
-        if (!DirectoryCalibrationFramePixels.validDimensions(dimensions.outWidth, dimensions.outHeight, expected)) return null
+        if (!DirectoryCalibrationFramePixels.validDimensions(dimensions.outWidth, dimensions.outHeight, expected) ||
+            !screen.accepts(dimensions.outWidth, dimensions.outHeight)) return null
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
         val complete = !bitmap.hasAlpha() || DirectoryCalibrationFramePixels.hasCompleteCoverage(bitmap.width, bitmap.height) { y, row ->
             bitmap.getPixels(row, 0, bitmap.width, 0, y, bitmap.width, 1)

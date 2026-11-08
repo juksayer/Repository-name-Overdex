@@ -26,12 +26,32 @@ class CalibrationScreenshotLibraryTest {
     }
 
     @Test
-    fun `unknown dimensions remain available without disguising a known mismatched image`() {
+    fun `unknown dimensions are reviewable in all images but never match this screen`() {
         val unknown = reference("Unreadable header", 0, 0)
         val actual = CalibrationScreenshotLibrary.filter(library + unknown, CalibrationScreenshotFilter.ThisScreen, 1080, 2400)
-        assertEquals(listOf(moondrop, unknown), actual)
-        assertEquals(listOf(unknown), CalibrationScreenshotLibrary.filter(listOf(pixel, unknown), CalibrationScreenshotFilter.ThisScreen, 1080, 2400))
+        assertEquals(listOf(moondrop), actual)
+        assertTrue(CalibrationScreenshotLibrary.filter(listOf(pixel, unknown), CalibrationScreenshotFilter.ThisScreen, 1080, 2400).isEmpty())
         assertTrue(CalibrationScreenshotLibrary.filter(listOf(pixel), CalibrationScreenshotFilter.ThisScreen, 1080, 2400).isEmpty())
+        assertEquals(listOf(pixel, unknown), CalibrationScreenshotLibrary.filter(listOf(pixel, unknown), CalibrationScreenshotFilter.All, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesScreen(unknown, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesScreen(null, 1080, 2400))
+    }
+
+    @Test fun `known downscaled frames match within existing rounding tolerance but other phone shapes do not`() {
+        assertTrue(CalibrationScreenshotLibrary.matchesScreen(reference("Moondrop frame", 672, 1493), 1080, 2400))
+        assertTrue(CalibrationScreenshotLibrary.matchesScreen(reference("Pixel frame", 672, 1419), 1080, 2280))
+        assertFalse(CalibrationScreenshotLibrary.matchesScreen(reference("Moondrop frame", 672, 1493), 1080, 2280))
+        assertFalse(CalibrationScreenshotLibrary.matchesScreen(reference("Pixel frame", 672, 1419), 1080, 2400))
+        assertTrue(CalibrationScreenshotLibrary.sameShape(1084, 2400, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.sameShape(1089, 2400, 1080, 2400))
+    }
+
+    @Test fun `decoded references must preserve both the declared shape and this screen shape`() {
+        assertTrue(CalibrationScreenshotLibrary.matchesDecodedScreen(moondrop, 216, 480, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesDecodedScreen(moondrop, 1080, 2280, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesDecodedScreen(pixel, 1080, 2400, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesDecodedScreen(moondrop, 0, 0, 1080, 2400))
+        assertFalse(CalibrationScreenshotLibrary.matchesDecodedScreen(reference("Unknown", 0, 0), 1080, 2400, 1080, 2400))
     }
 
     @Test

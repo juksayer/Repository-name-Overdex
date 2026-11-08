@@ -70,13 +70,13 @@ fun DirectoryCropPreviewLcd(
                     editor?.loading == true -> "Loading battle reference…"
                     focused && editor?.frame != null -> editor.frame!!.label()
                     latest != null -> "Battle crops ${timeFormat.format(Date(latest))}"
-                    else -> "Battle crops · tap to calibrate"
+                    else -> "Record a battle on this device"
                 }, modifier = Modifier.weight(1f).testTag("directory-crop-preview-timestamp"),
                     color = CropPreviewText, fontSize = 9.sp, lineHeight = 10.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
                 if (state.isLoading && !focused) Text("Loading", color = CropPreviewText,
                     fontSize = 8.sp, lineHeight = 10.sp, style = CropPreviewTextStyle)
-                if (state.reviewSlots.isNotEmpty()) Text("Review ${state.reviewSlots.size}",
+                if (state.crops.isNotEmpty() && state.reviewSlots.isNotEmpty()) Text("Review ${state.reviewSlots.size}",
                     Modifier.testTag("directory-crop-review")
                         .then(if (editor != null) Modifier.clickable { editor.select(state.reviewSlots.first()) } else Modifier)
                         .padding(start = 3.dp), color = CropReview, fontSize = 8.sp, lineHeight = 10.sp,

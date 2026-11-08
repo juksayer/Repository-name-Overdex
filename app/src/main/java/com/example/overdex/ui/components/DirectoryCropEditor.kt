@@ -9,7 +9,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** The profile and geometry against which a position-only edit was started. */
-data class DirectoryCalibrationSnapshot(val calibration: BattleCalibration, val profileId: String?)
+data class DirectoryCalibrationSnapshot(
+    val calibration: BattleCalibration,
+    val profileId: String?,
+    val screenGeometry: DirectoryCalibrationScreenGeometry = DirectoryCalibrationScreenGeometry(0, 0),
+    val profileMatchesDevice: Boolean = false,
+)
 
 @Stable
 class DirectoryCropEditor {
@@ -46,11 +51,15 @@ class DirectoryCropEditor {
     fun confirm(): Boolean {
         if (!focused) return false
         if (saving || loading) return true
+        if (snapshot?.profileMatchesDevice != true) {
+            notice = "Choose this device's profile in Match Calibration before editing here."
+            return true
+        }
         if (editing) saveDraft() else {
-            val source = frame?.bitmap
+            val source = frame?.takeIf { value -> snapshot?.screenGeometry?.let(value::isEditableOn) == true }?.bitmap
             val region = controls.selectedSlot?.let { snapshot?.calibration?.directoryCropRegion(it) }
             if (source == null || source.isRecycled || region == null) {
-                notice = "No full battle image saved yet. Record a battle to edit here."
+                notice = "No compatible full battle image saved yet. Record a battle on this device to edit here."
             } else {
                 controls = controls.beginEdit(region, source.width, source.height)
                 notice = null
@@ -98,8 +107,15 @@ fun rememberDirectoryCropEditor(
         editor.loading = true
         try {
             editor.snapshot = withContext(Dispatchers.IO) { currentLoadCalibration() }
-            if (editor.frame == null) editor.frame = currentLoadFrame()
-            if (editor.frame == null) editor.notice = "No full battle image saved yet. Record a battle to edit here."
+            if (editor.snapshot?.profileMatchesDevice != true) {
+                editor.frame = null
+                editor.notice = "Choose this device's profile in Match Calibration before editing here."
+            } else {
+                if (editor.frame == null) editor.frame = currentLoadFrame()?.takeIf { frame ->
+                    editor.snapshot?.screenGeometry?.let(frame::isEditableOn) == true
+                }
+                if (editor.frame == null) editor.notice = "No compatible full battle image saved yet. Record a battle on this device to edit here."
+            }
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { editor.notice = "Could not load the battle reference. Return to the directory and try again." }
         finally { editor.loading = false }
@@ -108,7 +124,7 @@ fun rememberDirectoryCropEditor(
         val expected = editor.snapshot
         val transition = editor.controls.confirm()
         val request = transition.save
-        if (expected != null && request != null && !editor.saving) {
+        if (expected?.profileMatchesDevice == true && request != null && !editor.saving) {
             // Claim the write before dispatch so repeated A cannot enqueue two saves.
             editor.saving = true
             scope.launch {

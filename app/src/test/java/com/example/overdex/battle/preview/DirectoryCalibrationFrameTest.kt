@@ -17,6 +17,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DirectoryCalibrationFrameTest {
+    @Test fun `device shape accepts faithful downscaling but never another phone unknown geometry or rotation`() {
+        val moondrop = DirectoryCalibrationScreenGeometry(1080, 2400)
+        val pixel = DirectoryCalibrationScreenGeometry(1080, 2280)
+        assertTrue(moondrop.accepts(672, 1493))
+        assertTrue(pixel.accepts(672, 1419))
+        assertFalse(moondrop.accepts(672, 1419))
+        assertFalse(pixel.accepts(672, 1493))
+        assertFalse(pixel.accepts(0, 0))
+        assertFalse(pixel.accepts(2280, 1080))
+        assertFalse(DirectoryCalibrationScreenGeometry(0, 0).accepts(1080, 2280))
+    }
+
     @Test fun `a frames prefix alone never establishes full source coverage`() {
         val trusted = article()
         assertNotNull(DirectoryCalibrationFrameReference.from(trusted))

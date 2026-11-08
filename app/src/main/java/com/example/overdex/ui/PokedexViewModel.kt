@@ -275,17 +275,31 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     private val directoryCropPreviewFeed = com.example.overdex.battle.preview.DirectoryCropPreviewFeed(application.filesDir, sources = {
         listOfNotNull(_activeMatch.value?.let { MatchArchiveSource(MatchId(it.matchId), it.realityTimeline) },
             _latestMatchArchiveSource.value)
-    })
+    }, screenGeometry = directoryCalibrationScreenGeometry())
     val directoryCropPreviews = directoryCropPreviewFeed.states().stateIn(viewModelScope,
         SharingStarted.WhileSubscribed(stopTimeoutMillis = 0),
         com.example.overdex.battle.preview.DirectoryCropPreviewState())
     suspend fun loadDirectoryCalibrationFrame() = directoryCropPreviewFeed.loadCalibrationFrame()
 
-    fun loadDirectoryCalibration(): com.example.overdex.ui.components.DirectoryCalibrationSnapshot =
-        com.example.overdex.ui.components.DirectoryCalibrationSnapshot(
+    fun loadDirectoryCalibration(): com.example.overdex.ui.components.DirectoryCalibrationSnapshot {
+        val screen = directoryCalibrationScreenGeometry()
+        val profile = com.example.overdex.data.MatchCalibrationProfileStore(getApplication()).activeSummary()
+        val model = listOf(android.os.Build.MANUFACTURER, android.os.Build.MODEL)
+            .map(String::trim).filter(String::isNotBlank).joinToString(" ")
+        return com.example.overdex.ui.components.DirectoryCalibrationSnapshot(
             CalibrationManager(getApplication()).load(),
-            com.example.overdex.data.MatchCalibrationProfileStore(getApplication()).activeProfile()?.id,
+            profile?.id,
+            screen,
+            profileMatchesDevice = profile == null || com.example.overdex.data.CalibrationProfileCompatibility.matchesDevice(
+                profile, model, screen.width, screen.height),
         )
+    }
+
+    private fun directoryCalibrationScreenGeometry(): com.example.overdex.battle.preview.DirectoryCalibrationScreenGeometry {
+        val manager = getApplication<Application>().getSystemService(android.content.Context.WINDOW_SERVICE) as android.view.WindowManager
+        val bounds = manager.maximumWindowMetrics.bounds
+        return com.example.overdex.battle.preview.DirectoryCalibrationScreenGeometry(bounds.width(), bounds.height())
+    }
 
     suspend fun saveDirectoryCalibration(
         expected: com.example.overdex.ui.components.DirectoryCalibrationSnapshot,
@@ -293,7 +307,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
     ): Boolean = withContext(Dispatchers.IO) {
         val current = loadDirectoryCalibration()
         // Never replace a profile or crop that changed while this draft was open.
-        if (current.profileId != expected.profileId ||
+        if (!current.profileMatchesDevice || !expected.profileMatchesDevice ||
+            current.profileId != expected.profileId || current.screenGeometry != expected.screenGeometry ||
             current.calibration.directoryCropRegion(request.slot) != expected.calibration.directoryCropRegion(request.slot)) {
             return@withContext false
         }

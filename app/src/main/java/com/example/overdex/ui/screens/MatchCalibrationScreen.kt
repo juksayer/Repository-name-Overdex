@@ -119,6 +119,7 @@ fun MatchCalibrationScreen(
     var calibration by remember { mutableStateOf(calibrationManager.load()) }
     var teamSelectCalibration by remember { mutableStateOf(teamSelectCalibrationStore.load()) }
     var activeProfile by remember { mutableStateOf<MatchCalibrationProfileSummary?>(profileStore.activeSummary()) }
+    var reviewedProfile by remember { mutableStateOf<MatchCalibrationProfileSummary?>(null) }
     var savedProfiles by remember { mutableStateOf(profileStore.list()) }
     var showProfileDialog by remember { mutableStateOf(false) }
     var showProfileMenu by remember { mutableStateOf(false) }
@@ -176,10 +177,23 @@ fun MatchCalibrationScreen(
         is CalibrationScreenshotFilter.Shape -> "Shape ${CalibrationScreenshotLibrary.shapeLabel(filter.width, filter.height)}"
         is CalibrationScreenshotFilter.Device -> filter.label
     }
-    val referenceMatchesDevice = selectedSample?.reference?.hasDimensions != true ||
-        CalibrationScreenshotLibrary.sameShape(
-            sourceFrameSize.width, sourceFrameSize.height, detectedScreenWidth, detectedScreenHeight
-        )
+    val referenceMatchesDevice = CalibrationScreenshotLibrary.matchesScreen(
+        selectedSample?.reference, detectedScreenWidth, detectedScreenHeight)
+    var renderedReference by remember { mutableStateOf<Pair<String, IntSize>?>(null) }
+    var failedReferenceId by remember { mutableStateOf<String?>(null) }
+    val renderedSize = renderedReference?.takeIf { it.first == selectedSample?.reference?.id }?.second
+    val referenceReadOnlyReason = when {
+        selectedSample == null -> "Read only: choose a screenshot matching this phone."
+        !selectedSample.reference.hasDimensions -> "Read only: screenshot dimensions are unknown. Choose a screenshot for this phone."
+        !referenceMatchesDevice -> "Read only: this screenshot has a different screen shape. Choose a screenshot for this phone."
+        failedReferenceId == selectedSample.reference.id -> "Read only: this screenshot could not be displayed. Choose another reference."
+        renderedSize == null -> "Read only: loading the reference image."
+        !CalibrationScreenshotLibrary.matchesDecodedScreen(selectedSample.reference, renderedSize.width, renderedSize.height,
+            detectedScreenWidth, detectedScreenHeight) -> "Read only: the displayed image does not match its reference dimensions. Choose another reference."
+        else -> null
+    }
+    val calibrationReadOnlyReason = referenceReadOnlyReason ?: if (activeProfile != null && !activeProfileMatchesDetectedDevice)
+        "Read only: this calibration belongs to another device. Save a copy for this phone first." else null
     val screenshotFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -349,6 +363,10 @@ fun MatchCalibrationScreen(
     }
 
     fun updateCalibration(updated: AnchorRegion) {
+        if (calibrationReadOnlyReason != null) {
+            profileActionError = calibrationReadOnlyReason
+            return
+        }
         val teamSelectUpdate = when (selectedRegion) {
             CalibrationRegion.TEAM_SELECT_LEAGUE_BADGE -> teamSelectCalibration.copy(leagueBadge = updated)
             CalibrationRegion.TEAM_SELECT_LEAGUE_TEXT -> teamSelectCalibration.copy(leagueText = updated)
@@ -479,6 +497,7 @@ fun MatchCalibrationScreen(
         battleSaveFailed = false
         teamSelectSaveFailed = false
         profileActionError = null
+        reviewedProfile = null
     }
 
     fun useDetectedDeviceGuess() {
@@ -490,12 +509,22 @@ fun MatchCalibrationScreen(
     }
 
     fun saveNamedProfile() {
+        if (referenceReadOnlyReason != null) {
+            profileSaveError = referenceReadOnlyReason
+            return
+        }
         val width = profileWidth.toIntOrNull()
         val height = profileHeight.toIntOrNull()
         if (profileName.isBlank() || profileModel.isBlank() || width == null || height == null ||
             width <= 0 || height <= 0
         ) {
             profileSaveError = "Enter a name, model, width, and height."
+            return
+        }
+        if (!CalibrationProfileCompatibility.matchesDevice(
+                MatchCalibrationProfileSummary("", profileName, profileModel, width, height, 0),
+                detectedDeviceModel, detectedScreenWidth, detectedScreenHeight)) {
+            profileSaveError = "Save a profile for the detected device. Other devices are available for review only."
             return
         }
         val saved = profileStore.saveAs(
@@ -583,7 +612,7 @@ fun MatchCalibrationScreen(
     LaunchedEffect(
         selectedRegion, mode, showLcdTouchHint, screenshotSourceName, screenshotReferenceName, sourceFrameSize,
         battleProfileSaved, teamSelectProfileSaved, battleSaveFailed, teamSelectSaveFailed, activeProfile,
-        referenceMatchesDevice,
+        referenceMatchesDevice, calibrationReadOnlyReason,
         activeRegion.x, activeRegion.y, activeRegion.width, activeRegion.height
     ) {
         val indexText = "${matchRegions.indexOf(selectedRegion) + 1}/${matchRegions.size}"
@@ -600,13 +629,14 @@ fun MatchCalibrationScreen(
         }
         val selectedSaveFailed = if (selectedRegion.name.startsWith("TEAM_SELECT_")) teamSelectSaveFailed else battleSaveFailed
         val saveStatus = when {
+            calibrationReadOnlyReason != null -> "READ ONLY"
             selectedSaveFailed -> "SAVE FAILED"
             selectedProfileSaved -> "SAVED"
             else -> "DEFAULT"
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
-            "HOLD A / SELECT: IMAGES  $screenshotSourceName · $screenshotReferenceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] DEVICE CALIBRATIONS${activeProfile?.let { "  ${it.name}" } ?: ""}${if (!referenceMatchesDevice) "  DIFFERENT SCREEN SHAPE" else ""}"
+            "HOLD A / SELECT: IMAGES  $screenshotSourceName · $screenshotReferenceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] DEVICE CALIBRATIONS${activeProfile?.let { "  ${it.name}" } ?: ""}${calibrationReadOnlyReason?.let { "  $it" } ?: ""}"
         )
     }
 
@@ -654,14 +684,24 @@ fun MatchCalibrationScreen(
                                     }
                                 }, onClick = {
                                     showProfileMenu = false
-                                    val selected = profileStore.activate(profile.id)
-                                    if (selected == null) profileActionError = "Could not load this calibration."
-                                    else displayProfile(selected)
+                                    if (!CalibrationProfileCompatibility.matchesDevice(profile, detectedDeviceModel,
+                                            detectedScreenWidth, detectedScreenHeight)) {
+                                        reviewedProfile = profile
+                                        profileActionError = "Review only: this profile belongs to another device. This phone's calibration is unchanged."
+                                    } else if (referenceReadOnlyReason != null) {
+                                        profileActionError = referenceReadOnlyReason
+                                    } else {
+                                        val selected = profileStore.activate(profile.id)
+                                        if (selected == null) profileActionError = "Could not load this calibration."
+                                        else displayProfile(selected)
+                                    }
                                 })
                             }
                         }
                     }
-                    activeProfile?.let { profile ->
+                    (reviewedProfile ?: activeProfile)?.let { profile ->
+                        if (reviewedProfile != null) Text("Review only · ${profile.name}", color = Color(0xFFFFC857), fontSize = 12.sp,
+                            modifier = Modifier.testTag("calibration-profile-review-only"))
                         Text("${profile.deviceModel} · ${profile.screenWidth}×${profile.screenHeight}\n${profile.workingStatus()}",
                             color = TerminalGreen, fontSize = 12.sp)
                         Text("Saved ${profile.savedAtMillis.calibrationTimeLabel()}", color = TerminalGreen, fontSize = 10.sp)
@@ -675,14 +715,14 @@ fun MatchCalibrationScreen(
                         modifier = Modifier.fillMaxWidth().testTag("calibration-profile-save-as")) {
                         Text("SAVE AS…", color = TerminalGreen)
                     }
-                    TextButton(enabled = activeProfile != null, onClick = {
+                    TextButton(enabled = reviewedProfile == null && activeProfile != null && calibrationReadOnlyReason == null, onClick = {
                         val kept = activeProfile?.let { profileStore.confirmWorking(it.id) }
                         if (kept == null) profileActionError = "Save a named calibration before keeping a working copy."
                         else displayProfile(kept)
                     }, modifier = Modifier.fillMaxWidth().testTag("calibration-profile-keep-working")) {
                         Text("KEEP AS WORKING", color = TerminalGreen)
                     }
-                    TextButton(enabled = activeProfile?.workingConfirmedAtMillis != null, onClick = {
+                    TextButton(enabled = reviewedProfile == null && activeProfile?.workingConfirmedAtMillis != null && calibrationReadOnlyReason == null, onClick = {
                         val restored = activeProfile?.let { profileStore.restoreWorking(it.id) }
                         if (restored == null) profileActionError = "Could not restore the working copy."
                         else displayProfile(restored)
@@ -758,7 +798,8 @@ fun MatchCalibrationScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    profileSaveError?.let { Text(it, color = Color(0xFFFF6B6B), fontSize = 12.sp) }
+                    profileSaveError?.let { Text(it, color = Color(0xFFFF6B6B), fontSize = 12.sp,
+                        modifier = Modifier.testTag("calibration-profile-save-error")) }
                 }
             },
             confirmButton = {
@@ -810,7 +851,7 @@ fun MatchCalibrationScreen(
                     val unknownCount = references.count { !it.hasDimensions }
                     if (unknownCount > 0) {
                         Text(
-                            "$unknownCount image(s) have unknown dimensions.\nThis screen keeps them available for review.",
+                            "$unknownCount image(s) have unknown dimensions.\nChoose All screenshots to review them; editing is disabled.",
                             color = Color(0xFFFFC857), fontSize = 11.sp
                         )
                     }
@@ -876,9 +917,9 @@ fun MatchCalibrationScreen(
             if (activeProfile != null && !activeProfileMatchesDetectedDevice) Text(
                 "Different device selected. Boxes stay unchanged; save a copy for this phone before adjusting.",
                 color = Color(0xFFFFC857), fontSize = 10.sp)
-            if (!referenceMatchesDevice) Text(
-                "Reference has a different screen shape. Adjustments still change this device's calibration.",
-                color = Color(0xFFFFC857), fontSize = 10.sp)
+            calibrationReadOnlyReason?.let { reason -> Text(reason,
+                color = Color(0xFFFFC857), fontSize = 10.sp,
+                modifier = Modifier.testTag("calibration-reference-read-only")) }
             if (droidballRuntime != DroidballRuntimeState.STOPPED) Text(
                 "Droidball is running. Saved changes apply after observation restarts.",
                 color = Color(0xFFFFC857), fontSize = 10.sp)
@@ -893,8 +934,17 @@ fun MatchCalibrationScreen(
         AsyncImage(
             model = selectedSample?.imageModel,
             contentDescription = "Calibration Background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.fillMaxSize().testTag(if (calibrationReadOnlyReason == null)
+                "calibration-reference-ready" else "calibration-reference-image"),
+            contentScale = ContentScale.Fit,
+            onSuccess = { state ->
+                selectedSample?.reference?.id?.let { id ->
+                    renderedReference = id to IntSize(state.result.drawable.intrinsicWidth, state.result.drawable.intrinsicHeight)
+                    failedReferenceId = null
+                }
+            },
+            onError = { failedReferenceId = selectedSample?.reference?.id; renderedReference = null },
+            onLoading = { renderedReference = null },
         )
 
         // Selected Region Overlay (Draw ONLY the selected region's rectangle)
@@ -945,7 +995,7 @@ private fun MatchCalibrationProfileSummary.workingStatus(): String = when {
 private fun Long.calibrationTimeLabel(): String =
     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(this))
 
-private data class CalibrationSample(
+internal data class CalibrationSample(
     val model: Any,
     val reference: CalibrationScreenshotReference,
     val sourceName: String,
@@ -954,24 +1004,25 @@ private data class CalibrationSample(
 }
 
 /** Enumerate files and decode only their headers on the caller's IO dispatcher. */
-private fun loadCalibrationSamples(
+internal fun loadCalibrationSamples(
     context: android.content.Context,
     directory: ScreenshotDirectoryManager,
+    userImages: List<ScreenshotDirectoryManager.Image> = runCatching { directory.images() }.getOrDefault(emptyList()),
 ): List<CalibrationSample> {
-    val userImages = runCatching { directory.images() }.getOrDefault(emptyList())
-    val samples = if (userImages.isNotEmpty()) {
+    // A selected library supplements this phone's own capture; it never displaces it.
+    val captured = BattleCalibrationReferenceStore(context.filesDir).latest()?.let { file ->
+        CalibrationSample(file, CalibrationScreenshotReference(file.absolutePath, "Latest device capture", 0, 0), "DEVICE CAPTURE")
+    }
+    val library = if (userImages.isNotEmpty()) {
         userImages.map { image ->
             CalibrationSample(image.uri, CalibrationScreenshotReference(image.uri.toString(), image.name, 0, 0, image.deviceLabel), "YOUR SCREENSHOT")
         }
     } else {
-        val captured = BattleCalibrationReferenceStore(context.filesDir).latest()?.let { file ->
-            CalibrationSample(file, CalibrationScreenshotReference(file.absolutePath, "Latest device capture", 0, 0), "DEVICE CAPTURE")
-        }
-        val bundled = context.assets.list("battle_samples").orEmpty().sorted().map { name ->
+        context.assets.list("battle_samples").orEmpty().sorted().map { name ->
             CalibrationSample(name, CalibrationScreenshotReference("asset:$name", name, 0, 0), "BUNDLED REFERENCE")
         }
-        listOfNotNull(captured) + bundled
     }
+    val samples = listOfNotNull(captured) + library
     return samples.map { sample ->
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         runCatching {

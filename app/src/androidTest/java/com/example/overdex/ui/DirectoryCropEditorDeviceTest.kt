@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.overdex.battle.preview.DirectoryCalibrationFrame
 import com.example.overdex.battle.preview.DirectoryCalibrationFrameOrigin
+import com.example.overdex.battle.preview.DirectoryCalibrationScreenGeometry
 import com.example.overdex.battle.preview.DirectoryCropImage
 import com.example.overdex.battle.preview.DirectoryCropPreviewState
 import com.example.overdex.battle.preview.DirectoryCropSlot
@@ -48,6 +49,51 @@ class DirectoryCropEditorDeviceTest {
     private val calibration = BattleCalibration(playerSpeciesNameRegion = ORIGINAL)
     private val currentCalibration = AtomicReference(calibration)
     private val enabled = mutableStateOf(true)
+
+    @Test fun aForeignActiveProfileCannotUseALocalImageToChangeAnotherDevicesSavedCrops() {
+        showEditor(profileMatchesDevice = false)
+        compose.onNodeWithTag("directory-crop-player_species").performClick()
+        compose.waitUntil(5_000) { calibrationLoads.get() == 1 && editor.snapshot != null && !editor.loading }
+        compose.runOnIdle {
+            assertEquals("No image should be decoded for a profile this device cannot edit", 0, loadCalls.get())
+            assertNull(editor.frame)
+            assertTrue(editor.confirm())
+            assertFalse(editor.editing)
+            assertTrue(editor.notice.orEmpty().contains("Choose this device's profile"))
+            assertEquals(calibration, currentCalibration.get())
+            assertEquals(0, saveCalls.get())
+        }
+        compose.onNodeWithTag("directory-crop-position-editor").assertDoesNotExist()
+    }
+
+    @Test fun anUnverifiedSourceCannotOpenAnEditingDraftOrChangeSavedCalibration() {
+        showEditor(frameGeometry = null)
+        compose.onNodeWithTag("directory-crop-player_species").performClick()
+        compose.waitUntil(5_000) { loadCalls.get() == 1 && editor.snapshot != null && !editor.loading }
+        compose.runOnIdle {
+            assertNull(editor.frame)
+            assertTrue(editor.confirm())
+            assertFalse(editor.editing)
+            assertTrue(editor.notice.orEmpty().contains("Record a battle on this device"))
+            assertEquals(calibration, currentCalibration.get())
+            assertEquals(0, saveCalls.get())
+        }
+        compose.onNodeWithTag("directory-crop-position-editor").assertDoesNotExist()
+    }
+
+    @Test fun aKnownForeignSourceCannotOpenAnEditingDraftOnThisDisplayShape() {
+        showEditor(screenGeometry = DirectoryCalibrationScreenGeometry(1080, 2280))
+        compose.onNodeWithTag("directory-crop-player_species").performClick()
+        compose.waitUntil(5_000) { loadCalls.get() == 1 && editor.snapshot != null && !editor.loading }
+        compose.runOnIdle {
+            assertNull(editor.frame)
+            assertTrue(editor.confirm())
+            assertFalse(editor.editing)
+            assertEquals(calibration, currentCalibration.get())
+            assertEquals(0, saveCalls.get())
+        }
+        compose.onNodeWithTag("directory-crop-position-editor").assertDoesNotExist()
+    }
 
     @Test fun reviewPromptSelectsTheFirstUnverifiedCropAndOpensTheExistingCorrectionRoute() {
         showEditor()
@@ -227,6 +273,9 @@ class DirectoryCropEditorDeviceTest {
     }
 
     private fun showEditor(
+        frameGeometry: DirectoryCalibrationScreenGeometry? = DirectoryCalibrationScreenGeometry(SOURCE_WIDTH, SOURCE_HEIGHT),
+        screenGeometry: DirectoryCalibrationScreenGeometry = DirectoryCalibrationScreenGeometry(SOURCE_WIDTH, SOURCE_HEIGHT),
+        profileMatchesDevice: Boolean = true,
         save: suspend (DirectoryCalibrationSnapshot, DirectoryCropEditSave) -> Boolean = { _, request ->
             saveCalls.incrementAndGet(); requests += request; true
         },
@@ -244,11 +293,12 @@ class DirectoryCropEditorDeviceTest {
                 enabled = enabled.value,
                 loadFrame = {
                     loadCalls.incrementAndGet()
-                    DirectoryCalibrationFrame(fullSource, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE)
+                    DirectoryCalibrationFrame(fullSource, DirectoryCalibrationFrameOrigin.SAVED_BATTLE_REFERENCE,
+                        sourceGeometry = frameGeometry)
                 },
                 loadCalibration = {
                     calibrationLoads.incrementAndGet()
-                    DirectoryCalibrationSnapshot(currentCalibration.get(), "test-profile")
+                    DirectoryCalibrationSnapshot(currentCalibration.get(), "test-profile", screenGeometry, profileMatchesDevice)
                 },
                 saveCalibration = save,
             )
