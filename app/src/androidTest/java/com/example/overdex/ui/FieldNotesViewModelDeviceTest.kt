@@ -3,12 +3,18 @@ package com.example.overdex.ui
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.overdex.data.FieldNoteImportDecision
+import com.example.overdex.data.FieldNoteTransferCodec
+import com.example.overdex.data.FieldNoteTransferPackage
+import com.example.overdex.data.canonicalNoteHash
 import com.example.overdex.model.FieldNoteDraft
+import com.example.overdex.model.PersonalFieldNote
 import com.example.overdex.model.SyllableCorrection
 import java.io.File
 import java.util.UUID
@@ -156,9 +162,27 @@ class FieldNotesViewModelDeviceTest {
         assertNotNull("Saving a deleted draft reports failure instead of inventing another note", first.model.saveError.value)
         assertTrue(first.model.localState.value.notes.isEmpty())
         close(first)
-        val reopened = openModel().model
-        assertNull(reopened.draft.value)
-        assertTrue(reopened.localState.value.notes.isEmpty())
+        val reopened = openModel()
+        assertNull(reopened.model.draft.value)
+        assertTrue(reopened.model.localState.value.notes.isEmpty())
+
+        val retainedNewDraft = startDraft(reopened.model, "A committed note with a retained new draft")
+        val recoveredId = saveNote(reopened.model)
+        val recoveredDeleted = AtomicBoolean()
+        main {
+            // Recreate the memory state after a commit whose success acknowledgement was lost:
+            // the note exists, while its original new draft still has no editingNoteId.
+            reopened.model.updateDraft(retainedNewDraft)
+            reopened.model.deleteNote(recoveredId) { recoveredDeleted.set(true) }
+        }
+        await { recoveredDeleted.get() && !reopened.model.busy.value }
+        assertNull("A recovered new draft also belongs to the deleted saved ID", reopened.model.draft.value)
+        assertNull(reopened.model.localState.value.draft)
+        assertTrue(reopened.model.localState.value.notes.isEmpty())
+        close(reopened)
+        val final = openModel().model
+        assertNull(final.draft.value)
+        assertTrue(final.localState.value.notes.isEmpty())
     }
 
     @Test fun retryPersistsTheNewerInMemoryDraftBeforeAnotherViewModelReopens() {
@@ -176,6 +200,103 @@ class FieldNotesViewModelDeviceTest {
             first.model.localState.value.draft)
         close(first)
         assertEquals(draft, openModel().model.draft.value)
+    }
+
+    @Test fun portablePackagesExcludePrivateWritingAndRequireReviewBeforeSavingOrForwardingReceivedNotes() {
+        val handle = openModel()
+        val model = handle.model
+        startDraft(model, "Private writing must stay here")
+        val privateId = saveNote(model)
+        val privateCorrectionId = UUID.randomUUID().toString()
+        val annotated = AtomicBoolean()
+        main {
+            model.saveCorrection(SyllableCorrection(
+                id = privateCorrectionId, entryId = privateId, entryRevision = 1, lineIndex = 0,
+                proposedCount = 5, pronunciation = "Private annotation", replacementLine = "", createdAt = 1,
+            )) { annotated.set(true) }
+        }
+        await { annotated.get() && !model.busy.value }
+        assertTrue("Private writing alone never becomes a package", main { runCatching { model.preparePackage(true) }.isFailure })
+
+        startDraft(model, "Explicitly selected for sharing")
+        val sharedId = saveNote(model)
+        main { model.setShareable(sharedId, true) }
+        await { !model.busy.value }
+        assertNull(model.saveError.value)
+        val workingDraft = startDraft(model, "Unfinished writing must also stay here")
+        val draftKept = AtomicBoolean()
+        main { model.keepDraft { draftKept.set(true) } }
+        await { draftKept.get() && !model.busy.value }
+        val exported = FieldNoteTransferCodec.decode(main { model.preparePackage(true) })
+        assertEquals(listOf(sharedId), exported.notes.map { it.id })
+        assertFalse(exported.notes.any { it.id == privateId || it.id == "personal-${workingDraft.id}" })
+        assertFalse("Annotations of a private note are private too", exported.corrections.any { it.id == privateCorrectionId })
+
+        val incomingNote = PersonalFieldNote(
+            id = "personal-${UUID.randomUUID()}", speciesId = 1, speciesName = "Bulbasaur",
+            title = "A linked trainer's writing", lines = listOf("Their original opening", "Their unchanged ending"),
+            lesson = "Original lesson", author = "Unknown Author", revision = 7, createdAt = 10, updatedAt = 70,
+            shareable = true, originTrainerId = UUID(0, 2042).toString(),
+        )
+        val packet = FieldNoteTransferPackage(packageId = UUID.randomUUID().toString(),
+            senderTrainerId = UUID(0, 2043).toString(), createdAt = 100, notes = listOf(incomingNote))
+        val bytes = FieldNoteTransferCodec.encode(packet)
+        val beforePreview = model.localState.value
+        main { model.receivePackage(bytes) }
+        await { !model.busy.value && model.incoming.value?.packageId == packet.packageId }
+        assertEquals("Receiving is a preview, not permission to write", beforePreview, model.localState.value)
+        assertEquals(FieldNoteImportDecision.NEW, main { model.importCandidates().single().decision })
+
+        main { model.clearIncoming() }
+        val tooLarge = File(fixtureDirectory, "too-large.odxnotes").apply {
+            writeBytes(ByteArray(FieldNoteTransferCodec.MAX_PACKAGE_BYTES + 1) { 32 })
+        }
+        main { model.importFile(Uri.fromFile(tooLarge)) }
+        await { !model.busy.value }
+        assertNotNull("The actual ContentResolver read enforces the package size limit", model.saveError.value)
+        assertNull(model.incoming.value)
+        assertEquals(beforePreview, model.localState.value)
+        val file = File(fixtureDirectory, "received.odxnotes").apply { writeBytes(bytes) }
+        main { model.importFile(Uri.fromFile(file)) }
+        await { !model.busy.value && model.incoming.value?.packageId == packet.packageId }
+        assertEquals("Opening a file is still only a preview", beforePreview, model.localState.value)
+        main { model.saveIncoming(setOf(incomingNote.id), includeCorrections = false) }
+        await { !model.busy.value && model.localState.value.notes.any { it.id == incomingNote.id } }
+        assertNull(model.saveError.value)
+        val received = model.localState.value.notes.single { it.id == incomingNote.id }
+        assertEquals(incomingNote.copy(received = true, shareable = false), received)
+        assertEquals(workingDraft, model.draft.value)
+        assertFalse(main { model.editNote(received.id) })
+        assertFalse(FieldNoteTransferCodec.decode(main { model.preparePackage(false) }).notes.any { it.id == received.id })
+
+        main { model.setShareable(received.id, true) }
+        await { !model.busy.value }
+        val forwarded = FieldNoteTransferCodec.decode(main { model.preparePackage(false) }).notes.single { it.id == received.id }
+        assertEquals("Forwarding preserves the author's identity, text, clocks and revision",
+            canonicalNoteHash(received), canonicalNoteHash(forwarded))
+        assertEquals(received.id, forwarded.id)
+        assertEquals(7, forwarded.revision)
+
+        val improperlySaved = AtomicBoolean()
+        main {
+            // The normal editor cannot open received notes; also test the defensive save guard.
+            model.updateDraft(workingDraft.copy(editingNoteId = received.id, title = "An unauthorized revision"))
+            model.saveDraftAsNote { improperlySaved.set(true) }
+        }
+        await { !model.busy.value }
+        assertFalse(improperlySaved.get())
+        assertNotNull(model.saveError.value)
+        assertEquals(received.copy(shareable = true), model.localState.value.notes.single { it.id == received.id })
+        val restoredDraft = AtomicBoolean()
+        main {
+            model.updateDraft(workingDraft)
+            model.keepDraft { restoredDraft.set(true) }
+        }
+        await { restoredDraft.get() && !model.busy.value }
+        close(handle)
+        val reopened = openModel().model
+        assertEquals(received.copy(shareable = true), reopened.localState.value.notes.single { it.id == received.id })
+        assertEquals(workingDraft, reopened.draft.value)
     }
 
     private fun startDraft(model: FieldNotesViewModel, title: String): FieldNoteDraft {

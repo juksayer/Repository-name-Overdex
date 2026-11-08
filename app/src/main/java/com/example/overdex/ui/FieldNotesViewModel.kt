@@ -1,12 +1,16 @@
 package com.example.overdex.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.overdex.data.FieldNoteFavoritesStore
 import com.example.overdex.data.FieldNoteRepository
 import com.example.overdex.data.PersonalFieldNotesStore
 import com.example.overdex.data.TrainerRepository
+import com.example.overdex.data.FieldNoteTransferCodec
+import com.example.overdex.data.FieldNoteTransferPackage
+import com.example.overdex.data.reviewFieldNoteImport
 import com.example.overdex.data.local.PokedexDatabase
 import com.example.overdex.data.local.toDomain
 import com.example.overdex.model.FieldNoteJournalEntry
@@ -16,6 +20,8 @@ import com.example.overdex.model.SyllableCorrection
 import com.example.overdex.model.OwnedPokemon
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +32,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.UUID
+import java.io.ByteArrayOutputStream
 
 class FieldNotesViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = FieldNoteRepository(application)
@@ -33,6 +41,10 @@ class FieldNotesViewModel(application: Application) : AndroidViewModel(applicati
     private val personalStore = PersonalFieldNotesStore(application)
     val localState = personalStore.state
     private val trainerId = TrainerRepository(application).getIdentity().trainerId.toString()
+    private val _incoming = MutableStateFlow<FieldNoteTransferPackage?>(null)
+    val incoming = _incoming.asStateFlow()
+    private val _exchangeMessage = MutableStateFlow<String?>(null)
+    val exchangeMessage = _exchangeMessage.asStateFlow()
     private val _draft = MutableStateFlow<FieldNoteDraft?>(null)
     val draft = _draft.asStateFlow()
     private val _busy = MutableStateFlow(false)
@@ -223,6 +235,81 @@ class FieldNotesViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteCorrection(id: String) = mutate("Your syllable note could not be deleted. Please try again.") {
         personalStore.deleteCorrection(id)
     }
+
+    fun setShareable(id: String, value: Boolean) = mutate("The sharing choice could not be saved. Please retry loading.") {
+        personalStore.setShareable(id, value)
+    }
+
+    fun importCandidates() = _incoming.value?.let {
+        reviewFieldNoteImport(it, personalStore.state.value.notes, trainerId)
+    }.orEmpty()
+
+    /** Only explicit sharing choices leave this phone; drafts and private-note annotations stay here. */
+    fun preparePackage(includeCorrections: Boolean): ByteArray {
+        check(personalReady) { "Wait for the saved journal to finish loading." }
+        val shared = localState.value.notes.filter { it.shareable }
+        val targets = bundledEntries.map { it.note.id }.toSet() + shared.map { it.id }
+        val annotations = if (includeCorrections) localState.value.corrections.filter { it.entryId in targets } else emptyList()
+        require(shared.isNotEmpty() || annotations.isNotEmpty()) { "Mark a saved note to share, or include syllable notes first." }
+        return FieldNoteTransferCodec.encode(FieldNoteTransferPackage(
+            packageId = UUID.randomUUID().toString(), senderTrainerId = trainerId,
+            createdAt = System.currentTimeMillis(), notes = shared, corrections = annotations,
+        ))
+    }
+
+    fun exportFile(uri: Uri, includeCorrections: Boolean) = mutate("The file could not be exported. Choose export again to retry.") {
+        val bytes = preparePackage(includeCorrections)
+        withContext(Dispatchers.IO) {
+            requireNotNull(getApplication<Application>().contentResolver.openOutputStream(uri, "wt")) {
+                "The selected file could not be opened."
+            }.use { it.write(bytes); it.flush() }
+        }
+        _exchangeMessage.value = "Exported selected notes. No trainer has received them yet."
+    }
+
+    fun importFile(uri: Uri) = mutate("This file could not be opened as an Overdex note package. The saved journal is unchanged.") {
+        val bytes = withContext(Dispatchers.IO) {
+            requireNotNull(getApplication<Application>().contentResolver.openInputStream(uri)).use { stream ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8_192)
+                while (output.size() <= FieldNoteTransferCodec.MAX_PACKAGE_BYTES) {
+                    val count = stream.read(buffer, 0, minOf(buffer.size,
+                        FieldNoteTransferCodec.MAX_PACKAGE_BYTES + 1 - output.size()))
+                    if (count < 0) break
+                    check(count > 0) { "The selected file could not be read." }
+                    output.write(buffer, 0, count)
+                }
+                val bytes = output.toByteArray()
+                require(bytes.size <= FieldNoteTransferCodec.MAX_PACKAGE_BYTES) { "The package exceeds 256 KiB." }
+                bytes
+            }
+        }
+        previewPackage(bytes)
+    }
+
+    fun receivePackage(bytes: ByteArray) = mutate("The received note package is invalid. Nothing was saved.") {
+        previewPackage(bytes)
+    }
+
+    private suspend fun previewPackage(bytes: ByteArray) {
+        val decoded = withContext(Dispatchers.Default) { FieldNoteTransferCodec.decode(bytes) }
+        _incoming.value = decoded
+        _exchangeMessage.value = "Preview only. Choose which notes to save."
+    }
+
+    fun clearIncoming() { if (!_busy.value) { _incoming.value = null; _exchangeMessage.value = null } }
+    fun exchangeStatus(message: String?) { _exchangeMessage.value = message }
+
+    fun saveIncoming(ids: Set<String>, includeCorrections: Boolean) =
+        mutate("The selected writing could not be imported. Review its originals and try again; saved entries were not partially changed.") {
+            val packet = requireNotNull(_incoming.value)
+            // Saving one entry includes its own annotations. A correction-only action reviews all targets.
+            val selectedPacket = if (ids.isNotEmpty()) packet.copy(corrections = packet.corrections.filter { it.entryId in ids }) else packet
+            personalStore.importReviewed(selectedPacket, ids, includeCorrections, trainerId,
+                bundledEntries.map { it.note.id }.toSet())
+            refreshEntries()
+            _exchangeMessage.value = "Saved the selected received writing on this phone."
+        }
 
     private fun mutate(failure: String, operation: suspend () -> Unit) {
         if (!personalReady || _busy.value) return

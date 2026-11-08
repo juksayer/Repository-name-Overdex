@@ -68,6 +68,16 @@ The principal composition points are:
 | Session lifecycle around a possible battle | [DroidballSession.kt](app/src/main/java/com/example/overdex/battle/observation/DroidballSession.kt) | **Canonical** |
 | Match custody-to-Timeline publication and match-aware derivation | [Match.kt](app/src/main/java/com/example/overdex/battle/observation/Match.kt) | **Canonical** |
 | Live overlay state | [DroidballOverlayPresentation.kt](app/src/main/java/com/example/overdex/battle/observation/DroidballOverlayPresentation.kt) | **Canonical presentation state** |
+| Field-note journal, drafts and explicit import/export | [FieldNotesViewModel.kt](app/src/main/java/com/example/overdex/ui/FieldNotesViewModel.kt) | **Canonical** |
+
+The standalone `field_notes` route reads bundled haiku through
+`FieldNoteRepository`, and keeps personal entries, drafts and separate syllable
+annotations in `PersonalFieldNotesStore` under Android's no-backup directory.
+`FieldNoteTransferCodec` owns the versioned portable format;
+`reviewFieldNoteImport` proposes duplicate/revision decisions, and the store
+rechecks explicit selections before atomic import. This journal path does not
+write battle history or change Timeline testimony. See the current
+[field-note plan](docs/plans/field-notes.md) and its linked validation records.
 
 `PokedexViewModel` currently acts as the battle composition root. It creates the
 Match and Droidball session, loads calibration, constructs artifact stores,

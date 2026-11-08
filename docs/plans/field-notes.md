@@ -33,7 +33,7 @@ count, pronunciation and replacement wording do not change the original poem.
 The personal journal lives in Android's no-backup directory rather than cloud
 backup. Bundled entries and the original source remain unchanged.
 
-## Trainer exchange
+## Portable trainer exchange
 
 The trainer's own haiku are stored locally. This is a personal notebook with
 deliberate exchanges between linked trainers, rather than a public submission
@@ -48,11 +48,27 @@ queue. There is no inactive submit button in the first slice.
 - Saved and forwarded copies retain the original author, stable note identity,
   revision and origin. Forwarding must not claim new authorship. Distinguish
   saving a local copy from favoriting a remote note.
-- Reuse the existing Trainer Comms identity/linking infrastructure after auditing
-  its current capabilities. Define access, offline behavior, duplicate/revision
-  handling, and what happens after unlinking before implementing exchange.
+- File exchange uses an explicit local sharing list and an incoming preview.
+  Drafts and annotations about private personal notes are excluded. A received
+  copy is private by default; forwarding is another explicit sharing choice.
+- Duplicate IDs/revisions are detected. Newer received revisions require an
+  explicit save, and older/conflicting copies cannot replace saved writing.
+  Authored notes cannot be overwritten by an incoming package.
 - A local save is not a delivered submission. Show transfer state and failure
   honestly. Sharing remains an explicit trainer action; no automatic broadcasts.
 
-Trainer exchange requires its own implementation and validation. Local writing
-does not publish notes, send messages, or add cloud access rules.
+The portable format is bounded, versioned UTF-8 JSON (`.odxnotes`). The system
+file picker chooses where to export or which package to preview. Local writing
+and file export do not publish notes, send messages, or add cloud access rules.
+See [portable exchange validation](../verification/2026-11-08-field-notes-exchange.md).
+
+## Nearby exchange acceptance
+
+The existing QR partner repository holds one local linked trainer identity;
+Trainer Comms is a separate Firebase-backed messaging system, not offline peer
+transport. Nearby journal transfer must use its own foreground-only connection,
+filter for that linked trainer, require matching authentication codes on both
+phones, and feed the same package parser and explicit import preview. A transport
+delivery is distinct from the recipient saving or favoriting a note. Closing or
+backgrounding the exchange stops discovery, hosting and connections. No automatic
+sharing follows linking, and unlinking does not erase already saved copies.

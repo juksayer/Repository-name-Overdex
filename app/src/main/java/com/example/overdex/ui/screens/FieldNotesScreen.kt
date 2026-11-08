@@ -1,6 +1,8 @@
 package com.example.overdex.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -95,6 +97,16 @@ fun FieldNotesScreen(
     val draft by journal.draft.collectAsState()
     val busy by journal.busy.collectAsState()
     val editorMessage by journal.editorMessage.collectAsState()
+    val incoming by journal.incoming.collectAsState()
+    val exchangeMessage by journal.exchangeMessage.collectAsState()
+    var exchangeOpen by rememberSaveable { mutableStateOf(false) }
+    var exportWithCorrections by rememberSaveable { mutableStateOf(false) }
+    val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) journal.importFile(uri) else journal.exchangeStatus("File selection canceled. Nothing was imported.")
+    }
+    val exportPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) journal.exportFile(uri, exportWithCorrections) else journal.exchangeStatus("Export canceled.")
+    }
     var editorOpen by rememberSaveable { mutableStateOf(false) }
     var correctionOpen by rememberSaveable { mutableStateOf(false) }
     var mineOnly by rememberSaveable { mutableStateOf(false) }
@@ -133,6 +145,23 @@ fun FieldNotesScreen(
     }
     val personalNote = local.notes.firstOrNull { it.id == displayed?.note?.id }
     val corrections = local.corrections.filter { it.entryId == displayed?.note?.id }
+
+    if (exchangeOpen) {
+        val exportTargets = entries.filterNot { it.note.id.startsWith("personal-") }.map { it.note.id }.toSet() +
+            local.notes.filter { it.shareable }.map { it.id }
+        FieldNotesExchangeScreen(viewModel, filterSettings, onFilterSettingsChange,
+            notes = local.notes, corrections = local.corrections.filter { it.entryId in exportTargets },
+            incoming = incoming, candidates = journal.importCandidates(), busy = busy,
+            message = saveError ?: exchangeMessage, onSetShareable = journal::setShareable,
+            onExportFile = { include ->
+                exportWithCorrections = include
+                exportPicker.launch("field-notes.odxnotes")
+            },
+            onImportFile = { importPicker.launch(arrayOf("application/json", "application/octet-stream", "*/*")) },
+            onSaveIncoming = journal::saveIncoming, onClearIncoming = journal::clearIncoming,
+            onBack = { if (!busy) exchangeOpen = false })
+        return
+    }
 
     if (editorOpen && draft != null) {
         FieldNoteEditorScreen(viewModel, filterSettings, onFilterSettingsChange, draft!!,
@@ -223,8 +252,10 @@ fun FieldNotesScreen(
             add(JournalAction("edit_note", "edit my entry") {
                 if (journal.editNote(personalNote.id)) editorOpen = true
             })
-            add(JournalAction("delete_note", "delete my entry") { pendingDelete = "note:${personalNote.id}" })
         }
+        if (personalNote != null) add(JournalAction("delete_note", if (personalNote.received) "delete saved copy" else "delete my entry") {
+            pendingDelete = "note:${personalNote.id}"
+        })
         if (displayed != null) add(JournalAction("suggest_correction", "suggest a syllable correction") {
             journal.clearEditorStatus(); correctionOpen = true
         })
@@ -250,6 +281,7 @@ fun FieldNotesScreen(
         add(JournalAction("my_notes", if (mineOnly) "show all entries" else "show my entries") {
             mineOnly = !mineOnly; indexNoteId = null
         })
+        add(JournalAction("exchange", "exchange field notes") { journal.dismissSaveError(); exchangeOpen = true })
         add(JournalAction("collection", if (favoritesOnly) "show all notes" else "show favorites", ::changeCollection))
         if (!indexOpen && current != null) {
             if (pageIndex > 0) add(JournalAction("previous", "previous page") { turnPage(-1) })

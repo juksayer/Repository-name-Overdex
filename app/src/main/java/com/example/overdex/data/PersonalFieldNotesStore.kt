@@ -56,6 +56,9 @@ class PersonalFieldNotesStore internal constructor(private val persistence: Pers
     suspend fun saveNote(note: PersonalFieldNote): PersonalFieldNote {
         val saved = update { current ->
             val previous = current.notes.firstOrNull { it.id == note.id }
+            require(!note.received && previous?.received != true) {
+                "Received notes keep their original writing; use the reviewed import workflow."
+            }
             if (previous != null) {
                 require(previous.originTrainerId == note.originTrainerId) { "A note's original trainer cannot be changed." }
                 require(previous.received == note.received) { "A received note cannot become a locally authored note." }
@@ -80,6 +83,73 @@ class PersonalFieldNotesStore internal constructor(private val persistence: Pers
     suspend fun deleteNote(id: String) {
         update { current -> current.copy(notes = current.notes.filterNot { it.id == id },
             draft = current.draft?.takeUnless { it.editingNoteId == id || "personal-${it.id}" == id }) }
+    }
+
+    /** Availability is this device's choice, not a new revision of the author's writing. */
+    suspend fun setShareable(id: String, shareable: Boolean) {
+        update { current ->
+            require(current.notes.any { it.id == id }) { "The saved note is no longer available." }
+            current.copy(notes = current.notes.map { if (it.id == id) it.copy(shareable = shareable) else it })
+        }
+    }
+
+    /** Apply explicit choices against current state, never against a stale review snapshot. */
+    suspend fun importReviewed(
+        value: FieldNoteTransferPackage,
+        selectedNoteIds: Set<String>,
+        includeCorrections: Boolean,
+        localTrainerId: String,
+        validBundledEntryIds: Set<String>,
+    ) {
+        update { current ->
+            val candidates = reviewFieldNoteImport(value, current.notes, localTrainerId)
+            fun key(id: String) = id.lowercase(java.util.Locale.ROOT)
+            val selected = selectedNoteIds.map(::key).toSet()
+            require(selected.all { selectedId -> candidates.any { key(it.note.id) == selectedId } }) {
+                "A selected note is not present in this package. Review the package again."
+            }
+            val notes = current.notes.toMutableList()
+            candidates.filter { key(it.note.id) in selected }.forEach { candidate ->
+                when (candidate.decision) {
+                    FieldNoteImportDecision.DUPLICATE -> Unit
+                    FieldNoteImportDecision.NEW, FieldNoteImportDecision.NEWER -> {
+                        val incoming = candidate.note
+                        val draftTarget = current.draft?.let { it.editingNoteId ?: "personal-${it.id}" }
+                        require(draftTarget == null || key(draftTarget) != key(incoming.id)) {
+                            "Finish or discard the draft for this note before importing a revision."
+                        }
+                        val index = notes.indexOfFirst { key(it.id) == key(incoming.id) }
+                        val received = incoming.copy(
+                            id = notes.getOrNull(index)?.id ?: incoming.id,
+                            received = true, shareable = false, lines = incoming.lines.toList(),
+                        )
+                        if (index < 0) notes += received else notes[index] = received
+                    }
+                    else -> throw IllegalArgumentException("A selected note is older or conflicts with saved writing. Review it again.")
+                }
+            }
+            val corrections = current.corrections.toMutableList()
+            if (includeCorrections) {
+                val knownTargets = validBundledEntryIds.associateBy(::key) + notes.associate { key(it.id) to it.id }
+                value.corrections.forEach { incoming ->
+                    val knownTarget = knownTargets[key(incoming.entryId)]
+                    val normalized = incoming.copy(entryId = knownTarget ?: incoming.entryId)
+                    val previous = corrections.firstOrNull { key(it.id) == key(incoming.id) }
+                    if (previous != null) {
+                        require(previous == normalized.copy(id = previous.id)) {
+                            "A syllable note with this ID already contains different writing."
+                        }
+                    } else {
+                        require(!incoming.originTrainerId.equals(localTrainerId, ignoreCase = true)) {
+                            "An import cannot create writing attributed to this device's trainer."
+                        }
+                        require(knownTarget != null) { "Save the original note before importing its syllable notes." }
+                        corrections += normalized
+                    }
+                }
+            }
+            current.copy(notes = notes.toList(), corrections = corrections.toList())
+        }
     }
 
     suspend fun saveCorrection(correction: SyllableCorrection) {
