@@ -955,7 +955,8 @@ class MatchReplayModel(
             (article.payload as? ArchivedActiveHpBarMeasured)?.let { hp ->
                 chargedHpCamera.observeHp(article.articleId, at, hp.side,
                     hp.barLeft, hp.barTop, hp.barRight, hp.barBottom,
-                    hp.sourceWidth, hp.sourceHeight)
+                    hp.sourceWidth, hp.sourceHeight,
+                    com.example.overdex.battle.observation.ChargedImpactHpSource.matches(article.sourceId))
             }
         }
         chargedHpCamera.advanceTo(recordingEndNanos)

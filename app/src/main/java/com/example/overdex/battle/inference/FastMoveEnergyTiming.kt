@@ -49,7 +49,8 @@ internal class FastMoveEnergyTiming {
         when (val payload = article.payload) {
             is ActiveHpBarMeasured -> chargedHpCamera.observeHp(article.id.value, at, payload.side.name,
                 payload.barLeft, payload.barTop, payload.barRight, payload.barBottom,
-                payload.sourceWidth, payload.sourceHeight)
+                payload.sourceWidth, payload.sourceHeight,
+                com.example.overdex.battle.observation.ChargedImpactHpSource.matches(article.sourceId.id))
             ChargeMoveUsedAnnounced -> chargedHpCamera.observeCharge(at)
             else -> Unit
         }

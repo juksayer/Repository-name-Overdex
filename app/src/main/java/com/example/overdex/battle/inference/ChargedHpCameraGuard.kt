@@ -106,6 +106,10 @@ internal class ChargedHpCameraGuard {
     private val charges = TreeSet<Long>()
     private val boundaries = TreeSet<Long>()
     private val inclusiveBoundaries = TreeSet<Long>()
+    // Explicit phase-owned camera measurements do not need a same-X baseline.
+    // Retain their exact source times; never invent a future suppression tail.
+    private val explicitImpacts = TreeSet<Long>()
+    private var explicitWindowCache: List<LongRange>? = null
     private val frozenWindows = LinkedHashMap<Pair<String, Long>, LongRange>()
     private val sideStates = mutableMapOf<String, SideState>()
     private var watermark = Long.MIN_VALUE
@@ -122,6 +126,7 @@ internal class ChargedHpCameraGuard {
     fun observeHp(
         id: String, at: Long, side: String, left: Int, top: Int, right: Int, bottom: Int,
         sourceW: Int?, sourceH: Int?,
+        explicitChargeImpact: Boolean = false,
     ) {
         if (at < 0 || id.isBlank() || side !in SIDES || sourceW == null || sourceH == null ||
             sourceW <= 0 || sourceH <= 0 || left < 0 || top < 0 || right <= left || bottom <= top ||
@@ -135,6 +140,11 @@ internal class ChargedHpCameraGuard {
         val frame = Frame(id, at, side, left, top, right, bottom, sourceW, sourceH)
         ids += id
         byTime[at] = frame
+        if (explicitChargeImpact) {
+            explicitImpacts += at
+            while (explicitImpacts.size > MAX_EXPLICIT_IMPACTS) explicitImpacts.pollFirst()
+            explicitWindowCache = null
+        }
         if (append && !dirty) process(frame) else dirty = true
         advanceTo(at)
         while (byTime.size > MAX_FRAMES_PER_SIDE) {
@@ -155,17 +165,20 @@ internal class ChargedHpCameraGuard {
         val added = boundaries.add(at)
         val inclusionAdded = includeImpactAtBoundary && inclusiveBoundaries.add(at)
         if (!added && !inclusionAdded) return
+        explicitWindowCache = null
         dirty = true
         advanceTo(at)
     }
 
     fun isChargeImpact(at: Long): Boolean {
         rebuild()
-        return frozenWindows.values.any { at in it } || episodes.any { it.contains(at) && confirmed(it) }
+        return explicitWindows().any { at in it } || frozenWindows.values.any { at in it } ||
+            episodes.any { it.contains(at) && confirmed(it) }
     }
 
     fun isAwaitingCharge(at: Long): Boolean {
         rebuild()
+        if (explicitWindows().any { at in it }) return false
         return episodes.any { it.contains(at) && !confirmed(it) &&
             watermark <= add(it.start, CAMERA_MAX_NANOS) }
     }
@@ -173,7 +186,7 @@ internal class ChargedHpCameraGuard {
     /** Confirmed windows retain their measured endpoints after old frames expire. */
     fun windows(): List<LongRange> {
         rebuild()
-        return (frozenWindows.values + episodes.filter(::confirmed).map { it.start until it.endExclusive })
+        return (explicitWindows() + frozenWindows.values + episodes.filter(::confirmed).map { it.start until it.endExclusive })
             .sortedBy { it.first }.fold(mutableListOf()) { merged, next ->
                 val previous = merged.lastOrNull()
                 if (previous != null && next.first <= add(previous.last, 1))
@@ -189,6 +202,8 @@ internal class ChargedHpCameraGuard {
         charges.clear()
         boundaries.clear()
         inclusiveBoundaries.clear()
+        explicitImpacts.clear()
+        explicitWindowCache = null
         frozenWindows.clear()
         sideStates.clear()
         episodes.clear()
@@ -202,6 +217,19 @@ internal class ChargedHpCameraGuard {
         val until = minOf(add(episode.start, CHARGE_LOOKAHEAD_NANOS),
             boundaries.higher(episode.start)?.let { boundaryEnd(it) - 1 } ?: Long.MAX_VALUE)
         return charges.ceiling(from)?.let { it <= until } == true
+    }
+
+    private fun explicitWindows(): List<LongRange> {
+        explicitWindowCache?.let { return it }
+        val windows = mutableListOf<LongRange>()
+        for (at in explicitImpacts) {
+            val prior = windows.lastOrNull()
+            val interveningBoundary = prior?.let { boundaries.higher(it.last)?.let { boundary -> boundary <= at } == true }
+            if (prior != null && at - prior.last <= EXPLICIT_MAX_GAP_NANOS && interveningBoundary != true)
+                windows[windows.lastIndex] = prior.first..at
+            else windows += at..at
+        }
+        return windows.also { explicitWindowCache = it }
     }
 
     private fun rebuild() {
@@ -320,5 +348,7 @@ internal class ChargedHpCameraGuard {
         const val RETENTION_NANOS = HISTORY_NANOS + BASELINE_NANOS + CAMERA_MAX_NANOS
         const val MAX_FRAMES_PER_SIDE = 2_048
         const val MAX_WINDOWS = 256
+        const val MAX_EXPLICIT_IMPACTS = 4_096
+        const val EXPLICIT_MAX_GAP_NANOS = 500_000_000L
     }
 }

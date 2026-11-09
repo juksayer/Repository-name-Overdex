@@ -254,6 +254,38 @@ class ChargedHpCameraGuardTest {
         assertFalse(guard.isAwaitingCharge(nanos(4.8)))
     }
 
+    @Test fun `explicit phase-owned centered camera survives horizontal relocation without a used cue`() {
+        val guard = baseline()
+        guard.observeHp("centered-charge", nanos(4.0), "PLAYER", 239, 763, 432, 782, 672, 1419,
+            explicitChargeImpact = true)
+        guard.observeHp("centered-charge-end", nanos(4.1), "PLAYER", 239, 763, 432, 782, 672, 1419,
+            explicitChargeImpact = true)
+        assertTrue(guard.isChargeImpact(nanos(4.0)))
+        assertTrue(guard.isChargeImpact(nanos(4.05)))
+        assertTrue(guard.isChargeImpact(nanos(4.1)))
+        // No fabricated post-camera tail may absorb an immediate real Fast Move.
+        assertFalse(guard.isChargeImpact(nanos(4.1) + 1))
+        assertEquals(listOf(nanos(4.0)..nanos(4.1)), guard.windows())
+    }
+
+    @Test fun `one explicit empty source frame is protected but missing later frames are unknown`() {
+        val guard = ChargedHpCameraGuard()
+        guard.observeHp("only-empty", nanos(4.0), "OPPONENT", 239, 763, 432, 782, 672, 1419,
+            explicitChargeImpact = true)
+        assertTrue(guard.isChargeImpact(nanos(4.0)))
+        assertFalse(guard.isChargeImpact(nanos(4.0) - 1))
+        assertFalse(guard.isChargeImpact(nanos(4.0) + 1))
+    }
+
+    @Test fun `explicit camera interpolation never crosses an appearance boundary`() {
+        val guard = ChargedHpCameraGuard()
+        guard.observeHp("old", nanos(4.0), "OPPONENT", 239, 763, 432, 782, 672, 1419, true)
+        guard.observeBoundary(nanos(4.1))
+        guard.observeHp("new", nanos(4.2), "OPPONENT", 239, 763, 432, 782, 672, 1419, true)
+        assertFalse(guard.isChargeImpact(nanos(4.1)))
+        assertEquals(listOf(nanos(4.0)..nanos(4.0), nanos(4.2)..nanos(4.2)), guard.windows())
+    }
+
     private fun baseline() = ChargedHpCameraGuard().also { guard ->
         hp(guard, "baseline-1", 1.0, 450)
         hp(guard, "baseline-2", 2.0, 480)

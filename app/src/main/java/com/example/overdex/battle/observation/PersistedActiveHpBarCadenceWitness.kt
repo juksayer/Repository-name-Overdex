@@ -135,6 +135,12 @@ internal class ActiveHpBarCadenceDetector {
         hp: ActiveHpBarMeasured,
         monotonicTimeNanos: Long
     ): ActiveHpBarCadenceMeasurement? {
+        if (ChargedImpactHpSource.matches(article.sourceId.id)) {
+            // A centered charged-move camera is still valid HP testimony, but
+            // cannot start or complete a Fast Move hop, including on reentry.
+            reset()
+            return null
+        }
         val centerY = (hp.barTop + hp.barBottom) / 2f
         val centerX = (hp.barLeft + hp.barRight) / 2f
         if (baselineX?.let { abs(centerX - it) > (hp.barRight - hp.barLeft) * .10f } == true) {

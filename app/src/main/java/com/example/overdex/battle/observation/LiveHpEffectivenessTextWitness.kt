@@ -25,8 +25,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.max
@@ -61,9 +59,7 @@ internal class LiveHpEffectivenessTextWitness(
     private var scope: CoroutineScope? = null
     private var activeMatch: Match? = null
     private var sampleChannel: Channel<LiveHpEffectivenessCrop>? = null
-    private val burstUntilNanos = AtomicLong(Long.MIN_VALUE)
-    private val currentCueId = AtomicReference<String?>(null)
-    private val lastQueuedNanos = AtomicLong(Long.MIN_VALUE)
+    private val sampling = HpEffectivenessTextSamplingState()
     private val lastEmittedAtByReading = ConcurrentHashMap<String, Long>()
 
     override fun start(match: Match) {
@@ -103,9 +99,7 @@ internal class LiveHpEffectivenessTextWitness(
                         else -> false
                     }
                     if (!cueMatchesSide) return@collect
-                    val at = maxOf(article.monotonicTimeNanos ?: return@collect, System.nanoTime())
-                    currentCueId.set(article.id.value)
-                    burstUntilNanos.set(at + BURST_WINDOW_NANOS)
+                    sampling.observeCue(article.id.value, article.monotonicTimeNanos ?: return@collect)
                 }
             }
             witnessScope.launch(Dispatchers.Default) {
@@ -113,19 +107,8 @@ internal class LiveHpEffectivenessTextWitness(
                 input.supplyFrames { frame ->
                     if (!isEnabled()) return@supplyFrames
                     val capturedAt = frame.capturedAtMonotonicTimeNanos
-                    val interval = if (capturedAt <= burstUntilNanos.get()) {
-                        BURST_SAMPLE_INTERVAL_NANOS
-                    } else {
-                        CONTINUOUS_SAMPLE_INTERVAL_NANOS
-                    }
-                    val prior = lastQueuedNanos.get()
-                    if (prior != Long.MIN_VALUE && capturedAt - prior < interval) {
-                        return@supplyFrames
-                    }
                     val barSample = frameHub.latestSample() ?: return@supplyFrames
-                    if (abs(capturedAt - barSample.capturedAtMonotonicTimeNanos) > MAX_BAR_LOCK_AGE_NANOS) {
-                        return@supplyFrames
-                    }
+                    val request = sampling.request(barSample, capturedAt) ?: return@supplyFrames
                     val hpRegionBounds = if (barSample.sourceWidth != null) {
                         if (barSample.sourceWidth != frame.bitmap.width || barSample.sourceHeight != frame.bitmap.height) return@supplyFrames
                         BattleCropBounds(0, 0, frame.bitmap.width, frame.bitmap.height)
@@ -147,12 +130,11 @@ internal class LiveHpEffectivenessTextWitness(
                         resolved.bitmap.recycle()
                         return@supplyFrames
                     }
-                    lastQueuedNanos.set(capturedAt)
+                    sampling.queued(capturedAt)
                     val result = samples.trySend(
                         LiveHpEffectivenessCrop(
                             resolved = resolved,
-                            cueArticleId = currentCueId.get()
-                                ?.takeIf { capturedAt <= burstUntilNanos.get() },
+                            cueArticleId = request.cueArticleId,
                             capturedAtWallTimeMillis = frame.capturedAtWallTimeMillis,
                             capturedAtMonotonicTimeNanos = capturedAt,
                         )
@@ -238,17 +220,11 @@ internal class LiveHpEffectivenessTextWitness(
     }
 
     private fun reset() {
-        burstUntilNanos.set(Long.MIN_VALUE)
-        currentCueId.set(null)
-        lastQueuedNanos.set(Long.MIN_VALUE)
+        sampling.reset()
         lastEmittedAtByReading.clear()
     }
 
     companion object {
-        private const val BURST_WINDOW_NANOS = 600_000_000L
-        private const val BURST_SAMPLE_INTERVAL_NANOS = 100_000_000L
-        private const val CONTINUOUS_SAMPLE_INTERVAL_NANOS = 200_000_000L
-        private const val MAX_BAR_LOCK_AGE_NANOS = 500_000_000L
         private const val REPEAT_SUPPRESSION_NANOS = 650_000_000L
 
         fun player(
@@ -286,6 +262,65 @@ internal class LiveHpEffectivenessTextWitness(
             ObserverId(FastMoveEffectivenessSources.OPPONENT_TEXT, ObserverSource.SCREEN_CAPTURE),
             "Opponent HP Effectiveness Text",
         )
+    }
+}
+
+/** Controls OCR eligibility without holding a source frame or a cropped bitmap. */
+internal class HpEffectivenessTextSamplingState {
+    data class Request(val cueArticleId: String?)
+
+    private var burstUntilNanos = Long.MIN_VALUE
+    private var currentCueId: String? = null
+    private var lastQueuedNanos = Long.MIN_VALUE
+    private var excludedThroughNanos = Long.MIN_VALUE
+
+    @Synchronized
+    fun observeCue(articleId: String, at: Long) {
+        if (at <= excludedThroughNanos) return
+        currentCueId = articleId
+        burstUntilNanos = at + BURST_WINDOW_NANOS
+    }
+
+    @Synchronized
+    fun request(barSample: LiveActiveHpBarSample, capturedAt: Long): Request? {
+        if (!barSample.fastMoveEvidenceAllowed) {
+            // Check before throttling: even an intervening charge-camera frame
+            // must invalidate the old hit cue. Its SUPER EFFECTIVE text belongs
+            // to the charged move and must never enter the Fast Move OCR lane.
+            excludedThroughNanos = maxOf(excludedThroughNanos, capturedAt,
+                barSample.capturedAtMonotonicTimeNanos)
+            burstUntilNanos = Long.MIN_VALUE
+            currentCueId = null
+            lastQueuedNanos = Long.MIN_VALUE
+            return null
+        }
+        if (capturedAt <= excludedThroughNanos ||
+            abs(capturedAt - barSample.capturedAtMonotonicTimeNanos) > MAX_BAR_LOCK_AGE_NANOS
+        ) return null
+        val inBurst = capturedAt <= burstUntilNanos
+        val interval = if (inBurst) BURST_SAMPLE_INTERVAL_NANOS else CONTINUOUS_SAMPLE_INTERVAL_NANOS
+        if (lastQueuedNanos != Long.MIN_VALUE && capturedAt - lastQueuedNanos < interval) return null
+        return Request(currentCueId.takeIf { inBurst })
+    }
+
+    @Synchronized
+    fun queued(at: Long) {
+        lastQueuedNanos = at
+    }
+
+    @Synchronized
+    fun reset() {
+        burstUntilNanos = Long.MIN_VALUE
+        currentCueId = null
+        lastQueuedNanos = Long.MIN_VALUE
+        excludedThroughNanos = Long.MIN_VALUE
+    }
+
+    private companion object {
+        const val BURST_WINDOW_NANOS = 600_000_000L
+        const val BURST_SAMPLE_INTERVAL_NANOS = 100_000_000L
+        const val CONTINUOUS_SAMPLE_INTERVAL_NANOS = 200_000_000L
+        const val MAX_BAR_LOCK_AGE_NANOS = 500_000_000L
     }
 }
 

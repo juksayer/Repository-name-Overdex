@@ -63,6 +63,40 @@ class ActiveHpBarCadenceDetectorTest {
         }
     }
 
+    @Test fun `charged impact HP cannot complete hops even without a lateral camera slide`() {
+        for (side in ActivePokemonSide.entries) {
+            val detector = ActiveHpBarCadenceDetector()
+            val positions = listOf(100, 70, 100, 70, 100)
+            positions.forEachIndexed { i, top ->
+                val at = i * 300_000_000L
+                val measured = hp(top).copy(side = side)
+                val article = article("charged-$i", at, top).copy(
+                    sourceId = SourceId(ChargedImpactHpSource.id(side)), payload = measured)
+                assertNull(detector.accept(article, measured, at))
+            }
+        }
+    }
+
+    @Test fun `charged impact resets previous completion and pending departure before ordinary reentry`() {
+        val detector = ActiveHpBarCadenceDetector()
+        assertNull(detector.accept(article("rest", 0L, 100), hp(100), 0L))
+        assertNull(detector.accept(article("first-away", 100_000_000L, 70), hp(70), 100_000_000L))
+        assertNull(detector.accept(article("first-return", 200_000_000L, 100), hp(100), 200_000_000L))
+        assertNull(detector.accept(article("pending-away", 300_000_000L, 70), hp(70), 300_000_000L))
+
+        val charged = article("charge-camera", 400_000_000L, 100).copy(
+            sourceId = SourceId(ChargedImpactHpSource.id(ActivePokemonSide.OPPONENT)))
+        assertNull(detector.accept(charged, hp(100), 400_000_000L))
+        assertNull(detector.accept(article("ordinary-return", 800_000_000L, 100), hp(100), 800_000_000L))
+        assertNull(detector.accept(article("new-away-1", 900_000_000L, 70), hp(70), 900_000_000L))
+        assertNull(detector.accept(article("new-return-1", 1_000_000_000L, 100), hp(100), 1_000_000_000L))
+        assertNull(detector.accept(article("new-away-2", 1_900_000_000L, 70), hp(70), 1_900_000_000L))
+        val resumed = requireNotNull(detector.accept(
+            article("new-return-2", 2_000_000_000L, 100), hp(100), 2_000_000_000L))
+        assertEquals(1_000_000_000L, resumed.intervalNanos)
+        assertEquals(listOf("new-away-2", "new-return-2"), resumed.evidenceArticleIds)
+    }
+
     private fun hp(top: Int) = ActiveHpBarMeasured(
         side = ActivePokemonSide.OPPONENT,
         barLeft = 10,

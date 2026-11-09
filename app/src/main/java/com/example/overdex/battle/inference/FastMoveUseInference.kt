@@ -157,7 +157,8 @@ class FastMoveUseInference(private val onFirstImpact: (RealityArticle) -> Unit =
             is ActiveHpBarMeasured -> {
                 chargedHpCamera.observeHp(article.id.value, atNanos, payload.side.name,
                     payload.barLeft, payload.barTop, payload.barRight, payload.barBottom,
-                    payload.sourceWidth, payload.sourceHeight)
+                    payload.sourceWidth, payload.sourceHeight,
+                    com.example.overdex.battle.observation.ChargedImpactHpSource.matches(article.sourceId.id))
                 val samples = hpHistory.getOrPut(payload.side) { mutableListOf() }
                 if (samples.none { it.id == article.id }) samples += article
                 samples.removeAll { (it.monotonicTimeNanos ?: 0L) < watermarkNanos - PHASE_HISTORY_NANOS }

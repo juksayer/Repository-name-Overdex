@@ -482,7 +482,9 @@ class Match(
                 // remains an uninterpreted ledger.
                 (article.payload as? com.example.overdex.battle.custody.ActiveHpBarMeasured)?.let { hp ->
                     if (article.sourceId.id == BattleWitnessContracts.playerActiveHpBar.witnessId ||
-                        article.sourceId.id == BattleWitnessContracts.opponentActiveHpBar.witnessId) {
+                        article.sourceId.id == BattleWitnessContracts.opponentActiveHpBar.witnessId ||
+                        article.sourceId.id == "CHARGED_IMPACT_PLAYER_HP_BAR_FRAME_WITNESS" ||
+                        article.sourceId.id == "CHARGED_IMPACT_OPPONENT_HP_BAR_FRAME_WITNESS") {
                         article.monotonicTimeNanos?.let { sourceAt ->
                             hpObservationDiagnostics.onTimelineRecorded(hp.side, sourceAt, System.nanoTime())
                         }
