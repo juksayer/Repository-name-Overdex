@@ -28,6 +28,21 @@ class OcrSourceFilterTest {
         assertEquals("Foul", filter(ownWord.copy(bounds = null)).acceptedText)
     }
 
+    @Test fun `dedicated battle text rejects small yellow white and dark HUD labels without erasing game sized words`() {
+        val battleContext = context.copy(overlayPolicy = OcrOverlayPolicy.SMALL_WORDS)
+        for (word in listOf("T. Punch", "-36 E", "Aqua Tail", "Rock Tomb!")) {
+            // None of the old violet/teal/red color heuristics matches yellow,
+            // white, or dark lettering. Capture position and scale still do.
+            val label = ownWord.copy(text = word, violetFraction = 0f)
+            val reading = filter(label, battleContext)
+            assertEquals(word, reading.rawText)
+            assertEquals("", reading.acceptedText)
+            assertEquals("HUD_SIZE_POSITION", reading.words.single().decision)
+            assertEquals(word, filter(label.copy(bounds = OcrBox(10f, 10f, 130f, 42f)), battleContext).acceptedText)
+            assertEquals(word, filter(label.copy(bounds = OcrBox(200f, 10f, 320f, 23f)), battleContext).acceptedText)
+        }
+    }
+
     @Test fun `the same physical lettering is classified equally at both capture resolutions`() {
         val scale = 1080f / 672f
         fun OcrBox.scaled() = OcrBox(left * scale, top * scale, right * scale, bottom * scale)

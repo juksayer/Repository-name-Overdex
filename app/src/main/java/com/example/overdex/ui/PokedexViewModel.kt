@@ -1014,6 +1014,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             ))
         }
         val battlePhaseTextSampling = com.example.overdex.battle.observation.BattlePhaseTextSampling()
+        observationDispatcher.register(com.example.overdex.battle.observation.ChargeTextOverlayProtection())
         observationDispatcher.register(battlePhaseTextSampling)
         listOf(
             BattleWitnessContracts.playerHpEvidenceCapture to "Player HP Evidence Capture",

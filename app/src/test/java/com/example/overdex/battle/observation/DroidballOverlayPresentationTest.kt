@@ -14,6 +14,32 @@ class DroidballOverlayPresentationTest {
         DroidballOverlayPresentation.reset()
     }
 
+    @Test fun `charge text protection is presentation only and clears on terminal phase or reset`() {
+        val p = DroidballOverlayPresentation
+        p.recordOpponentSpecies("Sneasel", 215,
+            listOf("Snarl" to PokemonType.DARK), listOf("Ice Punch" to PokemonType.ICE))
+        p.showBattleHud(userRequested = true)
+        p.recordBattleBadgePresent()
+        val roster = p.opponentSpecies.value
+        val moves = p.activeOpponentMovePossibilities.value
+        p.setChargeTextProtection(true)
+        assertTrue(p.chargeTextProtected.value)
+        assertEquals(roster, p.opponentSpecies.value)
+        assertEquals(moves, p.activeOpponentMovePossibilities.value)
+        assertTrue(p.expanded.value)
+        p.setChargeTextProtection(false)
+        assertFalse(p.chargeTextProtected.value)
+        p.setChargeTextProtection(true)
+        p.showSessionPhase(DroidballSessionPhase.RESULT)
+        assertFalse(p.chargeTextProtected.value)
+        p.setChargeTextProtection(true)
+        p.showSessionPhase(DroidballSessionPhase.ENDED)
+        assertFalse(p.chargeTextProtected.value)
+        p.setChargeTextProtection(true)
+        p.reset()
+        assertFalse(p.chargeTextProtected.value)
+    }
+
     @Test fun `starting midbattle keeps every automatic panel hidden until Droidball is tapped`() {
         DroidballOverlayPresentation.showTeamSelectScan()
         assertFalse(DroidballOverlayPresentation.panelAllowed.value)

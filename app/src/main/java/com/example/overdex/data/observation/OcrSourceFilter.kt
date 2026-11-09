@@ -7,7 +7,14 @@ import com.example.overdex.model.observation.OcrWordEvidence
 enum class OcrField(val initialHeightAt672: Float) { SPECIES(21f), ANNOUNCEMENT(28f) }
 
 /** Capture-time geometry, never the overlay's position when delayed OCR completes. */
-data class OcrSourceContext(val frameWidth: Int, val overlayBounds: OcrBox? = null)
+data class OcrSourceContext(
+    val frameWidth: Int,
+    val overlayBounds: OcrBox? = null,
+    val overlayPolicy: OcrOverlayPolicy = OcrOverlayPolicy.SIZE_COLOR_POSITION,
+)
+
+/** Dedicated battle text must exclude small HUD labels even when their move type changes the ink. */
+enum class OcrOverlayPolicy { SIZE_COLOR_POSITION, SMALL_WORDS }
 
 /** A bounded, per-witness profile learned only from clean, vocabulary-confirmed GO reads. */
 class OcrHeightProfile(val textField: OcrField) {
@@ -62,6 +69,8 @@ object OcrSourceFilter {
                 box.height * 672f / context.frameWidth else null
             val ourInk = word.violetFraction >= .04f || word.tealFraction >= .08f || word.dangerRedFraction >= .06f
             val decision = when {
+                overlap && height != null && minHeight != null && height < minHeight &&
+                    context?.overlayPolicy == OcrOverlayPolicy.SMALL_WORDS -> "HUD_SIZE_POSITION"
                 overlap && height != null && minHeight != null && height < minHeight && ourInk -> "HUD_SIZE_COLOR_POSITION"
                 else -> "RETAINED"
             }

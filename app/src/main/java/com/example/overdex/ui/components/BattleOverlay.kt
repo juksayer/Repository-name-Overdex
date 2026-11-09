@@ -271,6 +271,7 @@ private fun OverlayPanel(
     fieldBody: (@Composable () -> Unit)?,
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
+    val chargeTextProtected by DroidballOverlayPresentation.chargeTextProtected.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     if (!isBattleHud) {
         FieldBattleMenu(mode, inferredPlayerTeam, playerTeamConfirmed, configuredPlayerTeam,
@@ -301,9 +302,11 @@ private fun OverlayPanel(
                     repeat(3) { index -> OpponentSpeciesCell(opponentSpecies.getOrNull(index)) }
                 }
             }
-            // Only the sprite header has badge material. Keep the game's
-            // announcement strokes intact underneath the right-aligned labels.
-            Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
+            // Charge toasts and QTE grades use this same screen territory. Yield
+            // the entire lower section while that source-bounded phase is active;
+            // the native window shrinks and its capture footprint follows suit.
+            // Keep the roster header and its calibrated seam stable.
+            if (!chargeTextProtected) Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, bottom = 2.dp),
                 horizontalAlignment = Alignment.End) {
                 if (opponentMoves != null) {
                     if (opponentMoves.fastMoves.isNotEmpty()) {

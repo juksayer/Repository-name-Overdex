@@ -341,6 +341,63 @@ class CalibrationPersistenceTest {
         assertEquals(historical, store.activate(current.id)!!.battleCalibration)
     }
 
+    @Test fun `announcement upgrade changes only old factory preferences and preserves deliberate current saves`() {
+        val context = TestContext(temporary.newFolder())
+        val manager = CalibrationManager(context)
+        val old = manager.load().copy(announcementRegion = BattleCalibration.PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION)
+        val prefs = context.getSharedPreferences("overmon_calibration", Context.MODE_PRIVATE)
+        assertTrue(manager.save(old))
+        assertEquals(old, CalibrationManager(context).load())
+        assertTrue(prefs.edit().putInt("calibration_profile_version", 2).commit())
+        val expected = old.copy(announcementRegion = BattleCalibration.DEFAULT_ANNOUNCEMENT_REGION)
+        repeat(2) { assertEquals(expected, CalibrationManager(context).load()) }
+
+        // The known low Pixel profile is custom, even though the recordings
+        // demonstrate it misses the toast. Loading may not silently replace it.
+        val custom = old.copy(announcementRegion = AnchorRegion(0f, .316f, 1f, .046f))
+        assertTrue(manager.save(custom))
+        assertTrue(prefs.edit().putInt("calibration_profile_version", 2).commit())
+        assertEquals(custom, CalibrationManager(context).load())
+        val nearDefault = old.copy(announcementRegion = old.announcementRegion.copy(y = old.announcementRegion.y + .00001f))
+        assertTrue(manager.save(nearDefault))
+        assertTrue(prefs.edit().putInt("calibration_profile_version", 2).commit())
+        assertEquals(nearDefault, CalibrationManager(context).load())
+    }
+
+    @Test fun `old named announcement factory and checkpoint upgrade without rewriting custom or current profiles`() {
+        val context = TestContext(temporary.newFolder())
+        val store = MatchCalibrationProfileStore(context)
+        val old = BattleCalibration(announcementRegion = BattleCalibration.PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION)
+        val first = saveProfile(context, old, "Old announcement default")
+        store.confirmWorking(first.id)!!
+        assertEquals(old, store.activeProfile()!!.battleCalibration)
+        val file = File(context.filesDir, "calibration_profiles/${first.id}.json")
+        file.writeText(file.readText().replace(
+            "\"schemaVersion\": $MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION", "\"schemaVersion\": 3"))
+        val originalBytes = file.readText()
+        val expected = old.copy(announcementRegion = BattleCalibration.DEFAULT_ANNOUNCEMENT_REGION)
+        repeat(2) {
+            val loaded = MatchCalibrationProfileStore(context).activeProfile()!!
+            assertEquals(expected, loaded.battleCalibration)
+            assertEquals(expected, loaded.workingCheckpoint!!.battleCalibration)
+            assertEquals(originalBytes, file.readText())
+            assertFalse(store.activeSummary()!!.differsFromWorkingCheckpoint)
+        }
+
+        val workingCustom = old.copy(announcementRegion = AnchorRegion(.08f, .18f, .84f, .095f))
+        val custom = saveProfile(context, workingCustom, "Working custom announcement")
+        val customFile = File(context.filesDir, "calibration_profiles/${custom.id}.json")
+        customFile.writeText(customFile.readText().replace(
+            "\"schemaVersion\": $MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION", "\"schemaVersion\": 3"))
+        assertEquals(workingCustom, store.activeProfile()!!.battleCalibration)
+        assertEquals(expected, store.activate(first.id)!!.battleCalibration)
+        assertEquals(expected, store.restoreWorking(first.id)!!.battleCalibration)
+        assertEquals(workingCustom, store.activate(custom.id)!!.battleCalibration)
+        val currentHistorical = saveProfile(context, old, "Deliberately saved old announcement coordinates")
+        assertEquals(old, store.activeProfile()!!.battleCalibration)
+        assertEquals(currentHistorical.battleCalibration, CalibrationManager(context).load())
+    }
+
     private fun saveProfile(context: Context, battle: BattleCalibration, name: String = "Moondrop") =
         MatchCalibrationProfileStore(context).saveAs(
             name, "MOONDROP MD-PH-001", 1080, 2400, battle, TeamSelectCalibration.measured1080x2400

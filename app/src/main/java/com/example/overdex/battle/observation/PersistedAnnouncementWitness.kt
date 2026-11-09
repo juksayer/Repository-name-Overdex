@@ -11,6 +11,7 @@ import com.example.overdex.data.observation.OcrField
 import com.example.overdex.data.observation.OcrHeightProfile
 import com.example.overdex.data.observation.OcrPriority
 import com.example.overdex.data.observation.OcrSourceContext
+import com.example.overdex.data.observation.OcrOverlayPolicy
 import com.example.overdex.model.observation.OcrTextEvidence
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -148,7 +149,7 @@ class PersistedAnnouncementWitness internal constructor(
                             if (readings.none { reading -> reading.rawText.isNotBlank() }) pending.failed(it)
                             else pending.succeeded(it)
                         }
-                        val context = OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds)
+                        val context = OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds, OcrOverlayPolicy.SMALL_WORDS)
                         var acceptedText = ""
                         val references = mutableListOf(article.id.value)
                         for (reading in readings) {
@@ -243,7 +244,7 @@ private class ArtifactAnnouncementCropReader(private val artifactStore: FileCrop
                         ?: return@withContext emptyList()
                     try {
                         nativeTurn.recognizeEvidence(bitmap,
-                            OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds), profile)
+                            OcrSourceContext(crop.cropProvenance.sourceWidth, crop.overlayBounds, OcrOverlayPolicy.SMALL_WORDS), profile)
                     } finally { bitmap.recycle() }
                 }
         })

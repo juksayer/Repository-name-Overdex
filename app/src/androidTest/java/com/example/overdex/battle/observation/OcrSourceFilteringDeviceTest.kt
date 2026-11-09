@@ -53,11 +53,15 @@ class OcrSourceFilteringDeviceTest {
         val game = asset("battle/hud_oct13/go-plusle.png")
         try {
             witness.start(match)
+            var previousSourceTime = Long.MIN_VALUE
             for ((index, source) in listOf(hud, game).withIndex()) {
-                val time = 1_000_000_000L + index * 1_000_000_000L
                 val payload = CropCaptured(store.preservePng(source)!!,
                     BattleCropProvenance(BattleCropContracts.announcement.cropName, 672, 1493,
                         BattleCropBounds(0, 0, source.width, source.height)), source.whole())
+                // The live queue expires crops against System.nanoTime(). Use
+                // that clock domain rather than synthetic seconds since boot.
+                val time = maxOf(System.nanoTime(), previousSourceTime + 1L)
+                previousSourceTime = time
                 val receipt = custody.submitTestimony(SourceId("ANNOUNCEMENT_CROP_CAPTURE"),
                     payload, 100L + index, null, emptyList(), time)
                 val accepted = withTimeout(15_000) { match.articles.first {

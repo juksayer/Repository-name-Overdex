@@ -50,12 +50,9 @@ data class BattleCalibration(
         width = (445f - 20f) / 1080f,
         height = (350f - 225f) / 2400f
     ),
-    val announcementRegion: AnchorRegion = AnchorRegion(
-        x = 0f / 1080f,
-        y = 710f / 2400f,
-        width = 1080f / 1080f,
-        height = (870f - 710f) / 2400f
-    ),
+    // The move/entry toast sits above the QTE grade, around Y .20–.24 in
+    // whole-display Pixel captures. It is a separate field from effectiveness.
+    val announcementRegion: AnchorRegion = DEFAULT_ANNOUNCEMENT_REGION,
     val opponentTeamInfoRegion: AnchorRegion = AnchorRegion(
         x = 645f / 1080f,
         y = 225f / 2400f,
@@ -173,6 +170,18 @@ data class BattleCalibration(
     )
 ) {
     companion object {
+        /** Superseded factory strip that sampled sky or effectiveness below the toast. */
+        val PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION = AnchorRegion(
+            x = 0f, y = 710f / 2400f, width = 1f, height = 160f / 2400f
+        )
+
+        /** Full entry/move toast, measured in whole-display coordinates at both source sizes. */
+        val DEFAULT_ANNOUNCEMENT_REGION = AnchorRegion(x = 0f, y = .18f, width = 1f, height = .10f)
+
+        /** A load-time upgrade is allowed only for a known unchanged older factory strip. */
+        internal fun correctPreviousAnnouncementDefault(region: AnchorRegion): AnchorRegion =
+            if (region == PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION) DEFAULT_ANNOUNCEMENT_REGION else region
+
         /** Narrow grade box used before the recorded vertical animation was allowed for. */
         val PREVIOUS_DEFAULT_QTE_PROGRESS_TEXT_REGION = AnchorRegion(
             x = 0.12f, y = 0.26f, width = 0.76f, height = 0.075f

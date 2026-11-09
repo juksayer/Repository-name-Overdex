@@ -248,7 +248,7 @@ class CalibrationManager(context: Context) {
             .putFloat("out_of_battle_menu_y", calibration.outOfBattleMenuRegion.y)
             .putFloat("out_of_battle_menu_w", calibration.outOfBattleMenuRegion.width)
             .putFloat("out_of_battle_menu_h", calibration.outOfBattleMenuRegion.height)
-            .putInt(CALIBRATION_PROFILE_VERSION, 2)
+            .putInt(CALIBRATION_PROFILE_VERSION, 3)
             .putLong(CALIBRATION_SAVED_AT_MILLIS, savedAtMillis)
             .commit()
     }
@@ -402,20 +402,16 @@ class CalibrationManager(context: Context) {
 
         val announcementWidth = prefs.getFloat("announcement_w", 0f)
         val announcementRegion = if (announcementWidth > 0f && announcementWidth <= 1.0f) {
-            AnchorRegion(
-                x = prefs.getFloat("announcement_x", 0f).coerceIn(0f, 1f),
-                y = prefs.getFloat("announcement_y", 710f / 2400f).coerceIn(0f, 1f),
+            val fallback = BattleCalibration.PREVIOUS_DEFAULT_ANNOUNCEMENT_REGION
+            val stored = AnchorRegion(
+                x = prefs.getFloat("announcement_x", fallback.x).coerceIn(0f, 1f),
+                y = prefs.getFloat("announcement_y", fallback.y).coerceIn(0f, 1f),
                 width = announcementWidth.coerceIn(0.01f, 1f),
-                height = prefs.getFloat("announcement_h", (870f - 710f) / 2400f).coerceIn(0.01f, 1f)
+                height = prefs.getFloat("announcement_h", fallback.height).coerceIn(0.01f, 1f)
             )
-        } else {
-            AnchorRegion(
-                x = 0f / 1080f,
-                y = 710f / 2400f,
-                width = 1080f / 1080f,
-                height = (870f - 710f) / 2400f
-            )
-        }
+            if (prefs.getInt(CALIBRATION_PROFILE_VERSION, 0) < 3)
+                BattleCalibration.correctPreviousAnnouncementDefault(stored) else stored
+        } else BattleCalibration.DEFAULT_ANNOUNCEMENT_REGION
 
         val opponentTeamInfoWidth = prefs.getFloat("opponent_team_info_w", 0f)
         val opponentTeamInfoRegion = if (opponentTeamInfoWidth > 0f && opponentTeamInfoWidth <= 1.0f) {

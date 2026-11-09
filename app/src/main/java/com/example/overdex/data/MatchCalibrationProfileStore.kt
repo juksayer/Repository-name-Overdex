@@ -45,9 +45,9 @@ data class MatchCalibrationProfileSummary(
 /**
  * App-private calibration profiles survive ordinary APK installs and updates.
  * A profile is a complete user-owned snapshot. Custom coordinates remain exact.
- * The sole coordinate migration widens the exact factory QTE grade box in
- * pre-v3 profiles, including their working checkpoints. Current-version saved
- * boxes remain authoritative even at those historical coordinates.
+ * Coordinate upgrades affect only exact older factory boxes: the pre-v3 QTE
+ * grade strip and pre-v4 announcement strip, including working checkpoints.
+ * Current-version saved boxes remain authoritative at historical coordinates.
  */
 class MatchCalibrationProfileStore(context: Context) {
     private val appContext = context.applicationContext
@@ -248,7 +248,9 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         }),
         opponentShieldsRegion = battleRegions.region("opponent_shields", battleDefaults.opponentShieldsRegion),
         playerTeamInfoRegion = battleRegions.region("player_team_info", battleDefaults.playerTeamInfoRegion),
-        announcementRegion = battleRegions.region("announcement", battleDefaults.announcementRegion),
+        announcementRegion = battleRegions.region("announcement", battleDefaults.announcementRegion).let {
+            if (schemaVersion < 4) BattleCalibration.correctPreviousAnnouncementDefault(it) else it
+        },
         opponentTeamInfoRegion = battleRegions.region("opponent_team_info", battleDefaults.opponentTeamInfoRegion),
         playerSpeciesNameRegion = battleRegions.region("player_species_name", battleDefaults.playerSpeciesNameRegion),
         opponentSpeciesNameRegion = battleRegions.region("opponent_species_name", battleDefaults.opponentSpeciesNameRegion),
@@ -307,7 +309,7 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
     )
 }
 
-internal const val MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION = 3
+internal const val MATCH_CALIBRATION_PROFILE_SCHEMA_VERSION = 4
 
 private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(
     "enemy_name" to enemyNameRegion.stored(),

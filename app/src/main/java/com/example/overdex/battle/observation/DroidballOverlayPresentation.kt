@@ -128,6 +128,13 @@ object DroidballOverlayPresentation {
     val configuredPlayerTeam = _configuredPlayerTeam.asStateFlow()
     private val _teamEditingAllowed = MutableStateFlow(false)
     val teamEditingAllowed = _teamEditingAllowed.asStateFlow()
+    private val _chargeTextProtected = MutableStateFlow(false)
+    /** Only the transient lower move/status lines yield; the roster stays visible. */
+    val chargeTextProtected = _chargeTextProtected.asStateFlow()
+
+    /** Presentation hook; its caller owns source-time phase validation and expiry. */
+    fun setChargeTextProtection(protected: Boolean) { _chargeTextProtected.value = protected }
+
     private val _activeOpponentMovePossibilities = MutableStateFlow<OpponentMovePossibilities?>(null)
     val activeOpponentMovePossibilities = _activeOpponentMovePossibilities.asStateFlow()
     private var activePlayerTypes: List<PokemonType> = emptyList()
@@ -142,6 +149,9 @@ object DroidballOverlayPresentation {
     private val faintedSpeciesNames = mutableSetOf<String>()
 
     fun showSessionPhase(phase: DroidballSessionPhase) {
+        if (phase == DroidballSessionPhase.RESULT || phase == DroidballSessionPhase.ENDED) {
+            _chargeTextProtected.value = false
+        }
         _teamEditingAllowed.value = phase !in setOf(DroidballSessionPhase.BATTLE_ACTIVE, DroidballSessionPhase.RESULT, DroidballSessionPhase.ENDED)
         // Session state is delivered asynchronously. A prebattle emission can
         // arrive after VS/countdown has requested the HUD layout; it must not
@@ -449,6 +459,7 @@ object DroidballOverlayPresentation {
     }
 
     fun reset() {
+        _chargeTextProtected.value = false
         energyForecastMatchId = null
         _panelAllowed.value = false
         preBattleMenuSuppressed = false

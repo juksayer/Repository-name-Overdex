@@ -5,6 +5,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BattleCalibrationTest {
+    @Test fun `announcement default contains full Pixel toast at native and captured resolutions`() {
+        val region = BattleCalibration().announcementRegion
+        // Entry and charged-use toast surface in the supplied Pixel 4 examples,
+        // and the recorded Camerupt Rock Tomb frame (672 x 1419).
+        for ((width, height, bounds) in listOf(
+            Triple(1080f, 2280f, floatArrayOf(120f, 425f, 960f, 610f)),
+            Triple(672f, 1419f, floatArrayOf(74f, 267f, 598f, 377f)),
+        )) {
+            assertTrue(region.x * width <= bounds[0])
+            assertTrue(region.y * height <= bounds[1])
+            assertTrue((region.x + region.width) * width >= bounds[2])
+            assertTrue((region.y + region.height) * height >= bounds[3])
+        }
+        assertTrue(region.y > .12f) // Native team badges are a different field.
+        assertTrue(region.y + region.height < .29f)
+    }
+
     @Test
     fun `default countdown region includes horizontal margin for the full GO glyph`() {
         val region = BattleCalibration.DEFAULT_COUNTDOWN_REGION
