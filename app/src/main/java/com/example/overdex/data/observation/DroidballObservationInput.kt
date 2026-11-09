@@ -17,6 +17,7 @@ import kotlinx.coroutines.yield
  */
 class DroidballObservationInput : ObservationInput {
     override val source: SessionSource = SessionSource.LIVE_CAPTURE
+    override val supportsIndependentFrameCollectors: Boolean = true
 
     override fun latestVisualPublication(): VisualFramePublication? =
         DroidballService.latestVisualPublication()

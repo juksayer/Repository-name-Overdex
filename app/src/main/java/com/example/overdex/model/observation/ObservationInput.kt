@@ -12,6 +12,13 @@ interface ObservationInput {
      */
     val source: SessionSource
 
+    /**
+     * True only for multicast feeds whose collectors each receive their own
+     * frames. A narrow terminal reader may then run independently of geometry
+     * acquisition. Channel-backed or one-shot inputs keep one collector.
+     */
+    val supportsIndependentFrameCollectors: Boolean get() = false
+
     /** Latest accepted live-feed progress, even when a slow reader missed its frames. */
     fun latestVisualPublication(): VisualFramePublication? = null
 
