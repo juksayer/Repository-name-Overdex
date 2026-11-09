@@ -14,21 +14,35 @@ internal class ForecastBattlefieldVisibility {
     private val spans = mutableListOf<Span>()
     private var latestAt = Long.MIN_VALUE
 
-    fun observe(at: Long, bothBarsVisible: Boolean) {
-        if (at <= latestAt) return
+    /**
+     * Earliest source time whose visibility changed, or null for a frame that
+     * changes no interval. A forecast can keep its replay checkpoint when only
+     * the unprocessed tail grows. Confirmation and brief-gap recovery can
+     * revise an earlier interval and must be reconciled from that time.
+     */
+    fun observe(at: Long, bothBarsVisible: Boolean): Long? {
+        if (at <= latestAt) return null
         latestAt = at
         val last = spans.lastOrNull()
         if (!bothBarsVisible) {
-            if (last != null && last.missingAt == null) last.missingAt = minOf(at, last.end)
-            return
+            if (last != null && last.missingAt == null) {
+                val oldEnd = last.end
+                last.missingAt = minOf(at, oldEnd)
+                return minOf(oldEnd, last.end).takeIf { last.end != oldEnd }
+            }
+            return null
         }
         // A single failed frame should not repeatedly reset a multi-turn move.
         // Until it recovers, even that short uncertainty freezes the display.
         if (last != null && at - (last.missingAt ?: last.lastSeen) <=
             (if (last.missingAt == null) STALE_FRAME_NANOS else BRIEF_GAP_NANOS)) {
+            val oldEnd = last.end
             last.lastSeen = at
             last.missingAt = null
+            return minOf(oldEnd, last.end).takeIf { last.end != oldEnd }
         } else spans += Span(at, at)
+        // A new unconfirmed span has no visible duration yet.
+        return null
     }
 
     fun contains(at: Long): Boolean = spans.any { at >= it.start && at < it.end }

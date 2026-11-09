@@ -33,23 +33,46 @@ data class OpponentEnergyEstimate(
  */
 class OpponentEnergyForecast {
     private data class Event(val at: Long, val payload: TestimonyPayload)
-    private val events = linkedMapOf<String, Event>()
+    private val eventIds = mutableSetOf<String>()
+    // Stable source-time order is maintained only when semantic evidence arrives.
+    private val events = mutableListOf<Event>()
     private val moves = mutableMapOf<String, List<Move>>()
     private val candidates = mutableMapOf<String, Set<String>>()
     private val identities = mutableMapOf<String, Pair<Long, FastMoveIdentified>>()
     private val battlefield = ForecastBattlefieldVisibility()
+    private val selectedMoves = mutableMapOf<String, Move>()
+    private var projection: Projection? = null
+    private var projectionBuilds = 0L
+    private var eventsApplied = 0L
+
+    /** Deterministic work accounting for tests; no per-tick history logging. */
+    internal data class ProjectionWork(val builds: Long, val eventsApplied: Long)
+    @Synchronized internal fun projectionWork() = ProjectionWork(projectionBuilds, eventsApplied)
 
     /** Called on the live frame path, before queued OCR/custody delivery. */
     @Synchronized fun observeBattlefield(at: Long, bothBarsVisible: Boolean) {
-        battlefield.observe(at, bothBarsVisible)
+        val changedFrom = battlefield.observe(at, bothBarsVisible) ?: return
+        // Normal live frames extend visibility after the last processed event.
+        // Do not replay history for those frames. A recovered/confirmed interval
+        // can reach a processed hit or pause and needs a fresh projection.
+        if (projection?.let { changedFrom <= it.lastEventAt } == true) projection = null
     }
 
     @Synchronized fun registerMoves(species: String, available: List<Move>) {
-        moves[key(species)] = available.filter { it.isFast && (it.turns ?: 0) > 0 && it.energy > 0 }
+        val id = key(species)
+        val eligible = available.filter { it.isFast && (it.turns ?: 0) > 0 && it.energy > 0 }
+        if (moves[id] == eligible) return
+        moves[id] = eligible
+        updateSelectedMove(id)
     }
 
     @Synchronized fun restrictCandidates(species: String, names: List<String>) {
-        if (names.isNotEmpty()) candidates[key(species)] = names.map(::key).toSet()
+        if (names.isEmpty()) return
+        val id = key(species)
+        val allowed = names.map(::key).toSet()
+        if (candidates[id] == allowed) return
+        candidates[id] = allowed
+        updateSelectedMove(id)
     }
 
     @Synchronized fun observe(article: RealityArticle) {
@@ -57,7 +80,12 @@ class OpponentEnergyForecast {
         val p = article.payload
         if (p is FastMoveIdentified && p.side == ActivePokemonSide.OPPONENT) {
             if (at >= (identities[key(p.speciesName)]?.first ?: Long.MIN_VALUE)) {
-                identities[key(p.speciesName)] = at to p
+                val id = key(p.speciesName)
+                val previous = identities.put(id, at to p)?.second
+                updateSelectedMove(id)
+                // The identity flag is presentation state even when the move's
+                // energy/duration did not change (for example a resolved tie).
+                if (previous != p) projection = null
             }
             return
         }
@@ -68,16 +96,30 @@ class OpponentEnergyForecast {
             p != MatchStarted && p != AttackIncoming && p != GetReadyWitnessed &&
             p != ChargeMoveUsedAnnounced && p != ScreenIgnoredByUser &&
             p != ObservationSessionStoppedByUser && p != ObservationRestartedByUser) return
-        events.putIfAbsent(article.id.value, Event(at, p))
+        if (!eventIds.add(article.id.value)) return
+        val index = eventLimit(at)
+        events.add(index, Event(at, p))
+        // Appended evidence extends the checkpoint. A late event must replay in
+        // source order, including the original insertion order for equal times.
+        if (projection?.let { index < it.processedEvents } == true) projection = null
     }
 
     @Synchronized fun reset() {
-        events.clear(); moves.clear(); candidates.clear(); identities.clear()
+        events.clear(); eventIds.clear(); moves.clear(); candidates.clear(); identities.clear()
+        selectedMoves.clear(); projection = null
+        projectionBuilds = 0L; eventsApplied = 0L
         battlefield.clear()
     }
 
-    private fun chosenMove(species: String): Move? {
-        val id = key(species)
+    private fun chosenMove(species: String): Move? = selectedMoves[key(species)]
+
+    private fun updateSelectedMove(id: String) {
+        val chosen = selectMove(id)
+        val previous = if (chosen == null) selectedMoves.remove(id) else selectedMoves.put(id, chosen)
+        if (previous != chosen) projection = null
+    }
+
+    private fun selectMove(id: String): Move? {
         val pool = moves[id].orEmpty()
         val identity = identities[id]?.second
         val eligible = candidates[id]?.let { allowed -> pool.filter { key(it.name) in allowed } }
@@ -87,13 +129,46 @@ class OpponentEnergyForecast {
         if (identity != null && !identity.basis.contains("TIE_BREAK")) {
             eligible.firstOrNull { key(it.name) == key(identity.moveName) }?.let { return it }
         }
-        return eligible.sortedWith(compareByDescending<Move> { it.energy.toDouble() / it.turns!! }
-            .thenBy { it.name }).firstOrNull()
+        return eligible.minWithOrNull(compareByDescending<Move> { it.energy.toDouble() / it.turns!! }
+            .thenBy { it.name })
+    }
+
+    /** Number of events at or before this source time (an upper bound). */
+    private fun eventLimit(at: Long): Int {
+        var low = 0
+        var high = events.size
+        while (low < high) {
+            val middle = (low + high) ushr 1
+            if (events[middle].at <= at) low = middle + 1 else high = middle
+        }
+        return low
     }
 
     @Synchronized fun estimate(now: Long): OpponentEnergyEstimate? {
-        data class Balance(var energy: Int = 0, var expected: Int = 0, var observed: Int = 0,
-                           var activeNanos: Long = 0, var unexplained: Int = 0, var fainted: Boolean = false)
+        val limit = eventLimit(now)
+        val state = projection?.takeIf { it.processedEvents <= limit }
+            ?: Projection().also { projection = it; projectionBuilds++ }
+        while (state.processedEvents < limit) {
+            val event = events[state.processedEvents]
+            state.accept(event)
+            state.processedEvents++
+            state.lastEventAt = event.at
+            eventsApplied++
+        }
+        return state.estimate(now)
+    }
+
+    private data class Balance(var energy: Int = 0, var expected: Int = 0, var observed: Int = 0,
+                               var activeNanos: Long = 0, var unexplained: Int = 0, var fainted: Boolean = false)
+
+    /**
+     * Evidence-derived state stops at the last semantic event, never at a HUD
+     * tick. Tick estimates only advance the current balance in local scalars;
+     * they cannot award energy into the checkpoint or affect a later spend.
+     */
+    private inner class Projection {
+        var processedEvents = 0
+        var lastEventAt = Long.MIN_VALUE
         val balances = mutableMapOf<String, Balance>()
         val seenUses = mutableSetOf<String>()
         val activeBySide = mutableMapOf<ActivePokemonSide, String>()
@@ -110,11 +185,11 @@ class OpponentEnergyForecast {
         var earliestResume = 0L
         var chargeLockedUntil = Long.MIN_VALUE
         var decisionLockedUntil = Long.MIN_VALUE
-        fun balance(name: String) = balances.getOrPut(key(name)) { Balance() }
-        fun begin(at: Long, initialUses: Int = 0) {
+        private fun balance(name: String) = balances.getOrPut(key(name)) { Balance() }
+        private fun begin(at: Long, initialUses: Int = 0) {
             segmentAt = at; segmentAwarded = 0; segmentInitialUses = initialUses; segmentMeasuredNanos = 0
         }
-        fun advance(at: Long) {
+        private fun advance(at: Long) {
             val name = active ?: return
             if (!running || ended) return
             val b = balance(name)
@@ -129,11 +204,11 @@ class OpponentEnergyForecast {
             b.energy = (b.energy + gain * move.energy).coerceAtMost(100)
             segmentAwarded = uses
         }
-        fun pause(at: Long) {
+        private fun pause(at: Long) {
             advance(at); running = false; earliestResume = at
             partialCompletionAvailable = false
         }
-        for (event in events.values.filter { it.at <= now }.sortedBy { it.at }) {
+        fun accept(event: Event) {
             val t = event.at
             val p = event.payload
             advance(t)
@@ -197,20 +272,20 @@ class OpponentEnergyForecast {
                     }
                 }
                 is FastMoveUseObserved -> {
-                    if (ended || !seenUses.add(p.useId)) continue
+                    if (ended || !seenUses.add(p.useId)) return
                     // A stray pulse from a charge animation must not restart
                     // perfect-play extrapolation while the battle view is gone.
-                    if (!battlefield.contains(t)) continue
-                    if (t < chargeLockedUntil || t < decisionLockedUntil) continue
+                    if (!battlefield.contains(t)) return
+                    if (t < chargeLockedUntil || t < decisionLockedUntil) return
                     val opponent = p.attackingSide == ActivePokemonSide.OPPONENT
                     val named = p.attackerSpeciesName
                     if (opponent && named != null && key(named) != key(active.orEmpty())) {
                         // Correctly timed named uses can recover a missing badge.
                         active = named; activeBySide[ActivePokemonSide.OPPONENT] = named; begin(t)
                     }
-                    val name = active ?: continue
+                    val name = active ?: return
                     val b = balance(name)
-                    if (b.fainted) continue
+                    if (b.fainted) return
                     val firstPartialCompletion = start == null && opponent && partialCompletionAvailable
                     if (start == null) start = t // partial recording, no invented GO
                     if (!running) {
@@ -233,15 +308,27 @@ class OpponentEnergyForecast {
                 else -> Unit
             }
         }
-        advance(now)
-        val name = active ?: return null
-        val move = chosenMove(name) ?: return null
-        val b = balance(name)
-        val identity = identities[key(name)]?.second
-        return OpponentEnergyEstimate(name, move.name, b.energy, b.expected, b.observed,
-            (b.activeNanos / TURN_NANOS).toInt(), !running || ended || b.fainted || !battlefield.contains(now), partial,
-            b.unexplained, identity != null && !identity.basis.contains("TIE_BREAK") &&
-                key(identity.moveName) == key(move.name))
+        fun estimate(now: Long): OpponentEnergyEstimate? {
+            val name = active ?: return null
+            val move = chosenMove(name) ?: return null
+            val b = balance(name)
+            var energy = b.energy
+            var expected = b.expected
+            var activeNanos = b.activeNanos
+            if (running && !ended && !b.fainted) {
+                val elapsed = battlefield.elapsed(segmentAt, now)
+                activeNanos += elapsed - segmentMeasuredNanos
+                val uses = segmentInitialUses + battlefield.completedCycles(segmentAt, now, move.turns!! * TURN_NANOS)
+                val gain = (uses - segmentAwarded).coerceAtLeast(0)
+                expected += gain
+                energy = (energy + gain * move.energy).coerceAtMost(100)
+            }
+            val identity = identities[key(name)]?.second
+            return OpponentEnergyEstimate(name, move.name, energy, expected, b.observed,
+                (activeNanos / TURN_NANOS).toInt(), !running || ended || b.fainted || !battlefield.contains(now), partial,
+                b.unexplained, identity != null && !identity.basis.contains("TIE_BREAK") &&
+                    key(identity.moveName) == key(move.name))
+        }
     }
 
     private fun key(value: String) = value.uppercase().filter(Char::isLetterOrDigit)
