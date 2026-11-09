@@ -7,9 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.overdex.diagnostics.DiagnosticLogger
 import com.example.overdex.model.OwnedPokemonBinder
@@ -32,6 +35,38 @@ import org.junit.Test
 class DesktopTrackpadDeviceTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun trackpadUsesTheEntireLcdViewportIncludingAllFourCornersWithLargeText() {
+        val controller = OverdextopController()
+        var taps = 0
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.5f)) {
+                Box(Modifier.size(280.dp, 140.dp).testTag("trackpad-lcd-viewport")) {
+                    OverdextopLcd(
+                        controller = controller,
+                        onOpen = {}, onPrograms = {}, onExplorer = {},
+                        homeStyle = HomeScreenStyle.OVERDEXTOP,
+                        trackpadMode = true,
+                        onPointerTap = { taps++ },
+                    )
+                }
+            }
+        }
+        val viewport = compose.onNodeWithTag("trackpad-lcd-viewport").fetchSemanticsNode().boundsInRoot
+        val pad = compose.onNodeWithTag("overdextop-trackpad")
+        assertEquals("Context labels must not reserve any of the LCD's movement area",
+            viewport, pad.fetchSemanticsNode().boundsInRoot)
+        compose.onNodeWithTag("overdextop-input-mode").assertDoesNotExist()
+        compose.onNodeWithTag("overdextop-programs-button").assertDoesNotExist()
+        pad.performTouchInput {
+            click(Offset(1f, 1f))
+            click(Offset(width - 1f, 1f))
+            click(Offset(1f, height - 1f))
+            click(Offset(width - 1f, height - 1f))
+        }
+        compose.runOnIdle { assertEquals("Each LCD corner must belong to the trackpad", 4, taps) }
+    }
+
     @Test fun switchingInputModesKeepsTheHardwareFixedAndPhysicalNavigationStillWorks() {
         val controller = OverdextopController()
         val pointer = DesktopPointerController()
@@ -44,6 +79,9 @@ class DesktopTrackpadDeviceTest {
         compose.onNodeWithTag("overdextop-input-mode").assertIsDisplayed().performTouchInput { click() }
         compose.onNodeWithTag("overdextop-trackpad").assertIsDisplayed()
         compose.onNodeWithTag("overdextop-pointer").assertExists()
+        assertEquals("The entire dark LCD surface must be available as the trackpad",
+            compose.onNodeWithTag("instrument-lcd-surface").fetchSemanticsNode().boundsInRoot,
+            compose.onNodeWithTag("overdextop-trackpad").fetchSemanticsNode().boundsInRoot)
         compose.runOnIdle {
             assertTrue(pointer.enabled)
             check(controller.select("droidball"))
@@ -110,7 +148,7 @@ class DesktopTrackpadDeviceTest {
         }
     }
 
-    @Test fun leavingAnyTrackpadEdgeCancelsTheContactAcrossTheShellAndCrtUntilRelease() {
+    @Test fun leavingAnyTrackpadEdgePausesUntilTheSameContactReentersAndMovesAgain() {
         val controller = OverdextopController()
         val pointer = DesktopPointerController().apply { setEnabled(true) }
         val actions = mutableListOf<OverdextopAction>()
@@ -148,16 +186,30 @@ class DesktopTrackpadDeviceTest {
             }
             trackpad.performTouchInput {
                 // A contact stays captured by its original hit path. Move it over
-                // the actual CRT and hardware, then back into the pad before up.
+                // the actual CRT and hardware without activating either.
                 moveTo(crtCenter - padBounds.topLeft)
                 moveTo(aCenter - padBounds.topLeft)
-                moveTo(Offset(width * 0.7f, height * 0.6f))
+            }
+            compose.runOnIdle {
+                assertEquals("Movement outside $edge must remain paused", lastInside, pointer.x to pointer.y)
+                assertEquals(lastInsideRevision, pointer.motionRevision)
+                assertTrue("The escaped $edge contact must not activate the CRT or instrument controls", actions.isEmpty())
+            }
+            trackpad.performTouchInput { moveTo(Offset(width * 0.55f, height * 0.5f)) }
+            compose.runOnIdle {
+                assertEquals("Re-entering after $edge must set an anchor without jumping", lastInside, pointer.x to pointer.y)
+                assertEquals(lastInsideRevision, pointer.motionRevision)
+            }
+            trackpad.performTouchInput {
+                moveTo(Offset(width * 0.65f, height * 0.6f))
                 up()
             }
             compose.runOnIdle {
-                assertEquals("Leaving $edge must cancel movement even after re-entry", lastInside, pointer.x to pointer.y)
-                assertEquals(lastInsideRevision, pointer.motionRevision)
-                assertTrue("The escaped $edge contact must not activate the CRT or instrument controls", actions.isEmpty())
+                assertEquals("The original $edge drag must resume using only movement since re-entry",
+                    lastInside.first + 0.1f, pointer.x, 0.002f)
+                assertEquals(lastInside.second + 0.1f, pointer.y, 0.002f)
+                assertTrue(pointer.motionRevision > lastInsideRevision)
+                assertTrue("Releasing the resumed $edge drag must not launch anything", actions.isEmpty())
             }
         }
 
@@ -167,7 +219,7 @@ class DesktopTrackpadDeviceTest {
                 end = Offset(width * 0.45f, height * 0.5f), durationMillis = 240)
         }
         compose.runOnIdle {
-            assertTrue("Lifting the canceled contact must allow a new LCD drag", pointer.motionRevision > beforeFreshContact)
+            assertTrue("Lifting the resumed contact must allow a new LCD drag", pointer.motionRevision > beforeFreshContact)
             assertTrue(actions.isEmpty())
         }
         movePointerToMeasuredTarget(pointer, "current_team")
@@ -213,7 +265,7 @@ class DesktopTrackpadDeviceTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
-    @Test fun anOutsideHistoricalSampleCancelsEvenWhenTheLatestBatchedPositionIsInside() {
+    @Test fun anOutsideHistoricalSamplePausesWithoutJumpingAndTheSameContactCanResume() {
         val controller = OverdextopController()
         val pointer = DesktopPointerController().apply { setEnabled(true) }
         val actions = mutableListOf<OverdextopAction>()
@@ -230,23 +282,34 @@ class DesktopTrackpadDeviceTest {
             // event. Move that point one pixel while keeping it inside the pad.
             updatePointerTo(pointerId = 0, position = inside + Offset(1f, 0f))
             // Android can batch an excursion and return into one event. Its
-            // latest position is inside, but its history must still cancel it.
+            // latest position is inside, but its history must still pause it.
             // Root injection keeps both latest and historical coordinates in
             // the same space, independent of node-local history conversion.
             moveWithHistory(
                 relativeHistoricalTimes = listOf(-8L),
                 historicalCoordinates = listOf(Offset(padBounds.left - 1f, padBounds.center.y)),
             )
-            up()
         }
         compose.runOnIdle {
             assertEquals("An outside historical sample must not move the pointer", before, pointer.x to pointer.y)
             assertEquals(revision, pointer.motionRevision)
-            assertTrue("Batched re-entry must not turn a canceled contact into a tap", actions.isEmpty())
+            assertTrue("Batched re-entry must not turn an escaped contact into a tap", actions.isEmpty())
         }
+        compose.onRoot().performTouchInput {
+            moveTo(Offset(padBounds.left + 2f + padBounds.width * 0.1f, padBounds.center.y))
+            up()
+        }
+        compose.runOnIdle {
+            assertEquals("Movement after the batched re-entry must resume from its latest inside sample",
+                before.first + 0.1f, pointer.x, 0.002f)
+            assertEquals(before.second, pointer.y, 0.002f)
+            assertTrue(pointer.motionRevision > revision)
+            assertTrue("Releasing a resumed batched contact must not activate a target", actions.isEmpty())
+        }
+        movePointerToMeasuredTarget(pointer, "current_team")
         compose.onNodeWithTag("overdextop-trackpad").performTouchInput { click() }
         compose.runOnIdle {
-            assertEquals("A new contact must work after a canceled batched event",
+            assertEquals("A new contact must work after a paused batched event",
                 listOf(OverdextopAction.OpenProgram(InstrumentCommand.OpenCurrentTeam)), actions)
         }
     }
@@ -312,7 +375,11 @@ class DesktopTrackpadDeviceTest {
         val pointer = DesktopPointerController().apply { setEnabled(true) }
         compose.setContent { Handheld(controller, pointer, {}) }
 
+        // SELECT restores the context controls; the pad itself has no reserved
+        // header strip, and SELECT returns to it after entering Programs.
+        press("SELECT")
         compose.onNodeWithTag("overdextop-programs-button").assertIsDisplayed().performTouchInput { click() }
+        press("SELECT")
         compose.onNodeWithTag("overdextop-programs").assertIsDisplayed()
         repeat(controller.entries.lastIndex) { press("Down") }
         val id = controller.entries.last().id
@@ -449,6 +516,7 @@ class DesktopTrackpadDeviceTest {
                     onA = ::openSelected,
                     onB = { controller.back() },
                     onSelect = ::toggleInput,
+                    lcdEdgeToEdgeContent = pointer.enabled,
                     lcdContent = {
                         OverdextopLcd(
                             controller = controller,
@@ -477,7 +545,7 @@ class DesktopTrackpadDeviceTest {
     private fun hardwareBounds() = buildMap {
         put("Droidball", compose.onNodeWithContentDescription("Droidball").getUnclippedBoundsInRoot())
         put("CRT", compose.onNodeWithTag("overdextop-crt").getUnclippedBoundsInRoot())
-        put("LCD", compose.onNodeWithTag("overdextop-lcd").getUnclippedBoundsInRoot())
+        put("LCD", compose.onNodeWithTag("instrument-lcd-frame").getUnclippedBoundsInRoot())
         listOf("PWR", "OBS", "LINK", "A", "B", "SELECT", "START").forEach {
             put(it, compose.onNodeWithText(it).getUnclippedBoundsInRoot())
         }

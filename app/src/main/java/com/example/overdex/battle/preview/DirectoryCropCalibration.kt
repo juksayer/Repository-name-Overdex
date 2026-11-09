@@ -14,6 +14,7 @@ fun BattleCalibration.directoryCropRegion(slot: DirectoryCropSlot): AnchorRegion
     DirectoryCropSlot.PLAYER_BALLS -> playerPokeBallsRegion
     DirectoryCropSlot.OPPONENT_BALLS -> opponentPokeBallsRegion
     DirectoryCropSlot.ANNOUNCEMENT -> announcementRegion
+    DirectoryCropSlot.CHARGED_IMPACT_HP -> chargedImpactHpRegion
 }
 
 /**
@@ -37,6 +38,7 @@ fun BattleCalibration.withDirectoryCropRegion(slot: DirectoryCropSlot, updated: 
         DirectoryCropSlot.PLAYER_BALLS -> copy(playerPokeBallsRegion = bounded)
         DirectoryCropSlot.OPPONENT_BALLS -> copy(opponentPokeBallsRegion = bounded)
         DirectoryCropSlot.ANNOUNCEMENT -> copy(announcementRegion = bounded)
+        DirectoryCropSlot.CHARGED_IMPACT_HP -> copy(chargedImpactHpRegion = bounded)
     }
 }
 

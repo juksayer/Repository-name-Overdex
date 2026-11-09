@@ -17,9 +17,10 @@ object MatchArchiveArticleSelector {
 
         // The timeline remains intact. Raw artifact records join it only when a
         // retained observation explicitly cites them as evidence. The bounded,
-        // explicitly named QTE calibration samples and a bounded real-battle LCD
-        // preview are retained for inspection independently of successful recognition.
-        articles.filter { !isRawArtifact(it) || isQteCalibrationSample(it) || it.articleId in previewIds }.forEach { article ->
+        // explicitly named QTE/hand/charged-HP calibration samples and a bounded real-battle
+        // LCD preview are retained independently of successful recognition. Hand
+        // samples are raw manual experiments, not recall/send-out testimony.
+        articles.filter { !isRawArtifact(it) || isCalibrationSample(it) || it.articleId in previewIds }.forEach { article ->
             retainedIds += article.articleId
             article.referencedArticleIds().forEach(pendingIds::addLast)
         }
@@ -36,11 +37,17 @@ object MatchArchiveArticleSelector {
     private fun isRawArtifact(article: ArchivedRealityArticle): Boolean =
         article.payload is ArchivedCropCaptured || article.payload is ArchivedAudioCaptured
 
-    private fun isQteCalibrationSample(article: ArchivedRealityArticle): Boolean =
-        article.sourceId == "QTE_TYPE_ICONS_CAPTURE" &&
-            (article.payload as? ArchivedCropCaptured)?.cropName == "QteTypeIconsCrop"
+    private fun isCalibrationSample(article: ArchivedRealityArticle): Boolean {
+        val crop = article.payload as? ArchivedCropCaptured ?: return false
+        return when (article.sourceId) {
+            "QTE_TYPE_ICONS_CAPTURE" -> crop.cropName == "QteTypeIconsCrop"
+            "OPPONENT_TRAINER_HAND_CAPTURE" -> crop.cropName == "OpponentTrainerHandCrop"
+            "CHARGED_IMPACT_HP_CAPTURE" -> crop.cropName == "ChargedImpactHpCrop"
+            else -> false
+        }
+    }
 
-    /** At most seven extra raw samples: actual pixels, independent of each field's recognition success. */
+    /** At most eight extra raw previews; phase-bounded calibration samples remain independent. */
     private fun calibrationPreviewIds(articles: List<ArchivedRealityArticle>): Set<String> =
         articles.groupBy { it.matchId }.flatMap { (matchId, rows) ->
             BattleCalibrationPreviewSelection.fromArchivedArticles(matchId, rows)?.selectedArticleIds.orEmpty()

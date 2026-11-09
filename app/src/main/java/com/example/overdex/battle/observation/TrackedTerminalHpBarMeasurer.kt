@@ -21,8 +21,10 @@ internal data class TrackedTerminalHpBarSample(
  * outline, both vertical caps, and a dark, visibly unfilled interior.
  */
 internal object TrackedTerminalHpBarMeasurer {
-    fun measure(bitmap: Bitmap, anchor: ActiveHpBarMeasurement): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(bitmap.width, bitmap.height, anchor) ?: return null
+    fun measure(
+        bitmap: Bitmap, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds? = null,
+    ): TrackedTerminalHpBarSample? {
+        val bounds = searchBounds(bitmap.width, bitmap.height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         bitmap.getPixels(pixels, 0, bounds.width, bounds.left, bounds.top, bounds.width, bounds.height)
         return measureRegion(bounds, anchor, pixels)
@@ -33,8 +35,16 @@ internal object TrackedTerminalHpBarMeasurer {
         height: Int,
         anchor: ActiveHpBarMeasurement,
         pixelAt: (x: Int, y: Int) -> Int,
+    ): TrackedTerminalHpBarSample? = measure(width, height, anchor, null, pixelAt)
+
+    internal fun measure(
+        width: Int,
+        height: Int,
+        anchor: ActiveHpBarMeasurement,
+        territory: BattleCropBounds?,
+        pixelAt: (x: Int, y: Int) -> Int,
     ): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(width, height, anchor) ?: return null
+        val bounds = searchBounds(width, height, anchor, territory) ?: return null
         val pixels = IntArray(bounds.width * bounds.height)
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right) {
             pixels[(y - bounds.top) * bounds.width + x - bounds.left] = pixelAt(x, y)
@@ -58,17 +68,23 @@ internal object TrackedTerminalHpBarMeasurer {
         val height get() = bottom - top
     }
 
-    private fun searchBounds(width: Int, height: Int, anchor: ActiveHpBarMeasurement): Bounds? {
+    private fun searchBounds(
+        width: Int, height: Int, anchor: ActiveHpBarMeasurement, territory: BattleCropBounds?,
+    ): Bounds? {
         val barHeight = anchor.bottom - anchor.top
         if (width <= 0 || height <= 0 || anchor.width < 32 || barHeight !in 6..(anchor.width / 4) ||
             anchor.left < 1 || anchor.right >= width || anchor.top < 1 || anchor.bottom >= height - 1
         ) return null
+        if (territory != null && (territory.left < 0 || territory.top < 0 ||
+                territory.right > width || territory.bottom > height ||
+                anchor.left < territory.left || anchor.right > territory.right ||
+                anchor.top < territory.top || anchor.bottom >= territory.bottom)) return null
         val yMargin = verticalMargin(barHeight) + HEIGHT_TOLERANCE
         return Bounds(
-            (anchor.left - X_MARGIN).coerceAtLeast(0),
-            (anchor.top - yMargin).coerceAtLeast(0),
-            (anchor.right + X_MARGIN).coerceAtMost(width),
-            (anchor.bottom + yMargin + 1).coerceAtMost(height),
+            (anchor.left - X_MARGIN).coerceAtLeast(territory?.left ?: 0),
+            (anchor.top - yMargin).coerceAtLeast(territory?.top ?: 0),
+            (anchor.right + X_MARGIN).coerceAtMost(territory?.right ?: width),
+            (anchor.bottom + yMargin + 1).coerceAtMost(territory?.bottom ?: height),
         )
     }
 

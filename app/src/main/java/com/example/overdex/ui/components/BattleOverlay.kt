@@ -272,6 +272,7 @@ private fun OverlayPanel(
 ) {
     val teamEditingAllowed by DroidballOverlayPresentation.teamEditingAllowed.collectAsState()
     val chargeTextProtected by DroidballOverlayPresentation.chargeTextProtected.collectAsState()
+    val handBoxRequested by DroidballService.opponentHandBoxRequested.collectAsState()
     val isBattleHud = mode == DroidballOverlayMode.BATTLE_HUD || mode == DroidballOverlayMode.BATTLE_LIVE
     if (!isBattleHud) {
         FieldBattleMenu(mode, inferredPlayerTeam, playerTeamConfirmed, configuredPlayerTeam,
@@ -323,7 +324,11 @@ private fun OverlayPanel(
                 }
                 OpponentHudStatus(estimate)
             }
-
+            // Once explicitly selected, keep the experiment reachable after
+            // Save & Close without adding controls to ordinary battle sessions.
+            if (handBoxRequested) Text("OPPONENT BOX", color = BattleHudBadgeStyle.moveInk, fontSize = 10.sp,
+                modifier = Modifier.clickable(role = Role.Button) { DroidballService.openOpponentHandBox() }
+                    .padding(horizontal = 8.dp, vertical = 8.dp))
         }
     }
 }

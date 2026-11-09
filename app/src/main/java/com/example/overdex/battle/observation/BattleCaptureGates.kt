@@ -1,28 +1,48 @@
 package com.example.overdex.battle.observation
 
-import com.example.overdex.battle.custody.ActiveHpBarMeasured
-import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
-import com.example.overdex.battle.custody.ActivePokemonSide
-import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
-import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
-import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
-import com.example.overdex.battle.custody.MatchEnded
-import com.example.overdex.battle.custody.MatchResultMusicMeasured
-import com.example.overdex.battle.custody.MatchStarted
-import com.example.overdex.battle.custody.OpponentBattleResource
-import com.example.overdex.battle.custody.OpponentBattleResourceCountMeasured
-import com.example.overdex.battle.custody.PlayerPokeBallCountMeasured
-import com.example.overdex.battle.custody.SpeciesCheckMeasured
-import com.example.overdex.battle.custody.RawTestimony
+import com.example.overdex.battle.custody.*
+import com.example.overdex.battle.reality.RealityArticle
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
-/** Two-frame resource snapshots, with a brief ball watch spanning entry and faint animations. */
+/** Source-time assignments stop on a usable reading, rather than on a saved but unreadable image. */
+private class BoundedCaptureAssignments(private val cropNames: Set<String>, private val now: () -> Long) {
+    private data class Assignment(val from: Long, val until: Long)
+    private val pending = mutableMapOf<String, Assignment>()
+    private val requestedThrough = mutableMapOf<String, Long>()
+    private val measuredThrough = mutableMapOf<String, Long>()
+
+    fun request(crops: Set<String>, at: Long) {
+        val current = now()
+        if (at > current || current - at >= WINDOW_NANOS) return
+        crops.filter { it in cropNames }.forEach { crop ->
+            if (at <= (requestedThrough[crop] ?: Long.MIN_VALUE) ||
+                at <= (measuredThrough[crop] ?: Long.MIN_VALUE)) return@forEach
+            requestedThrough[crop] = at
+            pending[crop] = Assignment(at, at + WINDOW_NANOS)
+        }
+    }
+    fun enabled(crop: String): Boolean = pending[crop]?.let { now() < it.until } == true
+    fun accepts(crop: String, at: Long): Boolean = pending[crop]?.let {
+        enabled(crop) && at >= it.from && at < it.until && at <= now()
+    } == true
+    fun measured(crop: String, at: Long) {
+        if (crop !in cropNames || at > now() || at <= (measuredThrough[crop] ?: Long.MIN_VALUE)) return
+        measuredThrough[crop] = at
+        pending[crop]?.let { if (at >= it.from) pending.remove(crop) }
+    }
+    fun clear() { pending.clear(); requestedThrough.clear(); measuredThrough.clear() }
+    companion object { const val WINDOW_NANOS = 3_000_000_000L }
+}
+
+/** Resource readers sleep after a successful assignment and wake only when that resource can change. */
 class TeamResourceSnapshotGate(
     private val cropNames: Set<String>,
     private val pokeBallCropNames: Set<String>,
@@ -32,188 +52,200 @@ class TeamResourceSnapshotGate(
     override val name = "Team Resource Snapshot Gate"
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
-    private val remainingByCrop = cropNames.associateWith { 0 }.toMutableMap()
-    private val criticalHpSides = mutableSetOf<ActivePokemonSide>()
-    private val lastHpSampleAtBySide = mutableMapOf<ActivePokemonSide, Long>()
-    private val speciesAtBySide = mutableMapOf<ActivePokemonSide, Long>()
-    private var faintWatchUntil = Long.MIN_VALUE
-    private var resourceWatchUntil = Long.MIN_VALUE
+    private val assignments = BoundedCaptureAssignments(cropNames, now)
+    private val shieldCropNames = cropNames - pokeBallCropNames
     private val speciesBySide = mutableMapOf<ActivePokemonSide, String>()
+    private val speciesAtBySide = mutableMapOf<ActivePokemonSide, Long>()
+    private val hpAtBySide = mutableMapOf<ActivePokemonSide, Long>()
+    private val emptyHpSides = mutableSetOf<ActivePokemonSide>()
+    private var initialized = false
     private var ended = false
+    private var attemptFrom = Long.MIN_VALUE
 
-    @Synchronized fun isEnabled(cropName: String): Boolean =
-        !ended && (remainingByCrop.getOrDefault(cropName, 0) > 0 ||
-            (cropName in cropNames && now() < resourceWatchUntil) ||
-            (cropName in pokeBallCropNames && now() < faintWatchUntil))
+    @Synchronized fun isEnabled(cropName: String): Boolean = !ended && assignments.enabled(cropName)
+    @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean =
+        !ended && at >= attemptFrom && assignments.accepts(cropName, at)
 
-    @Synchronized fun captured(cropName: String) {
-        val remaining = remainingByCrop.getOrDefault(cropName, 0)
-        if (remaining > 0) remainingByCrop[cropName] = remaining - 1
+    /** Preservation alone cannot establish that a badge was visible or successfully interpreted. */
+    fun captured(@Suppress("UNUSED_PARAMETER") cropName: String) = Unit
+
+    @Synchronized internal fun requestSnapshot(requestedCrops: Set<String> = cropNames, observedAt: Long = now()) {
+        if (!ended && observedAt >= attemptFrom) assignments.request(requestedCrops, observedAt)
+    }
+    @Synchronized internal fun requestPokeBallSnapshot(observedAt: Long = now()) = requestSnapshot(pokeBallCropNames, observedAt)
+    @Synchronized internal fun requestResourceWatch(observedAt: Long = now()) = requestSnapshot(shieldCropNames, observedAt)
+    @Synchronized internal fun requestFaintWatch(observedAt: Long = now()) = requestPokeBallSnapshot(observedAt)
+    /** A scheduler hint requests independent counting; it carries no departure or faint testimony. */
+    @Synchronized fun requestDepartureCheck(side: ActivePokemonSide, observedAt: Long) =
+        requestSnapshot(setOf(ballCrop(side)), observedAt)
+    @Synchronized internal fun measured(cropName: String, observedAt: Long) {
+        if (!ended && observedAt >= attemptFrom) assignments.measured(cropName, observedAt)
     }
 
-    @Synchronized internal fun requestSnapshot(requestedCrops: Set<String> = cropNames) {
-        requestedCrops.forEach { cropName ->
-            if (cropName in cropNames) remainingByCrop[cropName] = REQUIRED_SAMPLES
-        }
+    private fun initialize(at: Long) {
+        if (initialized || ended || at < attemptFrom || at > now() ||
+            now() - at >= BoundedCaptureAssignments.WINDOW_NANOS) return
+        initialized = true
+        requestSnapshot(observedAt = at)
     }
-
-    @Synchronized internal fun requestPokeBallSnapshot() = requestSnapshot(pokeBallCropNames)
-
-    /** Give hidden/transitioning badges time to become readable before settling. */
-    @Synchronized internal fun requestResourceWatch() {
-        requestSnapshot()
-        resourceWatchUntil = now() + 3_000_000_000L
+    private fun sideCrops(side: ActivePokemonSide): Set<String> = cropNames.filterTo(linkedSetOf()) {
+        it == ballCrop(side) || it == shieldCrop(side)
     }
-
-    /** Entry/faint animations can hide a badge for the first two frames. */
-    @Synchronized internal fun requestFaintWatch(observedAt: Long = now()) {
-        requestPokeBallSnapshot()
-        faintWatchUntil = maxOf(faintWatchUntil, observedAt + FAINT_WATCH_NANOS)
-    }
+    private fun ballCrop(side: ActivePokemonSide): String = if (side == ActivePokemonSide.PLAYER)
+        BattleCropContracts.playerPokeBalls.cropName else BattleCropContracts.opponentPokeBalls.cropName
+    private fun shieldCrop(side: ActivePokemonSide): String = if (side == ActivePokemonSide.PLAYER)
+        BattleCropContracts.playerShields.cropName else BattleCropContracts.opponentShields.cropName
 
     @Synchronized internal fun observeSpecies(side: ActivePokemonSide, species: String, observedAt: Long = now()) {
-        if (ended || speciesAtBySide[side]?.let { observedAt < it } == true) return
+        if (ended || observedAt < attemptFrom || observedAt > now() ||
+            now() - observedAt >= BoundedCaptureAssignments.WINDOW_NANOS ||
+            observedAt <= (speciesAtBySide[side] ?: Long.MIN_VALUE)) return
         speciesAtBySide[side] = observedAt
+        initialize(observedAt)
         val previous = speciesBySide.put(side, species)
-        if (!species.equals(previous, ignoreCase = true)) {
-            criticalHpSides -= side
-            lastHpSampleAtBySide[side] = maxOf(lastHpSampleAtBySide[side] ?: Long.MIN_VALUE, observedAt)
-            requestResourceWatch()
-            requestFaintWatch()
+        if (previous != null && !species.equals(previous, ignoreCase = true)) {
+            emptyHpSides -= side
+            hpAtBySide[side] = maxOf(hpAtBySide[side] ?: Long.MIN_VALUE, observedAt)
+            requestSnapshot(sideCrops(side), observedAt)
         }
     }
-
-    /** Fresh red HP keeps observation available; only a later ball decrease establishes a faint. */
+    /** Empty HP can wake the count reader; red HP belongs to the separate terminal HP watch. */
     @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, filledFraction: Float, observedAt: Long = now()) {
-        val current = now()
-        if (ended || !filledFraction.isFinite() || filledFraction !in 0f..1f ||
-            observedAt > current || current - observedAt >= FAINT_WATCH_NANOS ||
-            lastHpSampleAtBySide[side]?.let { observedAt <= it } == true) return
-        lastHpSampleAtBySide[side] = observedAt
-        when {
-            filledFraction <= CRITICAL_HP_FRACTION -> {
-                if (criticalHpSides.add(side)) requestFaintWatch(observedAt)
-                else faintWatchUntil = maxOf(faintWatchUntil, observedAt + FAINT_WATCH_NANOS)
-            }
-            side in criticalHpSides && filledFraction >= CRITICAL_HP_REARM_FRACTION -> {
-                criticalHpSides -= side
-            }
-        }
+        if (ended || observedAt < attemptFrom || observedAt > now() || !filledFraction.isFinite() ||
+            filledFraction !in 0f..1f || observedAt <= (hpAtBySide[side] ?: Long.MIN_VALUE)) return
+        hpAtBySide[side] = observedAt
+        initialize(observedAt)
+        if (filledFraction == 0f) {
+            // An expired zero cannot consume the transition before a fresh
+            // frame has a chance to open its bounded count assignment.
+            if (now() - observedAt >= BoundedCaptureAssignments.WINDOW_NANOS) return
+            if (emptyHpSides.add(side)) requestSnapshot(setOf(ballCrop(side)), observedAt)
+        } else emptyHpSides -= side
+    }
+    @Synchronized internal fun observeDamageTick(damagedSide: ActivePokemonSide, afterFraction: Float, observedAt: Long = now()) {
+        // A confirmed zero is useful even when its direct HP publication was missed.
+        if (afterFraction == 0f) observeActiveHp(damagedSide, afterFraction, observedAt)
     }
 
-    /** Each further hit in red HP refreshes the brief Poké Ball watch window. */
-    @Synchronized internal fun observeDamageTick(damagedSide: ActivePokemonSide, afterFraction: Float) {
-        if (afterFraction <= CRITICAL_HP_FRACTION) {
-            criticalHpSides += damagedSide
-            requestFaintWatch()
-        }
-    }
-
-    override fun start(match: Match) {
-        if (scope != null) return
-        synchronized(this) { clearPending(); ended = false }
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
-            gateScope.launch {
-                match.articles.collect { article ->
-                    when (val payload = article.payload) {
-                        is RawTestimony -> if (
-                            article.sourceId.id == "ANNOUNCEMENT_WITNESS" &&
-                            (payload.data as? String)?.trim()?.startsWith("Go,", ignoreCase = true) == true
-                        ) { requestResourceWatch(); requestFaintWatch() }
-                        is MatchStarted -> { requestResourceWatch(); requestFaintWatch() }
-                        com.example.overdex.battle.custody.ChargeMoveUsedAnnounced -> requestResourceWatch()
-                        is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName,
-                            article.monotonicTimeNanos ?: now())
-                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction,
-                            article.monotonicTimeNanos ?: now())
-                        is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction)
-                        is BattleCryCandidatesMeasured -> if (payload.candidates.isNotEmpty() && payload.cueKind != "FAST_MOVE_IMPACT") {
-                            requestFaintWatch()
-                        }
-                        is SpeciesCheckMeasured -> if (
-                            payload.status == "OPENED" &&
-                            payload.reason in setOf("ENTRY", "SWITCH", "FAINT")
-                        ) { requestResourceWatch(); requestFaintWatch() }
-                        is MatchEnded -> observeMatchEnded()
-                    }
+    @Synchronized internal fun observe(article: RealityArticle) {
+        val at = article.monotonicTimeNanos ?: return
+        when (val payload = article.payload) {
+            ObservationRestartedByUser -> reset(at)
+            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> observeMatchEnded()
+            else -> {
+                if (ended || at < attemptFrom) return
+                when (payload) {
+                    MatchStarted -> initialize(at)
+                    GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced -> requestResourceWatch(at)
+                    is ActivePokemonSpeciesWitnessed -> observeSpecies(payload.side, payload.speciesName, at)
+                    is ActiveHpBarMeasured -> observeActiveHp(payload.side, payload.filledFraction, at)
+                    is ActiveHpBarDamageTickMeasured -> observeDamageTick(payload.damagedSide, payload.afterFraction, at)
+                    is ActivePokemonFaintedWitnessed -> requestSnapshot(sideCrops(payload.side), at)
+                    is SpeciesCheckMeasured -> if (payload.status == "OPENED" && payload.reason in setOf("SWITCH", "FAINT"))
+                        requestSnapshot(sideCrops(payload.side), payload.triggerMonotonicNanos)
+                    is PlayerPokeBallCountMeasured -> measured(BattleCropContracts.playerPokeBalls.cropName, at)
+                    is PlayerShieldCountMeasured -> measured(BattleCropContracts.playerShields.cropName, at)
+                    is OpponentBattleResourceCountMeasured -> measured(if (payload.resource == OpponentBattleResource.POKE_BALLS)
+                        BattleCropContracts.opponentPokeBalls.cropName else BattleCropContracts.opponentShields.cropName, at)
+                    else -> Unit
                 }
             }
         }
     }
-
+    override fun start(match: Match) {
+        if (scope != null) return
+        synchronized(this) { reset(Long.MIN_VALUE) }
+        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
+            gateScope.launch(start = CoroutineStart.UNDISPATCHED) { match.articles.collect(::observe) }
+        }
+    }
     override fun stop() {
-        scope?.cancel("Resource snapshot gate stopped")
-        scope = null
+        scope?.cancel("Resource snapshot gate stopped"); scope = null
         observeMatchEnded()
     }
-
-    @Synchronized internal fun observeMatchEnded() {
-        ended = true
-        clearPending()
-    }
-
-    @Synchronized private fun clearPending() {
-        remainingByCrop.keys.forEach { remainingByCrop[it] = 0 }
-        criticalHpSides.clear()
-        lastHpSampleAtBySide.clear()
-        speciesAtBySide.clear()
-        speciesBySide.clear()
-        faintWatchUntil = Long.MIN_VALUE
-        resourceWatchUntil = Long.MIN_VALUE
-    }
-
-    private companion object {
-        const val REQUIRED_SAMPLES = 2
-        const val CRITICAL_HP_FRACTION = 0.20f
-        const val CRITICAL_HP_REARM_FRACTION = 0.24f
-        const val FAINT_WATCH_NANOS = 3_000_000_000L
+    @Synchronized internal fun observeMatchEnded() { ended = true; assignments.clear() }
+    private fun reset(from: Long) {
+        ended = false; initialized = false; attemptFrom = from; assignments.clear()
+        speciesBySide.clear(); speciesAtBySide.clear(); hpAtBySide.clear(); emptyHpSides.clear()
     }
 }
 
-/** One bench snapshot per entry, switch, or faint, shared by the four inactive-card crops. */
+/** Initial player bench acquisition, then bounded assignments only for a player switch or faint. */
 class InactiveBenchSnapshotGate(
-    private val cropNames: Set<String>
+    private val cropNames: Set<String>,
+    private val now: () -> Long = System::nanoTime,
 ) : Observer {
     override val observerId = ObserverId("INACTIVE_BENCH_SNAPSHOT_GATE", ObservationSource.SCREEN_CAPTURE)
     override val name = "Inactive Bench Snapshot Gate"
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
-    private val pending = linkedSetOf<String>()
-    private var sawLiveHp = false
+    private val assignments = BoundedCaptureAssignments(cropNames, now)
+    private var initialized = false
+    private var species: String? = null
+    private var speciesAt = Long.MIN_VALUE
+    private var ended = false
+    private var attemptFrom = Long.MIN_VALUE
 
-    @Synchronized fun isEnabled(cropName: String): Boolean = cropName in pending
-    @Synchronized fun captured(cropName: String) { pending.remove(cropName) }
-    @Synchronized private fun requestSnapshot() { pending += cropNames }
-
-    override fun start(match: Match) {
-        if (scope != null) return
-        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
-            gateScope.launch {
-                match.articles.collect { article ->
-                    when (val payload = article.payload) {
-                        is MatchStarted -> requestSnapshot()
-                        is ActivePokemonSpeciesWitnessed -> if (payload.side == ActivePokemonSide.PLAYER) requestSnapshot()
-                        is ActiveHpBarMeasured -> if (!sawLiveHp) {
-                            sawLiveHp = true
-                            requestSnapshot()
-                        }
-                        is SpeciesCheckMeasured -> if (
-                            payload.side == ActivePokemonSide.PLAYER && payload.status == "OPENED" &&
-                            payload.reason in setOf("ENTRY", "EMPTY_HP")
-                        ) requestSnapshot()
+    @Synchronized fun isEnabled(cropName: String): Boolean = !ended && assignments.enabled(cropName)
+    @Synchronized fun acceptsFrame(cropName: String, at: Long): Boolean =
+        !ended && at >= attemptFrom && assignments.accepts(cropName, at)
+    fun captured(@Suppress("UNUSED_PARAMETER") cropName: String) = Unit
+    private fun initialize(at: Long) {
+        if (initialized || ended || at < attemptFrom || at > now() ||
+            now() - at >= BoundedCaptureAssignments.WINDOW_NANOS) return
+        initialized = true; requestSnapshot(at)
+    }
+    private fun requestSnapshot(at: Long) {
+        if (!ended && at >= attemptFrom) assignments.request(cropNames, at)
+    }
+    @Synchronized internal fun measured(cropName: String, at: Long) {
+        if (!ended && at >= attemptFrom) assignments.measured(cropName, at)
+    }
+    @Synchronized internal fun observe(article: RealityArticle) {
+        val at = article.monotonicTimeNanos ?: return
+        when (val payload = article.payload) {
+            ObservationRestartedByUser -> reset(at)
+            ScreenIgnoredByUser, ObservationSessionStoppedByUser, is MatchEnded -> { ended = true; assignments.clear() }
+            else -> {
+                if (ended || at < attemptFrom || at > now()) return
+                when (payload) {
+                    MatchStarted -> initialize(at)
+                    is ActiveHpBarMeasured -> if (payload.side == ActivePokemonSide.PLAYER) initialize(at)
+                    is ActivePokemonSpeciesWitnessed -> if (payload.side == ActivePokemonSide.PLAYER && at > speciesAt &&
+                        now() - at < BoundedCaptureAssignments.WINDOW_NANOS) {
+                        // Only wake-state bookkeeping is skipped for an expired
+                        // transition; its original identity article stays intact.
+                        speciesAt = at
+                        initialize(at)
+                        if (species != null && !payload.speciesName.equals(species, true)) requestSnapshot(at)
+                        species = payload.speciesName
                     }
+                    is ActivePokemonFaintedWitnessed -> if (payload.side == ActivePokemonSide.PLAYER) requestSnapshot(at)
+                    is SpeciesCheckMeasured -> if (payload.side == ActivePokemonSide.PLAYER && payload.status == "OPENED" &&
+                        payload.reason in setOf("SWITCH", "FAINT")) requestSnapshot(payload.triggerMonotonicNanos)
+                    is PlayerInactiveHpBarMeasured -> measured(if (payload.slot == 0)
+                        BattleCropContracts.playerInactiveUpperHpBar.cropName else BattleCropContracts.playerInactiveLowerHpBar.cropName, at)
+                    is PlayerInactiveSpeciesSpriteFingerprintMeasured -> measured(if (payload.slot == 0)
+                        BattleCropContracts.playerInactiveUpperSpeciesSprite.cropName else BattleCropContracts.playerInactiveLowerSpeciesSprite.cropName, at)
+                    else -> Unit
                 }
             }
         }
     }
-
-    override fun stop() {
-        scope?.cancel("Gate stopped")
-        scope = null
-        synchronized(this) {
-            pending.clear()
-            sawLiveHp = false
+    override fun start(match: Match) {
+        if (scope != null) return
+        synchronized(this) { reset(Long.MIN_VALUE) }
+        scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
+            gateScope.launch(start = CoroutineStart.UNDISPATCHED) { match.articles.collect(::observe) }
         }
+    }
+    override fun stop() {
+        scope?.cancel("Bench snapshot gate stopped"); scope = null
+        synchronized(this) { ended = true; assignments.clear() }
+    }
+    private fun reset(from: Long) {
+        initialized = false; species = null; speciesAt = Long.MIN_VALUE
+        ended = false; attemptFrom = from; assignments.clear()
     }
 }
 

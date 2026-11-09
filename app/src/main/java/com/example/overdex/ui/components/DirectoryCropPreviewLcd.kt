@@ -90,6 +90,8 @@ fun DirectoryCropPreviewLcd(
                 timeFormat, Modifier.weight(1f), editor)
             CropPreviewTile(DirectoryCropSlot.ANNOUNCEMENT, state.crops[DirectoryCropSlot.ANNOUNCEMENT],
                 timeFormat, Modifier.fillMaxWidth().weight(1.3f), editor)
+            CropPreviewTile(DirectoryCropSlot.CHARGED_IMPACT_HP, state.crops[DirectoryCropSlot.CHARGED_IMPACT_HP],
+                timeFormat, Modifier.fillMaxWidth().weight(.8f), editor)
             if (focused) Text(editor?.notice ?: "A Check position · B Directory · arrows select. Empty? Check the full image first.",
                 color = CropPreviewText, fontSize = 8.sp, lineHeight = 9.sp,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, style = CropPreviewTextStyle)
@@ -253,6 +255,7 @@ private fun DirectoryCropSlot.label() = when (this) {
     DirectoryCropSlot.PLAYER_BALLS -> "Your Poké Balls"
     DirectoryCropSlot.OPPONENT_BALLS -> "Opponent Poké Balls"
     DirectoryCropSlot.ANNOUNCEMENT -> "Announcement"
+    DirectoryCropSlot.CHARGED_IMPACT_HP -> "Charged impact HP"
 }
 
 private val CropPreviewText = Color(0xFFD4E7CF)

@@ -7,9 +7,10 @@ import kotlin.math.abs
 
 /** Recognition treatments are temporary; the original dial crop remains the evidence. */
 internal object DecisionTimerTextReader {
-    suspend fun read(bitmap: Bitmap): String {
-        val raw = SharedLatinTextRecognizer.readText(bitmap)
+    suspend fun read(bitmap: Bitmap, isFresh: () -> Boolean = { true }): String {
+        val raw = SharedLatinTextRecognizer.readTextFresh(bitmap, isFresh) ?: return ""
         if (DecisionTimerReadingFilter.parse(raw) != null) return raw
+        if (!isFresh()) return ""
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         val bounds = DecisionTimerNumerals.bounds(bitmap.width, bitmap.height) { x, y -> pixels[y * bitmap.width + x] }
@@ -28,7 +29,7 @@ internal object DecisionTimerTextReader {
             }
         }
         val isolated = Bitmap.createBitmap(rendered, renderedWidth, renderedHeight, Bitmap.Config.ARGB_8888)
-        return try { SharedLatinTextRecognizer.readText(isolated).ifBlank { raw } }
+        return try { SharedLatinTextRecognizer.readTextFresh(isolated, isFresh)?.ifBlank { raw }.orEmpty() }
         finally { isolated.recycle() }
     }
 }

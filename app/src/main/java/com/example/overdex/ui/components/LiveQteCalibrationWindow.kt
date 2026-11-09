@@ -34,7 +34,9 @@ import com.example.overdex.battle.observation.QteIconSamplingStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -55,6 +57,10 @@ internal class LiveQteCalibrationWindow(
     private val sampleRegion: (AnchorRegion) -> Boolean = { false },
     private val samplingStatus: Flow<QteIconSamplingStatus> = flowOf(QteIconSamplingStatus()),
     private val onRegionChanged: (AnchorRegion) -> Unit = {},
+    private val title: String = "QTE TYPE ICONS",
+    private val guideDescription: String = "QTE Type Icons guide",
+    private val controlDescription: String = "QTE",
+    private val hideWhileSampling: Boolean = false,
 ) {
     private var region by mutableStateOf(initialRegion.adjustPixels(0f, 0f, screenWidth, screenHeight, false))
     private var adjusting by mutableStateOf(false)
@@ -63,6 +69,9 @@ internal class LiveQteCalibrationWindow(
     private var saveFailed by mutableStateOf(false)
     private var sampleUnavailable by mutableStateOf(false)
     private var closed = false
+    private var visible = true
+    private var samplingActive = false
+    private var samplingVisibilityJob: Job? = null
     private val ink = Color(0xFF00FF66)
     private val guideParams = parameters(1, 1)
     private val panelParams = parameters(
@@ -72,7 +81,7 @@ internal class LiveQteCalibrationWindow(
     private val guide = composeView().apply {
         setContent {
             Box(Modifier.fillMaxSize().border(0.6.dp, Color(0xFFBA00FF))
-                .semantics { contentDescription = "QTE Type Icons guide" }
+                .semantics { contentDescription = guideDescription }
                 .pointerInput(adjusting, resizing, saving) {
                     if (adjusting && !saving) detectDragGestures { change, amount ->
                         change.consume()
@@ -92,7 +101,7 @@ internal class LiveQteCalibrationWindow(
                 }
             }
             Column(Modifier.fillMaxWidth().background(Color(0xEF10251C)).padding(6.dp)) {
-                Text("QTE TYPE ICONS · drag panel", color = ink, fontSize = 10.sp,
+                Text("$title · drag panel", color = ink, fontSize = 10.sp,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).pointerInput(Unit) {
                         detectDragGestures { change, amount ->
                             change.consume()
@@ -115,19 +124,26 @@ internal class LiveQteCalibrationWindow(
                     Action("CANCEL") { close() }
                 }
                 if (adjusting) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Nudge("←", "QTE left", -1f, 0f)
-                    Nudge("↑", "QTE up", 0f, -1f)
-                    Nudge("↓", "QTE down", 0f, 1f)
-                    Nudge("→", "QTE right", 1f, 0f)
+                    Nudge("←", "$controlDescription left", -1f, 0f)
+                    Nudge("↑", "$controlDescription up", 0f, -1f)
+                    Nudge("↓", "$controlDescription down", 0f, 1f)
+                    Nudge("→", "$controlDescription right", 1f, 0f)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Action(if (samples.sampling) "SAMPLING…" else "SAMPLE 10s", enabled = !samples.sampling) {
                         sampleUnavailable = !sampleRegion(region)
+                        if (!sampleUnavailable && hideWhileSampling) {
+                            adjusting = false
+                            updateGuide()
+                            samplingActive = true
+                            updateVisibility()
+                        }
                     }
                     Text("SAVED ${samples.saved}", color = ink, fontSize = 10.sp,
                         modifier = Modifier.padding(vertical = 10.dp))
                 }
                 if (sampleUnavailable) Text("Start an observation session to sample", color = ink, fontSize = 10.sp)
+                if (hideWhileSampling) Text("Box and controls hide during the 10s sample", color = ink, fontSize = 10.sp)
                 Action(if (saving) "SAVING…" else if (saveFailed) "RETRY SAVE & CLOSE" else "SAVE & CLOSE") {
                     saving = true
                     val savedRegion = region
@@ -157,16 +173,34 @@ internal class LiveQteCalibrationWindow(
         manager.addView(guide, guideParams)
         try { manager.addView(panel, panelParams) }
         catch (error: Exception) { close(); throw error }
+        if (hideWhileSampling) {
+            // A GONE Compose window may pause its frame clock. Restore native
+            // visibility from the external scope so the hidden panel can return.
+            samplingVisibilityJob = scope.launch {
+                samplingStatus.collect { status ->
+                    samplingActive = status.sampling
+                    if (!closed) updateVisibility()
+                }
+            }
+        }
     }
 
     fun setVisible(visible: Boolean) {
-        guide.visibility = if (visible) View.VISIBLE else View.GONE
-        panel.visibility = if (visible) View.VISIBLE else View.GONE
+        this.visible = visible
+        updateVisibility()
+    }
+
+    private fun updateVisibility() {
+        val show = visible && !(hideWhileSampling && samplingActive)
+        guide.visibility = if (show) View.VISIBLE else View.GONE
+        panel.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     fun close() {
         if (closed) return
         closed = true
+        samplingVisibilityJob?.cancel()
+        samplingVisibilityJob = null
         if (guide.isAttachedToWindow) manager.removeViewImmediate(guide)
         if (panel.isAttachedToWindow) manager.removeViewImmediate(panel)
         onClosed()

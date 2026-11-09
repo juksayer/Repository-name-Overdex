@@ -50,7 +50,9 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -473,11 +475,20 @@ fun OverdextopLcd(
     onPointerDrag: (deltaX: Float, deltaY: Float, padWidth: Float, padHeight: Float) -> Unit = { _, _, _, _ -> },
     onPointerTap: () -> Unit = {},
 ) {
+    if (trackpadMode) {
+        // The LCD is the pad, including the area normally used for context and
+        // menu actions. SELECT returns to those controls without reserving a
+        // header strip that would shorten the relative movement surface.
+        Box(Modifier.fillMaxSize().testTag("overdextop-lcd")) {
+            DesktopTrackpad(Modifier.fillMaxSize(), onPointerDrag, onPointerTap, onToggleTrackpad)
+        }
+        return
+    }
     val entry = controller.selectedEntry
     val shortcutsOpen = controller.surface == OverdextopSurface.SHORTCUTS
     Column(Modifier.fillMaxSize().testTag("overdextop-lcd")) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            if (trackpadMode || shortcutsOpen) {
+            if (shortcutsOpen) {
                 Box(
                     modifier = Modifier.testTag("overdextop-programs-button")
                         .clickable(role = Role.Button, onClick = onPrograms)
@@ -493,14 +504,14 @@ fun OverdextopLcd(
                 modifier = Modifier.testTag("overdextop-input-mode")
                     .clickable(role = Role.Button, onClick = onToggleTrackpad)
                     .semantics {
-                        contentDescription = if (trackpadMode) "Show LCD context" else "Use LCD trackpad"
-                        stateDescription = if (trackpadMode) "Trackpad" else "Context"
+                        contentDescription = "Use LCD trackpad"
+                        stateDescription = "Context"
                     }
                     .heightIn(min = 30.dp).padding(horizontal = 5.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = if (trackpadMode) "context" else "trackpad",
+                    text = "trackpad",
                     color = DesktopSelected,
                     fontFamily = DesktopTypeface,
                     fontSize = 12.sp,
@@ -508,9 +519,7 @@ fun OverdextopLcd(
                 )
             }
         }
-        if (trackpadMode) {
-            DesktopTrackpad(Modifier.weight(1f).fillMaxWidth(), onPointerDrag, onPointerTap)
-        } else if (shortcutsOpen) {
+        if (shortcutsOpen) {
             val visibility = controller.shortcutVisibility(entry.id)
             Column(Modifier.weight(1f).fillMaxWidth()) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
@@ -563,7 +572,7 @@ fun OverdextopLcd(
                 }
             }
         }
-        if (!trackpadMode && !shortcutsOpen) {
+        if (!shortcutsOpen) {
             Spacer(Modifier.height(5.dp))
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 DesktopLcdButton("open", "overdextop-open", Modifier.weight(1f), onOpen)
@@ -579,13 +588,20 @@ private fun DesktopTrackpad(
     modifier: Modifier,
     onDrag: (Float, Float, Float, Float) -> Unit,
     onTap: () -> Unit,
+    onShowContext: () -> Unit,
 ) {
     val currentOnDrag by rememberUpdatedState(onDrag)
     val currentOnTap by rememberUpdatedState(onTap)
     Box(
         modifier = modifier.testTag("overdextop-trackpad")
             .background(DesktopSelectionWash, RoundedCornerShape(3.dp))
-            .semantics { contentDescription = "LCD trackpad" }
+            .semantics {
+                contentDescription = "LCD trackpad"
+                customActions = listOf(CustomAccessibilityAction("Show LCD context") {
+                    onShowContext()
+                    true
+                })
+            }
             .pointerInput(Unit) {
                 awaitEachGesture {
                     fun insidePad(position: Offset): Boolean =
@@ -594,40 +610,57 @@ private fun DesktopTrackpad(
 
                     val down = awaitFirstDown()
                     var cancelled = !insidePad(down.position)
+                    var tapEligible = !cancelled
+                    var wasInside = !cancelled
                     down.consume()
                     var lastPosition = down.position
                     var accumulated = Offset.Zero
                     var dragging = false
+
+                    fun sample(position: Offset) {
+                        if (!insidePad(position)) {
+                            tapEligible = false
+                            wasInside = false
+                            // Movement before an excursion cannot become an
+                            // accidental tap or a delayed jump on re-entry.
+                            accumulated = Offset.Zero
+                            return
+                        }
+                        if (!wasInside) {
+                            // Re-entry establishes a new relative anchor. Only
+                            // movement after this point moves the CRT pointer.
+                            wasInside = true
+                            lastPosition = position
+                            return
+                        }
+                        val delta = position - lastPosition
+                        lastPosition = position
+                        accumulated += delta
+                        if (!dragging && accumulated.getDistance() > viewConfiguration.touchSlop) {
+                            dragging = true
+                            currentOnDrag(accumulated.x, accumulated.y, size.width.toFloat(), size.height.toFloat())
+                        } else if (dragging && delta != Offset.Zero) {
+                            currentOnDrag(delta.x, delta.y, size.width.toFloat(), size.height.toFloat())
+                        }
+                    }
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        // Compose retains a down's hit path outside its original
-                        // bounds. Leaving the pad cancels this entire contact,
-                        // even if it re-enters; never forward outside movement or
-                        // turn its release into a tap. Keep owning it until up so
-                        // crossing the CRT or shell controls cannot activate them.
-                        if (change.isConsumed || !insidePad(change.position) ||
-                            change.historical.any { !insidePad(it.position) }) cancelled = true
+                        // Own the original hit path through excursions over the
+                        // CRT or shell controls. Outside movement pauses the pad;
+                        // another recognizer consuming it cancels the contact.
+                        if (change.isConsumed) cancelled = true
                         change.consume()
                         if (cancelled) {
                             if (!change.pressed) break
                             continue
                         }
-                        val delta = change.position - lastPosition
-                        lastPosition = change.position
-                        accumulated += delta
-                        if (!dragging && accumulated.getDistance() > viewConfiguration.touchSlop) {
-                            dragging = true
-                            // Include movement before crossing touch slop, rather than
-                            // dropping a significant part of a short LCD gesture.
-                            currentOnDrag(accumulated.x, accumulated.y, size.width.toFloat(), size.height.toFloat())
-                        } else if (dragging) {
-                            if (delta != Offset.Zero) {
-                                currentOnDrag(delta.x, delta.y, size.width.toFloat(), size.height.toFloat())
-                            }
-                        }
+                        // Android can batch an excursion and return into one
+                        // event, so replay the history before its latest sample.
+                        change.historical.forEach { sample(it.position) }
+                        sample(change.position)
                         if (!change.pressed) {
-                            if (!dragging) {
+                            if (!dragging && tapEligible) {
                                 currentOnTap()
                             }
                             break

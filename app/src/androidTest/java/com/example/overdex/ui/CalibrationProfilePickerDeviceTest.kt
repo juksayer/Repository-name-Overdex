@@ -36,6 +36,77 @@ import org.junit.Test
 class CalibrationProfilePickerDeviceTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    @Test fun chargedImpactHpBoxCanBeSelectedMovedAndResizedWithoutChangingNormalHp() {
+        val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
+        try {
+            val bounds = context.getSystemService(WindowManager::class.java).maximumWindowMetrics.bounds
+            val model = listOf(Build.MANUFACTURER, Build.MODEL).map(String::trim)
+                .filter(String::isNotBlank).joinToString(" ")
+            saveReference(context)
+            val store = MatchCalibrationProfileStore(context)
+            val original = store.saveAs("Charged impact geometry test", model, bounds.width(), bounds.height(),
+                BattleCalibration(
+                    trainerHpRegion = AnchorRegion(.04f, .28f, .39f, .41f),
+                    opponentHpRegion = AnchorRegion(.54f, .29f, .41f, .43f),
+                    chargedImpactHpRegion = AnchorRegion(.28f, .25f, .43f, .33f),
+                ), TeamSelectCalibration.measured1080x2400)!!
+            var nextRegion: () -> Unit = {}
+            var selectMode: () -> Unit = {}
+            var right: () -> Unit = {}
+            var down: () -> Unit = {}
+            var lcdTitle = ""
+            var lcdDetail = ""
+            compose.setContent {
+                CompositionLocalProvider(LocalContext provides context,
+                    LocalActivityResultRegistryOwner provides compose.activity) {
+                    MatchCalibrationScreen(CalibrationManager(context), onA = { nextRegion = it },
+                        onSelect = { selectMode = it }, onRight = { right = it }, onDown = { down = it },
+                        onLcdUpdate = { title, detail -> lcdTitle = title.orEmpty(); lcdDetail = detail.orEmpty() })
+                }
+            }
+            awaitEditableReference()
+            // A advances territories; SELECT changes position/size mode. The
+            // new entry is appended so existing territory indices remain stable.
+            for (index in com.example.overdex.ui.components.CalibrationRegion.entries.indices) {
+                val previous = compose.runOnIdle { lcdTitle.substringBefore("  X:") }
+                if (previous.startsWith("Charged Impact HP ")) break
+                compose.runOnIdle { nextRegion() }
+                // The LCD callback runs after composition. Await each selection
+                // before deciding whether to press A again, as a person would.
+                compose.waitUntil(10_000) { lcdTitle.substringBefore("  X:") != previous }
+            }
+            compose.waitUntil(10_000) { lcdTitle.startsWith("Charged Impact HP ") }
+            compose.runOnIdle { right() }
+            compose.runOnIdle { down() }
+            compose.runOnIdle { selectMode() }
+            compose.waitUntil(10_000) { lcdDetail.contains("  SIZE  ") }
+            compose.runOnIdle { right() }
+            compose.runOnIdle { down() }
+
+            val expectedRegion = original.battleCalibration.chargedImpactHpRegion.let {
+                it.copy(x = it.x + .005f, y = it.y + .005f,
+                    width = it.width + .005f, height = it.height + .005f)
+            }
+            val expected = original.battleCalibration.copy(chargedImpactHpRegion = expectedRegion)
+            val x = (expectedRegion.x * bounds.width()).toInt()
+            val y = (expectedRegion.y * bounds.height()).toInt()
+            val width = (expectedRegion.width * bounds.width()).toInt()
+            val height = (expectedRegion.height * bounds.height()).toInt()
+            compose.runOnIdle {
+                val reloaded = MatchCalibrationProfileStore(context).activeProfile()!!
+                assertEquals(original.id, reloaded.id)
+                assertEquals(expected, reloaded.battleCalibration)
+                assertEquals(expected, CalibrationManager(context).load())
+                assertTrue("Source-space position and save state: $lcdTitle", lcdTitle.contains("  X:$x Y:$y  SAVED"))
+                assertTrue("Source-space size and mode: $lcdDetail",
+                    lcdDetail.contains("  W:$width H:$height / ${bounds.width()}×${bounds.height()}  SIZE  "))
+                assertEquals(original.teamSelectCalibration, reloaded.teamSelectCalibration)
+                assertEquals(original.battleCalibration.trainerHpRegion, reloaded.battleCalibration.trainerHpRegion)
+                assertEquals(original.battleCalibration.opponentHpRegion, reloaded.battleCalibration.opponentHpRegion)
+            }
+        } finally { context.cleanUp() }
+    }
+
     @Test fun unmatchedDeviceOffersReferencesWithoutSilentlySelectingAnotherProfile() {
         val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
         try {
@@ -214,6 +285,71 @@ class CalibrationProfilePickerDeviceTest {
             assertTrue("The foreign source remains available for deliberate review", foreignFile.isFile)
             assertEquals(samples.size, CalibrationScreenshotLibrary.filter(samples.map { it.reference },
                 CalibrationScreenshotFilter.All, 1080, 2280).size)
+        } finally { context.cleanUp() }
+    }
+
+    @Test fun longSelectCyclesReferencesWithoutChangingTheCropModeOrSavedProfile() {
+        val context = IsolatedContext(InstrumentationRegistry.getInstrumentation().targetContext)
+        try {
+            val bounds = context.getSystemService(WindowManager::class.java).maximumWindowMetrics.bounds
+            val model = listOf(Build.MANUFACTURER, Build.MODEL).map(String::trim)
+                .filter(String::isNotBlank).joinToString(" ")
+            // Start with a foreign image to prove browsing still works while editing is read only.
+            val foreignHeight = if (CalibrationScreenshotLibrary.sameShape(bounds.width(), bounds.height(), 1080, 2400)) 2280 else 2400
+            saveReference(context, 1080, foreignHeight)
+            val store = MatchCalibrationProfileStore(context)
+            val original = store.saveAs("Keep these boxes", model, bounds.width(), bounds.height(),
+                BattleCalibration(), TeamSelectCalibration.measured1080x2400)!!
+            val all = loadCalibrationSamples(context, ScreenshotDirectoryManager(context))
+            assertTrue(all.size > 1)
+            var library: () -> Unit = {}
+            var nextImage: () -> Unit = {}
+            var select: () -> Unit = {}
+            var nextRegion: () -> Unit = {}
+            var lcdTitle = ""
+            var lcdDetail = ""
+            compose.setContent {
+                CompositionLocalProvider(LocalContext provides context,
+                    LocalActivityResultRegistryOwner provides compose.activity) {
+                    MatchCalibrationScreen(CalibrationManager(context), onALong = { library = it },
+                        onSelectLong = { nextImage = it }, onSelect = { select = it }, onA = { nextRegion = it },
+                        onLcdUpdate = { title, detail -> lcdTitle = title.orEmpty(); lcdDetail = detail.orEmpty() })
+                }
+            }
+            compose.runOnIdle { library() }
+            compose.onNodeWithText("All screenshots").performScrollTo().performClick()
+            compose.onNodeWithText("CLOSE").performClick()
+            compose.waitUntil(10_000) { lcdDetail.contains(all.first().reference.name) }
+            compose.onNodeWithTag("calibration-reference-read-only").assertTextContains("different screen shape", substring = true)
+            compose.runOnIdle { select(); nextRegion() }
+            compose.waitUntil(10_000) { lcdDetail.contains("  SIZE  ") }
+            var regionTitle = ""
+            compose.runOnIdle { regionTitle = lcdTitle.substringBefore("  X:") }
+
+            // Complete one loop. Image decoding/read-only status cannot trap Select in a dialog.
+            for (offset in 1..all.size) {
+                compose.runOnIdle { nextImage() }
+                val expected = all[offset % all.size].reference.name
+                compose.waitUntil(10_000) { lcdDetail.contains(" · $expected  W:") }
+                compose.onNodeWithTag("calibration-screenshot-picker").assertDoesNotExist()
+                compose.runOnIdle {
+                    assertEquals(regionTitle, lcdTitle.substringBefore("  X:"))
+                    assertTrue(lcdDetail.contains("  SIZE  "))
+                }
+            }
+            compose.runOnIdle { library() }
+            compose.onNodeWithText("CHOOSE SCREENSHOT", useUnmergedTree = true).performScrollTo().performClick()
+            compose.onNodeWithTag("calibration-screenshot-name").assertTextEquals(all.first().reference.name)
+            compose.onNodeWithTag("calibration-screenshot-next").performClick()
+            compose.onNodeWithTag("calibration-screenshot-name").assertTextEquals(all[1].reference.name)
+            compose.onNodeWithTag("calibration-screenshot-cancel").performClick()
+            compose.runOnIdle {
+                assertTrue("Cancel preserves the main calibration reference", lcdDetail.contains(all.first().reference.name))
+                assertEquals(original.id, store.activeProfile()!!.id)
+                assertEquals(original.savedAtMillis, store.activeProfile()!!.savedAtMillis)
+                assertEquals(original.battleCalibration, CalibrationManager(context).load())
+                assertEquals(original.teamSelectCalibration, TeamSelectCalibrationStore(context).load())
+            }
         } finally { context.cleanUp() }
     }
 

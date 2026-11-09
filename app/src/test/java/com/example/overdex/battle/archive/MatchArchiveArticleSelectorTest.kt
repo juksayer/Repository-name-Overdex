@@ -7,6 +7,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MatchArchiveArticleSelectorTest {
+    @Test fun `compact keeps charged impact samples even when the bar is obscured or ownership is unresolved`() {
+        val payload = ArchivedCropCaptured("artifacts/crops/sha256/${"a".repeat(64)}.png", "a".repeat(64),
+            1, "image/png", "ChargedImpactHpCrop", 672, 1493, 168, 358, 504, 926)
+        val rows = (1..3).map { index ->
+            timed("charge-$index", payload, 10_000L + index * 500).copy(sourceId = "CHARGED_IMPACT_HP_CAPTURE")
+        }
+        val wrongSource = rows.first().copy(articleId = "wrong-source", sourceId = "OTHER_CAPTURE")
+        val wrongPurpose = rows.first().copy(articleId = "wrong-purpose", payload = payload.copy(cropName = "PlayerHpEvidenceCrop"))
+        assertEquals(rows, select(rows + listOf(wrongSource, wrongPurpose)))
+    }
     @Test
     fun `compact retains cited crop and audio artifacts but omits uncited artifacts`() {
         val crop = article("crop", ArchivedCropCaptured("artifacts/crops/sha256/${"a".repeat(64)}.png", "a".repeat(64), 1, "image/png", "COUNTDOWN", 1, 1, 0, 0, 1, 1))
@@ -27,6 +37,24 @@ class MatchArchiveArticleSelectorTest {
         val unrelated = article("unrelated", payload)
         val compact = MatchArchiveArticleSelector.select(listOf(sample, unrelated), MatchArchiveExportMode.COMPACT_CITED_EVIDENCE)
         assertEquals(listOf(sample), compact)
+    }
+
+    @Test
+    fun `compact retains manual hand samples only for their exact capture source and purpose`() {
+        val payload = ArchivedCropCaptured("artifacts/crops/sha256/${"a".repeat(64)}.png", "a".repeat(64),
+            1, "image/png", "OpponentTrainerHandCrop", 1080, 2400, 1045, 600, 1070, 680)
+        val hand = timed("hand", payload, 10_100).copy(sourceId = "OPPONENT_TRAINER_HAND_CAPTURE")
+        val otherWitness = hand.copy(articleId = "same-purpose-other-witness", sourceId = "QTE_TYPE_ICONS_CAPTURE")
+        val otherPurpose = hand.copy(articleId = "same-witness-other-purpose",
+            payload = payload.copy(cropName = "QteTypeIconsCrop"))
+        val unrelated = hand.copy(articleId = "unrelated", sourceId = "OTHER_CAPTURE")
+        // A genuine battle preview opportunity must not admit unrelated hand crops.
+        val start = timed("start", ArchivedMatchStarted, 10_000)
+        val rows = listOf(start, hand, otherWitness, otherPurpose, unrelated)
+
+        assertEquals(listOf(start, hand), select(rows))
+        assertTrue(previewIds(rows).isEmpty())
+        assertEquals(listOf(hand), select(listOf(hand))) // Manual inspection needs no successful reader.
     }
 
     @Test

@@ -26,7 +26,42 @@ are starting points; a task is not complete merely because a class or test exist
 | 7 | **Test visual recognition where it fills a measured gap.** First evaluate the small QTE-type crop and fast-effect color/motion on labeled captures. Separately pilot rendered 3D references for Sneasel, Sealeo and Vaporeon only if species failures remain. | Research first | Use held-out real screenshots with lighting, partial visibility and effects. Measure wrong matches, unresolved cases, added latency and phone cost against the existing readers before expanding. A rig or colored effect alone does not establish species, attack type or actor. |
 | 8 | **Add team advice using the existing PvPoke foundations.** Cached matchup coverage, counters, alternatives and owned-Pokémon move-upgrade advice. | Large | Recommendations respect current league/form/move data and declared shield/energy assumptions. Full rankings are precomputed or requested outside the live capture loop. Dated strategy articles do not supply current meta rankings. |
 
+## Deferred user notes — November 9
+
+[Replay framing and trainer result confirmation](2026-11-09-replay-and-result-confirmation.md)
+records the user's annotated images and deferred requests: charge-sequence
+resizing anchored at each sprite's visible top, small inward positioning, and
+move icons originating/landing in front of the opponent between combatants.
+It also records the proposal to ask the trainer about unresolved results or
+ending reasons, retaining their answer as a separately attributed source.
+These are design notes, not implemented behavior or a change to the work order.
+
 ## Current slice
+
+November 10 [charged-impact HP calibration](../verification/2026-11-10-charged-impact-hp-box.md)
+adds an independent **Charged Impact HP** search territory for the centered
+receiving Pokémon. Existing charged-phase attention now uses that saved box;
+sparse crops and literal measured fill color survive archive saving. The full
+2,317-test unit suite and 19 distinct native cases have passing final results.
+The tested APK is installed on the Moondrop with all scoped calibration/archive
+backups unchanged. Actual placement and fresh unshielded impact/color-transition
+recordings remain the acceptance boundary.
+
+November 9 [opponent hand sampling box](../verification/2026-11-09-opponent-hand-box.md)
+adds the user's guessed, movable trainer-hand/Poké Ball region and manual ten-
+second raw samples. The guide hides during capture, and compact match saves keep
+the samples. All 2,305 unit tests and both native checks pass; the update is
+installed on the Pixel 4. Arm/send-out/recall recognition remains unimplemented
+pending user placement and labeled real examples.
+
+November 9 [event-driven reader attention](../verification/2026-11-09-event-driven-reader-attention.md)
+now gives resolved readers bounded assignments and retires obsolete pre-battle
+work. Team snapshots use four seconds; resources, decision/switch timers and
+stat-sound matching wake on relevant cues. A conservative HP departure hint can
+wake only an independent ball count. All 2,297 unit tests, six emulator checks
+and both debug APK builds pass. No phone install or live speedup is claimed.
+The [reader and ending policy](2026-11-09-reader-attention.md) distinguishes this
+implementation from missing recall/exit/transition witnesses and player-note UI.
 
 - [x] Inspect the active HUD and its existing device checks.
 - [x] Remove visible species labels from battle cards; retain accessible names.
@@ -48,6 +83,16 @@ are starting points; a task is not complete merely because a class or test exist
 
 Next substantial slice: species/form preservation and the paired-match Fast Move
 audit (orders 1–2). Finish and measure one bounded change before adding readers.
+
+November 9 [broad HP search optimization](../verification/2026-11-09-hp-broad-search.md)
+skips ordinary/contrast row scans only when their outline color is absent.
+All 71 complete ordered candidate lists match the baseline in paired Moondrop
+measurements. Sierra broad-band detector CPU falls 23.02%; ten newer
+candidate-positive broad bands improve by a median 25.74%, with no regressions.
+All 2,236 unit tests and the debug build pass. A preliminary lazy fill gate was
+rejected for mixed timings. The retained update is built but not installed;
+fresh live capture must establish reader throughput and source-to-Timeline
+benefit. Calibration, broad recovery bounds and attention rules are unchanged.
 
 November 7 HP pipeline progress: [stage diagnostics](../verification/2026-11-07-hp-observation-diagnostics.md)
 now separate successful feed publication, enabled/disabled HP reader receipt,

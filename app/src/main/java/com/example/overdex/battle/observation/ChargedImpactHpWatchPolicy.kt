@@ -93,6 +93,14 @@ internal class ChargedImpactHpWatchPolicy {
 
     @Synchronized fun current(request: Request) = window?.token == request.token
 
+    /** Sparse forensic crops share the phase window, without advancing the live scan cadence. */
+    @Synchronized fun canCapture(at: Long): Boolean {
+        val active = window ?: return false
+        return at >= active.preparedAt + PREPARATION_DELAY_NANOS && at <= active.until &&
+            !active.consumed && boundaries[active.side]?.let { at <= it } != true &&
+            active.acquiredAt?.let { at - it >= IMPACT_WINDOW_NANOS } != true
+    }
+
     @Synchronized fun cameraCueIds(side: ActivePokemonSide, bar: ActiveHpBarMeasurement, at: Long): List<String>? {
         val active = window ?: return null
         val width = dimensions?.first ?: return null

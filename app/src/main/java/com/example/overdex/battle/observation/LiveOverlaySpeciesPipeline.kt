@@ -134,8 +134,8 @@ internal class LiveOverlaySpeciesPipeline(
                             val badge = TeamBadgeCropLocator.locate(badgeId, calibration, frame)
                             TeamBadgeCropLocator.nativeBadgePresent(frame, badge)
                         })
-                    // Once a battlefield is established, retain periodic recovery
-                    // checks even if a switch cue or transient badge is missed.
+                    // Unresolved identities retain recovery. Once resolved, a
+                    // fresh battle cue must reopen a bounded reading assignment.
                     val scheduled = battleAttention && match.speciesChecks.captureEnabled(side)
                     // A system-inset change can leave the saved strip inside our
                     // HUD while the native name is clear just above it. Recover

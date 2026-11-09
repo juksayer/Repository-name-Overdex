@@ -14,6 +14,29 @@ import com.google.mlkit.vision.text.Text
 
 object AnnouncementRecognizer {
 
+    /** Retire obsolete pre-battle work after waiting for the shared model turn. */
+    internal suspend fun recognizeFresh(
+        bitmap: Bitmap,
+        priority: OcrPriority = OcrPriority.NORMAL,
+        isFresh: () -> Boolean,
+    ): String? = try {
+        SharedLatinTextRecognizer.withReadingTurn(priority) { read ->
+            if (!isFresh()) return@withReadingTurn null
+            val direct = read(bitmap).text
+            if (direct.isNotBlank()) return@withReadingTurn direct.takeIf { isFresh() }
+            if (!isFresh()) return@withReadingTurn null
+            val prepared = highContrastInput(bitmap)
+            try {
+                if (!isFresh()) null else read(prepared).text.takeIf { isFresh() }
+            } finally { prepared.recycle() }
+        }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        Log.w("ANNOUNCEMENT_RECOGNIZER", "Fresh recognition failed; assignment may retry", error)
+        null
+    }
+
     /** Live announcement path: same warm recognizer, with auditable source filtering. */
     suspend fun recognizeEvidence(
         bitmap: Bitmap, context: OcrSourceContext, profile: OcrHeightProfile,

@@ -40,7 +40,8 @@ data class DirectoryCropImage(
 
 /** Presentation-only crop-local detail; never changes the historical provenance or saved search region. */
 fun DirectoryCropImage.hpTargetDetailBounds(slot: DirectoryCropSlot): BattleCropBounds? {
-    if (!targetWitnessed || slot !in listOf(DirectoryCropSlot.PLAYER_HP, DirectoryCropSlot.OPPONENT_HP)) return null
+    if (!targetWitnessed || slot !in listOf(DirectoryCropSlot.PLAYER_HP, DirectoryCropSlot.OPPONENT_HP,
+            DirectoryCropSlot.CHARGED_IMPACT_HP)) return null
     val search = provenance?.bounds ?: return null
     val target = targetBounds ?: return null
     if (target.left < search.left || target.top < search.top || target.right > search.right ||

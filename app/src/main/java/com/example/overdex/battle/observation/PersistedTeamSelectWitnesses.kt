@@ -17,9 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Accepts Team Select only after independent, freshly observed apertures agree. */
 internal class PersistedTeamSelectPartyWitness(
     private val store: FileCropArtifactStore,
-    private val readText: suspend (android.graphics.Bitmap, OcrPriority) -> String = { bitmap, priority ->
-        AnnouncementRecognizer.recognize(bitmap, priority).value.orEmpty()
-    },
+    private val isEnabled: () -> Boolean = { true },
+    private val readText: (suspend (android.graphics.Bitmap, OcrPriority) -> String)? = null,
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PARTY_WITNESS", ObservationSource.SCREEN_CAPTURE)
     override val name = "Team Select Party"
@@ -28,6 +27,15 @@ internal class PersistedTeamSelectPartyWitness(
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { s ->
             val accepted = AtomicBoolean(false)
+            suspend fun read(bitmap: android.graphics.Bitmap, priority: OcrPriority): String {
+                if (accepted.get() || !isEnabled()) return ""
+                val custom = readText
+                return if (custom != null) custom(bitmap, priority)
+                    .takeIf { !accepted.get() && isEnabled() }.orEmpty()
+                else AnnouncementRecognizer.recognizeFresh(bitmap, priority) {
+                    !accepted.get() && isEnabled()
+                }.orEmpty()
+            }
             val evidenceWindow = TeamSelectSurfaceEvidenceWindow()
             val evidenceLock = Mutex()
             val supported = listOf(
@@ -45,11 +53,11 @@ internal class PersistedTeamSelectPartyWitness(
             // OCR itself still uses the one shared, bounded-priority model lane.
             supported.forEach { cropName -> s.launch {
                 match.articles.filter { article ->
-                    !accepted.get() &&
+                    !accepted.get() && isEnabled() &&
                         (article.monotonicTimeNanos ?: Long.MIN_VALUE) >= match.observationAttemptStartedAtNanos &&
                         (article.payload as? CropCaptured)?.cropProvenance?.cropName == cropName
                 }.conflate().collect { a ->
-                    if (accepted.get()) return@collect
+                    if (accepted.get() || !isEnabled()) return@collect
                     val observedAt = a.monotonicTimeNanos ?: return@collect
                     if (observedAt < match.observationAttemptStartedAtNanos) return@collect
                     val crop = a.payload as CropCaptured
@@ -59,7 +67,7 @@ internal class PersistedTeamSelectPartyWitness(
                     try {
                         when (cropName) {
                             TeamSelectCropContracts.leagueText.cropName -> {
-                                val text = readText(bitmap, OcrPriority.NORMAL).uppercase()
+                                val text = read(bitmap, OcrPriority.NORMAL).uppercase()
                                 if ("LEAGUE" in text) signal = TeamSelectSignal(a.id.value, observedAt, 0.96f, a.perceivedAt)
                             }
                             TeamSelectCropContracts.leagueBadge.cropName -> {
@@ -80,14 +88,14 @@ internal class PersistedTeamSelectPartyWitness(
                                 }
                             }
                             TeamSelectCropContracts.restrictions.cropName -> {
-                                val text = readText(bitmap, OcrPriority.NORMAL)
+                                val text = read(bitmap, OcrPriority.NORMAL)
                                 if (TeamSelectSurfaceSignalDetector.isRestrictionText(text)) {
                                     signal = TeamSelectSignal(a.id.value, observedAt, 0.93f, a.perceivedAt)
                                 }
                             }
                             TeamSelectCropContracts.useThisParty.cropName -> {
                                 val colorConfidence = TeamSelectSurfaceSignalDetector.usePartyControlConfidence(bitmap)
-                                val text = readText(bitmap, OcrPriority.TRANSIENT)
+                                val text = read(bitmap, OcrPriority.TRANSIENT)
                                 val textAccepted = TeamSelectSurfaceSignalDetector.isUsePartyText(text)
                                 // Green terrain is not the Use This Party button.
                                 // Preserve the crop, but require its label to accept it.
@@ -99,7 +107,7 @@ internal class PersistedTeamSelectPartyWitness(
                     val measured = signal ?: return@collect
                     evidenceLock.withLock {
                         currentCoroutineContext().ensureActive()
-                        if (accepted.get() || observedAt < match.observationAttemptStartedAtNanos) return@withLock
+                        if (accepted.get() || !isEnabled() || observedAt < match.observationAttemptStartedAtNanos) return@withLock
                         val result = evidenceWindow.observe(observedAt) { evidence ->
                             when (cropName) {
                                 TeamSelectCropContracts.leagueText.cropName -> evidence.copy(leagueText = measured)
@@ -129,7 +137,10 @@ internal class PersistedTeamSelectPartyWitness(
 }
 
 /** Classifies the standard league while retaining the shield crop as its evidence. */
-class PersistedTeamSelectLeagueWitness(private val store: FileCropArtifactStore) : Observer {
+class PersistedTeamSelectLeagueWitness(
+    private val store: FileCropArtifactStore,
+    private val isEnabled: () -> Boolean = { true },
+) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_LEAGUE_WITNESS", ObservationSource.SCREEN_CAPTURE)
     override val name = "Team Select League"
     private var scope: CoroutineScope? = null
@@ -142,7 +153,7 @@ class PersistedTeamSelectLeagueWitness(private val store: FileCropArtifactStore)
                 var surfaceAccepted = false
                 var pendingBadge: com.example.overdex.battle.reality.RealityArticle? = null
                 match.articles.collect { article ->
-                    if (accepted) return@collect
+                    if (accepted || !isEnabled()) return@collect
                     if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                     if (article.payload is TeamSelectPartyWitnessed) surfaceAccepted = true
                     val incoming = article.payload as? CropCaptured
@@ -161,6 +172,8 @@ class PersistedTeamSelectLeagueWitness(private val store: FileCropArtifactStore)
                         bitmap.recycle()
                     } ?: return@collect
                     val monotonic = badgeArticle.monotonicTimeNanos ?: return@collect
+                    currentCoroutineContext().ensureActive()
+                    if (!isEnabled()) return@collect
                     accepted = true
                     match.custody.submitTestimony(
                         SourceId(observerId.id),
@@ -182,7 +195,8 @@ class PersistedTeamSelectLeagueWitness(private val store: FileCropArtifactStore)
 class PersistedPlayerTeamRosterSlotWitness(
     private val store: FileCropArtifactStore,
     private val slot: Int,
-    private val cropName: String
+    private val cropName: String,
+    private val isEnabled: () -> Boolean = { true },
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_OCR_WITNESS", ObservationSource.SCREEN_CAPTURE)
     override val name = "Team Select Player Slot $slot OCR"
@@ -198,7 +212,7 @@ class PersistedPlayerTeamRosterSlotWitness(
                 if (a.payload is VsScreenWitnessed || a.payload is CountdownGlyphWitnessed || a.payload is MatchEnded || a.payload == MatchStarted) {
                     a.monotonicTimeNanos?.let(rosterWindow::close)
                 }
-                if (accepted) return@collect
+                if (accepted || !isEnabled()) return@collect
                 if ((a.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                 if (a.payload is TeamSelectPartyWitnessed) {
                     rosterWindow.confirm(a.monotonicTimeNanos ?: return@collect)
@@ -214,8 +228,10 @@ class PersistedPlayerTeamRosterSlotWitness(
                 val crop = source.payload as CropCaptured
                 val bitmap = store.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                 val readings = try {
-                    SpeciesNameRecognizer.recognizeCandidates(bitmap) { rawText ->
-                        FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                    SpeciesNameRecognizer.withReadingTurn {
+                        if (!isEnabled()) emptyList() else recognizeCandidates(bitmap) { rawText ->
+                            FastOverlaySpeciesResolver.resolveDetailed(rawText, knownNames) != null
+                        }
                     }
                 } finally { bitmap.recycle() }
                 val resolution = readings.firstNotNullOfOrNull { reading ->
@@ -231,7 +247,7 @@ class PersistedPlayerTeamRosterSlotWitness(
                     source.monotonicTimeNanos ?: return@collect
                 )
                 currentCoroutineContext().ensureActive()
-                if (candidate.monotonicTimeNanos < match.observationAttemptStartedAtNanos) return@collect
+                if (!isEnabled() || candidate.monotonicTimeNanos < match.observationAttemptStartedAtNanos) return@collect
                 accepted = true
                 submitRosterCandidate(match, candidate)
             }
@@ -250,6 +266,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
     private val matcher: TeamSelectSpriteMatcher,
     private val slot: Int,
     private val cropName: String,
+    private val isEnabled: () -> Boolean = { true },
 ) : Observer {
     override val observerId = ObserverId("TEAM_SELECT_PLAYER_SLOT_${slot}_VISUAL_WITNESS", ObservationSource.SCREEN_CAPTURE)
     override val name = "Team Select Player Slot $slot Visual"
@@ -266,7 +283,7 @@ class PersistedPlayerTeamRosterSpriteWitness(
                     if (article.payload is VsScreenWitnessed || article.payload is CountdownGlyphWitnessed || article.payload is MatchEnded || article.payload == MatchStarted) {
                         article.monotonicTimeNanos?.let(rosterWindow::close)
                     }
-                    if ((article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
+                    if (!isEnabled() || (article.monotonicTimeNanos ?: Long.MIN_VALUE) < match.observationAttemptStartedAtNanos) return@collect
                     if (article.payload is TeamSelectPartyWitnessed) {
                         rosterWindow.confirm(article.monotonicTimeNanos ?: return@collect)
                         pending?.takeIf { rosterWindow.allows(it.monotonicTimeNanos) }?.let { candidate ->
@@ -287,6 +304,8 @@ class PersistedPlayerTeamRosterSpriteWitness(
                     val species = match.pokemonKnowledge.getPokemonBySpriteVariant(
                         visualMatch.speciesId, visualMatch.variant
                     ) ?: return@collect
+                    currentCoroutineContext().ensureActive()
+                    if (!isEnabled()) return@collect
                     val candidate = PendingRosterSlot(
                         sourceId = SourceId(observerId.id),
                         payload = PlayerTeamRosterSlotWitnessed(slot, species.name, species.id,

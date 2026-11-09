@@ -3,6 +3,10 @@ package com.example.overdex.battle.observation
 import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.GetReadyWitnessed
 import com.example.overdex.battle.custody.MatchEnded
+import com.example.overdex.battle.custody.TestimonyPayload
+import com.example.overdex.battle.custody.ObservationRestartedByUser
+import com.example.overdex.battle.custody.ScreenIgnoredByUser
+import com.example.overdex.battle.custody.ObservationSessionStoppedByUser
 import com.example.overdex.battle.timeline.observer.ObservationSource
 import com.example.overdex.battle.timeline.observer.ObserverId
 import com.example.overdex.model.AnchorRegion
@@ -18,13 +22,17 @@ import kotlinx.coroutines.launch
 
 data class QteIconSamplingStatus(val sampling: Boolean = false, val saved: Int = 0)
 
-/** A bounded collection of raw images for calibration, not a move/type identification. */
+/** A bounded raw calibration sampler; additional experiments can use manual-only attention. */
 class QteTypeIconSampling(
     private val savedRegion: () -> AnchorRegion,
     private val now: () -> Long = System::nanoTime,
+    private val followsQte: Boolean = true,
+    private val sampleLimit: Int = MAX_SAMPLES,
+    private val settleNanos: Long = 0L,
+    override val observerId: ObserverId = ObserverId("QTE_TYPE_ICON_SAMPLE_GATE", ObservationSource.SCREEN_CAPTURE),
+    override val name: String = "QTE Type Icon Sample Gate",
 ) : Observer {
-    override val observerId = ObserverId("QTE_TYPE_ICON_SAMPLE_GATE", ObservationSource.SCREEN_CAPTURE)
-    override val name = "QTE Type Icon Sample Gate"
+    init { require(sampleLimit > 0); require(settleNanos in 0 until WINDOW_NANOS) }
     override val managesAvailability = true
     private var scope: CoroutineScope? = null
     private var expiry: Job? = null
@@ -46,7 +54,7 @@ class QteTypeIconSampling(
     }
 
     @Synchronized fun isEnabled(): Boolean {
-        val enabled = accepting && now() < until && _status.value.saved < MAX_SAMPLES
+        val enabled = accepting && now() < until && _status.value.saved < sampleLimit
         if (_status.value.sampling != enabled) _status.value = _status.value.copy(sampling = enabled)
         return enabled
     }
@@ -96,7 +104,7 @@ class QteTypeIconSampling(
     }
 
     private fun open(at: Long, area: AnchorRegion) {
-        from = at
+        from = at + settleNanos
         until = at + WINDOW_NANOS
         region = area
         _status.value = QteIconSamplingStatus(sampling = true)
@@ -107,17 +115,23 @@ class QteTypeIconSampling(
         }
     }
 
+    internal fun observe(payload: TestimonyPayload, at: Long?) {
+        when (payload) {
+            GetReadyWitnessed -> if (followsQte) at?.let(::ready)
+            ChargeMoveUsedAnnounced -> if (followsQte) at?.let(::closeWindow)
+            is MatchEnded, ScreenIgnoredByUser, ObservationSessionStoppedByUser -> endSession()
+            ObservationRestartedByUser -> beginSession()
+            else -> Unit
+        }
+    }
+
     override fun start(match: Match) {
         if (scope != null) return
         beginSession()
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { gateScope ->
             gateScope.launch {
                 match.articles.collect { article ->
-                    when (article.payload) {
-                        GetReadyWitnessed -> article.monotonicTimeNanos?.let(::ready)
-                        ChargeMoveUsedAnnounced -> article.monotonicTimeNanos?.let(::closeWindow)
-                        is MatchEnded -> endSession()
-                    }
+                    observe(article.payload, article.monotonicTimeNanos)
                 }
             }
         }

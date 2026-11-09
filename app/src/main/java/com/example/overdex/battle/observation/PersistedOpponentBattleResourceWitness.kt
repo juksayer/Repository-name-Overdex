@@ -58,7 +58,8 @@ class PersistedOpponentBattleResourceWitness private constructor(
                         }
                         // Repeated ball snapshots also prove that an intervening
                         // species change was a switch, rather than a faint.
-                        if (resource != OpponentBattleResource.POKE_BALLS && delivered == count) return@collect
+                        // A fresh unchanged shield count completes a newly armed
+                        // assignment just as an unchanged ball count does.
                         val observed = if (delivered != count) candidateArticle ?: article else article
                         match.custody.submitTestimony(
                             sourceId = sourceId,

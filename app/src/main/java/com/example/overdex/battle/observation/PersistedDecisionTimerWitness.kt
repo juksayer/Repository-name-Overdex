@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.filter
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
 
 /** Reads only the short decision dial between the team badges, never the opening countdown. */
-class PersistedDecisionTimerWitness(private val artifacts: FileCropArtifactStore) : Observer {
+class PersistedDecisionTimerWitness(
+    private val artifacts: FileCropArtifactStore,
+    private val needsReading: (Long) -> Boolean = { true },
+) : Observer {
     override val observerId = ObserverId("DECISION_TIMER_WITNESS", ObserverSource.SCREEN_CAPTURE)
     override val name = "Decision Timer"
     private var scope: CoroutineScope? = null
@@ -27,13 +30,15 @@ class PersistedDecisionTimerWitness(private val artifacts: FileCropArtifactStore
                 }.conflate().collect { article ->
                     val crop = article.payload as CropCaptured
                     val at = article.monotonicTimeNanos ?: return@collect
+                    if (!needsReading(at)) return@collect
                     val bitmap = artifacts.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     try {
                         val dial = DecisionTimerAppearance.hasDial(bitmap)
                         // Admit one normal-priority read only after seeing the dial.
                         // Skipping every busy moment can miss the entire short timer;
                         // conflation keeps this worker bounded and species retain priority.
-                        val text = if (dial) DecisionTimerTextReader.read(bitmap) else ""
+                        val text = if (dial) DecisionTimerTextReader.read(bitmap) { needsReading(at) } else ""
+                        if (!needsReading(at)) return@collect
                         val change = filter.accept(dial, text, at) ?: return@collect
                         match.custody.submitTestimony(SourceId(observerId.id),
                             BattleDecisionTimerObserved(change.seconds, text,

@@ -17,6 +17,23 @@ class ChargedImpactHpWatchPolicyTest {
         it.seed(player, normal.copy(left = 35, right = 228), base - 500_000_000L)
     }
 
+    @Test fun `sparse crop window requires a prepared recipient and never advances the geometry cadence`() {
+        val watch = seeded()
+        assertFalse(watch.canCapture(base))
+        watch.prepare(opponent, base)
+        assertFalse(watch.canCapture(base + 1_999_999_999L))
+        val at = base + 3_000_000_000L
+        assertTrue(watch.canCapture(at))
+        assertTrue(watch.canCapture(at))
+        val request = requireNotNull(watch.request(672, 1419, at))
+        assertTrue(watch.accept(request, TrackedTerminalHpBarSample(center, HpBarFillColor.EMPTY), at))
+        assertFalse(watch.canCapture(at + 33_000_000L))
+        watch.resetAll(at + 50_000_000L)
+        assertFalse(watch.canCapture(at + 100_000_000L))
+        val expired = seeded().apply { prepare(opponent, base) }
+        assertFalse(expired.canCapture(base + 12_000_000_001L))
+    }
+
     @Test fun `green to empty is acquired from preparation without waiting for used OCR`() {
         val watch = seeded()
         watch.prepare(opponent, base)

@@ -9,13 +9,13 @@ class DirectoryCropEditStateTest {
     private val initial = AnchorRegion(.2f, .3f, .25f, .1f)
     private fun editing() = DirectoryCropEditState().enterFromDirectory(true).beginEdit(initial, 1080, 2400)
 
-    @Test fun `only Down past last directory row enters LCD and seven slots follow visible row order`() {
+    @Test fun `only Down past last directory row enters LCD and slots follow visible row order`() {
         val directory = DirectoryCropEditState()
         assertEquals(directory, directory.enterFromDirectory(false))
         assertEquals(DirectoryCropSlot.PLAYER_SPECIES, directory.enterFromDirectory(true).selectedSlot)
         var state = directory.enterFromDirectory(true)
         val visited = mutableListOf(state.selectedSlot)
-        repeat(6) {
+        repeat(7) {
             val moved = state.navigate(DirectoryCropEditDirection.DOWN)
             assertFalse(moved.returnToDirectory)
             state = moved.state
@@ -23,9 +23,9 @@ class DirectoryCropEditStateTest {
         }
         assertEquals(listOf(DirectoryCropSlot.PLAYER_SPECIES, DirectoryCropSlot.OPPONENT_SPECIES,
             DirectoryCropSlot.PLAYER_HP, DirectoryCropSlot.OPPONENT_HP, DirectoryCropSlot.PLAYER_BALLS,
-            DirectoryCropSlot.OPPONENT_BALLS, DirectoryCropSlot.ANNOUNCEMENT), visited)
+            DirectoryCropSlot.OPPONENT_BALLS, DirectoryCropSlot.ANNOUNCEMENT, DirectoryCropSlot.CHARGED_IMPACT_HP), visited)
         assertEquals(state, state.navigate(DirectoryCropEditDirection.DOWN).state)
-        assertEquals(DirectoryCropSlot.OPPONENT_BALLS, state.navigate(DirectoryCropEditDirection.LEFT).state.selectedSlot)
+        assertEquals(DirectoryCropSlot.ANNOUNCEMENT, state.navigate(DirectoryCropEditDirection.LEFT).state.selectedSlot)
     }
 
     @Test fun `Up from first slot and B from selected return directory without a save`() {
@@ -124,7 +124,7 @@ class DirectoryCropEditStateTest {
     @Test fun `each preview maps to exactly its own calibration region`() {
         assertEquals(listOf(CalibrationRegion.PLAYER_SPECIES_NAME, CalibrationRegion.OPPONENT_SPECIES_NAME,
             CalibrationRegion.TRAINER_HP, CalibrationRegion.OPPONENT_HP, CalibrationRegion.PLAYER_POKE_BALLS,
-            CalibrationRegion.OPPONENT_POKE_BALLS, CalibrationRegion.ANNOUNCEMENT),
+            CalibrationRegion.OPPONENT_POKE_BALLS, CalibrationRegion.ANNOUNCEMENT, CalibrationRegion.CHARGED_IMPACT_HP),
             DirectoryCropEditState.slots.map { DirectoryCropEditState.calibrationRegion(it) })
     }
 }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.abs
 
@@ -33,7 +34,16 @@ class StatChangeSoundWitness(
         if (scope != null) return
         scope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { scope ->
             val matcher = scope.async { loadStatSoundMatcher(context) }
-            val probes = ConcurrentLinkedQueue<Pair<AudioCaptureCue, Long>>()
+            val listening = StatSoundListeningGate()
+            data class Probe(val cue: AudioCaptureCue, val at: Long, val generation: Long)
+            val probes = ConcurrentLinkedQueue<Probe>()
+            val pendingProbeClips = ConcurrentHashMap<Pair<String, Long>, Pair<Long, Long>>()
+            // Phase attention must not wait for reference loading, disk I/O or matching.
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                match.articles.collect { article ->
+                    listening.observe(article.payload, article.monotonicTimeNanos, article.sourceId.id)
+                }
+            }
             scope.launch {
                 val recognizer = matcher.await()
                 val window = StatSoundWindow()
@@ -48,12 +58,14 @@ class StatChangeSoundWitness(
                 }
                 val saved = ArrayDeque<Pair<StatChangeCue, Long>>()
                 val probeBuffer = TimedStatSoundProbeBuffer()
-                val pendingProbes = mutableMapOf<String, Long>()
+                val pendingProbes = mutableMapOf<String, Probe>()
+                var generation = listening.generation
                 fun probeStatus(status: String, refs: List<String>, chunk: LivePcmChunk) {
                     match.custody.submitTestimony(SourceId(observerId.id), StatChangeSoundChecked(status),
                         chunk.endWallTimeMillis, null, refs, chunk.endMonotonicNanos)
                 }
-                suspend fun preserve(pcm: ByteArray, kind: BattleCryCueKind, refs: List<String>, chunk: LivePcmChunk) {
+                suspend fun preserve(pcm: ByteArray, kind: BattleCryCueKind, refs: List<String>, chunk: LivePcmChunk,
+                    expectedGeneration: Long, cueAt: Long) {
                     val artifact = withContext(Dispatchers.IO) {
                         store.preserveWav(Pcm16WavEncoder.encode(pcm, StatChangeSoundMatcher.RATE, 1))
                     }
@@ -61,19 +73,23 @@ class StatChangeSoundWitness(
                         probeStatus("STORAGE_FAILED", refs, chunk)
                         return
                     }
+                    if (!listening.acceptsPendingProbe(cueAt, expectedGeneration)) return
+                    if (kind == BattleCryCueKind.STAT_CHANGE_SOUND &&
+                        !listening.allowsScan(chunk.endMonotonicNanos, expectedGeneration, System.nanoTime())) return
                     val duration = pcm.size * 1_000_000_000L / (StatChangeSoundMatcher.RATE * 2)
+                    if (kind == BattleCryCueKind.CHARGED_MOVE_EFFECT)
+                        pendingProbeClips[artifact.sha256 to chunk.endMonotonicNanos - duration] =
+                            cueAt to expectedGeneration
                     match.custody.submitTestimony(SourceId("STAT_CHANGE_AUDIO_CAPTURE"),
                         AudioCaptured(artifact, StatChangeSoundMatcher.RATE, 1, duration, kind.name,
                             chunk.captureSource, PcmSignalLevel.peak(pcm)),
                         chunk.endWallTimeMillis - duration / 1_000_000, null, refs, chunk.endMonotonicNanos - duration)
                 }
                 input.collect { chunk ->
-                    // Finish an already requested bounded window even if the move ends the match.
-                    if (!isEnabled() && pendingProbes.isEmpty() && probes.isEmpty()) {
-                        window.reset(); lastSequence = null; lastEnd = null
-                        probeBuffer.reset()
-                        availability(false, chunk.endWallTimeMillis)
-                        return@collect
+                    if (generation != listening.generation) {
+                        generation = listening.generation
+                        window.reset(); probeBuffer.reset(); pendingProbes.clear(); pendingProbeClips.clear(); saved.clear()
+                        lastSequence = null; lastEnd = null; lastSource = null
                     }
                     val gap = lastSequence?.let { chunk.sequence != it + 1 } == true ||
                         lastEnd?.let { chunk.endMonotonicNanos - it > 200_000_000L } == true ||
@@ -88,46 +104,66 @@ class StatChangeSoundWitness(
                     lastSequence = chunk.sequence; lastEnd = chunk.endMonotonicNanos; lastSource = chunk.captureSource
                     while (true) {
                         val request = probes.poll() ?: break
-                        pendingProbes[request.first.articleId] = request.second
+                        if (listening.acceptsPendingProbe(request.at, request.generation))
+                            pendingProbes[request.cue.articleId] = request
                     }
+                    // Preserve bounded volatile history during ordinary fast play. A delayed
+                    // charged announcement must read its original sound, not newer combat audio.
                     probeBuffer.ingest(chunk)
-                    for ((id, at) in pendingProbes.toMap()) {
-                        when (val capture = probeBuffer.read(at)) {
+                    for ((id, request) in pendingProbes.toMap()) {
+                        if (!listening.acceptsPendingProbe(request.at, request.generation)) {
+                            pendingProbes.remove(id); continue
+                        }
+                        when (val capture = probeBuffer.read(request.at)) {
                             TimedStatSoundProbeBuffer.Read.Pending -> Unit
                             TimedStatSoundProbeBuffer.Read.Unavailable -> {
                                 probeStatus("REQUEST_OUTSIDE_RETAINED_AUDIO", listOf(id), chunk)
                                 pendingProbes.remove(id)
                             }
                             is TimedStatSoundProbeBuffer.Read.Ready -> {
-                                preserve(pcmBytes(capture.audio.samples), BattleCryCueKind.CHARGED_MOVE_EFFECT, listOf(id),
-                                    chunk.copy(endMonotonicNanos = capture.endNanos, endWallTimeMillis = capture.endWallMillis))
+                                if (listening.acceptsPendingProbe(request.at, request.generation))
+                                    preserve(pcmBytes(capture.audio.samples), BattleCryCueKind.CHARGED_MOVE_EFFECT, listOf(id),
+                                        chunk.copy(endMonotonicNanos = capture.endNanos, endWallTimeMillis = capture.endWallMillis),
+                                        request.generation, request.at)
                                 pendingProbes.remove(id)
                             }
                         }
                     }
+                    if (!isEnabled() || !listening.allowsScan(chunk.endMonotonicNanos, generation, System.nanoTime())) {
+                        window.reset()
+                        availability(false, chunk.endWallTimeMillis)
+                        return@collect
+                    }
                     val query = window.ingest(chunk) ?: return@collect
                     availability(true, chunk.endWallTimeMillis)
                     val found = recognizer.match(query) ?: return@collect
+                    if (!isEnabled() || !listening.allowsScan(chunk.endMonotonicNanos, generation, System.nanoTime())) return@collect
                     val duration = query.samples.size * 1_000_000_000L / query.sampleRateHz
                     val at = chunk.endMonotonicNanos - duration + found.offsetNanos
                     if (saved.any { it.first == found.cue && abs(it.second - at) < 1_200_000_000L }) return@collect
                     // Outside charged-move probes, unmatched continuous audio remains volatile.
-                    preserve(pcmBytes(query.samples), BattleCryCueKind.STAT_CHANGE_SOUND, emptyList(), chunk)
+                    preserve(pcmBytes(query.samples), BattleCryCueKind.STAT_CHANGE_SOUND, emptyList(), chunk,
+                        generation, chunk.endMonotonicNanos)
                     saved += found.cue to at
                     while (saved.size > 64) saved.removeFirst()
                 }
             }
-            scope.launch {
-                val recognizer = matcher.await()
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
                 var lastProbeAt: Long? = null
                 val measured = ArrayDeque<Pair<StatChangeCue, Long>>()
+                var generation = listening.generation
                 match.articles.collect { article ->
+                    if (generation != listening.generation) {
+                        generation = listening.generation
+                        lastProbeAt = null; measured.clear()
+                    }
                     if (article.payload is ChargeMoveUsedAnnounced) {
                         val at = article.monotonicTimeNanos ?: return@collect
+                        if (!listening.canRequestProbe(at)) return@collect
                         if (lastProbeAt?.let { abs(at - it) < 4_000_000_000L } == true) return@collect
                         lastProbeAt = at
                         if (probes.size < 4) {
-                            probes += AudioCaptureCue(article.id.value, BattleCryCueKind.CHARGED_MOVE_EFFECT) to at
+                            probes += Probe(AudioCaptureCue(article.id.value, BattleCryCueKind.CHARGED_MOVE_EFFECT), at, generation)
                             match.custody.submitTestimony(SourceId(observerId.id), StatChangeSoundChecked("WINDOW_REQUESTED"),
                                 article.perceivedAt, null, listOf(article.id.value), at)
                         }
@@ -137,10 +173,21 @@ class StatChangeSoundWitness(
                     val isProbe = captured.cueKind == BattleCryCueKind.CHARGED_MOVE_EFFECT.name
                     if (!isProbe && captured.cueKind != BattleCryCueKind.STAT_CHANGE_SOUND.name) return@collect
                     val clipAt = article.monotonicTimeNanos ?: return@collect
+                    val probe = if (isProbe) pendingProbeClips.remove(captured.artifact.sha256 to clipAt)
+                        ?: return@collect else null
+                    val cueAt = probe?.first ?: clipAt
+                    val analysisGeneration = probe?.second ?: listening.generation
+                    if (!listening.acceptsPendingProbe(cueAt, analysisGeneration)) return@collect
+                    if (!isProbe && !listening.allowsScan(clipAt + captured.durationNanos,
+                            analysisGeneration, System.nanoTime())) return@collect
                     try {
+                        val recognizer = matcher.await()
                         val bytes = withContext(Dispatchers.IO) { File(root, captured.artifact.relativePath).readBytes() }
                         if (statSoundSha256(bytes) != captured.artifact.sha256) return@collect
                         val candidate = WavPcm16.decode(bytes)?.let(recognizer::bestCandidate)
+                        if (!listening.acceptsPendingProbe(cueAt, analysisGeneration)) return@collect
+                        if (!isProbe && !listening.allowsScan(clipAt + captured.durationNanos,
+                                analysisGeneration, System.nanoTime())) return@collect
                         val found = candidate?.takeIf(StatChangeSoundMatcher::accepts)
                         if (isProbe) match.custody.submitTestimony(SourceId(observerId.id),
                             StatChangeSoundChecked(if (found != null) "ACCEPTED" else "NO_CONFIDENT_MATCH",

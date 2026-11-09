@@ -108,6 +108,6 @@ class TeamSelectSnapshotCaptureWitness(
     private fun sourceId(contract: TeamSelectCropContract): String = "${contract.cropName}_CAPTURE"
 
     private companion object {
-        const val CAPTURE_INTERVAL_NANOS = 1_000_000_000L
+        const val CAPTURE_INTERVAL_NANOS = 4_000_000_000L
     }
 }

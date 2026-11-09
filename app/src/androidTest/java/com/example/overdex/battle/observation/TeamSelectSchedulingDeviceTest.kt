@@ -15,7 +15,9 @@ import com.example.overdex.data.observation.SpeciesNameRecognizer
 import com.example.overdex.model.AnchorRegion
 import com.example.overdex.model.observation.ObservationInput
 import com.example.overdex.model.observation.SessionSource
+import com.example.overdex.model.observation.CapturedVisualFrame
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
@@ -73,6 +75,125 @@ class TeamSelectSchedulingDeviceTest {
 
     private suspend fun awaitCondition(timeoutMillis: Long = 8_000, condition: () -> Boolean) = withTimeout(timeoutMillis) {
         while (!condition()) delay(20)
+    }
+
+    @Test fun obsoletePrebattleReadRetiresAtSharedModelAdmission() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val enabled = java.util.concurrent.atomic.AtomicBoolean(true)
+        val checks = AtomicInteger()
+        val bitmap = Bitmap.createBitmap(96, 32, Bitmap.Config.ARGB_8888)
+        val holder = async(Dispatchers.Default) {
+            SharedLatinTextRecognizer.withReadingTurn(OcrPriority.NORMAL) {
+                entered.complete(Unit)
+                release.await()
+            }
+        }
+        try {
+            withTimeout(8_000) { entered.await() }
+            val waiting = async(Dispatchers.Default) {
+                AnnouncementRecognizer.recognizeFresh(bitmap, OcrPriority.NORMAL) {
+                    checks.incrementAndGet()
+                    enabled.get()
+                }
+            }
+            awaitCondition { SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL) == 1 }
+            assertEquals("Pending pixels must not start recognition", 0, checks.get())
+            enabled.set(false)
+            release.complete(Unit)
+            assertNull(withTimeout(8_000) { waiting.await() })
+            holder.await()
+            assertEquals("Retirement is checked at admission", 1, checks.get())
+        } finally {
+            release.complete(Unit)
+            holder.cancelAndJoin()
+            bitmap.recycle()
+        }
+    }
+
+    @Test fun snapshotsUseFourSecondCadenceAndRestartImmediately(): Unit = runBlocking {
+        Fixture().use { f ->
+            val frames = Channel<Pair<CapturedVisualFrame, CompletableDeferred<Unit>>>(Channel.UNLIMITED)
+            val input = object : ObservationInput {
+                override val source = SessionSource.LIVE_CAPTURE
+                override suspend fun supply(onVisualData: suspend (Bitmap) -> Unit) = error("Use timed frames")
+                override suspend fun supplyFrames(onFrame: suspend (CapturedVisualFrame) -> Unit) {
+                    for ((frame, consumed) in frames) {
+                        onFrame(frame)
+                        consumed.complete(Unit)
+                    }
+                }
+            }
+            val contracts = listOf(TeamSelectCropContracts.leagueBadge, TeamSelectCropContracts.useThisParty,
+                TeamSelectCropContracts.playerRosterSlot1, TeamSelectCropContracts.playerRosterSlot2,
+                TeamSelectCropContracts.playerRosterSlot3, TeamSelectCropContracts.playerRosterName1,
+                TeamSelectCropContracts.playerRosterName2, TeamSelectCropContracts.playerRosterName3,
+                TeamSelectCropContracts.leagueText, TeamSelectCropContracts.restrictions)
+            var enabled = true
+            val witness = TeamSelectSnapshotCaptureWitness(input, f.calibration, contracts, f.store, { enabled },
+                com.example.overdex.battle.timeline.observer.ObserverId("TEAM_SELECT_SNAPSHOT_CAPTURE",
+                    com.example.overdex.battle.timeline.observer.ObservationSource.SCREEN_CAPTURE), "Team Select Snapshot Capture")
+            fun crops() = f.timeline.getArticles().filter { it.payload is CropCaptured }
+            suspend fun frame(at: Long) {
+                val consumed = CompletableDeferred<Unit>()
+                frames.send(CapturedVisualFrame(f.bitmap, System.currentTimeMillis(), at) to consumed)
+                withTimeout(8_000) { consumed.await() }
+            }
+            f.start(witness)
+            val firstAt = System.nanoTime()
+            frame(firstAt)
+            awaitCondition { crops().size == contracts.size }
+            frame(firstAt + 3_999_999_999L)
+            assertEquals(contracts.size, crops().size)
+            frame(firstAt + 4_000_000_000L)
+            awaitCondition { crops().size == contracts.size * 2 }
+            val groups = crops().groupBy { it.monotonicTimeNanos }
+            assertEquals(setOf(firstAt, firstAt + 4_000_000_000L), groups.keys)
+            assertTrue(groups.values.all { group ->
+                group.size == contracts.size && group.map { (it.payload as CropCaptured).artifact }.distinct().size == 1
+            })
+
+            enabled = false
+            frame(firstAt + 8_000_000_000L)
+            assertEquals(contracts.size * 2, crops().size)
+            witness.stop()
+            enabled = true
+            witness.start(f.match)
+            frame(firstAt + 8_100_000_000L)
+            awaitCondition { crops().size == contracts.size * 3 }
+            assertEquals("Original evidence remains after restart", contracts.size * 2,
+                crops().count { it.monotonicTimeNanos!! <= firstAt + 4_000_000_000L })
+            frames.close()
+        }
+    }
+
+    @Test fun retiredTeamSelectDiscardsAnInFlightPartyReading() = runBlocking {
+        Fixture().use { f ->
+            val enabled = java.util.concurrent.atomic.AtomicBoolean(true)
+            val entered = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            val returned = CompletableDeferred<Unit>()
+            f.start(PersistedTeamSelectPartyWitness(f.store, isEnabled = enabled::get) { _, _ ->
+                entered.complete(Unit)
+                release.await()
+                returned.complete(Unit)
+                "USE THIS PARTY"
+            })
+            try {
+                f.send(TeamSelectCropContracts.leagueBadge)
+                f.send(TeamSelectCropContracts.useThisParty)
+                withTimeout(8_000) { entered.await() }
+                enabled.set(false)
+                release.complete(Unit)
+                withTimeout(8_000) { returned.await() }
+                delay(200)
+                assertTrue("Retired recognition cannot announce team selection", f.parties().isEmpty())
+                assertEquals("Retirement retains both original source crops", 2,
+                    f.timeline.getArticles().count { it.payload is CropCaptured })
+            } finally {
+                release.complete(Unit)
+            }
+        }
     }
 
     @Test fun stalledFallbackCannotBlockClearButtonAndBadge() = runBlocking {

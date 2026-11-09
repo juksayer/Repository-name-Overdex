@@ -276,6 +276,63 @@ class RealityArticleArchiveMapperTest {
         )
         assertEquals(null, legacy.sourceWidth)
         assertEquals(null, legacy.sourceHeight)
+        assertEquals(null, legacy.fillColor)
+    }
+
+    @Test fun `measured HP fill colors retain geometry timing and provenance through archive serialization`() {
+        val measuredColors = listOf("GREEN", "YELLOW", "RED", "EMPTY")
+        val fractions = listOf(.9f, .4f, .1f, 0f)
+        val mapped = measuredColors.mapIndexed { index, color ->
+            RealityArticleArchiveMapper.map(article(
+                id = "hp-color-$index",
+                payload = ActiveHpBarMeasured(
+                    side = ActivePokemonSide.OPPONENT,
+                    barLeft = 240,
+                    barTop = 600,
+                    barRight = 432,
+                    barBottom = 617,
+                    filledFraction = fractions[index],
+                    sourceWidth = 672,
+                    sourceHeight = 1493,
+                    fillColor = color
+                ),
+                evidenceReferences = listOf("impact-crop-$index"),
+                monotonicTimeNanos = 1_000_000_000L + index
+            ))
+        }
+        val archive = MatchArchive(matchId = "match-a", articles = mapped)
+        val encoded = MatchArchiveSerializer.serialize(archive)
+        val restored = MatchArchiveSerializer.deserialize(encoded)
+
+        assertEquals(archive, restored)
+        restored.articles.forEachIndexed { index, article ->
+            val measured = article.payload as ArchivedActiveHpBarMeasured
+            assertEquals(measuredColors[index], measured.fillColor)
+            assertEquals(fractions[index], measured.filledFraction)
+            assertEquals(240, measured.barLeft)
+            assertEquals(600, measured.barTop)
+            assertEquals(432, measured.barRight)
+            assertEquals(617, measured.barBottom)
+            assertEquals(672, measured.sourceWidth)
+            assertEquals(1493, measured.sourceHeight)
+            assertEquals(listOf("impact-crop-$index"), article.evidenceReferences)
+            assertEquals(1_000_000_000L + index, article.monotonicTimeNanos)
+        }
+        assertTrue(encoded.contains("\"fillColor\""))
+    }
+
+    @Test fun `old global HP measurements decode with no sampled fill color`() {
+        val json = kotlinx.serialization.json.Json { classDiscriminator = "kind" }
+        val legacy = json.decodeFromString(ArchivedTestimonyPayload.serializer(), """{
+            "kind":"active_hp_bar_measured","side":"OPPONENT","barLeft":240,"barTop":600,
+            "barRight":432,"barBottom":617,"filledFraction":0.9,"sourceWidth":672,"sourceHeight":1493
+        }""") as ArchivedActiveHpBarMeasured
+
+        assertEquals(null, legacy.fillColor)
+        assertEquals(672, legacy.sourceWidth)
+        assertEquals(1493, legacy.sourceHeight)
+        assertEquals(legacy, json.decodeFromString(ArchivedTestimonyPayload.serializer(),
+            json.encodeToString(ArchivedTestimonyPayload.serializer(), legacy)))
     }
 
     @Test

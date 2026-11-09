@@ -63,6 +63,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
+import androidx.navigation.NavBackStackEntry
 import com.example.overdex.model.observation.InstrumentDeploymentState
 import com.example.overdex.model.observation.ObservationSessionState
 import com.example.overdex.presentation.InstrumentLifecycle
@@ -334,12 +338,27 @@ fun ODXFiShell(
     var overlayState by remember { mutableStateOf(OverlayState.EXPANDED) }
 
     val currentRoute = com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute.current
+    // NavHost supplies this exact entry as the local lifecycle owner. The global
+    // diagnostic route may still describe the previous screen on first composition,
+    // and two entries can have the same route, so it cannot establish ownership.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val navigationOwner = lifecycleOwner as? NavBackStackEntry
+    val ownerLifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
     var owningRoute by remember { mutableStateOf(currentRoute) }
+    var inputAttached by remember { mutableStateOf(true) }
     SideEffect {
-        // NavHost can compose its first screen before the back-stack route is
-        // available. Latch that first real route while retaining the stale-input guard.
-        if (owningRoute == null && currentRoute != null) owningRoute = currentRoute
+        // Standalone previews/tests do not have a navigation entry. Retain their
+        // route guard, including the initial unnamed-route handoff.
+        if (navigationOwner == null && owningRoute == null && currentRoute != null) owningRoute = currentRoute
     }
+    fun ownsInput(): Boolean = inputAttached && if (navigationOwner != null) {
+        // Read the live lifecycle at dispatch as well as observing it for rendering;
+        // an outgoing callback can run before its next recomposition or after disposal.
+        navigationOwner.lifecycle.currentState == Lifecycle.State.RESUMED
+    } else currentRoute == owningRoute
+    val isInputOwner = inputAttached && if (navigationOwner != null) {
+        ownerLifecycleState == Lifecycle.State.RESUMED
+    } else currentRoute == owningRoute
     val instanceId = remember { UUID.randomUUID().toString().take(8) }
     val remoteFocusRequester = remember { FocusRequester() }
     val remoteBackPressTracker = remember {
@@ -348,17 +367,20 @@ fun ODXFiShell(
     val isTelevision = LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK ==
         Configuration.UI_MODE_TYPE_TELEVISION
 
-    LaunchedEffect(instanceId, currentRoute) {
-        remoteFocusRequester.requestFocus()
+    LaunchedEffect(instanceId, isInputOwner) {
+        if (isInputOwner) remoteFocusRequester.requestFocus()
     }
 
-    BackHandler(enabled = isTelevision && currentRoute == owningRoute) {
-        onB()
+    BackHandler(enabled = isTelevision && isInputOwner) {
+        if (ownsInput()) onB()
     }
 
-    DisposableEffect(instanceId) {
+    DisposableEffect(instanceId, navigationOwner) {
+        inputAttached = true
         com.example.overdex.diagnostics.DiagnosticLogger.logLifecycle(instanceId, "INIT", currentRoute)
         onDispose {
+            inputAttached = false
+            remoteBackPressTracker.cancel()
             com.example.overdex.diagnostics.DiagnosticLogger.logLifecycle(instanceId, "DISPOSE", currentRoute)
         }
     }
@@ -390,7 +412,7 @@ fun ODXFiShell(
     // Matchup Intelligence Foundation Verification
     var currentMatchup by remember { mutableStateOf<com.example.overdex.model.MatchupAnalysis?>(null) }
 
-    val timelineEventCount = battleMemory?.timeline?.events?.size ?: 0
+    val timelineEventCount = battleMemory?.timeline?.eventCount ?: 0
 
     val presentationState = remember(
         battleMemory,
@@ -511,7 +533,7 @@ fun ODXFiShell(
                             RemoteBackAction.CONSUME
                         }
                     }
-                    if (currentRoute == owningRoute) when (action) {
+                    if (ownsInput()) when (action) {
                         RemoteBackAction.RETURN -> onB()
                         RemoteBackAction.RESTORE_NAVIGATION -> remoteFocusRequester.requestFocus()
                         RemoteBackAction.CONSUME -> Unit
@@ -561,9 +583,8 @@ fun ODXFiShell(
                             .absoluteOffset(x = 54.dp * DROIDBALL_BODY_DIAMETER_FRACTION * droidballPose.xBodies)
                             .rotate(if (isBinderMode) 90f else 0f),
                         pose = droidballPose.copy(xBodies = 0f),
-                        interactive = isLogoInteractive && journey.phase == DroidballJourneyPhase.DOCKED &&
-                            currentRoute == owningRoute,
-                        resetKey = journey.generation to currentRoute,
+                        interactive = isLogoInteractive && journey.phase == DroidballJourneyPhase.DOCKED && isInputOwner,
+                        resetKey = journey.generation to (navigationOwner?.id ?: currentRoute),
                     )
                 }
 
@@ -733,12 +754,12 @@ fun ODXFiShell(
                     label = "B",
                     labelRotationDegrees = if (isBinderMode) 90f else 0f,
                     onClick = {
-                        val isOwner = currentRoute == owningRoute
+                        val isOwner = ownsInput()
                         com.example.overdex.diagnostics.DiagnosticLogger.logInput(instanceId, "B", currentRoute, isOwner)
                         if (isOwner) {
                             onB()
                         } else {
-                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute expected=$owningRoute")
+                            android.util.Log.d("NavDebug", "STALE DISPATCH: inst=$instanceId route=$currentRoute owner=${navigationOwner?.id ?: owningRoute}")
                         }
                     }
                 )

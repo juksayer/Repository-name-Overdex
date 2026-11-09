@@ -197,6 +197,16 @@ class CalibrationManager(context: Context) {
             .putFloat("exit_icon_w", calibration.exitIconRegion.width)
             .putFloat("exit_icon_h", calibration.exitIconRegion.height)
 
+            .putFloat("opponent_trainer_hand_x", calibration.opponentTrainerHandRegion.x)
+            .putFloat("opponent_trainer_hand_y", calibration.opponentTrainerHandRegion.y)
+            .putFloat("opponent_trainer_hand_w", calibration.opponentTrainerHandRegion.width)
+            .putFloat("opponent_trainer_hand_h", calibration.opponentTrainerHandRegion.height)
+
+            .putFloat("charged_impact_hp_x", calibration.chargedImpactHpRegion.x)
+            .putFloat("charged_impact_hp_y", calibration.chargedImpactHpRegion.y)
+            .putFloat("charged_impact_hp_w", calibration.chargedImpactHpRegion.width)
+            .putFloat("charged_impact_hp_h", calibration.chargedImpactHpRegion.height)
+
             .putFloat("trainer_charge_move_controls_x", calibration.trainerChargeMoveControlsRegion.x)
             .putFloat("trainer_charge_move_controls_y", calibration.trainerChargeMoveControlsRegion.y)
             .putFloat("trainer_charge_move_controls_w", calibration.trainerChargeMoveControlsRegion.width)
@@ -684,7 +694,9 @@ class CalibrationManager(context: Context) {
             trainerInactivePokemonRegion = trainerInactivePokemonRegion,
             battlePartyTabsRegion = battlePartyTabsRegion,
             outOfBattleMenuRegion = outOfBattleMenuRegion,
-            matchOutcomeRegion = matchOutcomeRegion
+            matchOutcomeRegion = matchOutcomeRegion,
+            opponentTrainerHandRegion = loadExtraRegion("opponent_trainer_hand", BattleCalibration().opponentTrainerHandRegion),
+            chargedImpactHpRegion = loadExtraRegion("charged_impact_hp", BattleCalibration().chargedImpactHpRegion)
         )
     }
 }

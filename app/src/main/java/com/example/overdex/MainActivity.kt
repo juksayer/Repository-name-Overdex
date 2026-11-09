@@ -822,7 +822,7 @@ fun PokedexApp(
                         }
                         else -> null
                     },
-                    lcdEdgeToEdgeContent = showCropPreviews,
+                    lcdEdgeToEdgeContent = showCropPreviews || (usingHomeLauncher && desktopPointer.enabled),
 
                     filterSettings = filterSettings,
                     onFilterSettingsChange = { filterSettings = it },

@@ -209,17 +209,42 @@ class DirectoryCropPreviewsTest {
         assertEquals("legacy", selected.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).articleId)
     }
 
-    @Test fun `seven slots remain independent and foreign match or registration crops are ignored`() {
+    @Test fun `preview slots remain independent and foreign match or registration crops are ignored`() {
         val selected = DirectoryCropSelection("a")
         selected.accept(event("start", "a", MatchStarted, 0, 0))
         val names = listOf("PlayerActiveSpeciesTextCrop", "OpponentActiveSpeciesTextCrop", "PlayerHpEvidenceCrop",
-            "OpponentHpEvidenceCrop", "PlayerPokeBallsCrop", "OpponentPokeBallsCrop", "AnnouncementCrop")
+            "OpponentHpEvidenceCrop", "PlayerPokeBallsCrop", "OpponentPokeBallsCrop", "AnnouncementCrop", "ChargedImpactHpCrop")
         names.forEachIndexed { i, name -> selected.accept(crop("$i", "a", name, i.toLong(), i.toLong())) }
         selected.accept(crop("foreign", "b", "AnnouncementCrop", 100, 100))
         selected.accept(crop("registration", "a", "RegistrationSpeciesNameCrop", 100, 100))
         assertEquals(DirectoryCropSlot.entries.toSet(), selected.crops.keys)
         assertEquals("6", selected.crops.getValue(DirectoryCropSlot.ANNOUNCEMENT).articleId)
         assertEquals(BattleCropBounds(10, 20, 110, 60), selected.crops.getValue(DirectoryCropSlot.PLAYER_HP).provenance.bounds)
+    }
+
+    @Test fun `charged impact HP verifies only its centered crop on an exact measured frame`() {
+        val impact = hp("impact", "a", 10, ActivePokemonSide.OPPONENT).copy(
+            sourceId = SourceId(
+                com.example.overdex.battle.observation.ChargedImpactHpSource.id(ActivePokemonSide.OPPONENT)))
+        val normal = crop("normal", "a", "OpponentHpEvidenceCrop", 10_000, ns(10))
+        val centered = crop("centered", "a", "ChargedImpactHpCrop", 10_000, ns(10))
+        val laterEmpty = crop("later-empty", "a", "ChargedImpactHpCrop", 10_100, ns(10) + 100_000_000)
+        val rows = listOf(event("start", "a", MatchStarted, 10_000, ns(10)), impact, normal, centered, laterEmpty)
+        for (order in listOf(rows, rows.reversed())) {
+            val selected = DirectoryCropSelection("a").also { order.forEach(it::accept) }
+            val received = selected.crops.getValue(DirectoryCropSlot.CHARGED_IMPACT_HP)
+            assertEquals("centered", received.articleId)
+            assertTrue(received.targetWitnessed)
+            assertEquals(BattleCropBounds(10, 20, 110, 25), received.targetBounds)
+            assertFalse("A centered impact measurement cannot verify a normal side's crop",
+                selected.crops.getValue(DirectoryCropSlot.OPPONENT_HP).targetWitnessed)
+            val archive = RealityArticleArchiveMapper.createArchive(MatchId("a"), order)
+            assertEquals(selected.crops, DirectoryCropSelection.fromBattleArchive(archive)?.crops)
+        }
+        val unverified = DirectoryCropSelection("a").also { listOf(rows.first(), centered,
+            hp("ordinary", "a", 10, ActivePokemonSide.OPPONENT)).forEach(it::accept) }
+        assertFalse("An ordinary battlefield bar cannot verify charged-camera pixels",
+            unverified.crops.getValue(DirectoryCropSlot.CHARGED_IMPACT_HP).targetWitnessed)
     }
 
     @Test fun `archive bootstrap excludes menu scans but accepts late captured battles without GO`() {

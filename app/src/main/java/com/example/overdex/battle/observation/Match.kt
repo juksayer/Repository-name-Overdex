@@ -217,6 +217,8 @@ class Match(
             payload is VsScreenWitnessed -> "VS"
             payload is CountdownGlyphWitnessed -> "COUNTDOWN"
             payload is MatchStarted -> "MATCH_START"
+            payload is GetReadyWitnessed || payload is AttackIncoming ||
+                payload is ChargeMoveUsedAnnounced -> "CHARGE"
             article.sourceId.id == "ANNOUNCEMENT_WITNESS" && text?.startsWith("Go,", true) == true -> "ENTRY"
             payload is ActivePokemonFaintedWitnessed -> {
                 // A delayed resource count can correctly faint the departed

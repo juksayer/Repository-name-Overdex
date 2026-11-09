@@ -37,6 +37,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import com.example.overdex.model.PokemonType
 import com.example.overdex.model.observation.InstrumentDeploymentState
@@ -172,12 +173,14 @@ fun InstrumentLCD(
 ) {
     val keyboardVisible = keyboardController?.isVisible == true
     val compactPadding = edgeToEdgeContent || keyboardVisible
+    val contentFillsSurface = edgeToEdgeContent && lcdContent != null && !keyboardVisible && contentRotationDegrees == 0f
     val latestIdentifiedPokemon = presentationState.timeline.events
         .lastOrNull {
             it.type == SemanticTimelineEventType.POKEMON_IDENTIFIED
         }
     Box(
         modifier = modifier
+            .testTag("instrument-lcd-frame")
             .background(Color.Black.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
             .border(1.dp, Color.Black.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
             .then(
@@ -202,9 +205,15 @@ fun InstrumentLCD(
                 .fillMaxSize()
                 .background(Color(0xFF121510)) // Dim greenish-black LCD
                 .border(1.dp, Color.Black, RoundedCornerShape(1.dp))
+                .testTag("instrument-lcd-surface")
                 .padding(
-                    horizontal = if (compactPadding) 2.dp else 8.dp,
+                    horizontal = when {
+                        contentFillsSurface -> 0.dp
+                        compactPadding -> 2.dp
+                        else -> 8.dp
+                    },
                     vertical = when {
+                        contentFillsSurface -> 0.dp
                         compactPadding -> 2.dp
                         keyboardController?.isVisible == true -> 4.dp
                         else -> 12.dp

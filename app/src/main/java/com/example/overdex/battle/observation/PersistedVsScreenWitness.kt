@@ -22,7 +22,8 @@ import kotlinx.coroutines.launch
 class PersistedVsScreenWitness(
     private val artifactStore: FileCropArtifactStore,
     override val observerId: ObserverId = ObserverId("VS_SCREEN_WITNESS", ObservationSource.SCREEN_CAPTURE),
-    override val name: String = "VS Screen"
+    override val name: String = "VS Screen",
+    private val isEnabled: () -> Boolean = { true },
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -41,19 +42,19 @@ class PersistedVsScreenWitness(
                     // crop to replace stale frames while the shared OCR model is busy.
                     .conflate()
                     .collect { article ->
-                    if (accepted) return@collect
+                    if (accepted || !isEnabled()) return@collect
                     val crop = article.payload as CropCaptured
                     val bitmap = artifactStore.loadVerifiedPng(crop.artifact, crop.cropProvenance) ?: return@collect
                     val isVsScreen = try {
                         // This crop contains the central VS token. A substring match can
                         // mistake a fast-moving, high-contrast Pokémon feature for “VS”.
-                        AnnouncementRecognizer.recognize(bitmap).value
+                        AnnouncementRecognizer.recognizeFresh(bitmap, isFresh = { !accepted && isEnabled() })
                             ?.uppercase()
                             ?.filter(Char::isLetterOrDigit) == "VS"
                     } finally {
                         bitmap.recycle()
                     }
-                    if (!isVsScreen) return@collect
+                    if (!isVsScreen || !isEnabled()) return@collect
 
                     val monotonicTimeNanos = article.monotonicTimeNanos ?: return@collect
                     accepted = true

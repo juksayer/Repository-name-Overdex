@@ -123,6 +123,11 @@ internal fun FieldBattleMenu(
                     }
                 }
             }
+            if (mode != DroidballOverlayMode.RESULT) {
+                FieldMenuAction("OPPONENT BOX", Modifier.weight(1f)) {
+                    DroidballService.openOpponentHandBox()
+                }
+            }
         }
     }
 }

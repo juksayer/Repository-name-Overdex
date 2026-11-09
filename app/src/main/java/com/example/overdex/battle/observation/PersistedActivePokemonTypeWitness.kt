@@ -20,7 +20,8 @@ class PersistedActivePokemonTypeWitness(
     private val side: ActivePokemonSide,
     private val crop: BattleCropContract,
     override val observerId: ObserverId,
-    override val name: String
+    override val name: String,
+    private val needsReading: (Long) -> Boolean = { true },
 ) : Observer {
     private var scope: CoroutineScope? = null
 
@@ -32,8 +33,11 @@ class PersistedActivePokemonTypeWitness(
                 match.articles.collect { article ->
                     val captured = article.payload as? CropCaptured ?: return@collect
                     if (captured.cropProvenance.cropName != crop.cropName) return@collect
+                    val capturedAt = article.monotonicTimeNanos ?: return@collect
+                    if (!needsReading(capturedAt)) return@collect
                     val bitmap = artifactStore.loadVerifiedPng(captured.artifact, captured.cropProvenance) ?: return@collect
                     try {
+                        if (!needsReading(capturedAt)) return@collect
                         val matches = runCatching { PokemonGoTypeIconMatcher.matchCrop(bitmap) }
                             .getOrElse { error ->
                                 // One malformed or undersized artifact means this
@@ -51,7 +55,7 @@ class PersistedActivePokemonTypeWitness(
                         match.custody.submitTestimony(
                             sourceId, ActivePokemonTypesWitnessed(side, reading.types, reading.similarity),
                             article.perceivedAt, reading.similarity, listOf(article.id.value),
-                            article.monotonicTimeNanos ?: return@collect
+                            capturedAt
                         )
                     } finally { bitmap.recycle() }
                 }
@@ -62,7 +66,7 @@ class PersistedActivePokemonTypeWitness(
     override fun stop() { scope?.cancel("Witness stopped"); scope = null }
 
     companion object {
-        fun player(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.PLAYER, BattleCropContracts.playerActiveTypeIcons, ObserverId(BattleWitnessContracts.playerActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Player Active Type Icons")
-        fun opponent(store: FileCropArtifactStore) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.OPPONENT, BattleCropContracts.opponentActiveTypeIcons, ObserverId(BattleWitnessContracts.opponentActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Opponent Active Type Icons")
+        fun player(store: FileCropArtifactStore, needsReading: (Long) -> Boolean = { true }) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.PLAYER, BattleCropContracts.playerActiveTypeIcons, ObserverId(BattleWitnessContracts.playerActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Player Active Type Icons", needsReading)
+        fun opponent(store: FileCropArtifactStore, needsReading: (Long) -> Boolean = { true }) = PersistedActivePokemonTypeWitness(store, ActivePokemonSide.OPPONENT, BattleCropContracts.opponentActiveTypeIcons, ObserverId(BattleWitnessContracts.opponentActiveTypeIcons.witnessId, ObservationSource.SCREEN_CAPTURE), "Opponent Active Type Icons", needsReading)
     }
 }

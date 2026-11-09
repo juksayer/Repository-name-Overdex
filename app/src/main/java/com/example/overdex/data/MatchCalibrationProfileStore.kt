@@ -276,7 +276,9 @@ private fun StoredProfile.toProfile(): MatchCalibrationProfile {
         trainerInactivePokemonRegion = battleRegions.region("trainer_inactive_pokemon", battleDefaults.trainerInactivePokemonRegion),
         battlePartyTabsRegion = battleRegions.region("battle_party_tabs", battleDefaults.battlePartyTabsRegion),
         outOfBattleMenuRegion = battleRegions.region("out_of_battle_menu", battleDefaults.outOfBattleMenuRegion),
-        matchOutcomeRegion = battleRegions.region("match_outcome", battleDefaults.matchOutcomeRegion)
+        matchOutcomeRegion = battleRegions.region("match_outcome", battleDefaults.matchOutcomeRegion),
+        opponentTrainerHandRegion = battleRegions.region("opponent_trainer_hand", battleDefaults.opponentTrainerHandRegion),
+        chargedImpactHpRegion = battleRegions.region("charged_impact_hp", battleDefaults.chargedImpactHpRegion)
     )
     return MatchCalibrationProfile(
         id = id,
@@ -347,7 +349,9 @@ private fun BattleCalibration.toRegionMap(): Map<String, StoredRegion> = linkedM
     "trainer_inactive_pokemon" to trainerInactivePokemonRegion.stored(),
     "battle_party_tabs" to battlePartyTabsRegion.stored(),
     "out_of_battle_menu" to outOfBattleMenuRegion.stored(),
-    "match_outcome" to matchOutcomeRegion.stored()
+    "match_outcome" to matchOutcomeRegion.stored(),
+    "opponent_trainer_hand" to opponentTrainerHandRegion.stored(),
+    "charged_impact_hp" to chargedImpactHpRegion.stored()
 )
 
 private fun TeamSelectCalibration.toRegionMap(): Map<String, StoredRegion> = linkedMapOf(

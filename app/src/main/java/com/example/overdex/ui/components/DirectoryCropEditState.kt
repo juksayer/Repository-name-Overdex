@@ -59,7 +59,7 @@ data class DirectoryCropPositionDraft(
 
 /**
  * Pure Directory/LCD focus and position editing. No image loading, profile I/O, or evidence changes.
- * Selection follows the seven displayed slots in row-major order and clamps like InstrumentTree.
+ * Selection follows the displayed slots in row-major order and clamps like InstrumentTree.
  */
 data class DirectoryCropEditState(
     val selectedSlot: DirectoryCropSlot? = null,
@@ -133,6 +133,7 @@ data class DirectoryCropEditState(
             DirectoryCropSlot.PLAYER_HP, DirectoryCropSlot.OPPONENT_HP,
             DirectoryCropSlot.PLAYER_BALLS, DirectoryCropSlot.OPPONENT_BALLS,
             DirectoryCropSlot.ANNOUNCEMENT,
+            DirectoryCropSlot.CHARGED_IMPACT_HP,
         )
 
         fun calibrationRegion(slot: DirectoryCropSlot): CalibrationRegion = when (slot) {
@@ -143,6 +144,7 @@ data class DirectoryCropEditState(
             DirectoryCropSlot.PLAYER_BALLS -> CalibrationRegion.PLAYER_POKE_BALLS
             DirectoryCropSlot.OPPONENT_BALLS -> CalibrationRegion.OPPONENT_POKE_BALLS
             DirectoryCropSlot.ANNOUNCEMENT -> CalibrationRegion.ANNOUNCEMENT
+            DirectoryCropSlot.CHARGED_IMPACT_HP -> CalibrationRegion.CHARGED_IMPACT_HP
         }
     }
 }

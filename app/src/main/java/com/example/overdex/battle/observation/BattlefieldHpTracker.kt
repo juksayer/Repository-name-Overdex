@@ -20,6 +20,8 @@ internal data class HpBarFrameDiagnostics(
     val measurements: Map<ActivePokemonSide, ActiveHpBarMeasurement>,
     val outcomes: Map<ActivePokemonSide, HpBarLocatorOutcome>,
     val timings: HpBarLocatorTimings? = null,
+    /** Existing final-pass geometry only, for conservative scheduler checks; never another pixel search. */
+    val candidates: List<ActiveHpBarMeasurement>? = null,
 ) {
     companion object {
         fun unavailable(outcome: HpBarLocatorOutcome) = HpBarFrameDiagnostics(
@@ -194,7 +196,7 @@ internal class LiveBattlefieldHpTracker(
                     observableCandidates.none { it.inBand() } -> HpBarLocatorOutcome.OBSCURED_CANDIDATES
                     else -> HpBarLocatorOutcome.UNASSIGNED_CANDIDATES
                 }
-            })
+            }, candidates = rawCandidates)
             cachedAt = at
             cachedSize = size
         } else {

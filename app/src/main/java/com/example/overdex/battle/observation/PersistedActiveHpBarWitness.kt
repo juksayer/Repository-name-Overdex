@@ -267,6 +267,7 @@ internal object ActiveHpBarMeasurer {
                 // White outline plus adjacent orange Pokémon art is not one
                 // long outline. Keep the two border states separate geometrically.
                 for (colorMask in colorMasks) {
+                    if (!pixelAt.rowHasColor(y, colorMask)) continue
                     addAll(findRuns(width, maxGap) { x ->
                         pixelAt(x, y) and colorMask != 0
                     }.filter { (left, right) -> right - left in minBarWidth..maxBarWidth }
@@ -277,6 +278,7 @@ internal object ActiveHpBarMeasurer {
                 // Recover that boundary without relaxing width, gaps, paired
                 // colors, real end caps, or the left-aligned saturated fill.
                 for (colorMask in contrastMasks) {
+                    if (!pixelAt.rowHasColor(y, colorMask)) continue
                     addAll(findRuns(width, maxGap) { x ->
                         pixelAt(x, y) and colorMask != 0 &&
                             ((y >= inset && pixelAt(x, y - inset) and colorMask == 0) ||
@@ -538,23 +540,35 @@ internal object ActiveHpBarMeasurer {
 
     private class HpPixels(private val width: Int, pixels: IntArray) {
         private val flags = ByteArray(pixels.size)
+        private val rowColors = IntArray((pixels.size + width - 1) / width)
         init {
-            for (i in pixels.indices) {
-                val color = pixels[i]
-                val r = color ushr 16 and 255
-                val g = color ushr 8 and 255
-                val b = color and 255
-                val neutral = minOf(r, g, b) >= 175 && maxOf(r, g, b) - minOf(r, g, b) <= 48
-                val orange = r >= 155 && g in 65..210 && b <= 135 && r - g >= 22 && g - b >= 12
-                val blueOutline = isBlueHpBarBorder(r, g, b)
-                val green = g >= 145 && g - r >= 55 && g - b >= 15
-                val yellow = r >= 145 && g >= 145 && b <= 135 && abs(r - g) <= 55
-                val red = r >= 145 && g <= 130 && b <= 145 && r - g >= 65
-                flags[i] = ((if (neutral) 1 else 0) or (if (orange) 2 else 0) or (if (blueOutline) 8 else 0) or
-                    (if ((green || yellow || red) && !orange) 4 else 0) or
-                    (if (green && !orange) 16 else 0)).toByte()
+            for (row in rowColors.indices) {
+                val start = row * width
+                val end = minOf(start + width, pixels.size)
+                var rowColorMask = 0
+                for (i in start until end) {
+                    val color = pixels[i]
+                    val r = color ushr 16 and 255
+                    val g = color ushr 8 and 255
+                    val b = color and 255
+                    val neutral = minOf(r, g, b) >= 175 && maxOf(r, g, b) - minOf(r, g, b) <= 48
+                    val orange = r >= 155 && g in 65..210 && b <= 135 && r - g >= 22 && g - b >= 12
+                    val blueOutline = isBlueHpBarBorder(r, g, b)
+                    val green = g >= 145 && g - r >= 55 && g - b >= 15
+                    val yellow = r >= 145 && g >= 145 && b <= 135 && abs(r - g) <= 55
+                    val red = r >= 145 && g <= 130 && b <= 145 && r - g >= 65
+                    val mask = (if (neutral) 1 else 0) or (if (orange) 2 else 0) or (if (blueOutline) 8 else 0) or
+                        (if ((green || yellow || red) && !orange) 4 else 0) or
+                        (if (green && !orange) 16 else 0)
+                    flags[i] = mask.toByte()
+                    rowColorMask = rowColorMask or mask
+                }
+                rowColors[row] = rowColorMask
             }
         }
+        // A missing outline color cannot yield a run, including contrast runs.
+        // Reuse classification instead of scanning the same empty row again.
+        fun rowHasColor(y: Int, colorMask: Int): Boolean = rowColors[y] and colorMask != 0
         operator fun invoke(x: Int, y: Int): Int = flags[y * width + x].toInt()
     }
 

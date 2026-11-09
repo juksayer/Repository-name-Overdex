@@ -240,7 +240,8 @@ object RealityArticleArchiveMapper {
                 barBottom = p.barBottom,
                 filledFraction = p.filledFraction,
                 sourceWidth = p.sourceWidth,
-                sourceHeight = p.sourceHeight
+                sourceHeight = p.sourceHeight,
+                fillColor = p.fillColor
             )
             is ActiveHpBarMotionCadenceMeasured -> ArchivedActiveHpBarMotionCadenceMeasured(
                 movingSide = p.movingSide.name,

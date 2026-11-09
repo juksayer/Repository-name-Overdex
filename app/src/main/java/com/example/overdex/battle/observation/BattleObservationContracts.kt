@@ -58,7 +58,9 @@ enum class BattleRegionId {
     PLAYER_POKE_BALLS,
     OPPONENT_POKE_BALLS,
     PLAYER_SHIELDS,
-    OPPONENT_SHIELDS;
+    OPPONENT_SHIELDS,
+    OPPONENT_TRAINER_HAND,
+    CHARGED_IMPACT_HP;
 
     fun regionIn(calibration: BattleCalibration): AnchorRegion = when (this) {
         ANNOUNCEMENT -> calibration.announcementRegion
@@ -95,6 +97,8 @@ enum class BattleRegionId {
         OPPONENT_POKE_BALLS -> calibration.opponentPokeBallsRegion
         PLAYER_SHIELDS -> calibration.playerShieldsRegion
         OPPONENT_SHIELDS -> calibration.opponentShieldsRegion
+        OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
+        CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
     }
 }
 
@@ -211,6 +215,9 @@ object BattleCropContracts {
     val matchOutcome = BattleCropContract("MatchOutcomeCrop", BattleRegionId.MATCH_OUTCOME, minimumSize = 32)
     val outOfBattleMenu = BattleCropContract("OutOfBattleMenuCrop", BattleRegionId.OUT_OF_BATTLE_MENU, minimumSize = 32)
     val battlePartyTabs = BattleCropContract("BattlePartyTabsCrop", BattleRegionId.BATTLE_PARTY_TABS, minimumSize = 32)
+    // Experimental raw pixels only: hand movement is not a witnessed recall or send-out.
+    val opponentTrainerHand = BattleCropContract("OpponentTrainerHandCrop", BattleRegionId.OPPONENT_TRAINER_HAND)
+    val chargedImpactHp = BattleCropContract("ChargedImpactHpCrop", BattleRegionId.CHARGED_IMPACT_HP)
 }
 
 /** A Witness produces exactly one kind of testimony. */
@@ -221,6 +228,14 @@ data class BattleWitnessContract<T : TestimonyPayload>(
 )
 
 object BattleWitnessContracts {
+    val chargedImpactHpCapture = BattleWitnessContract(
+        witnessId = "CHARGED_IMPACT_HP_CAPTURE", crop = BattleCropContracts.chargedImpactHp,
+        testimonyType = CropCaptured::class
+    )
+    val opponentTrainerHandCapture = BattleWitnessContract(
+        witnessId = "OPPONENT_TRAINER_HAND_CAPTURE", crop = BattleCropContracts.opponentTrainerHand,
+        testimonyType = CropCaptured::class
+    )
     val qteTypeIconsCapture = BattleWitnessContract(
         witnessId = "QTE_TYPE_ICONS_CAPTURE", crop = BattleCropContracts.qteTypeIcons,
         testimonyType = CropCaptured::class

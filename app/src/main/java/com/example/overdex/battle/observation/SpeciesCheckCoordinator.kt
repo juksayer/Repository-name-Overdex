@@ -18,7 +18,8 @@ class SpeciesCheckCoordinator(
         var targetMissed: Boolean = false,
         var deliveredSpecies: String? = null,
         val recentWindows: LinkedHashMap<Long, Window> = linkedMapOf(),
-        var latestAcceptedWindowOpenedAt: Long = Long.MIN_VALUE
+        var latestAcceptedWindowOpenedAt: Long = Long.MIN_VALUE,
+        var identityResolved: Boolean = false,
     )
     private val states = ActivePokemonSide.entries.associateWith { State() }
     private var serial = 0L
@@ -27,6 +28,7 @@ class SpeciesCheckCoordinator(
     @Synchronized fun request(side: ActivePokemonSide, reason: String, triggerId: String?, triggerAt: Long = now()) {
         if (stopped) return
         val state = states.getValue(side)
+        if (reason == "RECOVERY" && state.identityResolved) return
         reportMissedTarget(side, state)
         if (state.window != null) {
             // A lifecycle cue supersedes an unrelated recovery/countdown check.
@@ -41,6 +43,7 @@ class SpeciesCheckCoordinator(
             state.recentWindows.remove(superseded.id)
         }
         val window = Window(++serial, now(), triggerAt, reason, triggerId)
+        if (reason in setOf("ENTRY", "SWITCH", "FAINT")) state.identityResolved = false
         state.window = window
         state.recentWindows[window.id] = window
         while (state.recentWindows.size > MAX_RETAINED_WINDOWS) {
@@ -56,8 +59,8 @@ class SpeciesCheckCoordinator(
         if (stopped) return false
         val state = states.getValue(side)
         reportMissedTarget(side, state)
-        // An occasional recovery window prevents a missed cue from freezing identity.
-        if (state.window == null && now() >= state.nextRecoveryAt) request(side, "RECOVERY", null)
+        // Unknown appearances retain recovery. A confirmed appearance rests until a real cue.
+        if (!state.identityResolved && state.window == null && now() >= state.nextRecoveryAt) request(side, "RECOVERY", null)
         return state.window != null
     }
 
@@ -86,6 +89,7 @@ class SpeciesCheckCoordinator(
         state.completed = window
         state.latestAcceptedWindowOpenedAt = window.openedAt
         state.deliveredSpecies = species
+        state.identityResolved = true
         emit(side, window, "CONFIRMED", species, refs)
         return refs
     }
@@ -110,6 +114,9 @@ class SpeciesCheckCoordinator(
         state.completed = window
         state.latestAcceptedWindowOpenedAt = window.openedAt
         state.deliveredSpecies = species
+        // Earlier preserved OCR may finish during a replacement's newer check.
+        // Its historical acceptance must not retire that unresolved appearance's recovery.
+        if (state.window == null) state.identityResolved = true
         state.candidate = species
         state.reads.clear()
         state.reads += cropId
@@ -165,6 +172,7 @@ class SpeciesCheckCoordinator(
             state.deliveredSpecies = null
             state.recentWindows.clear()
             state.latestAcceptedWindowOpenedAt = Long.MIN_VALUE
+            state.identityResolved = false
         }
     }
 
@@ -203,7 +211,7 @@ class SpeciesCheckCoordinator(
         const val SAMPLE_INTERVAL_NANOS = 150_000_000L
         const val RECOVERY_INTERVAL_NANOS = 5_000_000_000L
         const val MAX_RETAINED_WINDOWS = 8
-        private val LIFECYCLE_REASONS = setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START")
+        private val LIFECYCLE_REASONS = setOf("ENTRY", "SWITCH", "FAINT", "CRY", "MATCH_START", "CHARGE", "QTE")
         private val BATTLE_CUE_REASONS = LIFECYCLE_REASONS + setOf("VS", "COUNTDOWN")
     }
 }

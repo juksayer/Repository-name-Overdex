@@ -21,7 +21,12 @@ fun signalLabel(typeName: String): String =
 /** Formats supplied fields; never decides whether a record is true or observed. */
 object BattleRecordDiagnostics {
     fun log(record: TimelineRecord) {
-        format(record)?.let { Log.d("BATTLE_TIMELINE", it) }
+        // The retained Article is the diagnostic authority. Avoid reflection,
+        // source-label splitting and numeric formatting on every live record
+        // unless this verbose log channel was explicitly enabled.
+        if (Log.isLoggable("BATTLE_TIMELINE", Log.DEBUG)) {
+            format(record)?.let { Log.d("BATTLE_TIMELINE", it) }
+        }
     }
 
     fun format(record: TimelineRecord): String? = when (record) {

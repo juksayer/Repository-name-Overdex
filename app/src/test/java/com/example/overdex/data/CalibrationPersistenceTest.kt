@@ -21,6 +21,131 @@ import org.junit.rules.TemporaryFolder
 class CalibrationPersistenceTest {
     @get:Rule val temporary = TemporaryFolder()
 
+    @Test fun `charged impact HP has independent centered territory and its own crop contract`() {
+        val calibration = BattleCalibration()
+        assertEquals(AnchorRegion(.25f, .24f, .50f, .38f), calibration.chargedImpactHpRegion)
+        val contract = com.example.overdex.battle.observation.BattleCropContracts.chargedImpactHp
+        assertEquals("ChargedImpactHpCrop", contract.cropName)
+        assertEquals(calibration.chargedImpactHpRegion, contract.region.regionIn(calibration))
+        assertEquals("CHARGED_IMPACT_HP_CAPTURE",
+            com.example.overdex.battle.observation.BattleWitnessContracts.chargedImpactHpCapture.witnessId)
+    }
+
+    @Test fun `charged impact HP adjustment persists independently through preferences named profile and working restore`() {
+        val context = TestContext(temporary.newFolder())
+        val original = CalibrationManager(context).load().copy(
+            trainerHpRegion = AnchorRegion(.04f, .28f, .39f, .41f),
+            opponentHpRegion = AnchorRegion(.54f, .29f, .41f, .43f),
+            opponentTrainerHandRegion = strip(925f, 745f, 95f, 155f),
+        )
+        val positioned = original.copy(chargedImpactHpRegion = AnchorRegion(.28f, .37f, .43f, .16f))
+        assertTrue(CalibrationManager(context).save(positioned))
+        assertEquals(positioned, CalibrationManager(context).load())
+        val profile = saveProfile(context, original)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(profile.id))
+        assertTrue(CalibrationManager(context).save(positioned))
+        val reloaded = MatchCalibrationProfileStore(context).activeProfile()!!
+        assertEquals(profile.id, reloaded.id)
+        assertEquals(positioned, reloaded.battleCalibration)
+        assertEquals(profile.teamSelectCalibration, reloaded.teamSelectCalibration)
+        assertEquals(original, reloaded.workingCheckpoint!!.battleCalibration)
+        assertEquals(original, store.restoreWorking(profile.id)!!.battleCalibration)
+        assertEquals(original, CalibrationManager(context).load())
+    }
+
+    @Test fun `old profiles and checkpoints gain only charged impact default without rewriting coordinates or files`() {
+        val context = TestContext(temporary.newFolder())
+        val positioned = BattleCalibration(
+            trainerHpRegion = AnchorRegion(.04f, .28f, .39f, .41f),
+            opponentHpRegion = AnchorRegion(.54f, .29f, .41f, .43f),
+            opponentTrainerHandRegion = strip(925f, 745f, 95f, 155f),
+        )
+        val saved = saveProfile(context, positioned)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(saved.id))
+        val file = File(context.filesDir, "calibration_profiles/${saved.id}.json")
+        val json = kotlinx.serialization.json.Json.parseToJsonElement(file.readText()) as kotlinx.serialization.json.JsonObject
+        val regions = json["battleRegions"] as kotlinx.serialization.json.JsonObject
+        val checkpoint = json["workingCheckpoint"] as kotlinx.serialization.json.JsonObject
+        val checkpointRegions = checkpoint["battleRegions"] as kotlinx.serialization.json.JsonObject
+        file.writeText(kotlinx.serialization.json.JsonObject(json + mapOf(
+            "battleRegions" to kotlinx.serialization.json.JsonObject(regions - "charged_impact_hp"),
+            "workingCheckpoint" to kotlinx.serialization.json.JsonObject(checkpoint + ("battleRegions" to
+                kotlinx.serialization.json.JsonObject(checkpointRegions - "charged_impact_hp")))
+        )).toString())
+        val before = file.readText()
+        repeat(2) {
+            assertEquals(positioned, CalibrationManager(context).load())
+            assertEquals(positioned, store.activeProfile()!!.workingCheckpoint!!.battleCalibration)
+            assertEquals(before, file.readText())
+        }
+    }
+
+    @Test fun `opponent hand default is only a guessed full display box and maps to its own crop`() {
+        val calibration = BattleCalibration()
+        assertEquals(strip(1045f, 600f, 25f, 80f), calibration.opponentTrainerHandRegion)
+        val contract = com.example.overdex.battle.observation.BattleCropContracts.opponentTrainerHand
+        assertEquals("OpponentTrainerHandCrop", contract.cropName)
+        assertEquals(1, contract.minimumSize)
+        assertEquals(calibration.opponentTrainerHandRegion, contract.region.regionIn(calibration))
+        assertEquals("OPPONENT_TRAINER_HAND_CAPTURE",
+            com.example.overdex.battle.observation.BattleWitnessContracts.opponentTrainerHandCapture.witnessId)
+    }
+
+    @Test fun `opponent hand adjustment survives legacy named and working profile saves independently`() {
+        val context = TestContext(temporary.newFolder())
+        val original = CalibrationManager(context).load().copy(
+            playerSpeciesNameRegion = strip(35f, 241f, 250f, 48f),
+            opponentSpeciesNameRegion = strip(789f, 242f, 249f, 49f),
+            exitIconRegion = strip(29f, 388f, 144f, 138f),
+        )
+        val positioned = original.copy(opponentTrainerHandRegion = strip(925f, 745f, 95f, 155f))
+        assertTrue(CalibrationManager(context).save(positioned))
+        assertEquals(positioned, CalibrationManager(context).load())
+
+        val profile = saveProfile(context, original)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(profile.id))
+        assertTrue(CalibrationManager(context).save(positioned))
+        val reloaded = MatchCalibrationProfileStore(context).activeProfile()!!
+        assertEquals(profile.id, reloaded.id)
+        assertEquals(positioned, reloaded.battleCalibration)
+        assertEquals(profile.teamSelectCalibration, reloaded.teamSelectCalibration)
+        assertEquals(original, reloaded.workingCheckpoint!!.battleCalibration)
+        assertEquals(positioned.opponentTrainerHandRegion,
+            com.example.overdex.battle.observation.BattleCropContracts.opponentTrainerHand.region.regionIn(positioned))
+        assertEquals(original, store.restoreWorking(profile.id)!!.battleCalibration)
+        assertEquals(original, CalibrationManager(context).load())
+    }
+
+    @Test fun `older profiles add only the guessed opponent hand region without rewriting saved boxes`() {
+        val context = TestContext(temporary.newFolder())
+        val positioned = BattleCalibration(
+            opponentSpeciesNameRegion = strip(782f, 242f, 259f, 54f),
+            qteTypeIconsRegion = strip(410f, 1000f, 256f, 270f),
+        )
+        val saved = saveProfile(context, positioned)
+        val store = MatchCalibrationProfileStore(context)
+        assertNotNull(store.confirmWorking(saved.id))
+        val file = File(context.filesDir, "calibration_profiles/${saved.id}.json")
+        val json = kotlinx.serialization.json.Json.parseToJsonElement(file.readText()) as kotlinx.serialization.json.JsonObject
+        val regions = json["battleRegions"] as kotlinx.serialization.json.JsonObject
+        val checkpoint = json["workingCheckpoint"] as kotlinx.serialization.json.JsonObject
+        val checkpointRegions = checkpoint["battleRegions"] as kotlinx.serialization.json.JsonObject
+        file.writeText(kotlinx.serialization.json.JsonObject(json + mapOf(
+            "battleRegions" to kotlinx.serialization.json.JsonObject(regions - "opponent_trainer_hand"),
+            "workingCheckpoint" to kotlinx.serialization.json.JsonObject(checkpoint + ("battleRegions" to
+                kotlinx.serialization.json.JsonObject(checkpointRegions - "opponent_trainer_hand")))
+        )).toString())
+        val before = file.readText()
+        repeat(2) {
+            assertEquals(positioned, CalibrationManager(context).load())
+            assertEquals(positioned, store.activeProfile()!!.workingCheckpoint!!.battleCalibration)
+            assertEquals(before, file.readText())
+        }
+    }
+
     @Test fun `exit box survives legacy and named saves without changing other calibration`() {
         val context = TestContext(temporary.newFolder())
         val original = CalibrationManager(context).load().copy(

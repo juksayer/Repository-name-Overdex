@@ -101,7 +101,7 @@ class DirectoryCropPreviewFeedDeviceTest {
         }
     }
 
-    @Test fun compactArchiveRestoresAllSevenRawPreviewsWithoutLooseArtifactsOrRecognizerSuccess() = runBlocking {
+    @Test fun compactArchiveRestoresAllRawPreviewsWithoutLooseArtifactsOrRecognizerSuccess() = runBlocking {
         withRoot { root ->
             val original = patternedBitmap(4, 3)
             val expected = pixels(original)
@@ -109,7 +109,7 @@ class DirectoryCropPreviewFeedDeviceTest {
             original.recycle()
             val names = listOf("PlayerActiveSpeciesTextCrop", "OpponentActiveSpeciesTextCrop",
                 "PlayerHpEvidenceCrop", "OpponentHpEvidenceCrop", "PlayerPokeBallsCrop",
-                "OpponentPokeBallsCrop", "AnnouncementCrop")
+                "OpponentPokeBallsCrop", "AnnouncementCrop", "ChargedImpactHpCrop")
             val raw = names.mapIndexed { index, name ->
                 crop("raw-$index", artifact, name, 4, 3, BattleCropBounds(0, 0, 4, 3))
             }

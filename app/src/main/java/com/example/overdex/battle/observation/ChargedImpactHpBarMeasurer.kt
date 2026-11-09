@@ -10,16 +10,25 @@ import kotlin.math.max
  * Unlike the ordinary locator this can find a still-visible EMPTY outline.
  */
 internal object ChargedImpactHpBarMeasurer {
-    fun searchBounds(width: Int, height: Int, reference: ActiveHpBarMeasurement): BattleCropBounds? {
+    fun searchBounds(
+        width: Int, height: Int, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds? = null,
+    ): BattleCropBounds? {
         if (width <= 0 || height <= 0 || reference.width !in 32..width / 2 ||
             reference.bottom - reference.top !in 6..reference.width / 4) return null
+        if (territory != null) return territory.takeIf {
+            it.left >= 0 && it.top >= 0 && it.right <= width && it.bottom <= height &&
+                it.right > it.left && it.bottom > it.top
+        }
         val half = reference.width / 2 + max(8, width * 6 / 100)
         return BattleCropBounds((width / 2 - half).coerceAtLeast(0), height * 34 / 100,
             (width / 2 + half).coerceAtMost(width), height * 62 / 100)
     }
 
-    fun acquire(bitmap: Bitmap, reference: ActiveHpBarMeasurement): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(bitmap.width, bitmap.height, reference) ?: return null
+    fun acquire(
+        bitmap: Bitmap, reference: ActiveHpBarMeasurement, territory: BattleCropBounds? = null,
+    ): TrackedTerminalHpBarSample? {
+        val bounds = searchBounds(bitmap.width, bitmap.height, reference, territory) ?: return null
         val width = bounds.right - bounds.left
         val pixels = IntArray(width * (bounds.bottom - bounds.top))
         bitmap.getPixels(pixels, 0, width, bounds.left, bounds.top, width, bounds.bottom - bounds.top)
@@ -29,8 +38,13 @@ internal object ChargedImpactHpBarMeasurer {
     internal fun acquire(
         width: Int, height: Int, reference: ActiveHpBarMeasurement,
         pixelAt: (Int, Int) -> Int,
+    ): TrackedTerminalHpBarSample? = acquire(width, height, reference, null, pixelAt)
+
+    internal fun acquire(
+        width: Int, height: Int, reference: ActiveHpBarMeasurement,
+        territory: BattleCropBounds?, pixelAt: (Int, Int) -> Int,
     ): TrackedTerminalHpBarSample? {
-        val bounds = searchBounds(width, height, reference) ?: return null
+        val bounds = searchBounds(width, height, reference, territory) ?: return null
         val regionWidth = bounds.right - bounds.left
         val pixels = IntArray(regionWidth * (bounds.bottom - bounds.top))
         for (y in bounds.top until bounds.bottom) for (x in bounds.left until bounds.right)

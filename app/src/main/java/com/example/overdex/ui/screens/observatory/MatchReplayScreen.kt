@@ -603,17 +603,60 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                 val chargePreparation = scene.chargedMoveActions.lastOrNull {
                     it.phase == ReplayChargePhase.CHARGING && it.side in setOf("PLAYER", "OPPONENT")
                 }
-                // Projectiles share the battlefield's rear plane. The recipient's
-                // opaque sprite pixels mask their arrival, while the open field and
-                // transparent parts of the artwork continue to show the moving glyph.
+                val playerOffset = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = true)
+                val opponentOffset = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = false)
+                val opponentScale = ReplayChargePose.qteSpriteScale(chargePreparation, cursor, player = false)
+                var opponentArt by remember(scene.opponent?.speciesId, scene.opponent?.speciesName) {
+                    mutableStateOf<ReplaySpriteVisibleBounds?>(null)
+                }
+                val opponentFrontFraction = opponentArt?.let { art ->
+                    val leadingEdge = if (scene.opponent?.speciesId == 776) 1f - art.right else art.left
+                    // A small inset overlaps the facing silhouette instead of targeting
+                    // transparent PNG margins or the middle of a wide sprite.
+                    leadingEdge + (art.right - art.left) * .10f
+                } ?: .22f
+                val opponentForwardX = travelHalfWidth + spriteSize * 0.9f *
+                    (opponentFrontFraction - .5f) * opponentScale
+                val opponentForwardY = spriteSize * 0.9f * (opponentArt?.let { art ->
+                    // Place the glyph on the visible upper body. A fixed shoulder height
+                    // can float above short, wide art, especially with a head-anchored scale.
+                    art.top + (art.bottom - art.top) * .45f * opponentScale - .5f
+                } ?: -.12f)
+                // Keep the far combatant behind the attack plane and the player's
+                // rear-facing sprite in front. Opponent-side glyphs remain visible
+                // over its forward shoulder without painting over the player.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).align(Alignment.Center),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.weight(1f))
+                    ReplayCombatantSlot(
+                        combatant = scene.opponent,
+                        cursorNanos = cursor,
+                        hp = scene.opponentHp,
+                        context = context,
+                        useBackSprite = false,
+                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
+                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
+                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
+                        statChanges = scene.statChanges.filter { it.side == "OPPONENT" },
+                        spriteSize = spriteSize * 0.9f,
+                        qteSpriteScale = opponentScale,
+                        qteSpriteTranslationXPixels = opponentOffset,
+                        onVisibleArt = { opponentArt = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 scene.fastMoveActions.forEach { action ->
-                    FastMoveReplayIndicator(action, travelHalfWidth, Modifier.align(Alignment.Center))
+                    FastMoveReplayIndicator(action, travelHalfWidth, opponentForwardX, opponentForwardY,
+                        Modifier.align(Alignment.Center), playerOffset, opponentOffset)
                 }
                 scene.chargedMoveActions.forEach { action ->
                     ChargedMoveReplayIndicator(action, travelHalfWidth, spriteSize * 1.15f,
-                        spriteSize * 0.9f, Modifier.align(Alignment.Center),
-                        performerOffsetPixels = ReplayChargePose.qteSpriteTranslationXPixels(
-                            chargePreparation, cursor, player = action.side == "PLAYER"))
+                        opponentForwardX, opponentForwardY, Modifier.align(Alignment.Center),
+                        performerOffsetPixels = if (action.side == "PLAYER") playerOffset else opponentOffset,
+                        recipientOffsetPixels = if (action.side == "PLAYER") opponentOffset else playerOffset)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).align(Alignment.Center),
@@ -635,21 +678,7 @@ internal fun ReplayBattlefield(scene: ReplayScene, cursor: Long, context: Contex
                         qteSpriteTranslationXPixels = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = true),
                         modifier = Modifier.weight(1f),
                     )
-                    ReplayCombatantSlot(
-                        combatant = scene.opponent,
-                        cursorNanos = cursor,
-                        hp = scene.opponentHp,
-                        context = context,
-                        useBackSprite = false,
-                        fastAction = scene.fastMoveActions.lastOrNull { it.side == "OPPONENT" },
-                        chargedAction = scene.chargedMoveActions.lastOrNull { it.side == "OPPONENT" },
-                        qteMilestone = scene.qteMilestone.takeIf { scene.qteMilestoneSide == "OPPONENT" },
-                        statChanges = scene.statChanges.filter { it.side == "OPPONENT" },
-                        spriteSize = spriteSize * 0.9f,
-                        qteSpriteScale = ReplayChargePose.qteSpriteScale(chargePreparation, cursor, player = false),
-                        qteSpriteTranslationXPixels = ReplayChargePose.qteSpriteTranslationXPixels(chargePreparation, cursor, player = false),
-                        modifier = Modifier.weight(1f),
-                    )
+                    Box(Modifier.weight(1f))
                 }
                 Row(
                     Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(horizontal = 12.dp, vertical = 18.dp),
@@ -774,20 +803,32 @@ private fun replayOutcomeLabel(outcome: String): String = when (
 }
 
 @Composable
-private fun FastMoveReplayIndicator(action: ReplayFastMoveAction, travelHalfWidth: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+private fun FastMoveReplayIndicator(
+    action: ReplayFastMoveAction,
+    travelHalfWidth: androidx.compose.ui.unit.Dp,
+    opponentForwardX: androidx.compose.ui.unit.Dp,
+    opponentForwardY: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
+    playerOffsetPixels: Float = 0f,
+    opponentOffsetPixels: Float = 0f,
+) {
     val progress = action.progress.coerceIn(0f, 1f)
-    val movement = progress * 2f - 1f
     val player = action.side == "PLAYER"
-    val direction = if (player) 1f else -1f
+    val originX = if (player) -travelHalfWidth else opponentForwardX
+    val targetX = if (player) opponentForwardX else -travelHalfWidth
+    val originY = if (player) 24.dp else opponentForwardY
+    val targetY = if (player) opponentForwardY else 24.dp
     val indicatorColor = action.type?.color ?: Color(0xFF88AFA0)
     Box(
         modifier = modifier
-            .offset(x = travelHalfWidth * (movement * direction),
-                y = 24.dp * if (player) 1f - progress else progress)
+            .offset(x = originX * (1f - progress) + targetX * progress,
+                y = originY * (1f - progress) + targetY * progress)
             .graphicsLayer {
                 // Finish at the recipient's actual sprite plane, including the
                 // player's lower rear-view placement, rather than above its head.
                 translationY = 25f * if (player) 1f - progress else progress
+                translationX = if (player) playerOffsetPixels * (1f - progress) + opponentOffsetPixels * progress
+                    else opponentOffsetPixels * (1f - progress) + playerOffsetPixels * progress
             }
             .size(34.dp)
             .background(indicatorColor.copy(alpha = 0.18f), CircleShape)
@@ -833,6 +874,7 @@ internal fun ReplayCombatantSlot(
     statChanges: List<com.example.overdex.battle.replay.ReplayStatChangeAction> = emptyList(),
     qteSpriteScale: Float = 1f,
     qteSpriteTranslationXPixels: Float = 0f,
+    onVisibleArt: (ReplaySpriteVisibleBounds) -> Unit = {},
 ) {
     val endPose = ReplayCombatantEndPose.at(combatant, cursorNanos, useBackSprite)
     val inactive = endPose != null
@@ -851,10 +893,12 @@ internal fun ReplayCombatantSlot(
             AsyncImage(
                 model = spriteRequest,
                 onSuccess = { state ->
-                    // Read only until the first visible row, once per decoded sprite.
+                    // Measure visible art once per decoded sprite, including rear art.
                     // Set the pivot with image success to avoid an initial wrong-anchor frame.
-                    if (!useBackSprite) visibleTop = (state.result.drawable as? BitmapDrawable)?.bitmap
-                        ?.let(::replaySpriteVisibleTopFraction) ?: 0f
+                    val art = (state.result.drawable as? BitmapDrawable)?.bitmap
+                        ?.let(::replaySpriteVisibleBounds) ?: ReplaySpriteVisibleBounds(0f, 0f, 1f, 1f)
+                    visibleTop = art.top
+                    onVisibleArt(art)
                 },
                 contentDescription = if (combatant.isFainted) "${combatant.speciesName}, fainted"
                     else if (inactive) "${combatant.speciesName}, defeated" else combatant.speciesName,
@@ -874,7 +918,7 @@ internal fun ReplayCombatantSlot(
                         scaleY = focusScale
                         // Fit artwork can contain transparent top padding and letterboxing.
                         // Pivot on the visible head, preserving its top as the body shrinks.
-                        transformOrigin = if (useBackSprite || inactive) TransformOrigin.Center
+                        transformOrigin = if (inactive) TransformOrigin.Center
                             else TransformOrigin(0.5f, visibleTop)
                         // Keep fading on the transformed layer so a separate
                         // opacity layer cannot clip the falling sprite.
@@ -942,31 +986,32 @@ internal fun ChargedMoveReplayIndicator(
     action: ReplayChargedMoveAction,
     travelHalfWidth: androidx.compose.ui.unit.Dp,
     playerSpriteSize: androidx.compose.ui.unit.Dp,
-    opponentSpriteSize: androidx.compose.ui.unit.Dp,
+    opponentForwardX: androidx.compose.ui.unit.Dp,
+    opponentForwardY: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
     performerOffsetPixels: Float = 0f,
+    recipientOffsetPixels: Float = 0f,
 ) {
     val player = action.side == "PLAYER"
     val attributed = action.side == "PLAYER" || action.side == "OPPONENT"
     val pose = ReplayChargePose.at(action, player)
     val flight = pose.projectileProgress
-    val direction = if (player) 1f else -1f
-    val spriteSize = if (player) playerSpriteSize else opponentSpriteSize
-    // Place the growing glyph at the performer's forward shoulder. The sprite
-    // is drawn afterward, masking the part of the glyph that overlaps its body.
-    val originX = -travelHalfWidth * direction + spriteSize * 0.28f * direction
-    val originY = (if (player) 24.dp else 0.dp) - spriteSize * 0.12f
-    val targetY = if (player) 0.dp else 24.dp
+    // The opponent's front shoulder is both its launch point and the player's
+    // landing point. Its glyph is drawn above that sprite on the attack plane.
+    val originX = if (player) -travelHalfWidth + playerSpriteSize * 0.28f else opponentForwardX
+    val targetX = if (player) opponentForwardX else -travelHalfWidth
+    val originY = if (player) 24.dp - playerSpriteSize * 0.12f else opponentForwardY
+    val targetY = if (player) opponentForwardY else 24.dp
     val color = action.type?.color ?: Color(0xFF88AFA0)
     Box(modifier
-        .offset(x = if (attributed) originX * (1f - flight) + travelHalfWidth * direction * flight else 0.dp,
+        .offset(x = if (attributed) originX * (1f - flight) + targetX * flight else 0.dp,
             y = if (attributed) originY * (1f - flight) + targetY * flight else 0.dp)
         .graphicsLayer {
             translationY = if (attributed) {
                 (pose.risePixels + if (player) 25f else 0f) * (1f - flight) +
                     (if (player) 0f else 25f) * flight - 18f * sin(flight * Math.PI).toFloat()
             } else 0f
-            translationX = performerOffsetPixels * (1f - flight)
+            translationX = if (attributed) performerOffsetPixels * (1f - flight) + recipientOffsetPixels * flight else 0f
             alpha = pose.iconAlpha
             scaleX = pose.iconScale
             scaleY = pose.iconScale

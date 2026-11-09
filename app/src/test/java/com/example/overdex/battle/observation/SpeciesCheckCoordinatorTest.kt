@@ -197,7 +197,7 @@ class SpeciesCheckCoordinatorTest {
         assertEquals("OPENED", reports.last().status)
     }
 
-    @Test fun `completed sides rest while the unresolved side keeps checking`() {
+    @Test fun `completed sides stop periodic recovery while the unresolved side keeps checking`() {
         checks.captureEnabled(side)
         checks.captureEnabled(ActivePokemonSide.PLAYER)
         val id = checks.windowFor(side, time)!!.id
@@ -205,6 +205,66 @@ class SpeciesCheckCoordinatorTest {
         checks.read(side, id, "Sneasel", "two")
         assertFalse(checks.captureEnabled(side))
         assertTrue(checks.captureEnabled(ActivePokemonSide.PLAYER))
+        time += SpeciesCheckCoordinator.RECOVERY_INTERVAL_NANOS
+        assertFalse(checks.captureEnabled(side))
+        time += 120_000_000_000L
+        assertFalse(checks.captureEnabled(side))
+        checks.request(side, "RECOVERY", null)
+        assertFalse(checks.captureEnabled(side))
+    }
+
+    @Test fun `a charge rechecks known identity once and a missed read does not start periodic recovery`() {
+        checks.captureEnabled(side)
+        val first = checks.windowFor(side, time)!!
+        checks.acceptImmediate(side, first.id, "Sneasel", "first")
+        time += 10_000_000_000L
+        assertFalse(checks.captureEnabled(side))
+        checks.request(side, "CHARGE", "used-move")
+        assertTrue(checks.captureEnabled(side))
+        assertEquals("CHARGE", checks.windowFor(side, time)?.reason)
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS
+        assertFalse(checks.captureEnabled(side))
+        time += SpeciesCheckCoordinator.RECOVERY_INTERVAL_NANOS
+        assertFalse(checks.captureEnabled(side))
+    }
+
+    @Test fun `a replacement entry restores unknown recovery until that appearance is resolved`() {
+        checks.captureEnabled(side)
+        val first = checks.windowFor(side, time)!!
+        checks.acceptImmediate(side, first.id, "Sneasel", "first")
+        time += 1_000_000_000L
+        checks.request(side, "ENTRY", "new-entry")
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS
+        assertFalse(checks.captureEnabled(side))
+        time += SpeciesCheckCoordinator.RECOVERY_INTERVAL_NANOS
+        assertTrue(checks.captureEnabled(side))
+        val recovery = checks.windowFor(side, time)!!
+        checks.acceptImmediate(side, recovery.id, "Sealeo", "replacement")
+        time += 60_000_000_000L
+        assertFalse(checks.captureEnabled(side))
+    }
+
+    @Test fun `charge and QTE cues supersede an initial recovery window`() {
+        for (reason in listOf("CHARGE", "QTE")) {
+            checks.restartObservationAttempt()
+            checks.captureEnabled(side)
+            time += 100_000_000L
+            checks.request(side, reason, "cue-$reason")
+            assertEquals(reason, checks.windowFor(side, time)?.reason)
+            assertTrue(checks.hasBattleCue(side))
+        }
+    }
+
+    @Test fun `late earlier evidence cannot retire recovery for a newer unresolved appearance`() {
+        checks.request(side, "ENTRY", "first-entry")
+        val first = checks.windowFor(side, time)!!
+        val capturedAt = time + 100_000_000L
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS
+        checks.tick()
+        checks.request(side, "ENTRY", "replacement-entry")
+        assertNotNull(checks.acceptImmediate(side, first.id, "Sneasel", "old-crop", capturedAt))
+        time += SpeciesCheckCoordinator.MAX_WINDOW_NANOS
+        assertFalse(checks.captureEnabled(side))
         time += SpeciesCheckCoordinator.RECOVERY_INTERVAL_NANOS
         assertTrue(checks.captureEnabled(side))
     }

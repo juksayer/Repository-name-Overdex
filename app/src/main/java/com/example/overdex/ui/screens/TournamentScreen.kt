@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.overdex.comms.CommsTrainer
+import com.example.overdex.comms.CommsState
 import com.example.overdex.comms.TrainerCode
 import com.example.overdex.comms.TrainerCommsServices
 import com.example.overdex.tournament.*
@@ -26,6 +27,8 @@ import com.example.overdex.ui.components.rememberTerminalKeyboardController
 import com.example.overdex.ui.theme.TerminalDimGreen
 import com.example.overdex.ui.theme.TerminalGreen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -48,9 +51,30 @@ fun TournamentScreen(
     onOpenComms: () -> Unit,
     onOpenPokemonGo: () -> Unit,
 ) {
-    val repository = services.repository
-    val state by repository.state.collectAsState()
     val commsState by comms.repository.state.collectAsState()
+    TournamentScreen(
+        repository = services.repository,
+        commsState = commsState,
+        reconnect = services::reconnect,
+        viewModel = viewModel,
+        onBack = onBack,
+        onOpenComms = onOpenComms,
+        onOpenPokemonGo = onOpenPokemonGo,
+    )
+}
+
+/** The room uses the same repository for app services and isolated device checks. */
+@Composable
+internal fun TournamentScreen(
+    repository: TournamentRepository,
+    commsState: CommsState,
+    reconnect: suspend () -> Unit,
+    viewModel: PokedexViewModel? = null,
+    onBack: () -> Unit,
+    onOpenComms: () -> Unit,
+    onOpenPokemonGo: () -> Unit,
+) {
+    val state by repository.state.collectAsState()
     val scope = rememberCoroutineScope()
     val keyboard = rememberTerminalKeyboardController()
     val listState = rememberLazyListState()
@@ -68,6 +92,7 @@ fun TournamentScreen(
     var textDraft by remember { mutableStateOf("") }
     var notice by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var operation by remember { mutableStateOf<Job?>(null) }
     // Account listeners can arrive in either order; never show one account through another.
     val accountId = state.accountId.takeIf { it == commsState.accountId }
     val profile = commsState.snapshot.profile?.takeIf { it.accountId == accountId }
@@ -96,13 +121,20 @@ fun TournamentScreen(
         if (busy) return
         busy = true
         notice = null
-        scope.launch {
+        val nextOperation = scope.launch(start = CoroutineStart.LAZY) {
             try { block(); if (success != null) notice = success }
             catch (error: Exception) {
                 if (error is CancellationException) throw error
                 notice = tournamentError(error)
-            } finally { busy = false }
+            } finally {
+                if (operation == coroutineContext[Job]) {
+                    busy = false
+                    operation = null
+                }
+            }
         }
+        operation = nextOperation
+        nextOperation.start()
     }
     fun changePage(value: TournamentPage) {
         page = value
@@ -145,11 +177,21 @@ fun TournamentScreen(
         }.take(when (textEdit?.field) { 0 -> 80; 2 -> 2000; else -> 240 })
     }
     fun goBack() {
-        if (busy) return
+        // Leaving a view must not wait for a network acknowledgement. Cancelling this
+        // wait does not rewrite a result; the server's room is observed again on return.
+        operation?.cancel()
+        operation = null
+        busy = false
+        notice = null
         when {
             keyboard.isVisible || textEdit != null -> cancelText()
             page == TournamentPage.LIST -> onBack()
-            page == TournamentPage.ROOM -> work { repository.select(null); changePage(TournamentPage.LIST) }
+            page == TournamentPage.ROOM -> {
+                changePage(TournamentPage.LIST)
+                // Enqueue the deselection before another room can be opened.
+                // Repository selection is serialized, including listener retirement.
+                scope.launch(start = CoroutineStart.UNDISPATCHED) { repository.select(null) }
+            }
             page == TournamentPage.SETTINGS && !editingExisting -> changePage(TournamentPage.LIST)
             else -> changePage(TournamentPage.ROOM)
         }
@@ -236,7 +278,7 @@ fun TournamentScreen(
         selectedContacts = emptySet()
         cancelText()
     }
-    LaunchedEffect(event?.id, event?.phase) {
+    LaunchedEffect(event?.id, event?.phase, mySeries?.id) {
         if (page == TournamentPage.ROOM && mySeries != null)
             selectedRow = event.players.size + event.series.indexOf(mySeries)
     }
@@ -312,6 +354,24 @@ fun TournamentScreen(
     val canUseNetwork = accountId != null && state.connected && !busy && !state.loading &&
         (page == TournamentPage.LIST || lobby?.fromCache != true)
     val activePairing = pairing?.phase == SeriesPhase.PLAYING && event?.phase == TournamentPhase.ACTIVE
+    val agreement = if (activePairing && lobby != null && pairing != null)
+        TournamentEngine.agreement(lobby, pairing) else null
+    val resultReported = preparation?.result in listOf(BattleResultReport.WIN, BattleResultReport.LOSS, BattleResultReport.DRAW)
+    val progressLabel = when {
+        agreement?.draw == true -> "RECORD DRAW · REPLAY"
+        agreement != null && pairing != null && pairing.wins(agreement.winnerId) + 1 >= pairing.winsRequired ->
+            if (pairing.round == event?.series?.maxOfOrNull { it.round }) "FINISH TOURNAMENT" else "CONFIRM RESULT · ADVANCE"
+        else -> "NEXT BATTLE"
+    }
+    val pairingStatus = when {
+        agreement != null && owner -> "Both players agreed. Choose $progressLabel to record this battle."
+        agreement != null -> "Both players agreed. Waiting for ${event?.let { it.name(it.ownerId) }} to confirm the result."
+        resultReported && pairing != null && opponents.any { lobby?.preparation(pairing, it)?.result !in listOf(null, BattleResultReport.NONE) } ->
+            "Results need review. Check each player's report or report a problem."
+        resultReported -> "Your result is reported. Waiting for your opponent's report."
+        preparation?.ready == true -> "Ready · report the result after playing"
+        else -> "Mark READY before starting this battle"
+    }
     val actions = when {
         accountId == null || profile == null -> listOf(
             TournamentAction("TRAINER COMMS") { onOpenComms() },
@@ -321,7 +381,7 @@ fun TournamentScreen(
             TournamentAction("OPEN", events.isNotEmpty()) { chooseRow() },
             TournamentAction("NEW TOURNAMENT", canUseNetwork) { beginSettings(false) },
             TournamentAction("TRAINER COMMS") { onOpenComms() },
-            TournamentAction("RECONNECT", !busy) { work { services.reconnect() } },
+            TournamentAction("RECONNECT", !busy) { work { reconnect() } },
             TournamentAction("BACK") { onBack() },
         )
         page == TournamentPage.SETTINGS -> listOf(
@@ -357,6 +417,14 @@ fun TournamentScreen(
         )
         page in listOf(TournamentPage.HISTORY, TournamentPage.RULES) -> listOf(TournamentAction("BACK TO ROOM") { changePage(TournamentPage.ROOM) })
         else -> buildList {
+            if (owner && agreement != null && pairing != null) {
+                add(TournamentAction(progressLabel, canUseNetwork) {
+                    val id = pairing.id; val key = pairing.battleKey
+                    work { repository.host(TournamentHostCommand.Finalize(id, key)) }
+                })
+            } else if (agreement != null && inPairing) {
+                add(TournamentAction("WAITING FOR HOST", enabled = false) {})
+            }
             if (event?.phase == TournamentPhase.LOBBY && mine != null) {
                 if (!attendance.accepted) {
                     add(TournamentAction("ACCEPT INVITATION", canUseNetwork) {
@@ -373,8 +441,12 @@ fun TournamentScreen(
                 })
             }
             if (activePairing && inPairing) {
-                add(TournamentAction("READY", canUseNetwork) { setReady(true) })
-                add(TournamentAction("NEED A MOMENT", canUseNetwork) { setReady(false) })
+                // READY creates a fresh preparation. Do not offer it over a result
+                // that has already been reported for this same battle.
+                if (!resultReported) {
+                    add(TournamentAction("READY", canUseNetwork) { setReady(true) })
+                    add(TournamentAction("NEED A MOMENT", canUseNetwork) { setReady(false) })
+                }
                 add(TournamentAction("OPEN POKÉMON GO") { onOpenPokemonGo() })
                 add(TournamentAction("I WON", canUseNetwork && preparation?.ready == true) { report(BattleResultReport.WIN) })
                 add(TournamentAction("OPPONENT WON", canUseNetwork && preparation?.ready == true) { report(BattleResultReport.LOSS) })
@@ -392,10 +464,6 @@ fun TournamentScreen(
                 add(TournamentAction("START TOURNAMENT", canUseNetwork && checkedIn >= 2) { work { repository.host(TournamentHostCommand.Start) } })
             }
             if (owner && activePairing) {
-                add(TournamentAction("FINALIZE AGREED RESULT", canUseNetwork && TournamentEngine.agreement(lobby, pairing) != null) {
-                    val id = pairing.id; val key = pairing.battleKey
-                    work { repository.host(TournamentHostCommand.Finalize(id, key)) }
-                })
                 add(TournamentAction("RESOLVE: ${event?.name(pairing.playerA)}", canUseNetwork) { beginNote(TournamentNote.RESOLVE_A) })
                 add(TournamentAction("RESOLVE: ${event?.name(pairing.playerB)}", canUseNetwork) { beginNote(TournamentNote.RESOLVE_B) })
                 add(TournamentAction("RESOLVE: DRAW", canUseNetwork) { beginNote(TournamentNote.RESOLVE_DRAW) })
@@ -404,7 +472,7 @@ fun TournamentScreen(
                 add(TournamentAction("END EARLY", canUseNetwork) { beginNote(TournamentNote.END_EARLY) })
             add(TournamentAction("VIEW RULES") { changePage(TournamentPage.RULES) })
             add(TournamentAction("BATTLE HISTORY") { changePage(TournamentPage.HISTORY) })
-            add(TournamentAction("RECONNECT", !busy) { work { services.reconnect() } })
+            add(TournamentAction("RECONNECT", !busy) { work { reconnect() } })
             add(TournamentAction("TOURNAMENT LIST") { goBack() })
         }
     }
@@ -416,6 +484,7 @@ fun TournamentScreen(
     ODXFiShell(
         viewModel = viewModel,
         showBattleOverlay = false,
+        lcdEdgeToEdgeContent = true,
         keyboardController = keyboard,
         keyboardPreviewOnCrt = textEdit?.let { "${it.title}: ${textDraft}_" },
         onKeyActivated = ::inputKey,
@@ -428,18 +497,8 @@ fun TournamentScreen(
         onSelect = { if (keyboard.isVisible) finishText() else if (!busy) chooseRow() },
         onStart = { if (keyboard.isVisible) finishText() else activate() },
         lcdContent = {
-            Column(Modifier.fillMaxSize().testTag("tournament-lcd")) {
-                if (busy || state.loading) Text("WORKING…", color = TerminalGreen, fontSize = 12.sp)
-                notice?.let { Text(it, color = TournamentWarning, fontSize = 12.sp, maxLines = 3) }
-                state.error?.let { Text(it, color = TournamentWarning, fontSize = 12.sp, maxLines = 3) }
-                if (!state.connected && accountId != null) Text("Offline · reconnect before changing this room", color = TournamentWarning, fontSize = 11.sp)
-                if (lobby?.fromCache == true && page != TournamentPage.LIST) Text("Saved room · waiting for online confirmation", color = TournamentWarning, fontSize = 11.sp)
-                if (page == TournamentPage.ROOM && activePairing) {
-                    Text("${event?.name(pairing.playerA)} ${pairing.wins(pairing.playerA)}–${pairing.wins(pairing.playerB)} ${event?.name(pairing.playerB)}",
-                        color = TerminalGreen, fontSize = 12.sp, maxLines = 2)
-                    Text(if (preparation?.ready == true) "Ready · report the result after playing" else "Mark READY before starting this battle",
-                        color = TerminalDimGreen, fontSize = 10.sp)
-                }
+            Column(Modifier.fillMaxSize().padding(horizontal = 4.dp).testTag("tournament-lcd")) {
+                if (busy || state.loading) Text("WORKING… · B back", color = TerminalGreen, fontSize = 12.sp, maxLines = 1)
                 TournamentActionButtons(
                     actions = actions,
                     selectedAction = selectedAction,
@@ -447,7 +506,7 @@ fun TournamentScreen(
                     onSelectedAction = { selectedAction = it },
                     modifier = Modifier.weight(1f),
                 )
-                Text("↑ ↓ browse · ← → actions · A choose · B back", color = TerminalDimGreen, fontSize = 10.sp)
+                Text("← → actions · A choose · B back", color = TerminalDimGreen, fontSize = 11.sp, maxLines = 1)
             }
         },
     ) { _ ->
@@ -462,6 +521,16 @@ fun TournamentScreen(
                 else -> event?.settings?.title ?: "OPENING ROOM…"
             }, color = TerminalGreen, fontSize = 20.sp)
             Spacer(Modifier.height(8.dp))
+            notice?.let { Text(it, color = TournamentWarning, fontSize = 13.sp) }
+            state.error?.let { Text(it, color = TournamentWarning, fontSize = 13.sp) }
+            if (!state.connected && accountId != null) Text("Offline · reconnect before changing this room", color = TournamentWarning, fontSize = 12.sp)
+            if (lobby?.fromCache == true && page != TournamentPage.LIST) Text("Saved room · waiting for online confirmation", color = TournamentWarning, fontSize = 12.sp)
+            if (page == TournamentPage.ROOM && activePairing && pairing != null) {
+                Text("BATTLE ${pairing.battles.size + 1} · ${event?.name(pairing.playerA)} ${pairing.wins(pairing.playerA)}–${pairing.wins(pairing.playerB)} ${event?.name(pairing.playerB)}",
+                    color = TerminalGreen, fontSize = 14.sp)
+                Text(pairingStatus, color = if (agreement != null) TournamentWarning else TerminalDimGreen,
+                    fontSize = 13.sp, modifier = Modifier.testTag("tournament-pairing-status"))
+            }
             when {
                 accountId == null -> Text("Sign in through Trainer Comms to create a private tournament or receive an invitation.", color = TerminalGreen)
                 profile == null -> Text("Set your trainer name and Pokémon GO code in Trainer Comms before joining a tournament.", color = TerminalGreen)
@@ -481,7 +550,7 @@ fun TournamentScreen(
                     event.settings.rules.takeIf { it.isNotBlank() }?.let { Text(it, color = TerminalDimGreen, fontSize = 12.sp, maxLines = 4) }
                     event.championId?.let { Text("CHAMPION · ${event.name(it)}", color = TerminalGreen, fontSize = 18.sp) }
                     if (event.phase == TournamentPhase.ENDED_EARLY) Text("Ended early: ${event.endReason}", color = TournamentWarning, fontSize = 13.sp)
-                    if (event.phase == TournamentPhase.ACTIVE) Text("Ready means ready for this battle. Returning from Pokémon GO keeps your room. Both players report a result; the host finalizes it.", color = TerminalDimGreen, fontSize = 12.sp)
+                    if (event.phase == TournamentPhase.ACTIVE && !activePairing) Text("Both players report each result. The host confirms the agreement before the next battle.", color = TerminalDimGreen, fontSize = 12.sp)
                 }
             }
             Spacer(Modifier.height(10.dp))
@@ -516,21 +585,17 @@ internal fun TournamentActionButtons(
 ) {
     val scroll = rememberLazyListState()
     LaunchedEffect(selectedAction, actions.map { it.label }) {
-        if (actions.isNotEmpty()) scroll.animateScrollToItem(selectedAction.coerceIn(actions.indices) / 2)
+        if (actions.isNotEmpty()) scroll.animateScrollToItem(selectedAction.coerceIn(actions.indices))
     }
     LazyColumn(state = scroll, modifier = modifier.fillMaxWidth().testTag("tournament-actions")) {
-        itemsIndexed(actions.chunked(2)) { row, buttons ->
-            Row(Modifier.fillMaxWidth()) {
-                buttons.forEachIndexed { column, action ->
-                    val index = row * 2 + column
-                    TextButton(onClick = { onSelectedAction(index); if (action.enabled && !busy) action.run() },
-                        enabled = action.enabled && !busy,
-                        modifier = Modifier.weight(1f).testTag("tournament-action:$index")) {
-                        Text((if (index == selectedAction) "> " else "") + action.label,
-                            color = if (action.enabled && !busy) TerminalGreen else TerminalDimGreen, fontSize = 11.sp)
-                    }
-                }
-                if (buttons.size == 1) Spacer(Modifier.weight(1f))
+        itemsIndexed(actions) { index, action ->
+            TextButton(onClick = { onSelectedAction(index); if (action.enabled && !busy) action.run() },
+                enabled = action.enabled && !busy,
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth().testTag("tournament-action:$index")) {
+                Text((if (index == selectedAction) "> " else "") + action.label,
+                    color = if (action.enabled && !busy) TerminalGreen else TerminalDimGreen,
+                    fontSize = 14.sp, modifier = Modifier.fillMaxWidth())
             }
         }
     }

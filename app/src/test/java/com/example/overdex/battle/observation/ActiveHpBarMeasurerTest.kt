@@ -6,6 +6,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ActiveHpBarMeasurerTest {
+    @Test fun `unused full and partial pixel buffer rows do not change candidates`() {
+        val image = javax.imageio.ImageIO.read(javaClass.getResource("/battle/hp/opponent.png"))
+        val pixels = image.getRGB(0, 0, image.width, image.height, null, 0, image.width)
+        val expected = ActiveHpBarMeasurer.measureAll(image.width, image.height, null, pixels)
+        assertTrue("Recorded crop must exercise accepted candidates", expected.isNotEmpty())
+
+        for (extraPixels in listOf(image.width, image.width + image.width / 2)) {
+            val extended = pixels.copyOf(pixels.size + extraPixels)
+            for (index in pixels.size until extended.size) {
+                extended[index] = when (index % 4) {
+                    0 -> 0xffeeeeee.toInt()
+                    1 -> 0xffff8a20.toInt()
+                    2 -> 0xff3388ee.toInt()
+                    else -> 0xff1effbc.toInt()
+                }
+            }
+            assertEquals(expected, ActiveHpBarMeasurer.measureAll(image.width, image.height, null, extended))
+        }
+    }
+
     @Test fun `discarded scenery fragments preserve the complete accepted candidate list`() {
         val width = 320
         val height = 180

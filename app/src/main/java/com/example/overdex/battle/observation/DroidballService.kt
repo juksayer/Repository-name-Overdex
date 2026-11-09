@@ -149,6 +149,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         private const val CAPTURE_SCALE = 0.625f
         @Volatile private var activeService: DroidballService? = null
         val qteTypeIconSampling = MutableStateFlow<QteTypeIconSampling?>(null)
+        val opponentHandSampling = MutableStateFlow<QteTypeIconSampling?>(null)
+        private val _opponentHandBoxRequested = MutableStateFlow(false)
+        val opponentHandBoxRequested = _opponentHandBoxRequested.asStateFlow()
         @Volatile var qteCalibrationRegion: com.example.overdex.model.AnchorRegion? = null
         private val captureVisibility = LiveCaptureVisibilityGate()
         private val instrumentVisible = MutableStateFlow(true)
@@ -165,6 +168,14 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         val runtimeState = _runtimeState.asStateFlow()
 
         fun isRunning(): Boolean = _runtimeState.value != DroidballRuntimeState.STOPPED
+
+        /** Open a manual experiment from the field menu without making a battle claim. */
+        fun openOpponentHandBox(): Boolean {
+            val service = activeService?.takeUnless { it.registrationMode } ?: return false
+            _opponentHandBoxRequested.value = true
+            service.serviceScope.launch(Dispatchers.Main.immediate) { service.openOpponentHandCalibration() }
+            return true
+        }
 
         internal fun handleNotificationControl(action: String?, sessionId: String?, matchId: String?) {
             val service = activeService ?: return
@@ -306,6 +317,7 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
     private var registrationMode = false
     private var registrationBoxes: com.example.overdex.ui.components.RegistrationAlignmentWindows? = null
     private var qteCalibrationWindow: com.example.overdex.ui.components.LiveQteCalibrationWindow? = null
+    private var opponentHandCalibrationWindow: com.example.overdex.ui.components.LiveQteCalibrationWindow? = null
     private val registrationPanelExpanded = androidx.compose.runtime.mutableStateOf(false)
     private val registrationController by lazy {
         androidx.lifecycle.ViewModelProvider(
@@ -1060,7 +1072,10 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         serviceScope.launch(Dispatchers.Main) {
-            instrumentVisible.collect { visible -> qteCalibrationWindow?.setVisible(!visible) }
+            instrumentVisible.collect { visible ->
+                qteCalibrationWindow?.setVisible(!visible)
+                opponentHandCalibrationWindow?.setVisible(!visible)
+            }
         }
         if (!registrationMode) serviceScope.launch(Dispatchers.Main) {
             combine(instrumentVisible, DroidballJourney.state) { visible, journey ->
@@ -1155,6 +1170,37 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         catch (error: Exception) {
             window.close()
             Log.e("QTE_CALIBRATION", "Unable to open calibration guide", error)
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun openOpponentHandCalibration() {
+        if (registrationMode || opponentHandCalibrationWindow != null) return
+        qteCalibrationWindow?.close()
+        if (DroidballOverlayPresentation.expanded.value) DroidballOverlayPresentation.toggleExpanded()
+        val bounds = displayBounds()
+        val calibration = com.example.overdex.CalibrationManager(this)
+        val window = com.example.overdex.ui.components.LiveQteCalibrationWindow(
+            this, windowManager, this, this, this, serviceScope,
+            bounds.width(), bounds.height(), calibration.load().opponentTrainerHandRegion,
+            saveRegion = { region ->
+                calibration.save(calibration.load().copy(opponentTrainerHandRegion = region))
+            },
+            onClosed = { opponentHandCalibrationWindow = null },
+            sampleRegion = { opponentHandSampling.value?.sample(it) == true },
+            samplingStatus = opponentHandSampling.flatMapLatest { sampler ->
+                sampler?.status ?: kotlinx.coroutines.flow.flowOf(QteIconSamplingStatus())
+            },
+            title = "OPPONENT HAND / POKÉ BALL",
+            guideDescription = "Opponent Hand / Poké Ball guide",
+            controlDescription = "Opponent hand",
+            hideWhileSampling = true,
+        )
+        opponentHandCalibrationWindow = window
+        try { window.show(); window.setVisible(!instrumentVisible.value) }
+        catch (error: Exception) {
+            window.close()
+            Log.e("OPPONENT_HAND_CALIBRATION", "Unable to open calibration guide", error)
         }
     }
 
@@ -1520,6 +1566,9 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         notificationStateJob?.cancel()
         qteTypeIconSampling.value?.stop()
         qteTypeIconSampling.value = null
+        opponentHandSampling.value?.stop()
+        opponentHandSampling.value = null
+        _opponentHandBoxRequested.value = false
         Log.i("LIFECYCLE_DIAGNOSTIC", "[PID=${android.os.Process.myPid()}] [Instance=${System.identityHashCode(this)}] DroidballService.onDestroy()")
         if (activeService === this) activeService = null
         Log.d("DroidballService", "onDestroy: Releasing resources")
@@ -1530,6 +1579,8 @@ class DroidballService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSt
         registrationBoxes = null
         qteCalibrationWindow?.close()
         qteCalibrationWindow = null
+        opponentHandCalibrationWindow?.close()
+        opponentHandCalibrationWindow = null
         retainedOpponentBadge.close()
         _signals.tryEmit(DroidballSignal.Stopped)
         

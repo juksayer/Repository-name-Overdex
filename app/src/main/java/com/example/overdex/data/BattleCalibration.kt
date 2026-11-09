@@ -167,6 +167,18 @@ data class BattleCalibration(
         y = 0.4f,
         width = 0.6f,
         height = 0.2f
+    ),
+    // Guessed starting box on the whole 1080 x 2400 Moondrop display. The user
+    // will position it over the opponent's hand; this is no event detector.
+    val opponentTrainerHandRegion: AnchorRegion = AnchorRegion(
+        x = 1045f / 1080f, y = 600f / 2400f,
+        width = 25f / 1080f, height = 80f / 2400f
+    ),
+    // Broad starter territory for the centered recipient's moving charged-impact
+    // bar, including the higher Moondrop shielded pose. This is search territory,
+    // not a fixed bar rectangle, and is independent from ordinary battlefield HP.
+    val chargedImpactHpRegion: AnchorRegion = AnchorRegion(
+        x = 0.25f, y = 0.24f, width = 0.50f, height = 0.38f
     )
 ) {
     companion object {

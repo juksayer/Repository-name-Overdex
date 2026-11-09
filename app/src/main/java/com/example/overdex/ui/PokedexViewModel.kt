@@ -512,11 +512,11 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         // changes the match boundary; it must not decide whether visible battle
         // information is preserved.
         val battleEvidenceLive: () -> Boolean = {
-            session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
+            !session.hasCompletedMatch && (session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.COUNTDOWN ||
                 session.phase.value == com.example.overdex.battle.observation.DroidballSessionPhase.BATTLE_ACTIVE ||
                 session.battleSurfaceEstablished.value ||
                 DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_HUD ||
-                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_LIVE
+                DroidballOverlayPresentation.mode.value == com.example.overdex.battle.observation.DroidballOverlayMode.BATTLE_LIVE)
         }
         // The announcement carries entry species names before 3/2/1. The heavier
         // HUD witnesses still wait for the countdown boundary.
@@ -746,14 +746,17 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             observerId = ObserverId("TEAM_SELECT_SNAPSHOT_CAPTURE", ObserverSource.SCREEN_CAPTURE),
             name = "Team Select Snapshot Capture",
         ))
-        observationDispatcher.register(PersistedTeamSelectPartyWitness(cropArtifactStore))
-        observationDispatcher.register(PersistedTeamSelectLeagueWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedTeamSelectPartyWitness(cropArtifactStore,
+            isEnabled = { session.canObserveTeamSelect }))
+        observationDispatcher.register(PersistedTeamSelectLeagueWitness(cropArtifactStore,
+            isEnabled = { session.canObserveTeamSelect }))
         listOf(
             1 to TeamSelectCropContracts.playerRosterName1.cropName,
             2 to TeamSelectCropContracts.playerRosterName2.cropName,
             3 to TeamSelectCropContracts.playerRosterName3.cropName
         ).forEach { (slot, cropName) ->
-            observationDispatcher.register(PersistedPlayerTeamRosterSlotWitness(cropArtifactStore, slot, cropName))
+            observationDispatcher.register(PersistedPlayerTeamRosterSlotWitness(cropArtifactStore, slot, cropName,
+                isEnabled = { session.canObserveTeamSelect }))
         }
         val teamSelectSpriteMatcher = TeamSelectSpriteMatcher(getApplication<Application>().assets)
         listOf(
@@ -762,7 +765,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             3 to TeamSelectCropContracts.playerRosterSlot3.cropName,
         ).forEach { (slot, cropName) ->
             observationDispatcher.register(
-                PersistedPlayerTeamRosterSpriteWitness(cropArtifactStore, teamSelectSpriteMatcher, slot, cropName)
+                PersistedPlayerTeamRosterSpriteWitness(cropArtifactStore, teamSelectSpriteMatcher, slot, cropName,
+                    isEnabled = { session.canObserveTeamSelect })
             )
         }
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -859,6 +863,7 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = name,
+                acceptsFrame = { teamResourceSnapshotGate.acceptsFrame(contract.crop.cropName, it) },
                 onCaptured = { _, _, _ ->
                     teamResourceSnapshotGate.captured(contract.crop.cropName)
                 }
@@ -869,8 +874,12 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         observationDispatcher.register(PersistedOpponentBattleResourceWitness.pokeBalls(cropArtifactStore))
         observationDispatcher.register(PersistedOpponentBattleResourceWitness.shields(cropArtifactStore))
         observationDispatcher.register(PersistedOpponentBattleResourceWitness.playerShields(cropArtifactStore))
-        observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore))
-        observationDispatcher.register(PersistedActivePokemonTypeWitness.opponent(cropArtifactStore))
+        observationDispatcher.register(PersistedActivePokemonTypeWitness.player(cropArtifactStore) { at ->
+            battleEvidenceLive() && activeTypeSampling.needsReading(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER, at)
+        })
+        observationDispatcher.register(PersistedActivePokemonTypeWitness.opponent(cropArtifactStore) { at ->
+            battleEvidenceLive() && activeTypeSampling.needsReading(com.example.overdex.battle.custody.ActivePokemonSide.OPPONENT, at)
+        })
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -909,7 +918,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 name = "VS Screen Crop Capture"
             )
         )
-        observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore))
+        observationDispatcher.register(PersistedVsScreenWitness(cropArtifactStore,
+            isEnabled = session::vsScreenWitnessingActive))
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -959,8 +969,23 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
         )
         observationDispatcher.register(FirstLiveCombatRouter(session))
         val battlefieldHpTracker = com.example.overdex.battle.observation.LiveBattlefieldHpTracker(calibration)
-        observationDispatcher.register(LiveActiveHpBarWitness(
-            input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub
+        val activeHpBarWitness = LiveActiveHpBarWitness(
+            input, battlefieldHpTracker, activeHpEvidenceLive, playerHpFrameHub, opponentHpFrameHub,
+            onDepartureCheck = teamResourceSnapshotGate::requestDepartureCheck,
+            chargedImpactHpRegion = calibration.chargedImpactHpRegion,
+        )
+        observationDispatcher.register(activeHpBarWitness)
+        observationDispatcher.register(CropCaptureWitness(
+            input = input,
+            calibration = calibration,
+            contract = BattleWitnessContracts.chargedImpactHpCapture,
+            artifactStore = cropArtifactStore,
+            isEnabled = activeHpEvidenceLive,
+            acceptsFrame = activeHpBarWitness::canCaptureChargedImpact,
+            captureIntervalNanos = 500_000_000L,
+            captureDispatcher = combatCaptureDispatcher,
+            observerId = ObserverId(BattleWitnessContracts.chargedImpactHpCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
+            name = "Charged Impact HP Capture",
         ))
         observationDispatcher.register(PokemonFaintWitness())
         observationDispatcher.register(PokemonFaintWitness(com.example.overdex.battle.custody.ActivePokemonSide.PLAYER))
@@ -1077,13 +1102,41 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
             name = "QTE Type Icons Capture",
             onCaptured = { _, _, at -> qteSampling.captured(at) }
         ))
+        // User-requested raw samples can include the pre-GO send-out. They do
+        // not wake on battle events or run continuously once the box is added.
+        val opponentHandSampling = com.example.overdex.battle.observation.QteTypeIconSampling(
+            savedRegion = { calibrationManager.load().opponentTrainerHandRegion },
+            followsQte = false, sampleLimit = 100, settleNanos = 150_000_000L,
+            observerId = ObserverId("OPPONENT_HAND_SAMPLE_GATE", ObserverSource.SCREEN_CAPTURE),
+            name = "Opponent Hand Sample Gate",
+        )
+        DroidballService.opponentHandSampling.value = opponentHandSampling
+        observationDispatcher.register(opponentHandSampling)
+        observationDispatcher.register(CropCaptureWitness(input, calibration,
+            BattleWitnessContracts.opponentTrainerHandCapture, cropArtifactStore,
+            isEnabled = opponentHandSampling::isEnabled,
+            acceptsFrame = opponentHandSampling::acceptsFrame,
+            calibrationProvider = {
+                calibration.copy(opponentTrainerHandRegion = opponentHandSampling.region ?: calibration.opponentTrainerHandRegion)
+            },
+            captureIntervalNanos = 100_000_000L,
+            captureDispatcher = auxiliaryCaptureDispatcher,
+            observerId = ObserverId("OPPONENT_TRAINER_HAND_CAPTURE", ObserverSource.SCREEN_CAPTURE),
+            name = "Opponent Hand / Poké Ball Samples",
+            onCaptured = { _, _, at -> opponentHandSampling.captured(at) },
+        ))
+        val decisionTimerAttention = com.example.overdex.battle.observation.DecisionTimerCaptureGate()
+        observationDispatcher.register(decisionTimerAttention)
         observationDispatcher.register(CropCaptureWitness(input, calibration,
             BattleWitnessContracts.decisionTimerCapture, cropArtifactStore,
-            isEnabled = { battleEvidenceLive() && session.firstLiveCombatArticle.value != null },
+            isEnabled = { battleEvidenceLive() && decisionTimerAttention.isEnabled() },
+            acceptsFrame = decisionTimerAttention::acceptsFrame,
             captureIntervalNanos = 250_000_000L, captureDispatcher = auxiliaryCaptureDispatcher,
             observerId = ObserverId("DECISION_TIMER_CAPTURE", ObserverSource.SCREEN_CAPTURE),
             name = "Decision Timer Capture"))
-        observationDispatcher.register(com.example.overdex.battle.observation.PersistedDecisionTimerWitness(cropArtifactStore))
+        observationDispatcher.register(com.example.overdex.battle.observation.PersistedDecisionTimerWitness(cropArtifactStore) { at ->
+            battleEvidenceLive() && decisionTimerAttention.acceptsFrame(at)
+        })
         observationDispatcher.register(PersistedPlayerEntrySpeciesWitness())
         observationDispatcher.register(PersistedAnnouncementSpeciesWitness())
         observationDispatcher.register(PersistedAttackIncomingWitness(cropArtifactStore))
@@ -1106,10 +1159,13 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                     captureDispatcher = auxiliaryCaptureDispatcher,
                     observerId = ObserverId(contract.witnessId, ObserverSource.SCREEN_CAPTURE),
                     name = name,
+                    acceptsFrame = { inactiveBenchSnapshotGate.acceptsFrame(contract.crop.cropName, it) },
                     onCaptured = { _, _, _ -> inactiveBenchSnapshotGate.captured(contract.crop.cropName) }
                 )
             )
         }
+        val switchTimerAttention = com.example.overdex.battle.observation.SwitchTimerCaptureGate()
+        observationDispatcher.register(switchTimerAttention)
         observationDispatcher.register(
             CropCaptureWitness(
                 input = input,
@@ -1132,7 +1188,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 calibration = calibration,
                 contract = BattleWitnessContracts.switchLockoutTimerCapture,
                 artifactStore = cropArtifactStore,
-                isEnabled = { battleEvidenceLive() && session.firstLiveCombatArticle.value != null },
+                isEnabled = { battleEvidenceLive() && switchTimerAttention.isEnabled() },
+                acceptsFrame = switchTimerAttention::acceptsFrame,
                 captureIntervalNanos = 1_000_000_000L,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.switchLockoutTimerCapture.witnessId, ObserverSource.SCREEN_CAPTURE),

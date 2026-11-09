@@ -27,6 +27,42 @@ import org.junit.Test
 
 /** Charge preparation can preserve a single zero even while ordinary acquisition is stalled. */
 class LiveChargedImpactHpWitnessDeviceTest {
+    @Test fun calibratedHigherReceiverBarRetainsGreenRedAndEmptyWithoutInventingFastMoves() = runBlocking {
+        val fixture = Fixture(chargedRegion = AnchorRegion(.3f, .16f, .4f, .17f))
+        try {
+            fixture.start()
+            fixture.deliver(0, normal())
+            fixture.deliver(1, normal())
+            fixture.prepare()
+            fixture.deliver(100, bitmap(-300, 136, 0, 240, 100, 160))
+            fixture.deliver(101, bitmap(-300, 136, 0, 240, 100, 12, 0xffec8575.toInt()))
+            fixture.deliver(102, bitmap(-300, 136, 0, 240, 100, 0))
+            fixture.deliver(103, missing())
+            val impact = fixture.timeline.getArticles().filter {
+                ChargedImpactHpSource.matches(it.sourceId.id) && it.payload is ActiveHpBarMeasured
+            }
+            assertEquals(listOf("GREEN", "RED", "EMPTY"), impact.map { (it.payload as ActiveHpBarMeasured).fillColor })
+            assertEquals(listOf(100, 101, 102).map(fixture::at), impact.map { it.monotonicTimeNanos })
+            assertTrue(impact.all { (it.payload as ActiveHpBarMeasured).barTop == 100 })
+            fixture.assertNoInventedHits()
+        } finally { fixture.close() }
+    }
+
+    @Test fun aRecipientOutsideTheCalibratedBoxCannotUseTheFormerFixedSearch() = runBlocking {
+        val fixture = Fixture(chargedRegion = AnchorRegion(.3f, .16f, .4f, .17f))
+        try {
+            fixture.start()
+            fixture.deliver(0, normal())
+            fixture.deliver(1, normal())
+            fixture.prepare()
+            fixture.deliver(100, centered(empty = true))
+            fixture.deliver(101, missing())
+            assertFalse(fixture.timeline.getArticles().any { ChargedImpactHpSource.matches(it.sourceId.id) })
+            assertFalse(fixture.timeline.getArticles().any { (it.payload as? ActiveHpBarMeasured)?.filledFraction == 0f })
+            fixture.assertNoInventedHits()
+        } finally { fixture.close() }
+    }
+
     @Test fun singleChargedEmptyFrameKeepsItsSourceClockCueProvenanceAndArchiveWithoutAFastMove() = runBlocking {
         val fixture = Fixture()
         try {
@@ -46,6 +82,7 @@ class LiveChargedImpactHpWitnessDeviceTest {
             assertTrue(empty.evidenceReferences.orEmpty().contains(cue))
             assertEquals(240, (empty.payload as ActiveHpBarMeasured).barLeft)
             assertEquals(210, (empty.payload as ActiveHpBarMeasured).barTop)
+            assertEquals("EMPTY", (empty.payload as ActiveHpBarMeasured).fillColor)
             assertFalse(fixture.timeline.getArticles().any { it.monotonicTimeNanos == fixture.at(101) && it.payload is ActiveHpBarMeasured })
             fixture.assertNoInventedHits()
             val snapshot = MatchArchiveSource(MatchId(fixture.match.matchId), fixture.timeline).snapshot()
@@ -55,6 +92,7 @@ class LiveChargedImpactHpWitnessDeviceTest {
             assertEquals(empty.monotonicTimeNanos, archived.monotonicTimeNanos)
             assertEquals(empty.sourceId.id, archived.sourceId)
             assertEquals(empty.evidenceReferences, archived.evidenceReferences)
+            assertEquals("EMPTY", (archived.payload as ArchivedActiveHpBarMeasured).fillColor)
         } finally { fixture.close() }
     }
 
@@ -111,7 +149,10 @@ class LiveChargedImpactHpWitnessDeviceTest {
         } finally { fixture.close() }
     }
 
-    private class Fixture(clock: () -> Long = System::nanoTime) {
+    private class Fixture(
+        chargedRegion: AnchorRegion = BattleCalibration().chargedImpactHpRegion,
+        clock: () -> Long = System::nanoTime,
+    ) {
         val timeline = InMemoryRealityTimeline()
         private val input = Input()
         private val custody = InMemoryTestimonyCustody()
@@ -126,7 +167,7 @@ class LiveChargedImpactHpWitnessDeviceTest {
         private val witness = LiveActiveHpBarWitness(input, LiveBattlefieldHpTracker(BattleCalibration(
             trainerHpRegion = AnchorRegion(0f, .1f, .5f, .7f),
             opponentHpRegion = AnchorRegion(.5f, .1f, .5f, .7f)), elapsedTimeNanos = clock),
-            { true }, playerHub, opponentHub)
+            { true }, playerHub, opponentHub, chargedImpactHpRegion = chargedRegion)
         private val derived = listOf(LiveActiveHpBarDamageTickWitness.opponent(opponentHub),
             LiveActiveHpBarBorderPulseWitness.opponent(opponentHub),
             LiveActiveHpBarBorderCadenceWitness.opponent(opponentHub),
@@ -191,16 +232,17 @@ class LiveChargedImpactHpWitnessDeviceTest {
         fun missing() = Bitmap.createBitmap(IntArray(WIDTH * HEIGHT) { DARK }, WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
         fun normal(fill: Int = 160) = bitmap(20, 136, 160, 460, 136, fill)
         fun centered(empty: Boolean, fill: Int = 160) = bitmap(-300, 136, 0, 240, 210, if (empty) 0 else fill)
-        fun bitmap(playerX: Int, playerY: Int, playerFill: Int, opponentX: Int, opponentY: Int, opponentFill: Int): Bitmap {
+        fun bitmap(playerX: Int, playerY: Int, playerFill: Int, opponentX: Int, opponentY: Int, opponentFill: Int,
+            opponentFillColor: Int = GREEN): Bitmap {
             val pixels = IntArray(WIDTH * HEIGHT) { DARK }
-            fun bar(left: Int, top: Int, fill: Int) {
+            fun bar(left: Int, top: Int, fill: Int, fillColor: Int = GREEN) {
                 if (left < 0) return
                 val right = left + 220
                 for (x in left until right) { pixels[top * WIDTH + x] = WHITE; pixels[(top + 22) * WIDTH + x] = WHITE }
                 for (y in top..top + 22) { pixels[y * WIDTH + left] = WHITE; pixels[y * WIDTH + right - 1] = WHITE }
-                for (x in left + 3 until left + fill) for (y in top + 5 until top + 18) pixels[y * WIDTH + x] = GREEN
+                for (x in left + 3 until left + fill) for (y in top + 5 until top + 18) pixels[y * WIDTH + x] = fillColor
             }
-            bar(playerX, playerY, playerFill); bar(opponentX, opponentY, opponentFill)
+            bar(playerX, playerY, playerFill); bar(opponentX, opponentY, opponentFill, opponentFillColor)
             return Bitmap.createBitmap(pixels, WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
         }
     }

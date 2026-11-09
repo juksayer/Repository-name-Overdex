@@ -77,7 +77,7 @@ class DirectoryCropPreviewLcdDeviceTest {
                 targetWitnessed = true),
         )))
         showPreview(state)
-        compose.onNodeWithText("Review 6").assertIsDisplayed()
+        compose.onNodeWithText("Review 7").assertIsDisplayed()
         compose.onNodeWithText("Your name · Review").assertIsDisplayed()
         compose.onNodeWithText("Opponent name · Read").assertIsDisplayed()
         compose.onNodeWithTag(slotTag(DirectoryCropSlot.PLAYER_SPECIES)).assert(
@@ -111,7 +111,7 @@ class DirectoryCropPreviewLcdDeviceTest {
         assertEquals(BattleCropBounds(20, 40, 60, 120), crop.provenance?.bounds)
     }
 
-    @Test fun sevenUntintedCropsFitTheExistingLcdWithoutStretching() {
+    @Test fun allUntintedCropsFitTheExistingLcdWithoutStretching() {
         val image = quadrantBitmap()
         val state = mutableStateOf(DirectoryCropPreviewState(matchId = "complete-match", crops =
             DirectoryCropSlot.entries.associateWith { slot ->
@@ -136,13 +136,13 @@ class DirectoryCropPreviewLcdDeviceTest {
             assertTrue("Sides stay separate", slots.getValue(player).right <= slots.getValue(opponent).left)
         }
         val rowOrder = listOf(DirectoryCropSlot.PLAYER_SPECIES, DirectoryCropSlot.PLAYER_HP,
-            DirectoryCropSlot.PLAYER_BALLS, DirectoryCropSlot.ANNOUNCEMENT)
+            DirectoryCropSlot.PLAYER_BALLS, DirectoryCropSlot.ANNOUNCEMENT, DirectoryCropSlot.CHARGED_IMPACT_HP)
         rowOrder.zipWithNext().forEach { (above, below) ->
             assertTrue("Crop rows stay separate", slots.getValue(above).bottom <= slots.getValue(below).top)
         }
         assertTrue("Announcement spans both columns",
             slots.getValue(DirectoryCropSlot.ANNOUNCEMENT).width > slots.getValue(DirectoryCropSlot.PLAYER_SPECIES).width * 1.9f)
-        compose.onNodeWithText("Battle crops ${formatTime(CAPTURE_TIME + 6_000)}").assertIsDisplayed()
+        compose.onNodeWithText("Battle crops ${formatTime(CAPTURE_TIME + 7_000)}").assertIsDisplayed()
 
         val rendered = compose.onNodeWithTag(imageTag(DirectoryCropSlot.ANNOUNCEMENT))
             .captureToImage().asAndroidBitmap()

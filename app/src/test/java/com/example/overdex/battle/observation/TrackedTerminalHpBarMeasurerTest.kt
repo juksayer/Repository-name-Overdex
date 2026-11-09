@@ -9,6 +9,19 @@ import org.junit.Test
 class TrackedTerminalHpBarMeasurerTest {
     private val anchor = ActiveHpBarMeasurement(40, 80, 240, 96, .05f, .95f)
 
+    @Test fun `charge follow up stays inside the saved territory and rejects a moved out anchor`() {
+        val territory = BattleCropBounds(37, 77, 243, 100)
+        val source = bar(fillWidth = 9)
+        val sample = TrackedTerminalHpBarMeasurer.measure(400, 300, anchor, territory) { x, y ->
+            assertTrue(x in territory.left until territory.right && y in territory.top until territory.bottom)
+            source(x, y)
+        }
+        assertEquals(HpBarFillColor.RED, requireNotNull(sample).fillColor)
+        assertNull(TrackedTerminalHpBarMeasurer.measure(400, 300, anchor, territory.copy(left = 45)) { _, _ ->
+            throw AssertionError("An old anchor outside the new crop cannot read pixels")
+        })
+    }
+
     @Test fun `one visible empty frame is retained while a vanished bar stays unavailable`() {
         val red = measure(bar(fillWidth = 9))
         assertNotNull(red)

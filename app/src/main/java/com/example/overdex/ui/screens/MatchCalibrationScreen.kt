@@ -166,6 +166,9 @@ fun MatchCalibrationScreen(
     val samples = library.orEmpty().filter { it.reference.id in visibleIds }
     var currentImageIndex by remember { mutableIntStateOf(0) }
     val selectedSample = samples.getOrNull(currentImageIndex)
+    // A chosen folder owns quick cycling; bundled/device references remain
+    // available through the visual chooser and act as the fallback library.
+    val cyclingSamples = samples.filter { it.sourceName == "YOUR SCREENSHOT" }.ifEmpty { samples }
     val screenshotSourceName = selectedSample?.sourceName ?: "NO REFERENCE"
     val screenshotReferenceName = selectedSample?.reference?.name ?: "No reference selected"
     val sourceFrameSize = selectedSample?.reference?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
@@ -255,7 +258,9 @@ fun MatchCalibrationScreen(
             CalibrationRegion.PLAYER_CHARGE_MOVE_EFFECTIVENESS_RIGHT,
 
             CalibrationRegion.TRAINER_INACTIVE_POKEMON,
-            CalibrationRegion.MATCH_OUTCOME
+            CalibrationRegion.MATCH_OUTCOME,
+            CalibrationRegion.OPPONENT_TRAINER_HAND,
+            CalibrationRegion.CHARGED_IMPACT_HP
         )
     }
 
@@ -289,6 +294,8 @@ fun MatchCalibrationScreen(
             CalibrationRegion.QTE_PROGRESS_TEXT -> "QTE Progress Text (Nice / Great / Excellent)"
             CalibrationRegion.QTE_TYPE_ICONS -> "QTE Type Icons"
             CalibrationRegion.EXIT_ICON -> "Exit Icon"
+            CalibrationRegion.OPPONENT_TRAINER_HAND -> "Opponent Hand / Poké Ball"
+            CalibrationRegion.CHARGED_IMPACT_HP -> "Charged Impact HP"
             CalibrationRegion.TRAINER_CHARGE_MOVE_CONTROLS -> "Trainer Charge-Move Controls"
             CalibrationRegion.TRAINER_INACTIVE_POKEMON -> "Inactive Cards: Upper / Lower"
             CalibrationRegion.MATCH_OUTCOME -> "Match Outcome"
@@ -336,6 +343,8 @@ fun MatchCalibrationScreen(
         CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.qteProgressTextRegion
         CalibrationRegion.QTE_TYPE_ICONS -> calibration.qteTypeIconsRegion
         CalibrationRegion.EXIT_ICON -> calibration.exitIconRegion
+        CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.opponentTrainerHandRegion
+        CalibrationRegion.CHARGED_IMPACT_HP -> calibration.chargedImpactHpRegion
         CalibrationRegion.POINTER_COORDINATES -> calibration.pointerCoordinatesRegion
         CalibrationRegion.DECISION_TIMER -> calibration.decisionTimerRegion
         CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.playerChargeMoveNameLeftRegion
@@ -415,6 +424,8 @@ fun MatchCalibrationScreen(
             CalibrationRegion.QTE_PROGRESS_TEXT -> calibration.copy(qteProgressTextRegion = updated)
             CalibrationRegion.QTE_TYPE_ICONS -> calibration.copy(qteTypeIconsRegion = updated)
             CalibrationRegion.EXIT_ICON -> calibration.copy(exitIconRegion = updated)
+            CalibrationRegion.OPPONENT_TRAINER_HAND -> calibration.copy(opponentTrainerHandRegion = updated)
+            CalibrationRegion.CHARGED_IMPACT_HP -> calibration.copy(chargedImpactHpRegion = updated)
             CalibrationRegion.POINTER_COORDINATES -> calibration.copy(pointerCoordinatesRegion = updated)
             CalibrationRegion.DECISION_TIMER -> calibration.copy(decisionTimerRegion = updated)
             CalibrationRegion.PLAYER_CHARGE_MOVE_NAME_LEFT -> calibration.copy(playerChargeMoveNameLeftRegion = updated)
@@ -587,7 +598,11 @@ fun MatchCalibrationScreen(
         }
         onSelectLong {
             if (!calibrationControlsBlocked) {
-                if (samples.isNotEmpty()) showImagePicker = true else showLibraryDialog = true
+                if (cyclingSamples.isNotEmpty()) {
+                    val current = cyclingSamples.indexOfFirst { it.reference.id == selectedSample?.reference?.id }
+                    val next = cyclingSamples[(current + 1) % cyclingSamples.size].reference.id
+                    samples.indexOfFirst { it.reference.id == next }.takeIf { it >= 0 }?.let { currentImageIndex = it }
+                } else showLibraryDialog = true
             }
         }
         onStart {
@@ -637,7 +652,7 @@ fun MatchCalibrationScreen(
         }
         onLcdUpdate(
             "${getReadableName(selectedRegion)} $indexText  X:$x Y:$y  $saveStatus",
-            "HOLD A / SELECT: IMAGES  $screenshotSourceName · $screenshotReferenceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] DEVICE CALIBRATIONS${activeProfile?.let { "  ${it.name}" } ?: ""}${calibrationReadOnlyReason?.let { "  $it" } ?: ""}"
+            "HOLD SELECT: NEXT IMAGE · HOLD A: LIBRARY  $screenshotSourceName · $screenshotReferenceName  W:$width H:$height / ${sourceWidth}×${sourceHeight}  ${mode.name}  [START] DEVICE CALIBRATIONS${activeProfile?.let { "  ${it.name}" } ?: ""}${calibrationReadOnlyReason?.let { "  $it" } ?: ""}"
         )
     }
 
@@ -874,28 +889,18 @@ fun MatchCalibrationScreen(
     }
 
     if (showImagePicker) {
-        AlertDialog(
-            onDismissRequest = { showImagePicker = false },
-            title = { Text("CHOOSE SCREENSHOT", color = TerminalGreen) },
-            text = {
-                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-                    samples.forEachIndexed { index, sample ->
-                        TextButton(onClick = { currentImageIndex = index; showImagePicker = false }) {
-                            Column(Modifier.fillMaxWidth()) {
-                                Text(sample.reference.name, color = TerminalGreen, fontSize = 13.sp)
-                                Text(
-                                    listOfNotNull(sample.reference.deviceLabel, sample.reference.dimensionLabel()).joinToString(" · "),
-                                    color = TerminalGreen.copy(alpha = 0.75f), fontSize = 11.sp
-                                )
-                            }
-                        }
-                    }
+        CalibrationScreenshotPicker(
+            samples = samples,
+            selectedId = selectedSample?.reference?.id,
+            screenWidth = detectedScreenWidth,
+            screenHeight = detectedScreenHeight,
+            onChoose = { id ->
+                samples.indexOfFirst { it.reference.id == id }.takeIf { it >= 0 }?.let {
+                    currentImageIndex = it
                 }
+                showImagePicker = false
             },
-            confirmButton = {
-                TextButton(onClick = { showImagePicker = false }) { Text("CLOSE", color = TerminalGreen) }
-            },
-            containerColor = TerminalBlack
+            onDismiss = { showImagePicker = false },
         )
     }
 

@@ -8,7 +8,7 @@ import com.example.overdex.battle.reality.RealityArticle
 
 enum class BattleCalibrationPreviewSlot {
     PLAYER_SPECIES, OPPONENT_SPECIES, PLAYER_HP, OPPONENT_HP,
-    PLAYER_BALLS, OPPONENT_BALLS, ANNOUNCEMENT
+    PLAYER_BALLS, OPPONENT_BALLS, ANNOUNCEMENT, CHARGED_IMPACT_HP
 }
 
 
@@ -37,7 +37,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
     private data class Time(val wall: Long, val mono: Long?) {
         fun value(monotonic: Boolean): Long? = if (monotonic) mono else wall
     }
-    private enum class Kind { BATTLE, PLAYER_HP, OPPONENT_HP, OPENING, END, STOP, CLOSED, ANNOUNCEMENT }
+    private enum class Kind { BATTLE, PLAYER_HP, OPPONENT_HP, CHARGED_IMPACT_HP, OPENING, END, STOP, CLOSED, ANNOUNCEMENT }
     private data class HpGeometry(
         val left: Int, val top: Int, val right: Int, val bottom: Int,
         val sourceWidth: Int?, val sourceHeight: Int?,
@@ -97,7 +97,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         }
         val kind = when (val p = article.payload) {
             MatchStarted, is SupportingMatchStart -> Kind.OPENING
-            is ActiveHpBarMeasured -> hpKind(p.side.name).takeIf { validHp(p.barLeft, p.barTop, p.barRight, p.barBottom,
+            is ActiveHpBarMeasured -> hpKind(p.side.name, article.sourceId.id).takeIf { validHp(p.barLeft, p.barTop, p.barRight, p.barBottom,
                 p.filledFraction, p.sourceWidth, p.sourceHeight) }
             is ActiveHpBarDamageTickMeasured -> Kind.BATTLE.takeIf { validDamage(p.beforeFraction, p.afterFraction, p.lostFraction) }
             is FastMoveUseObserved -> Kind.BATTLE.takeIf {
@@ -140,7 +140,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         }
         val kind = when (val p = article.payload) {
             ArchivedMatchStarted, is ArchivedSupportingMatchStart -> Kind.OPENING
-            is ArchivedActiveHpBarMeasured -> hpKind(p.side).takeIf { validHp(p.barLeft, p.barTop, p.barRight, p.barBottom,
+            is ArchivedActiveHpBarMeasured -> hpKind(p.side, article.sourceId).takeIf { validHp(p.barLeft, p.barTop, p.barRight, p.barBottom,
                 p.filledFraction, p.sourceWidth, p.sourceHeight) }
             is ArchivedActiveHpBarDamageTickMeasured -> Kind.BATTLE.takeIf { validDamage(p.beforeFraction, p.afterFraction, p.lostFraction) }
             is ArchivedFastMoveUseObserved -> Kind.BATTLE.takeIf {
@@ -227,10 +227,11 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         // remains available for review when this field has never been read.
         val witnessed = candidates.filter { it.targetWitnessed || targetWitnessed(slot, it) }
         if (witnessed.isNotEmpty() && witnessed.size != candidates.size) return best(slot, witnessed)
-        if (slot == BattleCalibrationPreviewSlot.PLAYER_HP || slot == BattleCalibrationPreviewSlot.OPPONENT_HP) {
+        if (slot in hpSlots) {
             val windows = activeWindows()
             val cues = context.filter { cue ->
-                (cue.kind == Kind.PLAYER_HP || cue.kind == Kind.OPPONENT_HP) &&
+                (if (slot == BattleCalibrationPreviewSlot.CHARGED_IMPACT_HP) cue.kind == Kind.CHARGED_IMPACT_HP
+                    else cue.kind == Kind.PLAYER_HP || cue.kind == Kind.OPPONENT_HP) &&
                     windows.any { requireNotNull(cue.time.value(monotonicOnly)) in it.from..it.until }
             }
             // HP is sampled much more frequently than its saved raw image. A
@@ -282,7 +283,7 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
     }
 
     private fun measuredHpBounds(slot: BattleCalibrationPreviewSlot, reference: BattleCalibrationPreviewReference): BattleCropBounds? {
-        if (slot != BattleCalibrationPreviewSlot.PLAYER_HP && slot != BattleCalibrationPreviewSlot.OPPONENT_HP) return null
+        if (slot !in hpSlots) return null
         val at = if (monotonicOnly) reference.capturedAtNanos else reference.capturedAtMillis
         return context.lastOrNull { cue -> cue.time.value(monotonicOnly) == at &&
             cue.hp?.sourceWidth != null && cue.hp.sourceHeight != null && containsMeasuredHp(slot, reference, cue) }
@@ -319,7 +320,13 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         reference: BattleCalibrationPreviewReference,
         cue: Context,
     ): Boolean {
-        if ((slot == BattleCalibrationPreviewSlot.PLAYER_HP) != (cue.kind == Kind.PLAYER_HP)) return false
+        val matchingKind = when (slot) {
+            BattleCalibrationPreviewSlot.PLAYER_HP -> Kind.PLAYER_HP
+            BattleCalibrationPreviewSlot.OPPONENT_HP -> Kind.OPPONENT_HP
+            BattleCalibrationPreviewSlot.CHARGED_IMPACT_HP -> Kind.CHARGED_IMPACT_HP
+            else -> return false
+        }
+        if (cue.kind != matchingKind) return false
         val hp = cue.hp ?: return false
         val crop = reference.provenance
         if (!sameSourceSize(reference, cue)) return false
@@ -345,7 +352,9 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
         val closed = events.filter { it.second == Kind.CLOSED }.map { it.first }.distinct().sorted()
         // One false bar-shaped patch in navigation cannot establish a battle.
         // Two sides in one frame or repeated bars in distinct frames can.
-        val hp = events.filter { (at, kind) -> (kind == Kind.PLAYER_HP || kind == Kind.OPPONENT_HP) && (ended == null || at < ended) }
+        val hp = events.filter { (at, kind) ->
+            (kind == Kind.PLAYER_HP || kind == Kind.OPPONENT_HP || kind == Kind.CHARGED_IMPACT_HP) &&
+                (ended == null || at < ended) }
             .distinct().sortedBy { it.first }
         val credibleHp = hp.filterIndexed { index, event ->
             listOfNotNull(hp.getOrNull(index - 1), hp.getOrNull(index + 1)).any { other ->
@@ -443,16 +452,22 @@ internal class BattleCalibrationPreviewSelection(val matchId: String) {
             "PlayerPokeBallsCrop" to BattleCalibrationPreviewSlot.PLAYER_BALLS,
             "OpponentPokeBallsCrop" to BattleCalibrationPreviewSlot.OPPONENT_BALLS,
             "AnnouncementCrop" to BattleCalibrationPreviewSlot.ANNOUNCEMENT,
+            "ChargedImpactHpCrop" to BattleCalibrationPreviewSlot.CHARGED_IMPACT_HP,
         )
+        private val hpSlots = setOf(BattleCalibrationPreviewSlot.PLAYER_HP,
+            BattleCalibrationPreviewSlot.OPPONENT_HP, BattleCalibrationPreviewSlot.CHARGED_IMPACT_HP)
         private fun saturatedAdd(value: Long, delta: Long): Long = when {
             delta > 0 && value > Long.MAX_VALUE - delta -> Long.MAX_VALUE
             delta < 0 && value < Long.MIN_VALUE - delta -> Long.MIN_VALUE
             else -> value + delta
         }
-        private fun hpKind(side: String): Kind? = when (side) {
-            "PLAYER" -> Kind.PLAYER_HP
-            "OPPONENT" -> Kind.OPPONENT_HP
-            else -> null
+        private fun hpKind(side: String, sourceId: String): Kind? = when {
+            ChargedImpactHpSource.matches(sourceId) -> Kind.CHARGED_IMPACT_HP
+            else -> when (side) {
+                "PLAYER" -> Kind.PLAYER_HP
+                "OPPONENT" -> Kind.OPPONENT_HP
+                else -> null
+            }
         }
         private fun speciesSlot(side: String): BattleCalibrationPreviewSlot? = when (side) {
             "PLAYER" -> BattleCalibrationPreviewSlot.PLAYER_SPECIES

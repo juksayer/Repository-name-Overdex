@@ -69,6 +69,36 @@ class ChargedImpactHpBarMeasurerTest {
         assertTrue(seen.size <= 284 * 196)
     }
 
+    @Test fun `calibrated territory finds a higher recipient bar outside the former fixed band`() {
+        val higher = centered.copy(top = 190, bottom = 206)
+        val source = bar(higher, fillWidth = 70, fill = YELLOW)
+        assertNull(measure(source))
+        val territory = BattleCropBounds(225, 170, 475, 225)
+        val sample = requireNotNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, territory) { x, y ->
+            assertTrue(x in territory.left until territory.right && y in territory.top until territory.bottom)
+            source(x, y)
+        })
+        assertEquals(higher.top, sample.measurement.top)
+        assertEquals(HpBarFillColor.YELLOW, sample.fillColor)
+    }
+
+    @Test fun `moving the box cannot silently fall back to the old territory`() {
+        val source = bar(fillWidth = 12, fill = RED)
+        val moved = BattleCropBounds(225, 170, 475, 225)
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, moved, source))
+        assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference,
+            BattleCropBounds(225, 355, 475, 365), source)) // Outline clipped by calibration.
+    }
+
+    @Test fun `invalid calibrated territory is unavailable without reading source pixels`() {
+        for (territory in listOf(BattleCropBounds(-1, 170, 475, 225), BattleCropBounds(225, 170, 701, 225),
+                BattleCropBounds(225, 225, 475, 170))) {
+            assertNull(ChargedImpactHpBarMeasurer.acquire(700, 700, reference, territory) { _, _ ->
+                fail("Invalid territory must not read pixels"); DARK
+            })
+        }
+    }
+
     private fun bar(shape: ActiveHpBarMeasurement = centered, fillWidth: Int = 0, fill: Int = RED): (Int, Int) -> Int = { x, y ->
         when {
             (y == shape.top || y == shape.bottom) && x in shape.left until shape.right -> WHITE
@@ -83,6 +113,7 @@ class ChargedImpactHpBarMeasurerTest {
         const val DARK = -0xb5a8c4
         const val RED = -0x137a8b
         const val GREEN = -0xe10044
+        const val YELLOW = 0xffe3cf35.toInt()
         const val ORANGE = -0x75e0
     }
 }

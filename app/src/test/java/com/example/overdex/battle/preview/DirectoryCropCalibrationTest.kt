@@ -21,10 +21,10 @@ class DirectoryCropCalibrationTest {
         playerShieldsRegion = AnchorRegion(.02f, .11f, .09f, .02f),
     )
 
-    @Test fun `seven LCD slots read their specific saved territories`() {
+    @Test fun `LCD slots read their specific saved territories including centered charged HP`() {
         assertEquals(listOf(calibration.playerSpeciesNameRegion, calibration.opponentSpeciesNameRegion,
             calibration.trainerHpRegion, calibration.opponentHpRegion, calibration.playerPokeBallsRegion,
-            calibration.opponentPokeBallsRegion, calibration.announcementRegion),
+            calibration.opponentPokeBallsRegion, calibration.announcementRegion, calibration.chargedImpactHpRegion),
             DirectoryCropSlot.entries.map { calibration.directoryCropRegion(it) })
     }
 
@@ -40,6 +40,7 @@ class DirectoryCropCalibrationTest {
                 DirectoryCropSlot.PLAYER_BALLS -> calibration.copy(playerPokeBallsRegion = updated)
                 DirectoryCropSlot.OPPONENT_BALLS -> calibration.copy(opponentPokeBallsRegion = updated)
                 DirectoryCropSlot.ANNOUNCEMENT -> calibration.copy(announcementRegion = updated)
+                DirectoryCropSlot.CHARGED_IMPACT_HP -> calibration.copy(chargedImpactHpRegion = updated)
             }
             val saved = calibration.withDirectoryCropRegion(slot, updated)
             assertEquals(slot.name, expected, saved)

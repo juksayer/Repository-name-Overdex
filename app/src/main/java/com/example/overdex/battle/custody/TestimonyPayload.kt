@@ -451,7 +451,9 @@ data class ActiveHpBarMeasured(
     val filledFraction: Float,
     // Present for source-frame coordinates; absent in older crop-relative measurements.
     val sourceWidth: Int? = null,
-    val sourceHeight: Int? = null
+    val sourceHeight: Int? = null,
+    /** Actual measured fill: GREEN, YELLOW, RED, or EMPTY; null when unavailable or not sampled. */
+    val fillColor: String? = null
 ) : TestimonyPayload {
     init {
         require(barLeft >= 0 && barTop >= 0)
