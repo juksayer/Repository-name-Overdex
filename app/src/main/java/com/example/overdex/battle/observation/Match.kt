@@ -28,6 +28,7 @@ import com.example.overdex.battle.custody.VsScreenWitnessed
 import android.util.Log
 import com.example.overdex.battle.interpretation.BattleInterpreter
 import com.example.overdex.battle.inference.FastMoveCadenceInference
+import com.example.overdex.battle.inference.FastMoveCandidateSnapshot
 import com.example.overdex.battle.inference.FastMoveEnergyInference
 import com.example.overdex.battle.inference.FastMoveUseInference
 import com.example.overdex.battle.inference.ChargedMoveAnnouncementInference
@@ -78,6 +79,7 @@ class Match(
     private val countdownMatchStartInference = com.example.overdex.battle.inference.CountdownMatchStartInference()
     private val opponentFormReferences = com.example.overdex.data.PokemonFormKnowledge(pokemonKnowledge)
     private val fastMoveCadenceInference = FastMoveCadenceInference(pokemonKnowledge, opponentFormReferences)
+    private var lastOpponentCandidatePresentation: FastMoveCandidateSnapshot? = null
     private val playerInformationInference = com.example.overdex.battle.inference.PlayerBattleInformationInference(pokemonKnowledge)
     private val playerIdentityInference = com.example.overdex.battle.inference.PlayerActiveIdentityInference()
     private val fastMoveEnergyInference = FastMoveEnergyInference(pokemonKnowledge, opponentFormReferences)
@@ -931,13 +933,19 @@ class Match(
             playerIdentityInference.projectSpeciesReconfirmation(article) ?: return
         else playerIdentityInference.projectFaint(article)
         val derivations = fastMoveCadenceInference.accept(input)
-        fastMoveCadenceInference.candidateSnapshot(ActivePokemonSide.OPPONENT)?.let { candidates ->
-            opponentEnergyForecast.restrictCandidates(candidates.speciesName, candidates.remainingMoveNames)
-            DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
-                speciesName = candidates.speciesName,
-                moveNames = candidates.remainingMoveNames,
-                audioFavoredMoveName = candidates.audioPreference?.moveName,
-            )
+        val candidates = fastMoveCadenceInference.candidateSnapshot(ActivePokemonSide.OPPONENT)
+        if (candidates !== lastOpponentCandidatePresentation) {
+            // Keep the first presentation of each appearance and all evidence
+            // changes prompt. Unrelated measurements reuse the cached snapshot.
+            lastOpponentCandidatePresentation = candidates
+            candidates?.let {
+                opponentEnergyForecast.restrictCandidates(candidates.speciesName, candidates.remainingMoveNames)
+                DroidballOverlayPresentation.recordOpponentFastMoveCandidates(
+                    speciesName = candidates.speciesName,
+                    moveNames = candidates.remainingMoveNames,
+                    audioFavoredMoveName = candidates.audioPreference?.moveName,
+                )
+            }
         }
         derivations.forEach { derivation ->
             (derivation.payload as? FastMoveIdentified)?.let { identified ->

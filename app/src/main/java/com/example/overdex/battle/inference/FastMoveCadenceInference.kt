@@ -50,7 +50,7 @@ data class FastMoveCadenceDerivation(
  * Current live interpretation of one combatant's legal Fast Move pool.
  *
  * This is presentation state derived from retained Timeline evidence. It is
- * deliberately recomputed as evidence arrives, so a noisy early cadence can be
+ * recomputed when relevant evidence changes, so a noisy early cadence can be
  * refuted without deleting either the original measurement or the move from
  * Reference Knowledge.
  */
@@ -170,9 +170,21 @@ class FastMoveCadenceInference(
     private val pendingReferenceSounds = mutableListOf<RealityArticle>()
     private val audioEntryCues = mutableMapOf<ActivePokemonSide, Pair<Long, ArticleId>>()
     private val chargedEffectivenessWindow = ChargedMoveEffectivenessWindow()
-
+    private data class CandidatePresentation(
+        val remainingMoveKeys: Set<String>,
+        var snapshot: FastMoveCandidateSnapshot,
+    )
+    private val candidatePresentations = EnumMap<ActivePokemonSide, CandidatePresentation>(ActivePokemonSide::class.java)
+    /** Ranking work only, for bounded workload verification; never battle evidence. */
+    internal var candidatePresentationBuildCount: Long = 0
+        private set
 
     suspend fun accept(article: RealityArticle): List<FastMoveCadenceDerivation> {
+        // A first interval or ambiguous audio can change presentation without
+        // producing any derived Article. Invalidate from the inputs instead.
+        // Plain HP samples, OCR diagnostics and unrelated Articles reuse the
+        // ranked candidate set; their source times still age audio below.
+        if (changesCandidateEvidence(article)) candidatePresentations.clear()
         if (configurationScope.accept(article)) {
             // The scan can be another owned copy of the same species. Neither its
             // configured move nor a cached pre-battle identity transfers to it.
@@ -1000,16 +1012,36 @@ class FastMoveCadenceInference(
      */
     fun candidateSnapshot(side: ActivePokemonSide): FastMoveCandidateSnapshot? {
         val state = states[side] ?: return null
+        val presentation = candidatePresentations[side] ?: buildCandidatePresentation(state).also {
+            candidatePresentations[side] = it
+        }
+        val identified = state.identifiedMove
+        // Eligibility expires by SOURCE time even if every arriving Article is
+        // otherwise irrelevant to move candidates. Do not key the expensive
+        // cadence/effectiveness ranking by that advancing clock.
+        val preference = if (state.possibleMoves.isNotEmpty() &&
+            (identified == null || state.assumedHigherEnergyTieBreak) &&
+            audioEntryCues.isEmpty() && audioIdentityGate.allows(latestEvidenceAtNanos)) {
+            audioPreferences.preference(side, audioPreferenceContext(), latestEvidenceAtNanos)
+                ?.takeIf { normalize(it.moveName) in presentation.remainingMoveKeys }
+        } else null
+        if (presentation.snapshot.audioPreference != preference) {
+            presentation.snapshot = presentation.snapshot.copy(audioPreference = preference)
+        }
+        return presentation.snapshot
+    }
+
+    private fun buildCandidatePresentation(state: SideState): CandidatePresentation {
+        candidatePresentationBuildCount++
         val allMoves = state.possibleMoves
-        if (allMoves.isEmpty()) return FastMoveCandidateSnapshot(
-            side = side,
+        if (allMoves.isEmpty()) return CandidatePresentation(emptySet(), FastMoveCandidateSnapshot(
+            side = state.side,
             speciesName = state.speciesName,
             remainingMoveNames = emptyList(),
             eliminatedMoveNames = emptyList(),
             evidenceKinds = emptyList(),
             identifiedMoveName = null,
-        )
-
+        ))
         val identified = state.identifiedMove
         // An energy tie-break must not hide equally compatible moves or suppress
         // their audio preference. It still remains a forecast hypothesis.
@@ -1019,13 +1051,8 @@ class FastMoveCadenceInference(
             candidateMovesFromEvidence(state)
         }
         val remainingKeys = remaining.map { normalize(it.name) }.toSet()
-        val preference = if ((identified == null || state.assumedHigherEnergyTieBreak) &&
-            audioEntryCues.isEmpty() && audioIdentityGate.allows(latestEvidenceAtNanos)) {
-            audioPreferences.preference(side, audioPreferenceContext(), latestEvidenceAtNanos)
-                ?.takeIf { normalize(it.moveName) in remainingKeys }
-        } else null
-        return FastMoveCandidateSnapshot(
-            side = side,
+        return CandidatePresentation(remainingKeys, FastMoveCandidateSnapshot(
+            side = state.side,
             speciesName = state.speciesName,
             remainingMoveNames = remaining.map { it.name },
             eliminatedMoveNames = allMoves.filterNot { normalize(it.name) in remainingKeys }.map { it.name },
@@ -1036,8 +1063,22 @@ class FastMoveCadenceInference(
                 if (state.effectivenessEvidence.isNotEmpty()) add("EFFECTIVENESS")
             },
             identifiedMoveName = identified?.name,
-            audioPreference = preference,
-        )
+        ))
+    }
+
+    /** Every input that can change identity, constraints, impact support or appearance. */
+    private fun changesCandidateEvidence(article: RealityArticle): Boolean = when (article.payload) {
+        is ActivePokemonSpeciesWitnessed, is ActivePokemonFaintedWitnessed,
+        is PlayerTeamSlotConfigured, is PlayerTeamRosterSlotWitnessed,
+        is com.example.overdex.battle.custody.PlayerTeamRosterConfirmation,
+        is com.example.overdex.battle.custody.SpeciesCheckMeasured,
+        is ActiveHpBarMotionCadenceMeasured, is ActiveHpBarBorderCadenceMeasured,
+        is FastMoveRecipientVisualCadenceMeasured, is FastMoveEffectivenessWitnessed,
+        is FastMoveSoundMeasured, is FastMoveUseObserved,
+        GetReadyWitnessed, AttackIncoming, ChargeMoveUsedAnnounced,
+        is MatchEnded, com.example.overdex.battle.custody.ObservationRestartedByUser,
+        com.example.overdex.battle.custody.ScreenIgnoredByUser -> true
+        else -> rawImpactKind(article) != null
     }
 
     private fun audioPreferenceContext() = states.map { (side, state) ->

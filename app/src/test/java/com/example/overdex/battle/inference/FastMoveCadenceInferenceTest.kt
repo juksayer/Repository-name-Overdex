@@ -24,12 +24,130 @@ import com.example.overdex.model.Pokemon
 import com.example.overdex.model.PokemonType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
 
 class FastMoveCadenceInferenceTest {
     private val inference = FastMoveCadenceInference(EmptyKnowledge)
+
+    @Test fun `thousand unrelated measurements reuse one ranked candidate presentation`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        val snapshot = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        repeat(1_000) { index ->
+            val payload = if (index % 2 == 0) com.example.overdex.battle.custody.ActiveHpBarMeasured(
+                ActivePokemonSide.OPPONENT, 100, 400, 200, 410, .8f,
+            ) else com.example.overdex.battle.custody.RawTestimony("unrelated diagnostics")
+            assertTrue(engine.accept(article("unrelated-$index", payload)
+                .copy(monotonicTimeNanos = 2_000_000_000L + index * 1_000_000L)).isEmpty())
+            assertSame(snapshot, engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        }
+        assertEquals(1L, engine.candidatePresentationBuildCount)
+        assertEquals(setOf("Water Gun", "Powder Snow"), snapshot.remainingMoveNames.toSet())
+    }
+
+    @Test fun `first cadence interval invalidates presentation without emitting identity and charge clears it`() = runBlocking {
+        val engine = FastMoveCadenceInference(SinglePokemonKnowledge(testSealeo()))
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Sealeo", 364)))
+        val initial = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertTrue(engine.accept(borderCadence("first-interval", 500_000_000L)
+            .copy(monotonicTimeNanos = 2_000_000_000L)).isEmpty())
+        val narrowed = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertNotSame(initial, narrowed)
+        assertEquals(listOf("Water Gun"), narrowed.remainingMoveNames)
+        assertNull(narrowed.identifiedMoveName)
+        assertEquals(listOf("CADENCE"), narrowed.evidenceKinds)
+        assertTrue(engine.accept(article("get-ready", com.example.overdex.battle.custody.GetReadyWitnessed)
+            .copy(monotonicTimeNanos = 3_000_000_000L)).isEmpty())
+        val reset = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals(setOf("Water Gun", "Powder Snow"), reset.remainingMoveNames.toSet())
+        assertTrue(reset.evidenceKinds.isEmpty())
+        assertEquals(3L, engine.candidatePresentationBuildCount)
+    }
+
+    @Test fun `effectiveness can prune cached candidates without a uniquely identified move`() = runBlocking {
+        val attacker = Pokemon(999, "Water choices", listOf(PokemonType.WATER), "test", fastMoves = listOf(
+            move("Water Gun", 1, 3, PokemonType.WATER), move("Bubble", 3, 11, PokemonType.WATER),
+            move("Tackle", 1, 3, PokemonType.NORMAL)), chargedMoves = emptyList())
+        val defender = Pokemon(998, "Fire defender", listOf(PokemonType.FIRE), "test",
+            fastMoves = listOf(move("Ember", 2, 6)), chargedMoves = emptyList())
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(attacker, defender))
+        engine.accept(article("player", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, defender.name, defender.id)))
+        engine.accept(article("opponent", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, attacker.name, attacker.id)))
+        val before = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertTrue(engine.accept(effect("effective", FastMoveEffectiveness.SUPER_EFFECTIVE, 2_000_000_000L)).isEmpty())
+        val after = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertNotSame(before, after)
+        assertEquals(listOf("Water Gun", "Bubble"), after.remainingMoveNames)
+        assertEquals(listOf("Tackle"), after.eliminatedMoveNames)
+        assertNull(after.identifiedMoveName)
+    }
+
+    @Test fun `ambiguous audio refreshes cached presentation and unrelated source time expires it without reranking`() = runBlocking {
+        val engine = audioEngine()
+        engine.accept(article("go", com.example.overdex.battle.custody.MatchStarted))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        assertTrue(engine.accept(weakReferenceSound("weak1", 2_000_000_000L)).isEmpty())
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.audioPreference)
+        assertTrue(engine.accept(weakReferenceSound("weak2", 3_500_000_000L)).isEmpty())
+        val favored = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals("Spark", favored.audioPreference?.moveName)
+        val buildCount = engine.candidatePresentationBuildCount
+        engine.accept(article("still-fresh", com.example.overdex.battle.custody.RawTestimony("diagnostic"))
+            .copy(monotonicTimeNanos = 9_500_000_000L))
+        assertSame(favored, engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        engine.accept(article("expired", com.example.overdex.battle.custody.RawTestimony("diagnostic"))
+            .copy(monotonicTimeNanos = 9_500_000_001L))
+        val expired = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertNull(expired.audioPreference)
+        assertNotSame(favored, expired)
+        engine.accept(article("late-old-frame", com.example.overdex.battle.custody.RawTestimony("diagnostic"))
+            .copy(monotonicTimeNanos = 4_000_000_000L))
+        assertSame(expired, engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertEquals(buildCount, engine.candidatePresentationBuildCount)
+    }
+
+    @Test fun `explicit form and faint invalidate an already cached species pool`() = runBlocking {
+        val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
+        engine.accept(article("bare", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu", 26)))
+        assertTrue("Charm" in requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT)).remainingMoveNames)
+        engine.accept(article("explicit-form", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26))
+            .copy(monotonicTimeNanos = 2_000_000_000L))
+        val form = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        assertTrue("Charm" !in form.remainingMoveNames)
+        engine.accept(article("late-bare", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu", 26))
+            .copy(monotonicTimeNanos = 1_000_000_000L))
+        assertEquals("Raichu (Alolan)", engine.candidateSnapshot(ActivePokemonSide.OPPONENT)?.speciesName)
+        engine.accept(article("ko", com.example.overdex.battle.custody.ActivePokemonFaintedWitnessed(
+            ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26)).copy(monotonicTimeNanos = 3_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+        engine.accept(article("lingering-badge", ActivePokemonSpeciesWitnessed(ActivePokemonSide.OPPONENT, "Raichu (Alolan)", 26))
+            .copy(monotonicTimeNanos = 4_000_000_000L))
+        assertNull(engine.candidateSnapshot(ActivePokemonSide.OPPONENT))
+    }
+
+    @Test fun `late player reference knowledge and configuration replace cached empty candidates`() = runBlocking {
+        var available: Pokemon? = null
+        val knowledge = object : PokemonKnowledge {
+            override suspend fun getPokemonByName(name: String) = available?.takeIf { it.name == name }
+            override suspend fun getPokemonById(id: Int) = available?.takeIf { it.id == id }
+            override suspend fun getAllSpeciesNames() = setOf("Sealeo")
+        }
+        val engine = FastMoveCadenceInference(knowledge)
+        engine.accept(article("species", ActivePokemonSpeciesWitnessed(ActivePokemonSide.PLAYER, "Sealeo", 364)))
+        val empty = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER))
+        assertTrue(empty.remainingMoveNames.isEmpty())
+        available = testSealeo()
+        engine.accept(article("late-config", PlayerTeamSlotConfigured(1, "Sealeo", 364, "Powder Snow", listOf("Body Slam")))
+            .copy(monotonicTimeNanos = 2_000_000_000L))
+        val ready = requireNotNull(engine.candidateSnapshot(ActivePokemonSide.PLAYER))
+        assertNotSame(empty, ready)
+        assertEquals("Powder Snow", ready.identifiedMoveName)
+        assertEquals(listOf("Powder Snow"), ready.remainingMoveNames)
+    }
 
     @Test fun `resolved ordinary slot keeps Volt Switch when returning after Alolan Spark`() = runBlocking {
         val engine = FastMoveCadenceInference(MapPokemonKnowledge(raichu("Raichu (Alolan)", false), raichu("Raichu", true)))
