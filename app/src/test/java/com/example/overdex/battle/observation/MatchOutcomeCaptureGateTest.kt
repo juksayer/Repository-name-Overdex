@@ -7,6 +7,176 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MatchOutcomeCaptureGateTest {
+    @Test fun `finishing charged camera HP preserves urgent attention and the bounded late result tail`() {
+        for (side in ActivePokemonSide.entries) for (chargedHp in listOf(0f, .1f)) {
+            var now = 100_000_000_000L
+            val battlefieldAt = now
+            val gate = MatchOutcomeCaptureGate { now }
+            gate.observeMatchStarted(now)
+            gate.observePlayerBallCount(now, if (side == ActivePokemonSide.PLAYER) 1 else 3)
+            gate.observeOpponentBallCount(now, if (side == ActivePokemonSide.OPPONENT) 1 else 3)
+            gate.observeActiveHp(side, now, .83f)
+            now += 7_000_000_000L
+            gate.observeChargedMove(now)
+            val chargedAt = now
+            now += 1_000_000_000L
+            gate.observeActiveHp(side, now, chargedHp, chargedCamera = true)
+            assertTrue("Critical charge-camera HP still drives urgent result attention", gate.isEnabled())
+
+            now = battlefieldAt + 44_000_000_000L
+            assertFalse("Ordinary urgent attention remains bounded", gate.isEnabled())
+            assertEquals("A charge-camera measurement is not a normal battlefield return",
+                500_000_000L, gate.probeIntervalNanos())
+            assertTrue(gate.acceptsProbeFrame(now))
+            now += 500_000_000L
+            assertTrue(gate.acceptsProbeFrame(now))
+            now = chargedAt + 45_000_000_001L
+            assertEquals("Camera HP must not extend the charge-source deadline",
+                2_000_000_000L, gate.probeIntervalNanos())
+        }
+    }
+
+    @Test fun `normal battlefield return cancels late tail even when later camera HP is observed`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 1)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .83f)
+        now += 7_000_000_000L
+        gate.observeChargedMove(now)
+        now += 1_000_000_000L
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .1f, chargedCamera = true)
+        now += 1_000_000_000L
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .5f)
+        now += 1_000_000_000L
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .1f, chargedCamera = true)
+        now += 36_000_000_000L
+        assertFalse(gate.isEnabled())
+        assertEquals("A later camera frame cannot undo a real battlefield return",
+            2_000_000_000L, gate.probeIntervalNanos())
+    }
+
+    @Test fun `stopped gate cannot reuse prior battlefield context for camera-only HP`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .83f)
+        gate.stop()
+        now += 1_000_000_000L
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 1)
+        gate.observeChargedMove(now)
+        now += 1_000_000_000L
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, 0f, chargedCamera = true)
+        now += 36_000_000_000L
+        assertFalse(gate.isEnabled())
+        assertEquals("No normal bar in this Match authorized a late disappearance tail",
+            2_000_000_000L, gate.probeIntervalNanos())
+    }
+
+    @Test fun `late final charged result gets a bounded half second tail after ordinary fast window expires`() {
+        var now = 100_000_000_000L
+        val hpAt = now
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 1)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .11111111f)
+        now += 7_000_000_000L
+        gate.observeChargedMove(now)
+        now = hpAt + 36_000_000_000L
+        assertFalse("The four-Hz window still expires after 35 seconds", gate.isEnabled())
+        assertTrue(gate.isProbeEnabled())
+        assertEquals(500_000_000L, gate.probeIntervalNanos())
+        assertTrue(gate.acceptsProbeFrame(now))
+        now += 499_999_999L
+        assertFalse(gate.acceptsProbeFrame(now))
+        now++
+        assertTrue(gate.acceptsProbeFrame(now))
+        now = hpAt + 45_000_000_000L
+        assertTrue("The Rocket YOU WIN roughly 45s after last HP is still acquired densely", gate.acceptsProbeFrame(now))
+        now = hpAt + 52_000_000_000L
+        assertEquals(500_000_000L, gate.probeIntervalNanos())
+        now++
+        assertEquals("The extra attention ends 45s after its charged-move source", 2_000_000_000L, gate.probeIntervalNanos())
+        assertFalse(gate.isEnabled())
+    }
+
+    @Test fun `sparse probe remains two seconds apart without final charged disappearance`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 3)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .1f)
+        gate.observeChargedMove(now)
+        now += 40_000_000_000L
+        assertEquals(2_000_000_000L, gate.probeIntervalNanos())
+        assertTrue(gate.acceptsProbeFrame(now))
+        now += 500_000_000L
+        assertFalse(gate.acceptsProbeFrame(now))
+        now += 1_500_000_000L
+        assertTrue(gate.acceptsProbeFrame(now))
+    }
+
+    @Test fun `late attention needs charged evidence after last HP and closes on reappearance`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 3)
+        gate.observeOpponentBallCount(now, 1)
+        gate.observeChargedMove(now - 1) // Before the current Match, so unavailable.
+        gate.observeChargedMove(now + 1) // Future evidence cannot create attention.
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .75f)
+        now += 36_000_000_000L
+        assertEquals(2_000_000_000L, gate.probeIntervalNanos())
+        gate.observeChargedMove(now)
+        assertEquals(500_000_000L, gate.probeIntervalNanos())
+        now++
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .5f)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, 100_000_000_000L, .2f)
+        now += 36_000_000_000L
+        assertEquals("An old charge cannot rearm after a fresh battlefield HP measurement", 2_000_000_000L, gate.probeIntervalNanos())
+    }
+
+    @Test fun `probe capture rejects future duplicate and reordered frames and resets on stop`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        assertFalse(gate.acceptsProbeFrame(now - 1))
+        assertFalse(gate.acceptsProbeFrame(now + 1))
+        assertTrue(gate.acceptsProbeFrame(now))
+        assertFalse(gate.acceptsProbeFrame(now))
+        assertFalse(gate.acceptsProbeFrame(now - 1))
+        gate.observeMatchEnded()
+        now += 3_000_000_000L
+        assertFalse(gate.acceptsProbeFrame(now))
+        gate.stop()
+        gate.observeMatchStarted(now)
+        assertTrue(gate.acceptsProbeFrame(now))
+        assertEquals(2_000_000_000L, gate.probeIntervalNanos())
+    }
+
+    @Test fun `zero remaining team still permits late charged result acquisition but no inferred winner`() {
+        var now = 100_000_000_000L
+        val gate = MatchOutcomeCaptureGate { now }
+        gate.observeMatchStarted(now)
+        gate.observePlayerBallCount(now, 2)
+        gate.observeOpponentBallCount(now, 1)
+        gate.observeActiveHp(ActivePokemonSide.OPPONENT, now, .2f)
+        now += 1_000_000_000L
+        gate.observeChargedMove(now)
+        gate.observeOpponentBallCount(now, 0)
+        now += 36_000_000_000L
+        assertFalse(gate.isEnabled())
+        assertTrue(gate.isProbeEnabled())
+        assertEquals(500_000_000L, gate.probeIntervalNanos())
+        now += 25_000_000_000L
+        assertEquals(2_000_000_000L, gate.probeIntervalNanos())
+    }
+
     @Test fun `sparse result probe stays available with healthy HP and reserves through an early concession`() {
         var now = 1_000_000_000L
         val gate = MatchOutcomeCaptureGate { now }

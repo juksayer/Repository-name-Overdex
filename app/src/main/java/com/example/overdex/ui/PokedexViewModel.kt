@@ -1170,7 +1170,8 @@ class PokedexViewModel(application: Application) : AndroidViewModel(application)
                 contract = BattleWitnessContracts.matchOutcomeProbeCapture,
                 artifactStore = cropArtifactStore,
                 isEnabled = { battleEvidenceLive() && matchOutcomeCaptureGate.isProbeEnabled() },
-                captureIntervalNanos = MatchOutcomeCaptureGate.PROBE_CAPTURE_INTERVAL_NANOS,
+                captureIntervalNanos = MatchOutcomeCaptureGate.LATE_PROBE_CAPTURE_INTERVAL_NANOS,
+                acceptsFrame = matchOutcomeCaptureGate::acceptsProbeFrame,
                 captureDispatcher = auxiliaryCaptureDispatcher,
                 observerId = ObserverId(BattleWitnessContracts.matchOutcomeProbeCapture.witnessId, ObserverSource.SCREEN_CAPTURE),
                 name = "Match Outcome Probe Capture"

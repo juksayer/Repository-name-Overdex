@@ -52,7 +52,7 @@ class PersistedOutcomeTextWitnessTest {
             fixture.clock.addAndGet(1_000_000_000L)
             fixture.capture("newer-blank", fixture.clock.get() - 100_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val normal = reader.request(OcrPriority.NORMAL)
+            val normal = reader.request(OcrPriority.URGENT, index = 1)
             recent.admit.complete(Unit)
             fixture.awaitEnd()
             withTimeout(5_000) { normal.finished.await() }
@@ -77,7 +77,7 @@ class PersistedOutcomeTextWitnessTest {
         } finally { fixture.close() }
     }
 
-    @Test fun `a queued routine blank cannot hold a later promising win behind normal admission`() = runBlocking {
+    @Test fun `a queued sparse blank cannot hold a later promising win behind routine admission`() = runBlocking {
         val reader = ControlledReader(inspector = { article ->
             if (article.label() == "promising-win") TransientTextProbe.Reading(.9f, true, 1L, null)
             else TransientTextProbe.Reading(0f, false, 0L, null)
@@ -90,10 +90,10 @@ class PersistedOutcomeTextWitnessTest {
             fixture.start()
             fixture.capture("queued-blank", fixture.clock.get() - 500_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val normal = reader.request(OcrPriority.NORMAL)
+            val normal = reader.request(OcrPriority.URGENT)
             val win = fixture.capture("promising-win", fixture.clock.get() - 100_000_000L,
                 wall = 54_321L, source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val urgent = reader.request(OcrPriority.URGENT)
+            val urgent = reader.request(OcrPriority.URGENT, index = 1)
             assertTrue(reader.reads.isEmpty())
 
             // The normal request remains blocked; the independently queued
@@ -113,23 +113,76 @@ class PersistedOutcomeTextWitnessTest {
         } finally { fixture.close() }
     }
 
-    @Test fun `a weak visual probe still allows real result text to be read at routine priority`() = runBlocking {
-        val reader = ControlledReader { listOf(text("YOU WIN!")) }
+    @Test fun `a weak visual probe retains brief win before newer summary at urgent priority`() = runBlocking {
+        val reader = ControlledReader { article ->
+            if (article.label() == "weak-probe") listOf(text("YOU WIN!")) else emptyList()
+        }
         val fixture = Fixture(reader)
         try {
             fixture.clock.set(fixture.at + 10_000_000_000L)
             fixture.start()
             val win = fixture.capture("weak-probe", fixture.clock.get() - 100_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            reader.request(OcrPriority.NORMAL).admit.complete(Unit)
+            val request = reader.request(OcrPriority.URGENT)
+            fixture.clock.addAndGet(2_000_000_000L)
+            fixture.capture("newer-summary", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            assertTrue("Sparse results must not join the normal OCR backlog", reader.requests.none { it.priority == OcrPriority.NORMAL })
+            request.admit.complete(Unit)
             fixture.awaitEnd()
             assertEquals(listOf(win.id), reader.reads.map { it.id })
-            assertTrue(reader.requests.all { it.priority == OcrPriority.NORMAL })
+            assertTrue(reader.requests.all { it.priority == OcrPriority.URGENT })
             val diagnostic = fixture.timeline.getArticles().single {
                 it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY"
             }.payload as RawTestimony
-            assertTrue(diagnostic.data.toString().contains("selection=LATEST_FALLBACK"))
+            assertTrue(diagnostic.data.toString().contains("selection=RETAINED_FALLBACK"))
+            val end = fixture.timeline.getArticles().single { it.payload is MatchEnded }
+            assertEquals(win.monotonicTimeNanos, end.monotonicTimeNanos)
+            assertEquals(win.perceivedAt, end.perceivedAt)
         } finally { fixture.close() }
+    }
+
+    @Test fun `weak sparse result passes waiting routine work without replacing its captured pixels`() = runBlocking {
+        val scheduler = OcrWorkScheduler()
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val order = CopyOnWriteArrayList<String>()
+        val blocker = launch(start = CoroutineStart.UNDISPATCHED) {
+            scheduler.run(OcrPriority.NORMAL) { entered.complete(Unit); release.await() }
+        }
+        entered.await()
+        val routine = launch(start = CoroutineStart.UNDISPATCHED) {
+            scheduler.run(OcrPriority.NORMAL) { order += "routine" }
+        }
+        val reader = object : OutcomeCropReader {
+            override suspend fun warmUp() = Unit
+            override suspend fun <T> withReadingTurn(priority: OcrPriority,
+                block: suspend (OutcomeCropReadingTurn) -> T): T = scheduler.run(priority) {
+                block(turn { article ->
+                    order += article.label()
+                    if (article.label() == "weak-win") listOf(text("YOU WIN!")) else emptyList()
+                })
+            }
+        }
+        val fixture = Fixture(reader)
+        try {
+            fixture.clock.set(fixture.at + 10_000_000_000L)
+            fixture.start()
+            val win = fixture.capture("weak-win", fixture.clock.get() - 100_000_000L,
+                wall = 54_321L, source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            await { scheduler.waitingCount(OcrPriority.URGENT) == 1 }
+            fixture.clock.addAndGet(2_000_000_000L)
+            fixture.capture("newer-reward", fixture.clock.get() - 100_000_000L,
+                source = "MATCH_OUTCOME_PROBE_CAPTURE")
+            release.complete(Unit)
+            fixture.awaitEnd()
+            assertEquals("weak-win", order.first())
+            val end = fixture.timeline.getArticles().single { it.payload is MatchEnded }
+            assertEquals(win.perceivedAt, end.perceivedAt)
+            assertEquals(win.monotonicTimeNanos, end.monotonicTimeNanos)
+        } finally {
+            release.complete(Unit); blocker.cancel(); routine.cancel(); fixture.close()
+        }
     }
 
     @Test fun `stop during a routine visual inspection cannot enqueue a late native result read`() = runBlocking {
@@ -178,7 +231,7 @@ class PersistedOutcomeTextWitnessTest {
             fixture.start()
             fixture.capture("late-probe-read", fixture.clock.get() - 100_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val request = reader.request(OcrPriority.NORMAL)
+            val request = reader.request(OcrPriority.URGENT)
             request.admit.complete(Unit)
             withTimeout(5_000) { started.await() }
             fixture.witness.stop()
@@ -347,9 +400,9 @@ class PersistedOutcomeTextWitnessTest {
             val recovery = reader.request(OcrPriority.NORMAL)
             fixture.capture("probe-pending", fixture.clock.get() - 100_000_000L,
                 source = "MATCH_OUTCOME_PROBE_CAPTURE")
-            val probe = reader.request(OcrPriority.NORMAL, index = 1)
+            val probe = reader.request(OcrPriority.URGENT)
             fixture.capture("fresh-win", fixture.clock.get() - 100_000_000L)
-            val recent = reader.request(OcrPriority.URGENT)
+            val recent = reader.request(OcrPriority.URGENT, index = 1)
             recent.admit.complete(Unit)
             fixture.awaitEnd()
             withTimeout(5_000) { recovery.finished.await(); recent.finished.await(); probe.finished.await() }

@@ -156,10 +156,10 @@ class ConcessionOutcomeProbeDeviceTest {
                 SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL))
             gateNow.addAndGet(2_000 * MS)
             val blank = capture("battle-control-exact.png", CONTROL_HASH, 2_000)
-            // The weak control still receives an ordinary fallback; it must
-            // not take the winning frame's urgent slot or evade inspection.
-            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL) == 1 }
-            assertEquals(1, SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT))
+            // Sparse weak checks also receive bounded urgent admission. The
+            // earlier winning frame remains ahead of this newer control.
+            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT) == 2 }
+            assertEquals(0, SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL))
             assertTrue(timeline.getArticles().none { it.payload is MatchEnded })
             release.complete(Unit)
             blocker.join()
@@ -203,11 +203,135 @@ class ConcessionOutcomeProbeDeviceTest {
         }
     }
 
-    private fun privateFixtures(): File {
+    @Test fun weakRocketResultSurvivesNewerRewardAndRoutineBacklogWithActualNativeOcr(): Unit = runBlocking {
+        val fixtures = privateFixtures("rocketFixtureDir")
+        ensureTextRecognitionModule()
+        OutcomeTextRecognizer.warmUp()
+        val temporary = File(context.cacheDir, "rocket-result-probe-${System.nanoTime()}")
+        check(temporary.mkdirs())
+        val store = FileCropArtifactStore(temporary)
+        val custody = InMemoryTestimonyCustody()
+        val timeline = InMemoryRealityTimeline()
+        val match = Match("SYNTHETIC_ROCKET_WEAK_PROBE", custody = custody, realityTimeline = timeline,
+            pokemonKnowledge = object : PokemonKnowledge {
+                override suspend fun getPokemonByName(name: String): Pokemon? = null
+                override suspend fun getPokemonById(id: Int): Pokemon? = null
+                override suspend fun getAllSpeciesNames() = emptySet<String>()
+            })
+        val sourceBase = System.nanoTime() - 3_000 * MS
+        val clock = AtomicLong(sourceBase + 3_000 * MS)
+        val inspected = JSONArray()
+        val reader = object : OutcomeCropReader {
+            override suspend fun warmUp() = Unit
+            override suspend fun inspect(article: RealityArticle): TransientTextProbe.Reading? {
+                val crop = article.payload as CropCaptured
+                val bitmap = requireNotNull(store.loadVerifiedPng(crop.artifact, crop.cropProvenance))
+                try {
+                    val pixels = IntArray(bitmap.width * bitmap.height)
+                    bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+                    val actual = TransientTextProbe.analyze(pixels, bitmap.width, bitmap.height)
+                    inspected.put(JSONObject().put("cropId", article.id.value)
+                        .put("actualScore", actual.score).put("actualHasText", actual.hasText))
+                } finally { bitmap.recycle() }
+                // Deliberately model a heuristic miss. Native OCR, the source
+                // pixels, and the complete typed result chain remain real.
+                return null
+            }
+            override suspend fun <T> withReadingTurn(priority: OcrPriority,
+                block: suspend (OutcomeCropReadingTurn) -> T): T = OutcomeTextRecognizer.withReadingTurn(priority) {
+                val native = this
+                block(object : OutcomeCropReadingTurn {
+                    override val nativeReadNanos get() = native.nativeReadNanos
+                    override val readCount get() = native.readCount
+                    override suspend fun recognize(article: RealityArticle): List<OcrTextEvidence> {
+                        val crop = article.payload as CropCaptured
+                        val bitmap = requireNotNull(store.loadVerifiedPng(crop.artifact, crop.cropProvenance))
+                        return try { native.recognizeCandidates(bitmap) { MatchOutcomeTextResolver.resolve(it) != null } }
+                        finally { bitmap.recycle() }
+                    }
+                })
+            }
+        }
+        val text = PersistedOutcomeTextWitness(reader, clock::get)
+        val phrase = PersistedOutcomePhraseWitness(
+            { MatchOutcomeTextResolver.resolve(it) == MatchOutcomePhrase.WIN },
+            ObserverId("YOU_WIN_WITNESS", ObservationSource.SCREEN_CAPTURE), "You Win")
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val blocker = launch(Dispatchers.Default, start = CoroutineStart.UNDISPATCHED) {
+            SharedLatinTextRecognizer.withReadingTurn(OcrPriority.NORMAL) { entered.complete(Unit); release.await() }
+        }
+        val report = JSONObject().put("clockPolicy", CLOCK_POLICY).put("syntheticWeakProbe", true)
+            .put("sourceFrameSha256", ROCKET_SOURCE_HASH)
+        val output = File(context.cacheDir, "result-rocket-weak-probe.json")
+        try {
+            withTimeout(5_000) { entered.await() }
+            val source = requireNotNull(BitmapFactory.decodeFile(verified(fixtures, "source-rocket-win.png", ROCKET_SOURCE_HASH).path))
+            val exact = requireNotNull(BitmapFactory.decodeFile(verified(fixtures, "rocket-win.png", ROCKET_WIN_HASH).path))
+            try {
+                val resolved = requireNotNull(BattleCropContracts.matchOutcome.resolve(BattleCalibration(
+                    matchOutcomeRegion = AnchorRegion(.15000005f, .42f, .69499993f, .17500003f)), source))
+                try {
+                    assertEquals(PROVENANCE, resolved.provenance)
+                    val expectedPixels = IntArray(exact.width * exact.height)
+                    val actualPixels = IntArray(expectedPixels.size)
+                    exact.getPixels(expectedPixels, 0, exact.width, 0, 0, exact.width, exact.height)
+                    resolved.bitmap.getPixels(actualPixels, 0, exact.width, 0, 0, exact.width, exact.height)
+                    assertArrayEquals(expectedPixels, actualPixels)
+                } finally { resolved.bitmap.recycle() }
+            } finally { source.recycle(); exact.recycle() }
+            phrase.start(match); text.start(match)
+            suspend fun capture(filename: String, hash: String, offsetMillis: Long): RealityArticle {
+                val artifact = requireNotNull(store.preserveEncodedPng(verified(fixtures, filename, hash).readBytes()))
+                val receipt = custody.submitTestimony(SourceId(BattleWitnessContracts.matchOutcomeProbeCapture.witnessId),
+                    CropCaptured(artifact, PROVENANCE), 200_000L + offsetMillis,
+                    null, emptyList(), sourceBase + offsetMillis * MS)
+                match.awaitAcceptedEvidencePublished()
+                return timeline.getArticles().single { it.sequenceNumber == receipt.sequenceNumber }
+            }
+            val win = capture("rocket-win.png", ROCKET_WIN_HASH, 0)
+            await { SharedLatinTextRecognizer.waitingCount(OcrPriority.URGENT) == 1 }
+            val reward = capture("rocket-reward.png", ROCKET_REWARD_HASH, 2_000)
+            await { inspected.length() == 2 }
+            assertEquals(0, SharedLatinTextRecognizer.waitingCount(OcrPriority.NORMAL))
+            release.complete(Unit)
+            blocker.join()
+            await(30_000) { timeline.getArticles().any { it.payload is MatchEnded } }
+            match.awaitAcceptedEvidencePublished()
+            val articles = timeline.getArticles()
+            val end = articles.single { it.payload is MatchEnded }
+            assertEquals(MatchEnded(BattleResult.WIN), end.payload)
+            val accepted = articles.single { it.id == end.predecessorIds.single() }
+            val native = articles.single { it.id.value == accepted.evidenceReferences!!.single() }
+            assertEquals("YOU_WIN_WITNESS", accepted.sourceId.id)
+            assertEquals(listOf(win.id.value), native.evidenceReferences)
+            assertNotNull((native.payload as RawTestimony).ocr)
+            for (article in listOf(native, accepted, end)) {
+                assertEquals(win.monotonicTimeNanos, article.monotonicTimeNanos)
+                assertEquals(win.perceivedAt, article.perceivedAt)
+            }
+            assertNotEquals(reward.monotonicTimeNanos, end.monotonicTimeNanos)
+            val diagnostic = (articles.single { it.sourceId.id == "MATCH_OUTCOME_TEXT_WITNESS_LATENCY" }.payload as RawTestimony).data.toString()
+            assertTrue(diagnostic, diagnostic.contains("lane=PROBE priority=URGENT"))
+            assertTrue(diagnostic, diagnostic.contains("selection=RETAINED_FALLBACK"))
+            report.put("status", "passed").put("actualMlKit", true).put("diagnostic", diagnostic)
+        } catch (error: Throwable) {
+            report.put("status", "failed").put("error", error.toString())
+            throw error
+        } finally {
+            release.complete(Unit); blocker.cancelAndJoin()
+            text.stop(); phrase.stop(); match.awaitAcceptedEvidencePublished()
+            report.put("actualVisualProbes", inspected).put("articles", JSONArray(timeline.getArticles().map(::articleJson)))
+            output.writeText(report.toString(2))
+            match.release(); temporary.deleteRecursively()
+        }
+    }
+
+    private fun privateFixtures(argumentName: String = "fixtureDir"): File {
         check(Build.HARDWARE in setOf("ranchu", "goldfish") || Build.FINGERPRINT.contains("generic") ||
             Build.MODEL.contains("Emulator")) { "Run this isolated result test only on a disposable emulator" }
-        val argument = InstrumentationRegistry.getArguments().getString("fixtureDir")
-            ?: error("Supply fixtureDir for the private result-probe-fixture directory")
+        val argument = InstrumentationRegistry.getArguments().getString(argumentName)
+            ?: error("Supply $argumentName for the private result-probe-fixture directory")
         val directory = File(argument).canonicalFile
         check(directory.isDirectory && directory.path.startsWith(File(context.applicationInfo.dataDir).canonicalPath + File.separator))
         return directory
@@ -270,6 +394,9 @@ class ConcessionOutcomeProbeDeviceTest {
         const val SOURCE_HASH = "c6076aafdb5a11ebbc3a1bd8c70bbfc43c68a691af4689fea9b4271f5d59956b"
         const val WIN_HASH = "3246fc83b57ac4b507250d5ad3c1e1e3136f423fe5ce68a7da78f5e3709f418e"
         const val CONTROL_HASH = "182afff7044988b57bf5080594654da37b0217ed6e3f86084fa07185c98f78ae"
+        const val ROCKET_SOURCE_HASH = "ccffed15255b84de4e536745b0c4fffc7eb789f93753b3caf9dc48606a290c25"
+        const val ROCKET_WIN_HASH = "7ea2cf8d851a09a3f5e074ce10efb34a6deab7764fb2e4c7666873a41c144a39"
+        const val ROCKET_REWARD_HASH = "2d4339a545322968b28e3b1ab6c6b264b01150d8aa85a6e546f6802fe3cc3af6"
         val PROVENANCE = BattleCropProvenance("MatchOutcomeCrop", 672, 1493, BattleCropBounds(100, 627, 568, 888))
         fun letters(text: String) = text.uppercase().filter(Char::isLetter)
         fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)

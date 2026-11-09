@@ -5,6 +5,7 @@ import com.example.overdex.battle.custody.ActiveHpBarDamageTickMeasured
 import com.example.overdex.battle.custody.ActivePokemonSide
 import com.example.overdex.battle.custody.ActivePokemonSpeciesWitnessed
 import com.example.overdex.battle.custody.BattleCryCandidatesMeasured
+import com.example.overdex.battle.custody.ChargeMoveUsedAnnounced
 import com.example.overdex.battle.custody.MatchEnded
 import com.example.overdex.battle.custody.MatchResultMusicMeasured
 import com.example.overdex.battle.custody.MatchStarted
@@ -226,11 +227,14 @@ class MatchOutcomeCaptureGate(
     private var scope: CoroutineScope? = null
     @Volatile private var battleStartedAt: Long? = null
     private val lastHpSeenAt = mutableMapOf<ActivePokemonSide, Long>()
+    private val lastBattlefieldHpSeenAt = mutableMapOf<ActivePokemonSide, Long>()
     @Volatile private var probeUntil: Long = 0L
     @Volatile private var ended = false
     @Volatile private var playerBallCount: Int? = null
     @Volatile private var opponentBallCount: Int? = null
     private val finalCriticalHpSides = mutableSetOf<ActivePokemonSide>()
+    private var lastChargedMoveAt: Long? = null
+    private var lastProbeFrameAt: Long? = null
 
     @Synchronized fun isEnabled(): Boolean {
         if (ended) return false
@@ -253,12 +257,54 @@ class MatchOutcomeCaptureGate(
      */
     @Synchronized fun isProbeEnabled(): Boolean = !ended && battleStartedAt != null && !isEnabled()
 
+    /**
+     * Normal sparse checks stay two seconds apart. A final-member charged move
+     * may finish before a long Rocket dialog, after the original fast window
+     * has expired. Retain a short, denser tail without extending four-Hz OCR.
+     * This changes acquisition only; pixels still have to establish the result.
+     */
+    @Synchronized fun acceptsProbeFrame(capturedAtNanos: Long): Boolean {
+        val startedAt = battleStartedAt ?: return false
+        if (!isProbeEnabled() || capturedAtNanos !in startedAt..now()) return false
+        val interval = probeIntervalNanos(capturedAtNanos)
+        val previous = lastProbeFrameAt
+        if (previous != null && (capturedAtNanos <= previous || capturedAtNanos - previous < interval)) return false
+        lastProbeFrameAt = capturedAtNanos
+        return true
+    }
+
+    @Synchronized internal fun probeIntervalNanos(at: Long = now()): Long {
+        val chargedAt = lastChargedMoveAt ?: return PROBE_CAPTURE_INTERVAL_NANOS
+        if (ended || at < chargedAt || at - chargedAt > LATE_CHARGED_RESULT_NANOS) return PROBE_CAPTURE_INTERVAL_NANOS
+        val finalBarMissing = ActivePokemonSide.entries.any { side ->
+            // A measured charge-camera bar, including a finishing zero, does
+            // not establish that the normal battlefield has returned.
+            val hpAt = lastBattlefieldHpSeenAt[side] ?: return@any false
+            val sideCount = if (side == ActivePokemonSide.PLAYER) playerBallCount else opponentBallCount
+            val otherCount = if (side == ActivePokemonSide.PLAYER) opponentBallCount else playerBallCount
+            sideCount != null && sideCount in 0..1 && (otherCount ?: 0) > 0 && chargedAt >= hpAt &&
+                at - hpAt in FINAL_MEMBER_HP_LOST_NANOS..LATE_FINAL_BAR_ABSENCE_NANOS
+        }
+        return if (finalBarMissing) LATE_PROBE_CAPTURE_INTERVAL_NANOS else PROBE_CAPTURE_INTERVAL_NANOS
+    }
+
+    @Synchronized internal fun observeChargedMove(at: Long) {
+        val startedAt = battleStartedAt ?: return
+        if (!ended && at in startedAt..now() && (lastChargedMoveAt == null || at > lastChargedMoveAt!!)) {
+            lastChargedMoveAt = at
+        }
+    }
+
     internal fun observeMatchStarted(at: Long) {
         battleStartedAt = at
     }
 
-    @Synchronized internal fun observeActiveHp(side: ActivePokemonSide, at: Long, filledFraction: Float) {
+    @Synchronized internal fun observeActiveHp(
+        side: ActivePokemonSide, at: Long, filledFraction: Float, chargedCamera: Boolean = false,
+    ) {
+        if (lastHpSeenAt[side]?.let { at < it } == true) return
         lastHpSeenAt[side] = at
+        if (!chargedCamera) lastBattlefieldHpSeenAt[side] = at
         if (battleStartedAt == null) battleStartedAt = at
         // Either team can lose its final member while the other still has a
         // bench. Red HP on a side with reserves must not open this window.
@@ -316,7 +362,9 @@ class MatchOutcomeCaptureGate(
                     val at = article.monotonicTimeNanos ?: now()
                     when (val payload = article.payload) {
                         is MatchStarted -> observeMatchStarted(at)
-                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, at, payload.filledFraction)
+                        is ChargeMoveUsedAnnounced -> observeChargedMove(at)
+                        is ActiveHpBarMeasured -> observeActiveHp(payload.side, at, payload.filledFraction,
+                            chargedCamera = ChargedImpactHpSource.matches(article.sourceId.id))
                         is PlayerPokeBallCountMeasured -> observePlayerBallCount(at, payload.visibleCount)
                         is OpponentBattleResourceCountMeasured -> if (payload.resource == OpponentBattleResource.POKE_BALLS) {
                             observeOpponentBallCount(at, payload.visibleCount)
@@ -336,15 +384,21 @@ class MatchOutcomeCaptureGate(
         scope = null
         battleStartedAt = null
         lastHpSeenAt.clear()
+        lastBattlefieldHpSeenAt.clear()
         probeUntil = 0L
         ended = false
         playerBallCount = null
         opponentBallCount = null
         finalCriticalHpSides.clear()
+        lastChargedMoveAt = null
+        lastProbeFrameAt = null
     }
 
     companion object {
         const val PROBE_CAPTURE_INTERVAL_NANOS = 2_000_000_000L
+        const val LATE_PROBE_CAPTURE_INTERVAL_NANOS = 500_000_000L
+        private const val LATE_CHARGED_RESULT_NANOS = 45_000_000_000L
+        private const val LATE_FINAL_BAR_ABSENCE_NANOS = 60_000_000_000L
         private const val BATTLEFIELD_ABSENCE_NANOS = 250_000_000L
         private const val FAINT_PROBE_NANOS = 8_000_000_000L
         private const val FINAL_TEAM_PROBE_NANOS = 10_000_000_000L

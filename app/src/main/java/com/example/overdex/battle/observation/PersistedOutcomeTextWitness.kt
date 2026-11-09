@@ -47,7 +47,7 @@ class PersistedOutcomeTextWitness internal constructor(
             // Only artifact references are queued. Source crops remain in the
             // Timeline even when their live-reading window has expired.
             val pending = OutcomeEvidenceQueue<RealityArticle>()
-            val probePending = PendingTransientTextCrops()
+            val probePending = OutcomeProbeEvidenceQueue<RealityArticle>()
             val probeSource = BattleWitnessContracts.matchOutcomeProbeCapture.witnessId
             val recentWake = Channel<Unit>(Channel.CONFLATED)
             val recoveryWake = Channel<Unit>(Channel.CONFLATED)
@@ -71,9 +71,11 @@ class PersistedOutcomeTextWitness internal constructor(
                     }
                 }
             }
-            // Inspect the sparse checks separately so their I/O cannot delay
-            // urgent captures. Promising preserved text earns urgent OCR;
-            // weak/blank scenery stays in the bounded routine fallback lane.
+            // Inspect sparse checks separately so their I/O cannot delay urgent
+            // captures. A weak visual heuristic must not keep a brief result
+            // behind the routine OCR backlog, or let a newer blank replace it.
+            // Both lanes are urgent. The normal check is 0.5 Hz; a bounded late
+            // charged-result tail is 2 Hz, with at most 16 references / eight seconds.
             witnessScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 match.articles.filter { article ->
                     article.sourceId.id == probeSource &&
@@ -93,7 +95,8 @@ class PersistedOutcomeTextWitness internal constructor(
                             recoveryWake.trySend(Unit)
                         }
                     } else {
-                        probePending.offer(article, visual)
+                        val capturedAt = article.monotonicTimeNanos ?: return@collect
+                        probePending.offer(article, capturedAt, now())
                         probeWake.trySend(Unit)
                     }
                 }
@@ -101,7 +104,7 @@ class PersistedOutcomeTextWitness internal constructor(
             // Pay model startup while the battle is underway, before the brief result.
             witnessScope.launch { reader.warmUp() }
             fun launchLane(lane: OutcomeReadLane, wake: Channel<Unit>) = witnessScope.launch {
-                val priority = if (lane == OutcomeReadLane.RECENT) OcrPriority.URGENT else OcrPriority.NORMAL
+                val priority = if (lane == OutcomeReadLane.RECOVERY) OcrPriority.NORMAL else OcrPriority.URGENT
                 for (signal in wake) {
                     fun hasPending() = when (lane) {
                         OutcomeReadLane.RECENT -> pending.counts(now()).recent > 0
@@ -115,7 +118,7 @@ class PersistedOutcomeTextWitness internal constructor(
                         var nativeReadNanos = 0L
                         var passes = 0
                         var remaining = pending.counts(queuedAt)
-                        var probeSelection: PendingTransientTextCrops.Selection? = null
+                        var probeSelection: OutcomeProbeEvidenceQueue.Selection<RealityArticle>? = null
                         val readings: List<OcrTextEvidence> = try {
                             reader.withReadingTurn(priority) { turn ->
                                 admittedAt = now()
@@ -125,7 +128,7 @@ class PersistedOutcomeTextWitness internal constructor(
                                     OutcomeReadLane.RECENT -> pending.pollRecent(admittedAt)
                                     OutcomeReadLane.RECOVERY -> pending.pollRecovery(admittedAt)
                                     OutcomeReadLane.PROBE -> probePending.select(admittedAt)
-                                        ?.also { probeSelection = it }?.article
+                                        ?.also { probeSelection = it }?.value
                                 }
                                 recoveryWake.trySend(Unit) // expiry may have moved work
                                 article ?: return@withReadingTurn emptyList()
@@ -147,13 +150,9 @@ class PersistedOutcomeTextWitness internal constructor(
                         val article = sample ?: continue
                         val capturedAt = article.monotonicTimeNanos ?: continue
                         val completedAt = now()
-                        probeSelection?.let {
-                            if (readings.any { reading -> reading.rawText.isNotBlank() }) probePending.succeeded(it)
-                            else probePending.failed(it)
-                        }
                         val probeDetails = probeSelection?.let {
-                            " selection=${it.kind} probePending=${it.pendingCount} " +
-                                "coalescedTotal=${it.coalescedTotal} overflowTotal=${it.overflowTotal} expiredTotal=${it.expiredTotal}"
+                            " selection=RETAINED_FALLBACK probePending=${it.pendingCount} " +
+                                "overflowTotal=${it.overflowTotal} expiredTotal=${it.expiredTotal}"
                         }.orEmpty()
                         // queueMs is this backend request's wait. Crop age at
                         // admission also includes time waiting for local selection.
