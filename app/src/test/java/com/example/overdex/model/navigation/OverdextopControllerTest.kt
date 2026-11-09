@@ -5,6 +5,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class OverdextopControllerTest {
+    @Test fun `colors opens as a separate program without losing the settings return selection`() {
+        val controller = OverdextopController()
+        controller.openPrograms()
+        controller.openSettings()
+        assertTrue(controller.select("odxfi_colors"))
+        assertEquals(OverdextopAction.OpenAppearance, controller.confirm())
+        assertEquals(OverdextopSurface.SETTINGS, controller.surface)
+        assertEquals("odxfi_colors", controller.selectedEntry.id)
+        assertTrue(controller.back())
+        controller.openSettings()
+        assertEquals("odxfi_colors", controller.selectedEntry.id)
+    }
+
     @Test fun `desktop arrows follow three columns without wrapping between rows`() {
         val controller = OverdextopController()
         controller.move(OverdextopDirection.UP)

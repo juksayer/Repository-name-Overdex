@@ -59,6 +59,12 @@ Settings remains in Programs so an empty/hidden configuration can be repaired.
 Settings itself may be pinned to the desktop. Destination IDs preserve selection
 when filtering changes the grid; hidden entries never delete their program data.
 
+Programs → Settings → ODX-Fi colors opens the case, button and bezel picker.
+The LCD offers presets and RGB sliders; the actual shell previews each draft.
+Save persists the three colors across modules and restarts, B cancels, and
+Original colors restores the draft defaults. Physical controls remain usable
+while CRT GlassShield stays in place. See [color-picker verification](../verification/2026-11-08-odxfi-colors.md).
+
 For private tournament invitations, check-in, pairings and results, start with
 [TournamentScreen](../../app/src/main/java/com/example/overdex/ui/screens/TournamentScreen.kt),
 [TournamentEngine](../../app/src/main/java/com/example/overdex/tournament/TournamentEngine.kt)

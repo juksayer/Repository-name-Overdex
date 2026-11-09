@@ -443,7 +443,8 @@ private fun RotatedLcdPixels(
 fun StatusIndicator(
     label: String,
     color: Color,
-    cycleDurationMillis: Int = 4000
+    cycleDurationMillis: Int = 4000,
+    labelColor: Color = Color.White.copy(alpha = 0.4f),
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -451,7 +452,7 @@ fun StatusIndicator(
     ) {
         Text(
             text = label,
-            color = Color.White.copy(alpha = 0.4f),
+            color = labelColor,
             fontSize = 8.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace

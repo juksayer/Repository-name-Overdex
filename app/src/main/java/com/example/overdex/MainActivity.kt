@@ -502,6 +502,10 @@ fun PokedexApp(
         com.example.overdex.data.HomeScreenPreferences(context.applicationContext)
     }
     var homeStyle by remember { mutableStateOf(homePreferences.read()) }
+    val appearancePreferences = remember(context.applicationContext) {
+        com.example.overdex.data.ODXFiAppearancePreferences(context.applicationContext)
+    }
+    var odxFiAppearance by remember { mutableStateOf(appearancePreferences.read()) }
     val homeController = remember { OverdextopController(initialShortcuts = homePreferences.readShortcuts()) }
     val desktopPointer = remember { DesktopPointerController() }
     var explorerOpen by remember { mutableStateOf(false) }
@@ -593,6 +597,7 @@ fun PokedexApp(
     }
 
     CompositionLocalProvider(
+        com.example.overdex.ui.ODXFi.LocalODXFiAppearance provides odxFiAppearance,
         com.example.overdex.ui.components.LocalTerminalSwipeWords provides terminalSwipeWords,
         com.example.overdex.diagnostics.DiagnosticLogger.LocalCurrentRoute provides currentRoute,
         com.example.overdex.ui.ODXFi.LocalDroidballSessionControl provides
@@ -679,6 +684,9 @@ fun PokedexApp(
                         OverdextopAction.OpenPrograms -> homeController.openPrograms()
                         OverdextopAction.OpenSettings -> homeController.openSettings()
                         OverdextopAction.OpenShortcuts -> homeController.openShortcuts()
+                        OverdextopAction.OpenAppearance -> navController.navigate("odxfi_colors") {
+                            launchSingleTop = true
+                        }
                         is OverdextopAction.ChangeShortcutLocation -> {
                             val updated = homeController.shortcuts.withVisibility(
                                 action.destinationId, action.location, action.visible,
@@ -904,6 +912,20 @@ fun PokedexApp(
                 }
             }
             
+            composable("odxfi_colors") {
+                com.example.overdex.ui.screens.ODXFiAppearanceScreen(
+                    initialAppearance = odxFiAppearance,
+                    onSave = { appearance ->
+                        val saved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            appearancePreferences.write(appearance)
+                        }
+                        if (saved) odxFiAppearance = appearance.opaque()
+                        saved
+                    },
+                    onBack = { navController.debugPopBackStack() },
+                )
+            }
+
             composable("battle_records?ownedId={ownedId}", arguments = listOf(navArgument("ownedId") { type = NavType.StringType; nullable = true; defaultValue = null })) { entry ->
                 com.example.overdex.ui.screens.BattleRecordsScreen(viewModel,
                     ownedId = entry.arguments?.getString("ownedId"), onBack = { navController.debugPopBackStack() })

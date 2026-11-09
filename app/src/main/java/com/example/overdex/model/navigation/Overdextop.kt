@@ -49,6 +49,7 @@ sealed interface OverdextopAction {
     data object OpenPrograms : OverdextopAction
     data object OpenSettings : OverdextopAction
     data object OpenShortcuts : OverdextopAction
+    data object OpenAppearance : OverdextopAction
     data class ChooseHomeStyle(val style: HomeScreenStyle) : OverdextopAction
     data class ChangeShortcutLocation(
         val destinationId: String,
@@ -82,7 +83,7 @@ object OverdextopCatalog {
     private val history = program("match_history", "match history", "Review saved battles, summaries, and replays.", OverdextopIcon.HISTORY, InstrumentCommand.OpenBattleHistory)
     private val fieldNotes = program("field_notes", "field notes", "Read field notes and find the Pokémon in your collection.", OverdextopIcon.JOURNAL, InstrumentCommand.OpenFieldNotes)
     private val explorer = OverdextopEntry("explorer", "explorer", "Browse the complete directory tree.", OverdextopIcon.EXPLORER, OverdextopAction.OpenExplorer)
-    private val settings = OverdextopEntry("settings", "settings", "Choose the home screen and where program shortcuts appear.", OverdextopIcon.SETTINGS, OverdextopAction.OpenSettings)
+    private val settings = OverdextopEntry("settings", "settings", "Choose the home screen, shortcuts, and ODX-Fi colors.", OverdextopIcon.SETTINGS, OverdextopAction.OpenSettings)
     private val programsEntry = OverdextopEntry("programs", "programs", "Open your programs and settings.", OverdextopIcon.PROGRAMS, OverdextopAction.OpenPrograms)
     private val defaultDesktopIds = setOf("droidball", "pokedex", "current_team", "binders", "match_history", "explorer", "field_notes")
 
@@ -109,6 +110,7 @@ object OverdextopCatalog {
         OverdextopEntry("home_desktop", "desktop", "Use desktop shortcuts and the programs menu at home.", OverdextopIcon.PROGRAMS, OverdextopAction.ChooseHomeStyle(HomeScreenStyle.OVERDEXTOP)),
         OverdextopEntry("home_directory", "directory tree", "Use the directory tree as the home screen.", OverdextopIcon.EXPLORER, OverdextopAction.ChooseHomeStyle(HomeScreenStyle.DIRECTORY)),
         OverdextopEntry("shortcuts", "shortcuts", "Choose which programs appear on the desktop, in programs, in both, or in neither.", OverdextopIcon.PROGRAMS, OverdextopAction.OpenShortcuts),
+        OverdextopEntry("odxfi_colors", "ODX-Fi colors", "Choose colors for the case, buttons, and bezels.", OverdextopIcon.SETTINGS, OverdextopAction.OpenAppearance),
     )
 
     fun defaultVisibility(id: String): LauncherShortcutVisibility = LauncherShortcutVisibility(

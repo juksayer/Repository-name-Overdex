@@ -58,6 +58,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,6 @@ import com.example.overdex.ui.components.TerminalKeyboardController
 import com.example.overdex.ui.components.TypeIconText
 import com.example.overdex.ui.components.glassShield
 import com.example.overdex.ui.lcdDisplayEffect
-import com.example.overdex.ui.theme.PokedexGreen
 import com.example.overdex.ui.theme.PokedexScreen
 import com.example.overdex.ui.theme.TerminalGreen
 import java.util.UUID
@@ -99,8 +99,8 @@ fun InstrumentButton(
     modifier: Modifier = Modifier,
     label: String? = null,
     icon: ImageVector? = null,
-    color: Color = Color.DarkGray,
-    labelColor: Color = Color.White.copy(alpha = 0.6f),
+    color: Color = Color(LocalODXFiAppearance.current.buttonColorArgb),
+    labelColor: Color = odxFiLabelColor(color).copy(alpha = 0.8f),
     enabled: Boolean = true,
     iconRotationDegrees: Float = 0f,
     labelRotationDegrees: Float = 0f,
@@ -136,6 +136,7 @@ fun InstrumentButton(
 
     Box(
         modifier = modifier
+            .testTag("odxfi-button-${contentDescription ?: label ?: "control"}")
             .size(width = 56.dp, height = 36.dp)
             .background(color)
             .drawBehind {
@@ -377,7 +378,9 @@ fun ODXFiShell(
 
     // Shared physical material for the CRT and lower service assembly. The top
     // CRT rail is deeper only to retain the etched model badge.
-    val instrumentBezelColor = Color.Black.copy(alpha = 0.08f)
+    val appearance = LocalODXFiAppearance.current
+    val caseColor = Color(appearance.caseColorArgb)
+    val instrumentBezelColor = Color(appearance.bezelColorArgb)
     val instrumentBezelBorderColor = Color.Black.copy(alpha = 0.15f)
     val crtTopBezel = 28.dp
 
@@ -538,7 +541,8 @@ fun ODXFiShell(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PokedexGreen)
+                .testTag("odxfi-case")
+                .background(caseColor)
                 .padding(8.dp)
                 .then(remoteKeyModifier)
         ) {
@@ -569,9 +573,12 @@ fun ODXFiShell(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000)
-                    StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000)
-                    StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000)
+                    StatusIndicator(label = "PWR", color = Color.Red, cycleDurationMillis = 5000,
+                        labelColor = odxFiLabelColor(caseColor).copy(alpha = .7f))
+                    StatusIndicator(label = "OBS", color = Color(0xFFFFA500), cycleDurationMillis = 3000,
+                        labelColor = odxFiLabelColor(caseColor).copy(alpha = .7f))
+                    StatusIndicator(label = "LINK", color = Color.Green, cycleDurationMillis = 4000,
+                        labelColor = odxFiLabelColor(caseColor).copy(alpha = .7f))
                 }
             }
 
@@ -579,6 +586,7 @@ fun ODXFiShell(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("odxfi-crt-bezel")
                     .weight(1.3f) // Increase dominance of CRT
                     .background(instrumentBezelColor, RoundedCornerShape(4.dp))
                     .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
@@ -591,7 +599,7 @@ fun ODXFiShell(
             ) {
                 Text(
                     text = "oDX-Fi",
-                    color = Color.Black.copy(alpha = 0.4f),
+                    color = odxFiLabelColor(instrumentBezelColor).copy(alpha = 0.6f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.Monospace,
@@ -783,6 +791,7 @@ fun ODXFiShell(
 
             val panelModifier = Modifier
                 .fillMaxWidth()
+                .testTag("odxfi-control-bezel")
                 .height(panel.panelHeight)
                 .background(instrumentBezelColor, RoundedCornerShape(4.dp))
                 .border(1.dp, instrumentBezelBorderColor, RoundedCornerShape(4.dp))
