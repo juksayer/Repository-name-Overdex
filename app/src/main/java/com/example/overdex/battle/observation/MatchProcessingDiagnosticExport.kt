@@ -18,6 +18,22 @@ internal object MatchProcessingDiagnosticExport {
                 put("hits",c.hits); put("misses",c.misses); put("oversized",c.oversized)
                 put("evictions",c.evictions); put("entries",c.entries); put("retainedRows",c.retainedRows)
             }) }
+            match.articleListenerDiagnostics?.let { listeners ->
+                put("articleListeners", buildJsonObject {
+                    put("activeSubscriptions", listeners.activeSubscriptions)
+                    put("peakSubscriptions", listeners.peakSubscriptions)
+                    put("sampleEvery", 64)
+                    put("timingScope", "Sampled downstream callback elapsed time, including suspension; not publisher blocking time or CPU time")
+                    put("listeners", buildJsonObject {
+                        listeners.snapshot().forEach { (name, value) -> put(name, buildJsonObject {
+                            put("subscriptions", value.subscriptions); put("active", value.active)
+                            put("deliveries", value.deliveries); put("samples", value.samples)
+                            put("callbackElapsedNanos", value.callbackElapsedNanos)
+                            put("maximumCallbackNanos", value.maximumCallbackNanos)
+                        }) }
+                    })
+                })
+            }
             put("acceptedTestimony", match.custody.getRecords().count { it is TestimonyRecord })
             put("completedTestimony", snapshot.completed)
             put("lastCompletedSequence", snapshot.lastCompletedSequence)

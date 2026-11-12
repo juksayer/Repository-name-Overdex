@@ -108,11 +108,12 @@ class MatchPublicationDrainTest {
         val match = Match("drain-interpretation", custody = custody, realityTimeline = timeline,
             pokemonKnowledge = knowledge)
         try {
-            custody.submitTestimony(SourceId("SPECIES_WITNESS"), RawTestimony("Pikachu"),
+            val receipt = custody.submitTestimony(SourceId("SPECIES_WITNESS"), RawTestimony("Pikachu"),
                 1_000L, null, emptyList(), 10_000L)
             withTimeout(5_000) {
                 lookupEntered.await()
                 assertEquals(1, timeline.getArticles().size)
+                assertSame(timeline.getArticles().single(), match.awaitRawArticlePublished(receipt.sequenceNumber))
                 val drained = async(start = CoroutineStart.UNDISPATCHED) {
                     match.awaitAcceptedEvidencePublished()
                 }

@@ -49,7 +49,7 @@ class MatchProcessingDiagnosticsTest {
                 1234, .9f, listOf("crop-proof"), 1234000)
             withTimeout(5000) { match.awaitAcceptedEvidencePublished() }
             val stages = diagnostics.snapshot().stages.filterKeys { it.startsWith("raw_publication.") }
-            assertEquals(setOf("timeline_append", "hp_timing", "species_cues", "article_broadcast"),
+            assertEquals(setOf("timeline_append", "hp_timing", "species_cues", "article_broadcast", "receipt_notification"),
                 stages.keys.map { it.substringAfter('.').substringBefore('/') }.toSet())
             assertTrue(stages.values.all { it.calls == 1L })
             assertEquals(500_000_000L, stages.values.sumOf { it.elapsedNanos })

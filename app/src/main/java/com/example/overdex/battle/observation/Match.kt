@@ -149,8 +149,14 @@ class Match(
         extraBufferCapacity = 4_096,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+    private val rawArticlePublication = RawArticlePublication(realityTimeline::articleForSequence)
+
+    /** Raw article is on the Timeline and broadcast; inline derivations may still be running. */
+    suspend fun awaitRawArticlePublished(sequence: Long): RealityArticle = rawArticlePublication.await(sequence)
+
+    internal val articleListenerDiagnostics = processingDiagnostics?.let { ArticleListenerDiagnostics() }
     /** Accepted Timeline articles for downstream recognizers; the Timeline remains authoritative. */
-    val articles = _articles.asSharedFlow()
+    val articles = articleListenerDiagnostics?.wrap(_articles.asSharedFlow()) ?: _articles.asSharedFlow()
 
     // Species OCR has one job: inspect the two purpose-specific name strips.
     // Do not make it wait behind every HP, timer, and announcement crop in the
@@ -517,6 +523,8 @@ class Match(
                 cueSpeciesChecks(article)
                 processingSpan?.next("raw_publication.article_broadcast")
                 _articles.tryEmit(article)
+                processingSpan?.next("raw_publication.receipt_notification")
+                rawArticlePublication.published(article)
                 processingSpan?.next("identity_projection")
                 appendPlayerIdentityDerivations(article)
                 processingSpan?.next("crop_delivery")
@@ -1056,6 +1064,7 @@ class Match(
      * Releases resources and cancels active subscriptions.
      */
     fun release() {
+        rawArticlePublication.close()
         acceptedChargeCapturePreparation.close()
         speciesChecks.stop()
         matchScope.cancel("Match released")

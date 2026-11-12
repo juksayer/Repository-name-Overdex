@@ -12,7 +12,6 @@ import com.example.overdex.data.observation.OcrPriority
 import com.example.overdex.model.observation.ObservationInput
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.first
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Shared OCR admission is the only lock; optional coordinates never queue ahead of identity. */
@@ -186,7 +185,7 @@ internal class LivePlayerControlTextWitness(
                                 val accepted = match.custody.submitTestimony(SourceId("${observerId.id}_CAPTURE"),
                                     CropCaptured(artifact, sample.crop.provenance), sample.wall, null, emptyList(), sample.at)
                                 val article = withTimeoutOrNull(2_000.milliseconds) {
-                                    match.articles.first { it.sequenceNumber == accepted.sequenceNumber && it.payload is CropCaptured }
+                                    match.awaitRawArticlePublished(accepted.sequenceNumber)
                                 }
                                 references = listOfNotNull(article?.id?.value)
                                 lastPreserved = sample.at

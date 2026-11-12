@@ -13,6 +13,9 @@ interface RealityTimeline {
     /** Retrieves all preserved records in the order they were appended. */
     fun getArticles(): List<RealityArticle>
 
+    /** Custody sequence lookup without replaying the article stream. */
+    fun articleForSequence(sequence: Long): RealityArticle? = getArticles().firstOrNull { it.sequenceNumber == sequence }
+
     /** Only the newly appended tail is needed by an incremental checkpoint. */
     fun getArticlesFrom(index: Int): List<RealityArticle> = getArticles().drop(index)
 }
@@ -28,10 +31,15 @@ interface RealityTimeline {
 class InMemoryRealityTimeline : RealityTimeline {
     private val lock = Any()
     private val articles = mutableListOf<RealityArticle>()
+    private val bySequence = mutableMapOf<Long, RealityArticle>()
 
-    override fun append(article: RealityArticle) = synchronized(lock) {
+    override fun append(article: RealityArticle): Unit = synchronized(lock) {
         articles += article
+        article.sequenceNumber?.let { bySequence.putIfAbsent(it, article) }
+        Unit
     }
+
+    override fun articleForSequence(sequence: Long): RealityArticle? = synchronized(lock) { bySequence[sequence] }
 
     override fun getArticles(): List<RealityArticle> = synchronized(lock) {
         articles.toList()

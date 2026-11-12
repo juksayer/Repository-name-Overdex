@@ -577,3 +577,22 @@ Evidence and reconstruction limitations:
 | HP-HANDOFF-01 | A normal battlefield HP sample is the first after startup/reset and is discarded instead of seeding a fresh detector baseline. | The next lower sample may become the baseline, losing the first observable damage step even though both HP measurements are archived. | Verified with Pixel 14:47 opening samples and the current startup gate. This does not justify using charged-camera samples as Fast Move evidence or inventing moves in old archives. Implemented: the first normal sample seeds a fresh baseline without emitting a tick; charged-camera samples remain excluded. Startup, camera-return and appearance-boundary regressions cover this handoff. |
 
 Evidence: [first Turtonator hit trace](../verification/2026-11-12-pixel-1447-first-hit-trace.md).
+
+
+### Phase-scoped reader delivery (November 12, 2026)
+
+| ID | If | Then | Limits / status |
+| --- | --- | --- | --- |
+| READER-PHASE-01 | A pre-battle or result reader's assignment is inactive. | Its content lane should not deliver unrelated battle articles merely for that reader to reject. A separate phase controller retains the transition cues needed to rearm it. | User requirement; routing/lifecycle remedy under investigation. Existing downstream filters avoid recognition work but do not avoid SharedFlow wake-ups. Legitimate queued pre-battle evidence retains its capture-time phase; it must not authorize reading fresh battle images as team selection. |
+| READER-PHASE-02 | The Choose Your Party reader receives battlefield text such as SUPER EFFECTIVE. | Investigate capture gating, stale ownership, or wrong crop delivery; never accept it as team-selection evidence. | User-provided negative case. Not proof of which failure occurred without the source crop and capture clock. |
+
+### REPLAY-WINDOW-01 — Playback time versus retained evidence
+
+User preference (2026-11-12): Match Replay need not play idle time before Match
+Start or after the Match. Preserve pre-match team/VS evidence and late-recognized
+in-match evidence for reconstruction without extending the visible playback
+window to their processing/archive timestamps. Retain the finishing battle
+sequence within the selected boundary; trimming playback does not authorize
+removing source Articles, changing capture timestamps, or dropping listener work.
+Status: requested playback behavior; current implementation coverage not audited
+in this listener investigation.

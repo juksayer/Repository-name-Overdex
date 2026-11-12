@@ -20,7 +20,6 @@ import com.example.overdex.model.observation.OcrTextEvidence
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 
 /** Reads only its preserved prompt strip and reports text, never a faint or the outgoing identity. */
 class PersistedForcedReplacementWitness internal constructor(
@@ -59,7 +58,7 @@ class PersistedForcedReplacementWitness internal constructor(
                         val receipt = match.custody.submitTestimony(SourceId("${observerId.id}_OCR"),
                             RawTestimony(reading.rawText, reading), article.perceivedAt, null,
                             listOf(article.id.value), at)
-                        val raw = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
+                        val raw = match.awaitRawArticlePublished(receipt.sequenceNumber)
                         if (!fresh()) return@collect
                         val resolution = policy.observe(reading.acceptedText, at,
                             listOf(article.id.value, raw.id.value)) ?: return@collect

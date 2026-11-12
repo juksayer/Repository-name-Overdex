@@ -279,12 +279,15 @@ fun MatchReplayScreen(
     }
     val playbackStart = playbackWindow?.startNanos ?: model.startNanos
     val playbackEnd = playbackWindow?.endNanos ?: model.endNanos
+    val restartPosition = com.example.overdex.battle.replay.replayDefaultPosition(
+        playbackStart, playbackEnd, model.matchStartNanos, playbackWindow != null)
+
     val eventMarkers = remember(model, playbackStart, playbackEnd) {
         model.eventMarkers.filter { it.atNanos in playbackStart..playbackEnd }
     }
     var selectedMarkerId by remember(archive, playbackWindow) { mutableStateOf<String?>(null) }
     var cursor by remember(archive, initialCursorNanos, playbackWindow) {
-        mutableLongStateOf((initialCursorNanos ?: playbackStart).coerceIn(playbackStart, playbackEnd))
+        mutableLongStateOf((initialCursorNanos ?: restartPosition).coerceIn(playbackStart, playbackEnd))
     }
     var playing by remember(archive, playbackWindow) { mutableStateOf(false) }
     var autoStarted by remember(archive, playbackWindow) { mutableStateOf(false) }
@@ -398,7 +401,7 @@ fun MatchReplayScreen(
     }
 
     fun togglePlayback() {
-        if (!playing && cursor >= playbackEnd) cursor = playbackStart
+        if (!playing && cursor >= playbackEnd) cursor = restartPosition
         playing = !playing
         if (playing) transportSounds.play() else transportSounds.pause()
     }
@@ -535,7 +538,7 @@ fun MatchReplayScreen(
                 )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                MatchLcdTextButton("RESET", { cursor = playbackStart; playing = false; transportSounds.reset() }, Modifier.weight(1f))
+                MatchLcdTextButton("RESET", { cursor = restartPosition; playing = false; transportSounds.reset() }, Modifier.weight(1f))
                 MatchLcdTextButton(if (playing) "PAUSE" else "PLAY", toggle, Modifier.weight(1f))
                 MatchLcdTextButton(
                     label = "BLIPS ${if (eventBlipsEnabled) "ON" else "OFF"}",

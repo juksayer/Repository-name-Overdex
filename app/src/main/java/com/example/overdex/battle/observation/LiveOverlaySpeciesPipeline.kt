@@ -23,7 +23,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** A durable species crop delivered after its CropCaptured Timeline article exists. */
@@ -198,10 +197,7 @@ internal class LiveOverlaySpeciesPipeline(
                             evidenceReferences = emptyList(),
                             monotonicTimeNanos = sample.capturedAtMonotonicTimeNanos
                         )
-                        val cropArticle = match.articles.first { article ->
-                            article.sequenceNumber == accepted.sequenceNumber &&
-                                article.payload is CropCaptured
-                        }
+                        val cropArticle = match.awaitRawArticlePublished(accepted.sequenceNumber)
                         // The immutable raw crop is already on the Timeline.
                         // OCR does not wait for downstream inference consumers.
                         handedToOcr = crops.trySend(

@@ -24,7 +24,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.overdex.battle.timeline.observer.ObservationSource as ObserverSource
@@ -166,7 +165,7 @@ class PersistedAnnouncementWitness internal constructor(
                             val receipt = match.custody.submitTestimony(rawSourceId,
                                 RawTestimony(reading.rawText, reading), article.perceivedAt, null,
                                 listOf(article.id.value), capturedAt)
-                            val rawArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
+                            val rawArticle = match.awaitRawArticlePublished(receipt.sequenceNumber)
                             references += rawArticle.id.value
                             val announcedSpecies = ENTRY.matchEntire(reading.acceptedText.trim())?.groupValues?.get(1)
                             heightProfile.learn(reading, context, announcedSpecies != null &&
@@ -184,7 +183,7 @@ class PersistedAnnouncementWitness internal constructor(
                                 RawTestimony("basis=${resolution.basis} original=${resolution.originalText} " +
                                     "accepted=${resolution.acceptedText}"),
                                 article.perceivedAt, null, references.toList(), capturedAt)
-                            val resolvedArticle = match.articles.first { it.sequenceNumber == receipt.sequenceNumber }
+                            val resolvedArticle = match.awaitRawArticlePublished(receipt.sequenceNumber)
                             references += resolvedArticle.id.value
                             acceptedText = resolution.acceptedText
                         }
